@@ -30,10 +30,34 @@ class InvalidDictKeyError(Exception):
     """
 
 
-class HeterogeneousCoercionError(Exception):
-    """Raised when a collection contains heterogeneous scalar types and
-    the language would coerce them to strings, but the caller opted to
-    receive an error instead.
+class InconsistentRecordKeysError(Exception):
+    """Raised when a list contains dicts that do not share the same key
+    set.
+
+    Some sequence formats require structurally uniform records; this
+    library does not insert missing keys or null placeholders.
+    """
+
+
+class HeterogeneousScalarTypesError(Exception):
+    """Raised when a collection groups scalar values of incompatible types."""
+
+
+class HeterogeneousSiblingListScalarsError(Exception):
+    """Raised when parallel sibling lists combine incompatible scalar
+    types.
+    """
+
+
+class MixedMappingValueTypesError(Exception):
+    """Raised when a mapping's values span incompatible broad type
+    categories.
+    """
+
+
+class MixedSequenceElementTypesError(Exception):
+    """Raised when a list's elements span incompatible broad type
+    categories.
     """
 
 

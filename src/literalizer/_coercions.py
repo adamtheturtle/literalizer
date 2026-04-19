@@ -1,17 +1,24 @@
-"""Heterogeneous-type coercion and detection helpers."""
+"""Constraints on data for languages whose sequence format is not
+heterogeneous.
+"""
 
 import dataclasses
 import datetime
-import json
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import Protocol
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._language import Language
-from literalizer._types import Scalar, Value
-from literalizer.exceptions import HeterogeneousCoercionError
+from literalizer._types import Value
+from literalizer.exceptions import (
+    HeterogeneousScalarTypesError,
+    HeterogeneousSiblingListScalarsError,
+    InconsistentRecordKeysError,
+    MixedMappingValueTypesError,
+    MixedSequenceElementTypesError,
+)
 
 
 @beartype
@@ -35,29 +42,6 @@ def scalar_type_bucket(*, value: Value) -> type | None:
         if isinstance(value, bucket):
             return bucket
     return None
-
-
-@beartype
-def coerce_scalar_to_str(
-    *,
-    value: Value,
-) -> str:
-    """Convert a scalar to its string representation."""
-    match value:
-        case bool():
-            return "True" if value else "False"
-        case None:
-            return "None"
-        # datetime.datetime is a subclass of datetime.date, so this
-        # single check covers both types.
-        case datetime.date():
-            return value.isoformat()
-        case bytes():
-            return value.hex()
-        case str():
-            return value
-        case _:
-            return repr(value)
 
 
 @beartype
@@ -86,61 +70,6 @@ def all_scalars_heterogeneous(
     """Check whether values are all scalars with more than one type."""
     buckets = _scalar_type_buckets(values=values)
     return buckets is not None and len(buckets) > 1
-
-
-@beartype
-def _map_mapping_values(
-    *,
-    data: ordereddict | dict[str, Value],
-    fn: Callable[[Value], Value],
-) -> ordereddict | dict[str, Value]:
-    """Apply a function to every value of a dict or ordereddict,
-    preserving the container type.
-    """
-    if isinstance(data, ordereddict):
-        result: ordereddict = ordereddict()
-        for k, v in data.items():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-            result[k] = fn(v)  # pyright: ignore[reportUnknownArgumentType]
-        return result
-    return {k: fn(v) for k, v in data.items()}
-
-
-@beartype
-def _coerce_heterogeneous_sibling_lists(*, data: Value) -> Value:
-    """Recursively coerce sibling lists with heterogeneous scalar
-    element types so that every inner element becomes a string.
-
-    For example, ``[[1, 2], ["a", "b"]]`` becomes
-    ``[["1", "2"], ["a", "b"]]``.
-    """
-    match data:
-        case dict() | ordereddict():
-            return _map_mapping_values(
-                data=data,
-                fn=lambda v: _coerce_heterogeneous_sibling_lists(data=v),
-            )
-        case list():
-            new_list = [
-                _coerce_heterogeneous_sibling_lists(data=v) for v in data
-            ]
-            sublists: list[list[Value]] = []
-            all_elements: list[Value] = []
-            for v in new_list:
-                if isinstance(v, list):
-                    sublists.append(v)
-                    all_elements.extend(v)
-            if (
-                len(sublists) == len(new_list)
-                and len(sublists) > 1
-                and all_scalars_heterogeneous(values=all_elements)
-            ):
-                return [
-                    [coerce_scalar_to_str(value=e) for e in sub]
-                    for sub in sublists
-                ]
-            return new_list
-        case _:
-            return data
 
 
 @beartype
@@ -280,10 +209,9 @@ def _check_heterogeneous(*, data: Value) -> None:
         types = _describe_heterogeneous_types(data=data)
         msg = (
             "Collection contains heterogeneous scalar types "
-            "that would be coerced to strings"
-            f" (found types: {types})"
+            f"(found types: {types})"
         )
-        raise HeterogeneousCoercionError(msg)
+        raise HeterogeneousScalarTypesError(msg)
 
 
 @beartype
@@ -291,10 +219,10 @@ def _check_mixed_dict_shapes(*, data: Value) -> None:
     """Raise if data contains dicts with different key sets."""
     if _has_mixed_dict_shapes(data=data):
         msg = (
-            "List contains dicts with different key sets "
-            "that would be padded with null values"
+            "List contains dicts with different key sets; all records "
+            "must share the same keys for this format."
         )
-        raise HeterogeneousCoercionError(msg)
+        raise InconsistentRecordKeysError(msg)
 
 
 @beartype
@@ -303,11 +231,10 @@ def _check_heterogeneous_sibling_lists(*, data: Value) -> None:
     if _has_heterogeneous_sibling_lists(data=data):
         types = _describe_heterogeneous_types(data=data)
         msg = (
-            "Collection contains heterogeneous scalar types "
-            "that would be coerced to strings"
-            f" (found types: {types})"
+            "Sibling lists contain heterogeneous scalar types when "
+            f"combined (found types: {types})"
         )
-        raise HeterogeneousCoercionError(msg)
+        raise HeterogeneousSiblingListScalarsError(msg)
 
 
 @beartype
@@ -319,11 +246,10 @@ def _check_mixed_dict_values(*, data: Value) -> None:
             container_type=dict,
         )
         msg = (
-            "Dict contains values of mixed types "
-            "that would be coerced to strings"
-            f" (found types: {types})"
+            "Dict values use incompatible broad types "
+            f"(found types: {types})"
         )
-        raise HeterogeneousCoercionError(msg)
+        raise MixedMappingValueTypesError(msg)
 
 
 @beartype
@@ -335,73 +261,10 @@ def _check_mixed_list_values(*, data: Value) -> None:
             container_type=list,
         )
         msg = (
-            "List contains elements of mixed types "
-            "that would be coerced to strings"
-            f" (found types: {types})"
+            "List elements use incompatible broad types "
+            f"(found types: {types})"
         )
-        raise HeterogeneousCoercionError(msg)
-
-
-@beartype
-def _coerce_heterogeneous_mapping(
-    *,
-    data: ordereddict | dict[str, Value],
-) -> ordereddict | dict[str, Value]:
-    """Coerce a dict or ordereddict with heterogeneous scalar values."""
-    new_mapping = _map_mapping_values(
-        data=data,
-        fn=lambda v: _coerce_heterogeneous_scalars(data=v),
-    )
-    values: list[Value] = list(new_mapping.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-    if all_scalars_heterogeneous(values=values):
-        new_mapping = _map_mapping_values(
-            data=new_mapping,
-            fn=lambda v: coerce_scalar_to_str(value=v),
-        )
-    return new_mapping
-
-
-@beartype
-def _coerce_heterogeneous_set(
-    *,
-    data: set[Scalar],
-) -> set[Scalar]:
-    """Coerce a set with heterogeneous scalar values."""
-    items: list[Value] = list(data)
-    if all_scalars_heterogeneous(values=items):
-        return {coerce_scalar_to_str(value=v) for v in items}
-    return data
-
-
-@beartype
-def _coerce_heterogeneous_list(
-    *,
-    data: list[Value],
-) -> list[Value]:
-    """Coerce a list with heterogeneous scalar values."""
-    new_list = [_coerce_heterogeneous_scalars(data=v) for v in data]
-    if all_scalars_heterogeneous(values=new_list):
-        return [coerce_scalar_to_str(value=v) for v in new_list]
-    return new_list
-
-
-@beartype
-def _coerce_heterogeneous_scalars(
-    *,
-    data: Value,
-) -> Value:
-    """Recursively coerce heterogeneous all-scalar collections to
-    strings.
-    """
-    match data:
-        case ordereddict() | dict():
-            return _coerce_heterogeneous_mapping(data=data)
-        case set():
-            return _coerce_heterogeneous_set(data=data)
-        case list():
-            return _coerce_heterogeneous_list(data=data)
-        case _:
-            return data
+        raise MixedSequenceElementTypesError(msg)
 
 
 @beartype
@@ -441,115 +304,6 @@ def _values_mixed_types(*, values: Sequence[Value]) -> bool:
     for v in values:
         families.add(_value_type_family(value=v))
     return len(families) > 1
-
-
-@beartype
-def _coerce_value_to_str(*, value: Value) -> str:
-    """Convert any value (scalar or collection) to a string."""
-    match value:
-        case str():
-            return value
-        case None | bool() | int() | float() | bytes() | datetime.date():
-            return coerce_scalar_to_str(value=value)
-        case set():
-            sorted_items = sorted(
-                value,
-                key=lambda v: (type(v).__name__, repr(v)),
-            )
-            return json.dumps(obj=sorted_items, default=str)
-        case _:
-            return json.dumps(obj=value, default=str, sort_keys=False)
-
-
-@beartype
-def _coerce_mixed_dict_values(*, data: Value) -> Value:
-    """Recursively coerce dicts whose values span multiple type families.
-
-    When a dict has values of mixed types (e.g. strings and lists),
-    all values are converted to strings so the dict becomes homogeneous.
-    """
-    match data:
-        case ordereddict() | dict():
-            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if _values_mixed_types(values=values):
-                return _map_mapping_values(
-                    data=data,
-                    fn=lambda v: _coerce_value_to_str(value=v),
-                )
-            return _map_mapping_values(
-                data=data,
-                fn=lambda v: _coerce_mixed_dict_values(data=v),
-            )
-        case list():
-            return [_coerce_mixed_dict_values(data=v) for v in data]
-        case _:
-            return data
-
-
-@beartype
-def _coerce_mixed_list_values(*, data: Value) -> Value:
-    """Recursively coerce lists whose elements span multiple type families.
-
-    When a list has elements of mixed types (e.g. scalars and nested
-    collections), all elements are converted to strings so the list
-    becomes homogeneous.
-    """
-    match data:
-        case ordereddict() | dict():
-            return _map_mapping_values(
-                data=data,
-                fn=lambda v: _coerce_mixed_list_values(data=v),
-            )
-        case list():
-            if _values_mixed_types(values=data):
-                return [_coerce_value_to_str(value=v) for v in data]
-            return [_coerce_mixed_list_values(data=v) for v in data]
-        case _:
-            return data
-
-
-@beartype
-def _coerce_mixed_dict_shapes(*, data: Value) -> Value:
-    """Recursively pad dicts in lists so every dict has the same keys.
-
-    When a list contains dicts with different key sets, each dict is
-    padded with ``None`` for any missing keys so the records become
-    structurally uniform.
-    """
-    match data:
-        case ordereddict() | dict():
-            return _map_mapping_values(
-                data=data,
-                fn=lambda v: _coerce_mixed_dict_shapes(data=v),
-            )
-        case list():
-            new_list = [_coerce_mixed_dict_shapes(data=v) for v in data]
-            dicts_in_list = [v for v in new_list if isinstance(v, dict)]
-            key_sets = {frozenset(d.keys()) for d in dicts_in_list}
-            needs_padding = (
-                not all(ks == next(iter(key_sets)) for ks in key_sets)
-                if key_sets
-                else False
-            )
-            if needs_padding:
-                all_keys: list[str] = []
-                seen: set[str] = set()
-                for d in dicts_in_list:
-                    for k in d:
-                        if k not in seen:
-                            all_keys.append(k)
-                            seen.add(k)
-                new_list = [
-                    (
-                        {k: v.get(k) for k in all_keys}
-                        if isinstance(v, dict)
-                        else v
-                    )
-                    for v in new_list
-                ]
-            return new_list
-        case _:
-            return data
 
 
 @beartype
@@ -615,83 +369,47 @@ def _has_mixed_list_values(*, data: Value) -> bool:
 
 
 class _CheckFn(Protocol):
-    """Protocol for coercion check functions."""
+    """Protocol for validation check functions."""
 
     def __call__(self, *, data: Value) -> None:
-        """Raise if the data violates the coercion constraint."""
-
-
-class _CoerceFn(Protocol):
-    """Protocol for coercion transform functions."""
-
-    def __call__(self, *, data: Value) -> Value:
-        """Return the data with the coercion applied."""
+        """Raise if the data violates the constraint."""
 
 
 @dataclasses.dataclass(frozen=True)
-class _CoercionStep:
-    """A single coercion: a check that raises on error, and a
-    transform that applies the coercion.
-    """
+class _ValidationStep:
+    """One ordered validation step for homogeneous sequence formats."""
 
     check: _CheckFn
-    coerce: _CoerceFn
 
 
-def _build_coercion_steps(
+def _build_validation_steps(
     *,
     spec: Language,
-) -> list[_CoercionStep]:
-    """Build the ordered list of coercion steps for the given spec."""
-    steps: list[_CoercionStep] = []
+) -> list[_ValidationStep]:
+    """Build validation steps for the given spec."""
+    steps: list[_ValidationStep] = []
 
     if spec.sequence_format_config.requires_uniform_record_shapes:
-        steps.append(
-            _CoercionStep(
-                check=_check_mixed_dict_shapes,
-                coerce=_coerce_mixed_dict_shapes,
-            )
-        )
+        steps.append(_ValidationStep(check=_check_mixed_dict_shapes))
 
     steps.extend(
         [
-            _CoercionStep(
-                check=_check_heterogeneous,
-                coerce=_coerce_heterogeneous_scalars,
-            ),
-            _CoercionStep(
-                check=_check_heterogeneous_sibling_lists,
-                coerce=_coerce_heterogeneous_sibling_lists,
-            ),
-            _CoercionStep(
-                check=_check_mixed_dict_values,
-                coerce=_coerce_mixed_dict_values,
-            ),
-            _CoercionStep(
-                check=_check_mixed_list_values,
-                coerce=_coerce_mixed_list_values,
-            ),
+            _ValidationStep(check=_check_heterogeneous),
+            _ValidationStep(check=_check_heterogeneous_sibling_lists),
+            _ValidationStep(check=_check_mixed_dict_values),
+            _ValidationStep(check=_check_mixed_list_values),
         ]
     )
 
     return steps
 
 
-def apply_coercions(
-    *,
-    data: Value,
-    spec: Language,
-    error_on_coercion: bool,
-) -> Value:
-    """Apply heterogeneous-type coercions controlled by the sequence
-    format.
+@beartype
+def validate_homogeneous_sequence_data(*, data: Value, spec: Language) -> None:
+    """Raise if *data* violates constraints for non-heterogeneous
+    sequence formats.
     """
-    if not spec.sequence_format_config.supports_heterogeneity:
-        steps = _build_coercion_steps(spec=spec)
-        if error_on_coercion:
-            for step in steps:
-                step.check(data=data)
-        else:
-            for step in steps:
-                data = step.coerce(data=data)
-    return data
+    if spec.sequence_format_config.supports_heterogeneity:
+        return
+    for step in _build_validation_steps(spec=spec):
+        step.check(data=data)
