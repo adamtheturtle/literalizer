@@ -57,48 +57,23 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     date_scalar_preamble,
-    identity_call_target,
-    no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
 
 
-@dataclasses.dataclass(frozen=True)
-class _DotAccessConfig:
-    """Configuration for a single dot-access style."""
-
-    preamble_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]
-    call_target: Callable[[str], str]
-
-
 @beartype
-def _haskell_call_preamble_stub_record_dot(
+def _haskell_call_preamble_stub(
     name: str,
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return Haskell preamble stubs for a call name using
-    ``OverloadedRecordDot``.
-    """
-    parts = name.split(sep=".")
-    if len(parts) > 1:
+    """Emit ``OverloadedRecordDot`` when the call target contains dots."""
+    if "." in name:
         return ("{-# LANGUAGE OverloadedRecordDot #-}",)
     return ()
-
-
-@beartype
-def _haskell_record_selector_target(target: str, /) -> str:
-    """Convert ``app.client.fetch`` to ``(fetch (client app))``."""
-    parts = target.split(sep=".")
-    if len(parts) == 1:
-        return target
-    result = parts[0]
-    for part in parts[1:]:
-        result = f"({part} {result})"
-    return result
 
 
 def _build_haskell_call_stub(
@@ -727,16 +702,6 @@ class Haskell(metaclass=LanguageCls):
             * ``numeric_styles.EXPLICIT`` — wrap every numeric literal
               with its constructor (``HInt 42``, ``HFloat (3.14)``)
               and omit the typeclass instances.
-
-        dot_access_style: How dotted calls access record fields.
-
-            * ``dot_access_styles.OVERLOADED_RECORD_DOT`` — uses the
-              ``OverloadedRecordDot`` extension (GHC ≥ 9.2),
-              e.g. ``app.client.fetch("hello")``.
-            * ``dot_access_styles.RECORD_SELECTORS`` — uses plain
-              record selector functions,
-              e.g. ``(fetch (client app))("hello")``.  No language
-              extension is required.
     """
 
     extension = ".hs"
@@ -985,27 +950,6 @@ class Haskell(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    class DotAccessStyles(enum.Enum):
-        """How dotted calls access record fields.
-
-        * ``OVERLOADED_RECORD_DOT`` — uses the ``OverloadedRecordDot``
-          extension (GHC ≥ 9.2), e.g. ``app.client.fetch("hello")``.
-        * ``RECORD_SELECTORS`` — uses plain record selector functions,
-          e.g. ``(fetch (client app))("hello")``.  No language
-          extension is required.
-        """
-
-        OVERLOADED_RECORD_DOT = _DotAccessConfig(
-            preamble_stub=_haskell_call_preamble_stub_record_dot,
-            call_target=identity_call_target,
-        )
-        RECORD_SELECTORS = _DotAccessConfig(
-            preamble_stub=no_call_stub,
-            call_target=_haskell_record_selector_target,
-        )
-
-    dot_access_styles = DotAccessStyles
-
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -1065,9 +1009,6 @@ class Haskell(metaclass=LanguageCls):
         trailing_comma: TrailingCommas = TrailingCommas.NO,
         line_ending: LineEndings = LineEndings.SEMICOLON,
         call_style: CallStyles = CallStyles.POSITIONAL,
-        dot_access_style: DotAccessStyles = (
-            DotAccessStyles.OVERLOADED_RECORD_DOT
-        ),
         indent: str = "    ",
         type_name: str = "Val",
         constructor_prefix: str = "H",
@@ -1240,7 +1181,4 @@ class Haskell(metaclass=LanguageCls):
         )
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = dot_access_style.value.preamble_stub
-        self.format_call_target: Callable[[str], str] = (
-            dot_access_style.value.call_target
-        )
+        ] = _haskell_call_preamble_stub

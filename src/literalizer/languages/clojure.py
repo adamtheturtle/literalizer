@@ -44,7 +44,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -396,4 +395,3 @@ class Clojure(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target
