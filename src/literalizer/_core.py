@@ -1380,7 +1380,6 @@ def literalize_call(
     """
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
-    check_data(data=data, spec=language)
 
     if per_element:
         if not isinstance(data, list):
@@ -1393,6 +1392,11 @@ def literalize_call(
         lines: list[str] = []
         for element in data:
             arg_values = element if isinstance(element, list) else [element]
+            # Each element produces an independent call; check its
+            # argument list on its own rather than the top-level list,
+            # which is never rendered as a sequence in per-element mode.
+            for value in arg_values:
+                check_data(data=value, spec=language)
             args_str = _format_call_args(
                 values=cast("list[Value]", arg_values),
                 params=parameter_names,
@@ -1408,6 +1412,7 @@ def literalize_call(
             )
         result = "\n".join(lines)
     else:
+        check_data(data=data, spec=language)
         if language.call_style_config is None:
             raise UnsupportedCallStyleError(
                 language_name=type(language).__name__,

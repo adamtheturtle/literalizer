@@ -123,18 +123,16 @@ def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
     All-integer type lists widen to the largest integer; otherwise,
-    mixed types fall back to ``"&str"``.
+    returns the single type present.  Mixed-family inputs never reach
+    this function because
+    :func:`~literalizer._checks.check_data` raises for them.
 
     Callers must pass a non-empty sequence.
     """
     unique = list(dict.fromkeys(types))
-    match unique:
-        case [single]:
-            return single
-        case _ if all(t in _INTEGER_TYPES for t in unique):
-            return max(unique, key=_INTEGER_TYPES.index)
-        case _:
-            return "&str"
+    if len(unique) == 1:
+        return unique[0]
+    return max(unique, key=_INTEGER_TYPES.index)
 
 
 @beartype
