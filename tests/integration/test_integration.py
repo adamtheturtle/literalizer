@@ -15,6 +15,7 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import functools
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -1188,6 +1189,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints, "int_set", ""),
         (type_hints, "empty_set", ""),
         (type_hints, "mixed_number_list", ""),
+        (type_hints, "nested_sequence", ""),
+        (type_hints, "dict_with_list_value", ""),
+        (type_hints, "ordered_map_in_sequence", ""),
         (type_hints_cross, "int_list", ""),
         (type_hints_cross, "int_list_large", ""),
         (type_hints_cross, "pair_sequence", ""),
@@ -1460,7 +1464,8 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
 
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
-        path.relative_to(cases_dir) for path in actual - expected
+        os.path.relpath(path=path, start=cases_dir)
+        for path in actual - expected
     )
     assert not dead_files
 
