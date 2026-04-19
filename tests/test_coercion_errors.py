@@ -57,7 +57,7 @@ def _to_source(
     """Serialize *data* into a source string for *input_format*.
 
     For TOML, non-dict data is wrapped in ``{"_": data}`` because TOML
-    requires a top-level table.  The checks recurse through the data,
+    requires a top-level table.  The checks walk the whole data tree,
     so the wrapping does not affect whether an error is raised.
     """
     match input_format:
