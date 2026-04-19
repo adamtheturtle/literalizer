@@ -65,7 +65,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     wrap_combined_in_file_noop,
@@ -933,11 +932,6 @@ class Python(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
-
-    @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
-        """Transform a dotted call target."""
-        return identity_call_target
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 

@@ -700,6 +700,16 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def date_format(self) -> enum.Enum:
+        """The date format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def datetime_format(self) -> enum.Enum:
+        """The datetime format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def declaration_style(self) -> enum.Enum:
         """The declaration style chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -913,18 +923,6 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @property
-    def format_call_target(self) -> Callable[[str], str]:
-        """Transform a dotted call target before assembling the call
-        expression.
-
-        Most languages return the target unchanged
-        (:func:`identity_call_target`).  Haskell uses this to convert
-        ``app.client.fetch`` into ``(fetch (client app))`` when using
-        plain record selectors instead of ``OverloadedRecordDot``.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -959,17 +957,6 @@ no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
     _no_call_stub
 )
 """Shared callable for languages that need no call stubs."""
-
-
-def _identity_call_target(target: str, /) -> str:
-    """Return *target* unchanged."""
-    return target
-
-
-identity_call_target: Callable[[str], str] = _identity_call_target
-"""Shared callable for languages that do not transform dotted call
-targets.
-"""
 
 
 def _no_type_hint_preamble(

@@ -62,7 +62,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     prepend_body_preamble,
@@ -1134,11 +1133,6 @@ class Cpp(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _cpp_call_stub
-
-    @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
-        """Transform a dotted call target."""
-        return identity_call_target
 
     @cached_property
     def _cpp_date_type(self) -> str:
