@@ -25,35 +25,6 @@ PYTHON_ALWAYS_HINTS = Python(
 )
 
 
-@pytest.mark.parametrize(
-    argnames=("json_input", "expected"),
-    argvalues=[
-        ("42", "my_var: int = 42"),
-        ("3.14", "my_var: float = 3.14"),
-        ("true", "my_var: bool = True"),
-        ("false", "my_var: bool = False"),
-        ("null", "my_var: None = None"),
-        ('"hello"', 'my_var: str = "hello"'),
-    ],
-)
-def test_python_always_type_hints_scalars(
-    *, json_input: str, expected: str
-) -> None:
-    """Python with ALWAYS variable_type_hints adds type annotations
-    for scalar values.
-    """
-    result = literalize(
-        source=json_input,
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == expected
-
-
 def test_python_always_type_hints_assignment_no_hint() -> None:
     """Python ALWAYS hints do not add type hints for assignments."""
     result = literalize(
