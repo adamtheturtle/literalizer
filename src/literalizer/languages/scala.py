@@ -5,12 +5,8 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from types import MappingProxyType
-from typing import TYPE_CHECKING
 
 from beartype import beartype
-
-if TYPE_CHECKING:
-    from literalizer._modifiers import DeclarationModifier
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
@@ -71,6 +67,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier  # noqa: TC001
 from literalizer._types import Value
 
 

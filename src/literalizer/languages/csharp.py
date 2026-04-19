@@ -568,7 +568,37 @@ class CSharp(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
+        """Wrap code in a valid file.
+
+        When *content* starts with a class-field modifier keyword
+        (``public``/``private``/``protected``/``static``/``readonly``)
+        the declaration is placed inside a ``class Check`` body with a
+        ``Main`` entry point; otherwise it's emitted as a top-level
+        statement, which is the only context where ``var`` declarations
+        are valid.
+        """
+        first_token = (
+            content.lstrip().split(sep=" ", maxsplit=1)[0]
+            if content.strip()
+            else ""
+        )
+        is_class_field = first_token in {
+            "public",
+            "private",
+            "protected",
+            "static",
+            "readonly",
+        }
+        if is_class_field:
+            preamble_block = (
+                "\n".join(body_preamble) + "\n" if body_preamble else ""
+            )
+            return (
+                f"{preamble_block}class Check {{\n"
+                f"{content}\n"
+                "    public static void Main() {}\n"
+                "}"
+            )
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,

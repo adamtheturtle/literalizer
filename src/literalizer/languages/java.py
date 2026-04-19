@@ -787,8 +787,27 @@ class Java(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Java declaration in a static method."""
+        """Wrap a Java declaration in a ``class Check`` scope.
+
+        When *content* starts with a class-field modifier keyword
+        (``public``, ``private``, ``protected``, ``static``) the
+        declaration is placed at class-field scope, which is the only
+        context where those modifiers are valid.  Otherwise the
+        declaration goes inside ``public static void check()`` so that
+        local-only forms like ``var x = 42;`` compile.
+        """
         del variable_name
+        first_token = (
+            content.lstrip().split(sep=" ", maxsplit=1)[0]
+            if content.strip()
+            else ""
+        )
+        is_class_field = first_token in {
+            "public",
+            "private",
+            "protected",
+            "static",
+        }
         # Lines starting with "static " are class-level declarations
         # (call stubs); everything else goes inside the method body.
         class_lines = [
@@ -797,11 +816,18 @@ class Java(metaclass=LanguageCls):
         method_lines = tuple(
             line for line in body_preamble if not line.startswith("static ")
         )
+        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
+        if is_class_field:
+            field_preamble = (
+                "\n".join(method_lines) + "\n" if method_lines else ""
+            )
+            return (
+                f"class Check {{\n{class_block}{field_preamble}{content}\n}}"
+            )
         content = prepend_body_preamble(
             content=content,
             body_preamble=method_lines,
         )
-        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
         return (
             "class Check {\n"
             f"{class_block}"

@@ -90,10 +90,10 @@ def variable_declaration_formatter(
 
     Example::
 
-        decl = variable_declaration_formatter(
+        fmt = variable_declaration_formatter(
             template="const {name} = {value};",
         )
-        decl("x", "42", None, frozenset())  # => "const x = 42;"
+        fmt("x", "42", None, frozenset())  # => "const x = 42;"
     """
 
     @beartype

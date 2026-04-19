@@ -3,12 +3,8 @@
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING
 
 from beartype import beartype
-
-if TYPE_CHECKING:
-    from literalizer._modifiers import DeclarationModifier
 
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
@@ -60,6 +56,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier  # noqa: TC001
 from literalizer._types import Value
 
 

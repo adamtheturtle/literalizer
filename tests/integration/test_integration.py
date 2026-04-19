@@ -1007,6 +1007,9 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
 
     cases: list[_VariantCase] = []
     case_dirs = ("scalar_int", "simple_dict")
+    # C# ``const`` requires compile-time constants, so a dict can never
+    # be declared ``const``.  Skip the dict case for that combo.
+    skip_dict = {(CSharp, "const")}
     for lang_cls, mod_name, modifiers in combos:
         variant = _Variant(
             name=f"{lang_cls.__name__}_modifiers_{mod_name}",
@@ -1024,6 +1027,10 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
                 ),
             )
             for case_dir_name in case_dirs
+            if not (
+                case_dir_name == "simple_dict"
+                and (lang_cls, mod_name) in skip_dict
+            )
         )
     return cases
 
