@@ -30,7 +30,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -634,7 +634,7 @@ class Fortran(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             "  use, intrinsic :: ieee_arithmetic",
         )
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style_config: CallStyle | None = None
         self.statement_terminator = ""
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]

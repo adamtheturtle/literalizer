@@ -31,7 +31,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal_c_style,
 )
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -460,7 +460,7 @@ class ObjectiveC(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style_config: CallStyle | None = None
         self.statement_terminator = ";"
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
