@@ -26,6 +26,16 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
+def _format_date_ymd(value: datetime.date, template: str) -> str:
+    """Format a date using the YMD template."""
+    return template.format(
+        year=value.year,
+        month=value.month,
+        day=value.day,
+    )
+
+
+@beartype
 def date_ymd_formatter(
     *,
     template: str,
@@ -44,16 +54,24 @@ def date_ymd_formatter(
         fmt(datetime.date(2024, 1, 15))  # => "LocalDate.of(2024, 1, 15)"
     """
 
-    @beartype
     def _format(value: datetime.date) -> str:
-        """Format a date using the template."""
-        return template.format(
-            year=value.year,
-            month=value.month,
-            day=value.day,
-        )
+        """Delegate to module-level implementation."""
+        return _format_date_ymd(value, template)
 
     return _format
+
+
+@beartype
+def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
+    """Format a datetime using the YMDHMS template."""
+    return template.format(
+        year=value.year,
+        month=value.month,
+        day=value.day,
+        hour=value.hour,
+        minute=value.minute,
+        second=value.second,
+    )
 
 
 @beartype
@@ -75,19 +93,17 @@ def datetime_ymdhms_formatter(
         )
     """
 
-    @beartype
     def _format(value: datetime.datetime) -> str:
-        """Format a datetime using the template."""
-        return template.format(
-            year=value.year,
-            month=value.month,
-            day=value.day,
-            hour=value.hour,
-            minute=value.minute,
-            second=value.second,
-        )
+        """Delegate to module-level implementation."""
+        return _format_datetime_ymdhms(value, template)
 
     return _format
+
+
+@beartype
+def _format_date_iso_template(value: datetime.date, template: str) -> str:
+    """Format a date using the ISO template."""
+    return template.format(iso=value.isoformat())
 
 
 @beartype
@@ -108,12 +124,19 @@ def date_iso_formatter(
         fmt(datetime.date(2024, 1, 15))  # => 'DateTime.parse("2024-01-15")'
     """
 
-    @beartype
     def _format(value: datetime.date) -> str:
-        """Format a date using the ISO template."""
-        return template.format(iso=value.isoformat())
+        """Delegate to module-level implementation."""
+        return _format_date_iso_template(value, template)
 
     return _format
+
+
+@beartype
+def _format_datetime_iso_template(
+    value: datetime.datetime, template: str
+) -> str:
+    """Format a datetime using the ISO template."""
+    return template.format(iso=value.isoformat())
 
 
 @beartype
@@ -133,9 +156,8 @@ def datetime_iso_formatter(
         )
     """
 
-    @beartype
     def _format(value: datetime.datetime) -> str:
-        """Format a datetime using the ISO template."""
-        return template.format(iso=value.isoformat())
+        """Delegate to module-level implementation."""
+        return _format_datetime_iso_template(value, template)
 
     return _format

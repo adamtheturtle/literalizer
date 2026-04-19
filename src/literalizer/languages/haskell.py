@@ -101,66 +101,99 @@ def _haskell_record_selector_target(target: str, /) -> str:
     return result
 
 
+@beartype
+def _build_haskell_call_stub_lines(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    type_name: str,
+) -> tuple[str, ...]:
+    """Return Haskell stub declarations for a call name."""
+    ret = "IO ()"
+    body = "return ()"
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"{parts[0]} _ = {body}",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if len(params) == 1:
+        arg_type = type_name
+    else:
+        arg_type = "(" + ", ".join(type_name for _ in params) + ")"
+    field_type = f"{arg_type} -> {ret}"
+    if not fields:
+        cls = root.capitalize() + "Type_"
+        return (
+            f"data {cls} = {cls} {{ {method} :: {field_type} }}",
+            f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type_"
+    lines.append(
+        f"data {inner_cls} = {inner_cls} {{ {method} :: {field_type} }}",
+    )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type_"
+        lines.append(
+            f"data {cls} = {cls} {{ {fields[i + 1]} :: {prev_cls} }}",
+        )
+        prev_cls = cls
+    root_cls = root.capitalize() + "Type_"
+    lines.append(
+        f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
+    )
+    construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type_"
+        construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
+    construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
+    lines.append(f"{root} = {construction}")
+    return tuple(lines)
+
+
 def _build_haskell_call_stub(
     type_name: str,
 ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
     """Build a call stub function that uses *type_name* for field
     types.
     """
-    ret = "IO ()"
-    body = "return ()"
 
-    @beartype
     def _haskell_call_stub(
         name: str,
         params: Sequence[str],
         _stub_return: StubReturn,
         /,
     ) -> tuple[str, ...]:
-        """Return Haskell stub declarations for a call name."""
-        parts = name.split(sep=".")
-        if len(parts) == 1:
-            return (f"{parts[0]} _ = {body}",)
-        root = parts[0]
-        method = parts[-1]
-        fields = parts[1:-1]
-        if len(params) == 1:
-            arg_type = type_name
-        else:
-            arg_type = "(" + ", ".join(type_name for _ in params) + ")"
-        field_type = f"{arg_type} -> {ret}"
-        if not fields:
-            cls = root.capitalize() + "Type_"
-            return (
-                f"data {cls} = {cls} {{ {method} :: {field_type} }}",
-                f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
-            )
-        lines: list[str] = []
-        inner_cls = fields[-1].capitalize() + "Type_"
-        lines.append(
-            f"data {inner_cls} = {inner_cls} {{ {method} :: {field_type} }}",
+        """Delegate to module-level implementation."""
+        return _build_haskell_call_stub_lines(
+            name, params, _stub_return, type_name
         )
-        prev_cls = inner_cls
-        for i in range(len(fields) - 2, -1, -1):
-            cls = fields[i].capitalize() + "Type_"
-            lines.append(
-                f"data {cls} = {cls} {{ {fields[i + 1]} :: {prev_cls} }}",
-            )
-            prev_cls = cls
-        root_cls = root.capitalize() + "Type_"
-        lines.append(
-            f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
-        )
-        # Build nested construction from inside out.
-        construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
-        for i in range(len(fields) - 2, -1, -1):
-            cls = fields[i].capitalize() + "Type_"
-            construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
-        construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
-        lines.append(f"{root} = {construction}")
-        return tuple(lines)
 
     return _haskell_call_stub
+
+
+@beartype
+def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
+    """Format a datetime as a Haskell datetime constructor.
+
+    Timezone-aware datetimes are converted to UTC first, since
+    ``UTCTime`` represents a point in time in UTC.
+    """
+    if value.tzinfo is not None:
+        value = value.astimezone(tz=datetime.UTC)
+    total_seconds = value.hour * 3600 + value.minute * 60 + value.second
+    if value.microsecond:
+        picos = total_seconds * 10**12 + value.microsecond * 10**6
+        time_part = f"picosecondsToDiffTime {picos}"
+    else:
+        time_part = f"secondsToDiffTime {total_seconds}"
+    return (
+        f"{prefix}Datetime (UTCTime "
+        f"(fromGregorian {value.year} {value.month} {value.day}) "
+        f"({time_part}))"
+    )
 
 
 def _build_haskell_datetime_formatter(
@@ -170,26 +203,9 @@ def _build_haskell_datetime_formatter(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.datetime) -> str:
-        """Format a datetime as a Haskell datetime constructor.
-
-        Timezone-aware datetimes are converted to UTC first, since
-        ``UTCTime`` represents a point in time in UTC.
-        """
-        if value.tzinfo is not None:
-            value = value.astimezone(tz=datetime.UTC)
-        total_seconds = value.hour * 3600 + value.minute * 60 + value.second
-        if value.microsecond:
-            picos = total_seconds * 10**12 + value.microsecond * 10**6
-            time_part = f"picosecondsToDiffTime {picos}"
-        else:
-            time_part = f"secondsToDiffTime {total_seconds}"
-        return (
-            f"{prefix}Datetime (UTCTime "
-            f"(fromGregorian {value.year} {value.month} {value.day}) "
-            f"({time_part}))"
-        )
+        """Delegate to module-level implementation."""
+        return _format_haskell_datetime(value, prefix)
 
     return _format
 
@@ -203,6 +219,26 @@ class _DateTimeFormatters:
 
     format_date: Callable[[datetime.date], str]
     format_datetime: Callable[[datetime.datetime], str]
+
+
+@beartype
+def _wrap_with_str_constructor_date(
+    value: datetime.date,
+    str_prefix: str,
+    formatter: Callable[[datetime.date], str],
+) -> str:
+    """Wrap an ISO date string with the HStr constructor."""
+    return f"{str_prefix}{formatter(value)}"
+
+
+@beartype
+def _wrap_with_str_constructor_datetime(
+    value: datetime.datetime,
+    str_prefix: str,
+    formatter: Callable[[datetime.datetime], str],
+) -> str:
+    """Wrap an ISO datetime string with the HStr constructor."""
+    return f"{str_prefix}{formatter(value)}"
 
 
 @beartype
@@ -226,10 +262,11 @@ def _build_date_formatters(
     elif is_explicit:
         _str_pfx = f"{constructor_prefix}Str "
 
-        @beartype
         def _explicit_date(value: datetime.date) -> str:
-            """Wrap an ISO date string with the HStr constructor."""
-            return f"{_str_pfx}{date_formatter(value)}"
+            """Delegate to module-level implementation."""
+            return _wrap_with_str_constructor_date(
+                value, _str_pfx, date_formatter
+            )
 
         fmt_date = _explicit_date
     else:
@@ -242,10 +279,11 @@ def _build_date_formatters(
     elif is_explicit:
         _str_pfx_dt = f"{constructor_prefix}Str "
 
-        @beartype
         def _explicit_datetime(value: datetime.datetime) -> str:
-            """Wrap an ISO datetime string with the HStr constructor."""
-            return f"{_str_pfx_dt}{datetime_formatter(value)}"
+            """Delegate to module-level implementation."""
+            return _wrap_with_str_constructor_datetime(
+                value, _str_pfx_dt, datetime_formatter
+            )
 
         fmt_datetime = _explicit_datetime
     else:
@@ -265,6 +303,38 @@ class _StringFormatters:
     format_bytes: Callable[[bytes], str]
     format_dict_entry: Callable[[str, Value, str], str]
     is_explicit: bool
+
+
+@beartype
+def _wrap_str_with_constructor(
+    value: str,
+    string_constructor: str,
+    base_format_string: Callable[[str], str],
+) -> str:
+    """Wrap a formatted string with the constructor prefix."""
+    return f"{string_constructor}{base_format_string(value)}"
+
+
+@beartype
+def _wrap_bytes_with_constructor(
+    data: bytes,
+    string_constructor: str,
+    base_format_bytes: Callable[[bytes], str],
+) -> str:
+    """Wrap formatted bytes with the constructor prefix."""
+    return f"{string_constructor}{base_format_bytes(data)}"
+
+
+@beartype
+def _format_explicit_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+    string_constructor: str,
+) -> str:
+    """Format a dict entry, stripping the constructor from the key."""
+    clean_key = key.removeprefix(string_constructor)
+    return f"({clean_key}, {formatted_value})"
 
 
 @beartype
@@ -300,25 +370,27 @@ def _build_string_formatters(
 
     string_constructor = f"{constructor_prefix}Str "
 
-    @beartype
     def _format_string(value: str) -> str:
-        """Wrap a formatted string with the constructor prefix."""
-        return f"{string_constructor}{base_format_string(value)}"
+        """Delegate to module-level implementation."""
+        return _wrap_str_with_constructor(
+            value, string_constructor, base_format_string
+        )
 
-    @beartype
     def _format_bytes(data: bytes) -> str:
-        """Wrap formatted bytes with the constructor prefix."""
-        return f"{string_constructor}{base_format_bytes(data)}"
+        """Delegate to module-level implementation."""
+        return _wrap_bytes_with_constructor(
+            data, string_constructor, base_format_bytes
+        )
 
-    @beartype
     def _format_dict_entry(
         key: str,
         _raw_value: Value,
         formatted_value: str,
     ) -> str:
-        """Format a dict entry, stripping the constructor from the key."""
-        clean_key = key.removeprefix(string_constructor)
-        return f"({clean_key}, {formatted_value})"
+        """Delegate to module-level implementation."""
+        return _format_explicit_dict_entry(
+            key, _raw_value, formatted_value, string_constructor
+        )
 
     return _StringFormatters(
         format_string=_format_string,
@@ -568,6 +640,25 @@ class _DeclarationFormatters:
 
 
 @beartype
+def _format_haskell_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    base_declaration: Callable[[str, str, Value], str],
+    sequence_declared_type: str | None,
+    type_name: str,
+) -> str:
+    """Format a variable declaration with type annotation."""
+    base = base_declaration(name, value, data)
+    if isinstance(data, list):
+        if sequence_declared_type is None:
+            return base
+        return f"{name} :: {sequence_declared_type}\n{base}"
+    return f"{name} :: {type_name}\n{base}"
+
+
+@beartype
 def _build_declaration_formatters(
     *,
     declaration_style: enum.Enum,
@@ -585,15 +676,16 @@ def _build_declaration_formatters(
         else None
     )
 
-    @beartype
     def _haskell_declaration(name: str, value: str, data: Value) -> str:
-        """Format a variable declaration with type annotation."""
-        base = base_declaration(name, value, data)
-        if isinstance(data, list):
-            if sequence_declared_type is None:
-                return base
-            return f"{name} :: {sequence_declared_type}\n{base}"
-        return f"{name} :: {type_name}\n{base}"
+        """Delegate to module-level implementation."""
+        return _format_haskell_declaration(
+            name,
+            value,
+            data,
+            base_declaration=base_declaration,
+            sequence_declared_type=sequence_declared_type,
+            type_name=type_name,
+        )
 
     return _DeclarationFormatters(
         format_variable_declaration=_haskell_declaration,
@@ -653,6 +745,30 @@ def _build_preamble_setup(
             emit_num=emit_num,
         ),
     )
+
+
+@beartype
+def _wrap_integer_with_constructor(
+    value: int,
+    int_prefix: str,
+    base_format_integer: Callable[[int], str],
+) -> str:
+    """Wrap an integer with the constructor prefix."""
+    formatted = base_format_integer(value)
+    if value < 0:
+        return f"{int_prefix}({formatted})"
+    return f"{int_prefix}{formatted}"
+
+
+@beartype
+def _wrap_float_with_constructor(
+    value: float,
+    float_prefix: str,
+    base_format_float: Callable[[float], str],
+) -> str:
+    """Wrap a float with the constructor prefix."""
+    formatted = base_format_float(value)
+    return f"{float_prefix}({formatted})"
 
 
 @beartype
@@ -1172,19 +1288,17 @@ class Haskell(metaclass=LanguageCls):
             _base_format_float: Callable[[float], str] = float_format
             _base_format_integer: Callable[[int], str] = integer_format
 
-            @beartype
             def _wrap_integer(value: int) -> str:
-                """Wrap an integer with the constructor prefix."""
-                formatted = _base_format_integer(value)
-                if value < 0:
-                    return f"{_int_prefix}({formatted})"
-                return f"{_int_prefix}{formatted}"
+                """Delegate to module-level implementation."""
+                return _wrap_integer_with_constructor(
+                    value, _int_prefix, _base_format_integer
+                )
 
-            @beartype
             def _wrap_float(value: float) -> str:
-                """Wrap a float with the constructor prefix."""
-                formatted = _base_format_float(value)
-                return f"{_float_prefix}({formatted})"
+                """Delegate to module-level implementation."""
+                return _wrap_float_with_constructor(
+                    value, _float_prefix, _base_format_float
+                )
 
             self.format_float: Callable[[float], str] = _wrap_float
             self.format_integer: Callable[[int], str] = _wrap_integer

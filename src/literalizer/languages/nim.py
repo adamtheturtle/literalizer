@@ -64,6 +64,40 @@ from literalizer._types import Value
 
 
 @beartype
+def _apply_nim_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    *,
+    uses_typed_literal_for_scalars: bool,
+    keyword: str,
+    force_sequence: bool,
+) -> str:
+    """Format a declaration, using ``@`` for flat sequences of
+    simple scalars.
+    """
+    use_sequence = (
+        isinstance(_data, list)
+        and _data
+        and (
+            force_sequence
+            or (
+                uses_typed_literal_for_scalars
+                and all(
+                    isinstance(item, (str, int, float, bool, bytes))
+                    for item in _data
+                )
+            )
+        )
+    )
+    if use_sequence:
+        return f"{keyword} {name} = @{value}"
+    if force_sequence:
+        return f"{keyword} {name} = {value}"
+    return f"{keyword} {name} = %* {value}"
+
+
+@beartype
 def _make_variable_declaration(
     *,
     uses_typed_literal_for_scalars: bool,
@@ -72,32 +106,41 @@ def _make_variable_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable declaration formatter."""
 
-    @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format a declaration, using ``@`` for flat sequences of
-        simple scalars.
-        """
-        use_sequence = (
-            isinstance(_data, list)
-            and _data
-            and (
-                force_sequence
-                or (
-                    uses_typed_literal_for_scalars
-                    and all(
-                        isinstance(item, (str, int, float, bool, bytes))
-                        for item in _data
-                    )
-                )
-            )
+        """Delegate to module-level implementation."""
+        return _apply_nim_variable_declaration(
+            name,
+            value,
+            _data,
+            uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
+            keyword=keyword,
+            force_sequence=force_sequence,
         )
-        if use_sequence:
-            return f"{keyword} {name} = @{value}"
-        if force_sequence:
-            return f"{keyword} {name} = {value}"
-        return f"{keyword} {name} = %* {value}"
 
     return _format
+
+
+@beartype
+def _apply_nim_variable_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+    *,
+    uses_typed_literal_for_scalars: bool,
+) -> str:
+    """Format an assignment, using ``@`` for flat sequences of
+    simple scalars.
+    """
+    if (
+        uses_typed_literal_for_scalars
+        and isinstance(_data, list)
+        and _data
+        and all(
+            isinstance(item, (str, int, float, bool, bytes)) for item in _data
+        )
+    ):
+        return f"{name} = @{value}"
+    return f"{name} = %* {value}"
 
 
 @beartype
@@ -107,22 +150,14 @@ def _make_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable assignment formatter."""
 
-    @beartype
     def _format(name: str, value: str, _data: Value) -> str:
-        """Format an assignment, using ``@`` for flat sequences of
-        simple scalars.
-        """
-        if (
-            uses_typed_literal_for_scalars
-            and isinstance(_data, list)
-            and _data
-            and all(
-                isinstance(item, (str, int, float, bool, bytes))
-                for item in _data
-            )
-        ):
-            return f"{name} = @{value}"
-        return f"{name} = %* {value}"
+        """Delegate to module-level implementation."""
+        return _apply_nim_variable_assignment(
+            name,
+            value,
+            _data,
+            uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
+        )
 
     return _format
 
