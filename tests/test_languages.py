@@ -443,7 +443,11 @@ def test_literalize_call_per_element_false() -> None:
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
-    with pytest.raises(expected_exception=ValueError, match="wrap_in_file"):
+    expected_msg = "BothVariableForms requires wrap_in_file=True"
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
         literalize(
             source="42",
             input_format=InputFormat.JSON,

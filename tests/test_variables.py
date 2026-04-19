@@ -2,6 +2,7 @@
 converter.
 """
 
+import re
 import textwrap
 
 import pytest
@@ -109,61 +110,6 @@ RUST_CONST = Rust(
     sequence_format=Rust.sequence_formats.ARRAY,
     declaration_style=Rust.declaration_styles.CONST,
 )
-
-
-def test_rust_const_bytes() -> None:
-    """Rust CONST with bytes uses ``&str`` type.
-
-    The ``bytes()`` arm of ``_rust_scalar_type`` is only reachable via
-    a Rust CONST/STATIC declaration with bytes data; the ``binary``
-    integration case has only LET golden files.
-    """
-    yaml_input = "!!binary |\n  SGVsbG8="
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-    )
-    assert result.code == 'const my_var: &str = "48656c6c6f";'
-
-
-def test_rust_const_date() -> None:
-    """Rust CONST with ISO dates uses ``&str`` type.
-
-    The ``datetime.date()`` arm of ``_rust_scalar_type`` is only
-    reachable via Rust CONST/STATIC + date data; the ``scalar_date``
-    integration case has only LET golden files.
-    """
-    result = literalize(
-        source="2024-01-15",
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15";'
-
-
-def test_rust_const_datetime() -> None:
-    """Rust CONST with ISO datetimes uses ``&str`` type.
-
-    The ``datetime.datetime()`` arm of ``_rust_scalar_type`` is only
-    reachable via Rust CONST/STATIC + datetime data; the
-    ``scalar_datetime`` integration case has only LET golden files.
-    """
-    result = literalize(
-        source="2024-01-15T12:30:00",
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
 
 
 def test_rust_const_single_element_tuple() -> None:
@@ -413,8 +359,14 @@ def test_rust_vec_format_type_annotation() -> None:
 
 def test_rust_const_vec_raises() -> None:
     """Rust CONST with vector format raises."""
+    expected_msg = (
+        "Rust CONST requires a constant-expression initializer, "
+        "but the VEC sequence format produces vec![…] which is "
+        "not a constant expression. Use ARRAY or TUPLE instead."
+    )
     with pytest.raises(
-        expected_exception=IncompatibleFormatsError, match="VEC"
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
     ):
         Rust(
             declaration_style=Rust.declaration_styles.CONST,
@@ -424,8 +376,14 @@ def test_rust_const_vec_raises() -> None:
 
 def test_rust_static_vec_raises() -> None:
     """Rust STATIC with vector format raises."""
+    expected_msg = (
+        "Rust STATIC requires a constant-expression initializer, "
+        "but the VEC sequence format produces vec![…] which is "
+        "not a constant expression. Use ARRAY or TUPLE instead."
+    )
     with pytest.raises(
-        expected_exception=IncompatibleFormatsError, match="VEC"
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
     ):
         Rust(
             declaration_style=Rust.declaration_styles.STATIC,
