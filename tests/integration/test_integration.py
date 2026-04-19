@@ -790,9 +790,8 @@ def _build_string_format_cross_variants(
     For every language, pair every non-default ``string_format`` with
     every non-default value of the other axis.  Covers code paths where
     the chosen ``string_format`` interacts with another formatter axis
-    (e.g. the plain-ISO fallback inside ``_build_date_time_formatters``
-    that fires only when ``string_format`` is non-explicit *and* the
-    date/datetime format differs from the language-native one).
+    (e.g. the plain-ISO date/datetime fallback that only fires when both
+    ``string_format`` and the date/datetime format are non-default).
     """
     variants: list[_Variant] = []
     for lang_cls in _SORTED_LANGUAGES:
