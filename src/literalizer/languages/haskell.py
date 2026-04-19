@@ -1104,6 +1104,8 @@ class Haskell(metaclass=LanguageCls):
         self.format_datetime: Callable[[datetime.datetime], str] = (
             date_fmts.format_datetime
         )
+        self.date_format: enum.Enum = date_format
+        self.datetime_format: enum.Enum = datetime_format
 
         # Scalar formatters.
         _explicit_numeric = numeric_style.name == "EXPLICIT"

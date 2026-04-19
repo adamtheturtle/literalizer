@@ -697,6 +697,8 @@ class PureScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
         self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
+        self.date_format: enum.Enum = date_format
+        self.datetime_format: enum.Enum = datetime_format
         if constructor_prefix == "P":
             self.format_bytes: Callable[[bytes], str] = bytes_format
             self.format_date: Callable[[datetime.date], str] = date_format
