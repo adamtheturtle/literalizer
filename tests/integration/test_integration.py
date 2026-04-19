@@ -89,6 +89,30 @@ def _check_golden(
     )
 
 
+def test_check_golden_mismatch_delegates(
+    tmp_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``_check_golden`` delegates to ``file_regression.check`` on miss.
+
+    Production goldens all match in CI, so the fallback branch is
+    otherwise unexercised.
+    """
+    golden = tmp_path / "golden.txt"
+    golden.write_text(data="expected\n")
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match="FILES DIFFER",
+    ):
+        _check_golden(
+            file_regression=file_regression,
+            contents="different\n",
+            golden_path=golden,
+            extension=".txt",
+            newline="",
+        )
+
+
 @beartype
 def _find_redefinition_styles(
     spec: literalizer.Language,
