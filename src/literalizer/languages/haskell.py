@@ -43,8 +43,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,6 +52,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -992,7 +992,7 @@ class Haskell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Haskell call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -1243,7 +1243,7 @@ class Haskell(metaclass=LanguageCls):
         ] = preamble.compute_body_preamble
         self.data_dependent_preamble = no_data_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.call_style_config: CallStyleConfig | None = call_style.value
+        self.call_style_config: CallStyle | None = call_style.value
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = _build_haskell_call_stub(

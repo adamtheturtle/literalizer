@@ -30,7 +30,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -541,7 +541,9 @@ class Fortran(metaclass=LanguageCls):
             )
         )
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = lambda value: (
+            f"{value}_int64"
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = format_entry
         self.format_set_entry: Callable[[Value, str], str] = format_entry
         self.comment_format = comment_format
@@ -587,6 +589,7 @@ class Fortran(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ("module fval_m",)
         self.static_body_preamble: Sequence[str] = (
+            "  use, intrinsic :: iso_fortran_env, only: int64",
             "  implicit none",
             "  type :: fval_t",
             "    integer :: t = 0",
@@ -598,7 +601,7 @@ class Fortran(metaclass=LanguageCls):
             "; logical, intent(in) :: b"
             "; type(fval_t) :: v; end function",
             f"  function {int_name}(n) result(v)"
-            "; integer, intent(in) :: n"
+            "; integer(kind=int64), intent(in) :: n"
             "; type(fval_t) :: v; end function",
             f"  function {real_name}(x) result(v)"
             "; real, intent(in) :: x"
@@ -635,7 +638,7 @@ class Fortran(metaclass=LanguageCls):
         self.special_float_preamble: tuple[str, ...] = (
             "  use, intrinsic :: ieee_arithmetic",
         )
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style_config: CallStyle | None = None
         self.statement_terminator = ""
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]

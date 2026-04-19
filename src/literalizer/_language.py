@@ -167,34 +167,35 @@ class DeclarationStyleConfig:
     supports_redefinition: bool
 
 
-class CallStyleKind(enum.Enum):
-    """How a language passes arguments in function calls."""
-
-    KEYWORD = "keyword"
-    """Named arguments: ``func(name=value)``."""
-
-    POSITIONAL = "positional"
+@dataclasses.dataclass(frozen=True)
+class PositionalCallStyle:
     """Positional arguments only: ``func(value1, value2)``."""
-
-    OBJECT = "object"
-    """Arguments wrapped in an object literal:
-    ``func({ name: value })``.
-    """
 
 
 @dataclasses.dataclass(frozen=True)
-class CallStyleConfig:
-    """Describes how a language formats function call arguments.
+class KeywordCallStyle:
+    """Named arguments: ``func(name=value)``.
 
-    *kind* indicates the calling convention.  *keyword_separator* is the
-    string placed between the parameter name and its value for
-    :attr:`CallStyleKind.KEYWORD` and :attr:`CallStyleKind.OBJECT`
-    styles (e.g. ``"="`` for Python, ``": "`` for Ruby).  It is
-    ``None`` for :attr:`CallStyleKind.POSITIONAL` languages.
+    *separator* is the string placed between the parameter name and its
+    value (e.g. ``"="`` for Python, ``": "`` for Ruby).
     """
 
-    kind: CallStyleKind
-    keyword_separator: str | None = None
+    separator: str
+
+
+@dataclasses.dataclass(frozen=True)
+class ObjectCallStyle:
+    """Arguments wrapped in an object literal: ``func({ name: value })``.
+
+    *separator* is the string placed between the parameter name and its
+    value inside the object literal (e.g. ``": "`` for JavaScript).
+    """
+
+    separator: str
+
+
+CallStyle = PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
+"""Tagged union describing how a language passes call arguments."""
 
 
 class FloatSpecialsMixin:
@@ -802,11 +803,11 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     emitted when actually needed.
     """
 
-    call_style_config: CallStyleConfig | None
+    call_style_config: CallStyle | None
     """Describes how this language passes arguments in function calls.
 
     ``None`` for languages with an empty :attr:`CallStyles` enum.
-    See :class:`CallStyleConfig` for details.
+    See :data:`CallStyle` for the variant types.
     """
 
     statement_terminator: str

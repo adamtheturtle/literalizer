@@ -2,7 +2,7 @@ structure Check = struct
 
 datatype val_t =
     SBool of bool
-  | SInt of int
+  | SInt of LargeInt.int
   | SReal of real
   | SStr of string
   | SList of val_t list

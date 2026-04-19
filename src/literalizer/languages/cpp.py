@@ -45,8 +45,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -55,6 +54,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -1058,7 +1058,7 @@ class Cpp(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Cpp call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -1236,7 +1236,7 @@ class Cpp(metaclass=LanguageCls):
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ("#include <cmath>",)
         self.call_style = call_style
-        self.call_style_config: CallStyleConfig | None = call_style.value
+        self.call_style_config: CallStyle | None = call_style.value
         self.statement_terminator = ";"
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]

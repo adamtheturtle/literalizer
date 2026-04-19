@@ -29,7 +29,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -454,7 +454,7 @@ class Ada(metaclass=LanguageCls):
 
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
+        self.call_style_config: CallStyle | None = None
         self.statement_terminator = ";"
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
