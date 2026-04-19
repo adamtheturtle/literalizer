@@ -46,16 +46,17 @@ from literalizer._formatters.format_strings import (
     format_string_raw_python,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -822,11 +823,8 @@ class Python(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Call style options for Python."""
 
-        KEYWORD = CallStyleConfig(
-            kind=CallStyleKind.KEYWORD,
-            keyword_separator="=",
-        )
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        KEYWORD = KeywordCallStyle(separator="=")
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -1012,7 +1010,7 @@ class Python(metaclass=LanguageCls):
         )
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style = call_style
-        self.call_style_config: CallStyleConfig | None = call_style.value
+        self.call_style_config: CallStyle | None = call_style.value
         self.statement_terminator = ""
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
