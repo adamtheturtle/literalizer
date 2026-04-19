@@ -577,10 +577,6 @@ class _CallCaseConfig:
     transform_stub_names: list[str]
     per_element: bool
     call_style_type: type[literalizer.CallStyle] | None = None
-    language_overrides: dict[str, object] = dataclasses.field(
-        default_factory=dict[str, object],
-    )
-    language_filter: Callable[[literalizer.LanguageCls], bool] | None = None
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -630,42 +626,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
-    ),
-    _CallCaseConfig(
-        case_dir_name="call_dotted_method_record_selectors",
-        target_function="app.client.fetch",
-        parameter_names=["payload"],
-        call_transform=None,
-        transform_stub_names=[],
-        per_element=True,
-        language_overrides={
-            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
-        },
-        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
-    ),
-    _CallCaseConfig(
-        case_dir_name="call_deep_dotted_record_selectors",
-        target_function="obj.api.client.post",
-        parameter_names=["data"],
-        call_transform=None,
-        transform_stub_names=[],
-        per_element=True,
-        language_overrides={
-            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
-        },
-        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
-    ),
-    _CallCaseConfig(
-        case_dir_name="call_scalar_record_selectors",
-        target_function="process",
-        parameter_names=["value"],
-        call_transform=None,
-        transform_stub_names=[],
-        per_element=True,
-        language_overrides={
-            "dot_access_style": (Haskell.DotAccessStyles.RECORD_SELECTORS),
-        },
-        language_filter=lambda cls: hasattr(cls, "DotAccessStyles"),
     ),
     *[
         _CallCaseConfig(
@@ -955,6 +915,51 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_string_format_cross_variants(
+    *,
+    other_kwarg: str,
+    other_tag: str,
+    get_other_default: Callable[[literalizer.Language], object],
+    get_other_formats: Callable[[literalizer.Language], type[enum.Enum]],
+) -> list[_Variant]:
+    """Build cross-product variants of ``string_format`` and another axis.
+
+    For every language, pair every non-default ``string_format`` with
+    every non-default value of the other axis.  Covers code paths where
+    the chosen ``string_format`` interacts with another formatter axis
+    (e.g. the plain-ISO date/datetime fallback that only fires when both
+    ``string_format`` and the date/datetime format are non-default).
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _SORTED_LANGUAGES:
+        spec = _spec(lang_cls=lang_cls)
+        default_string = spec.string_format
+        default_other = get_other_default(spec)
+        lang_name = lang_cls.__name__
+        for sf in spec.string_formats:
+            if sf is default_string:
+                continue
+            for of in get_other_formats(spec):
+                if of is default_other:
+                    continue
+                variants.append(
+                    _Variant(
+                        name=(
+                            f"{lang_name}"
+                            f"_string_{sf.name.lower()}"
+                            f"_{other_tag}_{of.name.lower()}"
+                        ),
+                        spec=lang_cls(
+                            string_format=sf,
+                            **{other_kwarg: of},
+                        ),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
 def _build_type_hints_cross_variants() -> list[_Variant]:
     """Build cross-product variants: each non-default type-hint format
     combined with each non-default value of another format axis.
@@ -1183,6 +1188,18 @@ def _build_variant_cases() -> list[_VariantCase]:
     )
 
     type_hints_cross = _build_type_hints_cross_variants()
+    string_format_date_cross = _build_string_format_cross_variants(
+        other_kwarg="date_format",
+        other_tag="date",
+        get_other_default=lambda s: s.date_format,
+        get_other_formats=lambda s: s.date_formats,
+    )
+    string_format_datetime_cross = _build_string_format_cross_variants(
+        other_kwarg="datetime_format",
+        other_tag="dt",
+        get_other_default=lambda s: s.datetime_format,
+        get_other_formats=lambda s: s.datetime_formats,
+    )
 
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
@@ -1285,6 +1302,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (string_format, "string_with_backslash", ""),
         (string_format, "simple_dict", "_dict"),
         (string_format, "binary", "_binary"),
+        (string_format_date_cross, "scalar_date", ""),
+        (string_format_datetime_cross, "scalar_datetime", "_dt"),
         (bytes_format, "binary", ""),
         (trailing_comma, "simple_sequence", ""),
         (line_ending, "simple_sequence", ""),
@@ -1295,6 +1314,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "simple_dict", ""),
         (_build_constructor_prefix_variants(), "float_special_values", "_v"),
         (_build_constructor_prefix_variants(), "float_list", "_float"),
+        (_build_constructor_prefix_variants(), "binary", "_binary"),
+        (_build_constructor_prefix_variants(), "scalar_date", "_date"),
+        (_build_constructor_prefix_variants(), "scalar_datetime", "_datetime"),
         (numeric_style, "int_list", ""),
         (numeric_style, "int_list_with_zero", "_zero"),
         (numeric_style, "float_list", ""),
@@ -1304,14 +1326,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
-        (type_hints_cross, "int_list", ""),
-        (type_hints_cross, "int_list_large", ""),
-        (type_hints_cross, "pair_sequence", ""),
-        (type_hints_cross, "empty_list", ""),
-        (type_hints_cross, "scalar_date", ""),
-        (type_hints_cross, "scalar_datetime", ""),
-        (type_hints_cross, "simple_dict", ""),
-        (type_hints_cross, "int_set", ""),
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
     ]
@@ -1581,11 +1595,6 @@ def _discover_call_cases() -> list[_CallCase]:
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
-            if (
-                config.language_filter is not None
-                and not config.language_filter(lang_cls)
-            ):
-                continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
                 # non-default style.
@@ -1622,7 +1631,7 @@ def test_call_golden_file(
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_cls = call_case.lang_cls
-    kwargs: dict[str, object] = dict(config.language_overrides)
+    kwargs: dict[str, object] = {}
     if config.call_style_type is not None:
         style = next(
             s
