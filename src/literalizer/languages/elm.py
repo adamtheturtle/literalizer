@@ -639,6 +639,8 @@ class Elm(metaclass=LanguageCls):
                 prefix=constructor_prefix,
                 base=_INT_BASE[integer_format.name],
             )
+        self.date_format: enum.Enum = date_format
+        self.datetime_format: enum.Enum = datetime_format
 
         if constructor_prefix == "E":
             self.format_float: Callable[[float], str] = float_format
