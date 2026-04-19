@@ -27,6 +27,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._language import (
     CallStyle,
     CommentConfig,
@@ -521,7 +525,12 @@ class Cobol(metaclass=LanguageCls):
         self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = _format_string_cobol
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=str,
+                fallback=raise_for_unrepresentable_int(language_name="Cobol"),
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_cobol_sequence_entry
         )

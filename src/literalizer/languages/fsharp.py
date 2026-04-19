@@ -33,6 +33,9 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -72,10 +75,12 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             return formatted
         case int():
             negative = formatted.startswith("-")
+            # ``I`` yields a ``bigint``; ``L`` yields ``int64``.
+            suffix = "I" if not I64_MIN <= original <= I64_MAX else "L"
             return (
-                f"{prefix}Int({formatted}L)"
+                f"{prefix}Int({formatted}{suffix})"
                 if negative
-                else f"{prefix}Int {formatted}L"
+                else f"{prefix}Int {formatted}{suffix}"
             )
         case float():
             negative = formatted.startswith("-")
@@ -644,13 +649,15 @@ class FSharp(metaclass=LanguageCls):
         p = constructor_prefix
         _header = f"type {type_name} ="
         _f_str = f"    | {p}Str of string"
+        _int_int64 = (_header, f"    | {p}Int of int64")
+        _int_bigint = (_header, f"    | {p}Int of bigint")
         self.scalar_body_preamble: dict[
             type,
             tuple[str, ...],
         ] = {
             type(None): (_header, f"    | {p}Null"),
             bool: (_header, f"    | {p}Bool of bool"),
-            int: (_header, f"    | {p}Int of int64"),
+            int: _int_int64,
             float: (_header, f"    | {p}Float of float"),
             str: (_header, _f_str),
             bytes: (_header, _f_str),
@@ -672,12 +679,29 @@ class FSharp(metaclass=LanguageCls):
                 f"    | {p}Datetime of System.DateTime",
             ),
         }
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+        _static_compute = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+
+        @beartype
+        def _fsharp_compute_body_preamble(
+            types: frozenset[type], data: Value, /
+        ) -> tuple[str, ...]:
+            """Return F#-specific body preamble, swapping ``int64`` for
+            ``bigint`` when the data contains a very-large integer.
+            """
+            if data_has_out_of_range_int(data=data):
+                override = {**self.scalar_body_preamble, int: _int_bigint}
+                return body_preamble_from_scalars(
+                    scalar_body_preamble=override,
+                    format_lines=tuple,
+                )(types, data)
+            return _static_compute(types, data)
+
+        self.compute_body_preamble: Callable[
+            [frozenset[type], Value], tuple[str, ...]
+        ] = _fsharp_compute_body_preamble
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style = call_style

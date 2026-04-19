@@ -27,6 +27,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
 )
@@ -73,6 +76,19 @@ _NIX_KEYWORDS: frozenset[str] = frozenset(
         "with",
     }
 )
+
+
+@beartype
+def _format_nix_fromjson_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Nix
+    ``builtins.fromJSON`` expression.
+
+    Nix integers are 64-bit signed; values outside that range must be
+    materialized at evaluation time.  ``builtins.fromJSON "…"`` accepts
+    arbitrary-precision JSON integer literals and passes
+    ``nix-instantiate --parse``.
+    """
+    return f'(builtins.fromJSON "{value}")'
 
 
 @beartype
@@ -414,7 +430,12 @@ class Nix(metaclass=LanguageCls):
         self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = _format_nix_string
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = str
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=str,
+                fallback=_format_nix_fromjson_literal,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_nix_sequence_entry
         )

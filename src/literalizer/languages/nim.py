@@ -36,6 +36,8 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -531,8 +533,11 @@ class Nim(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=raise_for_unrepresentable_int(language_name="Nim"),
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (

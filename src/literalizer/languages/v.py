@@ -35,6 +35,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar_single,
@@ -64,6 +65,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from literalizer._types import Value
+
+
+@beartype
+def _format_v_u64_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a V ``u64``
+    typed conversion.
+    """
+    return f"u64({value})"
 
 
 @beartype
@@ -393,8 +402,11 @@ class V(metaclass=LanguageCls):
         )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=_format_v_u64_literal,
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (

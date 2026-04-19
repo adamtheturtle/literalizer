@@ -37,6 +37,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal_c_style,
     format_integer_tick,
     make_long_suffix_formatter,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import (
@@ -66,6 +67,20 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value, ValueKind
+
+
+@beartype
+def _format_cpp_ull_literal(value: int) -> str:
+    """Format a value outside ``long long`` range as an unsigned
+    literal.
+
+    C++ signed-integer literals are rejected when they exceed
+    ``LLONG_MAX``; the ``ULL`` suffix selects ``unsigned long long``,
+    which can hold values up to ``ULLONG_MAX``.
+    """
+    if value < 0:
+        return f"-{abs(value)}ULL"
+    return f"{value}ULL"
 
 
 @beartype
@@ -1168,8 +1183,11 @@ class Cpp(metaclass=LanguageCls):
             numeric_separator=numeric_separator,
         )
         self.format_integer: Callable[[int], str] = (
-            numeric_literal_suffix.wrap_integer_formatter(
-                base=base_int_formatter,
+            make_overflow_fallback_formatter(
+                base=numeric_literal_suffix.wrap_integer_formatter(
+                    base=base_int_formatter,
+                ),
+                fallback=_format_cpp_ull_literal,
             )
         )
         self.dict_format_config: DictFormatConfig = dict_format.get_config(

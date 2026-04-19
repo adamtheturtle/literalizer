@@ -67,3 +67,15 @@ class IncompatibleFormatsError(Exception):
     require constant-expression initializers, but the ``VEC`` sequence
     format produces ``vec![…]`` which is not a constant expression.
     """
+
+
+class UnrepresentableIntegerError(Exception):
+    """Raised when an integer value exceeds the range the target
+    language can represent natively.
+
+    Used by languages whose fixed-width integer types cannot hold
+    values outside the signed 64-bit range (e.g. Fortran default
+    ``integer``, Cobol ``PIC S9(18)``, PureScript ``Int``) when no
+    external arbitrary-precision integer library is assumed to be
+    available.
+    """

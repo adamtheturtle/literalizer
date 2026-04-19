@@ -41,9 +41,11 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
@@ -71,12 +73,32 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_kotlin_biginteger_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Kotlin
+    ``BigInteger`` constructor call.
+
+    Kotlin's ``Long`` is signed 64-bit; values outside that range
+    must use ``BigInteger`` (``import java.math.BigInteger``).
+    """
+    return f'BigInteger("{value}")'
+
+
+@beartype
+def _kotlin_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``import java.math.BigInteger`` if *data* contains a
+    very-large integer.
+    """
+    if data_has_out_of_range_int(data=data):
+        return ("import java.math.BigInteger",)
+    return ()
 
 
 @beartype
@@ -853,8 +875,11 @@ class Kotlin(metaclass=LanguageCls):
         )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=_format_kotlin_biginteger_literal,
             )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = (
@@ -932,7 +957,7 @@ class Kotlin(metaclass=LanguageCls):
         )
         self.static_preamble: Sequence[str] = ()
         self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
+        self.data_dependent_preamble = _kotlin_biginteger_preamble
         self.scalar_preamble: dict[type, tuple[str, ...]] = (
             date_scalar_preamble(
                 date_format=date_format,

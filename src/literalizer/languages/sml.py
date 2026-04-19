@@ -36,6 +36,8 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
@@ -593,8 +595,11 @@ class Sml(metaclass=LanguageCls):
         )
         self.format_float: Callable[[float], str] = float_format
         self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
+            make_overflow_fallback_formatter(
+                base=integer_format.get_formatter(
+                    numeric_separator=numeric_separator,
+                ),
+                fallback=raise_for_unrepresentable_int(language_name="SML"),
             )
         )
         self.format_set_entry: Callable[[Value, str], str] = _entry_formatter

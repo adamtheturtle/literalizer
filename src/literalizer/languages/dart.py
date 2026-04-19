@@ -35,7 +35,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    make_overflow_fallback_formatter,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
     format_string_backslash_dollar_single,
@@ -62,6 +65,18 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_dart_bigint_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Dart
+    ``BigInt.parse`` expression.
+
+    Dart's compile-time integer literals are limited to signed 64-bit;
+    ``BigInt.parse("…")`` yields an arbitrary-precision integer at
+    runtime.
+    """
+    return f'BigInt.parse("{value}")'
 
 
 @beartype
@@ -575,7 +590,12 @@ class Dart(metaclass=LanguageCls):
         self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = string_format
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=integer_format,
+                fallback=_format_dart_bigint_literal,
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             passthrough_sequence_entry
         )

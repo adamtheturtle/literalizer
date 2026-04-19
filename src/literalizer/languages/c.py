@@ -31,6 +31,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
     make_long_suffix_formatter,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -57,6 +58,21 @@ from literalizer._types import Value
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+
+
+@beartype
+def _format_c_ull_literal(value: int) -> str:
+    """Format a value outside ``long long`` range as an unsigned
+    literal.
+
+    C signed-integer literals are rejected by the compiler when they
+    exceed ``LLONG_MAX``; the ``ULL`` suffix selects
+    ``unsigned long long``, which can hold values up to
+    ``ULLONG_MAX``.
+    """
+    if value < 0:
+        return f"-{abs(value)}ULL"
+    return f"{value}ULL"
 
 
 @beartype
@@ -439,10 +455,16 @@ class C(metaclass=LanguageCls):
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
         suffix_is_auto = numeric_literal_suffix.name == "AUTO"
-        self.format_integer: Callable[[int], str] = (
+        _suffixed_int_formatter: Callable[[int], str] = (
             make_long_suffix_formatter(base=integer_format)
             if suffix_is_auto
             else integer_format
+        )
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=_suffixed_int_formatter,
+                fallback=_format_c_ull_literal,
+            )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = format_entry
         self.format_set_entry: Callable[[Value, str], str] = format_entry

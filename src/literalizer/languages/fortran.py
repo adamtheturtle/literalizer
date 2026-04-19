@@ -28,6 +28,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     CallStyle,
@@ -580,8 +584,13 @@ class Fortran(metaclass=LanguageCls):
             )
         )
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = lambda value: (
-            f"{value}_int64"
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=lambda value: f"{value}_int64",
+                fallback=raise_for_unrepresentable_int(
+                    language_name="Fortran"
+                ),
+            )
         )
         self.format_sequence_entry: Callable[[Value, str], str] = format_entry
         self.format_set_entry: Callable[[Value, str], str] = format_entry

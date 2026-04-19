@@ -26,6 +26,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     CallStyle,
@@ -409,7 +413,14 @@ class SystemVerilog(metaclass=LanguageCls):
         self.datetime_format: enum.Enum = datetime_format
         self.format_string: Callable[[str], str] = format_string_backslash
         self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
+        self.format_integer: Callable[[int], str] = (
+            make_overflow_fallback_formatter(
+                base=integer_format,
+                fallback=raise_for_unrepresentable_int(
+                    language_name="SystemVerilog",
+                ),
+            )
+        )
         self.format_sequence_entry: Callable[[Value, str], str] = (
             _format_sv_entry
         )

@@ -31,7 +31,11 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
+    format_integer_hex,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -54,6 +58,7 @@ from literalizer._language import (
     no_type_hint_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableIntegerError
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -182,6 +187,12 @@ def _apply_purescript_integer_formatter(
         if value < 0:
             return f"{prefix}Int ({formatted})"
         return f"{prefix}Int {formatted}"
+    if not I64_MIN <= value <= I64_MAX:
+        msg = (
+            f"PureScript cannot represent integer {value} without "
+            "external arbitrary-precision integer support."
+        )
+        raise UnrepresentableIntegerError(msg)
     if value < 0:
         return f"{prefix}Long (-{abs(value)}.0)"
     return f"{prefix}Long {value}.0"
