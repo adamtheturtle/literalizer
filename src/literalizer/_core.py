@@ -643,20 +643,23 @@ def _unwrap_yaml_scalar(*, value: object) -> object:
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
     ``ScalarFloat``, ``LiteralScalarString``, ``TimeStamp``, ...) that
     preserve source-style metadata.  The literalizer's type-inference
-    paths use ``type(value)`` for exact-type lookups, so these wrappers
-    are demoted to ``int``/``float``/``str``/``datetime`` before they
-    reach those code paths.  YAML dates parse as plain :class:`date`
-    already, so they pass through unchanged.
+    paths compare ``type(value)`` against the plain Python classes,
+    so these wrappers are demoted to
+    ``int``/``float``/``str``/``datetime`` before they reach those code
+    paths.  Built-in constructors short-circuit when given an
+    already-plain instance, so this is essentially free for unwrapped
+    values.  YAML dates parse as plain :class:`date` already, so they
+    pass through unchanged.
     """
     # bool is a subclass of int — check first so True/False stays bool.
     if isinstance(value, bool):
-        return value if type(value) is bool else bool(value)
+        return bool(value)
     if isinstance(value, int):
-        return value if type(value) is int else int(value)
+        return int(value)
     if isinstance(value, float):
-        return value if type(value) is float else float(value)
+        return float(value)
     if isinstance(value, str):
-        return value if type(value) is str else str(object=value)
+        return str(object=value)
     # datetime is a subclass of date — check first.  ``ruamel`` always
     # returns its own ``TimeStamp`` subclass for datetimes, so we always
     # reconstruct.
@@ -1018,7 +1021,8 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
     """Parse a YAML string into a ``_ParsedInput``.
 
     Uses the comment-preserving (round-trip) loader so the same parse
-    can later feed comment extraction without a second tokenize pass.
+    can later feed comment extraction without a second pass through
+    the YAML source.
     """
     ruamel_yaml = _get_yaml()
     try:
