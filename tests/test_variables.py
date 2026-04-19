@@ -116,7 +116,7 @@ def test_rust_const_bytes() -> None:
 
     The ``bytes()`` arm of ``_rust_scalar_type`` is only reachable via
     a Rust CONST/STATIC declaration with bytes data; the ``binary``
-    integration case has only LET goldens.
+    integration case has only LET golden files.
     """
     yaml_input = "!!binary |\n  SGVsbG8="
     result = literalize(
@@ -136,7 +136,7 @@ def test_rust_const_date() -> None:
 
     The ``datetime.date()`` arm of ``_rust_scalar_type`` is only
     reachable via Rust CONST/STATIC + date data; the ``scalar_date``
-    integration case has only LET goldens.
+    integration case has only LET golden files.
     """
     result = literalize(
         source="2024-01-15",
@@ -155,7 +155,7 @@ def test_rust_const_datetime() -> None:
 
     The ``datetime.datetime()`` arm of ``_rust_scalar_type`` is only
     reachable via Rust CONST/STATIC + datetime data; the
-    ``scalar_datetime`` integration case has only LET goldens.
+    ``scalar_datetime`` integration case has only LET golden files.
     """
     result = literalize(
         source="2024-01-15T12:30:00",
