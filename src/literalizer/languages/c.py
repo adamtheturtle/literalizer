@@ -62,16 +62,14 @@ from literalizer._types import Value
 
 @beartype
 def _format_c_ull_literal(value: int) -> str:
-    """Format a value outside ``long long`` range as an unsigned
-    literal.
+    """Format a value above ``LLONG_MAX`` as an unsigned literal.
 
     C signed-integer literals are rejected by the compiler when they
     exceed ``LLONG_MAX``; the ``ULL`` suffix selects
     ``unsigned long long``, which can hold values up to
-    ``ULLONG_MAX``.
+    ``ULLONG_MAX``.  Only reached for values above the signed 64-bit
+    range; values below are outside ``unsigned long long`` too.
     """
-    if value < 0:
-        return f"-{abs(value)}ULL"
     return f"{value}ULL"
 
 

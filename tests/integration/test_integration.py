@@ -1303,9 +1303,6 @@ def test_format_variant_golden_file(
     case_dir = cases_dir / variant_case.case_dir_name
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
-    golden_path = case_dir / (
-        variant_case.variant_name + variant.spec.extension
-    )
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -1319,16 +1316,11 @@ def test_format_variant_golden_file(
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    except UnrepresentableIntegerError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{variant.lang_cls.__name__} cannot represent integer "
-            "in this input"
-        )
     file_regression.check(
         contents=result.code + "\n",
         extension=variant.spec.extension,
-        fullpath=golden_path,
+        fullpath=case_dir
+        / (variant_case.variant_name + variant.spec.extension),
     )
 
 
