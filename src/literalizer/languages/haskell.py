@@ -626,7 +626,9 @@ def _build_sequence_setup(
 class _DeclarationFormatters:
     """Variable declaration and assignment formatters."""
 
-    format_variable_declaration: Callable[[str, str, Value], str]
+    format_variable_declaration: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ]
     format_variable_assignment: Callable[[str, str, Value], str]
 
 
@@ -635,13 +637,16 @@ def _format_haskell_declaration(
     name: str,
     value: str,
     data: Value,
+    modifiers: frozenset[DeclarationModifier],
     *,
-    base_declaration: Callable[[str, str, Value], str],
+    base_declaration: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
     sequence_declared_type: str | None,
     type_name: str,
 ) -> str:
     """Format a variable declaration with type annotation."""
-    base = base_declaration(name, value, data)
+    base = base_declaration(name, value, data, modifiers)
     if isinstance(data, list):
         if sequence_declared_type is None:
             return base
@@ -657,9 +662,9 @@ def _build_declaration_formatters(
     type_name: str,
 ) -> _DeclarationFormatters:
     """Build declaration/assignment formatters with type annotations."""
-    base_declaration: Callable[[str, str, Value], str] = (
-        declaration_style.value.formatter
-    )
+    base_declaration: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ] = declaration_style.value.formatter
     raw_declared = sequence_format.value.declared_type
     sequence_declared_type = (
         raw_declared.replace("Val", type_name)
@@ -667,12 +672,18 @@ def _build_declaration_formatters(
         else None
     )
 
-    def _haskell_declaration(name: str, value: str, data: Value) -> str:
+    def _haskell_declaration(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[DeclarationModifier],
+    ) -> str:
         """Delegate to module-level implementation."""
         return _format_haskell_declaration(
             name=name,
             value=value,
             data=data,
+            modifiers=modifiers,
             base_declaration=base_declaration,
             sequence_declared_type=sequence_declared_type,
             type_name=type_name,
@@ -950,7 +961,9 @@ class Haskell(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="{name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} = {value}"
+            ),
             supports_redefinition=False,
         )
 

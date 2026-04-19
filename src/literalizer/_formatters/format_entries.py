@@ -83,6 +83,30 @@ def assignment_formatter_from_declaration(
 
 
 @beartype
+def declaration_formatter_ignoring_modifiers(
+    formatter: Callable[[str, str, Value], str],
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    """Adapt a 3-arg callable to the 4-arg declaration formatter shape.
+
+    Use in language cached-properties whose declaration formatter does
+    not know how to apply :class:`~literalizer.DeclarationModifier`
+    values; the modifiers parameter is accepted and silently ignored.
+    """
+
+    @beartype
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
+        """Delegate to the wrapped 3-arg formatter, dropping modifiers."""
+        return formatter(name, value, data)
+
+    return _format
+
+
+@beartype
 def variable_declaration_formatter(
     *,
     template: str,

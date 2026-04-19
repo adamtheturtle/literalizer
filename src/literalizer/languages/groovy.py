@@ -199,7 +199,9 @@ class Groovy(metaclass=LanguageCls):
         """Declaration style options."""
 
         DEF = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="def {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="def {name} = {value}"
+            ),
             supports_redefinition=True,
         )
 

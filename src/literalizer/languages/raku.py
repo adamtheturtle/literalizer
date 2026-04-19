@@ -205,7 +205,9 @@ class Raku(metaclass=LanguageCls):
         """Declaration style options."""
 
         MY = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="my ${name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="my ${name} = {value};"
+            ),
             supports_redefinition=True,
         )
 

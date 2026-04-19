@@ -107,14 +107,24 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_const_declaration(name: str, value: str, data: Value) -> str:
+def _format_const_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"const {name}: ZVal = {wrapped};"
 
 
 @beartype
-def _format_var_declaration(name: str, value: str, data: Value) -> str:
+def _format_var_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"var {name}: ZVal = {wrapped};"

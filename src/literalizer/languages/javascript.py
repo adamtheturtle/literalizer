@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     dict_entry_with_separator,
     dict_entry_with_template,
     format_bytes_base64,
@@ -29,7 +30,6 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_declaration_formatter,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -211,15 +211,24 @@ class JavaScript(metaclass=LanguageCls):
 
         def wrap_formatter(
             self,
-            formatter: Callable[[str, str, Value], str],
-        ) -> Callable[[str, str, Value], str]:
+            formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Wrap a formatter to match this line ending style."""
             if self.value != "none":
                 return formatter
 
-            def without_semicolon(name: str, value: str, data: Value) -> str:
+            def without_semicolon(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[DeclarationModifier],
+            ) -> str:
                 """Format without a trailing semicolon."""
-                return formatter(name, value, data).removesuffix(";")
+                return formatter(name, value, data, modifiers).removesuffix(
+                    ";"
+                )
 
             return without_semicolon
 
@@ -227,11 +236,15 @@ class JavaScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};"
+            ),
             supports_redefinition=False,
         )
         LET = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="let {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value};"
+            ),
             supports_redefinition=True,
         )
 
@@ -582,8 +595,12 @@ class JavaScript(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
-        return self.line_ending.wrap_formatter(
-            formatter=variable_declaration_formatter(template="{name} = {value};"),
+        return assignment_formatter_from_declaration(
+            formatter=self.line_ending.wrap_formatter(
+                formatter=variable_declaration_formatter(
+                    template="{name} = {value};"
+                ),
+            ),
         )
 
     @cached_property

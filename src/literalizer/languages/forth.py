@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     fixed_set_open,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     passthrough_sequence_entry,
 )
 from literalizer._formatters.format_floats import format_float_scientific
@@ -115,7 +116,12 @@ def _format_bytes_base64_forth(value: bytes) -> str:
 
 
 @beartype
-def _format_forth_declaration(name: str, value: str, _data: Value) -> str:
+def _format_forth_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     r"""Format a Forth colon definition.
 
     Example (single line): ``: my_data 42 ;``
@@ -539,7 +545,9 @@ class Forth(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
-        return self.declaration_style.value.formatter
+        return assignment_formatter_from_declaration(
+            formatter=self.declaration_style.value.formatter,
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

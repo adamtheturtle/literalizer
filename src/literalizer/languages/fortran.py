@@ -172,11 +172,14 @@ def _apply_fortran_variable_declaration(
 def _build_format_variable_declaration(
     *,
     format_entry: Callable[[Value, str], str],
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Build a variable declaration formatter."""
 
     def _format_variable_declaration(
-        name: str, value: str, data: Value
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[DeclarationModifier],
     ) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_variable_declaration(

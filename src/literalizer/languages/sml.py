@@ -24,12 +24,12 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
     variable_declaration_formatter,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -734,7 +734,9 @@ class Sml(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
-        return self._sml_decl
+        return declaration_formatter_ignoring_modifiers(
+            formatter=self._sml_decl
+        )
 
     @cached_property
     def format_variable_assignment(

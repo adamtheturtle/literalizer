@@ -656,9 +656,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
-        ) -> Callable[
-            [str, str, Value, frozenset[DeclarationModifier]], str
-        ]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter for this hint
             style.
             """
@@ -700,7 +698,9 @@ class Python(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="{name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} = {value}"
+            ),
             supports_redefinition=True,
         )
 

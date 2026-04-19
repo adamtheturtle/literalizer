@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     braced_dict_entry,
     dict_entry_with_separator,
     format_bytes_base64,
@@ -420,7 +421,9 @@ class Erlang(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return _format_variable_declaration
+        return assignment_formatter_from_declaration(
+            formatter=_format_variable_declaration,
+        )
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

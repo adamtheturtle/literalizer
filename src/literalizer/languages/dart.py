@@ -143,6 +143,7 @@ def _format_dart_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -321,15 +322,21 @@ class Dart(metaclass=LanguageCls):
         """Declaration style options."""
 
         FINAL = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="final {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="final {name} = {value};"
+            ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};"
+            ),
             supports_redefinition=False,
         )
         CONST = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};"
+            ),
             supports_redefinition=False,
         )
 
@@ -419,7 +426,9 @@ class Dart(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -427,7 +436,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter

@@ -23,12 +23,12 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
     variable_declaration_formatter,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -709,11 +709,15 @@ class FSharp(metaclass=LanguageCls):
             if self.declaration_style.value.supports_redefinition
             else "let"
         )
-        return _build_fsharp_declaration(
-            template=(f"{keyword} {{name}}: {{declared_type}} = {{wrapped}}"),
-            sequence_declared_type=self._sequence_declared_type,
-            scalar_declared_type=self.type_name,
-            entry_formatter=self._entry_formatter,
+        return declaration_formatter_ignoring_modifiers(
+            formatter=_build_fsharp_declaration(
+                template=(
+                    f"{keyword} {{name}}: {{declared_type}} = {{wrapped}}"
+                ),
+                sequence_declared_type=self._sequence_declared_type,
+                scalar_declared_type=self.type_name,
+                entry_formatter=self._entry_formatter,
+            ),
         )
 
     @cached_property

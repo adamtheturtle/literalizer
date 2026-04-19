@@ -151,7 +151,9 @@ class Racket(metaclass=LanguageCls):
         """Declaration style options."""
 
         DEFINE = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="(define {name} {value})"),
+            formatter=variable_declaration_formatter(
+                template="(define {name} {value})"
+            ),
             supports_redefinition=True,
         )
 

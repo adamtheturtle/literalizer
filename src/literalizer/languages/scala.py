@@ -336,11 +336,15 @@ class Scala(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="val {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="val {name} = {value}"
+            ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="var {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value}"
+            ),
             supports_redefinition=True,
         )
 

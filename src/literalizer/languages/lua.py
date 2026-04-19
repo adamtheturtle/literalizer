@@ -214,7 +214,9 @@ class Lua(metaclass=LanguageCls):
         """Declaration style options."""
 
         LOCAL = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="local {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="local {name} = {value}"
+            ),
             supports_redefinition=True,
         )
 

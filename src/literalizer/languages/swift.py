@@ -226,6 +226,7 @@ def _format_swift_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -253,22 +254,27 @@ def _apply_swift_optional_nil_declaration(
     name: str,
     value: str,
     data: Value,
+    modifiers: frozenset[DeclarationModifier],
     *,
-    base_formatter: Callable[[str, str, Value], str],
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
     keyword: str,
 ) -> str:
     """Format a Swift variable declaration, guarding top-level ``nil``."""
     if data is None:
         return f"{keyword} {name}: Any? = {value}"
-    return base_formatter(name, value, data)
+    return base_formatter(name, value, data, modifiers)
 
 
 @beartype
 def _optional_nil_declaration(
-    base_formatter: Callable[[str, str, Value], str],
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
     *,
     keyword: str,
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Wrap *base_formatter* so top-level ``nil`` gets an optional type.
 
     ``Any`` is non-optional in Swift, so ``let my_data: Any = nil`` fails
@@ -276,12 +282,18 @@ def _optional_nil_declaration(
     ``None``.
     """
 
-    def _format(name: str, value: str, data: Value) -> str:
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[DeclarationModifier],
+    ) -> str:
         """Delegate to module-level implementation."""
         return _apply_swift_optional_nil_declaration(
             name=name,
             value=value,
             data=data,
+            modifiers=modifiers,
             base_formatter=base_formatter,
             keyword=keyword,
         )
@@ -412,11 +424,15 @@ class Swift(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="let {name}: Any = {value}"),
+            formatter=variable_declaration_formatter(
+                template="let {name}: Any = {value}"
+            ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="var {name}: Any = {value}"),
+            formatter=variable_declaration_formatter(
+                template="var {name}: Any = {value}"
+            ),
             supports_redefinition=True,
         )
 
@@ -553,7 +569,9 @@ class Swift(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -561,7 +579,7 @@ class Swift(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return _optional_nil_declaration(

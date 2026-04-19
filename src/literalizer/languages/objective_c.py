@@ -211,7 +211,9 @@ class ObjectiveC(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="id {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="id {name} = {value};"
+            ),
             supports_redefinition=True,
         )
 

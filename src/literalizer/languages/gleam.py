@@ -472,7 +472,9 @@ class Gleam(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="let {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value}"
+            ),
             supports_redefinition=True,
         )
 

@@ -258,6 +258,7 @@ def _format_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_type: str,
@@ -588,19 +589,27 @@ class Rust(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="let {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value};"
+            ),
             supports_redefinition=False,
         )
         LET_MUT = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="let mut {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let mut {name} = {value};"
+            ),
             supports_redefinition=True,
         )
         CONST = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};"
+            ),
             supports_redefinition=False,
         )
         STATIC = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="static {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="static {name} = {value};"
+            ),
             supports_redefinition=False,
         )
 
@@ -617,7 +626,7 @@ class Rust(metaclass=LanguageCls):
             default_set_element_type: str,
             default_dict_key_type: str,
             default_dict_value_type: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return a formatter for this declaration style.
 
             For ``LET`` and ``LET_MUT`` the formatter is used
