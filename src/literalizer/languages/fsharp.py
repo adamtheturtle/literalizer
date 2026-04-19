@@ -35,9 +35,13 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
+    make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -74,10 +78,17 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             return formatted
         case int():
             negative = formatted.startswith("-")
+            # ``I`` yields a ``bigint``; ``L`` yields ``int64``.
+            suffix = "I" if not I64_MIN <= original <= I64_MAX else "L"
+            literal = (
+                formatted
+                if formatted.endswith(suffix)
+                else f"{formatted}{suffix}"
+            )
             return (
-                f"{prefix}Int({formatted}L)"
+                f"{prefix}Int({literal})"
                 if negative
-                else f"{prefix}Int {formatted}L"
+                else f"{prefix}Int {literal}"
             )
         case float():
             negative = formatted.startswith("-")
@@ -654,7 +665,12 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format
+        return make_overflow_suffix_formatter(
+            base=self.integer_format,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
+            suffix="I",
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -770,11 +786,36 @@ class FSharp(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
-        return body_preamble_from_scalars(
+        """Compute body-preamble lines from the scalar map.
+
+        Swaps ``int64`` to ``bigint`` in the ``FInt`` variant when the
+        data contains an integer outside signed 64-bit range.
+        """
+        static_compute = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+        p = self.constructor_prefix
+        header = f"type {self.type_name} ="
+        bigint_override = {
+            **self.scalar_body_preamble,
+            int: (header, f"    | {p}Int of bigint"),
+        }
+        bigint_compute = body_preamble_from_scalars(
+            scalar_body_preamble=bigint_override,
+            format_lines=tuple,
+        )
+
+        @beartype
+        def _compute(
+            types: frozenset[type], data: Value, /
+        ) -> tuple[str, ...]:
+            """Return body preamble, preferring ``bigint`` when needed."""
+            if data_has_out_of_range_int(data=data):
+                return bigint_compute(types, data)
+            return static_compute(types, data)
+
+        return _compute
 
     @cached_property
     def call_style_config(self) -> CallStyle | None:

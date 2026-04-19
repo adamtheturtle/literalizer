@@ -122,6 +122,27 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
         )
 
 
+def test_literalize_yaml_after_invalid_uses_cached_instance() -> None:
+    """Cached ``YAML`` instances recover after a parse error.
+
+    Guards against ruamel.yaml ever leaving an instance in a broken
+    state after an exception, which would compound across calls now
+    that we cache instances via ``functools.cache``.
+    """
+    with pytest.raises(expected_exception=YAMLParseError):
+        literalize(
+            source=":\n  :\n    - ][",
+            input_format=InputFormat.YAML,
+            language=PYTHON,
+        )
+    result = literalize(
+        source="foo: bar",
+        input_format=InputFormat.YAML,
+        language=PYTHON,
+    )
+    assert result.declaration_code == '{\n    "foo": "bar",\n}'
+
+
 def test_cpp_array_binary_typed() -> None:
     """C++ ARRAY format infers std::array<std::string, N> for binary
     data.

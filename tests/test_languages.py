@@ -24,6 +24,7 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Cobol,
     Fortran,
+    FSharp,
     Go,
     Java,
     Matlab,
@@ -43,6 +44,7 @@ FORTRAN = Fortran(
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
 )
+FSHARP = FSharp()
 JAVA = Java(
     date_format=Java.date_formats.JAVA,
     datetime_format=Java.datetime_formats.INSTANT,
@@ -254,6 +256,27 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     assert result.code == expected
 
 
+def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
+    """Bare F# scalar integer values above i64 range use the ``I``
+    suffix.
+    """
+    result = literalize(
+        source="9223372036854775808",
+        input_format=InputFormat.JSON,
+        language=FSHARP,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=None,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        type Val =
+            | FInt of bigint
+        9223372036854775808I"""
+    )
+    assert result.code == expected
+
+
 def test_java_list_rejects_null_elements() -> None:
     """Java's ``List.of()`` does not accept null elements."""
     spec = Java(
@@ -420,7 +443,11 @@ def test_literalize_call_per_element_false() -> None:
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
-    with pytest.raises(expected_exception=ValueError, match="wrap_in_file"):
+    expected_msg = "BothVariableForms requires wrap_in_file=True"
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
         literalize(
             source="42",
             input_format=InputFormat.JSON,
