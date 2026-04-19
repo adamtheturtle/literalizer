@@ -439,6 +439,76 @@ def _build_variant_preamble(
 
 
 @beartype
+def _apply_cpp_variant_sequence_open(
+    items: list[Value],
+    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> str:
+    """Return a typed ``std::vector`` opener."""
+    element_type = infer_element_type(items=items)
+    if element_type is not None:
+        opener = type_to_opener(element_type)
+        if opener is not None:
+            return opener
+    inner = _compute_element_type_for_items(
+        items=items,
+        element_to_type=element_to_type,
+    )
+    return f"std::vector<{inner}>{{"
+
+
+@beartype
+def _apply_cpp_variant_dict_open(
+    items: dict[str, Value],
+    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+    opener_template: str,
+) -> str:
+    """Return a typed ``std::map`` opener."""
+    element_type = infer_element_type(items=list(items.values()))
+    if element_type is not None:
+        opener = type_to_opener(element_type)
+        if opener is not None:
+            return opener
+    value_type = _compute_element_type_for_items(
+        items=list(items.values()),
+        element_to_type=element_to_type,
+    )
+    if "unordered" in opener_template:
+        map_kind = "std::unordered_map"
+    else:
+        map_kind = "std::map"
+    return f"{map_kind}<std::string, {value_type}>{{"
+
+
+@beartype
+def _apply_cpp_variant_set_open(
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> str:
+    """Return a typed ``std::initializer_list`` opener."""
+    inner = _compute_element_type_for_items(
+        items=items,
+        element_to_type=element_to_type,
+    )
+    return f"std::initializer_list<{inner}>{{"
+
+
+@beartype
+def _apply_cpp_variant_ordered_map_open(
+    data: dict[str, Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+) -> str:
+    """Return a typed ordered-map opener."""
+    values: list[Value] = list(data.values())
+    value_type = _compute_element_type_for_items(
+        items=values,
+        element_to_type=element_to_type,
+    )
+    return f"std::vector<std::pair<std::string, {value_type}>>{{"
+
+
+@beartype
 def _build_variant_sequence_open(
     *,
     int_type: str,
@@ -458,19 +528,13 @@ def _build_variant_sequence_open(
         opener_template="std::vector<{type_name}>{{",
     )
 
-    @beartype
     def _open(items: list[Value]) -> str:
-        """Return a typed ``std::vector`` opener."""
-        element_type = infer_element_type(items=items)
-        if element_type is not None:
-            opener = type_to_opener(element_type)
-            if opener is not None:
-                return opener
-        inner = _compute_element_type_for_items(
+        """Delegate to module-level implementation."""
+        return _apply_cpp_variant_sequence_open(
             items=items,
+            type_to_opener=type_to_opener,
             element_to_type=element_to_type,
         )
-        return f"std::vector<{inner}>{{"
 
     return _open
 
@@ -496,23 +560,14 @@ def _build_variant_dict_open(
         opener_template=opener_template,
     )
 
-    @beartype
     def _open(items: dict[str, Value]) -> str:
-        """Return a typed ``std::map`` opener."""
-        element_type = infer_element_type(items=list(items.values()))
-        if element_type is not None:
-            opener = type_to_opener(element_type)
-            if opener is not None:
-                return opener
-        value_type = _compute_element_type_for_items(
-            items=list(items.values()),
+        """Delegate to module-level implementation."""
+        return _apply_cpp_variant_dict_open(
+            items=items,
+            type_to_opener=type_to_opener,
             element_to_type=element_to_type,
+            opener_template=opener_template,
         )
-        if "unordered" in opener_template:
-            map_kind = "std::unordered_map"
-        else:
-            map_kind = "std::map"
-        return f"{map_kind}<std::string, {value_type}>{{"
 
     return _open
 
@@ -531,14 +586,11 @@ def _build_variant_set_open(
         datetime_type=datetime_type,
     )
 
-    @beartype
     def _open(items: list[Value]) -> str:
-        """Return a typed ``std::initializer_list`` opener."""
-        inner = _compute_element_type_for_items(
-            items=items,
-            element_to_type=element_to_type,
+        """Delegate to module-level implementation."""
+        return _apply_cpp_variant_set_open(
+            items=items, element_to_type=element_to_type
         )
-        return f"std::initializer_list<{inner}>{{"
 
     return _open
 
@@ -559,15 +611,11 @@ def _build_variant_ordered_map_open(
         datetime_type=datetime_type,
     )
 
-    @beartype
     def _open(data: dict[str, Value]) -> str:
-        """Return a typed ordered-map opener."""
-        values: list[Value] = list(data.values())
-        value_type = _compute_element_type_for_items(
-            items=values,
-            element_to_type=element_to_type,
+        """Delegate to module-level implementation."""
+        return _apply_cpp_variant_ordered_map_open(
+            data=data, element_to_type=element_to_type
         )
-        return f"std::vector<std::pair<std::string, {value_type}>>{{"
 
     return _open
 

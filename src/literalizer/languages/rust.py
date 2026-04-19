@@ -89,6 +89,15 @@ def _rust_integer_type(value: int) -> str:
 
 
 @beartype
+def _apply_rust_integer_suffix(value: int, base: Callable[[int], str]) -> str:
+    """Format with a Rust type suffix when *value* overflows i32."""
+    formatted = base(value)
+    if _I32_MIN <= value <= _I32_MAX:
+        return formatted
+    return f"{formatted}{_rust_integer_type(value=value)}"
+
+
+@beartype
 def _make_rust_integer_suffix_formatter(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -102,13 +111,9 @@ def _make_rust_integer_suffix_formatter(
     narrowest type that holds *value*.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format with a Rust type suffix when *value* overflows i32."""
-        formatted = base(value)
-        if _I32_MIN <= value <= _I32_MAX:
-            return formatted
-        return f"{formatted}{_rust_integer_type(value=value)}"
+        """Delegate to module-level implementation."""
+        return _apply_rust_integer_suffix(value=value, base=base)
 
     return _format
 

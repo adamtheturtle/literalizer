@@ -247,6 +247,21 @@ def _format_swift_typed_declaration(
 
 
 @beartype
+def _apply_swift_optional_nil_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    *,
+    base_formatter: Callable[[str, str, Value], str],
+    keyword: str,
+) -> str:
+    """Format a Swift variable declaration, guarding top-level ``nil``."""
+    if data is None:
+        return f"{keyword} {name}: Any? = {value}"
+    return base_formatter(name, value, data)
+
+
+@beartype
 def _optional_nil_declaration(
     base_formatter: Callable[[str, str, Value], str],
     *,
@@ -259,12 +274,15 @@ def _optional_nil_declaration(
     ``None``.
     """
 
-    @beartype
     def _format(name: str, value: str, data: Value) -> str:
-        """Format a Swift variable declaration, guarding top-level ``nil``."""
-        if data is None:
-            return f"{keyword} {name}: Any? = {value}"
-        return base_formatter(name, value, data)
+        """Delegate to module-level implementation."""
+        return _apply_swift_optional_nil_declaration(
+            name=name,
+            value=value,
+            data=data,
+            base_formatter=base_formatter,
+            keyword=keyword,
+        )
 
     return _format
 
