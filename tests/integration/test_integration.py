@@ -839,7 +839,7 @@ def _build_string_format_cross_variants(
     *,
     other_kwarg: str,
     other_tag: str,
-    get_other_default: Callable[[literalizer.Language], enum.Enum],
+    get_other_default: Callable[[literalizer.Language], object],
     get_other_formats: Callable[[literalizer.Language], type[enum.Enum]],
 ) -> list[_Variant]:
     """Build cross-product variants of ``string_format`` and another axis.
@@ -1105,6 +1105,18 @@ def _build_variant_cases() -> list[_VariantCase]:
     )
 
     type_hints_cross = _build_type_hints_cross_variants()
+    string_format_date_cross = _build_string_format_cross_variants(
+        other_kwarg="date_format",
+        other_tag="date",
+        get_other_default=lambda s: s.date_format,
+        get_other_formats=lambda s: s.date_formats,
+    )
+    string_format_datetime_cross = _build_string_format_cross_variants(
+        other_kwarg="datetime_format",
+        other_tag="dt",
+        get_other_default=lambda s: s.datetime_format,
+        get_other_formats=lambda s: s.datetime_formats,
+    )
 
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
@@ -1207,6 +1219,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (string_format, "string_with_backslash", ""),
         (string_format, "simple_dict", "_dict"),
         (string_format, "binary", "_binary"),
+        (string_format_date_cross, "scalar_date", ""),
+        (string_format_datetime_cross, "scalar_datetime", "_dt"),
         (bytes_format, "binary", ""),
         (trailing_comma, "simple_sequence", ""),
         (line_ending, "simple_sequence", ""),
@@ -1220,26 +1234,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "binary", "_binary"),
         (_build_constructor_prefix_variants(), "scalar_date", "_date"),
         (_build_constructor_prefix_variants(), "scalar_datetime", "_datetime"),
-        (
-            _build_string_format_cross_variants(
-                other_kwarg="date_format",
-                other_tag="date",
-                get_other_default=lambda s: s.date_format,
-                get_other_formats=lambda s: s.date_formats,
-            ),
-            "scalar_date",
-            "",
-        ),
-        (
-            _build_string_format_cross_variants(
-                other_kwarg="datetime_format",
-                other_tag="dt",
-                get_other_default=lambda s: s.datetime_format,
-                get_other_formats=lambda s: s.datetime_formats,
-            ),
-            "scalar_datetime",
-            "_dt",
-        ),
         (numeric_style, "int_list", ""),
         (numeric_style, "int_list_with_zero", "_zero"),
         (numeric_style, "float_list", ""),
