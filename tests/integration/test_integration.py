@@ -15,6 +15,7 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import functools
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -1455,7 +1456,8 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
 
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
-        path.relative_to(cases_dir) for path in actual - expected
+        os.path.relpath(path=path, start=cases_dir)
+        for path in actual - expected
     )
     assert not dead_files
 
