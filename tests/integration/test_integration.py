@@ -1572,22 +1572,15 @@ def test_call_golden_file(
     spec = _spec(lang_cls=lang_cls, **kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (lang_cls.__name__ + lang_cls.extension)
-    try:
-        result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            per_element=config.per_element,
-        )
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous input"
-        )
+    result = literalizer.literalize_call(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        target_function=config.target_function,
+        parameter_names=config.parameter_names,
+        call_transform=config.call_transform,
+        per_element=config.per_element,
+    )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
