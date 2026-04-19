@@ -213,7 +213,7 @@ class VisualBasic(metaclass=LanguageCls):
                 empty_template="New HashSet(Of {type})()",
                 preamble_lines=(),
                 set_opener_template=("New HashSet(Of {type_name}) From {{"),
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

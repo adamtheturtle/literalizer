@@ -139,7 +139,7 @@ def _build_set_format_config(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     set_opener_template: str,
-    coerce_mixed_to_str: bool,
+    supports_heterogeneity: bool,
 ) -> SetFormatConfig:
     """Build a ``SetFormatConfig`` with the given default type."""
     open_str = open_template.format(type=default_type)
@@ -153,7 +153,7 @@ def _build_set_format_config(
         ),
         preamble_lines=preamble_lines,
         set_opener_template=set_opener_template,
-        coerce_mixed_to_str=coerce_mixed_to_str,
+        supports_heterogeneity=supports_heterogeneity,
     )
 
 
@@ -165,7 +165,7 @@ def set_format_factory(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     set_opener_template: str,
-    coerce_mixed_to_str: bool,
+    supports_heterogeneity: bool,
 ) -> Callable[[str], SetFormatConfig]:
     """Return a callable that builds a ``SetFormatConfig`` for a given
     type.
@@ -193,7 +193,7 @@ def set_format_factory(
             empty_template=empty_template,
             preamble_lines=preamble_lines,
             set_opener_template=set_opener_template,
-            coerce_mixed_to_str=coerce_mixed_to_str,
+            supports_heterogeneity=supports_heterogeneity,
         )
 
     return _build

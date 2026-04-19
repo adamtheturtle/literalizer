@@ -26,6 +26,7 @@ from ruamel.yaml import YAML
 import literalizer
 from literalizer._language import StubReturn
 from literalizer.exceptions import (
+    HeterogeneousCollectionError,
     NullInCollectionError,
     UnrepresentableIntegerError,
 )
@@ -185,19 +186,11 @@ def _build_non_default_variants(
 
 
 @beartype
-def _build_default_set_element_type_variants(
-    *,
-    should_coerce_mixed: bool = False,
-) -> Iterable[_Variant]:
+def _build_default_set_element_type_variants() -> Iterable[_Variant]:
     """Build default-set-type variants for languages that support it.
 
     For each language that advertises ``supports_default_set_element_type``,
     create a variant with a non-default value.
-
-    When *should_coerce_mixed* is ``True``, only include languages whose
-    set format has ``coerce_mixed_to_str`` enabled, since overriding
-    ``default_set_element_type`` to a typed key produces invalid code
-    for mixed sets when elements are not coerced.
     """
     # The test value must differ from the language's own default *and* be
     # a valid type name for that language's linter / compiler.
@@ -219,11 +212,6 @@ def _build_default_set_element_type_variants(
         spec = lang_cls(
             default_set_element_type=string_type,
         )
-        if (
-            should_coerce_mixed
-            and not spec.set_format_config.coerce_mixed_to_str
-        ):
-            continue
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_element_type_string",
@@ -616,12 +604,14 @@ def test_golden_file(
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=_wrap_variable_form(lang_cls=lang_cls),
-            error_on_coercion=False,
             wrap_in_file=True,
         )
     except UnrepresentableIntegerError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} cannot represent integer in this input")
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} cannot represent this heterogeneous input")
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
@@ -720,13 +710,17 @@ def test_golden_file_combined_variable_forms(
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=literalizer.BothVariableForms(name="my_data"),
-            error_on_coercion=False,
             wrap_in_file=True,
         )
     except UnrepresentableIntegerError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_cls.__name__} cannot represent integer in this input"
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous input"
         )
     file_regression.check(
         contents=result.code + "\n",
@@ -1150,13 +1144,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_default_set_element_type_variants(), "empty_set", ""),
         (_build_default_set_element_type_variants(), "set", ""),
         (
-            _build_default_set_element_type_variants(
-                should_coerce_mixed=True,
-            ),
-            "mixed_set",
-            "",
-        ),
-        (
             _build_default_sequence_element_type_variants(),
             "empty_sequence",
             "",
@@ -1303,6 +1290,9 @@ def test_format_variant_golden_file(
     case_dir = cases_dir / variant_case.case_dir_name
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
+    golden_path = case_dir / (
+        variant_case.variant_name + variant.spec.extension
+    )
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -1311,16 +1301,17 @@ def test_format_variant_golden_file(
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=variant_case.variable_form,
-            error_on_coercion=False,
             wrap_in_file=True,
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip("Format cannot represent this heterogeneous input")
     file_regression.check(
         contents=result.code + "\n",
         extension=variant.spec.extension,
-        fullpath=case_dir
-        / (variant_case.variant_name + variant.spec.extension),
+        fullpath=golden_path,
     )
 
 
@@ -1400,7 +1391,6 @@ def test_line_ending_combined_variable_forms(
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
     file_regression.check(
@@ -1577,15 +1567,22 @@ def test_call_golden_file(
     spec = _spec(lang_cls=lang_cls, **kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    result = literalizer.literalize_call(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        target_function=config.target_function,
-        parameter_names=config.parameter_names,
-        call_transform=config.call_transform,
-        per_element=config.per_element,
-    )
+    golden_path = input_path.parent / (lang_cls.__name__ + lang_cls.extension)
+    try:
+        result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous input"
+        )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []

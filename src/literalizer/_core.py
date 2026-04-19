@@ -18,12 +18,7 @@ from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
 
-from literalizer._coercions import (
-    all_scalars_heterogeneous,
-    apply_coercions,
-    coerce_scalar_to_str,
-    scalar_type_bucket,
-)
+from literalizer._checks import check_data, scalar_type_bucket
 from literalizer._comments import (
     CollectionComments,
     ElementComments,
@@ -378,10 +373,6 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
-    if set_cfg.coerce_mixed_to_str and all_scalars_heterogeneous(
-        values=list(value),
-    ):
-        value = {coerce_scalar_to_str(value=v) for v in value}
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
@@ -799,7 +790,6 @@ def _literalize(
     language: Language,
     line_prefix: str,
     include_delimiters: bool,
-    error_on_coercion: bool,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -825,16 +815,8 @@ def _literalize(
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
-        error_on_coercion: If ``True``, raise
-            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
-            instead of silently coercing heterogeneous scalar
-            collections to strings.
     """
-    data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=error_on_coercion,
-    )
+    check_data(data=data, spec=language)
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
@@ -884,13 +866,6 @@ def _literalize(
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
     )
-
-    if (
-        isinstance(data, set)
-        and language.set_format_config.coerce_mixed_to_str
-        and all_scalars_heterogeneous(values=list(data))
-    ):
-        data = {coerce_scalar_to_str(value=v) for v in data}
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
@@ -1012,7 +987,6 @@ class _PreFormState:
     """
 
     data: Value
-    coerced_data: Value
     result: str
     resolved: "_ResolvedComments | None"
     line_prefix: str
@@ -1026,13 +1000,11 @@ def _literalize_pre_form(
     language: Language,
     pre_indent_level: int,
     include_delimiters: bool,
-    error_on_coercion: bool,
 ) -> _PreFormState:
     """Run the variable-form-independent phase of :func:`literalize`.
 
-    Parses the source, formats the literal, resolves YAML/TOML
-    comments, and computes the coerced data used for preamble
-    calculation.
+    Parses the source, formats the literal, and resolves YAML/TOML
+    comments.
     """
     line_prefix = language.indent * pre_indent_level
     parsed = _parse_input(source=source, input_format=input_format)
@@ -1043,7 +1015,6 @@ def _literalize_pre_form(
         language=language,
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
-        error_on_coercion=error_on_coercion,
     )
 
     resolved: _ResolvedComments | None = None
@@ -1086,15 +1057,8 @@ def _literalize_pre_form(
         )
         result = resolved.result
 
-    coerced_data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=False,
-    )
-
     return _PreFormState(
         data=data,
-        coerced_data=coerced_data,
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
@@ -1136,14 +1100,14 @@ def _literalize_apply_form(
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
     computed = _compute_preamble(
-        data=pre_form.coerced_data,
+        data=pre_form.data,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(pre_form.coerced_data)
+        + language.data_dependent_preamble(pre_form.data)
     )
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
@@ -1182,7 +1146,6 @@ def _literalize_both_forms(
     pre_indent_level: int,
     include_delimiters: bool,
     variable_form: BothVariableForms,
-    error_on_coercion: bool,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
     pre_form = _literalize_pre_form(
@@ -1191,7 +1154,6 @@ def _literalize_both_forms(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
-        error_on_coercion=error_on_coercion,
     )
     declaration = _literalize_apply_form(
         pre_form=pre_form,
@@ -1233,7 +1195,6 @@ def literalize(
     pre_indent_level: int = 0,
     include_delimiters: bool = True,
     variable_form: VariableForm | None = None,
-    error_on_coercion: bool = False,
     wrap_in_file: bool = False,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
@@ -1262,12 +1223,6 @@ def literalize(
             and an assignment combined in one output (requires
             *wrap_in_file*).  ``None`` (default) means no variable
             wrapping.
-        error_on_coercion: If ``True``, raise
-            :exc:`~literalizer.exceptions.HeterogeneousCoercionError`
-            instead of silently coercing heterogeneous scalar
-            collections to strings.  Only has an effect when the
-            the language's sequence format does not support
-            heterogeneity.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
             complete, valid source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.
@@ -1284,9 +1239,10 @@ def literalize(
             not valid YAML.
         TOMLParseError: If *input_format* is ``TOML`` and *source* is
             not valid TOML.
-        HeterogeneousCoercionError: If *error_on_coercion* is ``True``
-            and the data contains heterogeneous scalar collections
-            that would be coerced.
+        HeterogeneousCollectionError: If the data contains collections
+            whose shape cannot be represented in the target language
+            (e.g. heterogeneous scalar types in a language that requires
+            homogeneous collections).
         ValueError: If *variable_form* is :class:`BothVariableForms`
             and *wrap_in_file* is ``False``.
     """
@@ -1301,7 +1257,6 @@ def literalize(
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
             variable_form=variable_form,
-            error_on_coercion=error_on_coercion,
         )
 
     pre_form = _literalize_pre_form(
@@ -1310,7 +1265,6 @@ def literalize(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
-        error_on_coercion=error_on_coercion,
     )
     return _literalize_apply_form(
         pre_form=pre_form,
@@ -1426,22 +1380,18 @@ def literalize_call(
     """
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
-    coerced_data = apply_coercions(
-        data=data,
-        spec=language,
-        error_on_coercion=False,
-    )
+    check_data(data=data, spec=language)
 
     if per_element:
-        if not isinstance(coerced_data, list):
+        if not isinstance(data, list):
             msg = (
                 "per_element=True requires a top-level list, "
-                f"got {type(coerced_data).__name__}"
+                f"got {type(data).__name__}"
             )
             raise PerElementNotListError(msg)
 
         lines: list[str] = []
-        for element in coerced_data:
+        for element in data:
             arg_values = element if isinstance(element, list) else [element]
             args_str = _format_call_args(
                 values=cast("list[Value]", arg_values),
@@ -1463,11 +1413,10 @@ def literalize_call(
                 language_name=type(language).__name__,
             )
         lit = _literalize(
-            data=coerced_data,
+            data=data,
             language=language,
             line_prefix="",
             include_delimiters=True,
-            error_on_coercion=False,
         )
         args_str = f"({lit})"
         result = _assemble_call(
@@ -1477,14 +1426,14 @@ def literalize_call(
             statement_terminator=language.statement_terminator,
         )
     computed = _compute_preamble(
-        data=coerced_data,
+        data=data,
         language=language,
         has_variable_declaration=False,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(coerced_data)
+        + language.data_dependent_preamble(data)
     )
 
     if wrap_in_file:

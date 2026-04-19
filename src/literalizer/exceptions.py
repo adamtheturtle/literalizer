@@ -30,10 +30,46 @@ class InvalidDictKeyError(Exception):
     """
 
 
-class HeterogeneousCoercionError(Exception):
-    """Raised when a collection contains heterogeneous scalar types and
-    the language would coerce them to strings, but the caller opted to
-    receive an error instead.
+class HeterogeneousCollectionError(Exception):
+    """Base class for errors raised when data is incompatible with the
+    target language's collection-shape constraints.
+    """
+
+
+class HeterogeneousScalarCollectionError(HeterogeneousCollectionError):
+    """Raised when a collection contains scalars of multiple types and
+    the target language requires homogeneous scalar collections.
+    """
+
+
+class HeterogeneousSiblingListsError(HeterogeneousCollectionError):
+    """Raised when sibling sub-lists contain scalars that, combined,
+    span multiple types and the target language requires homogeneous
+    scalar collections.
+    """
+
+
+class MixedDictValuesError(HeterogeneousCollectionError):
+    """Raised when a dict has values spanning multiple type families
+    and the target language requires homogeneous dict values.
+    """
+
+
+class MixedListValuesError(HeterogeneousCollectionError):
+    """Raised when a list has elements spanning multiple type families
+    and the target language requires homogeneous list elements.
+    """
+
+
+class MixedDictShapesError(HeterogeneousCollectionError):
+    """Raised when a list contains dicts with different key sets and
+    the target language requires uniform record shapes (e.g. Dhall).
+    """
+
+
+class HeterogeneousSetError(HeterogeneousCollectionError):
+    """Raised when a set contains scalars of multiple types and the
+    target language requires homogeneous set elements.
     """
 
 

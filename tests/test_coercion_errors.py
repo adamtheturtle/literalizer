@@ -1,9 +1,10 @@
-"""Parametrized error_on_coercion tests across all input formats.
+"""Parametrized representability-check tests across all input formats.
 
-These tests verify that ``error_on_coercion=True`` raises (or does not raise)
-``HeterogeneousCoercionError`` consistently regardless of input format.
-Format-specific coercion tests (e.g. YAML ordered-maps and sets) remain in
-their respective test modules.
+These tests verify that ``literalize`` raises precise exceptions when
+input data cannot be represented in the target language's collection
+formats (e.g. heterogeneous scalar types in Mojo, non-uniform record
+shapes in Dhall).  Format-specific tests for ordered maps and sets
+remain in :mod:`tests.test_yaml`.
 """
 
 import json
@@ -16,7 +17,13 @@ import tomlkit
 from ruamel.yaml import YAML
 
 from literalizer import InputFormat, literalize
-from literalizer.exceptions import HeterogeneousCoercionError
+from literalizer.exceptions import (
+    HeterogeneousScalarCollectionError,
+    HeterogeneousSiblingListsError,
+    MixedDictShapesError,
+    MixedDictValuesError,
+    MixedListValuesError,
+)
 from literalizer.languages import Dhall, Mojo, Python
 
 if TYPE_CHECKING:
@@ -50,8 +57,9 @@ def _to_source(
     """Serialize *data* into a source string for *input_format*.
 
     For TOML, non-dict data is wrapped in ``{"_": data}`` because TOML
-    requires a top-level table.  The coercion checker works recursively,
-    so the wrapping does not affect whether an error is raised.
+    requires a top-level table.  The representability checks work
+    recursively, so the wrapping does not affect whether an error is
+    raised.
     """
     match input_format:
         case InputFormat.JSON:
@@ -75,18 +83,19 @@ def _to_source(
             assert_never(unreachable)
 
 
-# --- Tests that should raise HeterogeneousCoercionError ---
+# --- Tests that should raise ---
 
 
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_raises_heterogeneous_array(input_format: InputFormat) -> None:
     """Heterogeneous scalar array raises across all formats."""
     expected_msg = re.escape(
-        pattern="Collection contains heterogeneous scalar types "
-        "that would be coerced to strings (found types: float, int)",
+        pattern="Collection contains heterogeneous scalar types that "
+        "cannot be represented in the target language "
+        "(found types: float, int)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=HeterogeneousScalarCollectionError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -95,14 +104,13 @@ def test_raises_heterogeneous_array(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_raises_heterogeneous_dict(input_format: InputFormat) -> None:
     """Dict with mixed-type scalar values raises across all formats."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    with pytest.raises(expected_exception=HeterogeneousScalarCollectionError):
         literalize(
             source=_to_source(
                 data={"a": 1, "b": 2.5},
@@ -112,14 +120,13 @@ def test_raises_heterogeneous_dict(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_raises_nested_heterogeneous(input_format: InputFormat) -> None:
     """Heterogeneous data nested in a list raises across all formats."""
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    with pytest.raises(expected_exception=HeterogeneousScalarCollectionError):
         literalize(
             source=_to_source(
                 data=[[1, "hello"]],
@@ -129,7 +136,6 @@ def test_raises_nested_heterogeneous(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -137,11 +143,12 @@ def test_raises_nested_heterogeneous(input_format: InputFormat) -> None:
 def test_raises_sibling_lists(input_format: InputFormat) -> None:
     """Heterogeneous sibling sub-lists raise across all formats."""
     expected_msg = re.escape(
-        pattern="Collection contains heterogeneous scalar types "
-        "that would be coerced to strings (found types: int, str)",
+        pattern="Sibling lists contain heterogeneous scalar types that "
+        "cannot be represented in the target language "
+        "(found types: int, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=HeterogeneousSiblingListsError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -153,7 +160,6 @@ def test_raises_sibling_lists(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -161,11 +167,12 @@ def test_raises_sibling_lists(input_format: InputFormat) -> None:
 def test_raises_nested_sibling_lists(input_format: InputFormat) -> None:
     """Nested heterogeneous sibling sub-lists raise across all formats."""
     expected_msg = re.escape(
-        pattern="Collection contains heterogeneous scalar types "
-        "that would be coerced to strings (found types: int, str)",
+        pattern="Sibling lists contain heterogeneous scalar types that "
+        "cannot be represented in the target language "
+        "(found types: int, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=HeterogeneousSiblingListsError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -177,7 +184,6 @@ def test_raises_nested_sibling_lists(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -185,11 +191,12 @@ def test_raises_nested_sibling_lists(input_format: InputFormat) -> None:
 def test_raises_mixed_dict_values(input_format: InputFormat) -> None:
     """Dict with string and list values raises across all formats."""
     expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, str)",
+        pattern="Dict contains values of mixed types that cannot be "
+        "represented in the target language "
+        "(found types: list, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -201,7 +208,6 @@ def test_raises_mixed_dict_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -213,11 +219,12 @@ def test_raises_nested_mixed_dict_values(input_format: InputFormat) -> None:
     the search must skip past it before finding the mixed one.
     """
     expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, str)",
+        pattern="Dict contains values of mixed types that cannot be "
+        "represented in the target language "
+        "(found types: list, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -232,7 +239,6 @@ def test_raises_nested_mixed_dict_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -244,11 +250,12 @@ def test_raises_nested_mixed_list_values(input_format: InputFormat) -> None:
     past it before finding the mixed second element.
     """
     expected_msg = re.escape(
-        pattern="List contains elements of mixed types "
-        "that would be coerced to strings (found types: list, str)",
+        pattern="List contains elements of mixed types that cannot be "
+        "represented in the target language "
+        "(found types: list, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedListValuesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -260,7 +267,6 @@ def test_raises_nested_mixed_list_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -268,11 +274,12 @@ def test_raises_nested_mixed_list_values(input_format: InputFormat) -> None:
 def test_raises_mixed_list_values(input_format: InputFormat) -> None:
     """List with string and nested list raises across all formats."""
     expected_msg = re.escape(
-        pattern="List contains elements of mixed types "
-        "that would be coerced to strings (found types: list, str)",
+        pattern="List contains elements of mixed types that cannot be "
+        "represented in the target language "
+        "(found types: list, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedListValuesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -284,7 +291,6 @@ def test_raises_mixed_list_values(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -296,11 +302,12 @@ def test_raises_mixed_dict_inside_mixed_list(
     nested inside a mixed list.
     """
     expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, str)",
+        pattern="Dict contains values of mixed types that cannot be "
+        "represented in the target language "
+        "(found types: list, str)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -312,7 +319,6 @@ def test_raises_mixed_dict_inside_mixed_list(
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -326,11 +332,11 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
         ],
     }
     expected_msg = re.escape(
-        pattern="List contains dicts with different key sets "
-        "that would be padded with null values",
+        pattern="List contains dicts with different key sets that "
+        "cannot be represented in the target language",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedDictShapesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -339,7 +345,6 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -347,11 +352,12 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
 def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
     """Dict with None alongside a list raises (formats with null)."""
     expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, none)",
+        pattern="Dict contains values of mixed types that cannot be "
+        "represented in the target language "
+        "(found types: list, none)",
     )
     with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
+        expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
         literalize(
@@ -363,7 +369,6 @@ def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=True,
         )
 
 
@@ -379,7 +384,6 @@ def test_no_raise_homogeneous_array(input_format: InputFormat) -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )
 
 
@@ -395,20 +399,20 @@ def test_no_raise_homogeneous_dict(input_format: InputFormat) -> None:
         language=MOJO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )
 
 
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
-def test_no_effect_without_coerce_flag(input_format: InputFormat) -> None:
-    """Error_on_coercion has no effect when language does not coerce."""
+def test_no_raise_heterogeneous_for_language_supporting_it(
+    input_format: InputFormat,
+) -> None:
+    """Heterogeneous data does not raise for languages that support it."""
     literalize(
         source=_to_source(data=[1, 2.5, 3], input_format=input_format),
         input_format=input_format,
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )
 
 
@@ -425,5 +429,4 @@ def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
         language=Dhall(),
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=True,
     )

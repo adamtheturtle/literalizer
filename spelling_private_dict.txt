@@ -112,7 +112,6 @@ beartype
 bool
 booleans
 chrono
-coercions
 commonjs
 config
 const

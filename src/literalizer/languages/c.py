@@ -196,7 +196,7 @@ class C(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -492,7 +492,7 @@ class C(metaclass=LanguageCls):
             empty_set=self.set_format.value.empty_set,
             preamble_lines=self.set_format.value.preamble_lines,
             set_opener_template=self.set_format.value.set_opener_template,
-            coerce_mixed_to_str=self.set_format.value.coerce_mixed_to_str,
+            supports_heterogeneity=self.set_format.value.supports_heterogeneity,
         )
 
     @cached_property
