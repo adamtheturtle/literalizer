@@ -529,7 +529,7 @@ class Kotlin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
         SORTED_SET = enum.member(
@@ -539,7 +539,7 @@ class Kotlin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="sortedSetOf<{type_name}>(",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

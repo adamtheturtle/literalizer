@@ -5,6 +5,6 @@ fn main() {
     let app = AppType_ { client: ClientType_ };
     fn emit<A>(__arg: A) {}
     emit(app.client.fetch("hello"));
-    emit(app.client.fetch("42"));
-    emit(app.client.fetch("True"));
+    emit(app.client.fetch(42));
+    emit(app.client.fetch(true));
 }

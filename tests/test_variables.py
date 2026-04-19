@@ -12,7 +12,10 @@ from literalizer import (
     NewVariable,
     literalize,
 )
-from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.exceptions import (
+    HeterogeneousScalarCollectionError,
+    IncompatibleFormatsError,
+)
 from literalizer.languages import Python, Rust
 
 PYTHON_ALWAYS_HINTS = Python(
@@ -35,7 +38,6 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -58,7 +60,6 @@ def test_python_always_type_hints_dict_with_uniform_list_values() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -91,7 +92,6 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -128,7 +128,6 @@ def test_rust_const_single_element_tuple() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -149,7 +148,6 @@ def test_rust_const_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -171,7 +169,6 @@ def test_rust_const_empty_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == (
         "const my_var: HashSet<String> = HashSet::<String>::new();"
@@ -187,7 +184,6 @@ def test_rust_const_dict() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -207,7 +203,6 @@ def test_rust_const_empty_dict() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == (
         "const my_var: HashMap<String, String>"
@@ -215,25 +210,19 @@ def test_rust_const_empty_dict() -> None:
     )
 
 
-def test_rust_const_dict_mixed_values() -> None:
-    """Rust CONST with mixed dict values falls back to ``&str``."""
-    result = literalize(
-        source='{"a": 1, "b": "x"}',
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: HashMap<&str, &str> = HashMap::from([
-            ("a", "1"),
-            ("b", "x"),
-        ]);"""
-    )
-    assert result.code == expected
+def test_rust_const_dict_mixed_values_raises() -> None:
+    """Rust CONST raises for dicts with heterogeneous scalar values."""
+    with pytest.raises(
+        expected_exception=HeterogeneousScalarCollectionError,
+    ):
+        literalize(
+            source='{"a": 1, "b": "x"}',
+            input_format=InputFormat.JSON,
+            language=RUST_CONST,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=NewVariable(name="my_var"),
+        )
 
 
 def test_rust_const_btree_set() -> None:
@@ -253,7 +242,6 @@ def test_rust_const_btree_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -282,7 +270,6 @@ def test_rust_const_btree_map() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -302,7 +289,6 @@ def test_rust_const_widened_int_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -323,7 +309,6 @@ def test_rust_const_i128_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -343,7 +328,6 @@ def test_rust_const_nested_list() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

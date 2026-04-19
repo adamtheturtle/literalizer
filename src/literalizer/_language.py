@@ -93,7 +93,7 @@ class SetFormatConfig:
     empty_set: str | None
     preamble_lines: tuple[str, ...]
     set_opener_template: str
-    coerce_mixed_to_str: bool
+    supports_heterogeneity: bool
 
     def with_typed_opener(
         self,

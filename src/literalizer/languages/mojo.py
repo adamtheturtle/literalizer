@@ -77,14 +77,10 @@ class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 
     Mojo does not support heterogeneous collections — every element in a
-    list or set must share a single type.  When a collection contains
-    scalar values of mixed types (e.g. ``[1, 2.5, 3]``), **all values
-    are coerced to their string representations** so that the resulting
-    literal is valid Mojo (e.g. ``["1", "2.5", "3"]``).
-
-    For sets, this coercion can cause the output to have fewer elements
-    than the input when distinct values of different types coerce to the
-    same string (e.g. ``{1, "1"}`` both become ``"1"``).
+    list or set must share a single type.  Input data containing
+    heterogeneous scalars or mixed-type collection values raises a
+    subclass of
+    :exc:`~literalizer.exceptions.HeterogeneousCollectionError`.
     """
 
     extension = ".mojo"
@@ -160,7 +156,7 @@ class Mojo(metaclass=LanguageCls):
                 empty_template="Set[{type}]()",
                 preamble_lines=("from std.collections import Set",),
                 set_opener_template="Set[{type_name}](",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

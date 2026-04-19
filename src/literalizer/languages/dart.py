@@ -310,7 +310,7 @@ class Dart(metaclass=LanguageCls):
                 empty_template="<{type}>{{}}",
                 preamble_lines=(),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

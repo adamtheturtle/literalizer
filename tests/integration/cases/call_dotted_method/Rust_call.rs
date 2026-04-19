@@ -4,6 +4,6 @@ fn main() {
     struct AppType_ { client: ClientType_ }
     let app = AppType_ { client: ClientType_ };
     app.client.fetch("hello");
-    app.client.fetch("42");
-    app.client.fetch("True");
+    app.client.fetch(42);
+    app.client.fetch(true);
 }
