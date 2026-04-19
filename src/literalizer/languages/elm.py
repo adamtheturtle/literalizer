@@ -49,7 +49,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -801,4 +800,3 @@ class Elm(metaclass=LanguageCls):
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
         ] = no_call_stub
-        self.format_call_target: Callable[[str], str] = identity_call_target
