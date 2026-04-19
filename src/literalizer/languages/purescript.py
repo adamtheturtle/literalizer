@@ -52,7 +52,6 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
-    wrap_combined_in_file_unsupported,
 )
 from literalizer._types import Value
 
@@ -682,7 +681,18 @@ class PureScript(metaclass=LanguageCls):
         preamble = "\n".join(body_preamble)
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
-    wrap_combined_in_file = staticmethod(wrap_combined_in_file_unsupported)
+    @staticmethod
+    def wrap_combined_in_file(  # pragma: no cover
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Unsupported: literalize() rejects BothVariableForms
+        upstream.
+        """
+        del declaration, assignment, variable_name, body_preamble
+        raise NotImplementedError
 
     def __init__(  # noqa: PLR0915
         self,
