@@ -111,7 +111,6 @@ backticks
 beartype
 bool
 booleans
-builtins
 chrono
 coercions
 commonjs
@@ -177,7 +176,6 @@ omap
 optimisation
 ordereddict
 os
-params
 paren
 parsers
 pragma

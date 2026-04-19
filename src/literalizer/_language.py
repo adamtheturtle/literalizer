@@ -890,9 +890,10 @@ class Language(Protocol):
 
         *name* is either a simple identifier (``"process"``) for a
         function call, or a dotted path (``"throttler.check"``) for a
-        method call on an object.  *params* is the list of parameter
-        names (e.g. ``["user_id", "ts"]``) so that keyword-style
-        languages can generate stubs with matching named parameters.
+        method call on an object.  The second argument is the list of
+        parameter names (e.g. ``["user_id", "ts"]``) so that
+        keyword-style languages can generate stubs with matching named
+        parameters.
         *stub_return* controls the return type of the generated stub:
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
@@ -904,8 +905,8 @@ class Language(Protocol):
         use :attr:`format_call_preamble_stub` instead.
 
         Returns an empty tuple when no stub is needed (e.g. for
-        builtins, or in languages whose lint checks only verify
-        syntax).
+        built-in functions, or in languages whose lint checks only
+        verify syntax).
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
