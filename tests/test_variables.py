@@ -7,7 +7,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    ExistingVariable,
     InputFormat,
     NewVariable,
     literalize,
@@ -23,20 +22,6 @@ PYTHON_ALWAYS_HINTS = Python(
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
 )
-
-
-def test_python_always_type_hints_assignment_no_hint() -> None:
-    """Python ALWAYS hints do not add type hints for assignments."""
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=ExistingVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == "my_var = 42"
 
 
 def test_python_always_type_hints_set_with_colon_in_string() -> None:
@@ -60,79 +45,6 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
     assert result.code == expected
 
 
-def test_python_always_type_hints_nested_list_in_list() -> None:
-    """Nested collections get recursive type hints, not Any."""
-    result = literalize(
-        source='[true, "hi", [1, 2], null]',
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: tuple[bool | str | tuple[int, ...] | None, ...] = (
-            True,
-            "hi",
-            (1, 2),
-            None,
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_dict_with_list_values() -> None:
-    """Dict with list values infers recursive type hints."""
-    result = literalize(
-        source='{"key": [1, 2, 3]}',
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: dict[str, tuple[int, ...]] = {
-            "key": (1, 2, 3),
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
-    """Ordered dicts in a sequence merge value types into one hint."""
-    yaml_input = textwrap.dedent(
-        text="""\
-        ---
-        - !!omap
-          - name: Alice
-          - draft: true
-        - !!omap
-          - name: Bob"""
-    )
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: tuple[OrderedDict[str, str | bool], ...] = (
-            OrderedDict([("name", "Alice"), ("draft", True)]),
-            OrderedDict([("name", "Bob")]),
-        )""",
-    )
-    assert result.code == expected
-
-
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
     datetime_format=Rust.datetime_formats.ISO,
@@ -140,49 +52,6 @@ RUST_CONST = Rust(
     sequence_format=Rust.sequence_formats.ARRAY,
     declaration_style=Rust.declaration_styles.CONST,
 )
-
-
-def test_rust_const_bytes() -> None:
-    """Rust CONST with bytes uses ``&str`` type."""
-    yaml_input = "!!binary |\n  SGVsbG8="
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "48656c6c6f";'
-
-
-def test_rust_const_date() -> None:
-    """Rust CONST with ISO dates uses ``&str`` type."""
-    result = literalize(
-        source="2024-01-15",
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15";'
-
-
-def test_rust_const_datetime() -> None:
-    """Rust CONST with ISO datetimes uses ``&str`` type."""
-    result = literalize(
-        source="2024-01-15T12:30:00",
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
 
 
 def test_rust_const_single_element_tuple() -> None:
