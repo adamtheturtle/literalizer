@@ -637,10 +637,7 @@ def _wrap_body(
 
 
 @beartype
-def _unwrap_yaml_scalar(  # noqa: PLR0911
-    *,
-    value: object,
-) -> object:
+def _unwrap_yaml_scalar(*, value: object) -> object:
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
@@ -648,7 +645,8 @@ def _unwrap_yaml_scalar(  # noqa: PLR0911
     preserve source-style metadata.  The literalizer's type-inference
     paths use ``type(value)`` for exact-type lookups, so these wrappers
     are demoted to ``int``/``float``/``str``/``datetime`` before they
-    reach those code paths.
+    reach those code paths.  YAML dates parse as plain :class:`date`
+    already, so they pass through unchanged.
     """
     # bool is a subclass of int — check first so True/False stays bool.
     if isinstance(value, bool):
@@ -659,10 +657,10 @@ def _unwrap_yaml_scalar(  # noqa: PLR0911
         return value if type(value) is float else float(value)
     if isinstance(value, str):
         return value if type(value) is str else str(object=value)
-    # datetime is a subclass of date — check first.
+    # datetime is a subclass of date — check first.  ``ruamel`` always
+    # returns its own ``TimeStamp`` subclass for datetimes, so we always
+    # reconstruct.
     if isinstance(value, datetime.datetime):
-        if type(value) is datetime.datetime:
-            return value
         return datetime.datetime(
             year=value.year,
             month=value.month,
@@ -673,37 +671,25 @@ def _unwrap_yaml_scalar(  # noqa: PLR0911
             microsecond=value.microsecond,
             tzinfo=value.tzinfo,
         )
-    if isinstance(value, datetime.date):
-        if type(value) is datetime.date:
-            return value
-        return datetime.date(
-            year=value.year,
-            month=value.month,
-            day=value.day,
-        )
     return value
 
 
 @beartype
-def _coerce_yaml_keys(  # noqa: PLR0911
-    *,
-    data: object,
-) -> Value:
+def _coerce_yaml_keys(*, data: object) -> Value:
     """Recursively convert non-string dict keys to their string form.
 
     YAML allows non-string mapping keys (e.g. integers); ``Value``
     requires ``dict[str, Value]``, so we normalise before passing
     loaded YAML data to :func:`_literalize`.
 
-    ``ordereddict`` (used for YAML ``!!omap`` nodes) preserves its keys
-    (so ordered-map detection in :func:`_literalize` still works) but
-    still walks into its values.  Round-trip ``CommentedMap`` instances
-    inherit from ``ordereddict`` despite representing plain mappings,
-    so they are matched explicitly and demoted to ``dict``.
-    :class:`CommentedSet` does not subclass :class:`set`, so it is
-    converted as well.  Scalar leaves are unwrapped to plain Python
-    types so type-based dispatch sees ``int`` rather than ``ScalarInt``
-    and friends.
+    The round-trip loader returns ``CommentedOrderedMap`` for YAML
+    ``!!omap`` nodes; those are demoted to plain ``ordereddict`` so
+    ordered-map detection in :func:`_literalize` still works.  Other
+    mappings come through as ``CommentedMap`` and are demoted to plain
+    ``dict``.  :class:`CommentedSet` does not subclass :class:`set`, so
+    it is converted as well.  Scalar leaves are unwrapped to plain
+    Python types so type-based dispatch sees ``int`` rather than
+    ``ScalarInt`` and friends.
     """
     match data:
         case CommentedOrderedMap():
@@ -720,21 +706,7 @@ def _coerce_yaml_keys(  # noqa: PLR0911
                 f"{k}": _coerce_yaml_keys(data=v)
                 for k, v in cast("dict[object, object]", data).items()
             }
-        case ordereddict():
-            ordered_src = cast("dict[object, object]", data)
-            ordered = ordereddict(
-                [
-                    (f"{k}", _coerce_yaml_keys(data=v))
-                    for k, v in ordered_src.items()
-                ]
-            )
-            return cast("Value", ordered)
-        case dict():
-            return {
-                f"{k}": _coerce_yaml_keys(data=v)
-                for k, v in cast("dict[object, object]", data).items()
-            }
-        case list():
+        case CommentedSeq():
             return [
                 _coerce_yaml_keys(data=item)
                 for item in cast("list[object]", data)
