@@ -27,7 +27,7 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 @beartype
 def _format_date_ymd(value: datetime.date, template: str) -> str:
-    """Format a date using the YMD template."""
+    """Format a date using a year/month/day template."""
     return template.format(
         year=value.year,
         month=value.month,
@@ -63,7 +63,9 @@ def date_ymd_formatter(
 
 @beartype
 def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
-    """Format a datetime using the YMDHMS template."""
+    """Format a datetime using a year/month/day/hour/minute/second
+    template.
+    """
     return template.format(
         year=value.year,
         month=value.month,
