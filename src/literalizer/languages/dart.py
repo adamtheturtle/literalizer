@@ -1,15 +1,18 @@
 """Dart language specification."""
 
+import dataclasses
 import datetime
 import enum
 import functools
 from collections.abc import Callable, Sequence
-from typing import assert_never
+from functools import cached_property
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
+    TypeOpeners,
     fixed_dict_open,
     fixed_sequence_open,
     typed_collection_open,
@@ -140,7 +143,6 @@ def _format_dart_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -164,6 +166,7 @@ def _format_dart_typed_declaration(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Dart(metaclass=LanguageCls):
     """Dart language specification.
 
@@ -318,21 +321,15 @@ class Dart(metaclass=LanguageCls):
         """Declaration style options."""
 
         FINAL = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="final {name} = {value};",
-            ),
+            formatter=variable_declaration_formatter(template="final {name} = {value};"),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="var {name} = {value};",
-            ),
+            formatter=variable_declaration_formatter(template="var {name} = {value};"),
             supports_redefinition=False,
         )
         CONST = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="const {name} = {value};",
-            ),
+            formatter=variable_declaration_formatter(template="const {name} = {value};"),
             supports_redefinition=False,
         )
 
@@ -422,9 +419,7 @@ class Dart(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[
-                [str, str, Value, frozenset[DeclarationModifier]], str
-            ],
+            auto_formatter: Callable[[str, str, Value], str],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -432,7 +427,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -500,71 +495,154 @@ class Dart(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
-        self,
-        *,
-        date_format: DateFormats = DateFormats.DART,
-        datetime_format: DatetimeFormats = DatetimeFormats.DART,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.LIST,
-        set_format: SetFormats = SetFormats.SET,
-        default_set_element_type: str = "dynamic",
-        default_dict_key_type: str = "String",
-        default_dict_value_type: str = "dynamic",
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.FINAL,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DEFAULT,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.YES,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        indent: str = "    ",
-    ) -> None:
-        """Initialize Dart language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "null"
-        self.true_literal = "true"
-        self.false_literal = "false"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
+    date_format: DateFormats = DateFormats.DART
+    datetime_format: DatetimeFormats = DatetimeFormats.DART
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.LIST
+    set_format: SetFormats = SetFormats.SET
+    default_set_element_type: str = "dynamic"
+    default_dict_key_type: str = "String"
+    default_dict_value_type: str = "dynamic"
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.FINAL
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.YES
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    indent: str = "    "
 
-        self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_element_type,
+    null_literal: ClassVar[str] = "null"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ";"
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+    call_style_config: ClassVar[CallStyle | None] = None
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+        """Format an assignment to an existing variable."""
+        return variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Format one ordered-map entry."""
+        return dict_entry_with_separator(
+            separator=": ", format_value=passthrough_sequence_entry
         )
 
-        date_tp = date_format.value.type_produced
-        dt_tp = datetime_format.value.type_produced
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def _date_tp(self) -> type:
+        """Python type produced by the chosen date format."""
+        return self.date_format.value.type_produced
+
+    @cached_property
+    def _dt_tp(self) -> type:
+        """Python type produced by the chosen datetime format."""
+        return self.datetime_format.value.type_produced
+
+    @cached_property
+    def _openers(self) -> TypeOpeners:
+        """Typed openers built from the opener config."""
         cfg = self._opener_config
-        openers = cfg.build(
-            date_type=cfg.type_name(py_type=date_tp),
-            datetime_type=cfg.type_name(py_type=dt_tp),
+        return cfg.build(
+            date_type=cfg.type_name(py_type=self._date_tp),
+            datetime_type=cfg.type_name(py_type=self._dt_tp),
             set_opener_template=None,
             narrow_dict_values=True,
-            dict_key_type=default_dict_key_type,
+            dict_key_type=self.default_dict_key_type,
         )
-        self.sequence_open: Callable[[list[Value]], str] = (
-            typed_collection_open(
-                type_to_opener=openers.seq,
+
+    @cached_property
+    def _dart_keyword(self) -> str:
+        """Keyword prefix derived from the declaration style."""
+        kw = self.declaration_style.name.lower()
+        return "" if kw == "var" else f"{kw} "
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format.value
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return self.set_format(
+            default_type=self.default_set_element_type,
+        )
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        fmt = self.sequence_format.value
+        if fmt.typed_opener_fallback is not None:
+            return typed_collection_open(
+                type_to_opener=self._openers.seq,
                 fallback=fmt.typed_opener_fallback,
             )
-            if fmt.typed_opener_fallback is not None
-            else fmt.sequence_open
-        )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+        return fmt.sequence_open
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
             dict_open=typed_dict_open(
-                type_to_opener=openers.dict,
+                type_to_opener=self._openers.dict,
                 fallback=(
-                    f"<{default_dict_key_type}, {default_dict_value_type}>{{"
+                    f"<{self.default_dict_key_type}, "
+                    f"{self.default_dict_value_type}>{{"
                 ),
             ),
             close="}",
@@ -576,102 +654,96 @@ class Dart(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        return self.string_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        return self.integer_format
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(open_str="{"),
+            close="}",
+            preamble_lines=(),
         )
-        self.datetime_format: enum.Enum = datetime_format
-        self.format_string: Callable[[str], str] = string_format
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
-        )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
-        )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(open_str="{"),
-                close="}",
-                preamble_lines=(),
-            )
-        )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_separator(
-                separator=": ",
-                format_value=passthrough_sequence_entry,
-            )
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = False
-        # In Dart, ``var`` is replaced by the type; ``final``/``const``
-        # precede the type with a space.
-        _dart_kw = declaration_style.name.lower()
-        _dart_keyword = "" if _dart_kw == "var" else f"{_dart_kw} "
-        self.format_variable_declaration: Callable[
-            [str, str, Value, frozenset[DeclarationModifier]], str
-        ] = variable_type_hints.formatter(
-            auto_formatter=declaration_style.value.formatter,
-            keyword=_dart_keyword,
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        """Callable that formats a new variable declaration."""
+        return self.variable_type_hints.formatter(
+            auto_formatter=self.declaration_style.value.formatter,
+            keyword=self._dart_keyword,
             date_hint=(
                 "String"
-                if date_format.value.type_produced is str
+                if self.date_format.value.type_produced is str
                 else "DateTime"
             ),
             datetime_hint=(
                 "String"
-                if datetime_format.value.type_produced is str
+                if self.datetime_format.value.type_produced is str
                 else "DateTime"
             ),
-            default_set_element_type=default_set_element_type,
-            default_dict_key_type=default_dict_key_type,
-            default_dict_value_type=default_dict_value_type,
-            sequence_is_tuple=(sequence_format.name == "TUPLE"),
+            default_set_element_type=self.default_set_element_type,
+            default_dict_key_type=self.default_dict_key_type,
+            default_dict_value_type=self.default_dict_value_type,
+            sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
-        )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble (Dart needs none)."""
+        return {}
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Dart needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
-
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyle | None = None
-        self.statement_terminator = ";"
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub

@@ -1,10 +1,12 @@
 """Fortran language specification."""
 
+import dataclasses
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
+from functools import cached_property
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -51,9 +53,6 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 @beartype
@@ -173,14 +172,11 @@ def _apply_fortran_variable_declaration(
 def _build_format_variable_declaration(
     *,
     format_entry: Callable[[Value, str], str],
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+) -> Callable[[str, str, Value], str]:
     """Build a variable declaration formatter."""
 
     def _format_variable_declaration(
-        name: str,
-        value: str,
-        data: Value,
-        _modifiers: frozenset[DeclarationModifier],
+        name: str, value: str, data: Value
     ) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_variable_declaration(
@@ -220,6 +216,7 @@ def _build_format_variable_assignment(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
@@ -469,223 +466,314 @@ class Fortran(metaclass=LanguageCls):
             "end program main"
         )
 
-    def __init__(  # noqa: PLR0915
+    date_format: DateFormats = DateFormats.ISO
+    datetime_format: DatetimeFormats = DatetimeFormats.ISO
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.LIST
+    set_format: SetFormats = SetFormats.SET
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.EXCLAMATION
+    declaration_style: DeclarationStyles = DeclarationStyles.TYPED
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.NO
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    indent: str = "    "
+    null_name: str = "fnull"
+    bool_name: str = "fbool"
+    int_name: str = "fint"
+    real_name: str = "freal"
+    str_name: str = "fstr"
+    list_name: str = "flist"
+    map_name: str = "fmap"
+    set_name: str = "fset"
+    entry_name: str = "fentry"
+
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = False
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ""
+    special_float_preamble: ClassVar[tuple[str, ...]] = (
+        "  use, intrinsic :: ieee_arithmetic",
+    )
+    call_style_config: ClassVar[CallStyle | None] = None
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Format an int value as an int64 Fortran literal."""
+        return lambda value: f"{value}_int64"
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
         self,
-        *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.LIST,
-        set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.EXCLAMATION,
-        declaration_style: DeclarationStyles = DeclarationStyles.TYPED,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DEFAULT,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.NO,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        indent: str = "    ",
-        null_name: str = "fnull",
-        bool_name: str = "fbool",
-        int_name: str = "fint",
-        real_name: str = "freal",
-        str_name: str = "fstr",
-        list_name: str = "flist",
-        map_name: str = "fmap",
-        set_name: str = "fset",
-        entry_name: str = "fentry",
-    ) -> None:
-        """Initialize Fortran language specification."""
-        format_entry = _build_format_fortran_entry(
-            int_name=int_name,
-            real_name=real_name,
-            str_name=str_name,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def _format_entry(self) -> Callable[[Value, str], str]:
+        """Shared entry formatter for Fortran values."""
+        return _build_format_fortran_entry(
+            int_name=self.int_name,
+            real_name=self.real_name,
+            str_name=self.str_name,
         )
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal: str = f"{null_name}()"
-        self.true_literal: str = f"{bool_name}(.true.)"
-        self.false_literal: str = f"{bool_name}(.false.)"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = (
-            SequenceFormatConfig(
-                sequence_open=fixed_sequence_open(
-                    open_str=f"{list_name}([fval_t :: ",
-                ),
-                close="])",
-                supports_heterogeneity=fmt.supports_heterogeneity,
-                single_element_trailing_comma=(
-                    fmt.single_element_trailing_comma
-                ),
-                supports_trailing_comma=fmt.supports_trailing_comma,
-                empty_sequence=fmt.empty_sequence,
-                preamble_lines=fmt.preamble_lines,
-                format_entry=fmt.format_entry,
-                typed_opener_fallback=fmt.typed_opener_fallback,
-                uses_typed_literal_for_scalars=(
-                    fmt.uses_typed_literal_for_scalars
-                ),
-                requires_uniform_record_shapes=(
-                    fmt.requires_uniform_record_shapes
-                ),
-                declared_type=fmt.declared_type,
-            )
-        )
-        self.set_format = set_format
-        self.set_format_config: SetFormatConfig = SetFormatConfig(
-            set_open=fixed_set_open(
-                open_str=f"{set_name}([fval_t :: ",
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Literal representing ``None``."""
+        return f"{self.null_name}()"
+
+    @cached_property
+    def true_literal(self) -> str:
+        """Literal representing ``True``."""
+        return f"{self.bool_name}(.true.)"
+
+    @cached_property
+    def false_literal(self) -> str:
+        """Literal representing ``False``."""
+        return f"{self.bool_name}(.false.)"
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        fmt = self.sequence_format.value
+        return SequenceFormatConfig(
+            sequence_open=fixed_sequence_open(
+                open_str=f"{self.list_name}([fval_t :: ",
             ),
             close="])",
-            empty_set=set_format.value.empty_set,
-            preamble_lines=set_format.value.preamble_lines,
-            set_opener_template=set_format.value.set_opener_template,
-            coerce_mixed_to_str=set_format.value.coerce_mixed_to_str,
+            supports_heterogeneity=fmt.supports_heterogeneity,
+            single_element_trailing_comma=(fmt.single_element_trailing_comma),
+            supports_trailing_comma=fmt.supports_trailing_comma,
+            empty_sequence=fmt.empty_sequence,
+            preamble_lines=fmt.preamble_lines,
+            format_entry=fmt.format_entry,
+            typed_opener_fallback=fmt.typed_opener_fallback,
+            uses_typed_literal_for_scalars=(
+                fmt.uses_typed_literal_for_scalars
+            ),
+            requires_uniform_record_shapes=(
+                fmt.requires_uniform_record_shapes
+            ),
+            declared_type=fmt.declared_type,
         )
-        self.sequence_open: Callable[[list[Value]], str] = (
-            self.sequence_format_config.sequence_open
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return SetFormatConfig(
+            set_open=fixed_set_open(
+                open_str=f"{self.set_name}([fval_t :: ",
+            ),
+            close="])",
+            empty_set=self.set_format.value.empty_set,
+            preamble_lines=self.set_format.value.preamble_lines,
+            set_opener_template=self.set_format.value.set_opener_template,
+            coerce_mixed_to_str=self.set_format.value.coerce_mixed_to_str,
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return self.sequence_format_config.sequence_open
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
             dict_open=fixed_dict_open(
-                open_str=f"{map_name}([fval_t :: ",
+                open_str=f"{self.map_name}([fval_t :: ",
             ),
             close="])",
             format_entry=dict_entry_with_template(
-                template=f"{entry_name}({{key}}, {{value}})",
-                format_value=format_entry,
+                template=f"{self.entry_name}({{key}}, {{value}})",
+                format_value=self._format_entry,
             ),
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        return format_string_concat_control(
+            quote_char="'",
+            quote_escape="''",
+            control_char_template="achar({})",
+            concat_operator=" // ",
+            escape_backslash=False,
         )
-        self.datetime_format: enum.Enum = datetime_format
-        self.format_string: Callable[[str], str] = (
-            format_string_concat_control(
-                quote_char="'",
-                quote_escape="''",
-                control_char_template="achar({})",
-                concat_operator=" // ",
-                escape_backslash=False,
-            )
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Callable that formats one sequence entry."""
+        return self._format_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Callable that formats one set entry."""
+        return self._format_entry
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str=f"{self.map_name}([fval_t :: ",
+            ),
+            close="])",
+            preamble_lines=(),
         )
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = lambda value: (
-            f"{value}_int64"
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return dict_entry_with_template(
+            template=f"{self.entry_name}({{key}}, {{value}})",
+            format_value=self._format_entry,
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = format_entry
-        self.format_set_entry: Callable[[Value, str], str] = format_entry
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str=f"{map_name}([fval_t :: ",
-                ),
-                close="])",
-                preamble_lines=(),
-            )
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        """Callable that formats a new variable declaration."""
+        return _build_format_variable_declaration(
+            format_entry=self._format_entry,
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_template(
-                template=f"{entry_name}({{key}}, {{value}})",
-                format_value=format_entry,
-            )
+
+    @cached_property
+    def format_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment to an existing variable."""
+        return _build_format_variable_assignment(
+            format_entry=self._format_entry,
         )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = False
-        self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[
-            [str, str, Value, frozenset[DeclarationModifier]], str
-        ] = _build_format_variable_declaration(format_entry=format_entry)
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _build_format_variable_assignment(format_entry=format_entry)
-        )
-        self.static_preamble: Sequence[str] = ("module fval_m",)
-        self.static_body_preamble: Sequence[str] = (
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file."""
+        return ("module fval_m",)
+
+    @cached_property
+    def static_body_preamble(self) -> Sequence[str]:
+        """Static body-preamble lines emitted once per file."""
+        return (
             "  use, intrinsic :: iso_fortran_env, only: int64",
             "  implicit none",
             "  type :: fval_t",
             "    integer :: t = 0",
             "  end type fval_t",
             "contains",
-            f"  function {null_name}() result(v)"
+            f"  function {self.null_name}() result(v)"
             "; type(fval_t) :: v; end function",
-            f"  function {bool_name}(b) result(v)"
+            f"  function {self.bool_name}(b) result(v)"
             "; logical, intent(in) :: b"
             "; type(fval_t) :: v; end function",
-            f"  function {int_name}(n) result(v)"
+            f"  function {self.int_name}(n) result(v)"
             "; integer(kind=int64), intent(in) :: n"
             "; type(fval_t) :: v; end function",
-            f"  function {real_name}(x) result(v)"
+            f"  function {self.real_name}(x) result(v)"
             "; real, intent(in) :: x"
             "; type(fval_t) :: v; end function",
-            f"  function {str_name}(s) result(v)"
+            f"  function {self.str_name}(s) result(v)"
             "; character(len=*), intent(in) :: s"
             "; type(fval_t) :: v; end function",
-            f"  function {list_name}(a) result(v)"
+            f"  function {self.list_name}(a) result(v)"
             "; type(fval_t), intent(in) :: a(:)"
             "; type(fval_t) :: v; end function",
-            f"  function {map_name}(a) result(v)"
+            f"  function {self.map_name}(a) result(v)"
             "; type(fval_t), intent(in) :: a(:)"
             "; type(fval_t) :: v; end function",
-            f"  function {set_name}(a) result(v)"
+            f"  function {self.set_name}(a) result(v)"
             "; type(fval_t), intent(in) :: a(:)"
             "; type(fval_t) :: v; end function",
-            f"  function {entry_name}(k, u) result(v)"
+            f"  function {self.entry_name}(k, u) result(v)"
             "; character(len=*), intent(in) :: k"
             "; type(fval_t), intent(in) :: u"
             "; type(fval_t) :: v; end function",
             "end module fval_m",
         )
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble (Fortran needs none)."""
+        return {}
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Fortran needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
-
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = (
-            "  use, intrinsic :: ieee_arithmetic",
-        )
-        self.call_style_config: CallStyle | None = None
-        self.statement_terminator = ""
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub

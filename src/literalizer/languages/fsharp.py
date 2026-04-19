@@ -5,6 +5,8 @@ import datetime
 import enum
 import textwrap
 from collections.abc import Callable, Sequence
+from functools import cached_property
+from typing import ClassVar
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -26,6 +28,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     tuple_dict_entry,
     variable_declaration_formatter,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -136,14 +139,14 @@ def _apply_fsharp_declaration(
 
 
 @beartype
-def _build_fsharp_assignment(
+def _build_fsharp_declaration(
     *,
     template: str,
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
 ) -> Callable[[str, str, Value], str]:
-    """Build an F# variable assignment formatter."""
+    """Build an F# variable declaration/assignment formatter."""
 
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
@@ -156,35 +159,6 @@ def _build_fsharp_assignment(
             scalar_declared_type=scalar_declared_type,
             entry_formatter=entry_formatter,
         )
-
-    return _format
-
-
-@beartype
-def _build_fsharp_declaration(
-    *,
-    template: str,
-    sequence_declared_type: str,
-    scalar_declared_type: str,
-    entry_formatter: Callable[[Value, str], str],
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
-    """Build an F# variable declaration formatter."""
-    assign = _build_fsharp_assignment(
-        template=template,
-        sequence_declared_type=sequence_declared_type,
-        scalar_declared_type=scalar_declared_type,
-        entry_formatter=entry_formatter,
-    )
-
-    @beartype
-    def _format(
-        name: str,
-        value: str,
-        data: Value,
-        _modifiers: frozenset[DeclarationModifier],
-    ) -> str:
-        """Format a variable declaration."""
-        return assign(name, value, data)
 
     return _format
 
@@ -229,6 +203,7 @@ def _fsharp_call_stub(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class FSharp(metaclass=LanguageCls):
     """F# language specification.
 
@@ -520,200 +495,290 @@ class FSharp(metaclass=LanguageCls):
         )
         return body
 
-    def __init__(  # noqa: PLR0915
+    date_format: DateFormats = DateFormats.FSHARP
+    datetime_format: DatetimeFormats = DatetimeFormats.FSHARP
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.LIST
+    set_format: SetFormats = SetFormats.SET
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.LET
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.NO
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
+    indent: str = "    "
+    type_name: str = "Val"
+    constructor_prefix: str = "F"
+
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = "; "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = False
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ""
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Format a string value as a quoted literal."""
+        return format_string_backslash
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
         self,
-        *,
-        date_format: DateFormats = DateFormats.FSHARP,
-        datetime_format: DatetimeFormats = DatetimeFormats.FSHARP,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.LIST,
-        set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.LET,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DEFAULT,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.NO,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
-        indent: str = "    ",
-        type_name: str = "Val",
-        constructor_prefix: str = "F",
-    ) -> None:
-        """Initialize FSharp language specification."""
-        _entry_formatter = _build_fsharp_entry_formatter(
-            prefix=constructor_prefix,
-        )
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal: str = f"{constructor_prefix}Null"
-        self.true_literal: str = f"{constructor_prefix}Bool true"
-        self.false_literal: str = f"{constructor_prefix}Bool false"
-        fmt = sequence_format.value
-        if sequence_format.name == "ARRAY":
-            self.sequence_format_config: SequenceFormatConfig = fmt
-            self.sequence_open: Callable[[list[Value]], str] = (
-                fmt.sequence_open
-            )
-        else:
-            _seq_open = fixed_sequence_open(
-                open_str=f"{constructor_prefix}List [",
-            )
-            self.sequence_format_config = dataclasses.replace(
-                fmt,
-                sequence_open=_seq_open,
-            )
-            self.sequence_open = _seq_open
-        self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
-            set_open=fixed_set_open(
-                open_str=f"{constructor_prefix}Set [",
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return _fsharp_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def _entry_formatter(self) -> Callable[[Value, str], str]:
+        """Shared entry formatter with the configured constructor
+        prefix.
+        """
+        return _build_fsharp_entry_formatter(prefix=self.constructor_prefix)
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Literal representing ``None``."""
+        return f"{self.constructor_prefix}Null"
+
+    @cached_property
+    def true_literal(self) -> str:
+        """Literal representing ``True``."""
+        return f"{self.constructor_prefix}Bool true"
+
+    @cached_property
+    def false_literal(self) -> str:
+        """Literal representing ``False``."""
+        return f"{self.constructor_prefix}Bool false"
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        fmt = self.sequence_format.value
+        if self.sequence_format.name == "ARRAY":
+            return fmt
+        return dataclasses.replace(
+            fmt,
+            sequence_open=fixed_sequence_open(
+                open_str=f"{self.constructor_prefix}List [",
             ),
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return self.sequence_format_config.sequence_open
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return dataclasses.replace(
+            self.set_format.value,
+            set_open=fixed_set_open(
+                open_str=f"{self.constructor_prefix}Set [",
+            ),
+        )
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
             dict_open=fixed_dict_open(
-                open_str=f"{constructor_prefix}Map [",
+                open_str=f"{self.constructor_prefix}Map [",
             ),
             close="]",
             format_entry=tuple_dict_entry(
-                format_value=_entry_formatter,
+                format_value=self._entry_formatter,
             ),
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        return self.integer_format
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Callable that formats one sequence entry."""
+        return self._entry_formatter
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Callable that formats one set entry."""
+        return self._entry_formatter
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str=f"{self.constructor_prefix}Map [",
+            ),
+            close="]",
+            preamble_lines=(),
         )
-        self.datetime_format: enum.Enum = datetime_format
-        self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = integer_format
-        self.format_set_entry: Callable[[Value, str], str] = _entry_formatter
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str=f"{constructor_prefix}Map [",
-                ),
-                close="]",
-                preamble_lines=(),
-            )
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return tuple_dict_entry(format_value=self._entry_formatter)
+
+    @cached_property
+    def _sequence_declared_type(self) -> str:
+        """Resolved declared type for sequence values."""
+        raw_declared = self.sequence_format.value.declared_type
+        return (
+            raw_declared.replace("Val", self.type_name)
+            if raw_declared is not None
+            else self.type_name
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            tuple_dict_entry(format_value=_entry_formatter)
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = False
-        self.supports_scalar_inline_comments = False
-        _raw_declared = sequence_format.value.declared_type
-        _sequence_declared_type = (
-            _raw_declared.replace("Val", type_name)
-            if _raw_declared is not None
-            else type_name
-        )
-        _keyword = (
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        """Callable that formats a new variable declaration."""
+        keyword = (
             "let mutable"
-            if declaration_style.value.supports_redefinition
+            if self.declaration_style.value.supports_redefinition
             else "let"
         )
-        self.format_variable_declaration: Callable[
-            [str, str, Value, frozenset[DeclarationModifier]], str
-        ] = _build_fsharp_declaration(
-            template=(f"{_keyword} {{name}}: {{declared_type}} = {{wrapped}}"),
-            sequence_declared_type=_sequence_declared_type,
-            scalar_declared_type=type_name,
-            entry_formatter=_entry_formatter,
+        return _build_fsharp_declaration(
+            template=(f"{keyword} {{name}}: {{declared_type}} = {{wrapped}}"),
+            sequence_declared_type=self._sequence_declared_type,
+            scalar_declared_type=self.type_name,
+            entry_formatter=self._entry_formatter,
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            _build_fsharp_assignment(
-                template="let {name}: {declared_type} = {wrapped}",
-                sequence_declared_type=_sequence_declared_type,
-                scalar_declared_type=type_name,
-                entry_formatter=_entry_formatter,
-            )
+
+    @cached_property
+    def format_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment to an existing variable."""
+        return _build_fsharp_declaration(
+            template="let {name}: {declared_type} = {wrapped}",
+            sequence_declared_type=self._sequence_declared_type,
+            scalar_declared_type=self.type_name,
+            entry_formatter=self._entry_formatter,
         )
-        self.element_separator = "; "
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            _entry_formatter
-        )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = {}
-        p = constructor_prefix
-        _header = f"type {type_name} ="
-        _f_str = f"    | {p}Str of string"
-        self.scalar_body_preamble: dict[
-            type,
-            tuple[str, ...],
-        ] = {
-            type(None): (_header, f"    | {p}Null"),
-            bool: (_header, f"    | {p}Bool of bool"),
-            int: (_header, f"    | {p}Int of int64"),
-            float: (_header, f"    | {p}Float of float"),
-            str: (_header, _f_str),
-            bytes: (_header, _f_str),
-            list: (_header, f"    | {p}List of {type_name} list"),
-            dict: (_header, f"    | {p}Map of (string * {type_name}) list"),
-            ordereddict: (
-                _header,
-                f"    | {p}Map of (string * {type_name}) list",
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble (FSharp needs none)."""
+        return {}
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble with type declarations."""
+        p = self.constructor_prefix
+        header = f"type {self.type_name} ="
+        f_str = f"    | {p}Str of string"
+        return {
+            type(None): (header, f"    | {p}Null"),
+            bool: (header, f"    | {p}Bool of bool"),
+            int: (header, f"    | {p}Int of int64"),
+            float: (header, f"    | {p}Float of float"),
+            str: (header, f_str),
+            bytes: (header, f_str),
+            list: (header, f"    | {p}List of {self.type_name} list"),
+            dict: (
+                header,
+                f"    | {p}Map of (string * {self.type_name}) list",
             ),
-            set: (_header, f"    | {p}Set of {type_name} list"),
+            ordereddict: (
+                header,
+                f"    | {p}Map of (string * {self.type_name}) list",
+            ),
+            set: (header, f"    | {p}Set of {self.type_name} list"),
             datetime.date: (
-                _header,
-                _f_str,
+                header,
+                f_str,
                 f"    | {p}Date of System.DateTime",
             ),
             datetime.datetime: (
-                _header,
-                _f_str,
+                header,
+                f_str,
                 f"    | {p}Datetime of System.DateTime",
             ),
         }
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style = call_style
-        self.call_style_config: CallStyle | None = call_style.value
-        self.statement_terminator = ""
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = _fsharp_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
+
+    @cached_property
+    def call_style_config(self) -> CallStyle | None:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
