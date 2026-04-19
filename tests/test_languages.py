@@ -309,6 +309,34 @@ def test_pygments_name_is_valid(
     find_lexer_class_by_name(_alias=language_cls.pygments_name)
 
 
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_wrap_in_file_methods_preserve_content(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language's wrap_in_file and wrap_combined_in_file embed the
+    supplied content in their output.
+    """
+    wrapped = language_cls.wrap_in_file(
+        content="x = 1",
+        variable_name="x",
+        body_preamble=(),
+    )
+    assert "x = 1" in wrapped
+    combined = language_cls.wrap_combined_in_file(
+        declaration="x = 1",
+        assignment="x = 2",
+        variable_name="x",
+        body_preamble=(),
+    )
+    assert "x = 1" in combined
+    assert "x = 2" in combined
+
+
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
     """When all Python default collection types are non-Any, the
     ``from typing import Any`` import is not emitted.
