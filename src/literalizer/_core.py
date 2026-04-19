@@ -651,30 +651,32 @@ def _unwrap_yaml_scalar(*, value: object) -> object:
     values.  YAML dates parse as plain :class:`date` already, so they
     pass through unchanged.
     """
-    # bool is a subclass of int — check first so True/False stays bool.
-    if isinstance(value, bool):
-        return bool(value)
-    if isinstance(value, int):
-        return int(value)
-    if isinstance(value, float):
-        return float(value)
-    if isinstance(value, str):
-        return str(object=value)
-    # datetime is a subclass of date — check first.  ``ruamel`` always
-    # returns its own ``TimeStamp`` subclass for datetimes, so we always
-    # reconstruct.
-    if isinstance(value, datetime.datetime):
-        return datetime.datetime(
-            year=value.year,
-            month=value.month,
-            day=value.day,
-            hour=value.hour,
-            minute=value.minute,
-            second=value.second,
-            microsecond=value.microsecond,
-            tzinfo=value.tzinfo,
-        )
-    return value
+    # ``bool`` and ``datetime.datetime`` come before their bases (``int``
+    # and ``date``) because match arms test class membership in order.
+    # ``ruamel`` always returns its own ``TimeStamp`` subclass for
+    # datetimes, so we always reconstruct.
+    match value:
+        case bool():
+            return bool(value)
+        case int():
+            return int(value)
+        case float():
+            return float(value)
+        case str():
+            return str(object=value)
+        case datetime.datetime():
+            return datetime.datetime(
+                year=value.year,
+                month=value.month,
+                day=value.day,
+                hour=value.hour,
+                minute=value.minute,
+                second=value.second,
+                microsecond=value.microsecond,
+                tzinfo=value.tzinfo,
+            )
+        case _:
+            return value
 
 
 @beartype
@@ -1686,45 +1688,51 @@ def _resolve_yaml_comments(
     are not attached to a collection.
     """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    if isinstance(raw_data, CommentedSet):
-        return _resolve_collection_comments(
-            collection_comments=extract_yaml_comments(ruamel_data=raw_data),
-            base=base,
-            language=language,
-            comment_prefix=comment_prefix,
-            comment_suffix=comment_suffix,
-            comment_line_prefix=comment_line_prefix,
-            include_delimiters=include_delimiters,
-        )
-
-    if isinstance(raw_data, (CommentedSeq, CommentedMap)):
-        return _resolve_yaml_collection_comments(
-            ruamel_data=raw_data,
-            data=raw_data,
-            base=base,
-            language=language,
-            comment_prefix=comment_prefix,
-            comment_suffix=comment_suffix,
-            comment_line_prefix=comment_line_prefix,
-            include_delimiters=include_delimiters,
-        )
-
-    stream = StringIO(initial_value=yaml_string)
-    tokens = _get_yaml().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-    scalar_result = literalize_yaml_scalar(
-        tokens=tokens,
-        base=base,
-        comment_prefix=comment_prefix,
-        comment_suffix=comment_suffix,
-        line_prefix=line_prefix,
-        supports_scalar_before_comments=language.supports_scalar_before_comments,
-        supports_scalar_inline_comments=language.supports_scalar_inline_comments,
-    )
-    return _ResolvedComments(
-        result=scalar_result.result,
-        pending=None,
-        pending_scalar_before=scalar_result.pending_before,
-    )
+    match raw_data:
+        case CommentedSet():
+            return _resolve_collection_comments(
+                collection_comments=extract_yaml_comments(
+                    ruamel_data=raw_data,
+                ),
+                base=base,
+                language=language,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                comment_line_prefix=comment_line_prefix,
+                include_delimiters=include_delimiters,
+            )
+        case CommentedSeq() | CommentedMap():
+            return _resolve_yaml_collection_comments(
+                ruamel_data=raw_data,
+                data=raw_data,
+                base=base,
+                language=language,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                comment_line_prefix=comment_line_prefix,
+                include_delimiters=include_delimiters,
+            )
+        case _:
+            stream = StringIO(initial_value=yaml_string)
+            tokens = _get_yaml().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
+            scalar_result = literalize_yaml_scalar(
+                tokens=tokens,
+                base=base,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                line_prefix=line_prefix,
+                supports_scalar_before_comments=(
+                    language.supports_scalar_before_comments
+                ),
+                supports_scalar_inline_comments=(
+                    language.supports_scalar_inline_comments
+                ),
+            )
+            return _ResolvedComments(
+                result=scalar_result.result,
+                pending=None,
+                pending_scalar_before=scalar_result.pending_before,
+            )
 
 
 @beartype
