@@ -1245,11 +1245,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_prefix_variants(), "float_list", "_float"),
         (_build_constructor_prefix_variants(), "binary", "_binary"),
         (_build_constructor_prefix_variants(), "scalar_date", "_date"),
-        (
-            _build_constructor_prefix_variants(),
-            "scalar_datetime",
-            "_datetime",
-        ),
+        (_build_constructor_prefix_variants(), "scalar_datetime", "_datetime"),
         (_build_haskell_iso_double_variants(), "scalar_date", ""),
         (_build_haskell_iso_double_variants(), "scalar_datetime", "_dt"),
         (numeric_style, "int_list", ""),
