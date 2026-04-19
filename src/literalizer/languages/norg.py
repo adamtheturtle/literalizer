@@ -47,7 +47,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
-    wrap_combined_in_file_noop,
+    wrap_combined_in_file_unsupported,
     wrap_in_file_noop,
 )
 
@@ -269,20 +269,7 @@ class Norg(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = staticmethod(wrap_combined_in_file_unsupported)
 
     def __init__(  # noqa: PLR0915
         self,

@@ -59,6 +59,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
+    wrap_combined_in_file_unsupported,
 )
 
 if TYPE_CHECKING:
@@ -367,19 +368,7 @@ class Elixir(metaclass=LanguageCls):
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap Elixir declaration + assignment in a module function."""
-        return Elixir.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = staticmethod(wrap_combined_in_file_unsupported)
 
     def __init__(  # noqa: PLR0915
         self,

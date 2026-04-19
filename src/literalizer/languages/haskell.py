@@ -59,6 +59,7 @@ from literalizer._language import (
     date_scalar_preamble,
     no_data_preamble,
     no_type_hint_preamble,
+    wrap_combined_in_file_unsupported,
 )
 from literalizer._types import Value
 
@@ -1099,19 +1100,7 @@ class Haskell(metaclass=LanguageCls):
             )
         return "module Check where\n" + preamble + "\n" + content
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap Haskell declaration + assignment in a module."""
-        return Haskell.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = staticmethod(wrap_combined_in_file_unsupported)
 
     def __init__(  # noqa: PLR0915
         self,

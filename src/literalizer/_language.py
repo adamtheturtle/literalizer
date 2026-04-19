@@ -961,6 +961,23 @@ def wrap_combined_in_file_noop(
     )
 
 
+@beartype
+def wrap_combined_in_file_unsupported(  # pragma: no cover
+    declaration: str,
+    assignment: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Placeholder for languages that do not support combined declaration
+    plus assignment output.
+
+    :func:`literalizer.literalize` rejects :class:`BothVariableForms` for
+    such languages before this is reached.
+    """
+    del declaration, assignment, variable_name, body_preamble
+    raise NotImplementedError
+
+
 def body_preamble_from_scalars(
     *,
     scalar_body_preamble: dict[type, tuple[str, ...]],

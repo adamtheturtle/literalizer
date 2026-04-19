@@ -52,6 +52,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    wrap_combined_in_file_unsupported,
 )
 from literalizer._types import Value
 
@@ -681,19 +682,7 @@ class PureScript(metaclass=LanguageCls):
         preamble = "\n".join(body_preamble)
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap PureScript declaration + assignment in a module."""
-        return PureScript.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = staticmethod(wrap_combined_in_file_unsupported)
 
     def __init__(  # noqa: PLR0915
         self,
