@@ -854,9 +854,7 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     expression.
 
     Most languages return the target unchanged
-    (:func:`identity_call_target`).  Haskell uses this to convert
-    ``app.client.fetch`` into ``(fetch (client app))`` when using
-    plain record selectors instead of ``OverloadedRecordDot``.
+    (:func:`identity_call_target`).
     """
 
     @staticmethod
