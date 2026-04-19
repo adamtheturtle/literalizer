@@ -2,17 +2,20 @@
 converter.
 """
 
+import re
 import textwrap
 
 import pytest
 
 from literalizer import (
-    ExistingVariable,
     InputFormat,
     NewVariable,
     literalize,
 )
-from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.exceptions import (
+    HeterogeneousScalarCollectionError,
+    IncompatibleFormatsError,
+)
 from literalizer.languages import Python, Rust
 
 PYTHON_ALWAYS_HINTS = Python(
@@ -25,20 +28,6 @@ PYTHON_ALWAYS_HINTS = Python(
 )
 
 
-def test_python_always_type_hints_assignment_no_hint() -> None:
-    """Python ALWAYS hints do not add type hints for assignments."""
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=ExistingVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == "my_var = 42"
-
-
 def test_python_always_type_hints_set_with_colon_in_string() -> None:
     """A set element containing ``": `` is not misidentified as a dict."""
     yaml_string = "!!set\n? 'a\": b'\n"
@@ -49,7 +38,6 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -60,31 +48,11 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
     assert result.code == expected
 
 
-def test_python_always_type_hints_nested_list_in_list() -> None:
-    """Nested collections get recursive type hints, not Any."""
-    result = literalize(
-        source='[true, "hi", [1, 2], null]',
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: tuple[bool | str | tuple[int, ...] | None, ...] = (
-            True,
-            "hi",
-            (1, 2),
-            None,
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_dict_with_list_values() -> None:
-    """Dict with list values infers recursive type hints."""
+def test_python_always_type_hints_dict_with_uniform_list_values() -> None:
+    """Dict whose values are all lists collapses to a single value type
+    (no union), distinct from the mixed-value path covered by the
+    ``dict_with_list_value`` golden.
+    """
     result = literalize(
         source='{"key": [1, 2, 3]}',
         input_format=InputFormat.JSON,
@@ -92,7 +60,6 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -104,7 +71,11 @@ def test_python_always_type_hints_dict_with_list_values() -> None:
 
 
 def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
-    """Ordered dicts in a sequence merge value types into one hint."""
+    """Multiple OrderedDicts in a sequence merge value types into one
+    hint.  OrderedDict value-merging uses a separate code path from
+    plain dict value-merging, so the ``mixed_type_dicts_in_sequence``
+    golden does not cover it.
+    """
     yaml_input = textwrap.dedent(
         text="""\
         ---
@@ -121,7 +92,6 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -142,49 +112,6 @@ RUST_CONST = Rust(
 )
 
 
-def test_rust_const_bytes() -> None:
-    """Rust CONST with bytes uses ``&str`` type."""
-    yaml_input = "!!binary |\n  SGVsbG8="
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "48656c6c6f";'
-
-
-def test_rust_const_date() -> None:
-    """Rust CONST with ISO dates uses ``&str`` type."""
-    result = literalize(
-        source="2024-01-15",
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15";'
-
-
-def test_rust_const_datetime() -> None:
-    """Rust CONST with ISO datetimes uses ``&str`` type."""
-    result = literalize(
-        source="2024-01-15T12:30:00",
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    assert result.code == 'const my_var: &str = "2024-01-15T12:30:00";'
-
-
 def test_rust_const_single_element_tuple() -> None:
     """Rust CONST single-element tuple has trailing comma in type."""
     rust_tuple = Rust(
@@ -201,7 +128,6 @@ def test_rust_const_single_element_tuple() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -222,7 +148,6 @@ def test_rust_const_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -244,7 +169,6 @@ def test_rust_const_empty_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == (
         "const my_var: HashSet<String> = HashSet::<String>::new();"
@@ -260,7 +184,6 @@ def test_rust_const_dict() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -280,7 +203,6 @@ def test_rust_const_empty_dict() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     assert result.code == (
         "const my_var: HashMap<String, String>"
@@ -288,25 +210,19 @@ def test_rust_const_empty_dict() -> None:
     )
 
 
-def test_rust_const_dict_mixed_values() -> None:
-    """Rust CONST with mixed dict values falls back to ``&str``."""
-    result = literalize(
-        source='{"a": 1, "b": "x"}',
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: HashMap<&str, &str> = HashMap::from([
-            ("a", "1"),
-            ("b", "x"),
-        ]);"""
-    )
-    assert result.code == expected
+def test_rust_const_dict_mixed_values_raises() -> None:
+    """Rust CONST raises for dicts with heterogeneous scalar values."""
+    with pytest.raises(
+        expected_exception=HeterogeneousScalarCollectionError,
+    ):
+        literalize(
+            source='{"a": 1, "b": "x"}',
+            input_format=InputFormat.JSON,
+            language=RUST_CONST,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=NewVariable(name="my_var"),
+        )
 
 
 def test_rust_const_btree_set() -> None:
@@ -326,7 +242,6 @@ def test_rust_const_btree_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -355,7 +270,6 @@ def test_rust_const_btree_map() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -375,7 +289,6 @@ def test_rust_const_widened_int_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -396,7 +309,6 @@ def test_rust_const_i128_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -416,7 +328,6 @@ def test_rust_const_nested_list() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -448,8 +359,14 @@ def test_rust_vec_format_type_annotation() -> None:
 
 def test_rust_const_vec_raises() -> None:
     """Rust CONST with vector format raises."""
+    expected_msg = (
+        "Rust CONST requires a constant-expression initializer, "
+        "but the VEC sequence format produces vec![…] which is "
+        "not a constant expression. Use ARRAY or TUPLE instead."
+    )
     with pytest.raises(
-        expected_exception=IncompatibleFormatsError, match="VEC"
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
     ):
         Rust(
             declaration_style=Rust.declaration_styles.CONST,
@@ -459,8 +376,14 @@ def test_rust_const_vec_raises() -> None:
 
 def test_rust_static_vec_raises() -> None:
     """Rust STATIC with vector format raises."""
+    expected_msg = (
+        "Rust STATIC requires a constant-expression initializer, "
+        "but the VEC sequence format produces vec![…] which is "
+        "not a constant expression. Use ARRAY or TUPLE instead."
+    )
     with pytest.raises(
-        expected_exception=IncompatibleFormatsError, match="VEC"
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
     ):
         Rust(
             declaration_style=Rust.declaration_styles.STATIC,

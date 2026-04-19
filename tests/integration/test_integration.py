@@ -15,6 +15,7 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import functools
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -25,7 +26,11 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    HeterogeneousCollectionError,
+    NullInCollectionError,
+    UnrepresentableIntegerError,
+)
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
@@ -186,19 +191,11 @@ def _build_non_default_variants(
 
 
 @beartype
-def _build_default_set_element_type_variants(
-    *,
-    should_coerce_mixed: bool = False,
-) -> Iterable[_Variant]:
+def _build_default_set_element_type_variants() -> Iterable[_Variant]:
     """Build default-set-type variants for languages that support it.
 
     For each language that advertises ``supports_default_set_element_type``,
     create a variant with a non-default value.
-
-    When *should_coerce_mixed* is ``True``, only include languages whose
-    set format has ``coerce_mixed_to_str`` enabled, since overriding
-    ``default_set_element_type`` to a typed key produces invalid code
-    for mixed sets when elements are not coerced.
     """
     # The test value must differ from the language's own default *and* be
     # a valid type name for that language's linter / compiler.
@@ -220,11 +217,6 @@ def _build_default_set_element_type_variants(
         spec = lang_cls(
             default_set_element_type=string_type,
         )
-        if (
-            should_coerce_mixed
-            and not spec.set_format_config.coerce_mixed_to_str
-        ):
-            continue
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_element_type_string",
@@ -608,16 +600,23 @@ def test_golden_file(
     input_path = cases_dir / _case_name / "input.yaml"
     lang_name = lang_cls.__name__
     yaml_string = input_path.read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=_spec(lang_cls=lang_cls),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=_wrap_variable_form(lang_cls=lang_cls),
-        error_on_coercion=False,
-        wrap_in_file=True,
-    )
+    golden_path = input_path.parent / (lang_name + lang_cls.extension)
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=_spec(lang_cls=lang_cls),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=_wrap_variable_form(lang_cls=lang_cls),
+            wrap_in_file=True,
+        )
+    except UnrepresentableIntegerError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} cannot represent integer in this input")
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} cannot represent this heterogeneous input")
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
@@ -625,7 +624,7 @@ def test_golden_file(
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent / (lang_name + lang_cls.extension),
+        fullpath=golden_path,
     )
 
 
@@ -705,22 +704,34 @@ def test_golden_file_combined_variable_forms(
         declaration_style=combined_case.declaration_style,
     )
     yaml_string = input_path.read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
-        wrap_in_file=True,
+    golden_path = input_path.parent / (
+        combined_case.golden_file_name + lang_cls.extension
     )
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=literalizer.BothVariableForms(name="my_data"),
+            wrap_in_file=True,
+        )
+    except UnrepresentableIntegerError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent integer in this input"
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous input"
+        )
     file_regression.check(
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent
-        / (combined_case.golden_file_name + lang_cls.extension),
+        fullpath=golden_path,
     )
 
 
@@ -1304,13 +1315,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_default_set_element_type_variants(), "empty_set", ""),
         (_build_default_set_element_type_variants(), "set", ""),
         (
-            _build_default_set_element_type_variants(
-                should_coerce_mixed=True,
-            ),
-            "mixed_set",
-            "",
-        ),
-        (
             _build_default_sequence_element_type_variants(),
             "empty_sequence",
             "",
@@ -1342,6 +1346,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints, "int_set", ""),
         (type_hints, "empty_set", ""),
         (type_hints, "mixed_number_list", ""),
+        (type_hints, "nested_sequence", ""),
+        (type_hints, "dict_with_list_value", ""),
+        (type_hints, "ordered_map_in_sequence", ""),
         (type_hints_cross, "int_list", ""),
         (type_hints_cross, "int_list_large", ""),
         (type_hints_cross, "pair_sequence", ""),
@@ -1359,6 +1366,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (declaration_style, "scalar_bool", ""),
         (declaration_style, "scalar_string", ""),
         (declaration_style, "scalar_null", ""),
+        (declaration_style, "scalar_date", ""),
+        (declaration_style, "scalar_datetime", ""),
+        (declaration_style, "binary", ""),
         (dict_format, "simple_dict", ""),
         (dict_format, "dict_with_list_value", "_list_val"),
         (dict_entry_style, "simple_dict", ""),
@@ -1417,8 +1427,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "float_list", ""),
     ]
     # Rust CONST/STATIC with dict cases produce HashMap::from([…])
-    # which is not a constant expression, so skip those.
+    # which is not a constant expression, so skip those.  Dart CONST with
+    # dates / datetimes uses DateTime.parse(…), which is also not a const
+    # expression.
     _const_static_suffixes = ("_const", "_static")
+    _dart_non_const_cases = {"scalar_date", "scalar_datetime"}
 
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
@@ -1433,6 +1446,11 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variant.lang_cls.__name__ == "Rust"
                 and variant.name.endswith(_const_static_suffixes)
                 and "dict" in case_dir_name
+            )
+            and not (
+                variant.lang_cls.__name__ == "Dart"
+                and variant.name.endswith("_const")
+                and case_dir_name in _dart_non_const_cases
             )
         )
     cases.extend(_build_modifier_variant_cases())
@@ -1458,6 +1476,9 @@ def test_format_variant_golden_file(
     case_dir = cases_dir / variant_case.case_dir_name
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
+    golden_path = case_dir / (
+        variant_case.variant_name + variant.spec.extension
+    )
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -1466,16 +1487,17 @@ def test_format_variant_golden_file(
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=variant_case.variable_form,
-            error_on_coercion=False,
             wrap_in_file=True,
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip("Format cannot represent this heterogeneous input")
     file_regression.check(
         contents=result.code + "\n",
         extension=variant.spec.extension,
-        fullpath=case_dir
-        / (variant_case.variant_name + variant.spec.extension),
+        fullpath=golden_path,
     )
 
 
@@ -1555,7 +1577,6 @@ def test_line_ending_combined_variable_forms(
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
     file_regression.check(
@@ -1615,7 +1636,8 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
 
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
-        path.relative_to(cases_dir) for path in actual - expected
+        os.path.relpath(path=path, start=cases_dir)
+        for path in actual - expected
     )
     assert not dead_files
 

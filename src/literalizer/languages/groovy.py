@@ -175,7 +175,7 @@ class Groovy(metaclass=LanguageCls):
                 empty_template="[] as Set<{type}>",
                 preamble_lines=(),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

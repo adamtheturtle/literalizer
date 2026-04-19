@@ -210,7 +210,7 @@ class Erlang(metaclass=LanguageCls):
             empty_set="sets:from_list([])",
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):

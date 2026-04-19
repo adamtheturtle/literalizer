@@ -394,7 +394,7 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new HashSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
         SORTED_SET = enum.member(
@@ -404,7 +404,7 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new SortedSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="new SortedSet<{type_name}> {{",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

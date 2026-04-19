@@ -125,18 +125,16 @@ def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
     All-integer type lists widen to the largest integer; otherwise,
-    mixed types fall back to ``"&str"``.
+    returns the single type present.  Mixed-family inputs never reach
+    this function because
+    :func:`~literalizer._checks.check_data` raises for them.
 
     Callers must pass a non-empty sequence.
     """
     unique = list(dict.fromkeys(types))
-    match unique:
-        case [single]:
-            return single
-        case _ if all(t in _INTEGER_TYPES for t in unique):
-            return max(unique, key=_INTEGER_TYPES.index)
-        case _:
-            return "&str"
+    if len(unique) == 1:
+        return unique[0]
+    return max(unique, key=_INTEGER_TYPES.index)
 
 
 @beartype
@@ -175,11 +173,7 @@ def _rust_homogeneous_element_type(
     infer: Callable[[Value], str],
     default_type: str,
 ) -> str:
-    """Return the element type for a homogeneous Rust collection.
-
-    If elements have mixed types, returns ``"&str"`` because the
-    formatter coerces mixed elements to strings.
-    """
+    """Return the element type for a homogeneous Rust collection."""
     if not elements:
         return default_type
     types = [infer(element) for element in elements]
@@ -402,12 +396,10 @@ class Rust(metaclass=LanguageCls):
 
             * ``sequence_formats.VEC`` — ``vec![]`` macro,
               e.g. ``vec![1, 2, 3]``.  Because ``Vec`` is
-              homogeneous, mixed-type sequences have all elements
-              coerced to strings.
+              homogeneous, heterogeneous-scalar inputs raise.
             * ``sequence_formats.ARRAY`` — fixed-size array literal,
               e.g. ``[1, 2, 3]``.  Because Rust arrays are
-              homogeneous, mixed-type sequences have all elements
-              coerced to strings.
+              homogeneous, heterogeneous-scalar inputs raise.
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
 
@@ -548,7 +540,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="HashSet::<{type}>::new()",
                 preamble_lines=("use std::collections::HashSet;",),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
         BTREE_SET = enum.member(
@@ -558,7 +550,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="BTreeSet::<{type}>::new()",
                 preamble_lines=("use std::collections::BTreeSet;",),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 

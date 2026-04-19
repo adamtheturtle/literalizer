@@ -39,7 +39,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    make_overflow_fallback_formatter,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
     format_string_backslash_dollar_single,
@@ -67,6 +70,18 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+
+@beartype
+def _format_dart_bigint_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Dart
+    ``BigInt.parse`` expression.
+
+    Dart's compile-time integer literals are limited to signed 64-bit;
+    ``BigInt.parse("…")`` yields an arbitrary-precision integer at
+    runtime.
+    """
+    return f'BigInt.parse("{value}")'
 
 
 @beartype
@@ -298,7 +313,7 @@ class Dart(metaclass=LanguageCls):
                 empty_template="<{type}>{{}}",
                 preamble_lines=(),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 
@@ -697,7 +712,10 @@ class Dart(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format
+        return make_overflow_fallback_formatter(
+            base=self.integer_format,
+            fallback=_format_dart_bigint_literal,
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

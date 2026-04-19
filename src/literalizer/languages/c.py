@@ -34,6 +34,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
     make_long_suffix_formatter,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -58,6 +59,19 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+
+@beartype
+def _format_c_ull_literal(value: int) -> str:
+    """Format a value above ``LLONG_MAX`` as an unsigned literal.
+
+    C signed-integer literals are rejected by the compiler when they
+    exceed ``LLONG_MAX``; the ``ULL`` suffix selects
+    ``unsigned long long``, which can hold values up to
+    ``ULLONG_MAX``.  Only reached for values above the signed 64-bit
+    range; values below are outside ``unsigned long long`` too.
+    """
+    return f"{value}ULL"
 
 
 @beartype
@@ -183,7 +197,7 @@ class C(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -479,7 +493,7 @@ class C(metaclass=LanguageCls):
             empty_set=self.set_format.value.empty_set,
             preamble_lines=self.set_format.value.preamble_lines,
             set_opener_template=self.set_format.value.set_opener_template,
-            coerce_mixed_to_str=self.set_format.value.coerce_mixed_to_str,
+            supports_heterogeneity=self.set_format.value.supports_heterogeneity,
         )
 
     @cached_property
@@ -530,9 +544,15 @@ class C(metaclass=LanguageCls):
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
-        if suffix_is_auto:
-            return make_long_suffix_formatter(base=self.integer_format)
-        return self.integer_format
+        base: Callable[[int], str] = (
+            make_long_suffix_formatter(base=self.integer_format)
+            if suffix_is_auto
+            else self.integer_format
+        )
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=_format_c_ull_literal,
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

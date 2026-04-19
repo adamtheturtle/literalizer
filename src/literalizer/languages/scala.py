@@ -42,6 +42,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
@@ -70,6 +71,17 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+
+@beartype
+def _format_scala_bigint_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Scala
+    ``BigInt(...)`` expression.
+
+    Scala's ``Long`` is signed 64-bit; values outside that range must
+    use ``BigInt``, which is available in the default scope.
+    """
+    return f'BigInt("{value}")'
 
 
 @beartype
@@ -309,7 +321,7 @@ class Scala(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="TreeSet("),
@@ -317,7 +329,7 @@ class Scala(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -698,13 +710,16 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return make_overflow_suffix_formatter(
-            base=self.integer_format.get_formatter(
-                numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=make_overflow_suffix_formatter(
+                base=self.integer_format.get_formatter(
+                    numeric_separator=self.numeric_separator,
+                ),
+                min_value=-(2**31),
+                max_value=2**31 - 1,
+                suffix="L",
             ),
-            min_value=-(2**31),
-            max_value=2**31 - 1,
-            suffix="L",
+            fallback=_format_scala_bigint_literal,
         )
 
     @cached_property

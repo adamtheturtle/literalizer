@@ -41,11 +41,13 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_underscore,
     make_long_suffix_formatter,
+    make_overflow_fallback_formatter,
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
@@ -67,7 +69,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
@@ -119,6 +120,27 @@ def _java_call_stub(
     )
     lines.append(f"static {root_type} {root} = new {root_type}();")
     return tuple(lines)
+
+
+@beartype
+def _format_java_biginteger_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Java
+    ``new BigInteger(...)`` expression.
+
+    Java's ``long`` is signed 64-bit; values outside that range must
+    use ``java.math.BigInteger``.
+    """
+    return f'new BigInteger("{value}")'
+
+
+@beartype
+def _java_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``import java.math.BigInteger;`` if *data* contains a
+    very-large integer.
+    """
+    if data_has_out_of_range_int(data=data):
+        return ("import java.math.BigInteger;",)
+    return ()
 
 
 @beartype
@@ -585,7 +607,7 @@ class Java(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
@@ -596,7 +618,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.TreeSet;",
             ),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -939,7 +961,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
-        return no_data_preamble
+        return _java_biginteger_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -1047,13 +1069,19 @@ class Java(metaclass=LanguageCls):
         base_int_formatter = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
-        if self._suffix_is_auto:
-            return make_long_suffix_formatter(base=base_int_formatter)
-        return make_overflow_suffix_formatter(
-            base=base_int_formatter,
-            min_value=-(2**31),
-            max_value=2**31 - 1,
-            suffix="L",
+        suffixed: Callable[[int], str] = (
+            make_long_suffix_formatter(base=base_int_formatter)
+            if self._suffix_is_auto
+            else make_overflow_suffix_formatter(
+                base=base_int_formatter,
+                min_value=-(2**31),
+                max_value=2**31 - 1,
+                suffix="L",
+            )
+        )
+        return make_overflow_fallback_formatter(
+            base=suffixed,
+            fallback=_format_java_biginteger_literal,
         )
 
     @cached_property

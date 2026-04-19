@@ -29,6 +29,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     CallStyle,
@@ -205,7 +209,7 @@ class SystemVerilog(metaclass=LanguageCls):
             empty_set="'{}",
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -526,7 +530,12 @@ class SystemVerilog(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format
+        return make_overflow_fallback_formatter(
+            base=self.integer_format,
+            fallback=raise_for_unrepresentable_int(
+                language_name="SystemVerilog",
+            ),
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

@@ -37,6 +37,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+)
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     CallStyle,
@@ -60,6 +63,18 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+
+@beartype
+def _format_vb_ulong_literal(value: int) -> str:
+    """Format a value above signed 64-bit range as a VB.NET ``UL``
+    unsigned 64-bit literal.
+
+    The default VB.NET integer type is signed 64-bit; values above
+    that range need the ``UL`` suffix to select the unsigned 64-bit
+    type, which covers up to 2^64 - 1.
+    """
+    return f"{value}UL"
 
 
 @beartype
@@ -204,7 +219,7 @@ class VisualBasic(metaclass=LanguageCls):
                 empty_template="New HashSet(Of {type})()",
                 preamble_lines=(),
                 set_opener_template=("New HashSet(Of {type_name}) From {{"),
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 
@@ -438,7 +453,10 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
-        return str
+        return make_overflow_fallback_formatter(
+            base=str,
+            fallback=_format_vb_ulong_literal,
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

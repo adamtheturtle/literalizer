@@ -43,6 +43,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
     make_int64_cast_formatter,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import DictType, ListType
@@ -70,6 +71,19 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+
+@beartype
+def _format_go_uint64_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Go ``uint64``
+    typed conversion.
+
+    A Go integer constant without an explicit type can hold arbitrary
+    size, but its default promotion to ``int`` overflows.  Wrapping in
+    ``uint64(...)`` forces a typed conversion and accepts values up to
+    ``math.MaxUint64``.
+    """
+    return f"uint64({value})"
 
 
 @beartype
@@ -309,7 +323,7 @@ class Go(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 
@@ -701,9 +715,15 @@ class Go(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
-        if suffix_is_auto:
-            return make_int64_cast_formatter(base=base_int_formatter)
-        return base_int_formatter
+        base: Callable[[int], str] = (
+            make_int64_cast_formatter(base=base_int_formatter)
+            if suffix_is_auto
+            else base_int_formatter
+        )
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=_format_go_uint64_literal,
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

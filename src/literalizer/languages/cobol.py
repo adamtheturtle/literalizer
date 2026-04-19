@@ -30,6 +30,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._language import (
     CallStyle,
     CommentConfig,
@@ -317,7 +321,7 @@ class Cobol(metaclass=LanguageCls):
             empty_set="05 FILLER PIC X(1) VALUE SPACES.",
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -519,7 +523,10 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
-        return str
+        return make_overflow_fallback_formatter(
+            base=str,
+            fallback=raise_for_unrepresentable_int(language_name="Cobol"),
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

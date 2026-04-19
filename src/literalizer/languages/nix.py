@@ -31,6 +31,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
 )
@@ -75,6 +78,19 @@ _NIX_KEYWORDS: frozenset[str] = frozenset(
         "with",
     }
 )
+
+
+@beartype
+def _format_nix_fromjson_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Nix
+    ``builtins.fromJSON`` expression.
+
+    Nix integers are 64-bit signed; values outside that range must be
+    materialized at evaluation time.  ``builtins.fromJSON "…"`` accepts
+    arbitrary-precision JSON integer literals and passes
+    ``nix-instantiate --parse``.
+    """
+    return f'(builtins.fromJSON "{value}")'
 
 
 @beartype
@@ -220,7 +236,7 @@ class Nix(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -408,7 +424,10 @@ class Nix(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
-        return str
+        return make_overflow_fallback_formatter(
+            base=str,
+            fallback=_format_nix_fromjson_literal,
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

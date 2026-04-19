@@ -622,7 +622,7 @@ class Python(metaclass=LanguageCls):
             empty_set="set()",
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
         FROZENSET = SetFormatConfig(
             set_open=fixed_set_open(open_str="frozenset({"),
@@ -630,7 +630,7 @@ class Python(metaclass=LanguageCls):
             empty_set="frozenset()",
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
         @property

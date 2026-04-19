@@ -54,6 +54,7 @@ optional-dependencies.dev = [
     "pyright==1.1.408",
     "pyroma==5.0.1",
     "pytest==9.0.3",
+    "pytest-beartype-tests",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
@@ -100,6 +101,9 @@ packages.find.where = [
 #
 # Code to match this is in ``conf.py``.
 version_scheme = "post-release"
+
+[tool.uv]
+sources.pytest-beartype-tests = { git = "https://github.com/adamtheturtle/pytest-beartype-tests.git", rev = "bc81d99" }
 
 [tool.ruff]
 line-length = 79
@@ -279,7 +283,7 @@ ignore = [
 ]
 
 [tool.deptry]
-pep621_dev_dependency_groups = [
+optional_dependencies_dev_groups = [
     "dev",
     "release",
 ]
@@ -365,7 +369,6 @@ linewrap-full-docstring = true
 ignore_names = [
     # pytest configuration
     "pytest_collect_file",
-    "pytest_collection_modifyitems",
     "pytest_plugins",
     # pytest fixtures - we name fixtures like this for this purpose
     "fixture_*",

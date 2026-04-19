@@ -38,6 +38,8 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
@@ -335,7 +337,7 @@ class Sml(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -679,8 +681,11 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=raise_for_unrepresentable_int(language_name="SML"),
         )
 
     @cached_property

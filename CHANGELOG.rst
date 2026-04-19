@@ -13,6 +13,19 @@ Next
   ``protected``/``static``/``final``), C# (same plus ``readonly`` and
   ``const``), and C++ (``static``/``const``).  Other languages silently
   ignore modifiers they cannot express.
+- Removed automatic coercion of heterogeneous data to strings.  The
+  ``error_on_coercion`` parameter has been removed from ``literalize``;
+  ``literalize`` now always raises a subclass of
+  ``HeterogeneousCollectionError`` when the data cannot be represented
+  in the target language's collection formats.
+- Replaced ``HeterogeneousCoercionError`` with precise exceptions:
+  ``HeterogeneousCollectionError`` (base class),
+  ``HeterogeneousScalarCollectionError``,
+  ``HeterogeneousSiblingListsError``, ``MixedDictValuesError``,
+  ``MixedListValuesError``, ``MixedDictShapesError``, and
+  ``HeterogeneousSetError``.
+- Renamed ``SetFormatConfig.coerce_mixed_to_str`` to
+  ``SetFormatConfig.supports_heterogeneity`` (with inverted semantics).
 
 2026.04.18
 ----------

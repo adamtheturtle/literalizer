@@ -38,6 +38,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar_single,
@@ -64,6 +65,14 @@ from literalizer._language import (
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+
+@beartype
+def _format_v_u64_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a V ``u64``
+    typed conversion.
+    """
+    return f"u64({value})"
 
 
 @beartype
@@ -149,7 +158,7 @@ class V(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -479,8 +488,11 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=_format_v_u64_literal,
         )
 
     @cached_property
