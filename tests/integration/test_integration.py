@@ -95,8 +95,8 @@ def test_check_golden_mismatch_delegates(
 ) -> None:
     """``_check_golden`` delegates to ``file_regression.check`` on miss.
 
-    Production goldens all match in CI, so the fallback branch is
-    otherwise unexercised.
+    Every golden file matches in CI, so nothing else reaches the
+    fallback branch.
     """
     golden = tmp_path / "golden.txt"
     golden.write_text(data="expected\n")
