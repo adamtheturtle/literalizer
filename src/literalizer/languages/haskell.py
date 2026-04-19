@@ -58,11 +58,23 @@ from literalizer._language import (
     TrailingCommaConfig,
     date_scalar_preamble,
     identity_call_target,
-    no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _haskell_call_preamble_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Emit ``OverloadedRecordDot`` when the call target contains dots."""
+    if "." in name:
+        return ("{-# LANGUAGE OverloadedRecordDot #-}",)
+    return ()
 
 
 def _build_haskell_call_stub(
@@ -1170,5 +1182,5 @@ class Haskell(metaclass=LanguageCls):
         )
         self.format_call_preamble_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
+        ] = _haskell_call_preamble_stub
         self.format_call_target: Callable[[str], str] = identity_call_target

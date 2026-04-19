@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 module Check where
 data Val = HFloat Double | HStr String | HList [Val]
 instance Num Val where
