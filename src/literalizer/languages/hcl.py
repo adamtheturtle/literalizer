@@ -30,8 +30,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_backslash_hcl
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -40,6 +39,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -249,7 +249,7 @@ class Hcl(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Hcl call style options."""
 
-        POSITIONAL = CallStyleConfig(kind=CallStyleKind.POSITIONAL)
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -413,7 +413,7 @@ class Hcl(metaclass=LanguageCls):
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style = call_style
-        self.call_style_config: CallStyleConfig | None = call_style.value
+        self.call_style_config: CallStyle | None = call_style.value
         self.statement_terminator = ""
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]

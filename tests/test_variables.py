@@ -691,7 +691,7 @@ def test_rust_const_widened_int_array() -> None:
         text="""\
         const my_var: [i64; 2] = [
             1,
-            2147483648,
+            2147483648i64,
         ];"""
     )
     assert result.code == expected
@@ -710,7 +710,7 @@ def test_rust_const_i128_array() -> None:
     expected = textwrap.dedent(
         text="""\
         const my_var: [i128; 1] = [
-            9223372036854775808,
+            9223372036854775808i128,
         ];"""
     )
     assert result.code == expected

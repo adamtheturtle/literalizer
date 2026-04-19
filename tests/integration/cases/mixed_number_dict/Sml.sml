@@ -1,7 +1,7 @@
 structure Check = struct
 
 datatype val_t =
-    SInt of int
+    SInt of LargeInt.int
   | SReal of real
   | SStr of string
   | SMap of (string * val_t) list

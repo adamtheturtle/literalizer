@@ -10,8 +10,6 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import (
     BothVariableForms,
-    CallStyleConfig,
-    CallStyleKind,
     InputFormat,
     NewVariable,
     literalize,
@@ -250,7 +248,7 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         type(fval_t) :: cfg
         cfg = fmap([fval_t :: &
             fentry('host', fstr('it''s here')), &  ! a comment
-            fentry('port', fint(80)) &  ! another
+            fentry('port', fint(80_int64)) &  ! another
         ])""",
     )
     assert result.code == expected
@@ -403,31 +401,6 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
             input_format=InputFormat.JSON,
             language=Python(),
             variable_form=BothVariableForms(name="x"),
-        )
-
-
-def test_literalize_call_missing_keyword_separator_raises() -> None:
-    """Literalize_call raises ValueError for keyword style without
-    separator.
-    """
-
-    class BadLang(Python):
-        """Python variant with missing keyword_separator."""
-
-    lang = BadLang()
-    lang.call_style_config = CallStyleConfig(
-        kind=CallStyleKind.KEYWORD,
-    )
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^keyword_separator must be set for 'keyword' call style$",
-    ):
-        literalize_call(
-            source="- [1]",
-            input_format=InputFormat.YAML,
-            language=lang,
-            target_function="f",
-            parameter_names=["x"],
         )
 
 

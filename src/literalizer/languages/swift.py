@@ -42,14 +42,14 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
-    CallStyleConfig,
-    CallStyleKind,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -580,10 +580,7 @@ class Swift(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Swift call style options."""
 
-        KEYWORD = CallStyleConfig(
-            kind=CallStyleKind.KEYWORD,
-            keyword_separator=": ",
-        )
+        KEYWORD = KeywordCallStyle(separator=": ")
 
     call_styles = CallStyles
 
@@ -761,7 +758,7 @@ class Swift(metaclass=LanguageCls):
         self.type_hint_collection_preamble_lines = no_type_hint_preamble
         self.special_float_preamble: tuple[str, ...] = ()
         self.call_style = call_style
-        self.call_style_config: CallStyleConfig | None = call_style.value
+        self.call_style_config: CallStyle | None = call_style.value
         self.statement_terminator = ";"
         self.format_call_stub: Callable[
             [str, Sequence[str], StubReturn], tuple[str, ...]

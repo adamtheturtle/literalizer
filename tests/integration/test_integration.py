@@ -576,11 +576,18 @@ class _CallCaseConfig:
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
     per_element: bool
-    call_style_kind: literalizer.CallStyleKind | None = None
+    call_style_type: type[literalizer.CallStyle] | None = None
     language_overrides: dict[str, object] = dataclasses.field(
         default_factory=dict[str, object],
     )
     language_filter: Callable[[literalizer.LanguageCls], bool] | None = None
+
+
+_CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
+    ("keyword", literalizer.KeywordCallStyle),
+    ("positional", literalizer.PositionalCallStyle),
+    ("object", literalizer.ObjectCallStyle),
+]
 
 
 _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
@@ -662,15 +669,15 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ),
     *[
         _CallCaseConfig(
-            case_dir_name=f"call_{kind.value}",
+            case_dir_name=f"call_{name}",
             target_function="throttler.check",
             parameter_names=["user_id", "ts"],
             call_transform=lambda c: f"emit({c})",
             transform_stub_names=["emit"],
             per_element=True,
-            call_style_kind=kind,
+            call_style_type=cls,
         )
-        for kind in literalizer.CallStyleKind
+        for name, cls in _CALL_STYLE_VARIANTS
     ],
 ]
 
@@ -1243,6 +1250,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (declaration_style, "simple_dict", ""),
         (declaration_style, "empty_list", ""),
         (declaration_style, "scalar_int", ""),
+        (declaration_style, "scalar_int_large", ""),
         (declaration_style, "scalar_float", ""),
         (declaration_style, "scalar_bool", ""),
         (declaration_style, "scalar_string", ""),
@@ -1578,17 +1586,19 @@ def _discover_call_cases() -> list[_CallCase]:
                 and not config.language_filter(lang_cls)
             ):
                 continue
-            if config.call_style_kind is not None:
+            if config.call_style_type is not None:
                 # Only include languages that have this as a
                 # non-default style.
                 styles = list(lang_cls.CallStyles)
                 matching = [
-                    s for s in styles if s.value.kind == config.call_style_kind
+                    s
+                    for s in styles
+                    if isinstance(s.value, config.call_style_type)
                 ]
                 if not matching:
                     continue
                 default_style = styles[0]
-                if default_style.value.kind == config.call_style_kind:
+                if isinstance(default_style.value, config.call_style_type):
                     continue
             cases.append(_CallCase(config=config, lang_cls=lang_cls))
     return cases
@@ -1613,11 +1623,11 @@ def test_call_golden_file(
     config = call_case.config
     lang_cls = call_case.lang_cls
     kwargs: dict[str, object] = dict(config.language_overrides)
-    if config.call_style_kind is not None:
+    if config.call_style_type is not None:
         style = next(
             s
             for s in lang_cls.CallStyles
-            if s.value.kind == config.call_style_kind
+            if isinstance(s.value, config.call_style_type)
         )
         kwargs["call_style"] = style
     spec = _lax_spec(lang_cls=lang_cls, **kwargs)
