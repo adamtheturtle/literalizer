@@ -973,9 +973,10 @@ def _get_yaml(*, safe: bool) -> YAML:
     """Return a cached ``YAML`` instance.
 
     Constructing ``YAML()`` globs the package directory for plug-ins
-    (~50 µs); caching avoids that cost on every parse.  ``ruamel``
-    parsers are not safe for concurrent use within a single instance,
-    so ``literalize`` is not safe to call from multiple threads.
+    on every call; caching avoids that cost on every parse.
+    ``ruamel`` parsers are not safe for concurrent use within a single
+    instance, so ``literalize`` is not safe to call from multiple
+    threads.
     """
     return YAML(typ="safe") if safe else YAML()
 
