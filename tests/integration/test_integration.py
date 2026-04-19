@@ -881,6 +881,51 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_string_format_cross_variants(
+    *,
+    other_kwarg: str,
+    other_tag: str,
+    get_other_default: Callable[[literalizer.Language], object],
+    get_other_formats: Callable[[literalizer.Language], type[enum.Enum]],
+) -> list[_Variant]:
+    """Build cross-product variants of ``string_format`` and another axis.
+
+    For every language, pair every non-default ``string_format`` with
+    every non-default value of the other axis.  Covers code paths where
+    the chosen ``string_format`` interacts with another formatter axis
+    (e.g. the plain-ISO date/datetime fallback that only fires when both
+    ``string_format`` and the date/datetime format are non-default).
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _SORTED_LANGUAGES:
+        spec = _spec(lang_cls=lang_cls)
+        default_string = spec.string_format
+        default_other = get_other_default(spec)
+        lang_name = lang_cls.__name__
+        for sf in spec.string_formats:
+            if sf is default_string:
+                continue
+            for of in get_other_formats(spec):
+                if of is default_other:
+                    continue
+                variants.append(
+                    _Variant(
+                        name=(
+                            f"{lang_name}"
+                            f"_string_{sf.name.lower()}"
+                            f"_{other_tag}_{of.name.lower()}"
+                        ),
+                        spec=lang_cls(
+                            string_format=sf,
+                            **{other_kwarg: of},
+                        ),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
 def _build_type_hints_cross_variants() -> list[_Variant]:
     """Build cross-product variants: each non-default type-hint format
     combined with each non-default value of another format axis.
@@ -1106,6 +1151,18 @@ def _build_variant_cases() -> list[_VariantCase]:
     )
 
     type_hints_cross = _build_type_hints_cross_variants()
+    string_format_date_cross = _build_string_format_cross_variants(
+        other_kwarg="date_format",
+        other_tag="date",
+        get_other_default=lambda s: s.date_format,
+        get_other_formats=lambda s: s.date_formats,
+    )
+    string_format_datetime_cross = _build_string_format_cross_variants(
+        other_kwarg="datetime_format",
+        other_tag="dt",
+        get_other_default=lambda s: s.datetime_format,
+        get_other_formats=lambda s: s.datetime_formats,
+    )
 
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
@@ -1208,6 +1265,8 @@ def _build_variant_cases() -> list[_VariantCase]:
         (string_format, "string_with_backslash", ""),
         (string_format, "simple_dict", "_dict"),
         (string_format, "binary", "_binary"),
+        (string_format_date_cross, "scalar_date", ""),
+        (string_format_datetime_cross, "scalar_datetime", "_dt"),
         (bytes_format, "binary", ""),
         (trailing_comma, "simple_sequence", ""),
         (line_ending, "simple_sequence", ""),
