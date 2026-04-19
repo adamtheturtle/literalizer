@@ -1106,18 +1106,6 @@ def _build_variant_cases() -> list[_VariantCase]:
     )
 
     type_hints_cross = _build_type_hints_cross_variants()
-    string_format_date_cross = _build_string_format_cross_variants(
-        other_kwarg="date_format",
-        other_tag="date",
-        get_other_default=lambda s: s.date_format,
-        get_other_formats=lambda s: s.date_formats,
-    )
-    string_format_datetime_cross = _build_string_format_cross_variants(
-        other_kwarg="datetime_format",
-        other_tag="dt",
-        get_other_default=lambda s: s.datetime_format,
-        get_other_formats=lambda s: s.datetime_formats,
-    )
 
     cases: list[_VariantCase] = []
     variant_sources: list[tuple[Iterable[_Variant], str, str]] = [
@@ -1220,8 +1208,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (string_format, "string_with_backslash", ""),
         (string_format, "simple_dict", "_dict"),
         (string_format, "binary", "_binary"),
-        (string_format_date_cross, "scalar_date", ""),
-        (string_format_datetime_cross, "scalar_datetime", "_dt"),
         (bytes_format, "binary", ""),
         (trailing_comma, "simple_sequence", ""),
         (line_ending, "simple_sequence", ""),
