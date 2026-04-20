@@ -1,38 +1,19 @@
-"""Core conversion logic: formatting values and parsing input formats."""
+"""Core conversion logic: formatting values and entry points."""
 
 import dataclasses
 import datetime
-import enum
-import functools
-import json
-import math
 from collections.abc import Callable, Sequence
-from io import StringIO
-from typing import Any, assert_never, cast
+from typing import assert_never, cast
 
-import pyjson5
-import tomlkit
 from beartype import BeartypeConf, beartype
-from ruamel.yaml import YAML
-from ruamel.yaml.comments import (
-    CommentedMap,
-    CommentedOrderedMap,
-    CommentedSeq,
-    CommentedSet,
-)
 from ruamel.yaml.compat import ordereddict
-from ruamel.yaml.error import YAMLError
-from tomlkit.exceptions import TOMLKitError
 
-from literalizer._checks import check_data, scalar_type_bucket
-from literalizer._comments import (
-    CollectionComments,
-    ElementComments,
-    apply_collection_comments,
-    extract_toml_comments,
-    extract_yaml_comments,
-    literalize_yaml_scalar,
-    prepend_collection_comments,
+from literalizer._checks import check_data
+from literalizer._comments import prepend_collection_comments
+from literalizer._comments_resolve import (
+    ResolvedComments,
+    resolve_toml_comments,
+    resolve_yaml_comments,
 )
 from literalizer._formatters.type_inference import (
     DictType,
@@ -45,24 +26,13 @@ from literalizer._language import (
     PositionalCallStyle,
 )
 from literalizer._modifiers import DeclarationModifier
+from literalizer._parsing import InputFormat, parse_input
+from literalizer._preamble import compute_preamble
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
-    JSON5ParseError,
-    JSONParseError,
     PerElementNotListError,
-    TOMLParseError,
     UnsupportedCallStyleError,
-    YAMLParseError,
 )
-
-
-class InputFormat(enum.Enum):
-    """Supported input serialization formats."""
-
-    JSON = enum.auto()
-    JSON5 = enum.auto()
-    YAML = enum.auto()
-    TOML = enum.auto()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -168,184 +138,6 @@ class BothVariableForms:
 
 
 VariableForm = NewVariable | ExistingVariable | BothVariableForms
-
-
-@beartype
-def _collect_value_types(*, data: Value) -> frozenset[type]:
-    """Return the set of Python types present in *data*."""
-    match data:
-        case ordereddict():
-            child_types: frozenset[type] = frozenset()
-            for v in data.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                child_types = child_types | _collect_value_types(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return frozenset({ordereddict, str}) | child_types
-        case dict():
-            child_types = frozenset()
-            for v in data.values():
-                child_types = child_types | _collect_value_types(data=v)
-            return frozenset({dict, str}) | child_types
-        case set():
-            scalar_types: frozenset[type] = frozenset(
-                t
-                for v in data
-                if (t := _preamble_scalar_type(value=v)) is not None
-            )
-            return frozenset({set}) | scalar_types
-        case list():
-            child_types = frozenset()
-            for v in data:
-                child_types = child_types | _collect_value_types(data=v)
-            return frozenset({list}) | child_types
-        case _:
-            result = _preamble_scalar_type(value=data)
-            return frozenset({result}) if result is not None else frozenset()
-
-
-@beartype
-def _walk_empty_collections(*, val: Value, result: set[type]) -> None:
-    """Walk *val* and add empty collection types to *result*."""
-    match val:
-        case ordereddict() | dict():
-            if not val:
-                result.add(dict)
-            else:
-                for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                    _walk_empty_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
-        case set():
-            if not val:
-                result.add(set)
-        case list():
-            if not val:
-                result.add(list)
-            else:
-                for v in val:
-                    _walk_empty_collections(val=v, result=result)
-        case _:
-            pass
-
-
-@beartype
-def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
-    """Return the set of collection types that have empty instances."""
-    result: set[type] = set()
-    _walk_empty_collections(val=data, result=result)
-    return frozenset(result)
-
-
-@beartype
-def _preamble_scalar_type(*, value: Value) -> type | None:
-    """Return the preamble-relevant type for a scalar.
-
-    Like :func:`scalar_type_bucket` but distinguishes
-    ``datetime.datetime`` from ``datetime.date`` (they need different
-    preamble lines).
-    """
-    match value:
-        case datetime.datetime():
-            return datetime.datetime
-        case datetime.date():
-            return datetime.date
-        case _:
-            return scalar_type_bucket(value=value)
-
-
-@beartype
-def _collection_preamble(
-    *,
-    types: frozenset[type],
-    language: Language,
-) -> tuple[str, ...]:
-    """Return collection-config preamble lines for present types."""
-    lines: list[str] = []
-    if dict in types:
-        lines.extend(language.dict_format_config.preamble_lines)
-    if set in types:
-        lines.extend(language.set_format_config.preamble_lines)
-    if list in types:
-        lines.extend(language.sequence_format_config.preamble_lines)
-    if ordereddict in types:
-        lines.extend(language.ordered_map_format_config.preamble_lines)
-    return tuple(lines)
-
-
-@beartype
-def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
-    """Remove duplicates from *lines* preserving insertion order."""
-    seen: set[str] = set()
-    result: list[str] = []
-    for line in lines:
-        if line not in seen:
-            seen.add(line)
-            result.append(line)
-    return tuple(result)
-
-
-@beartype
-def _has_special_float(*, data: Value) -> bool:
-    """Return ``True`` if *data* contains any special float value
-    (inf, -inf, or nan).
-    """
-    match data:
-        case float():
-            return math.isinf(data) or math.isnan(data)
-        case dict():
-            return any(_has_special_float(data=v) for v in data.values())
-        case list() | set():
-            return any(_has_special_float(data=v) for v in data)
-        case _:
-            return False
-
-
-@dataclasses.dataclass(frozen=True)
-class _PreambleResult:
-    """Header and body preamble lines."""
-
-    header: tuple[str, ...]
-    body: tuple[str, ...]
-
-
-@beartype
-def _compute_preamble(
-    *,
-    data: Value,
-    language: Language,
-    has_variable_declaration: bool,
-) -> _PreambleResult:
-    """Compute preamble lines from the data types present and the
-    language configuration.
-    """
-    types = _collect_value_types(data=data)
-
-    scalar = tuple(
-        line
-        for scalar_type, preamble in language.scalar_preamble.items()
-        if scalar_type in types
-        for line in preamble
-    )
-    special_float = (
-        language.special_float_preamble
-        if float in types and _has_special_float(data=data)
-        else ()
-    )
-    collection = _collection_preamble(types=types, language=language)
-    empty_collection_types: frozenset[type] = (
-        _collect_empty_collection_types(data=data)
-        if has_variable_declaration and types & {dict, list, set, ordereddict}
-        else frozenset()
-    )
-    type_hint = (
-        language.type_hint_collection_preamble_lines(empty_collection_types)
-        if empty_collection_types
-        else ()
-    )
-    body = language.compute_body_preamble(types, data)
-    return _PreambleResult(
-        header=_deduplicate(
-            lines=scalar + special_float + collection + type_hint,
-        )
-        + tuple(language.static_body_preamble),
-        body=body,
-    )
 
 
 @beartype
@@ -647,96 +439,6 @@ def _wrap_body(
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
-@beartype
-def _unwrap_yaml_scalar(*, value: object) -> object:
-    """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
-
-    The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
-    ``ScalarFloat``, ``LiteralScalarString``, ``TimeStamp``, ...) that
-    preserve source-style metadata.  The literalizer's type-inference
-    paths compare ``type(value)`` against the plain Python classes,
-    so these wrappers are demoted to
-    ``int``/``float``/``str``/``datetime`` before they reach those code
-    paths.  Built-in constructors short-circuit when given an
-    already-plain instance, so this is essentially free for unwrapped
-    values.  YAML dates parse as plain :class:`date` already, so they
-    pass through unchanged.
-    """
-    # ``bool`` and ``datetime.datetime`` come before their bases (``int``
-    # and ``date``) because match arms test class membership in order.
-    # ``ruamel`` always returns its own ``TimeStamp`` subclass for
-    # datetimes, so we always reconstruct.
-    match value:
-        case bool():
-            return bool(value)
-        case int():
-            return int(value)
-        case float():
-            return float(value)
-        case str():
-            return str(object=value)
-        case datetime.datetime():
-            return datetime.datetime(
-                year=value.year,
-                month=value.month,
-                day=value.day,
-                hour=value.hour,
-                minute=value.minute,
-                second=value.second,
-                microsecond=value.microsecond,
-                tzinfo=value.tzinfo,
-            )
-        case _:
-            return value
-
-
-@beartype
-def _coerce_yaml_keys(*, data: object) -> Value:
-    """Recursively convert non-string dict keys to their string form.
-
-    YAML allows non-string mapping keys (e.g. integers); ``Value``
-    requires ``dict[str, Value]``, so we normalise before passing
-    loaded YAML data to :func:`_literalize`.
-
-    The round-trip loader returns ``CommentedOrderedMap`` for YAML
-    ``!!omap`` nodes; those are demoted to plain ``ordereddict`` so
-    ordered-map detection in :func:`_literalize` still works.  Other
-    mappings come through as ``CommentedMap`` and are demoted to plain
-    ``dict``.  :class:`CommentedSet` does not subclass :class:`set`, so
-    it is converted as well.  Scalar leaves are unwrapped to plain
-    Python types so type-based dispatch sees ``int`` rather than
-    ``ScalarInt`` and friends.
-    """
-    match data:
-        case CommentedOrderedMap():
-            omap_src = cast("dict[object, object]", data)
-            omap = ordereddict(
-                [
-                    (f"{k}", _coerce_yaml_keys(data=v))
-                    for k, v in omap_src.items()
-                ]
-            )
-            return cast("Value", omap)
-        case CommentedMap():
-            return {
-                f"{k}": _coerce_yaml_keys(data=v)
-                for k, v in cast("dict[object, object]", data).items()
-            }
-        case CommentedSeq():
-            return [
-                _coerce_yaml_keys(data=item)
-                for item in cast("list[object]", data)
-            ]
-        case CommentedSet():
-            members = cast("set[object]", set(data))
-            return {
-                cast("Scalar", _unwrap_yaml_scalar(value=item))
-                for item in members
-            }
-        case _:
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-
-
 def _append_entries(
     *,
     formatted_entries: Sequence[str],
@@ -993,93 +695,6 @@ def _apply_variable_wrapper(
 
 
 @dataclasses.dataclass(frozen=True)
-class _ParsedInput:
-    """Result of parsing an input string."""
-
-    data: Value
-    raw_data: object
-
-
-def _parse_json(*, source: str) -> _ParsedInput:
-    """Parse a JSON string into a ``_ParsedInput``."""
-    try:
-        data = json.loads(s=source)
-    except json.JSONDecodeError as exc:
-        message = (
-            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
-        )
-        raise JSONParseError(message) from exc
-    return _ParsedInput(data=data, raw_data=data)
-
-
-def _parse_json5(*, source: str) -> _ParsedInput:
-    """Parse a JSON5 string into a ``_ParsedInput``."""
-    try:
-        data = pyjson5.decode(data=source)  # pylint: disable=no-member
-    except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
-        message = f"Invalid JSON5: {exc}"
-        raise JSON5ParseError(message) from exc
-    return _ParsedInput(data=data, raw_data=data)
-
-
-@functools.cache
-def _get_yaml() -> YAML:
-    """Return the cached round-trip ``YAML`` instance.
-
-    The round-trip loader is used everywhere so a single parse covers
-    both data extraction and comment metadata.  Constructing ``YAML()``
-    globs the package directory for plug-ins on every call; caching
-    avoids that cost on every parse.  ``ruamel`` parsers are not safe
-    for concurrent use within a single instance, so ``literalize`` is
-    not safe to call from multiple threads.
-    """
-    return YAML()
-
-
-def _parse_yaml(*, source: str) -> _ParsedInput:
-    """Parse a YAML string into a ``_ParsedInput``.
-
-    Uses the comment-preserving (round-trip) loader so the same parse
-    can later feed comment extraction without a second pass through
-    the YAML source.
-    """
-    ruamel_yaml = _get_yaml()
-    try:
-        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
-        raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-    except YAMLError as exc:
-        message = f"Invalid YAML: {exc}"
-        raise YAMLParseError(message) from exc
-    data = _coerce_yaml_keys(data=raw_data)
-    return _ParsedInput(data=data, raw_data=raw_data)
-
-
-def _parse_toml(*, source: str) -> _ParsedInput:
-    """Parse a TOML string into a ``_ParsedInput``."""
-    try:
-        toml_doc = tomlkit.parse(string=source)
-    except TOMLKitError as exc:
-        message = f"Invalid TOML: {exc}"
-        raise TOMLParseError(message) from exc
-    toml_data = _coerce_toml_values(data=toml_doc.unwrap())
-    return _ParsedInput(data=toml_data, raw_data=toml_doc)
-
-
-def _parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
-    """Parse and coerce an input string according to its format."""
-    match input_format:
-        case InputFormat.JSON:
-            return _parse_json(source=source)
-        case InputFormat.JSON5:
-            return _parse_json5(source=source)
-        case InputFormat.YAML:
-            return _parse_yaml(source=source)
-        case InputFormat.TOML:
-            return _parse_toml(source=source)
-    assert_never(input_format)  # pragma: no cover
-
-
-@dataclasses.dataclass(frozen=True)
 class _PreFormState:
     """Variable-form-independent results of
     :func:`_literalize_pre_form`.
@@ -1087,7 +702,7 @@ class _PreFormState:
 
     data: Value
     result: str
-    resolved: "_ResolvedComments | None"
+    resolved: ResolvedComments | None
     line_prefix: str
 
 
@@ -1106,7 +721,7 @@ def _literalize_pre_form(
     comments.
     """
     line_prefix = language.indent * pre_indent_level
-    parsed = _parse_input(source=source, input_format=input_format)
+    parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
 
     result = _literalize(
@@ -1116,7 +731,7 @@ def _literalize_pre_form(
         include_delimiters=include_delimiters,
     )
 
-    resolved: _ResolvedComments | None = None
+    resolved: ResolvedComments | None = None
     if input_format is InputFormat.YAML:
         comment_cfg = language.comment_config
         cp = comment_cfg.prefix
@@ -1126,7 +741,7 @@ def _literalize_pre_form(
             if include_delimiters
             else line_prefix
         )
-        resolved = _resolve_yaml_comments(
+        resolved = resolve_yaml_comments(
             yaml_string=source,
             raw_data=parsed.raw_data,
             base=result,
@@ -1145,7 +760,7 @@ def _literalize_pre_form(
             if include_delimiters
             else line_prefix
         )
-        resolved = _resolve_toml_comments(
+        resolved = resolve_toml_comments(
             toml_doc=parsed.raw_data,
             base=result,
             language=language,
@@ -1198,7 +813,7 @@ def _literalize_apply_form(
 
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
-    computed = _compute_preamble(
+    computed = compute_preamble(
         data=pre_form.data,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
@@ -1480,7 +1095,7 @@ def literalize_call(
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
     """
-    parsed = _parse_input(source=source, input_format=input_format)
+    parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
 
     if per_element:
@@ -1532,7 +1147,7 @@ def literalize_call(
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
         )
-    computed = _compute_preamble(
+    computed = compute_preamble(
         data=data,
         language=language,
         has_variable_declaration=False,
@@ -1562,241 +1177,3 @@ def literalize_call(
         preamble=preamble,
         body_preamble=computed.body,
     )
-
-
-@beartype
-def _filter_null_dict_comments(
-    *,
-    data: dict[Any, Any],
-    ruamel_data: CommentedMap,
-    collection_comments: CollectionComments,
-) -> CollectionComments:
-    """Remove comments for null-valued dict entries.
-
-    When a language skips null dict values, the associated comments
-    are redistributed to the next non-null entry.
-    """
-    pending: list[str] = []
-    filtered_elements_list: list[ElementComments] = []
-    for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
-        ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        collection_comments.elements,
-        strict=True,
-    ):
-        if data[key] is None:
-            pending.extend(ec.before)
-            if ec.inline:
-                pending.append(ec.inline)
-        else:
-            new_before = (*pending, *ec.before)
-            pending = []
-            filtered_elements_list.append(
-                dataclasses.replace(ec, before=new_before),
-            )
-    return dataclasses.replace(
-        collection_comments,
-        elements=tuple(filtered_elements_list),
-        trailing=(*pending, *collection_comments.trailing),
-    )
-
-
-@dataclasses.dataclass(frozen=True)
-class _ResolvedComments:
-    """Result of resolving YAML comments for a collection or scalar."""
-
-    result: str
-    pending: CollectionComments | None
-    pending_scalar_before: tuple[str, ...]
-    """Already-formatted comment lines to prepend before the variable
-    declaration.  Used for scalar before-comments when the language
-    does not support them inline (see
-    :attr:`~literalizer.Language.supports_scalar_before_comments`).
-    """
-
-
-@beartype
-def _resolve_collection_comments(
-    *,
-    collection_comments: CollectionComments,
-    base: str,
-    language: Language,
-    comment_prefix: str,
-    comment_suffix: str,
-    comment_line_prefix: str,
-    include_delimiters: bool,
-) -> _ResolvedComments:
-    """Resolve pre-extracted collection comments."""
-    if not language.supports_collection_comments:
-        return _ResolvedComments(
-            result=base,
-            pending=collection_comments,
-            pending_scalar_before=(),
-        )
-    result = apply_collection_comments(
-        collection_comments=collection_comments,
-        base=base,
-        comment_prefix=comment_prefix,
-        comment_suffix=comment_suffix,
-        comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
-    )
-    return _ResolvedComments(
-        result=result,
-        pending=None,
-        pending_scalar_before=(),
-    )
-
-
-@beartype
-def _resolve_yaml_collection_comments(
-    *,
-    ruamel_data: CommentedSeq | CommentedMap,
-    data: object,
-    base: str,
-    language: Language,
-    comment_prefix: str,
-    comment_suffix: str,
-    comment_line_prefix: str,
-    include_delimiters: bool,
-) -> _ResolvedComments:
-    """Resolve comments for a YAML list or dict."""
-    collection_comments = extract_yaml_comments(
-        ruamel_data=ruamel_data,
-    )
-
-    if (
-        language.skip_null_dict_values
-        and isinstance(ruamel_data, CommentedMap)
-        and isinstance(data, dict)
-    ):
-        collection_comments = _filter_null_dict_comments(
-            data=data,  # pyright: ignore[reportUnknownArgumentType]
-            ruamel_data=ruamel_data,
-            collection_comments=collection_comments,
-        )
-
-    return _resolve_collection_comments(
-        collection_comments=collection_comments,
-        base=base,
-        language=language,
-        comment_prefix=comment_prefix,
-        comment_suffix=comment_suffix,
-        comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
-    )
-
-
-@beartype
-def _resolve_yaml_comments(
-    *,
-    yaml_string: str,
-    raw_data: object,
-    base: str,
-    language: Language,
-    comment_prefix: str,
-    comment_suffix: str,
-    comment_line_prefix: str,
-    line_prefix: str,
-    include_delimiters: bool,
-) -> _ResolvedComments:
-    """Resolve comments using the already-parsed round-trip YAML data.
-
-    *raw_data* is the comment-preserving structure produced by
-    :func:`_parse_yaml` (a :class:`CommentedMap`, :class:`CommentedSeq`,
-    :class:`CommentedSet`, or scalar).  Scalars still need a separate
-    token scan because :meth:`YAML.load` discards comment tokens that
-    are not attached to a collection.
-    """
-    # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    match raw_data:
-        case CommentedSet():
-            return _resolve_collection_comments(
-                collection_comments=extract_yaml_comments(
-                    ruamel_data=raw_data,
-                ),
-                base=base,
-                language=language,
-                comment_prefix=comment_prefix,
-                comment_suffix=comment_suffix,
-                comment_line_prefix=comment_line_prefix,
-                include_delimiters=include_delimiters,
-            )
-        case CommentedSeq() | CommentedMap():
-            return _resolve_yaml_collection_comments(
-                ruamel_data=raw_data,
-                data=raw_data,
-                base=base,
-                language=language,
-                comment_prefix=comment_prefix,
-                comment_suffix=comment_suffix,
-                comment_line_prefix=comment_line_prefix,
-                include_delimiters=include_delimiters,
-            )
-        case _:
-            stream = StringIO(initial_value=yaml_string)
-            tokens = _get_yaml().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-            scalar_result = literalize_yaml_scalar(
-                tokens=tokens,
-                base=base,
-                comment_prefix=comment_prefix,
-                comment_suffix=comment_suffix,
-                line_prefix=line_prefix,
-                supports_scalar_before_comments=(
-                    language.supports_scalar_before_comments
-                ),
-                supports_scalar_inline_comments=(
-                    language.supports_scalar_inline_comments
-                ),
-            )
-            return _ResolvedComments(
-                result=scalar_result.result,
-                pending=None,
-                pending_scalar_before=scalar_result.pending_before,
-            )
-
-
-@beartype
-def _resolve_toml_comments(
-    *,
-    toml_doc: object,
-    base: str,
-    language: Language,
-    comment_prefix: str,
-    comment_suffix: str,
-    comment_line_prefix: str,
-    include_delimiters: bool,
-) -> _ResolvedComments:
-    """Extract and resolve comments from a tomlkit document."""
-    return _resolve_collection_comments(
-        collection_comments=extract_toml_comments(toml_doc=toml_doc),
-        base=base,
-        language=language,
-        comment_prefix=comment_prefix,
-        comment_suffix=comment_suffix,
-        comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
-    )
-
-
-def _coerce_toml_values(*, data: object) -> Value:
-    """Recursively convert TOML-specific types to ``Value`` types.
-
-    ``tomlkit`` produces ``datetime.time`` values which are not
-    representable in the ``Value`` type, so they are converted to
-    their ISO-format string form.
-    """
-    match data:
-        case dict():
-            return {
-                k: _coerce_toml_values(data=v)
-                for k, v in cast("dict[str, object]", data).items()
-            }
-        case list():
-            return [
-                _coerce_toml_values(data=item)
-                for item in cast("list[object]", data)
-            ]
-        case datetime.time():
-            return data.isoformat()
-        case _:
-            return cast("Value", data)
