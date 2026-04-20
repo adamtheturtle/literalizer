@@ -15,6 +15,7 @@ To regenerate all golden files after changing output::
 import dataclasses
 import enum
 import functools
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -25,15 +26,22 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    HeterogeneousCollectionError,
+    NullInCollectionError,
+    UnrepresentableIntegerError,
+)
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
+    Cpp,
+    CSharp,
     Elm,
     Fortran,
     FSharp,
     Gleam,
     Haskell,
+    Java,
     OCaml,
     PureScript,
 )
@@ -45,6 +53,67 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
     directory.
     """
     return request.config.rootpath / "tests" / "integration" / "cases"
+
+
+@beartype
+def _check_golden(
+    *,
+    file_regression: FileRegressionFixture,
+    contents: str,
+    golden_path: Path,
+    extension: str,
+    newline: str | None,
+) -> None:
+    """Compare ``contents`` against ``golden_path`` in memory.
+
+    ``file_regression.check`` writes an ``.obtained`` file, reads both
+    files back from disk, and runs ``difflib`` even on the pass path,
+    which dominates this module's runtime (~13k calls per run).  For
+    the pass path we can compare the already-in-memory ``contents``
+    against the golden file directly; only on miss or regen do we
+    delegate to the fixture for its ``.obtained`` + HTML-diff output.
+    """
+    config = file_regression.request.config
+    regen = file_regression.force_regen or bool(
+        config.getoption(name="regen_all")
+        or config.getoption(name="force_regen"),
+    )
+    if (
+        not regen
+        and golden_path.is_file()
+        and contents.splitlines() == golden_path.read_text().splitlines()
+    ):
+        return
+    file_regression.check(
+        contents=contents,
+        extension=extension,
+        newline=newline,
+        fullpath=golden_path,
+    )
+
+
+def test_check_golden_mismatch_delegates(
+    tmp_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``_check_golden`` delegates to ``file_regression.check`` on miss.
+
+    Every golden file matches in CI, so nothing else reaches the
+    fallback branch.
+    """
+    golden = tmp_path / "golden.txt"
+    golden.write_text(data="expected\n")
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match="FILES DIFFER",
+    ):
+        _check_golden(
+            file_regression=file_regression,
+            contents="different\n",
+            golden_path=golden,
+            extension=".txt",
+            newline="",
+        )
 
 
 @beartype
@@ -182,19 +251,11 @@ def _build_non_default_variants(
 
 
 @beartype
-def _build_default_set_element_type_variants(
-    *,
-    should_coerce_mixed: bool = False,
-) -> Iterable[_Variant]:
+def _build_default_set_element_type_variants() -> Iterable[_Variant]:
     """Build default-set-type variants for languages that support it.
 
     For each language that advertises ``supports_default_set_element_type``,
     create a variant with a non-default value.
-
-    When *should_coerce_mixed* is ``True``, only include languages whose
-    set format has ``coerce_mixed_to_str`` enabled, since overriding
-    ``default_set_element_type`` to a typed key produces invalid code
-    for mixed sets when elements are not coerced.
     """
     # The test value must differ from the language's own default *and* be
     # a valid type name for that language's linter / compiler.
@@ -216,11 +277,6 @@ def _build_default_set_element_type_variants(
         spec = lang_cls(
             default_set_element_type=string_type,
         )
-        if (
-            should_coerce_mixed
-            and not spec.set_format_config.coerce_mixed_to_str
-        ):
-            continue
         variants.append(
             _Variant(
                 name=f"{lang_name}_default_set_element_type_string",
@@ -604,24 +660,32 @@ def test_golden_file(
     input_path = cases_dir / _case_name / "input.yaml"
     lang_name = lang_cls.__name__
     yaml_string = input_path.read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=_spec(lang_cls=lang_cls),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=_wrap_variable_form(lang_cls=lang_cls),
-        error_on_coercion=False,
-        wrap_in_file=True,
-    )
+    golden_path = input_path.parent / (lang_name + lang_cls.extension)
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=_spec(lang_cls=lang_cls),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=_wrap_variable_form(lang_cls=lang_cls),
+            wrap_in_file=True,
+        )
+    except UnrepresentableIntegerError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} cannot represent integer in this input")
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} cannot represent this heterogeneous input")
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent / (lang_name + lang_cls.extension),
+        golden_path=golden_path,
     )
 
 
@@ -701,22 +765,35 @@ def test_golden_file_combined_variable_forms(
         declaration_style=combined_case.declaration_style,
     )
     yaml_string = input_path.read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
-        wrap_in_file=True,
+    golden_path = input_path.parent / (
+        combined_case.golden_file_name + lang_cls.extension
     )
-    file_regression.check(
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=literalizer.BothVariableForms(name="my_data"),
+            wrap_in_file=True,
+        )
+    except UnrepresentableIntegerError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent integer in this input"
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous input"
+        )
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent
-        / (combined_case.golden_file_name + lang_cls.extension),
+        golden_path=golden_path,
     )
 
 
@@ -964,6 +1041,151 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
     return variants
 
 
+@beartype
+def _build_modifier_variant_cases() -> list[_VariantCase]:
+    """Build variants exercising per-language modifier rendering.
+
+    Covers each language that defines a modifier enum: Java, C#, and
+    C++.  Each modifier combination is run against a scalar input and
+    a dict input so that typed-declaration inference is also exercised.
+    """
+    jm = Java.modifiers
+    cm = CSharp.modifiers
+    pm = Cpp.modifiers
+    combos: list[
+        tuple[
+            literalizer.LanguageCls,
+            str,
+            frozenset[enum.Enum],
+        ]
+    ] = [
+        (Java, "final", frozenset({jm.FINAL})),
+        (
+            Java,
+            "public_static_final",
+            frozenset({jm.PUBLIC, jm.STATIC, jm.FINAL}),
+        ),
+        (Java, "private", frozenset({jm.PRIVATE})),
+        (Java, "protected", frozenset({jm.PROTECTED})),
+        (Java, "static", frozenset({jm.STATIC})),
+        (CSharp, "readonly", frozenset({cm.READONLY})),
+        (
+            CSharp,
+            "public_static_readonly",
+            frozenset({cm.PUBLIC, cm.STATIC, cm.READONLY}),
+        ),
+        (CSharp, "const", frozenset({cm.CONST})),
+        (Cpp, "const", frozenset({pm.CONST})),
+        (Cpp, "static_const", frozenset({pm.STATIC, pm.CONST})),
+        (Cpp, "static", frozenset({pm.STATIC})),
+    ]
+
+    cases: list[_VariantCase] = []
+    case_dirs = ("scalar_int", "simple_dict")
+    # C# ``const`` requires compile-time constants, so a dict can never
+    # be declared ``const``.  Skip the dict case for that combo.
+    skip_dict = {(CSharp, "const")}
+    for lang_cls, mod_name, modifiers in combos:
+        variant = _Variant(
+            name=f"{lang_cls.__name__}_modifiers_{mod_name}",
+            spec=_spec(lang_cls=lang_cls),
+            lang_cls=lang_cls,
+        )
+        cases.extend(
+            _VariantCase(
+                variant_name=variant.name,
+                variant=variant,
+                case_dir_name=case_dir_name,
+                variable_form=literalizer.NewVariable(
+                    name="my_data",
+                    modifiers=modifiers,
+                ),
+            )
+            for case_dir_name in case_dirs
+            if not (
+                case_dir_name == "simple_dict"
+                and (lang_cls, mod_name) in skip_dict
+            )
+        )
+
+    # Extra coverage for C# modifier rendering: the typed-declaration
+    # path infers different branches for set and date values.  List
+    # values use ARRAY sequence format so the inferred ``object[]`` type
+    # matches the generated initializer.
+    csharp_readonly = _Variant(
+        name="CSharp_modifiers_readonly",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.extend(
+        _VariantCase(
+            variant_name=csharp_readonly.name,
+            variant=csharp_readonly,
+            case_dir_name=case_dir_name,
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({cm.READONLY}),
+            ),
+        )
+        for case_dir_name in ("set", "scalar_date", "scalar_datetime")
+    )
+    csharp_readonly_empty_set = _Variant(
+        name="CSharp_modifiers_readonly_empty_set",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_empty_set.name,
+            variant=csharp_readonly_empty_set,
+            case_dir_name="empty_set",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({cm.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_mixed = _Variant(
+        name="CSharp_modifiers_readonly_mixed_numbers",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_mixed.name,
+            variant=csharp_readonly_mixed,
+            case_dir_name="mixed_number_list",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({cm.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_array = _Variant(
+        name="CSharp_modifiers_readonly_array",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_array.name,
+            variant=csharp_readonly_array,
+            case_dir_name="simple_sequence",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({cm.READONLY}),
+            ),
+        )
+    )
+    return cases
+
+
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     nv = _build_non_default_variants
@@ -1134,13 +1356,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_default_set_element_type_variants(), "empty_set", ""),
         (_build_default_set_element_type_variants(), "set", ""),
         (
-            _build_default_set_element_type_variants(
-                should_coerce_mixed=True,
-            ),
-            "mixed_set",
-            "",
-        ),
-        (
             _build_default_sequence_element_type_variants(),
             "empty_sequence",
             "",
@@ -1172,6 +1387,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints, "int_set", ""),
         (type_hints, "empty_set", ""),
         (type_hints, "mixed_number_list", ""),
+        (type_hints, "nested_sequence", ""),
+        (type_hints, "dict_with_list_value", ""),
+        (type_hints, "ordered_map_in_sequence", ""),
         (type_hints_cross, "int_list", ""),
         (type_hints_cross, "int_list_large", ""),
         (type_hints_cross, "pair_sequence", ""),
@@ -1189,6 +1407,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (declaration_style, "scalar_bool", ""),
         (declaration_style, "scalar_string", ""),
         (declaration_style, "scalar_null", ""),
+        (declaration_style, "scalar_date", ""),
+        (declaration_style, "scalar_datetime", ""),
+        (declaration_style, "binary", ""),
         (dict_format, "simple_dict", ""),
         (dict_format, "dict_with_list_value", "_list_val"),
         (dict_entry_style, "simple_dict", ""),
@@ -1243,20 +1464,15 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_c_field_name_variants(), "simple_dict", ""),
         (_build_c_field_name_variants(), "simple_sequence", ""),
         (_build_constructor_name_variants(), "simple_dict", ""),
-        (type_hints_cross, "int_list", ""),
-        (type_hints_cross, "int_list_large", ""),
-        (type_hints_cross, "pair_sequence", ""),
-        (type_hints_cross, "empty_list", ""),
-        (type_hints_cross, "scalar_date", ""),
-        (type_hints_cross, "scalar_datetime", ""),
-        (type_hints_cross, "simple_dict", ""),
-        (type_hints_cross, "int_set", ""),
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
     ]
     # Rust CONST/STATIC with dict cases produce HashMap::from([…])
-    # which is not a constant expression, so skip those.
+    # which is not a constant expression, so skip those.  Dart CONST with
+    # dates / datetimes uses DateTime.parse(…), which is also not a const
+    # expression.
     _const_static_suffixes = ("_const", "_static")
+    _dart_non_const_cases = {"scalar_date", "scalar_datetime"}
 
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
@@ -1272,7 +1488,13 @@ def _build_variant_cases() -> list[_VariantCase]:
                 and variant.name.endswith(_const_static_suffixes)
                 and "dict" in case_dir_name
             )
+            and not (
+                variant.lang_cls.__name__ == "Dart"
+                and variant.name.endswith("_const")
+                and case_dir_name in _dart_non_const_cases
+            )
         )
+    cases.extend(_build_modifier_variant_cases())
     return cases
 
 
@@ -1295,6 +1517,9 @@ def test_format_variant_golden_file(
     case_dir = cases_dir / variant_case.case_dir_name
     variant = variant_case.variant
     yaml_string = (case_dir / "input.yaml").read_text()
+    golden_path = case_dir / (
+        variant_case.variant_name + variant.spec.extension
+    )
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -1303,16 +1528,19 @@ def test_format_variant_golden_file(
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=variant_case.variable_form,
-            error_on_coercion=False,
             wrap_in_file=True,
         )
     except NullInCollectionError:
         pytest.skip("Format rejects null elements in this input")
-    file_regression.check(
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip("Format cannot represent this heterogeneous input")
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=variant.spec.extension,
-        fullpath=case_dir
-        / (variant_case.variant_name + variant.spec.extension),
+        newline=None,
+        golden_path=golden_path,
     )
 
 
@@ -1392,13 +1620,14 @@ def test_line_ending_combined_variable_forms(
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
-        error_on_coercion=False,
         wrap_in_file=True,
     )
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=spec.extension,
-        fullpath=input_path.parent / (case.name + spec.extension),
+        newline=None,
+        golden_path=input_path.parent / (case.name + spec.extension),
     )
 
 
@@ -1452,7 +1681,8 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
 
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
-        path.relative_to(cases_dir) for path in actual - expected
+        os.path.relpath(path=path, start=cases_dir)
+        for path in actual - expected
     )
     assert not dead_files
 
@@ -1628,9 +1858,10 @@ def test_call_golden_file(
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     lang_name = lang_cls.__name__
     golden_name = f"{lang_name}_call"
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=wrapped + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent / (golden_name + lang_cls.extension),
+        golden_path=input_path.parent / (golden_name + lang_cls.extension),
     )

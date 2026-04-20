@@ -4,6 +4,30 @@ Changelog
 Next
 ----
 
+- Added a per-language ``Modifiers`` enum exposed on each language
+  class (alongside ``DateFormats``, ``SequenceFormats``, etc.).
+  ``Java.Modifiers`` has ``PUBLIC``/``PRIVATE``/``PROTECTED``/
+  ``STATIC``/``FINAL``; ``CSharp.Modifiers`` adds ``CONST`` and
+  ``READONLY``; ``Cpp.Modifiers`` has ``STATIC``/``CONST``.  Languages
+  without modifier vocabulary expose an empty ``Modifiers`` enum.
+- ``NewVariable`` and ``BothVariableForms`` now accept a ``modifiers``
+  keyword argument.  Values that are not members of the target
+  language's ``Modifiers`` enum are silently ignored, matching how
+  other language format enums behave.
+- Removed automatic coercion of heterogeneous data to strings.  The
+  ``error_on_coercion`` parameter has been removed from ``literalize``;
+  ``literalize`` now always raises a subclass of
+  ``HeterogeneousCollectionError`` when the data cannot be represented
+  in the target language's collection formats.
+- Replaced ``HeterogeneousCoercionError`` with precise exceptions:
+  ``HeterogeneousCollectionError`` (base class),
+  ``HeterogeneousScalarCollectionError``,
+  ``HeterogeneousSiblingListsError``, ``MixedDictValuesError``,
+  ``MixedListValuesError``, ``MixedDictShapesError``, and
+  ``HeterogeneousSetError``.
+- Renamed ``SetFormatConfig.coerce_mixed_to_str`` to
+  ``SetFormatConfig.supports_heterogeneity`` (with inverted semantics).
+
 2026.04.18
 ----------
 

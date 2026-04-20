@@ -11,7 +11,7 @@ from literalizer import (
     literalize,
 )
 from literalizer.exceptions import (
-    HeterogeneousCoercionError,
+    HeterogeneousCollectionError,
     InvalidDictKeyError,
     ParseError,
     YAMLParseError,
@@ -58,7 +58,6 @@ def test_literalize_yaml_sequence() -> None:
         pre_indent_level=1,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result.code == expected
@@ -82,7 +81,6 @@ def test_literalize_yaml_indent_override() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = '{\n\t"a": 1,\n\t"b": True,\n}'
     assert result.code == expected
@@ -98,7 +96,6 @@ def test_literalize_yaml_invalid() -> None:
             pre_indent_level=0,
             include_delimiters=False,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -112,8 +109,28 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             pre_indent_level=0,
             include_delimiters=False,
             variable_form=None,
-            error_on_coercion=False,
         )
+
+
+def test_literalize_yaml_after_invalid_uses_cached_instance() -> None:
+    """Cached ``YAML`` instances recover after a parse error.
+
+    Guards against ruamel.yaml ever leaving an instance in a broken
+    state after an exception, which would compound across calls now
+    that we cache instances via ``functools.cache``.
+    """
+    with pytest.raises(expected_exception=YAMLParseError):
+        literalize(
+            source=":\n  :\n    - ][",
+            input_format=InputFormat.YAML,
+            language=PYTHON,
+        )
+    result = literalize(
+        source="foo: bar",
+        input_format=InputFormat.YAML,
+        language=PYTHON,
+    )
+    assert result.declaration_code == '{\n    "foo": "bar",\n}'
 
 
 def test_cpp_array_binary_typed() -> None:
@@ -129,7 +146,6 @@ def test_cpp_array_binary_typed() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -153,7 +169,6 @@ def test_cpp_array_null_list_fallback() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -176,7 +191,6 @@ def test_yaml_set_inline_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == '{"a", "b"},'
 
@@ -190,7 +204,6 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == 'map[string]struct{}{"a": struct{}{}},'
 
@@ -204,7 +217,6 @@ def test_yaml_empty_set_inline() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == "set(),"
 
@@ -229,7 +241,6 @@ def test_ordered_map_nested_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -240,8 +251,8 @@ def test_ordered_map_nested_in_sequence() -> None:
     assert result.code == expected
 
 
-def test_coerce_heterogeneous_bytes_in_collection() -> None:
-    """Bytes in a heterogeneous collection are coerced to hex strings."""
+def test_heterogeneous_bytes_in_collection_raises() -> None:
+    """Bytes in a heterogeneous collection raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         key1: !!binary |
@@ -249,83 +260,57 @@ def test_coerce_heterogeneous_bytes_in_collection() -> None:
         key2: 42
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "key1": "48656c6c6f",
-            "key2": "42",
-        }"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
-def test_coerce_heterogeneous_date_in_collection() -> None:
-    """Dates in a heterogeneous collection are coerced to ISO strings."""
+def test_heterogeneous_date_in_collection_raises() -> None:
+    """Dates in a heterogeneous collection raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         - 2024-01-15
         - 42
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        [
-            "2024-01-15",
-            "42",
-        ]"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
-def test_coerce_heterogeneous_datetime_in_collection() -> None:
-    """Datetimes in a heterogeneous collection are coerced to ISO
-    strings.
-    """
+def test_heterogeneous_datetime_in_collection_raises() -> None:
+    """Datetimes in a heterogeneous collection raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         - 2024-01-15T12:30:00
         - 42
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        [
-            "2024-01-15T12:30:00",
-            "42",
-        ]"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
-def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
-    """Homogeneous ordereddict values are not coerced."""
+def test_homogeneous_ordered_map_no_raise() -> None:
+    """Homogeneous ordereddict values do not raise."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -340,7 +325,6 @@ def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -352,8 +336,8 @@ def test_coerce_homogeneous_ordered_map_no_coercion() -> None:
     assert result.code == expected
 
 
-def test_coerce_mixed_dict_values_none_with_list() -> None:
-    """Dicts with None alongside a list are coerced to strings."""
+def test_mixed_dict_values_none_with_list_raises() -> None:
+    """Dicts with None alongside a list raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         tags:
@@ -361,27 +345,19 @@ def test_coerce_mixed_dict_values_none_with_list() -> None:
         extra:
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "tags": "[\\"admin\\"]",
-            "extra": "None",
-        }"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
-def test_coerce_mixed_dict_values_set_with_string() -> None:
-    """Dicts with a set alongside a string are coerced to strings."""
+def test_mixed_dict_values_set_with_string_raises() -> None:
+    """Dicts with a set alongside a string raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         name: Alice
@@ -389,28 +365,19 @@ def test_coerce_mixed_dict_values_set_with_string() -> None:
           ? admin
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    # Set is converted to a sorted JSON array before string conversion.
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "name": "Alice",
-            "roles": "[\\"admin\\"]",
-        }"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
-def test_coerce_mixed_dict_values_with_list() -> None:
-    """Dicts with string and list values are coerced to all strings."""
+def test_mixed_dict_values_with_list_raises() -> None:
+    """Dicts with string and list values raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         name: Bob
@@ -419,27 +386,19 @@ def test_coerce_mixed_dict_values_with_list() -> None:
           - user
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "name": "Bob",
-            "tags": "[\\"admin\\", \\"user\\"]",
-        }"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
-def test_coerce_mixed_ordered_map_values() -> None:
-    """Ordered maps with mixed value types are coerced to strings."""
+def test_mixed_ordered_map_values_raises() -> None:
+    """Ordered maps with mixed value types raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -449,24 +408,15 @@ def test_coerce_mixed_ordered_map_values() -> None:
             - admin
     """,
     )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        [
-            Tuple("name", "Alice"),
-            Tuple("score", "42"),
-            Tuple("tags", "[\\"admin\\"]"),
-        ]"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
 
 
 def test_r_empty_dict_key_positional() -> None:
@@ -486,7 +436,6 @@ def test_r_empty_dict_key_positional() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -523,7 +472,6 @@ def test_r_empty_dict_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -544,7 +492,6 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -555,8 +502,8 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
     assert result.code == expected
 
 
-def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
-    """Error_on_coercion raises for heterogeneous ordered-map values."""
+def test_raises_for_heterogeneous_ordered_map() -> None:
+    """Raises for heterogeneous ordered-map values."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -564,7 +511,7 @@ def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
           - age: 30
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -572,12 +519,11 @@ def test_error_on_coercion_raises_for_heterogeneous_ordered_map() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=True,
         )
 
 
-def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
-    """Error_on_coercion raises for heterogeneous sets."""
+def test_raises_for_heterogeneous_set() -> None:
+    """Raises for heterogeneous sets."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!set
@@ -585,7 +531,7 @@ def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
         ? "hello"
     """,
     )
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
         literalize(
             source=yaml_string,
             input_format=InputFormat.YAML,
@@ -593,12 +539,11 @@ def test_error_on_coercion_raises_for_heterogeneous_set() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=True,
         )
 
 
-def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
-    """Error_on_coercion does not raise for homogeneous ordered-map values."""
+def test_no_raise_for_homogeneous_ordered_map() -> None:
+    """Does not raise for homogeneous ordered-map values."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -613,7 +558,6 @@ def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -625,8 +569,8 @@ def test_error_on_coercion_no_raise_for_homogeneous_ordered_map() -> None:
     assert result.code == expected
 
 
-def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
-    """Error_on_coercion does not raise for homogeneous sets."""
+def test_no_raise_for_homogeneous_set() -> None:
+    """Does not raise for homogeneous sets."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!set
@@ -641,7 +585,6 @@ def test_error_on_coercion_no_raise_for_homogeneous_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=True,
     )
     expected = textwrap.dedent(
         text="""\
@@ -672,7 +615,6 @@ def test_dhall_empty_dict_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -686,7 +628,6 @@ def test_dhall_control_char_in_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     expected = 'let my_data = "\\u{0001}" in my_data'
     assert result.code == expected
@@ -711,7 +652,6 @@ def test_dhall_control_char_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -734,7 +674,6 @@ def test_nix_control_char_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -748,7 +687,6 @@ def test_dhall_backtick_label_unescaping() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

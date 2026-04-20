@@ -2,6 +2,7 @@ const ZVal = union(enum) {
     nil,
     bool: bool,
     int: i64,
+    uint: u64,
     float: f64,
     str: []const u8,
     arr: []const ZVal,

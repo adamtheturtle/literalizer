@@ -24,6 +24,7 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Cobol,
     Fortran,
+    FSharp,
     Go,
     Java,
     Matlab,
@@ -43,6 +44,7 @@ FORTRAN = Fortran(
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
 )
+FSHARP = FSharp()
 JAVA = Java(
     date_format=Java.date_formats.JAVA,
     datetime_format=Java.datetime_formats.INSTANT,
@@ -61,7 +63,6 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -91,7 +92,6 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -121,7 +121,6 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -145,7 +144,6 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = "Map.ofEntries()\n    // trailing"
     assert result.code == expected
@@ -170,7 +168,6 @@ def test_matlab_dict_key_with_quote() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == "'hello \"world\"', 1"
 
@@ -200,7 +197,6 @@ def test_cobol_level_number_cap() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = (
         "\n"
@@ -230,7 +226,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     for line in result.code.splitlines():
         stripped = line.strip()
@@ -249,7 +244,6 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         pre_indent_level=0,
         variable_form=NewVariable(name="cfg"),
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -258,6 +252,27 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
             fentry('host', fstr('it''s here')), &  ! a comment
             fentry('port', fint(80_int64)) &  ! another
         ])""",
+    )
+    assert result.code == expected
+
+
+def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
+    """Bare F# scalar integer values above i64 range use the ``I``
+    suffix.
+    """
+    result = literalize(
+        source="9223372036854775808",
+        input_format=InputFormat.JSON,
+        language=FSHARP,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=None,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        type Val =
+            | FInt of bigint
+        9223372036854775808I"""
     )
     assert result.code == expected
 
@@ -283,7 +298,6 @@ def test_java_list_rejects_null_elements() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -309,6 +323,31 @@ def test_pygments_name_is_valid(
     find_lexer_class_by_name(_alias=language_cls.pygments_name)
 
 
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_protocol_properties_accessible(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every Language exposes its Protocol attributes for any language.
+
+    Many ``@cached_property`` members are only exercised by tests for
+    the subset of languages that opt in to a feature (variable
+    reassignment, type-hint preambles, call stubs).  Accessing every
+    documented member here keeps coverage at 100% across the matrix.
+    """
+    spec = language_cls()
+    assert callable(spec.format_call_stub)
+    assert callable(spec.format_call_preamble_stub)
+    assert callable(spec.format_variable_declaration)
+    assert callable(spec.format_variable_assignment)
+    assert callable(spec.type_hint_collection_preamble_lines)
+    assert isinstance(spec.scalar_body_preamble, dict)
+
+
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
     """When all Python default collection types are non-Any, the
     ``from typing import Any`` import is not emitted.
@@ -326,7 +365,6 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     assert result.code == "my_data: dict[str, str] = {}"
     assert not result.preamble
@@ -378,7 +416,11 @@ def test_literalize_call_per_element_false() -> None:
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
-    with pytest.raises(expected_exception=ValueError, match="wrap_in_file"):
+    expected_msg = "BothVariableForms requires wrap_in_file=True"
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
         literalize(
             source="42",
             input_format=InputFormat.JSON,

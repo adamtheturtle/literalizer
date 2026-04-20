@@ -3,14 +3,17 @@
 import dataclasses
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
+from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import ClassVar, cast
 
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
+    TypeOpeners,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -27,6 +30,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
@@ -40,9 +44,12 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
@@ -72,9 +79,170 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from literalizer._types import Value
+
+class _CSharpModifiers(enum.Enum):
+    """Declaration modifiers supported by C#.
+
+    Each member's value is the C# keyword it renders to.  Declaration
+    order matches canonical C# modifier order.
+
+    Exposed as :attr:`CSharp.Modifiers` / :attr:`CSharp.modifiers`.
+    """
+
+    PUBLIC = "public"
+    """Visibility: publicly accessible."""
+
+    PRIVATE = "private"
+    """Visibility: private to the enclosing type."""
+
+    PROTECTED = "protected"
+    """Visibility: protected (accessible from subclasses)."""
+
+    STATIC = "static"
+    """Storage: associated with the enclosing type rather than an
+    instance.
+    """
+
+    CONST = "const"
+    """Immutability: compile-time constant."""
+
+    READONLY = "readonly"
+    """Immutability: cannot be reassigned after initialization."""
+
+
+@beartype
+def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
+    """Return the ``public static readonly `` prefix for a C#
+    declaration, including a trailing space when non-empty.
+
+    Values that are not :class:`_CSharpModifiers` members are ignored.
+    """
+    keywords = [m.value for m in _CSharpModifiers if m in modifiers]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
+_CSHARP_SCALAR_TYPES: dict[type, str] = {
+    bool: "bool",
+    int: "int",
+    float: "double",
+    str: "string",
+    bytes: "string",
+}
+
+
+@beartype
+def _csharp_scalar_type(
+    value: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Return the C# type name for a scalar value."""
+    if isinstance(value, datetime.datetime):
+        return datetime_hint
+    if isinstance(value, datetime.date):
+        return date_hint
+    return _CSHARP_SCALAR_TYPES.get(type(value), "object")
+
+
+@beartype
+def _csharp_common_element_type(
+    items: list[Value],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Return the common C# type for a list of elements."""
+    if not items:
+        return "object"
+    types = {
+        _csharp_type_hint(
+            data=item,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            dict_value_type=dict_value_type,
+        )
+        for item in items
+    }
+    if len(types) == 1:
+        return next(iter(types))
+    if types == {"int", "double"}:
+        return "double"
+    return "object"
+
+
+@beartype
+def _csharp_type_hint(
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Return the C# declared type for *data*."""
+    match data:
+        case dict():
+            val_type = _csharp_common_element_type(
+                items=list(data.values()),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"Dictionary<string, {val_type}>"
+        case set():
+            elem = _csharp_common_element_type(
+                items=list(data),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"HashSet<{elem}>"
+        case list():
+            elem = _csharp_common_element_type(
+                items=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"{elem}[]"
+        case _:
+            return _csharp_scalar_type(
+                value=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+
+
+@beartype
+def _format_csharp_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    modifiers: frozenset[enum.Enum],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Format a C# variable declaration, applying modifiers when set.
+
+    Falls back to ``var {name} = {value};`` when *modifiers* is empty.
+    """
+    prefix = _csharp_modifier_prefix(modifiers=modifiers)
+    if not prefix:
+        return f"var {name} = {value};"
+    hint = _csharp_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_value_type=dict_value_type,
+    )
+    return f"{prefix}{hint} {name} = {value};"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -99,6 +267,7 @@ def _csharp_call_stub(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class CSharp(metaclass=LanguageCls):
     """C# language specification.
 
@@ -234,7 +403,7 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new HashSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
         SORTED_SET = enum.member(
@@ -244,7 +413,7 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new SortedSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="new SortedSet<{type_name}> {{",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 
@@ -268,7 +437,9 @@ class CSharp(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -369,12 +540,15 @@ class CSharp(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    Modifiers = _CSharpModifiers
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+    modifiers = _CSharpModifiers
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -415,7 +589,37 @@ class CSharp(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
+        """Wrap code in a valid file.
+
+        When *content* starts with a class-field modifier keyword (one
+        of the visibility or storage keywords that C# only accepts on
+        class members) the declaration is placed inside a ``class
+        Check`` body with a ``Main`` entry point; otherwise it's
+        emitted as a top-level statement, which is the only context
+        where ``var`` declarations are valid.
+        """
+        first_token = (
+            content.lstrip().split(sep=" ", maxsplit=1)[0]
+            if content.strip()
+            else ""
+        )
+        is_class_field = first_token in {
+            "public",
+            "private",
+            "protected",
+            "static",
+            "readonly",
+        }
+        if is_class_field:
+            preamble_block = (
+                "\n".join(body_preamble) + "\n" if body_preamble else ""
+            )
+            return (
+                f"{preamble_block}class Check {{\n"
+                f"{content}\n"
+                "    public static void Main() {}\n"
+                "}"
+            )
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
@@ -437,90 +641,181 @@ class CSharp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
-        self,
-        *,
-        date_format: DateFormats = DateFormats.CSHARP,
-        datetime_format: DatetimeFormats = DatetimeFormats.CSHARP,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.TUPLE,
-        set_format: SetFormats = SetFormats.HASH_SET,
-        default_set_element_type: str = "object",
-        default_sequence_element_type: str = "object",
-        default_dict_key_type: str = "string",
-        default_dict_value_type: str = "object",
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.VAR,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DICTIONARY,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.NO,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
-        indent: str = "    ",
-    ) -> None:
-        """Initialize CSharp language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "(object?)null"
-        self.true_literal = "true"
-        self.false_literal = "false"
-        fmt = sequence_format(default_type=default_sequence_element_type)
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
+    date_format: DateFormats = DateFormats.CSHARP
+    datetime_format: DatetimeFormats = DatetimeFormats.CSHARP
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.TUPLE
+    set_format: SetFormats = SetFormats.HASH_SET
+    default_set_element_type: str = "object"
+    default_sequence_element_type: str = "object"
+    default_dict_key_type: str = "string"
+    default_dict_value_type: str = "object"
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.VAR
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DICTIONARY
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.NO
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
+    indent: str = "    "
 
-        self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_element_type,
+    null_literal: ClassVar[str] = "(object?)null"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ";"
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+        """Format an assignment to an existing variable."""
+        return variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Format one ordered-map entry."""
+        return dict_entry_with_template(
+            template="[{key}] = {value}",
+            format_value=passthrough_sequence_entry,
         )
-        date_tp = date_format.value.type_produced
-        dt_tp = datetime_format.value.type_produced
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return _csharp_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def _date_tp(self) -> type:
+        """Python type produced by the chosen date format."""
+        return self.date_format.value.type_produced
+
+    @cached_property
+    def _dt_tp(self) -> type:
+        """Python type produced by the chosen datetime format."""
+        return self.datetime_format.value.type_produced
+
+    @cached_property
+    def _base_set_format_config(self) -> SetFormatConfig:
+        """Base set format config before typed-opener application."""
+        return self.set_format(
+            default_type=self.default_set_element_type,
+        )
+
+    @cached_property
+    def _openers(self) -> TypeOpeners:
+        """Typed openers built from the opener config."""
         cfg = self._opener_config
-        openers = cfg.build(
-            date_type=cfg.type_name(py_type=date_tp),
-            datetime_type=cfg.type_name(py_type=dt_tp),
-            set_opener_template=self.set_format_config.set_opener_template
-            or None,
+        return cfg.build(
+            date_type=cfg.type_name(py_type=self._date_tp),
+            datetime_type=cfg.type_name(py_type=self._dt_tp),
+            set_opener_template=(
+                self._base_set_format_config.set_opener_template or None
+            ),
             narrow_dict_values=False,
-            dict_key_type=default_dict_key_type,
+            dict_key_type=self.default_dict_key_type,
         )
-        self.set_format_config = self.set_format_config.with_typed_opener(
-            type_to_opener=openers.set,
-            fallback=self.set_format_config.set_open([]),
+
+    @cached_property
+    def _resolved_dict_opener(self) -> str:
+        """Opener template with the key type resolved."""
+        return self.dict_format.value.opener_template.replace(
+            "{key_type}",
+            self.default_dict_key_type,
         )
-        self.sequence_open: Callable[[list[Value]], str] = (
-            typed_collection_open(
-                type_to_opener=openers.seq,
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format(
+            default_type=self.default_sequence_element_type,
+        )
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format (with typed opener)."""
+        base = self._base_set_format_config
+        return base.with_typed_opener(
+            type_to_opener=self._openers.set,
+            fallback=base.set_open([]),
+        )
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        fmt = self.sequence_format_config
+        if fmt.typed_opener_fallback is not None:
+            return typed_collection_open(
+                type_to_opener=self._openers.seq,
                 fallback=fmt.typed_opener_fallback,
             )
-            if fmt.typed_opener_fallback is not None
-            else fmt.sequence_open
-        )
-        resolved_dict_opener = dict_format.value.opener_template.replace(
-            "{key_type}",
-            default_dict_key_type,
-        )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+        return fmt.sequence_open
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        cfg = self._opener_config
+        resolved = self._resolved_dict_opener
+        return DictFormatConfig(
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
                         list_template=None,
-                        date_type=cfg.type_name(py_type=date_tp),
-                        datetime_type=cfg.type_name(py_type=dt_tp),
+                        date_type=cfg.type_name(py_type=self._date_tp),
+                        datetime_type=cfg.type_name(py_type=self._dt_tp),
                         enable_dict_type=False,
-                        dict_key_type=default_dict_key_type,
+                        dict_key_type=self.default_dict_key_type,
                     ),
-                    opener_template=resolved_dict_opener,
+                    opener_template=resolved,
                 ),
-                fallback=resolved_dict_opener.format(
-                    type_name=default_dict_value_type,
+                fallback=resolved.format(
+                    type_name=self.default_dict_value_type,
                 ),
             ),
             close="}",
@@ -532,95 +827,121 @@ class CSharp(metaclass=LanguageCls):
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
-        )
-        self.datetime_format: enum.Enum = datetime_format
 
-        self.format_string: Callable[[str], str] = string_format
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
-            )
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        return self.string_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal.
+
+        Positive values above ``long.MaxValue`` are accepted as bare
+        literals because C# infers ``ulong`` for literals without a
+        type suffix up to ``ulong.MaxValue``.  Values below
+        ``long.MinValue`` have no clean literal form (unary minus
+        cannot apply to ``ulong``), so they raise
+        ``UnrepresentableIntegerError``.
+        """
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=raise_for_unrepresentable_int(language_name="C#"),
+            min_value=I64_MIN,
+            max_value=2**64 - 1,
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return ordered_map_format_factory(
+            open_template="new Dictionary<{key_type}, {type}> {{",
+            close="}",
+            preamble_lines=("using System.Collections.Generic;",),
+        )(
+            self.default_dict_value_type,
+            default_key_type=self.default_dict_key_type,
         )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            ordered_map_format_factory(
-                open_template="new Dictionary<{key_type}, {type}> {{",
-                close="}",
-                preamble_lines=("using System.Collections.Generic;",),
-            )(
-                default_dict_value_type,
-                default_key_type=default_dict_key_type,
-            )
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a new variable declaration."""
+        date_hint = (
+            "string"
+            if self.date_format.value.type_produced is str
+            else "DateOnly"
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_template(
-                template="[{key}] = {value}",
-                format_value=passthrough_sequence_entry,
-            )
+        datetime_hint = (
+            "string"
+            if self.datetime_format.value.type_produced is str
+            else "DateTime"
         )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = False
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+        return functools.partial(
+            _format_csharp_declaration,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            dict_value_type=self.default_dict_value_type,
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble computed from date/datetime format."""
+        return date_scalar_preamble(
+            date_format=self.date_format,
+            datetime_format=self.datetime_format,
         )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-            )
-        )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (C# needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
 
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style = call_style
-        self.call_style_config: CallStyle | None = call_style.value
-        self.statement_terminator = ";"
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = _csharp_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
+    @cached_property
+    def call_style_config(self) -> CallStyle | None:
+        """Configuration for the chosen call style."""
+        return cast("CallStyle", self.call_style.value)

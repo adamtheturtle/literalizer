@@ -6,8 +6,9 @@ import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
+from functools import cached_property
 from types import MappingProxyType
-from typing import assert_never
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -32,6 +33,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import set_format_factory
@@ -41,9 +43,11 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
@@ -71,12 +75,33 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_kotlin_biginteger_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Kotlin
+    ``java.math.BigInteger`` constructor call.
+
+    The Kotlin ``Long`` type is signed 64-bit; values outside that
+    range must use ``java.math.BigInteger`` (with a matching ``import``
+    statement emitted via the data-dependent preamble).
+    """
+    return f'BigInteger("{value}")'
+
+
+@beartype
+def _kotlin_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``import java.math.BigInteger`` if *data* contains a
+    very-large integer.
+    """
+    if data_has_out_of_range_int(data=data):
+        return ("import java.math.BigInteger",)
+    return ()
 
 
 @beartype
@@ -274,6 +299,7 @@ def _format_kotlin_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[enum.Enum],
     *,
     keyword: str,
     date_hint: str,
@@ -344,6 +370,7 @@ def _kotlin_call_stub(
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Kotlin(metaclass=LanguageCls):
     """Kotlin language specification.
 
@@ -504,7 +531,7 @@ class Kotlin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
         SORTED_SET = enum.member(
@@ -514,7 +541,7 @@ class Kotlin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="sortedSetOf<{type_name}>(",
-                coerce_mixed_to_str=False,
+                supports_heterogeneity=True,
             )
         )
 
@@ -538,11 +565,15 @@ class Kotlin(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=variable_formatter(template="val {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="val {name} = {value}"
+            ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value}"
+            ),
             supports_redefinition=True,
         )
 
@@ -654,7 +685,9 @@ class Kotlin(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[enum.Enum]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
@@ -664,7 +697,7 @@ class Kotlin(metaclass=LanguageCls):
             dict_outer: str,
             set_outer: str,
             sequence_format_name: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -709,6 +742,11 @@ class Kotlin(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -737,97 +775,161 @@ class Kotlin(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
+    date_format: DateFormats = DateFormats.KOTLIN
+    datetime_format: DatetimeFormats = DatetimeFormats.KOTLIN
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.LIST
+    set_format: SetFormats = SetFormats.SET
+    default_set_element_type: str = "Any?"
+    default_dict_key_type: str = "String"
+    default_dict_value_type: str = "Any?"
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.VAL
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.MAP
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.YES
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.KEYWORD
+    indent: str = "    "
+
+    null_literal: ClassVar[str] = "null"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = True
+    statement_terminator: ClassVar[str] = ""
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Format a string value as a quoted literal."""
+        return format_string_backslash_dollar
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+        """Format an assignment to an existing variable."""
+        return variable_formatter(template="{name} = {value}")
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return _kotlin_biginteger_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
         self,
-        *,
-        date_format: DateFormats = DateFormats.KOTLIN,
-        datetime_format: DatetimeFormats = DatetimeFormats.KOTLIN,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.LIST,
-        set_format: SetFormats = SetFormats.SET,
-        default_set_element_type: str = "Any?",
-        default_dict_key_type: str = "String",
-        default_dict_value_type: str = "Any?",
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.VAL,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.MAP,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.YES,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.KEYWORD,
-        indent: str = "    ",
-    ) -> None:
-        """Initialize Kotlin language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "null"
-        self.true_literal = "true"
-        self.false_literal = "false"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
 
-        cfg = self._opener_config
-        date_type_name = cfg.type_name(
-            py_type=date_format.value.type_produced,
-        )
-        dt_type_name = cfg.type_name(
-            py_type=datetime_format.value.type_produced,
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return _kotlin_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def _date_type_name(self) -> str | None:
+        """Resolved Kotlin type name for the chosen date format."""
+        return self._opener_config.type_name(
+            py_type=self.date_format.value.type_produced,
         )
 
-        self.sequence_open: Callable[[list[Value]], str] = (
-            _kotlin_list_sequence_open(
-                cfg=cfg,
-                date_type=date_type_name,
-                datetime_type=dt_type_name,
-                dict_key_type=default_dict_key_type,
-            )
-            if fmt.typed_opener_fallback is not None
-            else fmt.sequence_open
+    @cached_property
+    def _dt_type_name(self) -> str | None:
+        """Resolved Kotlin type name for the chosen datetime format."""
+        return self._opener_config.type_name(
+            py_type=self.datetime_format.value.type_produced,
         )
 
-        self.set_format_config: SetFormatConfig = set_format(
-            default_type=default_set_element_type,
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format.value
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        fmt = self.sequence_format.value
+        if fmt.typed_opener_fallback is None:
+            return fmt.sequence_open
+        return _kotlin_list_sequence_open(
+            cfg=self._opener_config,
+            date_type=self._date_type_name,
+            datetime_type=self._dt_type_name,
+            dict_key_type=self.default_dict_key_type,
         )
-        openers = cfg.build(
-            date_type=date_type_name,
-            datetime_type=dt_type_name,
-            set_opener_template=self.set_format_config.set_opener_template
-            or None,
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        base = self.set_format(default_type=self.default_set_element_type)
+        openers = self._opener_config.build(
+            date_type=self._date_type_name,
+            datetime_type=self._dt_type_name,
+            set_opener_template=base.set_opener_template or None,
             narrow_dict_values=False,
-            dict_key_type=default_dict_key_type,
+            dict_key_type=self.default_dict_key_type,
         )
-        self.set_format_config = self.set_format_config.with_typed_opener(
+        return base.with_typed_opener(
             type_to_opener=openers.set,
-            fallback=self.set_format_config.set_open([]),
+            fallback=base.set_open([]),
         )
-        resolved_dict_opener = dict_format.value.opener_template.replace(
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        resolved_dict_opener = self.dict_format.value.opener_template.replace(
             "{key_type}",
-            default_dict_key_type,
+            self.default_dict_key_type,
         )
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+        return DictFormatConfig(
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=cfg.element_to_type(
+                    element_to_type=self._opener_config.element_to_type(
                         list_template=None,
-                        date_type=date_type_name,
-                        datetime_type=dt_type_name,
+                        date_type=self._date_type_name,
+                        datetime_type=self._dt_type_name,
                         enable_dict_type=False,
-                        dict_key_type=default_dict_key_type,
+                        dict_key_type=self.default_dict_key_type,
                     ),
                     opener_template=resolved_dict_opener,
                 ),
                 fallback=resolved_dict_opener.format(
-                    type_name=default_dict_value_type,
+                    type_name=self.default_dict_value_type,
                 ),
             ),
             narrowed_open=None,
@@ -839,122 +941,123 @@ class Kotlin(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
-        )
-        self.datetime_format: enum.Enum = datetime_format
 
-        self.format_string: Callable[[str], str] = (
-            format_string_backslash_dollar
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=_format_kotlin_biginteger_literal,
         )
-        self.format_float: Callable[[float], str] = float_format
-        self.format_integer: Callable[[int], str] = (
-            integer_format.get_formatter(
-                numeric_separator=numeric_separator,
-            )
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str=(
+                    f"linkedMapOf<{self.default_dict_key_type}"
+                    f", {self.default_dict_value_type}>("
+                )
+            ),
+            close=")",
+            preamble_lines=(),
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return dict_entry_with_separator(
+            separator=" to ",
+            format_value=passthrough_sequence_entry,
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a new variable declaration."""
+        return self.variable_type_hints.formatter(
+            auto_formatter=self.declaration_style.value.formatter,
+            keyword=self.declaration_style.name.lower(),
+            date_hint=(
+                "String"
+                if self.date_format.value.type_produced is str
+                else "LocalDate"
+            ),
+            datetime_hint=(
+                "String"
+                if self.datetime_format.value.type_produced is str
+                else "LocalDateTime"
+            ),
+            default_set_element_type=self.default_set_element_type,
+            default_dict_key_type=self.default_dict_key_type,
+            default_dict_value_type=self.default_dict_value_type,
+            dict_outer=(
+                "HashMap" if self.dict_format.name == "HASH_MAP" else "Map"
+            ),
+            set_outer=(
+                "MutableSet" if self.set_format.name == "SORTED_SET" else "Set"
+            ),
+            sequence_format_name=self.sequence_format.name,
         )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str=(
-                        f"linkedMapOf<{default_dict_key_type}"
-                        f", {default_dict_value_type}>("
-                    )
-                ),
-                close=")",
-                preamble_lines=(),
-            )
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble computed from date/datetime format."""
+        return date_scalar_preamble(
+            date_format=self.date_format,
+            datetime_format=self.datetime_format,
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            dict_entry_with_separator(
-                separator=" to ",
-                format_value=passthrough_sequence_entry,
-            )
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_type_hints.formatter(
-                auto_formatter=declaration_style.value.formatter,
-                keyword=declaration_style.name.lower(),
-                date_hint=(
-                    "String"
-                    if date_format.value.type_produced is str
-                    else "LocalDate"
-                ),
-                datetime_hint=(
-                    "String"
-                    if datetime_format.value.type_produced is str
-                    else "LocalDateTime"
-                ),
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-                dict_outer=(
-                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-                ),
-                set_outer=(
-                    "MutableSet" if set_format.name == "SORTED_SET" else "Set"
-                ),
-                sequence_format_name=sequence_format.name,
-            )
-        )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value}")
-        )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-            )
-        )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Kotlin needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
 
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style = call_style
-        self.call_style_config: CallStyle | None = call_style.value
-        self.statement_terminator = ""
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = _kotlin_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
+    @cached_property
+    def call_style_config(self) -> CallStyle | None:
+        """Configuration for the chosen call style."""
+        return cast("CallStyle", self.call_style.value)

@@ -1,12 +1,14 @@
 """Java language specification."""
 
+import dataclasses
 import datetime
 import enum
 import functools
 from collections import OrderedDict
 from collections.abc import Callable, Sequence
+from functools import cached_property
 from types import MappingProxyType
-from typing import Any, assert_never
+from typing import Any, ClassVar, assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -30,6 +32,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -38,11 +41,13 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_underscore,
     make_long_suffix_formatter,
+    make_overflow_fallback_formatter,
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
@@ -64,12 +69,39 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
 )
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
+
+
+class _JavaModifiers(enum.Enum):
+    """Declaration modifiers supported by Java.
+
+    Each member's value is the Java keyword it renders to.  Declaration
+    order matches canonical Java modifier order
+    (visibility, storage, finality).
+
+    Exposed as :attr:`Java.Modifiers` / :attr:`Java.modifiers`.
+    """
+
+    PUBLIC = "public"
+    """Visibility: publicly accessible."""
+
+    PRIVATE = "private"
+    """Visibility: private to the enclosing class."""
+
+    PROTECTED = "protected"
+    """Visibility: protected (accessible from subclasses)."""
+
+    STATIC = "static"
+    """Storage: associated with the enclosing class rather than an
+    instance.
+    """
+
+    FINAL = "final"
+    """Immutability: cannot be reassigned."""
 
 
 def _java_call_stub(
@@ -115,6 +147,27 @@ def _java_call_stub(
     )
     lines.append(f"static {root_type} {root} = new {root_type}();")
     return tuple(lines)
+
+
+@beartype
+def _format_java_biginteger_literal(value: int) -> str:
+    """Format a value outside signed 64-bit range as a Java
+    ``new BigInteger(...)`` expression.
+
+    Java's ``long`` is signed 64-bit; values outside that range must
+    use ``java.math.BigInteger``.
+    """
+    return f'new BigInteger("{value}")'
+
+
+@beartype
+def _java_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``import java.math.BigInteger;`` if *data* contains a
+    very-large integer.
+    """
+    if data_has_out_of_range_int(data=data):
+        return ("import java.math.BigInteger;",)
+    return ()
 
 
 @beartype
@@ -293,10 +346,24 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
 
 
 @beartype
+def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
+    """Return the ``public static final `` prefix for a Java
+    declaration, including a trailing space when non-empty.
+
+    Values that are not :class:`_JavaModifiers` members are ignored.
+    """
+    keywords = [m.value for m in _JavaModifiers if m in modifiers]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
+@beartype
 def _format_java_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    modifiers: frozenset[enum.Enum],
     *,
     int_type: str,
     date_hint: str,
@@ -315,7 +382,8 @@ def _format_java_typed_declaration(
         dict_outer=dict_outer,
         set_outer=set_outer,
     )
-    return f"{hint} {name} = {value};"
+    prefix = _java_modifier_prefix(modifiers=modifiers)
+    return f"{prefix}{hint} {name} = {value};"
 
 
 @beartype
@@ -323,35 +391,57 @@ def _apply_java_object_nil_declaration(
     name: str,
     value: str,
     data: Value,
-    base_formatter: Callable[[str, str, Value], str],
+    modifiers: frozenset[enum.Enum],
+    *,
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+    typed_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
 ) -> str:
-    """Format a Java variable declaration, guarding top-level ``null``."""
+    """Format a Java variable declaration, guarding top-level ``null``
+    and switching to the typed form whenever modifiers are present.
+    """
+    if modifiers:
+        return typed_formatter(name, value, data, modifiers)
     if data is None:
         return f"Object {name} = {value};"
-    return base_formatter(name, value, data)
+    return base_formatter(name, value, data, modifiers)
 
 
 @beartype
 def _object_nil_declaration(
-    base_formatter: Callable[[str, str, Value], str],
-) -> Callable[[str, str, Value], str]:
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+    *,
+    typed_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Wrap *base_formatter* so top-level ``null`` gets a typed form.
 
     Java cannot infer a type from ``null``, so ``var {name} = null;``
     fails to compile.  Emit ``Object {name} = null;`` when the value is
-    ``None``.
+    ``None``.  Modifiers force the typed form because Java class-field
+    syntax (e.g. ``public static final``) cannot be combined with
+    ``var``.
     """
 
-    def _format(name: str, value: str, data: Value) -> str:
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+    ) -> str:
         """Delegate to module-level implementation."""
         return _apply_java_object_nil_declaration(
-            name=name, value=value, data=data, base_formatter=base_formatter
+            name=name,
+            value=value,
+            data=data,
+            modifiers=modifiers,
+            base_formatter=base_formatter,
+            typed_formatter=typed_formatter,
         )
 
     return _format
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Java(metaclass=LanguageCls):
     """Java language specification.
 
@@ -517,7 +607,7 @@ class Java(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
@@ -528,7 +618,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.TreeSet;",
             ),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -547,7 +637,9 @@ class Java(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -669,12 +761,15 @@ class Java(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    Modifiers = _JavaModifiers
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+    modifiers = _JavaModifiers
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -685,18 +780,18 @@ class Java(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[enum.Enum]], str
+            ],
             int_type: str,
             date_hint: str,
             datetime_hint: str,
             seq_is_array: bool,
             dict_outer: str,
             set_outer: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self is type(self).AUTO:
-                return _object_nil_declaration(base_formatter=auto_formatter)
-            return functools.partial(
+            typed = functools.partial(
                 _format_java_typed_declaration,
                 int_type=int_type,
                 date_hint=date_hint,
@@ -705,6 +800,12 @@ class Java(metaclass=LanguageCls):
                 dict_outer=dict_outer,
                 set_outer=set_outer,
             )
+            if self is type(self).AUTO:
+                return _object_nil_declaration(
+                    base_formatter=auto_formatter,
+                    typed_formatter=typed,
+                )
+            return typed
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -739,8 +840,27 @@ class Java(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Java declaration in a static method."""
+        """Wrap a Java declaration in a ``class Check`` scope.
+
+        When *content* starts with a class-field modifier keyword
+        (``public``, ``private``, ``protected``, ``static``) the
+        declaration is placed at class-field scope, which is the only
+        context where those modifiers are valid.  Otherwise the
+        declaration goes inside ``public static void check()`` so that
+        local-only forms like ``var x = 42;`` compile.
+        """
         del variable_name
+        first_token = (
+            content.lstrip().split(sep=" ", maxsplit=1)[0]
+            if content.strip()
+            else ""
+        )
+        is_class_field = first_token in {
+            "public",
+            "private",
+            "protected",
+            "static",
+        }
         # Lines starting with "static " are class-level declarations
         # (call stubs); everything else goes inside the method body.
         class_lines = [
@@ -749,11 +869,18 @@ class Java(metaclass=LanguageCls):
         method_lines = tuple(
             line for line in body_preamble if not line.startswith("static ")
         )
+        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
+        if is_class_field:
+            field_preamble = (
+                "\n".join(method_lines) + "\n" if method_lines else ""
+            )
+            return (
+                f"class Check {{\n{class_block}{field_preamble}{content}\n}}"
+            )
         content = prepend_body_preamble(
             content=content,
             body_preamble=method_lines,
         )
-        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
         return (
             "class Check {\n"
             f"{class_block}"
@@ -777,85 +904,177 @@ class Java(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
+    date_format: DateFormats = DateFormats.JAVA
+    datetime_format: DatetimeFormats = DatetimeFormats.INSTANT
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.ARRAY
+    set_format: SetFormats = SetFormats.SET
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.VAR
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.MAP_OF_ENTRIES
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.NO
+    line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
+    indent: str = "    "
+
+    null_literal: ClassVar[str] = "null"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = True
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = False
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ";"
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Format a string value as a quoted literal."""
+        return format_string_backslash
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+        """Format an assignment to an existing variable."""
+        return variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return _java_biginteger_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
         self,
-        *,
-        date_format: DateFormats = DateFormats.JAVA,
-        datetime_format: DatetimeFormats = DatetimeFormats.INSTANT,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.ARRAY,
-        set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.VAR,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.MAP_OF_ENTRIES,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.NO,
-        line_ending: LineEndings = LineEndings.SEMICOLON,
-        call_style: CallStyles = CallStyles.POSITIONAL,
-        indent: str = "    ",
-    ) -> None:
-        """Initialize Java language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal = "null"
-        self.true_literal = "true"
-        self.false_literal = "false"
-        fmt = sequence_format.value
-        self.sequence_format_config: SequenceFormatConfig = fmt
-        self.set_format = set_format
-        java_dict_entry = dict_entry_with_template(
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return _java_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def _suffix_is_auto(self) -> bool:
+        """Whether the numeric-literal suffix is AUTO (long suffix)."""
+        return self.numeric_literal_suffix.name == "AUTO"
+
+    @cached_property
+    def _java_dict_entry(self) -> Callable[[str, Value, str], str]:
+        """Shared dict-entry formatter used by dict and ordered-map."""
+        return dict_entry_with_template(
             template="Map.entry({key}, {value})",
             format_value=passthrough_sequence_entry,
         )
-        self.set_format_config: SetFormatConfig = set_format.value
 
-        date_tp = date_format.value.type_produced
-        suffix_is_auto = numeric_literal_suffix.name == "AUTO"
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format.value
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return self.set_format.value
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        fmt = self.sequence_format.value
+        if fmt.typed_opener_fallback is None:
+            return fmt.sequence_open
         cfg = (
-            self._opener_config_long if suffix_is_auto else self._opener_config
+            self._opener_config_long
+            if self._suffix_is_auto
+            else self._opener_config
         )
         openers = cfg.build(
-            date_type=cfg.type_name(py_type=date_tp),
+            date_type=cfg.type_name(
+                py_type=self.date_format.value.type_produced
+            ),
             datetime_type=cfg.type_name(
-                py_type=datetime_format.value.type_produced,
+                py_type=self.datetime_format.value.type_produced,
             ),
             set_opener_template=None,
             narrow_dict_values=False,
         )
-        self.sequence_open: Callable[[list[Value]], str] = (
-            typed_collection_open(
-                type_to_opener=openers.seq,
-                fallback=fmt.typed_opener_fallback,
-            )
-            if fmt.typed_opener_fallback is not None
-            else fmt.sequence_open
+        return typed_collection_open(
+            type_to_opener=openers.seq,
+            fallback=fmt.typed_opener_fallback,
         )
-        self.dict_format_config: DictFormatConfig = dict_format.value
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        self.format_bytes: Callable[[bytes], str] = bytes_format
-        self.format_date: Callable[[datetime.date], str] = date_format
-        self.date_format: enum.Enum = date_format
-        self.format_datetime: Callable[[datetime.datetime], str] = (
-            datetime_format
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return self.dict_format.value
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        base_int_formatter = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
         )
-        self.datetime_format: enum.Enum = datetime_format
-        self.format_string: Callable[[str], str] = format_string_backslash
-        self.format_float: Callable[[float], str] = float_format
-        base_int_formatter = integer_format.get_formatter(
-            numeric_separator=numeric_separator,
-        )
-        self.format_integer: Callable[[int], str] = (
+        suffixed: Callable[[int], str] = (
             make_long_suffix_formatter(base=base_int_formatter)
-            if suffix_is_auto
+            if self._suffix_is_auto
             else make_overflow_suffix_formatter(
                 base=base_int_formatter,
                 min_value=-(2**31),
@@ -863,100 +1082,87 @@ class Java(metaclass=LanguageCls):
                 suffix="L",
             )
         )
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
+        return make_overflow_fallback_formatter(
+            base=suffixed,
+            fallback=_format_java_biginteger_literal,
         )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
-        )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                ordered_map_open=fixed_dict_open(
-                    open_str=(
-                        "new java.util.ArrayList<>(java.util.Arrays.asList("
-                    ),
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str=(
+                    "new java.util.ArrayList<>(java.util.Arrays.asList("
                 ),
-                close="))",
-                preamble_lines=("import java.util.Map;",),
-            )
+            ),
+            close="))",
+            preamble_lines=("import java.util.Map;",),
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            java_dict_entry
-        )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = True
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = False
-        self.supports_scalar_inline_comments = False
-        _java_dt_hint: str
-        if datetime_format.value.type_produced is str:
-            _java_dt_hint = "String"
-        elif datetime_format.name == "ZONED":
-            _java_dt_hint = "ZonedDateTime"
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return self._java_dict_entry
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a new variable declaration."""
+        if self.datetime_format.value.type_produced is str:
+            datetime_hint = "String"
+        elif self.datetime_format.name == "ZONED":
+            datetime_hint = "ZonedDateTime"
         else:
-            _java_dt_hint = "Instant"
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            variable_type_hints.formatter(
-                auto_formatter=declaration_style.value.formatter,
-                int_type="long" if suffix_is_auto else "int",
-                date_hint=(
-                    "String"
-                    if date_format.value.type_produced is str
-                    else "LocalDate"
-                ),
-                datetime_hint=_java_dt_hint,
-                seq_is_array=(sequence_format.name == "ARRAY"),
-                dict_outer=(
-                    "HashMap" if dict_format.name == "HASH_MAP" else "Map"
-                ),
-                set_outer=(
-                    "TreeSet" if set_format.name == "TREE_SET" else "Set"
-                ),
-            )
+            datetime_hint = "Instant"
+        return self.variable_type_hints.formatter(
+            auto_formatter=self.declaration_style.value.formatter,
+            int_type="long" if self._suffix_is_auto else "int",
+            date_hint=(
+                "String"
+                if self.date_format.value.type_produced is str
+                else "LocalDate"
+            ),
+            datetime_hint=datetime_hint,
+            seq_is_array=(self.sequence_format.name == "ARRAY"),
+            dict_outer=(
+                "HashMap" if self.dict_format.name == "HASH_MAP" else "Map"
+            ),
+            set_outer=(
+                "TreeSet" if self.set_format.name == "TREE_SET" else "Set"
+            ),
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble computed from date/datetime format."""
+        return date_scalar_preamble(
+            date_format=self.date_format,
+            datetime_format=self.datetime_format,
         )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        self.data_dependent_preamble = no_data_preamble
-        self.scalar_preamble: dict[type, tuple[str, ...]] = (
-            date_scalar_preamble(
-                date_format=date_format,
-                datetime_format=datetime_format,
-            )
-        )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Java needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
 
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style = call_style
-        self.call_style_config: CallStyle | None = call_style.value
-        self.statement_terminator = ";"
-        self.format_call_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = _java_call_stub
-        self.format_call_preamble_stub: Callable[
-            [str, Sequence[str], StubReturn], tuple[str, ...]
-        ] = no_call_stub
+    @cached_property
+    def call_style_config(self) -> CallStyle | None:
+        """Configuration for the chosen call style."""
+        return self.call_style.value

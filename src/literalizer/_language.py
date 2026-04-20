@@ -93,7 +93,7 @@ class SetFormatConfig:
     empty_set: str | None
     preamble_lines: tuple[str, ...]
     set_opener_template: str
-    coerce_mixed_to_str: bool
+    supports_heterogeneity: bool
 
     def with_typed_opener(
         self,
@@ -162,7 +162,7 @@ class TrailingCommaConfig:
 class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
 
-    formatter: Callable[[str, str, Value], str]
+    formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str]
     supports_redefinition: bool
 
 
@@ -272,6 +272,7 @@ class LanguageCls(type):
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
     CallStyles: type[enum.Enum]
+    Modifiers: type[enum.Enum]
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -290,7 +291,7 @@ class LanguageCls(type):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError
 
     @staticmethod
     def wrap_combined_in_file(
@@ -300,7 +301,7 @@ class LanguageCls(type):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -309,7 +310,7 @@ class LanguageCls(type):
 
 
 @runtime_checkable
-class Language(Protocol):  # pylint: disable=too-many-public-methods
+class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
     sequences.
 
@@ -464,6 +465,15 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def modifiers(self) -> type[enum.Enum]:
+        """Enum class whose members list the declaration modifiers
+        this language supports.
+
+        Languages without modifier vocabulary expose an empty enum.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     extension: str
     """The file extension for this language, including the leading dot."""
 
@@ -475,14 +485,20 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    null_literal: str
-    """The literal representing null/None."""
+    @property
+    def null_literal(self) -> str:
+        """The literal representing null/None."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    true_literal: str
-    """The literal representing true/True."""
+    @property
+    def true_literal(self) -> str:
+        """The literal representing true/True."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    false_literal: str
-    """The literal representing false/False."""
+    @property
+    def false_literal(self) -> str:
+        """The literal representing false/False."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def sequence_open(self) -> Callable[[list[Value]], str]:
@@ -494,18 +510,24 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    sequence_format_config: SequenceFormatConfig
-    """Configuration for the chosen sequence format."""
+    @property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    dict_format_config: DictFormatConfig
-    """Configuration for dict formatting."""
+    @property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    trailing_comma_config: TrailingCommaConfig
-    """Configuration for trailing-comma behavior.
+    @property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior.
 
-    Trailing commas are only added to collection formats that support them.
-    See :class:`TrailingCommaConfig` for details.
-    """
+        Trailing commas are only added to collection formats that support
+        them.  See :class:`TrailingCommaConfig` for details.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
@@ -528,8 +550,10 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    set_format_config: SetFormatConfig
-    """Configuration for the chosen set format."""
+    @property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -541,78 +565,105 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """Callable that formats a set entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    comment_config: CommentConfig
-    """Configuration for the language's comment syntax."""
+    @property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    ordered_map_format_config: OrderedMapFormatConfig
-    """Configuration for ordered-map formatting."""
+    @property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    indent: str
-    """The indentation step for elements inside delimiters in multi-line
-    structures (e.g. ``"    "`` for 4-space indent).
-    """
-
-    indent_closing_delimiter: bool
-    """Whether to indent the closing delimiter of multi-line structures
-    by one ``indent`` step.
-    """
-
-    element_separator: str
-    """The separator placed between elements in inline sequences."""
-
-    skip_null_dict_values: bool
-    """Whether to omit dict entries whose value is ``None``."""
-
-    supports_collection_comments: bool
-    """Whether the language supports comments inside collection
-    initializers.
-
-    When ``False``, YAML comments on collection elements are emitted as
-    standalone comment lines immediately before the collection (or before
-    the variable declaration when a variable name is supplied) rather than
-    being placed inside the ``{...}`` block.
-    """
-
-    supports_scalar_before_comments: bool
-    """Whether the language supports a line comment between the
-    assignment operator and the value on the next line.
-
-    For example, in JavaScript ``const x = // note\\n42;`` is valid
-    because the parser continues the incomplete expression past the
-    line comment.  In Python ``x = # note\\n42`` is a syntax error
-    because the ``#`` comment terminates the statement.
-
-    When ``False``, YAML comments that appear before a scalar value
-    are emitted as standalone comment lines immediately before the
-    variable declaration rather than between the ``=`` and the value.
-    """
-
-    supports_scalar_inline_comments: bool
-    """Whether the language supports a trailing line comment on a
-    scalar value without breaking surrounding syntax.
-
-    For example, in JavaScript ``const x = 42  // note`` is valid
-    because no closing token follows on the same line.  In C
-    ``((_CVal){.i = 42  // note});`` is a syntax error because the
-    ``//`` comment consumes the closing ``});``.
-
-    When ``False``, YAML inline comments on scalar values are emitted
-    as standalone comment lines immediately before the variable
-    declaration rather than being appended after the value.
-    """
+    @property
+    def indent(self) -> str:
+        """The indentation step for elements inside delimiters in
+        multi-line structures (e.g. ``"    "`` for 4-space indent).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
+    def indent_closing_delimiter(self) -> bool:
+        """Whether to indent the closing delimiter of multi-line
+        structures by one ``indent`` step.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def element_separator(self) -> str:
+        """The separator placed between elements in inline sequences."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def skip_null_dict_values(self) -> bool:
+        """Whether to omit dict entries whose value is ``None``."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_collection_comments(self) -> bool:
+        """Whether the language supports comments inside collection
+        initializers.
+
+        When ``False``, YAML comments on collection elements are emitted
+        as standalone comment lines immediately before the collection
+        (or before the variable declaration when a variable name is
+        supplied) rather than being placed inside the ``{...}`` block.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_scalar_before_comments(self) -> bool:
+        r"""Whether the language supports a line comment between the
+        assignment operator and the value on the next line.
+
+        For example, in JavaScript ``const x = // note\n42;`` is valid
+        because the parser continues the incomplete expression past the
+        line comment.  In Python ``x = # note\n42`` is a syntax error
+        because the ``#`` comment terminates the statement.
+
+        When ``False``, YAML comments that appear before a scalar value
+        are emitted as standalone comment lines immediately before the
+        variable declaration rather than between the ``=`` and the
+        value.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_scalar_inline_comments(self) -> bool:
+        """Whether the language supports a trailing line comment on a
+        scalar value without breaking surrounding syntax.
+
+        For example, in JavaScript ``const x = 42  // note`` is valid
+        because no closing token follows on the same line.  In C
+        ``((_CVal){.i = 42  // note});`` is a syntax error because the
+        ``//`` comment consumes the closing ``});``.
+
+        When ``False``, YAML inline comments on scalar values are
+        emitted as standalone comment lines immediately before the
+        variable declaration rather than being appended after the
+        value.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration.
 
-        Called as ``format_variable_declaration(name, value, data)`` where
+        Called as
+        ``format_variable_declaration(name, value, data, modifiers)`` where
         *name* is the variable name, *value* is the already-formatted literal
-        value, and *data* is the original parsed data structure.
+        value, *data* is the original parsed data structure, and *modifiers*
+        is the set of modifier enum values requested by the caller.  Each
+        language exposes its modifier vocabulary as its nested
+        :attr:`Modifiers` enum; values that are not members of that
+        enum are silently ignored.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -663,6 +714,16 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
     @property
     def comment_format(self) -> enum.Enum:
         """The comment format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def date_format(self) -> enum.Enum:
+        """The date format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def datetime_format(self) -> enum.Enum:
+        """The datetime format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
@@ -717,16 +778,6 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def date_format(self) -> enum.Enum:
-        """The date format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
-    def datetime_format(self) -> enum.Enum:
-        """The datetime format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
     def trailing_comma(self) -> enum.Enum:
         """The trailing comma option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -736,128 +787,159 @@ class Language(Protocol):  # pylint: disable=too-many-public-methods
         """The line ending option chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    static_preamble: Sequence[str]
-    """Lines (imports, package declarations, etc.) that are always
-    emitted before the generated code, regardless of what types appear
-    in the data.  Use an empty sequence when none are needed.
-    """
+    @property
+    def static_preamble(self) -> Sequence[str]:
+        """Lines (imports, package declarations, etc.) that are always
+        emitted before the generated code, regardless of what types
+        appear in the data.  Use an empty sequence when none are needed.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    scalar_preamble: dict[type, tuple[str, ...]]
-    """Maps Python scalar types to the preamble lines required when
-    that type appears in the data.  For example, a language that needs
-    ``import datetime`` when dates are present would include
-    ``{datetime.date: ("import datetime",)}``.
-    """
+    @property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Maps Python scalar types to the preamble lines required when
+        that type appears in the data.  For example, a language that
+        needs ``import datetime`` when dates are present would include
+        ``{datetime.date: ("import datetime",)}``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    static_body_preamble: Sequence[str]
-    """Lines that are always prepended to the generated code,
-    regardless of what types appear in the data.  Appears after the
-    header preamble but before the code body.  Use an empty sequence
-    when none are needed.
-    """
+    @property
+    def static_body_preamble(self) -> Sequence[str]:
+        """Lines that are always prepended to the generated code,
+        regardless of what types appear in the data.  Appears after the
+        header preamble but before the code body.  Use an empty sequence
+        when none are needed.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    scalar_body_preamble: dict[type, tuple[str, ...]]
-    """Maps Python scalar types to body-preamble lines that are
-    prepended to the generated code.
+    @property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Maps Python scalar types to body-preamble lines that are
+        prepended to the generated code.
 
-    Most languages leave this empty.  Haskell uses it for typeclass
-    instance definitions.
-    """
+        Most languages leave this empty.  Haskell uses it for typeclass
+        instance definitions.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    compute_body_preamble: Callable[[frozenset[type], Value], tuple[str, ...]]
-    """Computes body-preamble lines based on which types are present in
-    the data.  Most languages build this from
-    :attr:`scalar_body_preamble`; Haskell overrides it to compose the
-    ``data Val`` declaration and imports dynamically.
+    @property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Computes body-preamble lines based on which types are present
+        in the data.  Most languages build this from
+        :attr:`scalar_body_preamble`; Haskell overrides it to compose
+        the ``data Val`` declaration and imports dynamically.
 
-    The second argument is the original data value, allowing
-    implementations to inspect actual values when needed (e.g. to
-    determine whether datetime microsecond-precision imports are
-    required).
-    """
+        The second argument is the original data value, allowing
+        implementations to inspect actual values when needed (e.g. to
+        determine whether datetime microsecond-precision imports are
+        required).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    data_dependent_preamble: Callable[[Value], tuple[str, ...]]
-    """Callable that receives the original data value and returns
-    extra preamble lines that depend on data content rather than just
-    which scalar types are present.
+    @property
+    def data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Callable that receives the original data value and returns
+        extra preamble lines that depend on data content rather than
+        just which scalar types are present.
 
-    Most languages use :func:`no_data_preamble` (returns ``()``);
-    C++ uses this to conditionally emit its ``Any`` helper struct
-    only when the data contains heterogeneous collections.
-    """
+        Most languages use :func:`no_data_preamble` (returns ``()``);
+        C++ uses this to conditionally emit its ``Any`` helper struct
+        only when the data contains heterogeneous collections.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    type_hint_collection_preamble_lines: Callable[
-        [frozenset[type]], tuple[str, ...]
-    ]
-    """Callable that receives the set of collection types that have
-    empty instances in the data and returns preamble lines needed for
-    type-hint annotations.
+    @property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Callable that receives the set of collection types that have
+        empty instances in the data and returns preamble lines needed
+        for type-hint annotations.
 
-    Most languages return ``()`` unconditionally; Python uses this to
-    emit ``from typing import Any`` only when the specific empty
-    collection types present actually require it.
-    """
+        Most languages return ``()`` unconditionally; Python uses this
+        to emit ``from typing import Any`` only when the specific empty
+        collection types present actually require it.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    special_float_preamble: tuple[str, ...]
-    """Preamble lines added only when special float values (inf, -inf,
-    nan) appear in the data.  Most languages set this to ``()``.
-    Languages whose special-float literals require imports (e.g. Go
-    needs ``import "math"``) populate this field so the import is only
-    emitted when actually needed.
-    """
+    @property
+    def special_float_preamble(self) -> tuple[str, ...]:
+        """Preamble lines added only when special float values (inf,
+        -inf, nan) appear in the data.  Most languages set this to
+        ``()``.  Languages whose special-float literals require imports
+        (e.g. Go needs ``import "math"``) populate this field so the
+        import is only emitted when actually needed.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    call_style_config: CallStyle | None
-    """Describes how this language passes arguments in function calls.
+    @property
+    def call_style_config(self) -> CallStyle | None:
+        """Describes how this language passes arguments in function
+        calls.
 
-    ``None`` for languages with an empty :attr:`CallStyles` enum.
-    See :data:`CallStyle` for the variant types.
-    """
+        ``None`` for languages with an empty :attr:`CallStyles` enum.
+        See :data:`CallStyle` for the variant types.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    statement_terminator: str
-    """String appended to each call expression to form a complete
-    statement.
+    @property
+    def statement_terminator(self) -> str:
+        """String appended to each call expression to form a complete
+        statement.
 
-    Most C-family languages use ``";"``.  Python, Ruby, and other
-    languages where a bare expression is a valid statement use ``""``.
-    """
+        Most C-family languages use ``";"``.  Python, Ruby, and other
+        languages where a bare expression is a valid statement use
+        ``""``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    format_call_stub: Callable[
-        [str, Sequence[str], StubReturn], tuple[str, ...]
-    ]
-    """Return stub declaration lines for a name used in a call
-    expression.
+    @property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declaration lines for a name used in a call
+        expression.
 
-    *name* is either a simple identifier (``"process"``) for a
-    function call, or a dotted path (``"throttler.check"``) for a
-    method call on an object.  *params* is the list of parameter
-    names (e.g. ``["user_id", "ts"]``) so that keyword-style
-    languages can generate stubs with matching named parameters.
-    *stub_return* controls the return type of the generated stub:
-    :attr:`StubReturn.VALUE` when the call expression's return
-    value is consumed (e.g. passed as an argument to a transform
-    wrapper), :attr:`StubReturn.VOID` otherwise.
+        *name* is either a simple identifier (``"process"``) for a
+        function call, or a dotted path (``"throttler.check"``) for a
+        method call on an object.  The second argument is the list of
+        parameter names (e.g. ``["user_id", "ts"]``) so that
+        keyword-style languages can generate stubs with matching named
+        parameters.
+        *stub_return* controls the return type of the generated stub:
+        :attr:`StubReturn.VALUE` when the call expression's return
+        value is consumed (e.g. passed as an argument to a transform
+        wrapper), :attr:`StubReturn.VOID` otherwise.
 
-    Stub lines are placed **inside** the language wrapper (e.g.
-    inside ``func main()`` for Go, inside ``class Check`` for Java).
-    Languages that need stubs at file/package scope should use
-    :attr:`format_call_preamble_stub` instead.
+        Stub lines are placed **inside** the language wrapper (e.g.
+        inside ``func main()`` for Go, inside ``class Check`` for
+        Java).  Languages that need stubs at file/package scope should
+        use :attr:`format_call_preamble_stub` instead.
 
-    Returns an empty tuple when no stub is needed (e.g. for
-    builtins, or in languages whose lint checks only verify
-    syntax).
-    """
+        Returns an empty tuple when no stub is needed (e.g. for
+        built-in functions, or in languages whose lint checks only
+        verify syntax).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
-    format_call_preamble_stub: Callable[
-        [str, Sequence[str], StubReturn], tuple[str, ...]
-    ]
-    """Like :attr:`format_call_stub` but the lines are placed
-    **before** the language wrapper — at file, package, or module
-    scope.
+    @property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Like :attr:`format_call_stub` but the lines are placed
+        **before** the language wrapper — at file, package, or module
+        scope.
 
-    Most languages return an empty tuple here and put all stubs in
-    :attr:`format_call_stub`.  Languages like Go that cannot declare
-    types inside function bodies use this instead.
-    """
+        Most languages return an empty tuple here and put all stubs in
+        :attr:`format_call_stub`.  Languages like Go that cannot
+        declare types inside function bodies use this instead.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @staticmethod
     def wrap_in_file(
