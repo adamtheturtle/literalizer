@@ -1,11 +1,11 @@
 """Dict entry, sequence entry, and variable formatting functions."""
 
 import base64
+import enum
 from collections.abc import Callable
 
 from beartype import beartype
 
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -59,9 +59,7 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
 
 @beartype
 def assignment_formatter_from_declaration(
-    formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
 ) -> Callable[[str, str, Value], str]:
     """Return a 3-arg assignment formatter wrapping a declaration
     formatter.
@@ -85,12 +83,12 @@ def assignment_formatter_from_declaration(
 @beartype
 def declaration_formatter_ignoring_modifiers(
     formatter: Callable[[str, str, Value], str],
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Adapt a 3-arg callable to the 4-arg declaration formatter shape.
 
     Use in language cached-properties whose declaration formatter does
-    not know how to apply :class:`~literalizer.DeclarationModifier`
-    values; the modifiers parameter is accepted and silently ignored.
+    not process modifiers; the modifiers parameter is accepted and
+    silently dropped.
     """
 
     @beartype
@@ -98,7 +96,7 @@ def declaration_formatter_ignoring_modifiers(
         name: str,
         value: str,
         data: Value,
-        _modifiers: frozenset[DeclarationModifier],
+        _modifiers: frozenset[enum.Enum],
     ) -> str:
         """Delegate to the wrapped 3-arg formatter, dropping modifiers."""
         return formatter(name, value, data)
@@ -110,16 +108,15 @@ def declaration_formatter_ignoring_modifiers(
 def variable_declaration_formatter(
     *,
     template: str,
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Return a ``format_variable_declaration`` callable from a template
     string.
 
     The *template* must contain ``{name}`` and ``{value}`` placeholders.
-    The resulting callable accepts (but silently ignores) the
-    :class:`~literalizer.DeclarationModifier` set — use this for
-    languages that cannot express the standard visibility/storage
-    modifiers.  Languages with concrete modifier syntax should provide
-    their own formatter rather than calling this helper.
+    The resulting callable accepts (but silently ignores) the modifier
+    set — use this for languages that do not define a modifier enum.
+    Languages with concrete modifier syntax should provide their own
+    formatter rather than calling this helper.
 
     Example::
 
@@ -134,7 +131,7 @@ def variable_declaration_formatter(
         name: str,
         value: str,
         _data: Value,
-        _modifiers: frozenset[DeclarationModifier],
+        _modifiers: frozenset[enum.Enum],
     ) -> str:
         """Delegate to module-level implementation, ignoring modifiers."""
         return _format_variable(

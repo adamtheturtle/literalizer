@@ -4,15 +4,16 @@ Changelog
 Next
 ----
 
-- Added ``DeclarationModifier`` enum with ``PUBLIC``, ``PRIVATE``,
-  ``PROTECTED``, ``STATIC``, ``FINAL``, ``READONLY``, and ``CONST`` members.
+- Added a per-language ``Modifiers`` enum exposed on each language
+  class (alongside ``DateFormats``, ``SequenceFormats``, etc.).
+  ``Java.Modifiers`` has ``PUBLIC``/``PRIVATE``/``PROTECTED``/
+  ``STATIC``/``FINAL``; ``CSharp.Modifiers`` adds ``CONST`` and
+  ``READONLY``; ``Cpp.Modifiers`` has ``STATIC``/``CONST``.  Languages
+  without modifier vocabulary expose an empty ``Modifiers`` enum.
 - ``NewVariable`` and ``BothVariableForms`` now accept a ``modifiers``
-  keyword argument to control visibility and storage on generated
-  declarations.
-- Implemented modifier rendering for Java (``public``/``private``/
-  ``protected``/``static``/``final``), C# (same plus ``readonly`` and
-  ``const``), and C++ (``static``/``const``).  Other languages silently
-  ignore modifiers they cannot express.
+  keyword argument.  Values that are not members of the target
+  language's ``Modifiers`` enum are silently ignored, matching how
+  other language format enums behave.
 - Removed automatic coercion of heterogeneous data to strings.  The
   ``error_on_coercion`` parameter has been removed from ``literalize``;
   ``literalize`` now always raises a subclass of
