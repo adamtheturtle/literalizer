@@ -35,6 +35,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
+    make_ull_fallback,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
@@ -58,19 +59,6 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
-
-
-@beartype
-def _format_c_ull_literal(value: int) -> str:
-    """Format a value above ``LLONG_MAX`` as an unsigned literal.
-
-    C signed-integer literals are rejected by the compiler when they
-    exceed ``LLONG_MAX``; the ``ULL`` suffix selects
-    ``unsigned long long``, which can hold values up to
-    ``ULLONG_MAX``.  Only reached for values above the signed 64-bit
-    range; values below are outside ``unsigned long long`` too.
-    """
-    return f"{value}ULL"
 
 
 @beartype
@@ -550,7 +538,7 @@ class C(metaclass=LanguageCls):
         )
         return make_overflow_fallback_formatter(
             base=base,
-            fallback=_format_c_ull_literal,
+            fallback=make_ull_fallback(language_name="C"),
         )
 
     @cached_property

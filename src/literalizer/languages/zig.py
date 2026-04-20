@@ -64,6 +64,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableIntegerError
 
 
 @beartype
@@ -95,8 +96,15 @@ def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
         case bool():
             return formatted
         case int():
-            if not I64_MIN <= original <= I64_MAX:
+            if original > I64_MAX:
                 return f".{{ .uint = {formatted} }}"
+            if original < I64_MIN:
+                msg = (
+                    f"Zig cannot represent negative integer {original} "
+                    "below the signed 64-bit range using the ZVal "
+                    "union's unsigned variant."
+                )
+                raise UnrepresentableIntegerError(msg)
             return f".{{ .int = {formatted} }}"
         case float():
             return f".{{ .float = {formatted} }}"
