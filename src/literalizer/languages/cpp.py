@@ -73,15 +73,19 @@ from literalizer._types import Value, ValueKind
 class _CppModifiers(enum.Enum):
     """Declaration modifiers supported by C++.
 
+    Each member's value is the C++ keyword it renders to.  Declaration
+    order matches canonical C++ modifier order (``static`` before
+    ``const``).
+
     Exposed as :attr:`Cpp.Modifiers` / :attr:`Cpp.modifiers`.
     """
 
-    STATIC = enum.auto()
+    STATIC = "static"
     """Storage: internal linkage at namespace scope, or per-class
     storage inside a class.
     """
 
-    CONST = enum.auto()
+    CONST = "const"
     """Immutability: the variable cannot be reassigned."""
 
 
@@ -671,17 +675,6 @@ def _build_ordered_map_config(
     )
 
 
-_CPP_MODIFIER_ORDER: tuple[_CppModifiers, ...] = (
-    _CppModifiers.STATIC,
-    _CppModifiers.CONST,
-)
-
-_CPP_MODIFIER_KEYWORDS: dict[_CppModifiers, str] = {
-    _CppModifiers.STATIC: "static",
-    _CppModifiers.CONST: "const",
-}
-
-
 @beartype
 def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``static const `` prefix for a C++ declaration,
@@ -689,11 +682,7 @@ def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 
     Values that are not :class:`_CppModifiers` members are ignored.
     """
-    keywords = [
-        _CPP_MODIFIER_KEYWORDS[m]
-        for m in _CPP_MODIFIER_ORDER
-        if m in modifiers
-    ]
+    keywords = [m.value for m in _CppModifiers if m in modifiers]
     if not keywords:
         return ""
     return " ".join(keywords) + " "

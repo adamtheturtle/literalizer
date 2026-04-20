@@ -79,24 +79,28 @@ from literalizer.exceptions import NullInCollectionError
 class _JavaModifiers(enum.Enum):
     """Declaration modifiers supported by Java.
 
+    Each member's value is the Java keyword it renders to.  Declaration
+    order matches canonical Java modifier order
+    (visibility, storage, finality).
+
     Exposed as :attr:`Java.Modifiers` / :attr:`Java.modifiers`.
     """
 
-    PUBLIC = enum.auto()
+    PUBLIC = "public"
     """Visibility: publicly accessible."""
 
-    PRIVATE = enum.auto()
+    PRIVATE = "private"
     """Visibility: private to the enclosing class."""
 
-    PROTECTED = enum.auto()
+    PROTECTED = "protected"
     """Visibility: protected (accessible from subclasses)."""
 
-    STATIC = enum.auto()
+    STATIC = "static"
     """Storage: associated with the enclosing class rather than an
     instance.
     """
 
-    FINAL = enum.auto()
+    FINAL = "final"
     """Immutability: cannot be reassigned."""
 
 
@@ -341,23 +345,6 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
             assert_never(unreachable)
 
 
-_JAVA_MODIFIER_ORDER: tuple[_JavaModifiers, ...] = (
-    _JavaModifiers.PUBLIC,
-    _JavaModifiers.PRIVATE,
-    _JavaModifiers.PROTECTED,
-    _JavaModifiers.STATIC,
-    _JavaModifiers.FINAL,
-)
-
-_JAVA_MODIFIER_KEYWORDS: dict[_JavaModifiers, str] = {
-    _JavaModifiers.PUBLIC: "public",
-    _JavaModifiers.PRIVATE: "private",
-    _JavaModifiers.PROTECTED: "protected",
-    _JavaModifiers.STATIC: "static",
-    _JavaModifiers.FINAL: "final",
-}
-
-
 @beartype
 def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static final `` prefix for a Java
@@ -365,11 +352,7 @@ def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 
     Values that are not :class:`_JavaModifiers` members are ignored.
     """
-    keywords = [
-        _JAVA_MODIFIER_KEYWORDS[m]
-        for m in _JAVA_MODIFIER_ORDER
-        if m in modifiers
-    ]
+    keywords = [m.value for m in _JavaModifiers if m in modifiers]
     if not keywords:
         return ""
     return " ".join(keywords) + " "

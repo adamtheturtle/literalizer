@@ -82,47 +82,31 @@ from literalizer._types import Value
 class _CSharpModifiers(enum.Enum):
     """Declaration modifiers supported by C#.
 
+    Each member's value is the C# keyword it renders to.  Declaration
+    order matches canonical C# modifier order.
+
     Exposed as :attr:`CSharp.Modifiers` / :attr:`CSharp.modifiers`.
     """
 
-    PUBLIC = enum.auto()
+    PUBLIC = "public"
     """Visibility: publicly accessible."""
 
-    PRIVATE = enum.auto()
+    PRIVATE = "private"
     """Visibility: private to the enclosing type."""
 
-    PROTECTED = enum.auto()
+    PROTECTED = "protected"
     """Visibility: protected (accessible from subclasses)."""
 
-    STATIC = enum.auto()
+    STATIC = "static"
     """Storage: associated with the enclosing type rather than an
     instance.
     """
 
-    CONST = enum.auto()
+    CONST = "const"
     """Immutability: compile-time constant."""
 
-    READONLY = enum.auto()
+    READONLY = "readonly"
     """Immutability: cannot be reassigned after initialization."""
-
-
-_CSHARP_MODIFIER_ORDER: tuple[_CSharpModifiers, ...] = (
-    _CSharpModifiers.PUBLIC,
-    _CSharpModifiers.PRIVATE,
-    _CSharpModifiers.PROTECTED,
-    _CSharpModifiers.STATIC,
-    _CSharpModifiers.CONST,
-    _CSharpModifiers.READONLY,
-)
-
-_CSHARP_MODIFIER_KEYWORDS: dict[_CSharpModifiers, str] = {
-    _CSharpModifiers.PUBLIC: "public",
-    _CSharpModifiers.PRIVATE: "private",
-    _CSharpModifiers.PROTECTED: "protected",
-    _CSharpModifiers.STATIC: "static",
-    _CSharpModifiers.CONST: "const",
-    _CSharpModifiers.READONLY: "readonly",
-}
 
 
 @beartype
@@ -132,11 +116,7 @@ def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 
     Values that are not :class:`_CSharpModifiers` members are ignored.
     """
-    keywords = [
-        _CSHARP_MODIFIER_KEYWORDS[m]
-        for m in _CSHARP_MODIFIER_ORDER
-        if m in modifiers
-    ]
+    keywords = [m.value for m in _CSharpModifiers if m in modifiers]
     if not keywords:
         return ""
     return " ".join(keywords) + " "
