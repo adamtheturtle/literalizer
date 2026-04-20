@@ -1043,7 +1043,7 @@ def body_preamble_from_scalars(
 
     Args:
         scalar_body_preamble: Mapping from type to preamble lines.
-        format_lines: Post-processing for the duplicate-free lines
+        format_lines: Post-processing for the de-duplicated lines
             (e.g. adding language-specific prefixes).
     """
 

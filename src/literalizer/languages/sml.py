@@ -217,7 +217,7 @@ def _build_sml_declaration(
 
 
 def _format_sml_preamble_lines(lines: list[str]) -> tuple[str, ...]:
-    """Format duplicate-free preamble lines with SML ``datatype`` syntax.
+    """Format de-duplicated preamble lines with SML ``datatype`` syntax.
 
     The first constructor is indented; subsequent constructors are
     prefixed with ``|``.

@@ -1463,7 +1463,7 @@ def literalize_call(
             literals.
         target_function: The function expression to call
             (e.g. ``"throttler.should_send_notification"``).
-        parameter_names: Parameter names, mapped by position to each
+        parameter_names: Parameter names, positionally mapped to each
             element in each row.  For :class:`PositionalCallStyle`
             languages these are unused in the output but still
             determine how many values to expect per row.
@@ -1472,7 +1472,7 @@ def literalize_call(
             version (e.g. ``lambda c: f"print({c})"``).
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
-            rendered value is passed as a single argument.
+            literalized value is passed as a single argument.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
             complete, valid source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.
@@ -1782,7 +1782,7 @@ def _coerce_toml_values(*, data: object) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
     ``tomlkit`` produces ``datetime.time`` values which are not
-    expressible in the ``Value`` type, so they are converted to
+    representable in the ``Value`` type, so they are converted to
     their ISO-format string form.
     """
     match data:
