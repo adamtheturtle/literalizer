@@ -76,32 +76,61 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
-_CSHARP_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
-    DeclarationModifier.PUBLIC,
-    DeclarationModifier.PRIVATE,
-    DeclarationModifier.PROTECTED,
-    DeclarationModifier.STATIC,
-    DeclarationModifier.CONST,
-    DeclarationModifier.READONLY,
+
+class _CSharpModifiers(enum.Enum):
+    """Declaration modifiers supported by C#.
+
+    Exposed as :attr:`CSharp.Modifiers` / :attr:`CSharp.modifiers`.
+    """
+
+    PUBLIC = enum.auto()
+    """Visibility: publicly accessible."""
+
+    PRIVATE = enum.auto()
+    """Visibility: private to the enclosing type."""
+
+    PROTECTED = enum.auto()
+    """Visibility: protected (accessible from subclasses)."""
+
+    STATIC = enum.auto()
+    """Storage: associated with the enclosing type rather than an
+    instance.
+    """
+
+    CONST = enum.auto()
+    """Immutability: compile-time constant."""
+
+    READONLY = enum.auto()
+    """Immutability: cannot be reassigned after initialization."""
+
+
+_CSHARP_MODIFIER_ORDER: tuple[_CSharpModifiers, ...] = (
+    _CSharpModifiers.PUBLIC,
+    _CSharpModifiers.PRIVATE,
+    _CSharpModifiers.PROTECTED,
+    _CSharpModifiers.STATIC,
+    _CSharpModifiers.CONST,
+    _CSharpModifiers.READONLY,
 )
 
-_CSHARP_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
-    DeclarationModifier.PUBLIC: "public",
-    DeclarationModifier.PRIVATE: "private",
-    DeclarationModifier.PROTECTED: "protected",
-    DeclarationModifier.STATIC: "static",
-    DeclarationModifier.CONST: "const",
-    DeclarationModifier.READONLY: "readonly",
+_CSHARP_MODIFIER_KEYWORDS: dict[_CSharpModifiers, str] = {
+    _CSharpModifiers.PUBLIC: "public",
+    _CSharpModifiers.PRIVATE: "private",
+    _CSharpModifiers.PROTECTED: "protected",
+    _CSharpModifiers.STATIC: "static",
+    _CSharpModifiers.CONST: "const",
+    _CSharpModifiers.READONLY: "readonly",
 }
 
 
 @beartype
-def _csharp_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static readonly `` prefix for a C#
     declaration, including a trailing space when non-empty.
+
+    Values that are not :class:`_CSharpModifiers` members are ignored.
     """
     keywords = [
         _CSHARP_MODIFIER_KEYWORDS[m]
@@ -211,7 +240,7 @@ def _format_csharp_declaration(
     name: str,
     value: str,
     data: Value,
-    modifiers: frozenset[DeclarationModifier],
+    modifiers: frozenset[enum.Enum],
     *,
     date_hint: str,
     datetime_hint: str,
@@ -219,10 +248,7 @@ def _format_csharp_declaration(
 ) -> str:
     """Format a C# variable declaration, applying modifiers when set.
 
-    Falls back to ``var {name} = {value};`` whenever *modifiers* is
-    empty or contains only values C# cannot express (e.g.
-    :attr:`DeclarationModifier.FINAL`), which matches the "silently
-    ignore modifiers a language cannot express" guarantee.
+    Falls back to ``var {name} = {value};`` when *modifiers* is empty.
     """
     prefix = _csharp_modifier_prefix(modifiers=modifiers)
     if not prefix:
@@ -531,12 +557,15 @@ class CSharp(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    Modifiers = _CSharpModifiers
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+    modifiers = _CSharpModifiers
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -873,7 +902,7 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         date_hint = (
             "string"

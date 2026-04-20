@@ -67,8 +67,22 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value, ValueKind
+
+
+class _CppModifiers(enum.Enum):
+    """Declaration modifiers supported by C++.
+
+    Exposed as :attr:`Cpp.Modifiers` / :attr:`Cpp.modifiers`.
+    """
+
+    STATIC = enum.auto()
+    """Storage: internal linkage at namespace scope, or per-class
+    storage inside a class.
+    """
+
+    CONST = enum.auto()
+    """Immutability: the variable cannot be reassigned."""
 
 
 @beartype
@@ -657,21 +671,23 @@ def _build_ordered_map_config(
     )
 
 
-_CPP_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
-    DeclarationModifier.STATIC,
-    DeclarationModifier.CONST,
+_CPP_MODIFIER_ORDER: tuple[_CppModifiers, ...] = (
+    _CppModifiers.STATIC,
+    _CppModifiers.CONST,
 )
 
-_CPP_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
-    DeclarationModifier.STATIC: "static",
-    DeclarationModifier.CONST: "const",
+_CPP_MODIFIER_KEYWORDS: dict[_CppModifiers, str] = {
+    _CppModifiers.STATIC: "static",
+    _CppModifiers.CONST: "const",
 }
 
 
 @beartype
-def _cpp_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``static const `` prefix for a C++ declaration,
     including a trailing space when non-empty.
+
+    Values that are not :class:`_CppModifiers` members are ignored.
     """
     keywords = [
         _CPP_MODIFIER_KEYWORDS[m]
@@ -688,7 +704,7 @@ def _format_variable_declaration(
     name: str,
     value: str,
     _data: Value,
-    modifiers: frozenset[DeclarationModifier],
+    modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a C++ variable declaration.
 
@@ -704,7 +720,7 @@ def _format_variable_declaration(
     match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
             type_keyword = "const auto*"
-            extra = modifiers - {DeclarationModifier.CONST}
+            extra = modifiers - {_CppModifiers.CONST}
         case ValueKind.TYPED_EXPRESSION:
             type_keyword = "auto"
             extra = modifiers
@@ -1086,12 +1102,15 @@ class Cpp(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    Modifiers = _CppModifiers
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+    modifiers = _CppModifiers
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -1351,7 +1370,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

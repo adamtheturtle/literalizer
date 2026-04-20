@@ -69,7 +69,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -178,10 +177,8 @@ def _apply_go_nil_safe_declaration(
     name: str,
     value: str,
     data: Value,
-    modifiers: frozenset[DeclarationModifier],
-    base_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    modifiers: frozenset[enum.Enum],
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
 ) -> str:
     """Format a Go variable declaration, guarding top-level
     ``nil``.
@@ -193,10 +190,8 @@ def _apply_go_nil_safe_declaration(
 
 @beartype
 def _nil_safe_declaration(
-    base_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Wrap *base_formatter* so top-level ``nil`` gets a typed form.
 
     Go cannot infer a type from ``nil`` alone, so
@@ -208,7 +203,7 @@ def _nil_safe_declaration(
         name: str,
         value: str,
         data: Value,
-        modifiers: frozenset[DeclarationModifier],
+        modifiers: frozenset[enum.Enum],
     ) -> str:
         """Delegate to module-level implementation."""
         return _apply_go_nil_safe_declaration(
@@ -491,6 +486,11 @@ class Go(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -749,7 +749,7 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return _nil_safe_declaration(
             base_formatter=self.declaration_style.value.formatter,

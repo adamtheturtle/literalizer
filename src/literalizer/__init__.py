@@ -31,7 +31,6 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
 )
-from literalizer._modifiers import DeclarationModifier
 
 __all__ = [
     "BothVariableForms",
@@ -39,7 +38,6 @@ __all__ = [
     "CommentConfig",
     "DateFormatConfig",
     "DatetimeFormatConfig",
-    "DeclarationModifier",
     "DictFormatConfig",
     "ExistingVariable",
     "InputFormat",

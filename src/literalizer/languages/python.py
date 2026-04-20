@@ -71,7 +71,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -133,7 +132,7 @@ def _format_variable_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
     bytes_hint: str,
     date_hint: str,
@@ -174,7 +173,7 @@ def _format_inline_type_hint_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
     bytes_hint: str,
     date_hint: str,
@@ -656,7 +655,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter for this hint
             style.
             """
@@ -836,6 +835,11 @@ class Python(metaclass=LanguageCls):
         POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
+
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
 
     @staticmethod
     def wrap_in_file(
@@ -1031,7 +1035,7 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,

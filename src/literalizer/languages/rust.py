@@ -68,7 +68,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
 
@@ -252,7 +251,7 @@ def _format_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
     keyword: str,
     date_type: str,
@@ -618,7 +617,7 @@ class Rust(metaclass=LanguageCls):
             default_set_element_type: str,
             default_dict_key_type: str,
             default_dict_value_type: str,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return a formatter for this declaration style.
 
             For ``LET`` and ``LET_MUT`` the formatter is used
@@ -830,6 +829,11 @@ class Rust(metaclass=LanguageCls):
         POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
+
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
 
     @staticmethod
     def wrap_in_file(
@@ -1047,7 +1051,7 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.build_formatter(
             date_type=(

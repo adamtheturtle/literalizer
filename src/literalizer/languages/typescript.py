@@ -71,7 +71,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -168,7 +167,7 @@ def _format_ts_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
     keyword: str,
     date_hint: str,
@@ -330,10 +329,8 @@ class TypeScript(metaclass=LanguageCls):
 
         def wrap_formatter(
             self,
-            formatter: Callable[
-                [str, str, Value, frozenset[DeclarationModifier]], str
-            ],
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+            formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Wrap a formatter to match this line ending style."""
             if self.value != "none":
                 return formatter
@@ -342,10 +339,10 @@ class TypeScript(metaclass=LanguageCls):
                 name: str,
                 value: str,
                 data: Value,
-                modifiers: frozenset[DeclarationModifier],
+                _modifiers: frozenset[enum.Enum],
             ) -> str:
                 """Format without a trailing semicolon."""
-                return formatter(name, value, data, modifiers).removesuffix(
+                return formatter(name, value, data, _modifiers).removesuffix(
                     ";"
                 )
 
@@ -509,14 +506,14 @@ class TypeScript(metaclass=LanguageCls):
             self,
             *,
             auto_formatter: Callable[
-                [str, str, Value, frozenset[DeclarationModifier]], str
+                [str, str, Value, frozenset[enum.Enum]], str
             ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
             dict_hint_template: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -550,6 +547,11 @@ class TypeScript(metaclass=LanguageCls):
         POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
+
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
 
     @staticmethod
     def wrap_in_file(
@@ -734,7 +736,7 @@ class TypeScript(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         base_decl = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,

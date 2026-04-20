@@ -67,7 +67,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -226,7 +225,7 @@ def _format_swift_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
     keyword: str,
     date_hint: str,
@@ -254,27 +253,23 @@ def _apply_swift_optional_nil_declaration(
     name: str,
     value: str,
     data: Value,
-    modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
-    base_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     keyword: str,
 ) -> str:
     """Format a Swift variable declaration, guarding top-level ``nil``."""
     if data is None:
         return f"{keyword} {name}: Any? = {value}"
-    return base_formatter(name, value, data, modifiers)
+    return base_formatter(name, value, data, _modifiers)
 
 
 @beartype
 def _optional_nil_declaration(
-    base_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     *,
     keyword: str,
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Wrap *base_formatter* so top-level ``nil`` gets an optional type.
 
     ``Any`` is non-optional in Swift, so ``let my_data: Any = nil`` fails
@@ -286,14 +281,14 @@ def _optional_nil_declaration(
         name: str,
         value: str,
         data: Value,
-        modifiers: frozenset[DeclarationModifier],
+        _modifiers: frozenset[enum.Enum],
     ) -> str:
         """Delegate to module-level implementation."""
         return _apply_swift_optional_nil_declaration(
             name=name,
             value=value,
             data=data,
-            modifiers=modifiers,
+            _modifiers=_modifiers,
             base_formatter=base_formatter,
             keyword=keyword,
         )
@@ -570,7 +565,7 @@ class Swift(metaclass=LanguageCls):
             self,
             *,
             auto_formatter: Callable[
-                [str, str, Value, frozenset[DeclarationModifier]], str
+                [str, str, Value, frozenset[enum.Enum]], str
             ],
             keyword: str,
             date_hint: str,
@@ -579,7 +574,7 @@ class Swift(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return _optional_nil_declaration(
@@ -623,6 +618,11 @@ class Swift(metaclass=LanguageCls):
         KEYWORD = KeywordCallStyle(separator=": ")
 
     call_styles = CallStyles
+
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
 
     @staticmethod
     def wrap_in_file(
@@ -825,7 +825,7 @@ class Swift(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,

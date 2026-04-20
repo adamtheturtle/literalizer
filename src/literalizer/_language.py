@@ -11,7 +11,6 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -163,7 +162,7 @@ class TrailingCommaConfig:
 class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
 
-    formatter: Callable[[str, str, Value, frozenset[DeclarationModifier]], str]
+    formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str]
     supports_redefinition: bool
 
 
@@ -273,6 +272,7 @@ class LanguageCls(type):
     TrailingCommas: type[enum.Enum]
     LineEndings: type[enum.Enum]
     CallStyles: type[enum.Enum]
+    Modifiers: type[enum.Enum]
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -465,6 +465,15 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def modifiers(self) -> type[enum.Enum]:
+        """Enum class whose members list the declaration modifiers
+        this language supports.
+
+        Languages without modifier vocabulary expose an empty enum.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     extension: str
     """The file extension for this language, including the leading dot."""
 
@@ -644,16 +653,17 @@ class Language(Protocol):
     @property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration.
 
         Called as
         ``format_variable_declaration(name, value, data, modifiers)`` where
         *name* is the variable name, *value* is the already-formatted literal
         value, *data* is the original parsed data structure, and *modifiers*
-        is the set of :class:`~literalizer.DeclarationModifier` values
-        requested by the caller.  Modifiers the language cannot express
-        are silently ignored.
+        is the set of modifier enum values requested by the caller.  Each
+        language exposes its modifier vocabulary as its nested
+        :attr:`Modifiers` enum; values that are not members of that
+        enum are silently ignored.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

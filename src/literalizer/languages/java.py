@@ -72,9 +72,32 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
+
+
+class _JavaModifiers(enum.Enum):
+    """Declaration modifiers supported by Java.
+
+    Exposed as :attr:`Java.Modifiers` / :attr:`Java.modifiers`.
+    """
+
+    PUBLIC = enum.auto()
+    """Visibility: publicly accessible."""
+
+    PRIVATE = enum.auto()
+    """Visibility: private to the enclosing class."""
+
+    PROTECTED = enum.auto()
+    """Visibility: protected (accessible from subclasses)."""
+
+    STATIC = enum.auto()
+    """Storage: associated with the enclosing class rather than an
+    instance.
+    """
+
+    FINAL = enum.auto()
+    """Immutability: cannot be reassigned."""
 
 
 def _java_call_stub(
@@ -318,27 +341,29 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
             assert_never(unreachable)
 
 
-_JAVA_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
-    DeclarationModifier.PUBLIC,
-    DeclarationModifier.PRIVATE,
-    DeclarationModifier.PROTECTED,
-    DeclarationModifier.STATIC,
-    DeclarationModifier.FINAL,
+_JAVA_MODIFIER_ORDER: tuple[_JavaModifiers, ...] = (
+    _JavaModifiers.PUBLIC,
+    _JavaModifiers.PRIVATE,
+    _JavaModifiers.PROTECTED,
+    _JavaModifiers.STATIC,
+    _JavaModifiers.FINAL,
 )
 
-_JAVA_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
-    DeclarationModifier.PUBLIC: "public",
-    DeclarationModifier.PRIVATE: "private",
-    DeclarationModifier.PROTECTED: "protected",
-    DeclarationModifier.STATIC: "static",
-    DeclarationModifier.FINAL: "final",
+_JAVA_MODIFIER_KEYWORDS: dict[_JavaModifiers, str] = {
+    _JavaModifiers.PUBLIC: "public",
+    _JavaModifiers.PRIVATE: "private",
+    _JavaModifiers.PROTECTED: "protected",
+    _JavaModifiers.STATIC: "static",
+    _JavaModifiers.FINAL: "final",
 }
 
 
 @beartype
-def _java_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static final `` prefix for a Java
     declaration, including a trailing space when non-empty.
+
+    Values that are not :class:`_JavaModifiers` members are ignored.
     """
     keywords = [
         _JAVA_MODIFIER_KEYWORDS[m]
@@ -355,7 +380,7 @@ def _format_java_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    modifiers: frozenset[enum.Enum],
     *,
     int_type: str,
     date_hint: str,
@@ -374,7 +399,7 @@ def _format_java_typed_declaration(
         dict_outer=dict_outer,
         set_outer=set_outer,
     )
-    prefix = _java_modifier_prefix(modifiers=_modifiers)
+    prefix = _java_modifier_prefix(modifiers=modifiers)
     return f"{prefix}{hint} {name} = {value};"
 
 
@@ -383,14 +408,10 @@ def _apply_java_object_nil_declaration(
     name: str,
     value: str,
     data: Value,
-    modifiers: frozenset[DeclarationModifier],
+    modifiers: frozenset[enum.Enum],
     *,
-    base_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
-    typed_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+    typed_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
 ) -> str:
     """Format a Java variable declaration, guarding top-level ``null``
     and switching to the typed form whenever modifiers are present.
@@ -404,14 +425,10 @@ def _apply_java_object_nil_declaration(
 
 @beartype
 def _object_nil_declaration(
-    base_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     *,
-    typed_formatter: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
-) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    typed_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Wrap *base_formatter* so top-level ``null`` gets a typed form.
 
     Java cannot infer a type from ``null``, so ``var {name} = null;``
@@ -425,7 +442,7 @@ def _object_nil_declaration(
         name: str,
         value: str,
         data: Value,
-        modifiers: frozenset[DeclarationModifier],
+        modifiers: frozenset[enum.Enum],
     ) -> str:
         """Delegate to module-level implementation."""
         return _apply_java_object_nil_declaration(
@@ -761,12 +778,15 @@ class Java(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    Modifiers = _JavaModifiers
+
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
     comment_formats = CommentFormats
+    modifiers = _JavaModifiers
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -778,7 +798,7 @@ class Java(metaclass=LanguageCls):
             self,
             *,
             auto_formatter: Callable[
-                [str, str, Value, frozenset[DeclarationModifier]], str
+                [str, str, Value, frozenset[enum.Enum]], str
             ],
             int_type: str,
             date_hint: str,
@@ -786,7 +806,7 @@ class Java(metaclass=LanguageCls):
             seq_is_array: bool,
             dict_outer: str,
             set_outer: str,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             typed = functools.partial(
                 _format_java_typed_declaration,
@@ -1110,7 +1130,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         if self.datetime_format.value.type_produced is str:
             datetime_hint = "String"
