@@ -31,17 +31,15 @@ from literalizer.exceptions import (
     NullInCollectionError,
     UnrepresentableIntegerError,
 )
-from literalizer.languages import (
-    ALL_LANGUAGES,
-    C,
-    Elm,
-    Fortran,
-    FSharp,
-    Gleam,
-    Haskell,
-    OCaml,
-    PureScript,
-)
+from literalizer.languages import all_languages
+from literalizer.languages.c import C
+from literalizer.languages.elm import Elm
+from literalizer.languages.fortran import Fortran
+from literalizer.languages.fsharp import FSharp
+from literalizer.languages.gleam import Gleam
+from literalizer.languages.haskell import Haskell
+from literalizer.languages.ocaml import OCaml
+from literalizer.languages.purescript import PureScript
 
 
 @pytest.fixture(name="cases_dir")
@@ -107,7 +105,7 @@ def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
 
 
 _SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
-    ALL_LANGUAGES,
+    all_languages(),
     key=_lang_cls_name,
 )
 

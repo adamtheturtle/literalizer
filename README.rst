@@ -36,7 +36,7 @@ Usage
    """Example of using literalizer."""
 
    from literalizer import InputFormat, literalize
-   from literalizer.languages import Go
+   from literalizer.languages.go import Go
 
    # YAML comments are preserved using the target language's comment syntax
    yaml_config = """\

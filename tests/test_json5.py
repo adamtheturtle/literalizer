@@ -15,11 +15,9 @@ from literalizer.exceptions import (
     JSON5ParseError,
     ParseError,
 )
-from literalizer.languages import (
-    Go,
-    JavaScript,
-    Python,
-)
+from literalizer.languages.go import Go
+from literalizer.languages.javascript import JavaScript
+from literalizer.languages.python import Python
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,

@@ -28,7 +28,7 @@ Use :func:`literalizer.literalize` to convert data to native language literals:
    """Example of using literalizer."""
 
    from literalizer import InputFormat, literalize
-   from literalizer.languages import Go
+   from literalizer.languages.go import Go
 
    # YAML comments are preserved using the target language's comment syntax
    yaml_config = """\

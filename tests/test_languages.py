@@ -21,16 +21,14 @@ from literalizer.exceptions import (
     PerElementNotListError,
     UnsupportedCallStyleError,
 )
-from literalizer.languages import (
-    Cobol,
-    Fortran,
-    FSharp,
-    Go,
-    Java,
-    Matlab,
-    Python,
-    Yaml,
-)
+from literalizer.languages.cobol import Cobol
+from literalizer.languages.fortran import Fortran
+from literalizer.languages.fsharp import FSharp
+from literalizer.languages.go import Go
+from literalizer.languages.java import Java
+from literalizer.languages.matlab import Matlab
+from literalizer.languages.python import Python
+from literalizer.languages.yaml import Yaml
 
 COBOL = Cobol(
     date_format=Cobol.date_formats.ISO,
@@ -302,7 +300,7 @@ def test_java_list_rejects_null_elements() -> None:
 
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
-    literalizer.languages.ALL_LANGUAGES,
+    literalizer.languages.all_languages(),
     key=lambda c: c.__name__,
 )
 

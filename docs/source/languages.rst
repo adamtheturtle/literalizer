@@ -10,8 +10,9 @@ You import the class, optionally configure it, and pass an instance to
 Selecting a language
 --------------------
 
-Each language class lives in :mod:`literalizer.languages` and is listed in
-:data:`~literalizer.languages.ALL_LANGUAGES`.
+Each language class lives in its own submodule of
+:mod:`literalizer.languages`; the full set is returned by
+:func:`~literalizer.languages.all_languages`.
 Create an instance with its defaults, or override individual format options:
 
 .. code-block:: python
@@ -19,7 +20,7 @@ Create an instance with its defaults, or override individual format options:
    """Select and configure a language."""
 
    from literalizer import InputFormat, literalize
-   from literalizer.languages import Python
+   from literalizer.languages.python import Python
 
    # Use all defaults
    result = literalize(

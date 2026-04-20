@@ -22,7 +22,7 @@ parameters (``user_id`` and ``ts``) and wrap each call in ``print()``:
    import textwrap
 
    from literalizer import InputFormat, literalize_call
-   from literalizer.languages import Python
+   from literalizer.languages.python import Python
 
    yaml_source = """\
    ---

@@ -3,10 +3,10 @@
 import pytest
 
 from literalizer import LanguageCls
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import all_languages
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
-    ALL_LANGUAGES,
+    all_languages(),
     key=lambda c: c.__name__,
 )
 
