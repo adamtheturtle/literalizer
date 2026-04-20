@@ -67,6 +67,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
+    value_contains,
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Scalar, Value
@@ -958,6 +959,26 @@ class Rust(metaclass=LanguageCls):
                 f"VEC sequence format produces vec![…] which "
                 f"is not a constant expression. "
                 f"Use ARRAY or TUPLE instead."
+            )
+            raise IncompatibleFormatsError(msg)
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Rust's only dict/map formats (``HashMap::from`` and
+        ``BTreeMap::from``) are runtime calls, so ``CONST`` and
+        ``STATIC`` declarations cannot accept dict data.
+        """
+        _decl_cls = type(self.declaration_style)
+        if self.declaration_style not in {_decl_cls.CONST, _decl_cls.STATIC}:
+            return
+        if value_contains(data=data, predicate=lambda v: isinstance(v, dict)):
+            msg = (
+                f"Rust {self.declaration_style.name} requires a "
+                f"constant-expression initializer, but the "
+                f"{self.dict_format.name} dict format produces a "
+                f"runtime ::from([…]) call which is not a constant "
+                f"expression."
             )
             raise IncompatibleFormatsError(msg)
 

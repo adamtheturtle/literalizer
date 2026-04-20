@@ -310,6 +310,22 @@ class LanguageCls(type):
 
 
 @runtime_checkable
+class ValidatesSpecForData(Protocol):
+    """Protocol for language specs that validate themselves against data.
+
+    Languages whose output depends on format/data combinations that
+    cannot produce valid code (e.g. Rust ``CONST`` + a dict value)
+    implement ``validate_spec_for_data`` to raise
+    :class:`~literalizer.exceptions.IncompatibleFormatsError` at
+    literalize time.  Other languages simply omit the method.
+    """
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
     sequences.
@@ -992,6 +1008,26 @@ def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
 
 no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
 """Shared callable for languages with no data-dependent preamble."""
+
+
+@beartype
+def value_contains(data: Value, predicate: Callable[[Value], bool]) -> bool:
+    """Return ``True`` if any element of *data* satisfies *predicate*.
+
+    Walks the data tree and invokes *predicate* on every node (scalars
+    and collections alike).  Used by languages to detect whether a
+    payload will trigger a format combination that cannot produce valid
+    output (e.g. Rust ``CONST`` + a dict value).
+    """
+    if predicate(data):
+        return True
+    if isinstance(data, dict):
+        return any(
+            value_contains(data=v, predicate=predicate) for v in data.values()
+        )
+    if isinstance(data, (list, set)):
+        return any(value_contains(data=v, predicate=predicate) for v in data)
+    return False
 
 
 @beartype

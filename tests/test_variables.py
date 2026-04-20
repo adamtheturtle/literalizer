@@ -13,7 +13,6 @@ from literalizer import (
     literalize,
 )
 from literalizer.exceptions import (
-    HeterogeneousScalarCollectionError,
     IncompatibleFormatsError,
 )
 from literalizer.languages import Python, Rust
@@ -175,48 +174,26 @@ def test_rust_const_empty_set() -> None:
     )
 
 
-def test_rust_const_dict() -> None:
-    """Rust CONST with dict produces ``HashMap`` type annotation."""
-    result = literalize(
-        source='{"a": "b"}',
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: HashMap<&str, &str> = HashMap::from([
-            ("a", "b"),
-        ]);"""
-    )
-    assert result.code == expected
-
-
-def test_rust_const_empty_dict() -> None:
-    """Rust CONST with empty dict uses default key/value types."""
-    result = literalize(
-        source="{}",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    assert result.code == (
-        "const my_var: HashMap<String, String>"
-        " = HashMap::<String, String>::from([]);"
-    )
-
-
-def test_rust_const_dict_mixed_values_raises() -> None:
-    """Rust CONST raises for dicts with heterogeneous scalar values."""
-    with pytest.raises(
-        expected_exception=HeterogeneousScalarCollectionError,
-    ):
+def test_rust_const_dict_raises() -> None:
+    """Rust CONST rejects dict data — ``HashMap::from`` is not a const
+    expression, and Rust has no const-compatible dict format.
+    """
+    with pytest.raises(expected_exception=IncompatibleFormatsError):
         literalize(
-            source='{"a": 1, "b": "x"}',
+            source='{"a": "b"}',
+            input_format=InputFormat.JSON,
+            language=RUST_CONST,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=NewVariable(name="my_var"),
+        )
+
+
+def test_rust_const_empty_dict_raises() -> None:
+    """Rust CONST rejects empty dict data for the same reason."""
+    with pytest.raises(expected_exception=IncompatibleFormatsError):
+        literalize(
+            source="{}",
             input_format=InputFormat.JSON,
             language=RUST_CONST,
             pre_indent_level=0,
@@ -253,8 +230,11 @@ def test_rust_const_btree_set() -> None:
     assert result.code == expected
 
 
-def test_rust_const_btree_map() -> None:
-    """Rust CONST with ``BTREE_MAP`` uses ``BTreeMap`` type annotation."""
+def test_rust_const_btree_map_raises() -> None:
+    """Rust CONST rejects dict data with ``BTREE_MAP`` too —
+    ``BTreeMap::from``
+    is equally non-const.
+    """
     rust_btree_map = Rust(
         date_format=Rust.date_formats.ISO,
         datetime_format=Rust.datetime_formats.ISO,
@@ -263,21 +243,15 @@ def test_rust_const_btree_map() -> None:
         dict_format=Rust.dict_formats.BTREE_MAP,
         declaration_style=Rust.declaration_styles.CONST,
     )
-    result = literalize(
-        source='{"a": "b"}',
-        input_format=InputFormat.JSON,
-        language=rust_btree_map,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: BTreeMap<&str, &str> = BTreeMap::from([
-            ("a", "b"),
-        ]);"""
-    )
-    assert result.code == expected
+    with pytest.raises(expected_exception=IncompatibleFormatsError):
+        literalize(
+            source='{"a": "b"}',
+            input_format=InputFormat.JSON,
+            language=rust_btree_map,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=NewVariable(name="my_var"),
+        )
 
 
 def test_rust_const_widened_int_array() -> None:

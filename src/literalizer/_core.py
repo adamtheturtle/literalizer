@@ -43,6 +43,7 @@ from literalizer._language import (
     Language,
     ObjectCallStyle,
     PositionalCallStyle,
+    ValidatesSpecForData,
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Scalar, Value
@@ -1108,6 +1109,9 @@ def _literalize_pre_form(
     line_prefix = language.indent * pre_indent_level
     parsed = _parse_input(source=source, input_format=input_format)
     data = parsed.data
+
+    if isinstance(language, ValidatesSpecForData):
+        language.validate_spec_for_data(data=data)
 
     result = _literalize(
         data=data,

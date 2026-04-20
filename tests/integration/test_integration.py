@@ -28,6 +28,7 @@ import literalizer
 from literalizer._language import StubReturn
 from literalizer.exceptions import (
     HeterogeneousCollectionError,
+    IncompatibleFormatsError,
     NullInCollectionError,
     UnrepresentableIntegerError,
 )
@@ -1489,13 +1490,6 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
     ]
-    # Rust CONST/STATIC with dict cases produce HashMap::from([…])
-    # which is not a constant expression, so skip those.  Dart CONST with
-    # dates / datetimes uses DateTime.parse(…), which is also not a const
-    # expression.
-    _const_static_suffixes = ("_const", "_static")
-    _dart_non_const_cases = {"scalar_date", "scalar_datetime"}
-
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
             _VariantCase(
@@ -1505,16 +1499,6 @@ def _build_variant_cases() -> list[_VariantCase]:
                 variable_form=_wrap_variable_form(lang_cls=variant.lang_cls),
             )
             for variant in variants
-            if not (
-                variant.lang_cls.__name__ == "Rust"
-                and variant.name.endswith(_const_static_suffixes)
-                and "dict" in case_dir_name
-            )
-            and not (
-                variant.lang_cls.__name__ == "Dart"
-                and variant.name.endswith("_const")
-                and case_dir_name in _dart_non_const_cases
-            )
         )
     cases.extend(_build_modifier_variant_cases())
     return cases
@@ -1557,6 +1541,9 @@ def test_format_variant_golden_file(
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
         pytest.skip("Format cannot represent this heterogeneous input")
+    except IncompatibleFormatsError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip("Format combination cannot represent this input")
     _check_golden(
         file_regression=file_regression,
         contents=result.code + "\n",

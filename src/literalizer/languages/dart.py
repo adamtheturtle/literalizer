@@ -65,11 +65,13 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    value_contains,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+from literalizer.exceptions import IncompatibleFormatsError
 
 
 @beartype
@@ -558,6 +560,41 @@ class Dart(metaclass=LanguageCls):
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
     call_style_config: ClassVar[CallStyle | None] = None
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Dart's ``DART`` date / datetime formats render as
+        ``DateTime.parse(...)``, which is a runtime call and not a
+        constant expression, so they are incompatible with ``CONST``.
+        """
+        _decl_cls = type(self.declaration_style)
+        if self.declaration_style is not _decl_cls.CONST:
+            return
+        _date_cls = type(self.date_format)
+        _datetime_cls = type(self.datetime_format)
+        if self.date_format is _date_cls.DART and value_contains(
+            data=data,
+            predicate=lambda v: type(v) is datetime.date,
+        ):
+            msg = (
+                "Dart CONST requires a constant-expression initializer, "
+                "but the DART date format produces a DateTime.parse(…) "
+                "call which is not a constant expression. "
+                "Use ISO instead."
+            )
+            raise IncompatibleFormatsError(msg)
+        if self.datetime_format is _datetime_cls.DART and value_contains(
+            data=data,
+            predicate=lambda v: isinstance(v, datetime.datetime),
+        ):
+            msg = (
+                "Dart CONST requires a constant-expression initializer, "
+                "but the DART datetime format produces a "
+                "DateTime.parse(…) call which is not a constant "
+                "expression. Use ISO instead."
+            )
+            raise IncompatibleFormatsError(msg)
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
