@@ -335,6 +335,7 @@ run.omit = [
 report.exclude_also = [
     "case _ as unreachable:\n\\s*assert_never\\(",
     "if TYPE_CHECKING:",
+    "raise NotImplementedError",
 ]
 report.show_missing = true
 
