@@ -39,6 +39,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
+    make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
@@ -66,9 +67,9 @@ from literalizer._types import Value
 
 
 @beartype
-def _format_vb_ulong_literal(value: int) -> str:
-    """Format a value above signed 64-bit range as a VB.NET ``UL``
-    unsigned 64-bit literal.
+def _format_vb_ulong_positive(value: int) -> str:
+    """Format a positive value above signed 64-bit range as a VB.NET
+    ``UL`` unsigned 64-bit literal.
 
     The default VB.NET integer type is signed 64-bit; values above
     that range need the ``UL`` suffix to select the unsigned 64-bit
@@ -455,7 +456,10 @@ class VisualBasic(metaclass=LanguageCls):
         """Format an int value as a literal."""
         return make_overflow_fallback_formatter(
             base=str,
-            fallback=_format_vb_ulong_literal,
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_format_vb_ulong_positive,
+                language_name="VB.NET",
+            ),
         )
 
     @cached_property
