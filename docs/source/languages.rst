@@ -10,7 +10,7 @@ You import the class, optionally configure it, and pass an instance to
 Selecting a language
 --------------------
 
-Each language class lives in its own submodule of
+Each language class lives in its own module under
 :mod:`literalizer.languages`; the full set is returned by
 :func:`~literalizer.languages.all_languages`.
 Create an instance with its defaults, or override individual format options:

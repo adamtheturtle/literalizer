@@ -1,4 +1,4 @@
-"""Parametrized checks across all input formats.
+"""Parameterized checks across all input formats.
 
 These tests verify that ``literalize`` raises precise exceptions when
 input data cannot be represented in the target language's collection

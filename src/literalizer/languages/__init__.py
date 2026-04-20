@@ -1,7 +1,8 @@
 """Built-in language specifications for common programming languages.
 
-Language classes live in submodules (e.g. ``literalizer.languages.python``)
-and are imported lazily.  Import what you need directly::
+Each language class lives in its own module under this package
+(e.g. ``literalizer.languages.python``) and is imported lazily.  Import
+what you need directly::
 
     from literalizer.languages.python import Python
 
@@ -16,10 +17,10 @@ from literalizer._language import LanguageCls
 def all_languages() -> frozenset[LanguageCls]:
     """Return the set of every built-in language specification class.
 
-    Loads all language modules on call.  Tests and tools that genuinely
+    Loads every language module on call.  Tests and tools that genuinely
     need the full set should call this once and reuse the result; for
     code that only needs a few languages, prefer importing them
-    individually from their submodules.
+    individually from their own modules.
     """
     # Local imports keep ``import literalizer.languages`` cheap.
     from .ada import Ada

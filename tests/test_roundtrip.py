@@ -69,7 +69,8 @@ json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     ),
     # ``max_leaves`` caps total nodes generated; the recursive strategy
     # is by far the dominant cost in these tests, so a tight bound here
-    # is the biggest single perf lever without losing meaningful coverage.
+    # is the biggest single performance lever without losing
+    # meaningful coverage.
     max_leaves=15,
 )
 json_arrays = st.lists(elements=json_values, max_size=5)
