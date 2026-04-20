@@ -5,7 +5,7 @@ from typing import Any, cast
 import pytest
 from ruamel.yaml import YAML
 
-from literalizer.languages import all_languages
+from literalizer.languages import ALL_LANGUAGES
 
 
 @pytest.fixture(scope="session", name="lint_workflow")
@@ -33,7 +33,7 @@ def test_all_languages_have_lint_workflow(
 
     expected_jobs = {
         f"lint-{lang_cls.__name__.lower()}"
-        for lang_cls in all_languages()
+        for lang_cls in ALL_LANGUAGES
         if lang_cls.__name__ not in no_dedicated_workflow
     }
     assert expected_jobs <= job_ids

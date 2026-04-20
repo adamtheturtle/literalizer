@@ -18,16 +18,18 @@ from literalizer.exceptions import (
     MixedDictValuesError,
     ParseError,
 )
-from literalizer.languages.cpp import Cpp
-from literalizer.languages.csharp import CSharp
-from literalizer.languages.dhall import Dhall
-from literalizer.languages.go import Go
-from literalizer.languages.javascript import JavaScript
-from literalizer.languages.mojo import Mojo
-from literalizer.languages.nix import Nix
-from literalizer.languages.python import Python
-from literalizer.languages.r import R
-from literalizer.languages.ruby import Ruby
+from literalizer.languages import (
+    Cpp,
+    CSharp,
+    Dhall,
+    Go,
+    JavaScript,
+    Mojo,
+    Nix,
+    Python,
+    R,
+    Ruby,
+)
 
 CPP = Cpp(
     date_format=Cpp.date_formats.CPP,

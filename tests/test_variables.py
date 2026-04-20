@@ -16,8 +16,7 @@ from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     IncompatibleFormatsError,
 )
-from literalizer.languages.python import Python
-from literalizer.languages.rust import Rust
+from literalizer.languages import Python, Rust
 
 PYTHON_ALWAYS_HINTS = Python(
     date_format=Python.date_formats.PYTHON,

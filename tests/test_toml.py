@@ -16,11 +16,13 @@ from literalizer.exceptions import (
     ParseError,
     TOMLParseError,
 )
-from literalizer.languages.go import Go
-from literalizer.languages.haskell import Haskell
-from literalizer.languages.javascript import JavaScript
-from literalizer.languages.python import Python
-from literalizer.languages.vb import VisualBasic
+from literalizer.languages import (
+    Go,
+    Haskell,
+    JavaScript,
+    Python,
+    VisualBasic,
+)
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,

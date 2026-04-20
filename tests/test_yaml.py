@@ -16,13 +16,15 @@ from literalizer.exceptions import (
     ParseError,
     YAMLParseError,
 )
-from literalizer.languages.cpp import Cpp
-from literalizer.languages.dhall import Dhall
-from literalizer.languages.go import Go
-from literalizer.languages.mojo import Mojo
-from literalizer.languages.nix import Nix
-from literalizer.languages.python import Python
-from literalizer.languages.r import R
+from literalizer.languages import (
+    Cpp,
+    Dhall,
+    Go,
+    Mojo,
+    Nix,
+    Python,
+    R,
+)
 
 GO = Go(
     date_format=Go.date_formats.GO,

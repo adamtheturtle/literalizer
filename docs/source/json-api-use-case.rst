@@ -29,7 +29,7 @@ returns this response:
    import textwrap
 
    from literalizer import InputFormat, NewVariable, literalize
-   from literalizer.languages.python import Python
+   from literalizer.languages import Python
 
    request_json = '{"name": "Alice", "email": "alice@example.com"}'
    response_json = (

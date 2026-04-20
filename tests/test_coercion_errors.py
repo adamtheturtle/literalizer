@@ -24,9 +24,7 @@ from literalizer.exceptions import (
     MixedDictValuesError,
     MixedListValuesError,
 )
-from literalizer.languages.dhall import Dhall
-from literalizer.languages.mojo import Mojo
-from literalizer.languages.python import Python
+from literalizer.languages import Dhall, Mojo, Python
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

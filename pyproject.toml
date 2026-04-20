@@ -130,14 +130,6 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow asserts in docs.
     "S101",
 ]
-lint.per-file-ignores."src/literalizer/languages/__init__.py" = [
-    # ``all_languages`` imports every language module on demand so that
-    # ``import literalizer.languages`` stays cheap; the local imports are
-    # the entire point of the function.
-    "PLC0415",
-    # Importing 60+ languages is verbose by nature.
-    "PLR0915",
-]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
     # unused-import checks (F401) so we catch stale imports.
@@ -255,10 +247,6 @@ MESSAGES-CONTROL.per-file-ignores = [
     "docs/source/conf.py:invalid-name",
     "docs/source/doccmd_*.py:invalid-name",
     "doccmd_README_rst_*.py:invalid-name",
-    # ``all_languages`` imports every language module on demand so that
-    # ``import literalizer.languages`` stays cheap; the local imports are
-    # the entire point of the function.
-    "src/literalizer/languages/__init__.py:import-outside-toplevel",
 ]
 # Spelling dictionary name. Available dictionaries: none. To make it working
 # install python-enchant package.

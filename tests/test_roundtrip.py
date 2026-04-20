@@ -11,13 +11,15 @@ from hypothesis import strategies as st
 
 from literalizer import InputFormat, literalize
 from literalizer._language import Language
-from literalizer.languages.cpp import Cpp
-from literalizer.languages.erlang import Erlang
-from literalizer.languages.go import Go
-from literalizer.languages.java import Java
-from literalizer.languages.python import Python
-from literalizer.languages.rust import Rust
-from literalizer.languages.swift import Swift
+from literalizer.languages import (
+    Cpp,
+    Erlang,
+    Go,
+    Java,
+    Python,
+    Rust,
+    Swift,
+)
 
 # Use LIST sequence format so that ast.literal_eval returns plain lists,
 # matching the JSON input directly without any conversion step.
