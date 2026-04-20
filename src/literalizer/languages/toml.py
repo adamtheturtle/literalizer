@@ -57,6 +57,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_spec_for_data,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
@@ -293,6 +294,7 @@ class Toml(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+    validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
     def wrap_in_file(

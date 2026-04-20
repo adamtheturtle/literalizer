@@ -960,6 +960,18 @@ class Language(Protocol):
         """Wrap a declaration and assignment in a complete, valid file."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Languages whose output depends on format/data combinations that
+        cannot produce valid code (e.g. Rust ``CONST`` + a dict value)
+        override this method to raise
+        :class:`~literalizer.exceptions.IncompatibleFormatsError` at
+        literalize time.  Languages with no such constraints assign
+        :func:`no_validate_spec_for_data` as a no-op.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 def _no_call_stub(
     _name: str,
@@ -1002,6 +1014,39 @@ def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
 
 no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
 """Shared callable for languages with no data-dependent preamble."""
+
+
+def _no_validate_spec_for_data(self: "Language", data: Value) -> None:
+    """Default ``validate_spec_for_data`` — no spec/data constraints."""
+    del self, data
+
+
+no_validate_spec_for_data: Callable[["Language", Value], None] = (
+    _no_validate_spec_for_data
+)
+"""Shared callable for languages with no spec/data constraints to
+check.
+"""
+
+
+@beartype
+def value_contains(data: Value, predicate: Callable[[Value], bool]) -> bool:
+    """Return ``True`` if any element of *data* satisfies *predicate*.
+
+    Walks the data tree and invokes *predicate* on every node (scalars
+    and collections alike).  Used by languages to detect whether a
+    payload will trigger a format combination that cannot produce valid
+    output (e.g. Rust ``CONST`` + a dict value).
+    """
+    if predicate(data):
+        return True
+    if isinstance(data, dict):
+        return any(
+            value_contains(data=v, predicate=predicate) for v in data.values()
+        )
+    if isinstance(data, (list, set)):
+        return any(value_contains(data=v, predicate=predicate) for v in data)
+    return False
 
 
 @beartype

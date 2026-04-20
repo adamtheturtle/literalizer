@@ -67,6 +67,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     prepend_body_preamble,
+    value_contains,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
@@ -188,13 +189,15 @@ def _rust_type_annotation(
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
     set_format_type_annotation: Callable[[str], str],
-    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
-    default_dict_key_type: str,
-    default_dict_value_type: str,
 ) -> str:
-    """Derive a Rust type annotation string from a ``Value``."""
+    """Derive a Rust type annotation string from a ``Value``.
+
+    Rust ``CONST`` / ``STATIC`` spec+data validation rejects any dict
+    data before this function is called (Rust has no const-expression
+    dict format), so the dict branch is omitted.
+    """
     recurse = functools.partial(
         _rust_type_annotation,
         date_type=date_type,
@@ -202,22 +205,10 @@ def _rust_type_annotation(
         sequence_format_type_annotation=sequence_format_type_annotation,
         sequence_supports_heterogeneity=sequence_supports_heterogeneity,
         set_format_type_annotation=set_format_type_annotation,
-        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
     )
     match data:
-        case dict():
-            if data:
-                value_types = [recurse(v) for v in data.values()]
-                value_type = _unify_rust_types(types=value_types)
-                key_type = "&str"
-            else:
-                value_type = default_dict_value_type
-                key_type = default_dict_key_type
-            return dict_format_type_annotation(key_type, value_type)
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
@@ -238,6 +229,11 @@ def _rust_type_annotation(
                 default_type=default_sequence_element_type,
             )
             return sequence_format_type_annotation(element_type, len(data))
+        case dict():  # pragma: no cover
+            msg = (
+                "Rust CONST/STATIC reject dict data in validate_spec_for_data"
+            )
+            raise AssertionError(msg)
         case _:
             return _rust_scalar_type(
                 data=data,
@@ -259,11 +255,8 @@ def _format_typed_declaration(
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
     set_format_type_annotation: Callable[[str], str],
-    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
-    default_dict_key_type: str,
-    default_dict_value_type: str,
 ) -> str:
     """Format a ``const`` or ``static`` declaration with a type
     annotation.
@@ -275,11 +268,8 @@ def _format_typed_declaration(
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         set_format_type_annotation=set_format_type_annotation,
-        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
     )
     return f"{keyword} {name}: {type_annotation} = {value};"
 
@@ -612,11 +602,8 @@ class Rust(metaclass=LanguageCls):
             sequence_format_type_annotation: Callable[[str, int], str],
             sequence_supports_heterogeneity: bool,
             set_format_type_annotation: Callable[[str], str],
-            dict_format_type_annotation: Callable[[str, str], str],
             default_sequence_element_type: str,
             default_set_element_type: str,
-            default_dict_key_type: str,
-            default_dict_value_type: str,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return a formatter for this declaration style.
 
@@ -640,11 +627,8 @@ class Rust(metaclass=LanguageCls):
                     sequence_supports_heterogeneity
                 ),
                 set_format_type_annotation=set_format_type_annotation,
-                dict_format_type_annotation=dict_format_type_annotation,
                 default_sequence_element_type=(default_sequence_element_type),
                 default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
             )
 
     class DictEntryStyles(enum.Enum):
@@ -691,17 +675,6 @@ class Rust(metaclass=LanguageCls):
                 default_type,
                 default_key_type=default_key_type,
             )
-
-        def format_type_annotation(
-            self,
-            key_type: str,
-            value_type: str,
-        ) -> str:
-            """Return the Rust type annotation for this dict format."""
-            cls = type(self)
-            if self is cls.HASH_MAP:
-                return f"HashMap<{key_type}, {value_type}>"
-            return f"BTreeMap<{key_type}, {value_type}>"
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -965,6 +938,26 @@ class Rust(metaclass=LanguageCls):
             )
             raise IncompatibleFormatsError(msg)
 
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Rust's only dict/map formats (``HashMap::from`` and
+        ``BTreeMap::from``) are runtime calls, so ``CONST`` and
+        ``STATIC`` declarations cannot accept dict data.
+        """
+        _decl_cls = type(self.declaration_style)
+        if self.declaration_style not in {_decl_cls.CONST, _decl_cls.STATIC}:
+            return
+        if value_contains(data=data, predicate=lambda v: isinstance(v, dict)):
+            msg = (
+                f"Rust {self.declaration_style.name} requires a "
+                f"constant-expression initializer, but the "
+                f"{self.dict_format.name} dict format produces a "
+                f"runtime ::from([…]) call which is not a constant "
+                f"expression."
+            )
+            raise IncompatibleFormatsError(msg)
+
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
@@ -1073,13 +1066,8 @@ class Rust(metaclass=LanguageCls):
             set_format_type_annotation=(
                 self.set_format.format_type_annotation
             ),
-            dict_format_type_annotation=(
-                self.dict_format.format_type_annotation
-            ),
             default_sequence_element_type=self.default_sequence_element_type,
             default_set_element_type=self.default_set_element_type,
-            default_dict_key_type=self.default_dict_key_type,
-            default_dict_value_type=self.default_dict_value_type,
         )
 
     @cached_property
