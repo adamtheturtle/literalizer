@@ -80,12 +80,13 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             return formatted
         case int():
             negative = formatted.startswith("-")
-            # ``I`` yields a ``bigint``; ``L`` yields ``int64``.
-            suffix = "I" if not I64_MIN <= original <= I64_MAX else "L"
+            # ``format_integer`` already appends the ``I`` suffix for
+            # values outside the signed 64-bit range; here we only add
+            # the ``L`` suffix for in-range ``int64`` values.
             literal = (
-                formatted
-                if formatted.endswith(suffix)
-                else f"{formatted}{suffix}"
+                f"{formatted}L"
+                if I64_MIN <= original <= I64_MAX
+                else formatted
             )
             return (
                 f"{prefix}Int({literal})"

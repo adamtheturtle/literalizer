@@ -1,6 +1,6 @@
 """Meta-tests for project structure and CI configuration."""
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from ruamel.yaml import YAML
@@ -8,16 +8,22 @@ from ruamel.yaml import YAML
 from literalizer.languages import ALL_LANGUAGES
 
 
+@pytest.fixture(scope="session", name="lint_workflow")
+def fixture_lint_workflow(
+    pytestconfig: pytest.Config,
+) -> dict[str, Any]:
+    """Parse ``.github/workflows/lint.yml`` once per session."""
+    lint_yml = pytestconfig.rootpath / ".github" / "workflows" / "lint.yml"
+    ruamel_yaml = YAML()
+    loaded = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]
+    return cast("dict[str, Any]", loaded)
+
+
 def test_all_languages_have_lint_workflow(
-    request: pytest.FixtureRequest,
+    lint_workflow: dict[str, Any],
 ) -> None:
     """Every language has a lint job in the lint workflow."""
-    lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
-    ruamel_yaml = YAML()
-    workflow: dict[str, Any] = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
-        stream=lint_yml,
-    )
-    job_ids: set[str] = set(workflow["jobs"])
+    job_ids: set[str] = set(lint_workflow["jobs"])
 
     # Python is linted by the "build" job (pre-commit hooks),
     # not a dedicated lint workflow.
@@ -34,17 +40,12 @@ def test_all_languages_have_lint_workflow(
 
 
 def test_all_lint_jobs_in_completion_gate(
-    request: pytest.FixtureRequest,
+    lint_workflow: dict[str, Any],
 ) -> None:
     """Every lint job is in completion-lint needs."""
-    lint_yml = request.config.rootpath / ".github" / "workflows" / "lint.yml"
-    ruamel_yaml = YAML()
-    workflow: dict[str, Any] = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
-        stream=lint_yml,
-    )
-    job_ids: set[str] = set(workflow["jobs"])
+    job_ids: set[str] = set(lint_workflow["jobs"])
     completion_needs: set[str] = set(
-        workflow["jobs"]["completion-lint"]["needs"],
+        lint_workflow["jobs"]["completion-lint"]["needs"],
     )
 
     lint_jobs = {jid for jid in job_ids if jid.startswith("lint-")}
