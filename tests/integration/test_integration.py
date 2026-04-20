@@ -45,7 +45,6 @@ from literalizer.languages import (
     Java,
     OCaml,
     PureScript,
-    Python,
 )
 
 
@@ -1045,44 +1044,41 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
 
 @beartype
 def _build_modifier_variant_cases() -> list[_VariantCase]:
-    """Build variants exercising :class:`DeclarationModifier` rendering.
+    """Build variants exercising per-language modifier rendering.
 
-    Covers each language whose declaration syntax maps the issue-1249
-    modifier vocabulary (Java, C#, C++), plus Python which must silently
-    ignore every modifier.  Each modifier combination is run against a
-    scalar input and a dict input so that typed-declaration inference is
-    also exercised.
+    Covers each language that defines a modifier enum: Java, C#, and
+    C++.  Each modifier combination is run against a scalar input and
+    a dict input so that typed-declaration inference is also exercised.
     """
-    m = literalizer.DeclarationModifier
+    jm = Java.modifiers
+    cm = CSharp.modifiers
+    pm = Cpp.modifiers
     combos: list[
         tuple[
             literalizer.LanguageCls,
             str,
-            frozenset[literalizer.DeclarationModifier],
+            frozenset[enum.Enum],
         ]
     ] = [
-        (Java, "final", frozenset({m.FINAL})),
+        (Java, "final", frozenset({jm.FINAL})),
         (
             Java,
             "public_static_final",
-            frozenset({m.PUBLIC, m.STATIC, m.FINAL}),
+            frozenset({jm.PUBLIC, jm.STATIC, jm.FINAL}),
         ),
-        (Java, "private", frozenset({m.PRIVATE})),
-        (Java, "protected", frozenset({m.PROTECTED})),
-        (Java, "static", frozenset({m.STATIC})),
-        (CSharp, "readonly", frozenset({m.READONLY})),
+        (Java, "private", frozenset({jm.PRIVATE})),
+        (Java, "protected", frozenset({jm.PROTECTED})),
+        (Java, "static", frozenset({jm.STATIC})),
+        (CSharp, "readonly", frozenset({cm.READONLY})),
         (
             CSharp,
             "public_static_readonly",
-            frozenset({m.PUBLIC, m.STATIC, m.READONLY}),
+            frozenset({cm.PUBLIC, cm.STATIC, cm.READONLY}),
         ),
-        (CSharp, "const", frozenset({m.CONST})),
-        (Cpp, "const", frozenset({m.CONST})),
-        (Cpp, "static_const", frozenset({m.STATIC, m.CONST})),
-        (Cpp, "static", frozenset({m.STATIC})),
-        # Python must treat every modifier as a silent no-op.
-        (Python, "const_noop", frozenset({m.CONST})),
-        (Python, "public_final_noop", frozenset({m.PUBLIC, m.FINAL})),
+        (CSharp, "const", frozenset({cm.CONST})),
+        (Cpp, "const", frozenset({pm.CONST})),
+        (Cpp, "static_const", frozenset({pm.STATIC, pm.CONST})),
+        (Cpp, "static", frozenset({pm.STATIC})),
     ]
 
     cases: list[_VariantCase] = []
@@ -1129,7 +1125,7 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
             case_dir_name=case_dir_name,
             variable_form=literalizer.NewVariable(
                 name="my_data",
-                modifiers=frozenset({m.READONLY}),
+                modifiers=frozenset({cm.READONLY}),
             ),
         )
         for case_dir_name in ("set", "scalar_date", "scalar_datetime")
@@ -1146,7 +1142,7 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
             case_dir_name="empty_set",
             variable_form=literalizer.NewVariable(
                 name="my_data",
-                modifiers=frozenset({m.READONLY}),
+                modifiers=frozenset({cm.READONLY}),
             ),
         )
     )
@@ -1165,7 +1161,7 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
             case_dir_name="mixed_number_list",
             variable_form=literalizer.NewVariable(
                 name="my_data",
-                modifiers=frozenset({m.READONLY}),
+                modifiers=frozenset({cm.READONLY}),
             ),
         )
     )
@@ -1184,25 +1180,7 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
             case_dir_name="simple_sequence",
             variable_form=literalizer.NewVariable(
                 name="my_data",
-                modifiers=frozenset({m.READONLY}),
-            ),
-        )
-    )
-    # Cover the "modifiers contains only values C# cannot express"
-    # fall-back path (e.g. ``FINAL`` alone on C#).
-    csharp_final_ignored = _Variant(
-        name="CSharp_modifiers_final_ignored",
-        spec=_spec(lang_cls=CSharp),
-        lang_cls=CSharp,
-    )
-    cases.append(
-        _VariantCase(
-            variant_name=csharp_final_ignored.name,
-            variant=csharp_final_ignored,
-            case_dir_name="scalar_int",
-            variable_form=literalizer.NewVariable(
-                name="my_data",
-                modifiers=frozenset({m.FINAL}),
+                modifiers=frozenset({cm.READONLY}),
             ),
         )
     )

@@ -30,7 +30,6 @@ from literalizer._literalize import (
     literalize,
     literalize_call,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._parsing import InputFormat
 
 __all__ = [
@@ -39,7 +38,6 @@ __all__ = [
     "CommentConfig",
     "DateFormatConfig",
     "DatetimeFormatConfig",
-    "DeclarationModifier",
     "DictFormatConfig",
     "ExistingVariable",
     "InputFormat",

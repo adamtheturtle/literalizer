@@ -69,7 +69,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 from literalizer.exceptions import IncompatibleFormatsError
 
@@ -160,7 +159,7 @@ def _format_dart_typed_declaration(
     name: str,
     value: str,
     data: Value,
-    _modifiers: frozenset[DeclarationModifier],
+    _modifiers: frozenset[enum.Enum],
     *,
     keyword: str,
     date_hint: str,
@@ -444,7 +443,7 @@ class Dart(metaclass=LanguageCls):
             self,
             *,
             auto_formatter: Callable[
-                [str, str, Value, frozenset[DeclarationModifier]], str
+                [str, str, Value, frozenset[enum.Enum]], str
             ],
             keyword: str,
             date_hint: str,
@@ -453,7 +452,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -492,6 +491,11 @@ class Dart(metaclass=LanguageCls):
         """Dart call style options."""
 
     call_styles = CallStyles
+
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
 
     @staticmethod
     def wrap_in_file(
@@ -778,7 +782,7 @@ class Dart(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,

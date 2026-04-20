@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import enum
 from collections.abc import Callable, Sequence
 from typing import assert_never, cast
 
@@ -26,7 +27,6 @@ from literalizer._language import (
     PositionalCallStyle,
     ValidatesSpecForData,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
 from literalizer._types import Scalar, Value
@@ -109,11 +109,12 @@ class NewVariable:
     """Wrap output in a new variable declaration."""
 
     name: str
-    modifiers: frozenset[DeclarationModifier] = frozenset()
-    """Declaration modifiers to apply.  Each target language maps these
-    to its own syntax (e.g. :attr:`DeclarationModifier.FINAL` becomes
-    ``final`` in Java, ``readonly`` in C#, and is a no-op in Python).
-    Modifiers the target language cannot express are silently ignored.
+    modifiers: frozenset[enum.Enum] = frozenset()
+    """Declaration modifiers to apply.  Each language exposes its own
+    modifier enum as ``Language.Modifiers`` (e.g. ``Java.Modifiers.FINAL``,
+    ``CSharp.Modifiers.READONLY``, ``Cpp.Modifiers.STATIC``).  Values
+    that are not members of the target language's ``Modifiers`` enum
+    are silently ignored.
     """
 
 
@@ -132,7 +133,7 @@ class BothVariableForms:
     """
 
     name: str
-    modifiers: frozenset[DeclarationModifier] = frozenset()
+    modifiers: frozenset[enum.Enum] = frozenset()
     """Declaration modifiers applied to the declaration half.  See
     :attr:`NewVariable.modifiers`.
     """

@@ -55,7 +55,6 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -592,6 +591,11 @@ class Elm(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -846,7 +850,7 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         _base_declaration = self.declaration_style.value.formatter
         _raw_declared = self.sequence_format.value.declared_type
@@ -862,7 +866,7 @@ class Elm(metaclass=LanguageCls):
             name: str,
             value: str,
             data: Value,
-            _modifiers: frozenset[DeclarationModifier],
+            _modifiers: frozenset[enum.Enum],
         ) -> str:
             """Format a variable declaration with type annotation."""
             base = _base_declaration(name, value, data, _modifiers)

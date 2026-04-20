@@ -213,7 +213,8 @@ def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             return _parse_yaml(source=source)
         case InputFormat.TOML:
             return _parse_toml(source=source)
-    assert_never(input_format)  # pragma: no cover
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def _coerce_toml_values(*, data: object) -> Value:

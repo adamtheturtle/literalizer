@@ -63,7 +63,6 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
 )
-from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -627,7 +626,7 @@ class _DeclarationFormatters:
     """Variable declaration and assignment formatters."""
 
     format_variable_declaration: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
+        [str, str, Value, frozenset[enum.Enum]], str
     ]
     format_variable_assignment: Callable[[str, str, Value], str]
 
@@ -637,11 +636,9 @@ def _format_haskell_declaration(
     name: str,
     value: str,
     data: Value,
-    modifiers: frozenset[DeclarationModifier],
+    modifiers: frozenset[enum.Enum],
     *,
-    base_declaration: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
-    ],
+    base_declaration: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     sequence_declared_type: str | None,
     type_name: str,
 ) -> str:
@@ -663,7 +660,7 @@ def _build_declaration_formatters(
 ) -> _DeclarationFormatters:
     """Build declaration/assignment formatters with type annotations."""
     base_declaration: Callable[
-        [str, str, Value, frozenset[DeclarationModifier]], str
+        [str, str, Value, frozenset[enum.Enum]], str
     ] = declaration_style.value.formatter
     raw_declared = sequence_format.value.declared_type
     sequence_declared_type = (
@@ -676,7 +673,7 @@ def _build_declaration_formatters(
         name: str,
         value: str,
         data: Value,
-        modifiers: frozenset[DeclarationModifier],
+        modifiers: frozenset[enum.Enum],
     ) -> str:
         """Delegate to module-level implementation."""
         return _format_haskell_declaration(
@@ -1085,6 +1082,11 @@ class Haskell(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -1348,7 +1350,7 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self._decl_fmts.format_variable_declaration
 
