@@ -14,7 +14,12 @@ import pyjson5
 import tomlkit
 from beartype import BeartypeConf, beartype
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
+from ruamel.yaml.comments import (
+    CommentedMap,
+    CommentedOrderedMap,
+    CommentedSeq,
+    CommentedSet,
+)
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
@@ -632,6 +637,49 @@ def _wrap_body(
 
 
 @beartype
+def _unwrap_yaml_scalar(*, value: object) -> object:
+    """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
+
+    The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
+    ``ScalarFloat``, ``LiteralScalarString``, ``TimeStamp``, ...) that
+    preserve source-style metadata.  The literalizer's type-inference
+    paths compare ``type(value)`` against the plain Python classes,
+    so these wrappers are demoted to
+    ``int``/``float``/``str``/``datetime`` before they reach those code
+    paths.  Built-in constructors short-circuit when given an
+    already-plain instance, so this is essentially free for unwrapped
+    values.  YAML dates parse as plain :class:`date` already, so they
+    pass through unchanged.
+    """
+    # ``bool`` and ``datetime.datetime`` come before their bases (``int``
+    # and ``date``) because match arms test class membership in order.
+    # ``ruamel`` always returns its own ``TimeStamp`` subclass for
+    # datetimes, so we always reconstruct.
+    match value:
+        case bool():
+            return bool(value)
+        case int():
+            return int(value)
+        case float():
+            return float(value)
+        case str():
+            return str(object=value)
+        case datetime.datetime():
+            return datetime.datetime(
+                year=value.year,
+                month=value.month,
+                day=value.day,
+                hour=value.hour,
+                minute=value.minute,
+                second=value.second,
+                microsecond=value.microsecond,
+                tzinfo=value.tzinfo,
+            )
+        case _:
+            return value
+
+
+@beartype
 def _coerce_yaml_keys(*, data: object) -> Value:
     """Recursively convert non-string dict keys to their string form.
 
@@ -639,29 +687,43 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     requires ``dict[str, Value]``, so we normalise before passing
     loaded YAML data to :func:`_literalize`.
 
-    ``ordereddict`` (used for YAML ``!!omap`` nodes) preserves its keys
-    (so ordered-map detection in :func:`_literalize` still works) but
-    still walks into its values.
+    The round-trip loader returns ``CommentedOrderedMap`` for YAML
+    ``!!omap`` nodes; those are demoted to plain ``ordereddict`` so
+    ordered-map detection in :func:`_literalize` still works.  Other
+    mappings come through as ``CommentedMap`` and are demoted to plain
+    ``dict``.  :class:`CommentedSet` does not subclass :class:`set`, so
+    it is converted as well.  Scalar leaves are unwrapped to plain
+    Python types so type-based dispatch sees ``int`` rather than
+    ``ScalarInt`` and friends.
     """
     match data:
-        case ordereddict():
-            omap = cast("dict[object, object]", data)
-            coerced = ordereddict(
-                [(f"{k}", _coerce_yaml_keys(data=v)) for k, v in omap.items()]
+        case CommentedOrderedMap():
+            omap_src = cast("dict[object, object]", data)
+            omap = ordereddict(
+                [
+                    (f"{k}", _coerce_yaml_keys(data=v))
+                    for k, v in omap_src.items()
+                ]
             )
-            return cast("Value", coerced)
-        case dict():
+            return cast("Value", omap)
+        case CommentedMap():
             return {
                 f"{k}": _coerce_yaml_keys(data=v)
                 for k, v in cast("dict[object, object]", data).items()
             }
-        case list():
+        case CommentedSeq():
             return [
                 _coerce_yaml_keys(data=item)
                 for item in cast("list[object]", data)
             ]
+        case CommentedSet():
+            members = cast("set[object]", set(data))
+            return {
+                cast("Scalar", _unwrap_yaml_scalar(value=item))
+                for item in members
+            }
         case _:
-            return cast("Value", data)
+            return cast("Value", _unwrap_yaml_scalar(value=data))
 
 
 def _append_entries(
@@ -944,21 +1006,27 @@ def _parse_json5(*, source: str) -> _ParsedInput:
 
 
 @functools.cache
-def _get_yaml(*, safe: bool) -> YAML:
-    """Return a cached ``YAML`` instance.
+def _get_yaml() -> YAML:
+    """Return the cached round-trip ``YAML`` instance.
 
-    Constructing ``YAML()`` globs the package directory for plug-ins
-    on every call; caching avoids that cost on every parse.
-    ``ruamel`` parsers are not safe for concurrent use within a single
-    instance, so ``literalize`` is not safe to call from multiple
-    threads.
+    The round-trip loader is used everywhere so a single parse covers
+    both data extraction and comment metadata.  Constructing ``YAML()``
+    globs the package directory for plug-ins on every call; caching
+    avoids that cost on every parse.  ``ruamel`` parsers are not safe
+    for concurrent use within a single instance, so ``literalize`` is
+    not safe to call from multiple threads.
     """
-    return YAML(typ="safe") if safe else YAML()
+    return YAML()
 
 
 def _parse_yaml(*, source: str) -> _ParsedInput:
-    """Parse a YAML string into a ``_ParsedInput``."""
-    ruamel_yaml = _get_yaml(safe=True)
+    """Parse a YAML string into a ``_ParsedInput``.
+
+    Uses the comment-preserving (round-trip) loader so the same parse
+    can later feed comment extraction without a second pass through
+    the YAML source.
+    """
+    ruamel_yaml = _get_yaml()
     try:
         # https://sourceforge.net/p/ruamel-yaml/tickets/564/
         raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
@@ -1043,7 +1111,7 @@ def _literalize_pre_form(
         )
         resolved = _resolve_yaml_comments(
             yaml_string=source,
-            data=parsed.raw_data,
+            raw_data=parsed.raw_data,
             base=result,
             language=language,
             comment_prefix=cp,
@@ -1602,7 +1670,7 @@ def _resolve_yaml_collection_comments(
 def _resolve_yaml_comments(
     *,
     yaml_string: str,
-    data: object,
+    raw_data: object,
     base: str,
     language: Language,
     comment_prefix: str,
@@ -1611,57 +1679,60 @@ def _resolve_yaml_comments(
     line_prefix: str,
     include_delimiters: bool,
 ) -> _ResolvedComments:
-    """Parse YAML for comment metadata and resolve comments."""
-    if isinstance(data, set):
-        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        ruamel_set: CommentedSet = _get_yaml(safe=False).load(  # pyright: ignore[reportUnknownMemberType]
-            stream=StringIO(initial_value=yaml_string),
-        )
-        return _resolve_collection_comments(
-            collection_comments=extract_yaml_comments(
-                ruamel_data=ruamel_set,
-            ),
-            base=base,
-            language=language,
-            comment_prefix=comment_prefix,
-            comment_suffix=comment_suffix,
-            comment_line_prefix=comment_line_prefix,
-            include_delimiters=include_delimiters,
-        )
+    """Resolve comments using the already-parsed round-trip YAML data.
 
-    if not isinstance(data, (list, dict)):
-        stream = StringIO(initial_value=yaml_string)
-        # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-        tokens = _get_yaml(safe=False).scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
-        scalar_result = literalize_yaml_scalar(
-            tokens=tokens,
-            base=base,
-            comment_prefix=comment_prefix,
-            comment_suffix=comment_suffix,
-            line_prefix=line_prefix,
-            supports_scalar_before_comments=language.supports_scalar_before_comments,
-            supports_scalar_inline_comments=language.supports_scalar_inline_comments,
-        )
-        return _ResolvedComments(
-            result=scalar_result.result,
-            pending=None,
-            pending_scalar_before=scalar_result.pending_before,
-        )
-
+    *raw_data* is the comment-preserving structure produced by
+    :func:`_parse_yaml` (a :class:`CommentedMap`, :class:`CommentedSeq`,
+    :class:`CommentedSet`, or scalar).  Scalars still need a separate
+    token scan because :meth:`YAML.load` discards comment tokens that
+    are not attached to a collection.
+    """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ruamel_data: CommentedSeq | CommentedMap = _get_yaml(safe=False).load(  # pyright: ignore[reportUnknownMemberType]
-        stream=StringIO(initial_value=yaml_string),
-    )
-    return _resolve_yaml_collection_comments(
-        ruamel_data=ruamel_data,
-        data=data,  # pyright: ignore[reportUnknownArgumentType]
-        base=base,
-        language=language,
-        comment_prefix=comment_prefix,
-        comment_suffix=comment_suffix,
-        comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
-    )
+    match raw_data:
+        case CommentedSet():
+            return _resolve_collection_comments(
+                collection_comments=extract_yaml_comments(
+                    ruamel_data=raw_data,
+                ),
+                base=base,
+                language=language,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                comment_line_prefix=comment_line_prefix,
+                include_delimiters=include_delimiters,
+            )
+        case CommentedSeq() | CommentedMap():
+            return _resolve_yaml_collection_comments(
+                ruamel_data=raw_data,
+                data=raw_data,
+                base=base,
+                language=language,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                comment_line_prefix=comment_line_prefix,
+                include_delimiters=include_delimiters,
+            )
+        case _:
+            stream = StringIO(initial_value=yaml_string)
+            tokens = _get_yaml().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
+            scalar_result = literalize_yaml_scalar(
+                tokens=tokens,
+                base=base,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                line_prefix=line_prefix,
+                supports_scalar_before_comments=(
+                    language.supports_scalar_before_comments
+                ),
+                supports_scalar_inline_comments=(
+                    language.supports_scalar_inline_comments
+                ),
+            )
+            return _ResolvedComments(
+                result=scalar_result.result,
+                pending=None,
+                pending_scalar_before=scalar_result.pending_before,
+            )
 
 
 @beartype
