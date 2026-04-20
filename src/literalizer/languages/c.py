@@ -24,7 +24,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
-    variable_formatter,
+    variable_declaration_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -57,6 +57,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -215,7 +216,7 @@ class C(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=variable_formatter(
+            formatter=variable_declaration_formatter(
                 template="CVal {name} = {value};",
             ),
             supports_redefinition=True,
@@ -585,12 +586,17 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         format_entry = self._format_entry
 
         @beartype
-        def _format_decl(name: str, value: str, data: Value) -> str:
+        def _format_decl(
+            name: str,
+            value: str,
+            data: Value,
+            _modifiers: frozenset[DeclarationModifier],
+        ) -> str:
             """Format a C variable declaration."""
             wrapped = format_entry(data, value)
             return f"CVal {name} = {wrapped};"

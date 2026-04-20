@@ -58,6 +58,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -107,7 +108,12 @@ def _format_d_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a D ``auto`` variable declaration using ``JSONValue``."""
     wrapped = _format_d_entry(original=data, formatted=value)
     return f"auto {name} = {wrapped};"
@@ -541,7 +547,7 @@ class D(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

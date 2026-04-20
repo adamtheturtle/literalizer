@@ -25,13 +25,14 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     dict_entry_with_separator,
     dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    variable_formatter,
+    variable_declaration_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -70,6 +71,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -166,6 +168,7 @@ def _format_ts_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     keyword: str,
     date_hint: str,
@@ -327,15 +330,24 @@ class TypeScript(metaclass=LanguageCls):
 
         def wrap_formatter(
             self,
-            formatter: Callable[[str, str, Value], str],
-        ) -> Callable[[str, str, Value], str]:
+            formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Wrap a formatter to match this line ending style."""
             if self.value != "none":
                 return formatter
 
-            def without_semicolon(name: str, value: str, data: Value) -> str:
+            def without_semicolon(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[DeclarationModifier],
+            ) -> str:
                 """Format without a trailing semicolon."""
-                return formatter(name, value, data).removesuffix(";")
+                return formatter(name, value, data, modifiers).removesuffix(
+                    ";"
+                )
 
             return without_semicolon
 
@@ -343,15 +355,21 @@ class TypeScript(metaclass=LanguageCls):
         """Declaration style options."""
 
         CONST = DeclarationStyleConfig(
-            formatter=variable_formatter(template="const {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value};"
+            ),
             supports_redefinition=False,
         )
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value};"
+            ),
             supports_redefinition=True,
         )
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};"
+            ),
             supports_redefinition=True,
         )
 
@@ -490,13 +508,15 @@ class TypeScript(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             keyword: str,
             date_hint: str,
             datetime_hint: str,
             dict_hint_template: str,
             sequence_is_tuple: bool,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
@@ -714,7 +734,7 @@ class TypeScript(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         base_decl = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
@@ -743,8 +763,12 @@ class TypeScript(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
-        return self.line_ending.wrap_formatter(
-            formatter=variable_formatter(template="{name} = {value};"),
+        return assignment_formatter_from_declaration(
+            formatter=self.line_ending.wrap_formatter(
+                formatter=variable_declaration_formatter(
+                    template="{name} = {value};"
+                ),
+            ),
         )
 
     @cached_property

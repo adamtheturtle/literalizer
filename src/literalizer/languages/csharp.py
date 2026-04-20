@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -29,6 +30,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
@@ -74,7 +76,164 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
+
+_CSHARP_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
+    DeclarationModifier.PUBLIC,
+    DeclarationModifier.PRIVATE,
+    DeclarationModifier.PROTECTED,
+    DeclarationModifier.STATIC,
+    DeclarationModifier.CONST,
+    DeclarationModifier.READONLY,
+)
+
+_CSHARP_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
+    DeclarationModifier.PUBLIC: "public",
+    DeclarationModifier.PRIVATE: "private",
+    DeclarationModifier.PROTECTED: "protected",
+    DeclarationModifier.STATIC: "static",
+    DeclarationModifier.CONST: "const",
+    DeclarationModifier.READONLY: "readonly",
+}
+
+
+@beartype
+def _csharp_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+    """Return the ``public static readonly `` prefix for a C#
+    declaration, including a trailing space when non-empty.
+    """
+    keywords = [
+        _CSHARP_MODIFIER_KEYWORDS[m]
+        for m in _CSHARP_MODIFIER_ORDER
+        if m in modifiers
+    ]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
+_CSHARP_SCALAR_TYPES: dict[type, str] = {
+    bool: "bool",
+    int: "int",
+    float: "double",
+    str: "string",
+    bytes: "string",
+}
+
+
+@beartype
+def _csharp_scalar_type(
+    value: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Return the C# type name for a scalar value."""
+    if isinstance(value, datetime.datetime):
+        return datetime_hint
+    if isinstance(value, datetime.date):
+        return date_hint
+    return _CSHARP_SCALAR_TYPES.get(type(value), "object")
+
+
+@beartype
+def _csharp_common_element_type(
+    items: list[Value],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Return the common C# type for a list of elements."""
+    if not items:
+        return "object"
+    types = {
+        _csharp_type_hint(
+            data=item,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            dict_value_type=dict_value_type,
+        )
+        for item in items
+    }
+    if len(types) == 1:
+        return next(iter(types))
+    if types == {"int", "double"}:
+        return "double"
+    return "object"
+
+
+@beartype
+def _csharp_type_hint(
+    data: Value,
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Return the C# declared type for *data*."""
+    match data:
+        case dict():
+            val_type = _csharp_common_element_type(
+                items=list(data.values()),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"Dictionary<string, {val_type}>"
+        case set():
+            elem = _csharp_common_element_type(
+                items=list(data),
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"HashSet<{elem}>"
+        case list():
+            elem = _csharp_common_element_type(
+                items=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+            return f"{elem}[]"
+        case _:
+            return _csharp_scalar_type(
+                value=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+
+
+@beartype
+def _format_csharp_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    modifiers: frozenset[DeclarationModifier],
+    *,
+    date_hint: str,
+    datetime_hint: str,
+    dict_value_type: str,
+) -> str:
+    """Format a C# variable declaration, applying modifiers when set.
+
+    Falls back to ``var {name} = {value};`` whenever *modifiers* is
+    empty or contains only values C# cannot express (e.g.
+    :attr:`DeclarationModifier.FINAL`), which matches the "silently
+    ignore modifiers a language cannot express" guarantee.
+    """
+    prefix = _csharp_modifier_prefix(modifiers=modifiers)
+    if not prefix:
+        return f"var {name} = {value};"
+    hint = _csharp_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        dict_value_type=dict_value_type,
+    )
+    return f"{prefix}{hint} {name} = {value};"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -269,7 +428,9 @@ class CSharp(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -416,7 +577,37 @@ class CSharp(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
+        """Wrap code in a valid file.
+
+        When *content* starts with a class-field modifier keyword (one
+        of the visibility or storage keywords that C# only accepts on
+        class members) the declaration is placed inside a ``class
+        Check`` body with a ``Main`` entry point; otherwise it's
+        emitted as a top-level statement, which is the only context
+        where ``var`` declarations are valid.
+        """
+        first_token = (
+            content.lstrip().split(sep=" ", maxsplit=1)[0]
+            if content.strip()
+            else ""
+        )
+        is_class_field = first_token in {
+            "public",
+            "private",
+            "protected",
+            "static",
+            "readonly",
+        }
+        if is_class_field:
+            preamble_block = (
+                "\n".join(body_preamble) + "\n" if body_preamble else ""
+            )
+            return (
+                f"{preamble_block}class Check {{\n"
+                f"{content}\n"
+                "    public static void Main() {}\n"
+                "}"
+            )
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
@@ -682,9 +873,24 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        date_hint = (
+            "string"
+            if self.date_format.value.type_produced is str
+            else "DateOnly"
+        )
+        datetime_hint = (
+            "string"
+            if self.datetime_format.value.type_produced is str
+            else "DateTime"
+        )
+        return functools.partial(
+            _format_csharp_declaration,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            dict_value_type=self.default_dict_value_type,
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

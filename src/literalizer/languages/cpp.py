@@ -67,6 +67,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value, ValueKind
 
 
@@ -656,11 +657,38 @@ def _build_ordered_map_config(
     )
 
 
+_CPP_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
+    DeclarationModifier.STATIC,
+    DeclarationModifier.CONST,
+)
+
+_CPP_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
+    DeclarationModifier.STATIC: "static",
+    DeclarationModifier.CONST: "const",
+}
+
+
+@beartype
+def _cpp_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+    """Return the ``static const `` prefix for a C++ declaration,
+    including a trailing space when non-empty.
+    """
+    keywords = [
+        _CPP_MODIFIER_KEYWORDS[m]
+        for m in _CPP_MODIFIER_ORDER
+        if m in modifiers
+    ]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
 @beartype
 def _format_variable_declaration(
     name: str,
     value: str,
     _data: Value,
+    modifiers: frozenset[DeclarationModifier],
 ) -> str:
     """Format a C++ variable declaration.
 
@@ -668,15 +696,22 @@ def _format_variable_declaration(
       ``readability-qualified-auto``.
     * ``auto`` — typed expression
       (e.g. ``std::vector<int>{...}``).
+
+    When *modifiers* is non-empty, applicable modifier keywords
+    (``static``, ``const``) are prepended.  ``const`` is not duplicated
+    against the built-in ``const auto*`` for string literals.
     """
     match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
             type_keyword = "const auto*"
+            extra = modifiers - {DeclarationModifier.CONST}
         case ValueKind.TYPED_EXPRESSION:
             type_keyword = "auto"
+            extra = modifiers
         case _ as unreachable:
             assert_never(unreachable)  # pyrefly: ignore[bad-argument-type]
-    return f"{type_keyword} {name} = {value};"
+    prefix = _cpp_modifier_prefix(modifiers=extra)
+    return f"{prefix}{type_keyword} {name} = {value};"
 
 
 def _infer_value_kind(*, value: str) -> ValueKind:
@@ -1316,7 +1351,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

@@ -4,7 +4,15 @@ Changelog
 Next
 ----
 
-
+- Added ``DeclarationModifier`` enum with ``PUBLIC``, ``PRIVATE``,
+  ``PROTECTED``, ``STATIC``, ``FINAL``, ``READONLY``, and ``CONST`` members.
+- ``NewVariable`` and ``BothVariableForms`` now accept a ``modifiers``
+  keyword argument to control visibility and storage on generated
+  declarations.
+- Implemented modifier rendering for Java (``public``/``private``/
+  ``protected``/``static``/``final``), C# (same plus ``readonly`` and
+  ``const``), and C++ (``static``/``const``).  Other languages silently
+  ignore modifiers they cannot express.
 - Removed automatic coercion of heterogeneous data to strings.  The
   ``error_on_coercion`` parameter has been removed from ``literalize``;
   ``literalize`` now always raises a subclass of

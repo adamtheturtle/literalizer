@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 from beartype import beartype
 
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -36,8 +37,8 @@ def _format_variable(
 
 @beartype
 def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
-    """Return a ``format_variable_declaration`` or
-    ``format_variable_assignment`` callable from a template string.
+    """Return a ``format_variable_assignment`` callable from a template
+    string.
 
     The *template* must contain ``{name}`` and ``{value}`` placeholders.
 
@@ -49,6 +50,93 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
 
     def _format(name: str, value: str, _data: Value) -> str:
         """Delegate to module-level implementation."""
+        return _format_variable(
+            name=name, value=value, _data=_data, template=template
+        )
+
+    return _format
+
+
+@beartype
+def assignment_formatter_from_declaration(
+    formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> Callable[[str, str, Value], str]:
+    """Return a 3-arg assignment formatter wrapping a declaration
+    formatter.
+
+    Modifiers are passed as an empty :class:`frozenset` — assignments
+    never carry modifiers.  Use this when a language's declaration and
+    assignment syntax are identical and can share a single
+    implementation.
+    """
+
+    @beartype
+    def _format(name: str, value: str, data: Value) -> str:
+        """Format a variable assignment by delegating to the declaration
+        formatter.
+        """
+        return formatter(name, value, data, frozenset())
+
+    return _format
+
+
+@beartype
+def declaration_formatter_ignoring_modifiers(
+    formatter: Callable[[str, str, Value], str],
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    """Adapt a 3-arg callable to the 4-arg declaration formatter shape.
+
+    Use in language cached-properties whose declaration formatter does
+    not know how to apply :class:`~literalizer.DeclarationModifier`
+    values; the modifiers parameter is accepted and silently ignored.
+    """
+
+    @beartype
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
+        """Delegate to the wrapped 3-arg formatter, dropping modifiers."""
+        return formatter(name, value, data)
+
+    return _format
+
+
+@beartype
+def variable_declaration_formatter(
+    *,
+    template: str,
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
+    """Return a ``format_variable_declaration`` callable from a template
+    string.
+
+    The *template* must contain ``{name}`` and ``{value}`` placeholders.
+    The resulting callable accepts (but silently ignores) the
+    :class:`~literalizer.DeclarationModifier` set — use this for
+    languages that cannot express the standard visibility/storage
+    modifiers.  Languages with concrete modifier syntax should provide
+    their own formatter rather than calling this helper.
+
+    Example::
+
+        fmt = variable_declaration_formatter(
+            template="const {name} = {value};",
+        )
+        fmt("x", "42", None, frozenset())  # => "const x = 42;"
+    """
+
+    @beartype
+    def _format(
+        name: str,
+        value: str,
+        _data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
+        """Delegate to module-level implementation, ignoring modifiers."""
         return _format_variable(
             name=name, value=value, _data=_data, template=template
         )

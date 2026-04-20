@@ -27,7 +27,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    variable_formatter,
+    variable_declaration_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -64,6 +64,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -107,10 +108,15 @@ def _make_variable_declaration(
     uses_typed_literal_for_scalars: bool,
     keyword: str,
     force_sequence: bool,
-) -> Callable[[str, str, Value], str]:
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Create a Nim variable declaration formatter."""
 
-    def _format(name: str, value: str, _data: Value) -> str:
+    def _format(
+        name: str,
+        value: str,
+        _data: Value,
+        _modifiers: frozenset[DeclarationModifier],
+    ) -> str:
         """Delegate to module-level implementation."""
         return _apply_nim_variable_declaration(
             name=name,
@@ -309,15 +315,21 @@ class Nim(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value}"
+            ),
             supports_redefinition=True,
         )
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value}"
+            ),
             supports_redefinition=False,
         )
         CONST = DeclarationStyleConfig(
-            formatter=variable_formatter(template="const {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="const {name} = {value}"
+            ),
             supports_redefinition=False,
         )
 
@@ -647,7 +659,7 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         is_const = self.declaration_style is self.declaration_styles.CONST
         return _make_variable_declaration(

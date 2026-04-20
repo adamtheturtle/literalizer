@@ -25,6 +25,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -62,6 +63,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -175,11 +177,15 @@ class V(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name} := {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} := {value}"
+            ),
             supports_redefinition=False,
         )
         MUT = DeclarationStyleConfig(
-            formatter=variable_formatter(template="mut {name} := {value}"),
+            formatter=variable_declaration_formatter(
+                template="mut {name} := {value}"
+            ),
             supports_redefinition=True,
         )
 
@@ -514,7 +520,7 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

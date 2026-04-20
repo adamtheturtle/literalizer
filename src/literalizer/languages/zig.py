@@ -63,6 +63,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -110,14 +111,24 @@ def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
 
 
 @beartype
-def _format_const_declaration(name: str, value: str, data: Value) -> str:
+def _format_const_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"const {name}: ZVal = {wrapped};"
 
 
 @beartype
-def _format_var_declaration(name: str, value: str, data: Value) -> str:
+def _format_var_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"var {name}: ZVal = {wrapped};"
@@ -579,7 +590,7 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

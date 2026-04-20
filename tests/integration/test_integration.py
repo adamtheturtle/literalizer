@@ -34,13 +34,17 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
+    Cpp,
+    CSharp,
     Elm,
     Fortran,
     FSharp,
     Gleam,
     Haskell,
+    Java,
     OCaml,
     PureScript,
+    Python,
 )
 
 
@@ -1038,6 +1042,172 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
     return variants
 
 
+@beartype
+def _build_modifier_variant_cases() -> list[_VariantCase]:
+    """Build variants exercising :class:`DeclarationModifier` rendering.
+
+    Covers each language whose declaration syntax maps the issue-1249
+    modifier vocabulary (Java, C#, C++), plus Python which must silently
+    ignore every modifier.  Each modifier combination is run against a
+    scalar input and a dict input so that typed-declaration inference is
+    also exercised.
+    """
+    m = literalizer.DeclarationModifier
+    combos: list[
+        tuple[
+            literalizer.LanguageCls,
+            str,
+            frozenset[literalizer.DeclarationModifier],
+        ]
+    ] = [
+        (Java, "final", frozenset({m.FINAL})),
+        (
+            Java,
+            "public_static_final",
+            frozenset({m.PUBLIC, m.STATIC, m.FINAL}),
+        ),
+        (Java, "private", frozenset({m.PRIVATE})),
+        (Java, "protected", frozenset({m.PROTECTED})),
+        (Java, "static", frozenset({m.STATIC})),
+        (CSharp, "readonly", frozenset({m.READONLY})),
+        (
+            CSharp,
+            "public_static_readonly",
+            frozenset({m.PUBLIC, m.STATIC, m.READONLY}),
+        ),
+        (CSharp, "const", frozenset({m.CONST})),
+        (Cpp, "const", frozenset({m.CONST})),
+        (Cpp, "static_const", frozenset({m.STATIC, m.CONST})),
+        (Cpp, "static", frozenset({m.STATIC})),
+        # Python must treat every modifier as a silent no-op.
+        (Python, "const_noop", frozenset({m.CONST})),
+        (Python, "public_final_noop", frozenset({m.PUBLIC, m.FINAL})),
+    ]
+
+    cases: list[_VariantCase] = []
+    case_dirs = ("scalar_int", "simple_dict")
+    # C# ``const`` requires compile-time constants, so a dict can never
+    # be declared ``const``.  Skip the dict case for that combo.
+    skip_dict = {(CSharp, "const")}
+    for lang_cls, mod_name, modifiers in combos:
+        variant = _Variant(
+            name=f"{lang_cls.__name__}_modifiers_{mod_name}",
+            spec=_spec(lang_cls=lang_cls),
+            lang_cls=lang_cls,
+        )
+        cases.extend(
+            _VariantCase(
+                variant_name=variant.name,
+                variant=variant,
+                case_dir_name=case_dir_name,
+                variable_form=literalizer.NewVariable(
+                    name="my_data",
+                    modifiers=modifiers,
+                ),
+            )
+            for case_dir_name in case_dirs
+            if not (
+                case_dir_name == "simple_dict"
+                and (lang_cls, mod_name) in skip_dict
+            )
+        )
+
+    # Extra coverage for C# modifier rendering: the typed-declaration
+    # path infers different branches for set and date values.  List
+    # values use ARRAY sequence format so the inferred ``object[]`` type
+    # matches the generated initializer.
+    csharp_readonly = _Variant(
+        name="CSharp_modifiers_readonly",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.extend(
+        _VariantCase(
+            variant_name=csharp_readonly.name,
+            variant=csharp_readonly,
+            case_dir_name=case_dir_name,
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+        for case_dir_name in ("set", "scalar_date", "scalar_datetime")
+    )
+    csharp_readonly_empty_set = _Variant(
+        name="CSharp_modifiers_readonly_empty_set",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_empty_set.name,
+            variant=csharp_readonly_empty_set,
+            case_dir_name="empty_set",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_mixed = _Variant(
+        name="CSharp_modifiers_readonly_mixed_numbers",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_mixed.name,
+            variant=csharp_readonly_mixed,
+            case_dir_name="mixed_number_list",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_array = _Variant(
+        name="CSharp_modifiers_readonly_array",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_array.name,
+            variant=csharp_readonly_array,
+            case_dir_name="simple_sequence",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    # Cover the "modifiers contains only values C# cannot express"
+    # fall-back path (e.g. ``FINAL`` alone on C#).
+    csharp_final_ignored = _Variant(
+        name="CSharp_modifiers_final_ignored",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_final_ignored.name,
+            variant=csharp_final_ignored,
+            case_dir_name="scalar_int",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.FINAL}),
+            ),
+        )
+    )
+    return cases
+
+
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     nv = _build_non_default_variants
@@ -1346,6 +1516,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 and case_dir_name in _dart_non_const_cases
             )
         )
+    cases.extend(_build_modifier_variant_cases())
     return cases
 
 
