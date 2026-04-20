@@ -25,6 +25,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import set_format_factory
@@ -60,6 +61,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -77,18 +79,23 @@ def _apply_odin_nil_safe_declaration(
     name: str,
     value: str,
     data: Value,
-    base_formatter: Callable[[str, str, Value], str],
+    modifiers: frozenset[DeclarationModifier],
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
 ) -> str:
     """Format an Odin variable declaration, guarding top-level ``nil``."""
     if data is None:
         return f"{name}: any = {value}"
-    return base_formatter(name, value, data)
+    return base_formatter(name, value, data, modifiers)
 
 
 @beartype
 def _nil_safe_declaration(
-    base_formatter: Callable[[str, str, Value], str],
-) -> Callable[[str, str, Value], str]:
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Wrap *base_formatter* so top-level ``nil`` gets a typed form.
 
     Odin cannot infer a type from ``nil`` alone, so
@@ -96,10 +103,19 @@ def _nil_safe_declaration(
     ``{name}: any = nil`` when the value is ``None``.
     """
 
-    def _format(name: str, value: str, data: Value) -> str:
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[DeclarationModifier],
+    ) -> str:
         """Delegate to module-level implementation."""
         return _apply_odin_nil_safe_declaration(
-            name=name, value=value, data=data, base_formatter=base_formatter
+            name=name,
+            value=value,
+            data=data,
+            modifiers=modifiers,
+            base_formatter=base_formatter,
         )
 
     return _format
@@ -204,7 +220,9 @@ class Odin(metaclass=LanguageCls):
         """Declaration style options."""
 
         SHORT = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name} := {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} := {value}"
+            ),
             supports_redefinition=False,
         )
 
@@ -563,7 +581,7 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return _nil_safe_declaration(
             base_formatter=self.declaration_style.value.formatter,

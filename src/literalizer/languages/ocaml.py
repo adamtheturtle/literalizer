@@ -23,11 +23,12 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
+    declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
-    variable_formatter,
+    variable_declaration_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -62,6 +63,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -311,7 +313,7 @@ class OCaml(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(
+            formatter=variable_declaration_formatter(
                 template="let {name} = {value}",
             ),
             supports_redefinition=False,
@@ -707,9 +709,11 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
-        return self._ocaml_declaration
+        return declaration_formatter_ignoring_modifiers(
+            formatter=self._ocaml_declaration
+        )
 
     @cached_property
     def format_variable_assignment(

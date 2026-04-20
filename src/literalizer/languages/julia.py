@@ -27,6 +27,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -67,6 +68,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -251,7 +253,9 @@ class Julia(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} = {value}"
+            ),
             supports_redefinition=True,
         )
 
@@ -592,7 +596,7 @@ class Julia(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

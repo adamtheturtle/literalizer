@@ -25,6 +25,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -54,6 +55,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -483,7 +485,9 @@ class Elm(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} = {value}"
+            ),
             supports_redefinition=False,
         )
 
@@ -842,7 +846,7 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         _base_declaration = self.declaration_style.value.formatter
         _raw_declared = self.sequence_format.value.declared_type
@@ -858,9 +862,10 @@ class Elm(metaclass=LanguageCls):
             name: str,
             value: str,
             data: Value,
+            _modifiers: frozenset[DeclarationModifier],
         ) -> str:
             """Format a variable declaration with type annotation."""
-            base = _base_declaration(name, value, data)
+            base = _base_declaration(name, value, data, _modifiers)
             decl_type = (
                 _sequence_declared_type
                 if isinstance(data, list)

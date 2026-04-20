@@ -54,6 +54,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -205,7 +206,12 @@ def _to_cobol_name(python_name: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a COBOL 01-level variable declaration.
 
     Scalars become an elementary 01-level item; collections become a
@@ -637,7 +643,7 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

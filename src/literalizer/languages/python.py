@@ -29,6 +29,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -70,6 +71,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -131,6 +133,7 @@ def _format_variable_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     bytes_hint: str,
     date_hint: str,
@@ -152,6 +155,7 @@ def _format_variable_declaration(
             name=name,
             value=value,
             data=data,
+            _modifiers=_modifiers,
             bytes_hint=bytes_hint,
             date_hint=date_hint,
             datetime_hint=datetime_hint,
@@ -170,6 +174,7 @@ def _format_inline_type_hint_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     bytes_hint: str,
     date_hint: str,
@@ -651,7 +656,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter for this hint
             style.
             """
@@ -693,7 +698,9 @@ class Python(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_formatter(template="{name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="{name} = {value}"
+            ),
             supports_redefinition=True,
         )
 
@@ -1024,7 +1031,7 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,

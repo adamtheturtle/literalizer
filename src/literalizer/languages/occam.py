@@ -24,6 +24,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -52,6 +53,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -166,7 +168,7 @@ class Occam(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAL = DeclarationStyleConfig(
-            formatter=variable_formatter(
+            formatter=variable_declaration_formatter(
                 template="VAL MOBILE LIT {name} IS {value}:",
             ),
             supports_redefinition=False,
@@ -490,7 +492,7 @@ class Occam(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

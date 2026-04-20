@@ -33,13 +33,17 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import all_languages
 from literalizer.languages.c import C
+from literalizer.languages.cpp import Cpp
+from literalizer.languages.csharp import CSharp
 from literalizer.languages.elm import Elm
 from literalizer.languages.fortran import Fortran
 from literalizer.languages.fsharp import FSharp
 from literalizer.languages.gleam import Gleam
 from literalizer.languages.haskell import Haskell
+from literalizer.languages.java import Java
 from literalizer.languages.ocaml import OCaml
 from literalizer.languages.purescript import PureScript
+from literalizer.languages.python import Python
 
 
 @pytest.fixture(name="cases_dir")
@@ -48,6 +52,67 @@ def fixture_cases_dir(request: pytest.FixtureRequest) -> Path:
     directory.
     """
     return request.config.rootpath / "tests" / "integration" / "cases"
+
+
+@beartype
+def _check_golden(
+    *,
+    file_regression: FileRegressionFixture,
+    contents: str,
+    golden_path: Path,
+    extension: str,
+    newline: str | None,
+) -> None:
+    """Compare ``contents`` against ``golden_path`` in memory.
+
+    ``file_regression.check`` writes an ``.obtained`` file, reads both
+    files back from disk, and runs ``difflib`` even on the pass path,
+    which dominates this module's runtime (~13k calls per run).  For
+    the pass path we can compare the already-in-memory ``contents``
+    against the golden file directly; only on miss or regen do we
+    delegate to the fixture for its ``.obtained`` + HTML-diff output.
+    """
+    config = file_regression.request.config
+    regen = file_regression.force_regen or bool(
+        config.getoption(name="regen_all")
+        or config.getoption(name="force_regen"),
+    )
+    if (
+        not regen
+        and golden_path.is_file()
+        and contents.splitlines() == golden_path.read_text().splitlines()
+    ):
+        return
+    file_regression.check(
+        contents=contents,
+        extension=extension,
+        newline=newline,
+        fullpath=golden_path,
+    )
+
+
+def test_check_golden_mismatch_delegates(
+    tmp_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``_check_golden`` delegates to ``file_regression.check`` on miss.
+
+    Every golden file matches in CI, so nothing else reaches the
+    fallback branch.
+    """
+    golden = tmp_path / "golden.txt"
+    golden.write_text(data="expected\n")
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match="FILES DIFFER",
+    ):
+        _check_golden(
+            file_regression=file_regression,
+            contents="different\n",
+            golden_path=golden,
+            extension=".txt",
+            newline="",
+        )
 
 
 @beartype
@@ -614,11 +679,12 @@ def test_golden_file(
     # newline="" prevents Python text-mode from converting \r\n to \n
     # on Windows, which would corrupt golden files containing literal
     # CR bytes (e.g. CommonLisp string_control_chars).
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
     )
 
 
@@ -721,11 +787,12 @@ def test_golden_file_combined_variable_forms(
         pytest.skip(
             f"{lang_cls.__name__} cannot represent this heterogeneous input"
         )
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
     )
 
 
@@ -971,6 +1038,172 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
                         ),
                     )
     return variants
+
+
+@beartype
+def _build_modifier_variant_cases() -> list[_VariantCase]:
+    """Build variants exercising :class:`DeclarationModifier` rendering.
+
+    Covers each language whose declaration syntax maps the issue-1249
+    modifier vocabulary (Java, C#, C++), plus Python which must silently
+    ignore every modifier.  Each modifier combination is run against a
+    scalar input and a dict input so that typed-declaration inference is
+    also exercised.
+    """
+    m = literalizer.DeclarationModifier
+    combos: list[
+        tuple[
+            literalizer.LanguageCls,
+            str,
+            frozenset[literalizer.DeclarationModifier],
+        ]
+    ] = [
+        (Java, "final", frozenset({m.FINAL})),
+        (
+            Java,
+            "public_static_final",
+            frozenset({m.PUBLIC, m.STATIC, m.FINAL}),
+        ),
+        (Java, "private", frozenset({m.PRIVATE})),
+        (Java, "protected", frozenset({m.PROTECTED})),
+        (Java, "static", frozenset({m.STATIC})),
+        (CSharp, "readonly", frozenset({m.READONLY})),
+        (
+            CSharp,
+            "public_static_readonly",
+            frozenset({m.PUBLIC, m.STATIC, m.READONLY}),
+        ),
+        (CSharp, "const", frozenset({m.CONST})),
+        (Cpp, "const", frozenset({m.CONST})),
+        (Cpp, "static_const", frozenset({m.STATIC, m.CONST})),
+        (Cpp, "static", frozenset({m.STATIC})),
+        # Python must treat every modifier as a silent no-op.
+        (Python, "const_noop", frozenset({m.CONST})),
+        (Python, "public_final_noop", frozenset({m.PUBLIC, m.FINAL})),
+    ]
+
+    cases: list[_VariantCase] = []
+    case_dirs = ("scalar_int", "simple_dict")
+    # C# ``const`` requires compile-time constants, so a dict can never
+    # be declared ``const``.  Skip the dict case for that combo.
+    skip_dict = {(CSharp, "const")}
+    for lang_cls, mod_name, modifiers in combos:
+        variant = _Variant(
+            name=f"{lang_cls.__name__}_modifiers_{mod_name}",
+            spec=_spec(lang_cls=lang_cls),
+            lang_cls=lang_cls,
+        )
+        cases.extend(
+            _VariantCase(
+                variant_name=variant.name,
+                variant=variant,
+                case_dir_name=case_dir_name,
+                variable_form=literalizer.NewVariable(
+                    name="my_data",
+                    modifiers=modifiers,
+                ),
+            )
+            for case_dir_name in case_dirs
+            if not (
+                case_dir_name == "simple_dict"
+                and (lang_cls, mod_name) in skip_dict
+            )
+        )
+
+    # Extra coverage for C# modifier rendering: the typed-declaration
+    # path infers different branches for set and date values.  List
+    # values use ARRAY sequence format so the inferred ``object[]`` type
+    # matches the generated initializer.
+    csharp_readonly = _Variant(
+        name="CSharp_modifiers_readonly",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.extend(
+        _VariantCase(
+            variant_name=csharp_readonly.name,
+            variant=csharp_readonly,
+            case_dir_name=case_dir_name,
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+        for case_dir_name in ("set", "scalar_date", "scalar_datetime")
+    )
+    csharp_readonly_empty_set = _Variant(
+        name="CSharp_modifiers_readonly_empty_set",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_empty_set.name,
+            variant=csharp_readonly_empty_set,
+            case_dir_name="empty_set",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_mixed = _Variant(
+        name="CSharp_modifiers_readonly_mixed_numbers",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_mixed.name,
+            variant=csharp_readonly_mixed,
+            case_dir_name="mixed_number_list",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    csharp_readonly_array = _Variant(
+        name="CSharp_modifiers_readonly_array",
+        spec=_spec(
+            lang_cls=CSharp,
+            sequence_format=CSharp.sequence_formats.ARRAY,
+        ),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_readonly_array.name,
+            variant=csharp_readonly_array,
+            case_dir_name="simple_sequence",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.READONLY}),
+            ),
+        )
+    )
+    # Cover the "modifiers contains only values C# cannot express"
+    # fall-back path (e.g. ``FINAL`` alone on C#).
+    csharp_final_ignored = _Variant(
+        name="CSharp_modifiers_final_ignored",
+        spec=_spec(lang_cls=CSharp),
+        lang_cls=CSharp,
+    )
+    cases.append(
+        _VariantCase(
+            variant_name=csharp_final_ignored.name,
+            variant=csharp_final_ignored,
+            case_dir_name="scalar_int",
+            variable_form=literalizer.NewVariable(
+                name="my_data",
+                modifiers=frozenset({m.FINAL}),
+            ),
+        )
+    )
+    return cases
 
 
 def _build_variant_cases() -> list[_VariantCase]:
@@ -1281,6 +1514,7 @@ def _build_variant_cases() -> list[_VariantCase]:
                 and case_dir_name in _dart_non_const_cases
             )
         )
+    cases.extend(_build_modifier_variant_cases())
     return cases
 
 
@@ -1321,10 +1555,12 @@ def test_format_variant_golden_file(
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
         pytest.skip("Format cannot represent this heterogeneous input")
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=variant.spec.extension,
-        fullpath=golden_path,
+        newline=None,
+        golden_path=golden_path,
     )
 
 
@@ -1406,10 +1642,12 @@ def test_line_ending_combined_variable_forms(
         variable_form=literalizer.BothVariableForms(name="my_data"),
         wrap_in_file=True,
     )
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=result.code + "\n",
         extension=spec.extension,
-        fullpath=input_path.parent / (case.name + spec.extension),
+        newline=None,
+        golden_path=input_path.parent / (case.name + spec.extension),
     )
 
 
@@ -1640,9 +1878,10 @@ def test_call_golden_file(
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     lang_name = lang_cls.__name__
     golden_name = f"{lang_name}_call"
-    file_regression.check(
+    _check_golden(
+        file_regression=file_regression,
         contents=wrapped + "\n",
         extension=lang_cls.extension,
         newline="",
-        fullpath=input_path.parent / (golden_name + lang_cls.extension),
+        golden_path=input_path.parent / (golden_name + lang_cls.extension),
     )

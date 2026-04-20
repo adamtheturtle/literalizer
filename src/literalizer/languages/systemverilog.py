@@ -54,6 +54,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 _INT32_MIN = -(2**31)
@@ -110,7 +111,12 @@ def _format_sv_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(name: str, value: str, data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[DeclarationModifier],
+) -> str:
     """Format a SystemVerilog variable declaration."""
     if isinstance(data, (list, set)):
         return f"static _VVal {name}[] = {value};"
@@ -553,7 +559,7 @@ class SystemVerilog(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
 

@@ -32,6 +32,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -71,6 +72,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     prepend_body_preamble,
 )
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 from literalizer.exceptions import NullInCollectionError
 
@@ -316,11 +318,44 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
             assert_never(unreachable)
 
 
+_JAVA_MODIFIER_ORDER: tuple[DeclarationModifier, ...] = (
+    DeclarationModifier.PUBLIC,
+    DeclarationModifier.PRIVATE,
+    DeclarationModifier.PROTECTED,
+    DeclarationModifier.STATIC,
+    DeclarationModifier.FINAL,
+)
+
+_JAVA_MODIFIER_KEYWORDS: dict[DeclarationModifier, str] = {
+    DeclarationModifier.PUBLIC: "public",
+    DeclarationModifier.PRIVATE: "private",
+    DeclarationModifier.PROTECTED: "protected",
+    DeclarationModifier.STATIC: "static",
+    DeclarationModifier.FINAL: "final",
+}
+
+
+@beartype
+def _java_modifier_prefix(modifiers: frozenset[DeclarationModifier]) -> str:
+    """Return the ``public static final `` prefix for a Java
+    declaration, including a trailing space when non-empty.
+    """
+    keywords = [
+        _JAVA_MODIFIER_KEYWORDS[m]
+        for m in _JAVA_MODIFIER_ORDER
+        if m in modifiers
+    ]
+    if not keywords:
+        return ""
+    return " ".join(keywords) + " "
+
+
 @beartype
 def _format_java_typed_declaration(
     name: str,
     value: str,
     data: Value,
+    _modifiers: frozenset[DeclarationModifier],
     *,
     int_type: str,
     date_hint: str,
@@ -339,7 +374,8 @@ def _format_java_typed_declaration(
         dict_outer=dict_outer,
         set_outer=set_outer,
     )
-    return f"{hint} {name} = {value};"
+    prefix = _java_modifier_prefix(modifiers=_modifiers)
+    return f"{prefix}{hint} {name} = {value};"
 
 
 @beartype
@@ -347,29 +383,58 @@ def _apply_java_object_nil_declaration(
     name: str,
     value: str,
     data: Value,
-    base_formatter: Callable[[str, str, Value], str],
+    modifiers: frozenset[DeclarationModifier],
+    *,
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+    typed_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
 ) -> str:
-    """Format a Java variable declaration, guarding top-level ``null``."""
+    """Format a Java variable declaration, guarding top-level ``null``
+    and switching to the typed form whenever modifiers are present.
+    """
+    if modifiers:
+        return typed_formatter(name, value, data, modifiers)
     if data is None:
         return f"Object {name} = {value};"
-    return base_formatter(name, value, data)
+    return base_formatter(name, value, data, modifiers)
 
 
 @beartype
 def _object_nil_declaration(
-    base_formatter: Callable[[str, str, Value], str],
-) -> Callable[[str, str, Value], str]:
+    base_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+    *,
+    typed_formatter: Callable[
+        [str, str, Value, frozenset[DeclarationModifier]], str
+    ],
+) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
     """Wrap *base_formatter* so top-level ``null`` gets a typed form.
 
     Java cannot infer a type from ``null``, so ``var {name} = null;``
     fails to compile.  Emit ``Object {name} = null;`` when the value is
-    ``None``.
+    ``None``.  Modifiers force the typed form because Java class-field
+    syntax (e.g. ``public static final``) cannot be combined with
+    ``var``.
     """
 
-    def _format(name: str, value: str, data: Value) -> str:
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[DeclarationModifier],
+    ) -> str:
         """Delegate to module-level implementation."""
         return _apply_java_object_nil_declaration(
-            name=name, value=value, data=data, base_formatter=base_formatter
+            name=name,
+            value=value,
+            data=data,
+            modifiers=modifiers,
+            base_formatter=base_formatter,
+            typed_formatter=typed_formatter,
         )
 
     return _format
@@ -572,7 +637,9 @@ class Java(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_formatter(template="var {name} = {value};"),
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};",
+            ),
             supports_redefinition=True,
         )
 
@@ -710,18 +777,18 @@ class Java(metaclass=LanguageCls):
         def formatter(
             self,
             *,
-            auto_formatter: Callable[[str, str, Value], str],
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[DeclarationModifier]], str
+            ],
             int_type: str,
             date_hint: str,
             datetime_hint: str,
             seq_is_array: bool,
             dict_outer: str,
             set_outer: str,
-        ) -> Callable[[str, str, Value], str]:
+        ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
             """Return the variable declaration formatter."""
-            if self is type(self).AUTO:
-                return _object_nil_declaration(base_formatter=auto_formatter)
-            return functools.partial(
+            typed = functools.partial(
                 _format_java_typed_declaration,
                 int_type=int_type,
                 date_hint=date_hint,
@@ -730,6 +797,12 @@ class Java(metaclass=LanguageCls):
                 dict_outer=dict_outer,
                 set_outer=set_outer,
             )
+            if self is type(self).AUTO:
+                return _object_nil_declaration(
+                    base_formatter=auto_formatter,
+                    typed_formatter=typed,
+                )
+            return typed
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -764,8 +837,27 @@ class Java(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Java declaration in a static method."""
+        """Wrap a Java declaration in a ``class Check`` scope.
+
+        When *content* starts with a class-field modifier keyword
+        (``public``, ``private``, ``protected``, ``static``) the
+        declaration is placed at class-field scope, which is the only
+        context where those modifiers are valid.  Otherwise the
+        declaration goes inside ``public static void check()`` so that
+        local-only forms like ``var x = 42;`` compile.
+        """
         del variable_name
+        first_token = (
+            content.lstrip().split(sep=" ", maxsplit=1)[0]
+            if content.strip()
+            else ""
+        )
+        is_class_field = first_token in {
+            "public",
+            "private",
+            "protected",
+            "static",
+        }
         # Lines starting with "static " are class-level declarations
         # (call stubs); everything else goes inside the method body.
         class_lines = [
@@ -774,11 +866,18 @@ class Java(metaclass=LanguageCls):
         method_lines = tuple(
             line for line in body_preamble if not line.startswith("static ")
         )
+        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
+        if is_class_field:
+            field_preamble = (
+                "\n".join(method_lines) + "\n" if method_lines else ""
+            )
+            return (
+                f"class Check {{\n{class_block}{field_preamble}{content}\n}}"
+            )
         content = prepend_body_preamble(
             content=content,
             body_preamble=method_lines,
         )
-        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
         return (
             "class Check {\n"
             f"{class_block}"
@@ -1011,7 +1110,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_variable_declaration(
         self,
-    ) -> Callable[[str, str, Value], str]:
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration."""
         if self.datetime_format.value.type_produced is str:
             datetime_hint = "String"

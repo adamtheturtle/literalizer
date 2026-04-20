@@ -11,6 +11,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
+from literalizer._modifiers import DeclarationModifier
 from literalizer._types import Value
 
 
@@ -162,7 +163,7 @@ class TrailingCommaConfig:
 class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
 
-    formatter: Callable[[str, str, Value], str]
+    formatter: Callable[[str, str, Value, frozenset[DeclarationModifier]], str]
     supports_redefinition: bool
 
 
@@ -641,12 +642,18 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_variable_declaration(self) -> Callable[[str, str, Value], str]:
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[DeclarationModifier]], str]:
         """Callable that formats a new variable declaration.
 
-        Called as ``format_variable_declaration(name, value, data)`` where
+        Called as
+        ``format_variable_declaration(name, value, data, modifiers)`` where
         *name* is the variable name, *value* is the already-formatted literal
-        value, and *data* is the original parsed data structure.
+        value, *data* is the original parsed data structure, and *modifiers*
+        is the set of :class:`~literalizer.DeclarationModifier` values
+        requested by the caller.  Modifiers the language cannot express
+        are silently ignored.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
