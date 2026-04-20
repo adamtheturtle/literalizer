@@ -430,8 +430,8 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
 
 
 def test_both_variable_forms_without_redefinition_support_raises() -> None:
-    """BothVariableForms with a non-redefinable declaration_style
-    raises.
+    """BothVariableForms raises when the declaration_style does not
+    support redefinition.
     """
     with pytest.raises(
         expected_exception=ValueError,
