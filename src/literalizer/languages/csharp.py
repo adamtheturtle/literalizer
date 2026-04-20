@@ -579,12 +579,12 @@ class CSharp(metaclass=LanguageCls):
     ) -> str:
         """Wrap code in a valid file.
 
-        When *content* starts with a class-field modifier keyword
-        (``public``/``private``/``protected``/``static``/``readonly``)
-        the declaration is placed inside a ``class Check`` body with a
-        ``Main`` entry point; otherwise it's emitted as a top-level
-        statement, which is the only context where ``var`` declarations
-        are valid.
+        When *content* starts with a class-field modifier keyword (one
+        of the visibility or storage keywords that C# only accepts on
+        class members) the declaration is placed inside a ``class
+        Check`` body with a ``Main`` entry point; otherwise it's
+        emitted as a top-level statement, which is the only context
+        where ``var`` declarations are valid.
         """
         first_token = (
             content.lstrip().split(sep=" ", maxsplit=1)[0]
