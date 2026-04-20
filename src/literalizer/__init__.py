@@ -1,15 +1,5 @@
 """Convert data structures to native language literal syntax."""
 
-from literalizer._core import (
-    BothVariableForms,
-    ExistingVariable,
-    InputFormat,
-    LiteralizeResult,
-    NewVariable,
-    VariableForm,
-    literalize,
-    literalize_call,
-)
 from literalizer._formatters.collection_openers import (
     fixed_dict_open,
     fixed_sequence_open,
@@ -31,6 +21,16 @@ from literalizer._language import (
     SetFormatConfig,
     TrailingCommaConfig,
 )
+from literalizer._literalize import (
+    BothVariableForms,
+    ExistingVariable,
+    LiteralizeResult,
+    NewVariable,
+    VariableForm,
+    literalize,
+    literalize_call,
+)
+from literalizer._parsing import InputFormat
 
 __all__ = [
     "BothVariableForms",

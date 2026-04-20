@@ -44,9 +44,12 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
@@ -857,9 +860,23 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
+        """Callable that formats an int value as a literal.
+
+        Positive values above ``long.MaxValue`` are accepted as bare
+        literals because C# infers ``ulong`` for literals without a
+        type suffix up to ``ulong.MaxValue``.  Values below
+        ``long.MinValue`` have no clean literal form (unary minus
+        cannot apply to ``ulong``), so they raise
+        ``UnrepresentableIntegerError``.
+        """
+        base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=raise_for_unrepresentable_int(language_name="C#"),
+            min_value=I64_MIN,
+            max_value=2**64 - 1,
         )
 
     @cached_property

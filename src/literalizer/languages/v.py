@@ -39,6 +39,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
     make_overflow_fallback_formatter,
+    make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar_single,
@@ -67,9 +68,9 @@ from literalizer._types import Value
 
 
 @beartype
-def _format_v_u64_literal(value: int) -> str:
-    """Format a value outside signed 64-bit range as a V ``u64``
-    typed conversion.
+def _format_v_u64_positive(value: int) -> str:
+    """Format a positive value outside signed 64-bit range as a V
+    ``u64`` typed conversion.
     """
     return f"u64({value})"
 
@@ -496,7 +497,10 @@ class V(metaclass=LanguageCls):
             base=self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
             ),
-            fallback=_format_v_u64_literal,
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_format_v_u64_positive,
+                language_name="V",
+            ),
         )
 
     @cached_property

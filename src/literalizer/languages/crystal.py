@@ -36,7 +36,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_underscore
+from literalizer._formatters.format_integers import (
+    format_integer_underscore,
+    make_overflow_fallback_formatter,
+)
 from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
     CallStyle,
@@ -62,6 +65,17 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_crystal_i128_literal(value: int) -> str:
+    """Format an out-of-range integer with a Crystal ``_i128`` suffix.
+
+    Crystal rejects bare integer literals outside the signed 64-bit
+    range; the ``_i128`` suffix selects ``Int128``, which covers
+    ``-2^127`` to ``2^127 - 1``.
+    """
+    return f"{value}_i128"
 
 
 @beartype
@@ -531,8 +545,12 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
+        base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=_format_crystal_i128_literal,
         )
 
     @cached_property
