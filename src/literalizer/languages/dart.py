@@ -573,9 +573,16 @@ class Dart(metaclass=LanguageCls):
             return
         _date_cls = type(self.date_format)
         _datetime_cls = type(self.datetime_format)
+        # Match pure ``date`` values only — ``datetime`` is a subclass
+        # of ``date``, so a plain ``isinstance(v, date)`` check would
+        # also fire for datetime values, which belong to the separate
+        # ``datetime_format`` check below.
         if self.date_format is _date_cls.DART and value_contains(
             data=data,
-            predicate=lambda v: type(v) is datetime.date,
+            predicate=lambda v: (
+                isinstance(v, datetime.date)
+                and not isinstance(v, datetime.datetime)
+            ),
         ):
             msg = (
                 "Dart CONST requires a constant-expression initializer, "
