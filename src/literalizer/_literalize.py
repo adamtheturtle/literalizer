@@ -25,7 +25,6 @@ from literalizer._language import (
     Language,
     ObjectCallStyle,
     PositionalCallStyle,
-    ValidatesSpecForData,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -726,8 +725,7 @@ def _literalize_pre_form(
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
 
-    if isinstance(language, ValidatesSpecForData):
-        language.validate_spec_for_data(data=data)
+    language.validate_spec_for_data(data=data)
 
     result = _literalize(
         data=data,

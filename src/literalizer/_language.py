@@ -310,22 +310,6 @@ class LanguageCls(type):
 
 
 @runtime_checkable
-class ValidatesSpecForData(Protocol):
-    """Protocol for language specs that validate themselves against data.
-
-    Languages whose output depends on format/data combinations that
-    cannot produce valid code (e.g. Rust ``CONST`` + a dict value)
-    implement ``validate_spec_for_data`` to raise
-    :class:`~literalizer.exceptions.IncompatibleFormatsError` at
-    literalize time.  Other languages simply omit the method.
-    """
-
-    def validate_spec_for_data(self, data: Value) -> None:
-        """Raise if the spec cannot produce valid code for *data*."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-
-@runtime_checkable
 class Language(Protocol):
     """Protocol describing how a language formats scalar literals and
     sequences.
@@ -976,6 +960,18 @@ class Language(Protocol):
         """Wrap a declaration and assignment in a complete, valid file."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Languages whose output depends on format/data combinations that
+        cannot produce valid code (e.g. Rust ``CONST`` + a dict value)
+        override this method to raise
+        :class:`~literalizer.exceptions.IncompatibleFormatsError` at
+        literalize time.  Languages with no such constraints assign
+        :func:`no_validate_spec_for_data` as a no-op.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 def _no_call_stub(
     _name: str,
@@ -1018,6 +1014,19 @@ def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
 
 no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
 """Shared callable for languages with no data-dependent preamble."""
+
+
+def _no_validate_spec_for_data(self: "Language", data: Value) -> None:
+    """Default ``validate_spec_for_data`` — no spec/data constraints."""
+    del self, data
+
+
+no_validate_spec_for_data: Callable[["Language", Value], None] = (
+    _no_validate_spec_for_data
+)
+"""Shared callable for languages with no spec/data constraints to
+check.
+"""
 
 
 @beartype
