@@ -8,6 +8,11 @@ Next
   a descriptive ``Expected N parameters but got M values`` message
   when ``parameter_names`` does not match a row's value count,
   replacing the opaque ``ValueError`` from ``zip(strict=True)``.
+
+2026.04.21.3
+------------
+
+
 - Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option
   that auto-generates a small tagged ``enum`` in the preamble whenever
   a dict, list, or sibling-list pair contains scalar values of more
