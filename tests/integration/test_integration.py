@@ -1393,6 +1393,12 @@ def _build_variant_cases() -> list[_VariantCase]:
         get_formats=lambda s: s.line_endings,
         make_spec=lambda cls, fmt: cls(line_ending=fmt),
     )
+    heterogeneous_strategy = nv(
+        category="heterogeneous_strategy",
+        get_default=lambda s: s.heterogeneous_strategy,
+        get_formats=lambda s: s.heterogeneous_strategies,
+        make_spec=lambda cls, fmt: cls(heterogeneous_strategy=fmt),
+    )
 
     type_hints_cross = _build_type_hints_cross_variants()
     string_format_date_cross = _build_string_format_cross_variants(
@@ -1534,6 +1540,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_name_variants(), "simple_dict", ""),
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
+        (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
+        (heterogeneous_strategy, "nested_mixed_types", "_sibling"),
+        (heterogeneous_strategy, "nested_mixed_inner", "_inner"),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(

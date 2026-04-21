@@ -407,6 +407,8 @@ ignore_names = [
     "BTREE_MAP",
     "BTREE_SET",
     "call_styles",
+    "heterogeneous_strategies",
+    "TAGGED_ENUM",
     "CONST",
     "CONTAINERS_MAP",
     "DICTIONARY",

@@ -402,7 +402,10 @@ def check_data(*, data: Value, spec: Language) -> None:
     if spec.sequence_format_config.requires_uniform_record_shapes:
         _check_mixed_dict_shapes(data=data)
 
-    if not spec.sequence_format_config.supports_heterogeneity:
+    if (
+        not spec.sequence_format_config.supports_heterogeneity
+        and not spec.heterogeneous_behavior.skip_scalar_checks
+    ):
         _check_heterogeneous(data=data)
         _check_heterogeneous_sibling_lists(data=data)
         _check_mixed_dict_values(data=data)

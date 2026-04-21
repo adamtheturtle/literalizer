@@ -1,8 +1,10 @@
 """Language-specific tests for literalizer converter."""
 
+import dataclasses
 import json
 import re
 import textwrap
+from functools import cached_property
 
 import pytest
 from pygments.lexers import find_lexer_class_by_name
@@ -15,7 +17,12 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer._language import LanguageCls
+from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
+    HeterogeneousBehavior,
+    LanguageCls,
+)
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -54,6 +61,56 @@ JAVA = Java(
     bytes_format=Java.bytes_formats.HEX,
     sequence_format=Java.sequence_formats.ARRAY,
 )
+
+
+def _flag_top_dict(data: Value) -> frozenset[int]:
+    """Return a set containing *data*'s id.
+
+    The test input is always a top-level dict, so flagging it
+    guarantees :func:`~literalizer._literalize._maybe_wrap_child`
+    dispatches to the language's ``wrap_scalar``.
+    """
+    return frozenset({id(data)})
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _IdentityWrapPython(Python):
+    """Python subclass whose :attr:`heterogeneous_behavior` flags
+    every dict but reuses
+    :data:`~literalizer._language.NO_HETEROGENEOUS_BEHAVIOR`'s
+    identity ``wrap_scalar``.
+
+    Used to exercise the identity ``wrap_scalar`` path through a real
+    ``literalize`` call — a scenario no production language triggers.
+    """
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return an identity-wrap behavior that flags every dict."""
+        return dataclasses.replace(
+            NO_HETEROGENEOUS_BEHAVIOR,
+            compute_wrap_ids=_flag_top_dict,
+        )
+
+
+def test_identity_wrap_scalar_leaves_formatted_output_unchanged() -> None:
+    """A language that flags containers but keeps
+    :data:`~literalizer._language.NO_HETEROGENEOUS_BEHAVIOR`'s
+    identity ``wrap_scalar`` produces output identical to the same
+    language without any wrapping.
+    """
+    source = '{"a": 1, "b": "x"}'
+    base = literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=Python(),
+    )
+    wrapped = literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=_IdentityWrapPython(),
+    )
+    assert wrapped.code == base.code
 
 
 def test_java_yaml_dict_null_values_with_comments() -> None:
