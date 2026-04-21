@@ -60,7 +60,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     date_scalar_preamble,
-    infix_call_line,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
@@ -1410,13 +1409,3 @@ class Haskell(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Callable that returns preamble stub declarations."""
         return _haskell_call_preamble_stub
-
-    @cached_property
-    def format_call_line(
-        self,
-    ) -> Callable[
-        [str, str, Callable[[str], str] | None, str],
-        str,
-    ]:
-        """Assemble a complete call statement from its parts."""
-        return infix_call_line

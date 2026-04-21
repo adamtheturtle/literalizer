@@ -30,7 +30,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
-    PositionalCallStyle,
+    PostfixCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -172,32 +172,6 @@ def _forth_call_stub(
         word = ".".join(parts[: i + 1])
         stubs.append(f": {word} ;")
     return tuple(stubs)
-
-
-def _forth_call_line(
-    target_function: str,
-    args_str: str,
-    call_transform: Callable[[str], str] | None,
-    statement_terminator: str,
-    /,
-) -> str:
-    """Assemble a Forth call in postfix (stack) order.
-
-    Converts the C-style ``target(arg1, arg2)`` into
-    ``arg1 arg2 target``.  When *call_transform* wraps the call
-    (e.g. ``emit(inner)``), the wrapper word is appended postfix
-    as well.
-    """
-    inner = args_str[1:-1] if args_str.startswith("(") else args_str
-    call_expr = f"{inner} {target_function}" if inner else target_function
-    if call_transform is not None:
-        sentinel = "\x00"
-        wrapped = call_transform(sentinel)
-        idx = wrapped.index(sentinel)
-        wrapper = wrapped[:idx].rstrip("(").strip()
-        if wrapper:
-            call_expr = f"{call_expr} {wrapper}"
-    return f"{call_expr}{statement_terminator}"
 
 
 @beartype
@@ -395,7 +369,7 @@ class Forth(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Forth call style options."""
 
-        POSITIONAL = PositionalCallStyle(arg_separator=" ")
+        POSTFIX = PostfixCallStyle(arg_separator=" ")
 
     call_styles = CallStyles
 
@@ -468,7 +442,7 @@ class Forth(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | None] = CallStyles.POSITIONAL.value
+    call_style_config: ClassVar[CallStyle | None] = CallStyles.POSTFIX.value
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -515,16 +489,6 @@ class Forth(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
-
-    @cached_property
-    def format_call_line(
-        self,
-    ) -> Callable[
-        [str, str, Callable[[str], str] | None, str],
-        str,
-    ]:
-        """Assemble a complete Forth call line in postfix order."""
-        return _forth_call_line
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

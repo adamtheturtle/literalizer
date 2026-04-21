@@ -168,14 +168,7 @@ class DeclarationStyleConfig:
 
 @dataclasses.dataclass(frozen=True)
 class PositionalCallStyle:
-    """Positional arguments only: ``func(value1, value2)``.
-
-    *arg_separator* is the string placed between arguments (defaults
-    to ``", "``).  Stack-based languages like Forth use ``" "`` so
-    that arguments can be pushed onto the stack without commas.
-    """
-
-    arg_separator: str = ", "
+    """Positional arguments only: ``func(value1, value2)``."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -200,7 +193,21 @@ class ObjectCallStyle:
     separator: str
 
 
-CallStyle = PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
+@dataclasses.dataclass(frozen=True)
+class PostfixCallStyle:
+    """Postfix (stack) calls: ``value1 value2 func``.
+
+    Used by stack-based languages like Forth where arguments are
+    pushed onto the stack before the word is invoked.  *arg_separator*
+    is the string placed between arguments.
+    """
+
+    arg_separator: str = " "
+
+
+CallStyle = (
+    PositionalCallStyle | KeywordCallStyle | ObjectCallStyle | PostfixCallStyle
+)
 """Tagged union describing how a language passes call arguments."""
 
 
@@ -966,23 +973,6 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @property
-    def format_call_line(
-        self,
-    ) -> Callable[
-        [str, str, Callable[[str], str] | None, str],
-        str,
-    ]:
-        """Assemble a complete call statement from its parts.
-
-        Called as ``format_call_line(target_function, args_str,
-        call_transform, statement_terminator)``.  Most languages use
-        :func:`infix_call_line` which produces ``target(args)``.
-        Stack-based languages like Forth override this to emit
-        postfix notation.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -1029,27 +1019,6 @@ no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
     _no_call_stub
 )
 """Shared callable for languages that need no call stubs."""
-
-
-def _infix_call_line(
-    target_function: str,
-    args_str: str,
-    call_transform: Callable[[str], str] | None,
-    statement_terminator: str,
-    /,
-) -> str:
-    """Assemble ``target(args)`` with an optional transform and terminator."""
-    call_expr = f"{target_function}{args_str}"
-    if call_transform is not None:
-        call_expr = call_transform(call_expr)
-    return f"{call_expr}{statement_terminator}"
-
-
-infix_call_line: Callable[
-    [str, str, Callable[[str], str] | None, str],
-    str,
-] = _infix_call_line
-"""Default call-line assembler — produces ``target(args)``."""
 
 
 def _no_type_hint_preamble(

@@ -69,7 +69,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    infix_call_line,
     no_call_stub,
     no_type_hint_preamble,
     no_validate_spec_for_data,
@@ -1002,16 +1001,6 @@ class Java(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
-
-    @cached_property
-    def format_call_line(
-        self,
-    ) -> Callable[
-        [str, str, Callable[[str], str] | None, str],
-        str,
-    ]:
-        """Assemble a complete call statement from its parts."""
-        return infix_call_line
 
     @cached_property
     def _suffix_is_auto(self) -> bool:

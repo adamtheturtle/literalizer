@@ -51,7 +51,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    infix_call_line,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -694,16 +693,6 @@ class Elm(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
-
-    @cached_property
-    def format_call_line(
-        self,
-    ) -> Callable[
-        [str, str, Callable[[str], str] | None, str],
-        str,
-    ]:
-        """Assemble a complete call statement from its parts."""
-        return infix_call_line
 
     @cached_property
     def null_literal(self) -> str:
