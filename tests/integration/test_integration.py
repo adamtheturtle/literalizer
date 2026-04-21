@@ -1958,7 +1958,7 @@ def test_call_golden_file(
 
 def test_literalize_call_per_element_false_prefix_style() -> None:
     """Per-element=False with prefix style emits a single call wrapping
-    the whole literalized data without doubling the surrounding parens.
+    the whole literalized data inside one pair of parentheses, not two.
     """
     result = literalizer.literalize_call(
         source="[1]",
