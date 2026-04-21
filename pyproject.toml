@@ -54,7 +54,7 @@ optional-dependencies.dev = [
     "pyright==1.1.408",
     "pyroma==5.0.1",
     "pytest==9.0.3",
-    "pytest-beartype-tests",
+    "pytest-beartype-tests==2026.4.20",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
@@ -101,9 +101,6 @@ packages.find.where = [
 #
 # Code to match this is in ``conf.py``.
 version_scheme = "post-release"
-
-[tool.uv]
-sources.pytest-beartype-tests = { git = "https://github.com/adamtheturtle/pytest-beartype-tests.git", rev = "bc81d99" }
 
 [tool.ruff]
 line-length = 79
