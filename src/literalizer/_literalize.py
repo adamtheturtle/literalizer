@@ -1067,21 +1067,26 @@ def _assemble_call(
     extracted via a sentinel and appended postfix, so the result is
     e.g. ``args target emit``.
     """
-    if isinstance(style, PostfixCallStyle):
-        call_expr = (
-            f"{args_str} {target_function}" if args_str else target_function
-        )
-        if call_transform is not None:
-            sentinel = "\x00"
-            wrapped = call_transform(sentinel)
-            idx = wrapped.index(sentinel)
-            wrapper = wrapped[:idx].rstrip("(").strip()
-            if wrapper:
-                call_expr = f"{call_expr} {wrapper}"
-    else:
-        call_expr = f"{target_function}{args_str}"
-        if call_transform is not None:
-            call_expr = call_transform(call_expr)
+    match style:
+        case PostfixCallStyle():
+            call_expr = (
+                f"{args_str} {target_function}"
+                if args_str
+                else target_function
+            )
+            if call_transform is not None:
+                sentinel = "\x00"
+                wrapped = call_transform(sentinel)
+                idx = wrapped.index(sentinel)
+                wrapper = wrapped[:idx].rstrip("(").strip()
+                if wrapper:
+                    call_expr = f"{call_expr} {wrapper}"
+        case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
+            call_expr = f"{target_function}{args_str}"
+            if call_transform is not None:
+                call_expr = call_transform(call_expr)
+        case _ as unreachable:
+            assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
 
 
