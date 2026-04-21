@@ -365,6 +365,100 @@ def test_rust_static_vec_raises() -> None:
         )
 
 
+RUST_LAZY_STATIC = Rust(
+    date_format=Rust.date_formats.ISO,
+    datetime_format=Rust.datetime_formats.ISO,
+    bytes_format=Rust.bytes_formats.HEX,
+    declaration_style=Rust.declaration_styles.LAZY_STATIC,
+)
+
+
+def test_rust_lazy_static_set() -> None:
+    """Rust LAZY_STATIC with a set wraps ``HashSet`` in ``LazyLock``.
+
+    The integration matrix pairs ``declaration_style`` with the
+    ``set`` case only for ``LAZY_STATIC`` / ``LET_MUT`` via this
+    unit test because Rust ``CONST`` / ``STATIC`` combined with
+    ``HashSet::from`` produces non-const code that does not compile,
+    a pre-existing limitation outside the scope of this change.
+    """
+    result = literalize(
+        source="!!set\n? a\n? b\n",
+        input_format=InputFormat.YAML,
+        language=RUST_LAZY_STATIC,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="names"),
+    )
+    expected = (
+        "static names: LazyLock<HashSet<&str>> = "
+        "LazyLock::new(|| HashSet::from([\n"
+        '    "a",\n'
+        '    "b",\n'
+        "]));"
+    )
+    assert result.code == expected
+
+
+def test_rust_lazy_static_dict_btree_map() -> None:
+    """Rust LAZY_STATIC composes with ``BTREE_MAP`` for sorted maps.
+
+    The ``dict_format`` x ``declaration_style`` cross-product is
+    not part of the integration-test variant matrix, so the
+    combination is exercised here.
+    """
+    lang = Rust(
+        date_format=Rust.date_formats.ISO,
+        datetime_format=Rust.datetime_formats.ISO,
+        bytes_format=Rust.bytes_formats.HEX,
+        dict_format=Rust.dict_formats.BTREE_MAP,
+        declaration_style=Rust.declaration_styles.LAZY_STATIC,
+    )
+    result = literalize(
+        source='{"a": 1}',
+        input_format=InputFormat.JSON,
+        language=lang,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="counts"),
+    )
+    expected = (
+        "static counts: LazyLock<BTreeMap<&str, i32>> = "
+        "LazyLock::new(|| BTreeMap::from([\n"
+        '    ("a", 1),\n'
+        "]));"
+    )
+    assert result.code == expected
+
+
+def test_rust_lazy_static_preamble_includes_lazy_lock() -> None:
+    """``LAZY_STATIC`` adds ``use std::sync::LazyLock;`` to the
+    preamble.
+    """
+    assert "use std::sync::LazyLock;" in RUST_LAZY_STATIC.static_preamble
+
+
+def test_rust_static_preamble_excludes_lazy_lock() -> None:
+    """Non-``LAZY_STATIC`` declaration styles emit no ``LazyLock``
+    import.
+    """
+    assert "use std::sync::LazyLock;" not in RUST_CONST.static_preamble
+
+
+def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:
+    """The LAZY_STATIC ``DeclarationStyleConfig`` formatter is a
+    placeholder.
+
+    The real formatter is built by
+    :meth:`Rust.DeclarationStyles.build_formatter`; calling the
+    stored one directly would silently emit invalid Rust, so it
+    raises instead.
+    """
+    style = Rust.declaration_styles.LAZY_STATIC
+    with pytest.raises(expected_exception=NotImplementedError):
+        style.value.formatter("x", "v", None, frozenset())
+
+
 @pytest.mark.parametrize(
     argnames="source",
     argvalues=[
