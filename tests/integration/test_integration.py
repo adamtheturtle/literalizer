@@ -1720,6 +1720,94 @@ def test_line_ending_combined_variable_forms(
     )
 
 
+@dataclasses.dataclass
+class _PreIndentCase:
+    """A ``pre_indent_level`` golden-file test case.
+
+    Exercises the interaction between ``pre_indent_level > 0`` and a
+    ``NewVariable`` form with a class-field modifier combination —
+    the scenario that previously placed the indent between ``=`` and a
+    multi-line value and doubly indented continuation lines.
+    """
+
+    name: str
+    lang_cls: literalizer.LanguageCls
+    case_dir_name: str
+    pre_indent_level: int
+    modifiers: frozenset[enum.Enum]
+
+
+@functools.cache
+@beartype
+def _build_pre_indent_cases() -> list[_PreIndentCase]:
+    """Build ``pre_indent_level`` cases keyed off
+    ``modifier_combinations``.
+
+    Languages whose ``wrap_in_file`` recognizes class-field modifiers
+    (``Java``, ``CSharp``, ``Cpp``) place the declaration directly at
+    class scope, so a non-zero ``pre_indent_level`` produces output
+    that is both syntactically valid and visually demonstrates the
+    fix: the declaration line carries the indent, the value sits flush
+    against ``=``, and continuation lines keep their relative offsets.
+    """
+    cases: list[_PreIndentCase] = []
+    case_dir_name = "simple_dict"
+    for lang_cls in _sorted_languages():
+        cases.extend(
+            _PreIndentCase(
+                name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}",
+                lang_cls=lang_cls,
+                case_dir_name=case_dir_name,
+                pre_indent_level=1,
+                modifiers=combo.modifiers,
+            )
+            for combo in lang_cls.modifier_combinations
+        )
+    return cases
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=_build_pre_indent_cases(),
+    ids=[c.name for c in _build_pre_indent_cases()],
+)
+def test_pre_indent_level_with_new_variable_golden_file(
+    case: _PreIndentCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``pre_indent_level > 0`` with ``NewVariable`` produces uniformly
+    indented output.
+
+    Regression test for the bug where the first line of a multi-line
+    value was inserted after ``=`` with the indent baked in, producing
+    extra spaces between ``=`` and the value and shifting continuation
+    lines by an extra indent.
+    """
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    spec = _spec(lang_cls=case.lang_cls)
+    result = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        pre_indent_level=case.pre_indent_level,
+        include_delimiters=True,
+        variable_form=literalizer.NewVariable(
+            name="my_data",
+            modifiers=case.modifiers,
+        ),
+        wrap_in_file=True,
+    )
+    _check_golden(
+        file_regression=file_regression,
+        contents=result.code + "\n",
+        extension=spec.extension,
+        newline=None,
+        golden_path=input_path.parent / (case.name + spec.extension),
+    )
+
+
 def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
     """Every file under ``cases/`` must be referenced by a parameterized
     test.  Orphaned golden files silently rot and waste repository space.
@@ -1759,6 +1847,14 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             cases_dir
             / line_ending_case.case_dir_name
             / (line_ending_case.name + line_ending_spec.extension)
+        )
+
+    for pre_indent_case in _build_pre_indent_cases():
+        ext = pre_indent_case.lang_cls.extension
+        expected.add(
+            cases_dir
+            / pre_indent_case.case_dir_name
+            / (pre_indent_case.name + ext)
         )
 
     for call_case in _discover_call_cases():
