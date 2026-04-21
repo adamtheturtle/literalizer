@@ -171,10 +171,10 @@ def _lang_cls_name(cls: literalizer.LanguageCls) -> str:
     return cls.__name__
 
 
-_SORTED_LANGUAGES: list[literalizer.LanguageCls] = sorted(
-    ALL_LANGUAGES,
-    key=_lang_cls_name,
-)
+@functools.cache
+def _sorted_languages() -> list[literalizer.LanguageCls]:
+    """Return all languages sorted by class name."""
+    return sorted(ALL_LANGUAGES, key=_lang_cls_name)
 
 
 @functools.cache
@@ -234,7 +234,7 @@ def _build_non_default_variants(
     each one.
     """
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         spec = _spec(lang_cls=lang_cls)
         default_format = get_default(spec)
@@ -270,7 +270,7 @@ def _build_default_set_element_type_variants() -> Iterable[_Variant]:
         "Rust": "i32",
     }
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         if not lang_cls.supports_default_set_element_type:
             continue
@@ -303,7 +303,7 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
         "Python": "int",
     }
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         if not lang_cls.supports_default_sequence_element_type:
             continue
@@ -338,7 +338,7 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
         "Rust": "i32",
     }
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         if not lang_cls.supports_default_dict_value_type:
             continue
@@ -372,7 +372,7 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
         "VisualBasic": "Object",
     }
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         if not lang_cls.supports_default_dict_key_type:
             continue
@@ -400,7 +400,7 @@ def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
         "Go": "interface{}",
     }
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         if not lang_cls.supports_default_ordered_map_value_type:
             continue
@@ -426,7 +426,7 @@ def _build_line_ending_decl_variants() -> Iterable[_Variant]:
     line ending paired with every non-default declaration style.
     """
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         spec = _spec(lang_cls=lang_cls)
         default_line_ending = spec.line_ending
@@ -468,7 +468,7 @@ def _build_sequence_decl_variants() -> Iterable[_Variant]:
     sequence format paired with every non-default declaration style.
     """
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         spec = _spec(lang_cls=lang_cls)
         default_sequence_format = spec.sequence_format
@@ -523,6 +523,7 @@ def _has_non_printable_ascii_dict_keys(data: object) -> bool:
     return False
 
 
+@functools.cache
 @beartype
 def _cases_with_non_trivial_dict_keys(
     cases_dir: Path,
@@ -616,24 +617,22 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ],
 ]
 
-_CALL_CASE_DIRS = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
 
-
-_CASES_DIR = Path(__file__).parent / "cases"
-_NON_TRIVIAL_KEY_CASES = _cases_with_non_trivial_dict_keys(
-    cases_dir=_CASES_DIR,
-)
-
-
+@functools.cache
 @beartype
 def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
+    cases_dir = Path(__file__).parent / "cases"
+    call_case_dirs = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
+    non_trivial_key_cases = _cases_with_non_trivial_dict_keys(
+        cases_dir=cases_dir,
+    )
     cases: list[tuple[str, literalizer.LanguageCls]] = []
-    for case_dir in sorted(_CASES_DIR.iterdir()):
-        if case_dir.name in _CALL_CASE_DIRS:
+    for case_dir in sorted(cases_dir.iterdir()):
+        if case_dir.name in call_case_dirs:
             continue
-        non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
-        for lang_cls in _SORTED_LANGUAGES:
+        non_trivial = case_dir.name in non_trivial_key_cases
+        for lang_cls in _sorted_languages():
             if (
                 non_trivial
                 and not lang_cls.supports_non_printable_ascii_dict_keys
@@ -643,13 +642,10 @@ def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
     return cases
 
 
-_CASES = _discover_cases()
-
-
 @pytest.mark.parametrize(
     argnames=("_case_name", "lang_cls"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1].__name__}" for c in _CASES],
+    argvalues=_discover_cases(),
+    ids=[f"{c[0]}/{c[1].__name__}" for c in _discover_cases()],
 )
 def test_golden_file(
     _case_name: str,
@@ -703,17 +699,23 @@ class _CombinedCase:
     golden_file_name: str
 
 
+@functools.cache
 @beartype
 def _discover_combined_cases() -> list[_CombinedCase]:
     """Return combined test cases for all redefinition-supporting
     styles.
     """
+    cases_dir = Path(__file__).parent / "cases"
+    call_case_dirs = frozenset(cfg.case_dir_name for cfg in _CALL_CASE_CONFIGS)
+    non_trivial_key_cases = _cases_with_non_trivial_dict_keys(
+        cases_dir=cases_dir,
+    )
     cases: list[_CombinedCase] = []
-    for case_dir in sorted(_CASES_DIR.iterdir()):
-        if case_dir.name in _CALL_CASE_DIRS:
+    for case_dir in sorted(cases_dir.iterdir()):
+        if case_dir.name in call_case_dirs:
             continue
-        non_trivial = case_dir.name in _NON_TRIVIAL_KEY_CASES
-        for lang_cls in _SORTED_LANGUAGES:
+        non_trivial = case_dir.name in non_trivial_key_cases
+        for lang_cls in _sorted_languages():
             lang_name = lang_cls.__name__
             if (
                 non_trivial
@@ -743,13 +745,13 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     return cases
 
 
-_COMBINED_CASES = _discover_combined_cases()
-
-
 @pytest.mark.parametrize(
     argnames="combined_case",
-    argvalues=_COMBINED_CASES,
-    ids=[f"{c.case_name}/{c.golden_file_name}" for c in _COMBINED_CASES],
+    argvalues=_discover_combined_cases(),
+    ids=[
+        f"{c.case_name}/{c.golden_file_name}"
+        for c in _discover_combined_cases()
+    ],
 )
 def test_golden_file_combined_variable_forms(
     combined_case: _CombinedCase,
@@ -929,7 +931,7 @@ def _build_string_format_cross_variants(
     ``string_format`` and the date/datetime format are non-default).
     """
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         spec = _spec(lang_cls=lang_cls)
         default_string = spec.string_format
         default_other = get_other_default(spec)
@@ -1011,7 +1013,7 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
         ),
     ]
     variants: list[_Variant] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         spec = _spec(lang_cls=lang_cls)
         default_th = spec.variable_type_hints
         lang_name = lang_cls.__name__
@@ -1187,6 +1189,7 @@ def _build_modifier_variant_cases() -> list[_VariantCase]:
     return cases
 
 
+@functools.cache
 def _build_variant_cases() -> list[_VariantCase]:
     """Collect all format-variant golden-file test cases."""
     nv = _build_non_default_variants
@@ -1482,13 +1485,10 @@ def _build_variant_cases() -> list[_VariantCase]:
     return cases
 
 
-_FORMAT_VARIANT_CASES = _build_variant_cases()
-
-
 @pytest.mark.parametrize(
     argnames="variant_case",
-    argvalues=_FORMAT_VARIANT_CASES,
-    ids=[c.variant_name for c in _FORMAT_VARIANT_CASES],
+    argvalues=_build_variant_cases(),
+    ids=[c.variant_name for c in _build_variant_cases()],
 )
 def test_format_variant_golden_file(
     variant_case: _VariantCase,
@@ -1543,13 +1543,14 @@ class _LineEndingCombinedCase:
     case_dir_name: str
 
 
+@functools.cache
 @beartype
 def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     """Collect combined (declaration + assignment) test cases for
     non-default line endings.
     """
     cases: list[_LineEndingCombinedCase] = []
-    for lang_cls in _SORTED_LANGUAGES:
+    for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         spec = _spec(lang_cls=lang_cls)
         if not _find_redefinition_styles(spec=spec):
@@ -1574,13 +1575,10 @@ def _build_line_ending_combined_cases() -> list[_LineEndingCombinedCase]:
     return cases
 
 
-_LINE_ENDING_COMBINED_CASES = _build_line_ending_combined_cases()
-
-
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=_LINE_ENDING_COMBINED_CASES,
-    ids=[c.name for c in _LINE_ENDING_COMBINED_CASES],
+    argvalues=_build_line_ending_combined_cases(),
+    ids=[c.name for c in _build_line_ending_combined_cases()],
 )
 def test_line_ending_combined_variable_forms(
     case: _LineEndingCombinedCase,
@@ -1628,11 +1626,11 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
     for case_dir in sorted(cases_dir.iterdir()):
         expected.add(case_dir / "input.yaml")
 
-    for case_name, lang_cls in _CASES:
+    for case_name, lang_cls in _discover_cases():
         ext = lang_cls.extension
         expected.add(cases_dir / case_name / (lang_cls.__name__ + ext))
 
-    for combined_case in _COMBINED_CASES:
+    for combined_case in _discover_combined_cases():
         ext = combined_case.lang_cls.extension
         expected.add(
             cases_dir
@@ -1640,7 +1638,7 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             / (combined_case.golden_file_name + ext)
         )
 
-    for variant_case in _FORMAT_VARIANT_CASES:
+    for variant_case in _build_variant_cases():
         ext = variant_case.variant.spec.extension
         expected.add(
             cases_dir
@@ -1648,7 +1646,7 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             / (variant_case.variant_name + ext)
         )
 
-    for line_ending_case in _LINE_ENDING_COMBINED_CASES:
+    for line_ending_case in _build_line_ending_combined_cases():
         line_ending_spec = _spec(
             lang_cls=line_ending_case.lang_cls,
             line_ending=line_ending_case.line_ending,
@@ -1659,7 +1657,7 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             / (line_ending_case.name + line_ending_spec.extension)
         )
 
-    for call_case in _CALL_CASES:
+    for call_case in _discover_call_cases():
         ext = call_case.lang_cls.extension
         golden_name = f"{call_case.lang_cls.__name__}_call"
         expected.add(
@@ -1676,8 +1674,8 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
 
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    argvalues=_sorted_languages(),
+    ids=[c.__name__ for c in _sorted_languages()],
 )
 def test_format_enumeration_properties(
     language_cls: literalizer.LanguageCls,
@@ -1728,12 +1726,13 @@ class _CallCase:
     lang_cls: literalizer.LanguageCls
 
 
+@functools.cache
 @beartype
 def _discover_call_cases() -> list[_CallCase]:
     """Return call test cases for all languages."""
     cases: list[_CallCase] = []
     for config in _CALL_CASE_CONFIGS:
-        for lang_cls in _SORTED_LANGUAGES:
+        for lang_cls in _sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue
             has_dotted_target = "." in config.target_function
@@ -1757,14 +1756,12 @@ def _discover_call_cases() -> list[_CallCase]:
     return cases
 
 
-_CALL_CASES = _discover_call_cases()
-
-
 @pytest.mark.parametrize(
     argnames="call_case",
-    argvalues=_CALL_CASES,
+    argvalues=_discover_call_cases(),
     ids=[
-        f"{c.config.case_dir_name}/{c.lang_cls.__name__}" for c in _CALL_CASES
+        f"{c.config.case_dir_name}/{c.lang_cls.__name__}"
+        for c in _discover_call_cases()
     ],
 )
 def test_call_golden_file(
