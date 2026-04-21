@@ -1586,6 +1586,9 @@ def _build_variant_cases() -> list[_VariantCase]:
         (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
         (heterogeneous_strategy, "nested_mixed_types", "_sibling"),
         (heterogeneous_strategy, "nested_mixed_inner", "_inner"),
+        (heterogeneous_strategy, "nested_mixed_dict", ""),
+        (heterogeneous_strategy, "nested_sequences", ""),
+        (heterogeneous_strategy, "dict_all_scalar_types", ""),
         (_build_heterogeneous_value_name_variants(), "dict_mixed_scalars", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
