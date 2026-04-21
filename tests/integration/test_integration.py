@@ -50,6 +50,7 @@ from literalizer.languages import (
     Odin,
     PureScript,
     Python,
+    Racket,
     Rust,
     Swift,
     VisualBasic,
@@ -687,14 +688,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: c,
         transform_stub_names=[],
         per_element=True,
-    ),
-    _CallCaseConfig(
-        case_dir_name="call_per_element_false",
-        target_function="process",
-        parameter_names=[],
-        call_transform=None,
-        transform_stub_names=[],
-        per_element=False,
     ),
     *[
         _CallCaseConfig(
@@ -1961,3 +1954,18 @@ def test_call_golden_file(
         newline="",
         golden_path=input_path.parent / (golden_name + lang_cls.extension),
     )
+
+
+def test_literalize_call_per_element_false_prefix_style() -> None:
+    """Per-element=False with prefix style emits a single call wrapping
+    the whole literalized data without doubling the surrounding parens.
+    """
+    result = literalizer.literalize_call(
+        source="[1]",
+        input_format=literalizer.InputFormat.JSON,
+        language=Racket(),
+        target_function="process",
+        parameter_names=[],
+        per_element=False,
+    )
+    assert result.declaration_code == "(process (list\n    1\n))"
