@@ -1552,6 +1552,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
         (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
+        (heterogeneous_strategy, "dict_mixed_scalars", ""),
         (heterogeneous_strategy, "nested_mixed_types", "_sibling"),
         (heterogeneous_strategy, "nested_mixed_inner", "_inner"),
     ]
