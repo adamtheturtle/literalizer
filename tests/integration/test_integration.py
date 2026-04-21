@@ -630,6 +630,7 @@ class _CallCaseConfig:
     transform_stub_names: list[str]
     per_element: bool
     call_style_type: type[literalizer.CallStyle] | None = None
+    skip_languages: frozenset[str] = frozenset()
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -687,6 +688,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: c,
         transform_stub_names=[],
         per_element=True,
+        # C++ emits ``[[nodiscard]]`` on the ``StubReturn.VALUE`` stub,
+        # and the identity transform discards the return value.
+        skip_languages=frozenset({"Cpp"}),
     ),
     *[
         _CallCaseConfig(
@@ -1829,6 +1833,8 @@ def _discover_call_cases() -> list[_CallCase]:
     for config in _CALL_CASE_CONFIGS:
         for lang_cls in _sorted_languages():
             if len(lang_cls.CallStyles) == 0:
+                continue
+            if lang_cls.__name__ in config.skip_languages:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
