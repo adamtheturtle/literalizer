@@ -47,43 +47,43 @@ repos:
   - repo: meta
     hooks:
       - id: check-useless-excludes
-        priority: 500
+        priority: 300
         stages: [pre-commit]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        priority: 500
+        priority: 310
         stages: [pre-commit]
       - id: check-case-conflict
-        priority: 500
+        priority: 320
         stages: [pre-commit]
       - id: check-executables-have-shebangs
-        priority: 500
+        priority: 330
         stages: [pre-commit]
       - id: check-merge-conflict
-        priority: 500
+        priority: 340
         stages: [pre-commit]
       - id: check-shebang-scripts-are-executable
-        priority: 500
+        priority: 350
         stages: [pre-commit]
       - id: check-symlinks
-        priority: 500
+        priority: 360
         stages: [pre-commit]
       - id: check-json
-        priority: 500
+        priority: 370
         stages: [pre-commit]
       - id: check-toml
         # Integration test fixtures use TOML v1.1 (multiline inline tables),
         # which tomllib (used by check-toml) does not support.
         exclude: ^tests/integration/cases/
-        priority: 500
+        priority: 380
         stages: [pre-commit]
       - id: check-vcs-permalinks
-        priority: 500
+        priority: 390
         stages: [pre-commit]
       - id: check-yaml
-        priority: 500
+        priority: 400
         stages: [pre-commit]
       - id: end-of-file-fixer
         priority: 100
@@ -99,16 +99,16 @@ repos:
     rev: v1.10.0
     hooks:
       - id: rst-directive-colons
-        priority: 500
+        priority: 410
         stages: [pre-commit]
       - id: rst-inline-touching-normal
-        priority: 500
+        priority: 420
         stages: [pre-commit]
       - id: text-unicode-replacement-char
-        priority: 500
+        priority: 430
         stages: [pre-commit]
       - id: rst-backticks
-        priority: 500
+        priority: 440
         stages: [pre-commit]
   - repo: local
     hooks:
