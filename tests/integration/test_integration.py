@@ -688,6 +688,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         transform_stub_names=[],
         per_element=True,
     ),
+    _CallCaseConfig(
+        case_dir_name="call_per_element_false",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+    ),
     *[
         _CallCaseConfig(
             case_dir_name=f"call_{name}",
