@@ -445,6 +445,20 @@ def test_rust_static_preamble_excludes_lazy_lock() -> None:
     assert "use std::sync::LazyLock;" not in RUST_CONST.static_preamble
 
 
+def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:
+    """The LAZY_STATIC ``DeclarationStyleConfig`` formatter is a
+    placeholder.
+
+    The real formatter is built by
+    :meth:`Rust.DeclarationStyles.build_formatter`; calling the
+    stored one directly would silently emit invalid Rust, so it
+    raises instead.
+    """
+    style = Rust.declaration_styles.LAZY_STATIC
+    with pytest.raises(expected_exception=NotImplementedError):
+        style.value.formatter("x", "v", None, frozenset())
+
+
 @pytest.mark.parametrize(
     argnames="source",
     argvalues=[
