@@ -38,6 +38,7 @@ from literalizer.languages import (
     Crystal,
     CSharp,
     Dart,
+    Dhall,
     Elm,
     Fortran,
     FSharp,
@@ -1039,6 +1040,36 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_heterogeneous_value_name_variants() -> list[_Variant]:
+    """Build variants that exercise the configurable value-type name
+    for languages whose heterogeneous strategy emits a named type
+    (Rust's tagged enum and Dhall's union type).
+    """
+    return [
+        _Variant(
+            name="Rust_heterogeneous_value_name_json_value",
+            spec=Rust(
+                heterogeneous_strategy=(
+                    Rust.heterogeneous_strategies.TAGGED_ENUM
+                ),
+                heterogeneous_value_enum_name="JsonValue",
+            ),
+            lang_cls=Rust,
+        ),
+        _Variant(
+            name="Dhall_heterogeneous_value_name_json_value",
+            spec=Dhall(
+                heterogeneous_strategy=(
+                    Dhall.heterogeneous_strategies.UNION_TYPE
+                ),
+                heterogeneous_value_union_name="JsonValue",
+            ),
+            lang_cls=Dhall,
+        ),
+    ]
+
+
+@beartype
 def _build_string_format_cross_variants(
     *,
     other_kwarg: str,
@@ -1552,6 +1583,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
         (heterogeneous_strategy, "nested_mixed_types", "_sibling"),
         (heterogeneous_strategy, "nested_mixed_inner", "_inner"),
+        (_build_heterogeneous_value_name_variants(), "dict_mixed_scalars", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
