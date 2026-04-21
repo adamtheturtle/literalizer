@@ -238,12 +238,12 @@ def _format_csharp_declaration(
     """
     if _CSharpModifiers.CONST in modifiers and isinstance(
         data,
-        list | dict | set,
+        list | dict | set | datetime.date | datetime.datetime,
     ):
         msg = (
             "C# 'const' requires a compile-time constant initializer, "
-            "but collection literals are not constant expressions. "
-            "Use 'readonly' or remove the 'const' modifier."
+            "but collection and date/datetime literals are not constant "
+            "expressions. Use 'readonly' or remove the 'const' modifier."
         )
         raise IncompatibleFormatsError(msg)
     prefix = _csharp_modifier_prefix(modifiers=modifiers)

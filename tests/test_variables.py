@@ -367,19 +367,26 @@ def test_rust_static_vec_raises() -> None:
 
 @pytest.mark.parametrize(
     argnames="source",
-    argvalues=["[1, 2, 3]", "{a: 1}", "!!set {1, 2}"],
-    ids=["list", "dict", "set"],
+    argvalues=[
+        "[1, 2, 3]",
+        "{a: 1}",
+        "!!set {1, 2}",
+        "2024-01-15",
+        "2024-01-15T12:30:00Z",
+    ],
+    ids=["list", "dict", "set", "date", "datetime"],
 )
-def test_csharp_const_with_collection_raises(source: str) -> None:
-    """C# ``const`` combined with a collection value raises.
+def test_csharp_const_with_non_constant_raises(source: str) -> None:
+    """C# ``const`` combined with a non-constant value raises.
 
     C# ``const`` requires a compile-time constant expression, which
-    collection literals (list, dict, set) are not.
+    collection literals (list, dict, set) and date/datetime values
+    are not.
     """
     expected_msg = (
         "C# 'const' requires a compile-time constant initializer, "
-        "but collection literals are not constant expressions. "
-        "Use 'readonly' or remove the 'const' modifier."
+        "but collection and date/datetime literals are not constant "
+        "expressions. Use 'readonly' or remove the 'const' modifier."
     )
     with pytest.raises(
         expected_exception=IncompatibleFormatsError,
