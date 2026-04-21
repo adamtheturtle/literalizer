@@ -7,6 +7,17 @@ Next
 - The ``lint-julia`` CI job now executes Julia golden files instead
   of only parsing them, catching ``UndefVarError`` and other runtime
   errors.
+- ``literalize_call`` now distinguishes two reasons a language has no
+  call support.  The single ``UnsupportedCallStyleError`` has been
+  replaced by ``CallsNotSupportedByLanguageError`` (raised for
+  data/markup formats like YAML, TOML, JSON5, Norg that have no
+  function call syntax) and ``CallsNotSupportedByToolError`` (raised
+  for programming languages whose call rendering literalizer has not
+  yet implemented).  The new ``CallSupport`` enum on a language's
+  ``call_style_config`` attribute captures which case applies.
+- Lint workflow now runs pre-commit hooks against the full supported
+  Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch
+  version-specific lint issues.
 
 2026.04.21.2
 ------------
@@ -15,9 +26,6 @@ Next
 - Added ``literalize_call`` support for PHP: ``Php.format_call_stub``
   now generates function, class, and nested-object stubs for a call
   expression.
-- Lint workflow now runs pre-commit hooks against the full supported
-  Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch
-  version-specific lint issues.
 
 2026.04.21.1
 ------------

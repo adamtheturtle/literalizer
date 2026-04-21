@@ -17,9 +17,10 @@ from literalizer import (
 )
 from literalizer._language import LanguageCls
 from literalizer.exceptions import (
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
     NullInCollectionError,
     PerElementNotListError,
-    UnsupportedCallStyleError,
 )
 from literalizer.languages import (
     Cobol,
@@ -499,13 +500,13 @@ def test_literalize_call_per_element_non_list_raises() -> None:
         )
 
 
-def test_literalize_call_unsupported_language_raises() -> None:
-    """Literalize_call raises UnsupportedCallStyleError for a language
-    without call support.
+def test_literalize_call_language_without_calls_raises() -> None:
+    """Literalize_call raises CallsNotSupportedByLanguageError for a
+    data-format language (Yaml) that has no call syntax.
     """
     with pytest.raises(
-        expected_exception=UnsupportedCallStyleError,
-        match=r"^Yaml does not support function call rendering$",
+        expected_exception=CallsNotSupportedByLanguageError,
+        match=r"^Yaml has no function call syntax$",
     ):
         literalize_call(
             source="[[1, 2]]",
@@ -516,18 +517,60 @@ def test_literalize_call_unsupported_language_raises() -> None:
         )
 
 
-def test_literalize_call_unsupported_language_per_element_false() -> None:
-    """Literalize_call raises UnsupportedCallStyleError for a non-call
-    language with per_element=False.
+def test_literalize_call_language_without_calls_per_element_false() -> None:
+    """Literalize_call raises CallsNotSupportedByLanguageError for a
+    data-format language with per_element=False.
     """
     with pytest.raises(
-        expected_exception=UnsupportedCallStyleError,
-        match=r"^Yaml does not support function call rendering$",
+        expected_exception=CallsNotSupportedByLanguageError,
+        match=r"^Yaml has no function call syntax$",
     ):
         literalize_call(
             source="[1, 2]",
             input_format=InputFormat.JSON,
             language=Yaml(),
+            target_function="f",
+            parameter_names=["data"],
+            per_element=False,
+        )
+
+
+def test_literalize_call_tool_unsupported_language_raises() -> None:
+    """Literalize_call raises CallsNotSupportedByToolError for a
+    programming language whose calls literalizer has not yet
+    implemented (Cobol).
+    """
+    with pytest.raises(
+        expected_exception=CallsNotSupportedByToolError,
+        match=(
+            r"^literalizer does not support function call rendering "
+            r"for Cobol$"
+        ),
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=COBOL,
+            target_function="f",
+            parameter_names=["a", "b"],
+        )
+
+
+def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
+    """Literalize_call raises CallsNotSupportedByToolError for a
+    programming language with per_element=False.
+    """
+    with pytest.raises(
+        expected_exception=CallsNotSupportedByToolError,
+        match=(
+            r"^literalizer does not support function call rendering "
+            r"for Cobol$"
+        ),
+    ):
+        literalize_call(
+            source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=COBOL,
             target_function="f",
             parameter_names=["data"],
             per_element=False,

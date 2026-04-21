@@ -39,6 +39,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyle,
+    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -349,7 +350,9 @@ class Json5(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | None] = None
+    call_style_config: ClassVar[CallStyle | CallSupport] = (
+        CallSupport.NOT_IN_LANGUAGE
+    )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
