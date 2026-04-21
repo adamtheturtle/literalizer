@@ -311,37 +311,62 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
     return f"NaiveDateTime::new({date}, {time_call})"
 
 
+@dataclasses.dataclass(frozen=True)
+class _VariantSignature:
+    """Name and optional inner-type string for one tagged-enum variant.
+
+    ``inner_type`` is ``None`` for unit variants (e.g. ``Null``); for
+    payload-carrying variants it's the Rust type rendered between the
+    parentheses, e.g. ``"i32"`` for ``I32(i32)``.
+    """
+
+    name: str
+    inner_type: str | None
+
+
 @beartype
 def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
     value: Scalar,
     *,
     date_type: str,
     datetime_type: str,
-) -> tuple[str, str | None]:
-    """Return ``(variant_name, inner_type)`` for *value*.
+) -> _VariantSignature:
+    """Return the tagged-enum variant signature for *value*.
 
-    ``inner_type`` is ``None`` for unit variants (``Null``).  Integer
-    values use narrowest-width variants (``I32``/``I64``/``I128``) to
-    match Rust's default integer-type inference.
+    Integer values use narrowest-width variants
+    (``I32``/``I64``/``I128``) to match Rust's default integer-type
+    inference.
     """
     match value:
         case bool():
-            return ("Bool", "bool")
+            return _VariantSignature(name="Bool", inner_type="bool")
         case int():
             int_type = _rust_integer_type(value=value)
-            return (int_type.upper(), int_type)
+            return _VariantSignature(
+                name=int_type.upper(),
+                inner_type=int_type,
+            )
         case float():
-            return ("F64", "f64")
+            return _VariantSignature(name="F64", inner_type="f64")
         case str():
-            return ("Str", "&'static str")
+            return _VariantSignature(
+                name="Str",
+                inner_type="&'static str",
+            )
         case bytes():
-            return ("Bytes", "&'static str")
+            return _VariantSignature(
+                name="Bytes",
+                inner_type="&'static str",
+            )
         case datetime.datetime():
-            return ("DateTime", datetime_type)
+            return _VariantSignature(
+                name="DateTime",
+                inner_type=datetime_type,
+            )
         case datetime.date():
-            return ("Date", date_type)
+            return _VariantSignature(name="Date", inner_type=date_type)
         case None:
-            return ("Null", None)
+            return _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -378,7 +403,7 @@ def _all_scalars_mixed_buckets(values: Sequence[Value]) -> bool:
 
 
 @beartype
-def _collect_heterogeneous_container_ids(
+def _collect_heterogeneous_container_ids(  # noqa: C901
     data: Value,
     *,
     ids: set[int],
@@ -392,7 +417,9 @@ def _collect_heterogeneous_container_ids(
     * it is a list whose elements are all scalars of mixed buckets; or
     * it is a list that is a child of another list whose children are
       all lists and whose combined leaf scalars are heterogeneous
-      (sibling-list heterogeneity).
+      (sibling-list heterogeneity); or
+    * it is a dict in a list of sibling dicts whose combined scalar
+      values are heterogeneous (sibling-dict heterogeneity).
     """
     match data:
         case ordereddict() | dict():
@@ -409,11 +436,23 @@ def _collect_heterogeneous_container_ids(
                 len(sublists) == len(data)
                 and len(sublists) > 1
                 and _all_scalars_mixed_buckets(
-                    values=[e for sub in sublists for e in sub],
+                    values=[e for sublist in sublists for e in sublist],
                 )
             ):
-                for sub in sublists:
-                    ids.add(id(sub))
+                for sublist in sublists:
+                    ids.add(id(sublist))
+            subdicts: list[dict[str, Value]] = [
+                v for v in data if isinstance(v, dict)
+            ]
+            if (
+                len(subdicts) == len(data)
+                and len(subdicts) > 1
+                and _all_scalars_mixed_buckets(
+                    values=[v for d in subdicts for v in d.values()],
+                )
+            ):
+                for subdict in subdicts:
+                    ids.add(id(subdict))
             for v in data:
                 _collect_heterogeneous_container_ids(data=v, ids=ids)
         case set():
@@ -523,14 +562,14 @@ def _build_tagged_enum_behavior(
         """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
         if isinstance(raw_value, (list, dict, set)):
             return formatted
-        variant, inner = _heterogeneous_variant_for_scalar(
+        signature = _heterogeneous_variant_for_scalar(
             value=raw_value,
             date_type=date_type,
             datetime_type=datetime_type,
         )
-        if inner is None:
-            return f"{enum_name}::{variant}"
-        return f"{enum_name}::{variant}({formatted})"
+        if signature.inner_type is None:
+            return f"{enum_name}::{signature.name}"
+        return f"{enum_name}::{signature.name}({formatted})"
 
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
@@ -555,23 +594,27 @@ def _build_tagged_enum_preamble(
         if not wrap_ids:
             return ()
         scalars = _iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        variants: list[tuple[str, str | None]] = []
+        variants: list[_VariantSignature] = []
         seen: set[str] = set()
         for scalar in scalars:
-            variant, inner = _heterogeneous_variant_for_scalar(
+            signature = _heterogeneous_variant_for_scalar(
                 value=scalar,
                 date_type=date_type,
                 datetime_type=datetime_type,
             )
-            if variant in seen:
+            if signature.name in seen:
                 continue
-            seen.add(variant)
-            variants.append((variant, inner))
+            seen.add(signature.name)
+            variants.append(signature)
         if not variants:
             return ()
         lines: list[str] = [f"enum {enum_name} {{"]
-        for variant, inner in variants:
-            body = variant if inner is None else f"{variant}({inner})"
+        for variant in variants:
+            body = (
+                variant.name
+                if variant.inner_type is None
+                else f"{variant.name}({variant.inner_type})"
+            )
             lines.append(f"    {body},")
         lines.append("}")
         return tuple(lines)

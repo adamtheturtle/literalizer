@@ -1,10 +1,16 @@
-"""Tests for Rust's tagged-enum heterogeneous-value strategy."""
+"""Unit tests for Rust's tagged-enum heterogeneous-value strategy.
 
-import textwrap
+Golden-file coverage for the main rendering paths (dict-mixed,
+sibling-list, and sibling-dict heterogeneity) lives in
+``tests/integration/cases/*/Rust_heterogeneous_strategy_tagged_enum*.rs``.
+These unit tests cover the behaviors that don't fit the golden-file
+workflow: error-raising on the default strategy, and variant-set
+shaping (integer widths, enum name, null payload, homogeneous no-op).
+"""
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize
+from literalizer import InputFormat, literalize
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSiblingListsError,
@@ -26,53 +32,6 @@ def test_default_strategy_is_error() -> None:
         )
 
 
-def test_dict_mixed_values_wraps_each_value() -> None:
-    """A dict with mixed scalar values is rendered with each value
-    wrapped in its tagged-enum variant.
-    """
-    result = literalize(
-        source='{"type": "create", "pr_id": "pr_1", "draft": true}',
-        input_format=InputFormat.JSON,
-        language=_TAGGED,
-        variable_form=NewVariable(name="my_data"),
-        wrap_in_file=True,
-    )
-    assert "enum Value {" in result.code
-    assert "Str(&'static str)" in result.code
-    assert "Bool(bool)" in result.code
-    assert 'Value::Str("create")' in result.code
-    assert "Value::Bool(true)" in result.code
-
-
-def test_list_mixed_elements_wraps_each_element() -> None:
-    """A list with mixed scalar elements wraps each element."""
-    result = literalize(
-        source='[1, "a", true]',
-        input_format=InputFormat.JSON,
-        language=_TAGGED,
-        wrap_in_file=True,
-    )
-    assert "Value::I32(1)" in result.code
-    assert 'Value::Str("a")' in result.code
-    assert "Value::Bool(true)" in result.code
-
-
-def test_sibling_lists_wrap_inner_elements() -> None:
-    """Sibling lists whose combined elements are heterogeneous have
-    each inner list's scalar children wrapped.
-    """
-    result = literalize(
-        source='[[1, 2], ["a", "b"]]',
-        input_format=InputFormat.JSON,
-        language=_TAGGED,
-        wrap_in_file=True,
-    )
-    assert "Value::I32(1)" in result.code
-    assert "Value::I32(2)" in result.code
-    assert 'Value::Str("a")' in result.code
-    assert 'Value::Str("b")' in result.code
-
-
 def test_sibling_lists_still_error_without_opt_in() -> None:
     """Default Rust spec raises ``HeterogeneousSiblingListsError`` for
     sibling-list heterogeneity.
@@ -86,8 +45,8 @@ def test_sibling_lists_still_error_without_opt_in() -> None:
 
 
 def test_enum_contains_only_used_variants() -> None:
-    """The emitted enum declares only the variants actually present
-    in heterogeneous positions.
+    """The emitted enum declares only the variants actually present in
+    heterogeneous positions — here, only ``I32`` and ``Str``.
     """
     result = literalize(
         source='{"a": 1, "b": "x"}',
@@ -95,27 +54,46 @@ def test_enum_contains_only_used_variants() -> None:
         language=_TAGGED,
         wrap_in_file=True,
     )
-    assert "I32(i32)" in result.code
-    assert "Str(&'static str)" in result.code
-    # No other variants should appear.
-    for unused in ("Bool(bool)", "F64(f64)", "I64(i64)", "I128(i128)", "Null"):
-        assert unused not in result.code
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    I32(i32),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::I32(1)),\n'
+        '        ("b", Value::Str("x")),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
 
 
 def test_integer_variants_use_narrowest_width() -> None:
-    """Integers that fit in i32 use ``I32``; larger values use ``I64``
-    or ``I128`` as appropriate.
-    """
+    """Integers that fit in i32 use ``I32``; larger values use ``I64``."""
     result = literalize(
         source='{"a": 1, "b": 3000000000, "c": "x"}',
         input_format=InputFormat.JSON,
         language=_TAGGED,
         wrap_in_file=True,
     )
-    assert "I32(i32)" in result.code
-    assert "I64(i64)" in result.code
-    assert "Value::I32(1)" in result.code
-    assert "Value::I64(3000000000i64)" in result.code
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    I32(i32),\n"
+        "    I64(i64),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::I32(1)),\n'
+        '        ("b", Value::I64(3000000000i64)),\n'
+        '        ("c", Value::Str("x")),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
 
 
 def test_configurable_enum_name() -> None:
@@ -131,15 +109,25 @@ def test_configurable_enum_name() -> None:
         ),
         wrap_in_file=True,
     )
-    assert "enum JsonValue {" in result.code
-    assert "JsonValue::I32(1)" in result.code
-    assert 'JsonValue::Str("x")' in result.code
-    assert "enum Value" not in result.code
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum JsonValue {\n"
+        "    I32(i32),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", JsonValue::I32(1)),\n'
+        '        ("b", JsonValue::Str("x")),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
 
 
 def test_null_variant_has_no_payload() -> None:
     """The ``Null`` variant is emitted as a unit variant without
-    parentheses.
+    parentheses; callers use it as ``Value::Null``.
     """
     result = literalize(
         source='{"a": 1, "b": null}',
@@ -147,15 +135,25 @@ def test_null_variant_has_no_payload() -> None:
         language=_TAGGED,
         wrap_in_file=True,
     )
-    assert "    Null,\n" in result.code
-    assert "Value::Null)" in result.code
-    # Ensure no payload-form for Null.
-    assert "Null(" not in result.code
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    I32(i32),\n"
+        "    Null,\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::I32(1)),\n'
+        '        ("b", Value::Null),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
 
 
 def test_homogeneous_data_emits_no_enum() -> None:
-    """Homogeneous data with tagged-enum opted in still emits no enum
-    and no wrapping.
+    """Opting into the tagged-enum strategy is a no-op when the data
+    contains no heterogeneous collections.
     """
     result = literalize(
         source='{"a": 1, "b": 2}',
@@ -163,8 +161,16 @@ def test_homogeneous_data_emits_no_enum() -> None:
         language=_TAGGED,
         wrap_in_file=True,
     )
-    assert "enum Value" not in result.code
-    assert "Value::" not in result.code
+    expected = (
+        "use std::collections::HashMap;\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", 1),\n'
+        '        ("b", 2),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
 
 
 def test_float_variant() -> None:
@@ -175,32 +181,17 @@ def test_float_variant() -> None:
         language=_TAGGED,
         wrap_in_file=True,
     )
-    assert "F64(f64)" in result.code
-    assert "Value::F64(1.5)" in result.code
-
-
-def test_nested_heterogeneous_dicts() -> None:
-    """Heterogeneous dicts inside a homogeneous list of dicts render
-    with only the inner dicts' values wrapped.
-    """
-    source = textwrap.dedent(
-        text="""\
-        - type: create
-          pr_id: pr_1
-          draft: true
-        - type: create
-          pr_id: pr_2
-          draft: false
-        """
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    F64(f64),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::F64(1.5)),\n'
+        '        ("b", Value::Str("x")),\n'
+        "    ])\n"
+        "}"
     )
-    result = literalize(
-        source=source,
-        input_format=InputFormat.YAML,
-        language=_TAGGED,
-        variable_form=NewVariable(name="events"),
-        wrap_in_file=True,
-    )
-    assert 'Value::Str("create")' in result.code
-    assert 'Value::Str("pr_1")' in result.code
-    assert "Value::Bool(true)" in result.code
-    assert "Value::Bool(false)" in result.code
+    assert result.code == expected
