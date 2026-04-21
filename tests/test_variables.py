@@ -15,7 +15,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import Python, Rust
+from literalizer.languages import CSharp, Python, Rust
 
 PYTHON_ALWAYS_HINTS = Python(
     date_format=Python.date_formats.PYTHON,
@@ -362,4 +362,38 @@ def test_rust_static_vec_raises() -> None:
         Rust(
             declaration_style=Rust.declaration_styles.STATIC,
             sequence_format=Rust.sequence_formats.VEC,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=["[1, 2, 3]", "{a: 1}", "!!set {1, 2}"],
+    ids=["list", "dict", "set"],
+)
+def test_csharp_const_with_collection_raises(source: str) -> None:
+    """C# ``const`` combined with a collection value raises.
+
+    C# ``const`` requires a compile-time constant expression, which
+    collection literals (list, dict, set) are not.
+    """
+    expected_msg = (
+        "C# 'const' requires a compile-time constant initializer, "
+        "but collection literals are not constant expressions. "
+        "Use 'readonly' or remove the 'const' modifier."
+    )
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
+        literalize(
+            source=source,
+            input_format=InputFormat.YAML,
+            language=CSharp(),
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=NewVariable(
+                name="my_data",
+                modifiers=frozenset({CSharp.modifiers.CONST}),
+            ),
+            wrap_in_file=True,
         )

@@ -56,6 +56,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -1089,6 +1090,14 @@ class Cpp(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     modifiers = _CppModifiers
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
+        ModifierCombination(
+            name="static_const",
+            modifiers=frozenset(
+                {_CppModifiers.STATIC, _CppModifiers.CONST},
+            ),
+        ),
+    )
     validate_spec_for_data = no_validate_spec_for_data
 
     class VariableTypeHints(enum.Enum):

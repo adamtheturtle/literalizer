@@ -35,14 +35,12 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
-    Cpp,
     CSharp,
     Elm,
     Fortran,
     FSharp,
     Gleam,
     Haskell,
-    Java,
     OCaml,
     PureScript,
 )
@@ -1046,73 +1044,51 @@ def _build_type_hints_cross_variants() -> list[_Variant]:
 def _build_modifier_variant_cases() -> list[_VariantCase]:
     """Build variants exercising per-language modifier rendering.
 
-    Covers each language that defines a modifier enum: Java, C#, and
-    C++.  Each modifier combination is run against a scalar input and
-    a dict input so that typed-declaration inference is also exercised.
+    For every language with a non-empty ``modifiers`` enum, emit one
+    singleton-modifier variant per member plus one variant per entry
+    in ``lang_cls.modifier_combinations``.  Each variant runs against
+    a scalar input and a dict input so typed-declaration inference is
+    exercised; combinations the language rejects at literalize time
+    are skipped by the test itself.
     """
-    jm = Java.modifiers
-    cm = CSharp.modifiers
-    pm = Cpp.modifiers
-    combos: list[
-        tuple[
-            literalizer.LanguageCls,
-            str,
-            frozenset[enum.Enum],
-        ]
-    ] = [
-        (Java, "final", frozenset({jm.FINAL})),
-        (
-            Java,
-            "public_static_final",
-            frozenset({jm.PUBLIC, jm.STATIC, jm.FINAL}),
-        ),
-        (Java, "private", frozenset({jm.PRIVATE})),
-        (Java, "protected", frozenset({jm.PROTECTED})),
-        (Java, "static", frozenset({jm.STATIC})),
-        (CSharp, "readonly", frozenset({cm.READONLY})),
-        (
-            CSharp,
-            "public_static_readonly",
-            frozenset({cm.PUBLIC, cm.STATIC, cm.READONLY}),
-        ),
-        (CSharp, "const", frozenset({cm.CONST})),
-        (Cpp, "const", frozenset({pm.CONST})),
-        (Cpp, "static_const", frozenset({pm.STATIC, pm.CONST})),
-        (Cpp, "static", frozenset({pm.STATIC})),
-    ]
-
     cases: list[_VariantCase] = []
     case_dirs = ("scalar_int", "simple_dict")
-    # C# ``const`` requires compile-time constants, so a dict can never
-    # be declared ``const``.  Skip the dict case for that combo.
-    skip_dict = {(CSharp, "const")}
-    for lang_cls, mod_name, modifiers in combos:
-        variant = _Variant(
-            name=f"{lang_cls.__name__}_modifiers_{mod_name}",
-            spec=_spec(lang_cls=lang_cls),
-            lang_cls=lang_cls,
+    for lang_cls in _SORTED_LANGUAGES:
+        spec = _spec(lang_cls=lang_cls)
+        if len(spec.modifiers) == 0:
+            continue
+        entries: list[tuple[str, frozenset[enum.Enum]]] = [
+            (member.name.lower(), frozenset({member}))
+            for member in spec.modifiers
+        ]
+        entries.extend(
+            (combo.name, combo.modifiers)
+            for combo in lang_cls.modifier_combinations
         )
-        cases.extend(
-            _VariantCase(
-                variant_name=variant.name,
-                variant=variant,
-                case_dir_name=case_dir_name,
-                variable_form=literalizer.NewVariable(
-                    name="my_data",
-                    modifiers=modifiers,
-                ),
+        for mod_name, modifiers in entries:
+            variant = _Variant(
+                name=f"{lang_cls.__name__}_modifiers_{mod_name}",
+                spec=_spec(lang_cls=lang_cls),
+                lang_cls=lang_cls,
             )
-            for case_dir_name in case_dirs
-            if not (
-                case_dir_name == "simple_dict"
-                and (lang_cls, mod_name) in skip_dict
+            cases.extend(
+                _VariantCase(
+                    variant_name=variant.name,
+                    variant=variant,
+                    case_dir_name=case_dir_name,
+                    variable_form=literalizer.NewVariable(
+                        name="my_data",
+                        modifiers=modifiers,
+                    ),
+                )
+                for case_dir_name in case_dirs
             )
-        )
 
     # Extra coverage for C# modifier rendering: the typed-declaration
     # path infers different branches for set and date values.  List
     # values use ARRAY sequence format so the inferred ``object[]`` type
     # matches the generated initializer.
+    cm = CSharp.modifiers
     csharp_readonly = _Variant(
         name="CSharp_modifiers_readonly",
         spec=_spec(lang_cls=CSharp),

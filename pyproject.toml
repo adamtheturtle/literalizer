@@ -435,6 +435,8 @@ ignore_names = [
     "OCTAL_C_STYLE",
     "RAW",
     "ORDERED",
+    "PRIVATE",
+    "PROTECTED",
     "ROCKET",
     "SEQ",
     "SCIENTIFIC",
