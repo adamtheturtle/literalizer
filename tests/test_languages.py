@@ -15,7 +15,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer._language import LanguageCls
+from literalizer._language import NO_HETEROGENEOUS_BEHAVIOR, LanguageCls
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -52,6 +52,17 @@ JAVA = Java(
     bytes_format=Java.bytes_formats.HEX,
     sequence_format=Java.sequence_formats.ARRAY,
 )
+
+
+def test_no_heterogeneous_behavior_wrap_scalar_is_identity() -> None:
+    """The shared :data:`NO_HETEROGENEOUS_BEHAVIOR` sentinel's
+    ``wrap_scalar`` returns the formatted string unchanged.
+
+    This path is unreachable through normal ``literalize`` flows
+    because non-wrapping languages always produce an empty
+    ``wrap_ids`` set; testing it directly documents the contract.
+    """
+    assert NO_HETEROGENEOUS_BEHAVIOR.wrap_scalar(1, "1") == "1"
 
 
 def test_java_yaml_dict_null_values_with_comments() -> None:
