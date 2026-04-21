@@ -1013,6 +1013,7 @@ def _format_call_args(
     values: list[Value],
     params: Sequence[str],
     language: Language,
+    style: CallStyle,
 ) -> str:
     """Format argument values for a single function call.
 
@@ -1021,11 +1022,6 @@ def _format_call_args(
     unwrapped, space-separated argument list so the caller can
     assemble ``args target`` directly.
     """
-    style = language.call_style_config
-    if style is None:
-        raise UnsupportedCallStyleError(
-            language_name=type(language).__name__,
-        )
     formatted = [
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values
@@ -1157,6 +1153,7 @@ def literalize_call(
                 values=cast("list[Value]", arg_values),
                 params=parameter_names,
                 language=language,
+                style=style,
             )
             lines.append(
                 _assemble_call(

@@ -23,7 +23,6 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Cobol,
-    Forth,
     Fortran,
     FSharp,
     Go,
@@ -498,21 +497,6 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             parameter_names=["value"],
             per_element=True,
         )
-
-
-def test_literalize_call_forth_identity_transform() -> None:
-    """Forth call_transform that adds no prefix leaves expression
-    unchanged.
-    """
-    result = literalize_call(
-        source="[[42]]",
-        input_format=InputFormat.JSON,
-        language=Forth(),
-        target_function="process",
-        parameter_names=["x"],
-        call_transform=lambda c: f"({c})",
-    )
-    assert result.code == "42 process"
 
 
 def test_literalize_call_unsupported_language_raises() -> None:

@@ -601,6 +601,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         transform_stub_names=["emit"],
         per_element=True,
     ),
+    _CallCaseConfig(
+        case_dir_name="call_paren_wrap_transform",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda c: f"({c})",
+        transform_stub_names=[],
+        per_element=True,
+    ),
     *[
         _CallCaseConfig(
             case_dir_name=f"call_{name}",
