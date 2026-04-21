@@ -5,6 +5,17 @@ Next
 ----
 
 
+- Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option
+  that auto-generates a small tagged ``enum`` in the preamble whenever
+  a dict, list, or sibling-list pair contains scalar values of more
+  than one Rust type.  Each heterogeneous value is wrapped at the
+  call site as ``{EnumName}::{Variant}(value)``; only the variants
+  actually present in the data are emitted, with integer variants
+  using Rust's narrowest-width names (``I32``, ``I64``, ``I128``).
+  The enum name defaults to ``Value`` and is configurable via the new
+  ``heterogeneous_value_enum_name`` constructor argument.  The
+  default remains ``HeterogeneousStrategies.ERROR`` (unchanged
+  behavior).
 - ``literalize_call`` now distinguishes two reasons a language has no
   call support.  The single ``UnsupportedCallStyleError`` has been
   replaced by ``CallsNotSupportedByLanguageError`` (raised for

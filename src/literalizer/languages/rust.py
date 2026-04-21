@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import ClassVar, assert_never
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import fixed_dict_open
 from literalizer._formatters.format_dates import (
@@ -47,6 +48,7 @@ from literalizer._formatters.format_strings import (
     format_string_raw_rust,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -54,6 +56,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -306,6 +309,283 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
             f"{value.hour}, {value.minute}, {value.second}).unwrap()"
         )
     return f"NaiveDateTime::new({date}, {time_call})"
+
+
+@beartype
+def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
+    value: Scalar,
+    *,
+    date_type: str,
+    datetime_type: str,
+) -> tuple[str, str | None]:
+    """Return ``(variant_name, inner_type)`` for *value*.
+
+    ``inner_type`` is ``None`` for unit variants (``Null``).  Integer
+    values use narrowest-width variants (``I32``/``I64``/``I128``) to
+    match Rust's default integer-type inference.
+    """
+    match value:
+        case bool():
+            return ("Bool", "bool")
+        case int():
+            int_type = _rust_integer_type(value=value)
+            return (int_type.upper(), int_type)
+        case float():
+            return ("F64", "f64")
+        case str():
+            return ("Str", "&'static str")
+        case bytes():
+            return ("Bytes", "&'static str")
+        case datetime.datetime():
+            return ("DateTime", datetime_type)
+        case datetime.date():
+            return ("Date", date_type)
+        case None:
+            return ("Null", None)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _all_scalars_mixed_buckets(values: Sequence[Value]) -> bool:
+    """Return ``True`` when *values* are all scalars spanning >1 type
+    bucket.
+    """
+    buckets: set[type] = set()
+    for v in values:
+        match v:
+            case bool():
+                bucket = bool
+            case int():
+                bucket = int
+            case float():
+                bucket = float
+            case str():
+                bucket = str
+            case bytes():
+                bucket = bytes
+            case datetime.datetime():
+                bucket = datetime.datetime
+            case datetime.date():
+                bucket = datetime.date
+            case None:
+                bucket = type(None)
+            case _:
+                return False
+        buckets.add(bucket)
+    return len(buckets) > 1
+
+
+@beartype
+def _collect_heterogeneous_container_ids(
+    data: Value,
+    *,
+    ids: set[int],
+) -> None:
+    """Populate *ids* with container ids whose scalar children need
+    wrapping.
+
+    A container is a target when:
+
+    * it is a dict whose values are all scalars of mixed buckets; or
+    * it is a list whose elements are all scalars of mixed buckets; or
+    * it is a list that is a child of another list whose children are
+      all lists and whose combined leaf scalars are heterogeneous
+      (sibling-list heterogeneity).
+    """
+    match data:
+        case ordereddict() | dict():
+            values = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            if _all_scalars_mixed_buckets(values=values):
+                ids.add(id(data))
+            for v in values:
+                _collect_heterogeneous_container_ids(data=v, ids=ids)
+        case list():
+            if _all_scalars_mixed_buckets(values=data):
+                ids.add(id(data))
+            sublists = [v for v in data if isinstance(v, list)]
+            if (
+                len(sublists) == len(data)
+                and len(sublists) > 1
+                and _all_scalars_mixed_buckets(
+                    values=[e for sub in sublists for e in sub],
+                )
+            ):
+                for sub in sublists:
+                    ids.add(id(sub))
+            for v in data:
+                _collect_heterogeneous_container_ids(data=v, ids=ids)
+        case set():
+            pass
+        case _:
+            pass
+
+
+@beartype
+def _iter_wrapped_scalars(
+    data: Value,
+    *,
+    wrap_ids: frozenset[int],
+) -> list[Scalar]:
+    """Return scalars that will be wrapped when rendering *data*.
+
+    Walks *data* and yields each scalar whose immediate container's id
+    appears in *wrap_ids*.
+    """
+    out: list[Scalar] = []
+
+    def _walk(value: Value) -> None:
+        """Recurse into *value*, collecting wrapped scalars."""
+        match value:
+            case ordereddict() | dict():
+                parent_wrapped = id(value) in wrap_ids
+                dict_values: list[Value] = list(value.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                for v in dict_values:
+                    if parent_wrapped and not isinstance(
+                        v,
+                        (list, dict, set),
+                    ):
+                        out.append(v)
+                    _walk(value=v)
+            case list():
+                parent_wrapped = id(value) in wrap_ids
+                for v in value:
+                    if parent_wrapped and not isinstance(
+                        v,
+                        (list, dict, set),
+                    ):
+                        out.append(v)
+                    _walk(value=v)
+            case set():
+                pass
+            case _:
+                pass
+
+    _walk(value=data)
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class _HeterogeneousStrategyConfig:
+    """Configuration for one Rust heterogeneous-values strategy.
+
+    ``build_behavior`` produces the
+    :class:`~literalizer._language.HeterogeneousBehavior` exposed on a
+    Rust instance.  ``build_preamble`` produces the data-dependent
+    preamble callable (e.g. the tagged-enum declaration lines).  Both
+    receive the Rust instance's configurable enum name and scalar
+    type names so the resulting callables can close over them.
+    """
+
+    build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
+    build_preamble: Callable[
+        [str, str, str],
+        Callable[[Value], tuple[str, ...]],
+    ]
+
+
+def _build_error_behavior(
+    _enum_name: str,
+    _date_type: str,
+    _datetime_type: str,
+    /,
+) -> HeterogeneousBehavior:
+    """ERROR strategy: no wrapping, no skipping of checks."""
+    return NO_HETEROGENEOUS_BEHAVIOR
+
+
+def _build_error_preamble(
+    _enum_name: str,
+    _date_type: str,
+    _datetime_type: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """ERROR strategy: no data-dependent preamble."""
+    return no_data_preamble
+
+
+def _build_tagged_enum_behavior(
+    enum_name: str,
+    date_type: str,
+    datetime_type: str,
+    /,
+) -> HeterogeneousBehavior:
+    """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
+
+    def _compute(data: Value) -> frozenset[int]:
+        """Return container ids whose scalar children should wrap."""
+        ids: set[int] = set()
+        _collect_heterogeneous_container_ids(data=data, ids=ids)
+        return frozenset(ids)
+
+    def _wrap(raw_value: Value, formatted: str) -> str:
+        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
+        if isinstance(raw_value, (list, dict, set)):
+            return formatted
+        variant, inner = _heterogeneous_variant_for_scalar(
+            raw_value,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+        if inner is None:
+            return f"{enum_name}::{variant}"
+        return f"{enum_name}::{variant}({formatted})"
+
+    return HeterogeneousBehavior(
+        skip_scalar_checks=True,
+        compute_wrap_ids=_compute,
+        wrap_scalar=_wrap,
+    )
+
+
+def _build_tagged_enum_preamble(
+    enum_name: str,
+    date_type: str,
+    datetime_type: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """TAGGED_ENUM strategy: emit a minimal ``enum`` declaration."""
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Build the tagged-enum declaration for *data*."""
+        ids: set[int] = set()
+        _collect_heterogeneous_container_ids(data=data, ids=ids)
+        wrap_ids = frozenset(ids)
+        if not wrap_ids:
+            return ()
+        scalars = _iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        variants: list[tuple[str, str | None]] = []
+        seen: set[str] = set()
+        for scalar in scalars:
+            variant, inner = _heterogeneous_variant_for_scalar(
+                scalar,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+            if variant in seen:
+                continue
+            seen.add(variant)
+            variants.append((variant, inner))
+        if not variants:
+            return ()
+        lines: list[str] = [f"enum {enum_name} {{"]
+        for variant, inner in variants:
+            body = variant if inner is None else f"{variant}({inner})"
+            lines.append(f"    {body},")
+        lines.append("}")
+        return tuple(lines)
+
+    return _preamble
+
+
+_ERROR_STRATEGY = _HeterogeneousStrategyConfig(
+    build_behavior=_build_error_behavior,
+    build_preamble=_build_error_preamble,
+)
+_TAGGED_ENUM_STRATEGY = _HeterogeneousStrategyConfig(
+    build_behavior=_build_tagged_enum_behavior,
+    build_preamble=_build_tagged_enum_preamble,
+)
 
 
 def _rust_call_stub(
@@ -815,6 +1095,33 @@ class Rust(metaclass=LanguageCls):
 
     modifiers = Modifiers
 
+    class HeterogeneousStrategies(enum.Enum):
+        """Strategy for representing dicts or lists whose scalar values
+        span more than one Rust type.
+        """
+
+        ERROR = enum.member(value=_ERROR_STRATEGY)
+        """Raise
+        :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
+        (or :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
+        when scalar values of mixed types appear in a container that
+        cannot represent them.  This is the default, matching Rust's
+        strict-typing convention.
+        """
+
+        TAGGED_ENUM = enum.member(value=_TAGGED_ENUM_STRATEGY)
+        """Auto-generate a tagged ``enum`` in the preamble containing
+        only the variants actually present in the data, and wrap each
+        heterogeneous scalar value with ``{EnumName}::{Variant}(value)``.
+
+        Integer variants use narrowest-width names (``I32``, ``I64``,
+        ``I128``) matching Rust's default integer-type inference.  The
+        enum name is configurable via
+        :attr:`Rust.heterogeneous_value_enum_name`.
+        """
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -869,6 +1176,10 @@ class Rust(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
     call_style: CallStyles = CallStyles.POSITIONAL
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
+    heterogeneous_value_enum_name: str = "Value"
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None::<()>"
@@ -901,9 +1212,48 @@ class Rust(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value};")
 
     @cached_property
+    def _heterogeneous_variant_date_type(self) -> str:
+        """Rust type used for :class:`datetime.date` variant payloads."""
+        return (
+            "&'static str"
+            if self.date_format.value.type_produced is str
+            else "NaiveDate"
+        )
+
+    @cached_property
+    def _heterogeneous_variant_datetime_type(self) -> str:
+        """Rust type used for :class:`datetime.datetime` variant
+        payloads.
+        """
+        return (
+            "&'static str"
+            if self.datetime_format.value.type_produced is str
+            else "NaiveDateTime"
+        )
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self.heterogeneous_strategy.value.build_behavior(
+            self.heterogeneous_value_enum_name,
+            self._heterogeneous_variant_date_type,
+            self._heterogeneous_variant_datetime_type,
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        For ``HeterogeneousStrategies.TAGGED_ENUM`` emits a minimal
+        ``enum`` declaration listing only the variants actually used in
+        heterogeneous positions in the data.  Other strategies produce
+        no preamble.
+        """
+        return self.heterogeneous_strategy.value.build_preamble(
+            self.heterogeneous_value_enum_name,
+            self._heterogeneous_variant_date_type,
+            self._heterogeneous_variant_datetime_type,
+        )
 
     @cached_property
     def type_hint_collection_preamble_lines(

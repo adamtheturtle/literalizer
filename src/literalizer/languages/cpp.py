@@ -48,6 +48,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -55,6 +56,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
@@ -1348,6 +1350,11 @@ class Cpp(metaclass=LanguageCls):
             date_type=self._cpp_date_type,
             datetime_type=self._cpp_datetime_type,
         )
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def format_variable_declaration(

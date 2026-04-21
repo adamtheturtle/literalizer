@@ -260,6 +260,52 @@ class StubReturn(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
+class HeterogeneousBehavior:
+    """Per-language hook describing how heterogeneous scalar
+    collections are rendered.
+
+    ``skip_scalar_checks`` tells :func:`~literalizer._checks.check_data`
+    to skip the four scalar-heterogeneity checks when the language has
+    opted into a wrapping strategy that handles mixed scalars at
+    render time.
+
+    ``compute_wrap_ids`` pre-walks the data once and returns the ids
+    of containers whose scalar children must be wrapped.
+
+    ``wrap_scalar`` wraps a formatted scalar value (e.g. Rust's
+    tagged-enum ``Value::Variant(…)``).  For non-scalar inputs the
+    implementation is expected to return *formatted* unchanged.
+
+    Languages that do not wrap expose
+    :data:`NO_HETEROGENEOUS_BEHAVIOR`.
+    """
+
+    skip_scalar_checks: bool
+    compute_wrap_ids: Callable[[Value], frozenset[int]]
+    wrap_scalar: Callable[[Value, str], str]
+
+
+def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
+    """Return an empty wrap-id set — used by non-wrapping languages."""
+    return frozenset()
+
+
+def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
+    """Return *formatted* unchanged — used by non-wrapping languages."""
+    return formatted
+
+
+NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
+    skip_scalar_checks=False,
+    compute_wrap_ids=_no_compute_wrap_ids,
+    wrap_scalar=_no_wrap_scalar,
+)
+"""Shared behavior for languages that do not wrap heterogeneous scalar
+values.
+"""
+
+
+@dataclasses.dataclass(frozen=True)
 class ModifierCombination:
     """A named combination of declaration modifiers for a language.
 
@@ -884,6 +930,19 @@ class Language(Protocol):
         Most languages use :func:`no_data_preamble` (returns ``()``);
         C++ uses this to conditionally emit its ``Any`` helper struct
         only when the data contains heterogeneous collections.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Describes how this language handles heterogeneous scalar
+        collections.
+
+        Languages that don't wrap heterogeneous values expose
+        :data:`NO_HETEROGENEOUS_BEHAVIOR`.  Languages that wrap them
+        (e.g. Rust's ``HeterogeneousStrategies.TAGGED_ENUM``) return a
+        :class:`HeterogeneousBehavior` whose ``wrap_scalar`` and
+        ``compute_wrap_ids`` implement the wrapping.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
