@@ -194,9 +194,12 @@ def _rust_type_annotation(
 ) -> str:
     """Derive a Rust type annotation string from a ``Value``.
 
-    Rust ``CONST`` / ``STATIC`` spec+data validation rejects any dict
-    data before this function is called (Rust has no const-expression
-    dict format), so the dict branch is omitted.
+    Only called for ``CONST`` / ``STATIC`` declarations, whose
+    :meth:`Rust.validate_spec_for_data` rejects dict data upstream
+    (Rust has no const-expression dict format).  A ``case dict()``
+    arm is still required so the final ``case _`` narrows to
+    ``Scalar`` for ``_rust_scalar_type``, but it is unreachable at
+    runtime.
     """
     recurse = functools.partial(
         _rust_type_annotation,
@@ -230,6 +233,11 @@ def _rust_type_annotation(
             )
             return sequence_format_type_annotation(element_type, len(data))
         case dict():  # pragma: no cover
+            # Defensive: unreachable at runtime because
+            # validate_spec_for_data rejects dict data for CONST/STATIC
+            # before this function is called.  The arm exists solely
+            # to narrow ``data`` to ``Scalar`` for the ``case _`` below,
+            # which delegates to ``_rust_scalar_type``.
             msg = (
                 "Rust CONST/STATIC reject dict data in validate_spec_for_data"
             )
