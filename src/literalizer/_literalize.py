@@ -1162,12 +1162,10 @@ def _format_call_args(
         case PostfixCallStyle(arg_separator=sep):
             return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
-            if kw_prefix:
-                return sep.join(
-                    f"{kw_prefix}{name}{sep}{val}"
-                    for name, val in zip(params, formatted, strict=True)
-                )
-            return sep.join(formatted)
+            return sep.join(
+                f"{kw_prefix}{name}{sep}{val}"
+                for name, val in zip(params, formatted, strict=True)
+            )
         case _ as unreachable:
             assert_never(unreachable)
 

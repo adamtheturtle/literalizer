@@ -435,7 +435,6 @@ ignore_names = [
     "PAREN",
     "OCTAL",
     "OCTAL_C_STYLE",
-    "PREFIX",
     "RAW",
     "ORDERED",
     "PRIVATE",

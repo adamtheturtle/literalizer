@@ -72,7 +72,7 @@ def _racket_call_stub(
     Each stub uses ``make-keyword-procedure`` so it accepts any
     combination of positional and keyword arguments — necessary
     because the same formatter is used both for the call target
-    (which may be invoked with keyword args) and for transform
+    (which may be invoked with keyword arguments) and for transform
     wrapper functions (which are invoked positionally).  Stub bodies
     are ``(void)`` for void stubs and ``0`` for value stubs (Racket
     has no ``undefined``).
@@ -282,7 +282,6 @@ class Racket(metaclass=LanguageCls):
             arg_separator=" ",
             keyword_prefix="#:",
         )
-        PREFIX = PrefixCallStyle(arg_separator=" ", keyword_prefix="")
 
     call_styles = CallStyles
 

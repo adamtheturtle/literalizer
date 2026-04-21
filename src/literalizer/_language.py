@@ -210,13 +210,13 @@ class PrefixCallStyle:
     """S-expression-style calls: ``(func value1 value2)``.
 
     Used by Lisp-family languages (Racket, Scheme, Common Lisp,
-    Clojure) where the function and its arguments are wrapped together
-    in one pair of parentheses.  *arg_separator* is the string between
-    arguments (typically a single space).
+    Clojure) where the function and its arguments are wrapped
+    together in one pair of parentheses.  *arg_separator* is the
+    string between arguments (typically a single space).
 
-    When *keyword_prefix* is non-empty, arguments are emitted as
-    ``{prefix}{name}{arg_separator}{value}`` pairs (e.g. Racket's
-    ``#:user_id "u"``); when empty, arguments are positional.
+    Arguments are emitted as
+    ``{keyword_prefix}{name}{arg_separator}{value}`` pairs (e.g.
+    Racket's ``#:user_id "u"``).
     """
 
     arg_separator: str
