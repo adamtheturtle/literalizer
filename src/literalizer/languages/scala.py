@@ -13,9 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -272,7 +270,7 @@ class Scala(metaclass=LanguageCls):
         """Sequence type options for Scala."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="List("),
+            sequence_open=fixed_open(open_str="List("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -286,7 +284,7 @@ class Scala(metaclass=LanguageCls):
             declared_type=None,
         )
         SEQ = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="Seq("),
+            sequence_open=fixed_open(open_str="Seq("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -300,7 +298,7 @@ class Scala(metaclass=LanguageCls):
             declared_type=None,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="Array("),
+            sequence_open=fixed_open(open_str="Array("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -318,7 +316,7 @@ class Scala(metaclass=LanguageCls):
         """Set type options for Scala."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set("),
+            set_open=fixed_open(open_str="Set("),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -326,7 +324,7 @@ class Scala(metaclass=LanguageCls):
             supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="TreeSet("),
+            set_open=fixed_open(open_str="TreeSet("),
             close=")",
             empty_set=None,
             preamble_lines=("import scala.collection.immutable.TreeSet",),
@@ -757,7 +755,7 @@ class Scala(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str="scala.collection.immutable.ListMap("
             ),
             close=")",

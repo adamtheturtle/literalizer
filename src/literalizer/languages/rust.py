@@ -13,7 +13,7 @@ from typing import ClassVar, assert_never, cast
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
-from literalizer._formatters.collection_openers import fixed_dict_open
+from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -1475,7 +1475,7 @@ class Rust(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="HashMap::from(["),
+            ordered_map_open=fixed_open(open_str="HashMap::from(["),
             close="])",
             preamble_lines=("use std::collections::HashMap;",),
         )

@@ -15,9 +15,7 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
     typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
@@ -574,7 +572,7 @@ class Java(metaclass=LanguageCls):
         """Sequence type options for Java."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="new Object[]{"),
+            sequence_open=fixed_open(open_str="new Object[]{"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -606,7 +604,7 @@ class Java(metaclass=LanguageCls):
         """Set type options for Java."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set.of("),
+            set_open=fixed_open(open_str="Set.of("),
             close=")",
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
@@ -614,7 +612,7 @@ class Java(metaclass=LanguageCls):
             supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
+            set_open=fixed_open(open_str="new TreeSet<>(Set.of("),
             close="))",
             empty_set="new TreeSet<>()",
             preamble_lines=(
@@ -656,7 +654,7 @@ class Java(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP_OF_ENTRIES = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="Map.ofEntries("),
+            dict_open=fixed_open(open_str="Map.ofEntries("),
             close=")",
             format_entry=dict_entry_with_template(
                 template="Map.entry({key}, {value})",
@@ -667,7 +665,7 @@ class Java(metaclass=LanguageCls):
             narrowed_open=None,
         )
         HASH_MAP = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="new HashMap<>(Map.ofEntries("),
+            dict_open=fixed_open(open_str="new HashMap<>(Map.ofEntries("),
             close="))",
             format_entry=dict_entry_with_template(
                 template="Map.entry({key}, {value})",
@@ -1131,7 +1129,7 @@ class Java(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=(
                     "new java.util.ArrayList<>(java.util.Arrays.asList("
                 ),

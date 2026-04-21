@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- **Breaking:** Replaced the three public collection-opener helpers
+  ``fixed_set_open``, ``fixed_sequence_open``, and ``fixed_dict_open``
+  with a single ``fixed_open``.  They had identical implementations
+  and differed only in the type hint of the unused parameter.  Replace
+  each call with ``fixed_open(open_str=...)``.
 - ``literalize_call`` now raises ``ParameterCountMismatchError`` with
   a descriptive ``Expected N parameters but got M values`` message
   when ``parameter_names`` does not match a row's value count,

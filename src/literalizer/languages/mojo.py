@@ -11,7 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
+    fixed_open,
     make_element_to_type,
     make_type_to_opener,
 )
@@ -531,7 +531,7 @@ class Mojo(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="["),
+            ordered_map_open=fixed_open(open_str="["),
             close="]",
             preamble_lines=(),
         )

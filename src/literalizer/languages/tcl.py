@@ -10,9 +10,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -166,7 +164,7 @@ class Tcl(metaclass=LanguageCls):
         """Sequence type options."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="[list "),
+            sequence_open=fixed_open(open_str="[list "),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -184,7 +182,7 @@ class Tcl(metaclass=LanguageCls):
         """Set type options."""
 
         DICT = SetFormatConfig(
-            set_open=fixed_set_open(open_str="[dict create "),
+            set_open=fixed_open(open_str="[dict create "),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -463,7 +461,7 @@ class Tcl(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="[dict create "),
+            dict_open=fixed_open(open_str="[dict create "),
             close="]",
             format_entry=_format_tcl_dict_entry,
             empty_dict=None,
@@ -510,7 +508,7 @@ class Tcl(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="[dict create "),
+            ordered_map_open=fixed_open(open_str="[dict create "),
             close="]",
             preamble_lines=(),
         )

@@ -16,64 +16,21 @@ from literalizer._types import Value
 
 
 @beartype
-def _fixed_list_open_impl(_items: list[Value], open_str: str) -> str:
-    """Return the fixed opening delimiter for sequence/set items."""
-    return open_str
+def fixed_open(
+    *, open_str: str
+) -> Callable[[list[Value] | dict[str, Value]], str]:
+    """Return an opener callable that always returns *open_str*.
 
+    Use this as ``sequence_open``, ``set_open``, ``dict_open``, or
+    ``ordered_map_open`` when the opening delimiter is a fixed string
+    that does not depend on the collection contents.
 
-@beartype
-def _fixed_dict_open_impl(_items: dict[str, Value], open_str: str) -> str:
-    """Return the fixed opening delimiter for dict items."""
-    return open_str
-
-
-@beartype
-def fixed_set_open(*, open_str: str) -> Callable[[list[Value]], str]:
-    """Return a ``set_open`` callable that always returns *open_str*.
-
-    Use this as ``set_open`` when the opening delimiter for sets
-    is a fixed string that does not depend on the set contents.
-
-    Example: ``fixed_set_open(open_str="{")([1, 2, 3])`` -> ``"{"``.
+    Example: ``fixed_open(open_str="[")([1, 2, 3])`` -> ``"["``.
     """
 
-    def _open(_items: list[Value]) -> str:
-        """Delegate to module-level implementation."""
-        return _fixed_list_open_impl(_items=_items, open_str=open_str)
-
-    return _open
-
-
-@beartype
-def fixed_sequence_open(*, open_str: str) -> Callable[[list[Value]], str]:
-    """Return a ``sequence_open`` callable that always returns *open_str*.
-
-    Use this as ``sequence_open`` when the opening delimiter for sequences
-    is a fixed string that does not depend on the sequence contents.
-
-    Example: ``fixed_sequence_open(open_str="[")([1, 2, 3])`` -> ``"["``.
-    """
-
-    def _open(_items: list[Value]) -> str:
-        """Delegate to module-level implementation."""
-        return _fixed_list_open_impl(_items=_items, open_str=open_str)
-
-    return _open
-
-
-@beartype
-def fixed_dict_open(*, open_str: str) -> Callable[[dict[str, Value]], str]:
-    """Return a ``dict_open`` callable that always returns *open_str*.
-
-    Use this as ``dict_open`` when the opening delimiter for dicts
-    is a fixed string that does not depend on the dict contents.
-
-    Example: ``fixed_dict_open(open_str="{")({"a": 1})`` -> ``"{"``.
-    """
-
-    def _open(_items: dict[str, Value]) -> str:
-        """Delegate to module-level implementation."""
-        return _fixed_dict_open_impl(_items=_items, open_str=open_str)
+    def _open(_items: list[Value] | dict[str, Value], /) -> str:
+        """Return the fixed opening delimiter, ignoring *_items*."""
+        return open_str
 
     return _open
 

@@ -12,9 +12,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -446,7 +444,7 @@ class Elm(metaclass=LanguageCls):
         """Sequence type options for Elm."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="EList ["),
+            sequence_open=fixed_open(open_str="EList ["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -464,7 +462,7 @@ class Elm(metaclass=LanguageCls):
         """Set type options for Elm."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="ESet ["),
+            set_open=fixed_open(open_str="ESet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -735,7 +733,7 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def _seq_open(self) -> Callable[[list[Value]], str]:
         """Shared sequence opener with configured constructor prefix."""
-        return fixed_sequence_open(
+        return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
 
@@ -757,7 +755,7 @@ class Elm(metaclass=LanguageCls):
         """Configuration for the chosen set format."""
         return dataclasses.replace(
             self.set_format.value,
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Set [",
             ),
         )
@@ -771,7 +769,7 @@ class Elm(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
             ),
             close="]",
@@ -859,7 +857,7 @@ class Elm(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
             ),
             close="]",

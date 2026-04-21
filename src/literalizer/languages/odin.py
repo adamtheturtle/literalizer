@@ -11,8 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
+    fixed_open,
     make_element_to_type,
     make_type_to_opener,
 )
@@ -171,7 +170,7 @@ class Odin(metaclass=LanguageCls):
         """Sequence type options for Odin."""
 
         DYNAMIC_ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="[dynamic]any{"),
+            sequence_open=fixed_open(open_str="[dynamic]any{"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -535,7 +534,7 @@ class Odin(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str="map[string]any{",
             ),
             close="}",
@@ -589,7 +588,7 @@ class Odin(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="map[string]any{"),
+            ordered_map_open=fixed_open(open_str="map[string]any{"),
             close="}",
             preamble_lines=(),
         )
