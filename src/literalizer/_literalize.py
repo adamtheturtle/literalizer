@@ -785,26 +785,42 @@ def _apply_variable_wrapper(
     language: Language,
     data: Value,
     variable_form: NewVariable | ExistingVariable | None,
+    line_prefix: str,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
+
+    *result* arrives with *line_prefix* already prepended to every
+    line.  When wrapping in a variable form the leading prefix on the
+    first line is stripped so the value sits flush against the
+    declaration's ``=``, then re-prepended once to the entire wrapped
+    output.  This keeps every line uniformly indented instead of
+    doubly-indenting continuation lines.
     """
+    if variable_form is None:
+        return result
+
+    if line_prefix and result.startswith(line_prefix):
+        value = result[len(line_prefix) :]
+    else:
+        value = result
+
     match variable_form:
-        case None:
-            return result
         case NewVariable(name=name, modifiers=modifiers):
-            return language.format_variable_declaration(
+            wrapped = language.format_variable_declaration(
                 name,
-                result,
+                value,
                 data,
                 modifiers,
             )
         case _:
-            return language.format_variable_assignment(
+            wrapped = language.format_variable_assignment(
                 variable_form.name,
-                result,
+                value,
                 data,
             )
+
+    return line_prefix + wrapped
 
 
 @dataclasses.dataclass(frozen=True)
@@ -913,6 +929,7 @@ def _literalize_apply_form(
         language=language,
         data=pre_form.data,
         variable_form=variable_form,
+        line_prefix=pre_form.line_prefix,
     )
 
     resolved = pre_form.resolved
