@@ -151,7 +151,7 @@ def _collect_container_ids(
 
 
 @beartype
-def collect_heterogeneous_container_ids(data: Value) -> frozenset[int]:
+def collect_heterogeneous_container_ids(*, data: Value) -> frozenset[int]:
     """Return container ids whose scalar children need wrapping."""
     ids: set[int] = set()
     _collect_container_ids(data=data, ids=ids)
@@ -160,8 +160,8 @@ def collect_heterogeneous_container_ids(data: Value) -> frozenset[int]:
 
 @beartype
 def iter_wrapped_scalars(
-    data: Value,
     *,
+    data: Value,
     wrap_ids: frozenset[int],
 ) -> list[Scalar]:
     """Return scalars that will be wrapped when rendering *data*.

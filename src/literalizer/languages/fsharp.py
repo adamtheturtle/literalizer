@@ -127,10 +127,10 @@ _format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
 
 @beartype
 def _apply_fsharp_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
-    *,
     template: str,
     sequence_declared_type: str,
     scalar_declared_type: str,

@@ -220,8 +220,8 @@ def _java_box(type_name: str) -> str:
 
 @beartype
 def _java_common_element_type(
-    elements: list[Value],
     *,
+    elements: list[Value],
     boxed: bool,
     int_type: str,
     date_hint: str,
@@ -259,8 +259,8 @@ def _java_common_element_type(
 
 @beartype
 def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
-    data: Value,
     *,
+    data: Value,
     int_type: str,
     date_hint: str,
     datetime_hint: str,
@@ -362,11 +362,11 @@ def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 
 @beartype
 def _format_java_typed_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     modifiers: frozenset[enum.Enum],
-    *,
     int_type: str,
     date_hint: str,
     datetime_hint: str,
@@ -390,11 +390,11 @@ def _format_java_typed_declaration(
 
 @beartype
 def _apply_java_object_nil_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     modifiers: frozenset[enum.Enum],
-    *,
     base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     typed_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
 ) -> str:
@@ -410,8 +410,8 @@ def _apply_java_object_nil_declaration(
 
 @beartype
 def _object_nil_declaration(
-    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     *,
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     typed_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Wrap *base_formatter* so top-level ``null`` gets a typed form.
@@ -816,15 +816,29 @@ class Java(metaclass=LanguageCls):
             set_outer: str,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            typed = functools.partial(
-                _format_java_typed_declaration,
-                int_type=int_type,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
-            )
+
+            def typed(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt :func:`_format_java_typed_declaration` to the
+                positional formatter interface.
+                """
+                return _format_java_typed_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    modifiers=modifiers,
+                    int_type=int_type,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    seq_is_array=seq_is_array,
+                    dict_outer=dict_outer,
+                    set_outer=set_outer,
+                )
+
             if self is type(self).AUTO:
                 return _object_nil_declaration(
                     base_formatter=auto_formatter,

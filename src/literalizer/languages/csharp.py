@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import functools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -141,8 +140,8 @@ _CSHARP_SCALAR_TYPES: dict[type, str] = {
 
 @beartype
 def _csharp_scalar_type(
-    value: Value,
     *,
+    value: Value,
     date_hint: str,
     datetime_hint: str,
 ) -> str:
@@ -156,8 +155,8 @@ def _csharp_scalar_type(
 
 @beartype
 def _csharp_common_element_type(
-    items: list[Value],
     *,
+    items: list[Value],
     date_hint: str,
     datetime_hint: str,
     dict_value_type: str,
@@ -183,8 +182,8 @@ def _csharp_common_element_type(
 
 @beartype
 def _csharp_type_hint(
-    data: Value,
     *,
+    data: Value,
     date_hint: str,
     datetime_hint: str,
     dict_value_type: str,
@@ -225,11 +224,11 @@ def _csharp_type_hint(
 
 @beartype
 def _format_csharp_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     modifiers: frozenset[enum.Enum],
-    *,
     date_hint: str,
     datetime_hint: str,
     dict_value_type: str,
@@ -957,12 +956,28 @@ class CSharp(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced is str
             else "DateTime"
         )
-        return functools.partial(
-            _format_csharp_declaration,
-            date_hint=date_hint,
-            datetime_hint=datetime_hint,
-            dict_value_type=self.default_dict_value_type,
-        )
+        dict_value_type = self.default_dict_value_type
+
+        def _formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Adapt :func:`_format_csharp_declaration` to the positional
+            formatter interface.
+            """
+            return _format_csharp_declaration(
+                name=name,
+                value=value,
+                data=data,
+                modifiers=modifiers,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                dict_value_type=dict_value_type,
+            )
+
+        return _formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

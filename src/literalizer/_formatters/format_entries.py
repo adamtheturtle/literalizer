@@ -270,8 +270,8 @@ def _format_dict_entry_with_separator(
 
 @beartype
 def dict_entry_with_separator(
-    separator: str,
     *,
+    separator: str,
     format_value: Callable[[Value, str], str],
 ) -> Callable[[str, Value, str], str]:
     """Return a ``format_dict_entry`` callable that joins key and value

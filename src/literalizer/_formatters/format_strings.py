@@ -17,7 +17,7 @@ class _StringFormatter(Protocol):
 
 
 @beartype
-def _backslash_escape(value: str, *, quote_char: str) -> str:
+def _backslash_escape(*, value: str, quote_char: str) -> str:
     r"""Apply base backslash escapes to *value*.
 
     Escapes backslashes, *quote_char*, ``\r``, ``\n``, and ``\t``.
@@ -277,7 +277,7 @@ def _apply_concat_control(
 
 
 @beartype
-def escape_control_chars(value: str, *, fmt: str) -> str:
+def escape_control_chars(*, value: str, fmt: str) -> str:
     r"""Replace C0 control characters (U+0000-U+001F) with escape sequences.
 
     Call **after** replacing named escapes (``\t``, ``\n``, ``\r``) so that
@@ -295,8 +295,8 @@ def escape_control_chars(value: str, *, fmt: str) -> str:
 
 @beartype
 def format_string_backslash_control(
-    value: str,
     *,
+    value: str,
     control_char_fmt: str,
 ) -> str:
     r"""Format a string using backslash escaping plus control-char escaping.
@@ -305,10 +305,8 @@ def format_string_backslash_control(
     :func:`escape_control_chars` in one step.  The *control_char_fmt*
     is passed directly to :func:`escape_control_chars`.
 
-    Example with ``control_char_fmt="\\x{:02x}"``::
-
-        format_string_backslash_control("\x01hi", control_char_fmt="\\x{:02x}")
-        # => '"\\x01hi"'
+    Example with ``control_char_fmt="\\x{:02x}"`` and ``value="\x01hi"``
+    returns ``'"\\x01hi"'``.
     """
     escaped = _backslash_escape(value=value, quote_char='"')
     escaped = escape_control_chars(value=escaped, fmt=control_char_fmt)

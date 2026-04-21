@@ -194,8 +194,8 @@ def _kotlin_type_to_opener(
 
 @beartype
 def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
-    data: Value,
     *,
+    data: Value,
     date_hint: str,
     datetime_hint: str,
     default_set_element_type: str,
@@ -298,11 +298,11 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
 
 @beartype
 def _format_kotlin_typed_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     keyword: str,
     date_hint: str,
     datetime_hint: str,
@@ -703,18 +703,33 @@ class Kotlin(metaclass=LanguageCls):
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
-            return functools.partial(
-                _format_kotlin_typed_declaration,
-                keyword=keyword,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
-                sequence_format_name=sequence_format_name,
-            )
+
+            def _typed_formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt :func:`_format_kotlin_typed_declaration` to the
+                positional formatter interface.
+                """
+                return _format_kotlin_typed_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    _modifiers=modifiers,
+                    keyword=keyword,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    default_set_element_type=default_set_element_type,
+                    default_dict_key_type=default_dict_key_type,
+                    default_dict_value_type=default_dict_value_type,
+                    dict_outer=dict_outer,
+                    set_outer=set_outer,
+                    sequence_format_name=sequence_format_name,
+                )
+
+            return _typed_formatter
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles

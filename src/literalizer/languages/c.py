@@ -64,9 +64,9 @@ from literalizer._types import Value
 
 @beartype
 def _apply_format_c_entry(
+    *,
     original: Value,
     formatted: str,
-    *,
     int_field: str,
     float_field: str,
     string_field: str,

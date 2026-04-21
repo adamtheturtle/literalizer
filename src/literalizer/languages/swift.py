@@ -152,8 +152,8 @@ def _swift_call_stub(
 
 @beartype
 def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
-    data: Value,
     *,
+    data: Value,
     date_hint: str,
     datetime_hint: str,
     default_set_element_type: str,
@@ -225,11 +225,11 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
 
 @beartype
 def _format_swift_typed_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     keyword: str,
     date_hint: str,
     datetime_hint: str,
@@ -253,11 +253,11 @@ def _format_swift_typed_declaration(
 
 @beartype
 def _apply_swift_optional_nil_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     keyword: str,
 ) -> str:
@@ -269,8 +269,8 @@ def _apply_swift_optional_nil_declaration(
 
 @beartype
 def _optional_nil_declaration(
-    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     *,
+    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     keyword: str,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Wrap *base_formatter* so top-level ``nil`` gets an optional type.
@@ -584,16 +584,33 @@ class Swift(metaclass=LanguageCls):
                     base_formatter=auto_formatter,
                     keyword=keyword,
                 )
-            return functools.partial(
-                _format_swift_typed_declaration,
-                keyword=keyword,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                default_set_element_type=default_set_element_type,
-                default_sequence_element_type=(default_sequence_element_type),
-                default_dict_value_type=default_dict_value_type,
-                sequence_is_tuple=sequence_is_tuple,
-            )
+
+            def _typed_formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt :func:`_format_swift_typed_declaration` to the
+                positional formatter interface.
+                """
+                return _format_swift_typed_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    _modifiers=modifiers,
+                    keyword=keyword,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    default_set_element_type=default_set_element_type,
+                    default_sequence_element_type=(
+                        default_sequence_element_type
+                    ),
+                    default_dict_value_type=default_dict_value_type,
+                    sequence_is_tuple=sequence_is_tuple,
+                )
+
+            return _typed_formatter
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -713,9 +730,15 @@ class Swift(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return functools.partial(
-            format_string_backslash_control, control_char_fmt="\\u{{{:x}}}"
-        )
+
+        def _format(value: str) -> str:
+            """Format a string as a Swift quoted literal."""
+            return format_string_backslash_control(
+                value=value,
+                control_char_fmt="\\u{{{:x}}}",
+            )
+
+        return _format
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:

@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import functools
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -144,8 +143,8 @@ def _unify_rust_types(types: Sequence[str]) -> str:
 
 @beartype
 def _rust_scalar_type(  # noqa: PLR0911
-    data: Scalar,
     *,
+    data: Scalar,
     date_type: str,
     datetime_type: str,
 ) -> str:
@@ -173,8 +172,8 @@ def _rust_scalar_type(  # noqa: PLR0911
 
 @beartype
 def _rust_homogeneous_element_type(
-    elements: Sequence[Value],
     *,
+    elements: Sequence[Value],
     infer: Callable[[Value], str],
     default_type: str,
 ) -> str:
@@ -187,8 +186,8 @@ def _rust_homogeneous_element_type(
 
 @beartype
 def _rust_type_annotation(
-    data: Value,
     *,
+    data: Value,
     date_type: str,
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
@@ -211,19 +210,23 @@ def _rust_type_annotation(
     dict data is supported and the arm emits ``HashMap<K, V>`` or
     ``BTreeMap<K, V>``.
     """
-    recurse = functools.partial(
-        _rust_type_annotation,
-        date_type=date_type,
-        datetime_type=datetime_type,
-        sequence_format_type_annotation=sequence_format_type_annotation,
-        sequence_supports_heterogeneity=sequence_supports_heterogeneity,
-        set_format_type_annotation=set_format_type_annotation,
-        dict_format_type_annotation=dict_format_type_annotation,
-        default_sequence_element_type=default_sequence_element_type,
-        default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
-    )
+
+    def recurse(element: Value) -> str:
+        """Delegate to module-level implementation."""
+        return _rust_type_annotation(
+            data=element,
+            date_type=date_type,
+            datetime_type=datetime_type,
+            sequence_format_type_annotation=sequence_format_type_annotation,
+            sequence_supports_heterogeneity=sequence_supports_heterogeneity,
+            set_format_type_annotation=set_format_type_annotation,
+            dict_format_type_annotation=dict_format_type_annotation,
+            default_sequence_element_type=default_sequence_element_type,
+            default_set_element_type=default_set_element_type,
+            default_dict_key_type=default_dict_key_type,
+            default_dict_value_type=default_dict_value_type,
+        )
+
     match data:
         case set():
             element_type = _rust_homogeneous_element_type(
@@ -234,7 +237,7 @@ def _rust_type_annotation(
             return set_format_type_annotation(element_type)
         case list():
             if sequence_supports_heterogeneity:
-                element_types = [recurse(e) for e in data]
+                element_types = [recurse(element=e) for e in data]
                 inner = ", ".join(element_types)
                 if len(element_types) == 1:
                     inner += ","
@@ -277,11 +280,11 @@ def _rust_type_annotation(
 
 @beartype
 def _format_typed_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     keyword: str,
     date_type: str,
     datetime_type: str,
@@ -312,11 +315,11 @@ def _format_typed_declaration(
 
 @beartype
 def _format_lazy_static_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     date_type: str,
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
@@ -414,8 +417,8 @@ class _VariantSignature:
 
 @beartype
 def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
-    value: Scalar,
     *,
+    value: Scalar,
     date_type: str,
     datetime_type: str,
 ) -> _VariantSignature:
@@ -907,8 +910,62 @@ class Rust(metaclass=LanguageCls):
             """
             cls = type(self)
             if self is cls.LAZY_STATIC:
-                return functools.partial(
-                    _format_lazy_static_declaration,
+
+                def _lazy_formatter(
+                    name: str,
+                    value: str,
+                    data: Value,
+                    modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Adapt :func:`_format_lazy_static_declaration` to the
+                    positional formatter interface.
+                    """
+                    return _format_lazy_static_declaration(
+                        name=name,
+                        value=value,
+                        data=data,
+                        _modifiers=modifiers,
+                        date_type=date_type,
+                        datetime_type=datetime_type,
+                        sequence_format_type_annotation=(
+                            sequence_format_type_annotation
+                        ),
+                        sequence_supports_heterogeneity=(
+                            sequence_supports_heterogeneity
+                        ),
+                        set_format_type_annotation=set_format_type_annotation,
+                        dict_format_type_annotation=(
+                            dict_format_type_annotation
+                        ),
+                        default_sequence_element_type=(
+                            default_sequence_element_type
+                        ),
+                        default_set_element_type=default_set_element_type,
+                        default_dict_key_type=default_dict_key_type,
+                        default_dict_value_type=default_dict_value_type,
+                    )
+
+                return _lazy_formatter
+            if self not in {cls.CONST, cls.STATIC}:
+                config: DeclarationStyleConfig = self.value
+                return config.formatter
+            keyword = self.name.lower()
+
+            def _formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt :func:`_format_typed_declaration` to the
+                positional formatter interface.
+                """
+                return _format_typed_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    _modifiers=modifiers,
+                    keyword=keyword,
                     date_type=date_type,
                     datetime_type=datetime_type,
                     sequence_format_type_annotation=(
@@ -918,32 +975,13 @@ class Rust(metaclass=LanguageCls):
                         sequence_supports_heterogeneity
                     ),
                     set_format_type_annotation=set_format_type_annotation,
-                    dict_format_type_annotation=dict_format_type_annotation,
                     default_sequence_element_type=(
                         default_sequence_element_type
                     ),
                     default_set_element_type=default_set_element_type,
-                    default_dict_key_type=default_dict_key_type,
-                    default_dict_value_type=default_dict_value_type,
                 )
-            if self not in {cls.CONST, cls.STATIC}:
-                config: DeclarationStyleConfig = self.value
-                return config.formatter
-            return functools.partial(
-                _format_typed_declaration,
-                keyword=self.name.lower(),
-                date_type=date_type,
-                datetime_type=datetime_type,
-                sequence_format_type_annotation=(
-                    sequence_format_type_annotation
-                ),
-                sequence_supports_heterogeneity=(
-                    sequence_supports_heterogeneity
-                ),
-                set_format_type_annotation=set_format_type_annotation,
-                default_sequence_element_type=(default_sequence_element_type),
-                default_set_element_type=default_set_element_type,
-            )
+
+            return _formatter
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""

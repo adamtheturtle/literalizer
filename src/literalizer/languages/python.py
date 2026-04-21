@@ -130,11 +130,11 @@ def _needs_type_annotation(data: Value) -> bool:
 
 @beartype
 def _format_variable_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
@@ -171,11 +171,11 @@ def _format_variable_declaration(
 
 @beartype
 def _format_inline_type_hint_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
@@ -274,8 +274,8 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 
 @beartype
 def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
-    data: Value,
     *,
+    data: Value,
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
@@ -663,30 +663,64 @@ class Python(metaclass=LanguageCls):
             style.
             """
             if self is type(self).ALWAYS:
-                return functools.partial(
-                    _format_inline_type_hint_declaration,
+
+                def _always_formatter(
+                    name: str,
+                    value: str,
+                    data: Value,
+                    modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Adapt the inline-hint declaration to the positional
+                    formatter interface.
+                    """
+                    return _format_inline_type_hint_declaration(
+                        name=name,
+                        value=value,
+                        data=data,
+                        _modifiers=modifiers,
+                        bytes_hint=bytes_hint,
+                        date_hint=date_hint,
+                        datetime_hint=datetime_hint,
+                        sequence_hint=sequence_hint,
+                        set_hint=set_hint,
+                        default_set_element_type=default_set_element_type,
+                        default_sequence_element_type=(
+                            default_sequence_element_type
+                        ),
+                        default_dict_value_type=default_dict_value_type,
+                        default_dict_key_type=default_dict_key_type,
+                    )
+
+                return _always_formatter
+
+            def _auto_formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt the variable declaration to the positional
+                formatter interface.
+                """
+                return _format_variable_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    _modifiers=modifiers,
                     bytes_hint=bytes_hint,
                     date_hint=date_hint,
                     datetime_hint=datetime_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
                     default_set_element_type=default_set_element_type,
-                    default_sequence_element_type=default_sequence_element_type,
+                    default_sequence_element_type=(
+                        default_sequence_element_type
+                    ),
                     default_dict_value_type=default_dict_value_type,
                     default_dict_key_type=default_dict_key_type,
                 )
-            return functools.partial(
-                _format_variable_declaration,
-                bytes_hint=bytes_hint,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                sequence_hint=sequence_hint,
-                set_hint=set_hint,
-                default_set_element_type=default_set_element_type,
-                default_sequence_element_type=default_sequence_element_type,
-                default_dict_value_type=default_dict_value_type,
-                default_dict_key_type=default_dict_key_type,
-            )
+
+            return _auto_formatter
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
