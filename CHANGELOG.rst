@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+- The ``lint-julia`` CI job now executes Julia golden files instead
+  of only parsing them, catching ``UndefVarError`` and other runtime
+  errors.
+
 2026.04.21.1
 ------------
 
