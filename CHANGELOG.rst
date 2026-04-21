@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.21.3
+------------
+
+
 - Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option
   that auto-generates a small tagged ``enum`` in the preamble whenever
   a dict, list, or sibling-list pair contains scalar values of more
