@@ -1057,7 +1057,7 @@ class Rust(metaclass=LanguageCls):
             configuration.  ``LAZY_STATIC`` additionally wraps the
             inferred type in ``LazyLock<…>`` and the value in a
             ``LazyLock::new(|| …)`` call, enabling module-level
-            declarations of runtime-initialised collections like
+            declarations of runtime-initialized collections like
             ``HashMap`` and ``Vec``.
             """
             cls = type(self)
