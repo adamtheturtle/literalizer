@@ -20,6 +20,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     NullInCollectionError,
+    ParameterCountMismatchError,
     PerElementNotListError,
 )
 from literalizer.languages import (
@@ -28,6 +29,7 @@ from literalizer.languages import (
     FSharp,
     Go,
     Java,
+    JavaScript,
     Matlab,
     Python,
     Yaml,
@@ -497,6 +499,70 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             per_element=True,
+        )
+
+
+def test_literalize_call_parameter_count_too_few_raises() -> None:
+    """Literalize_call raises when fewer parameter_names than values."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 1 parameters but got 2 values$",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["a"],
+        )
+
+
+def test_literalize_call_parameter_count_too_many_raises() -> None:
+    """Literalize_call raises when more parameter_names than values."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 3 parameters but got 2 values$",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["a", "b", "c"],
+        )
+
+
+def test_literalize_call_parameter_count_mismatch_object_style() -> None:
+    """Literalize_call raises ParameterCountMismatchError for object
+    call styles (e.g. JavaScript) too.
+    """
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 2 parameters but got 1 values$",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=JavaScript(),
+            target_function="process",
+            parameter_names=["a", "b"],
+        )
+
+
+def test_literalize_call_parameter_count_mismatch_later_row() -> None:
+    """Literalize_call raises when a later per_element row has a
+    different value count than parameter_names.
+    """
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 2 parameters but got 1 values$",
+    ):
+        literalize_call(
+            source="[[1, 2], [3]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["a", "b"],
         )
 
 
