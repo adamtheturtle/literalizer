@@ -137,6 +137,7 @@ def _coerce_yaml_keys(*, data: object) -> Value:
             return cast("Value", _unwrap_yaml_scalar(value=data))
 
 
+@beartype
 def _parse_json(*, source: str) -> _ParsedInput:
     """Parse a JSON string into a ``_ParsedInput``."""
     try:
@@ -149,6 +150,7 @@ def _parse_json(*, source: str) -> _ParsedInput:
     return _ParsedInput(data=data, raw_data=data)
 
 
+@beartype
 def _parse_json5(*, source: str) -> _ParsedInput:
     """Parse a JSON5 string into a ``_ParsedInput``."""
     try:
@@ -173,6 +175,7 @@ def get_yaml() -> YAML:
     return YAML()
 
 
+@beartype
 def _parse_yaml(*, source: str) -> _ParsedInput:
     """Parse a YAML string into a ``_ParsedInput``.
 
@@ -191,6 +194,7 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
     return _ParsedInput(data=data, raw_data=raw_data)
 
 
+@beartype
 def _parse_toml(*, source: str) -> _ParsedInput:
     """Parse a TOML string into a ``_ParsedInput``."""
     try:
@@ -202,6 +206,7 @@ def _parse_toml(*, source: str) -> _ParsedInput:
     return _ParsedInput(data=toml_data, raw_data=toml_doc)
 
 
+@beartype
 def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
     """Parse and coerce an input string according to its format."""
     match input_format:
@@ -217,6 +222,7 @@ def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             assert_never(unreachable)
 
 
+@beartype
 def _coerce_toml_values(*, data: object) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
