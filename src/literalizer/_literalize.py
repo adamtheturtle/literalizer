@@ -417,26 +417,27 @@ def _wrap_body(
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = spec.indent if spec.indent_closing_delimiter else ""
     close_prefix = f"{line_prefix}{ci}"
-    if is_ordered_map and isinstance(data, dict):
-        ordered_map_cfg = spec.ordered_map_format_config
-        open_str = ordered_map_cfg.ordered_map_open(data)
-        opening = f"{line_prefix}{open_str}"
-        closing = f"{close_prefix}{ordered_map_cfg.close}"
-    elif isinstance(data, dict):
-        dict_cfg = spec.dict_format_config
-
-        opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
-        closing = f"{close_prefix}{dict_cfg.close}"
-    elif isinstance(data, set):
-        sorted_set: list[Value] = sorted(
-            data,
-            key=lambda v: (type(v).__name__, repr(v)),
-        )
-        opening = f"{line_prefix}{spec.set_format_config.set_open(sorted_set)}"
-        closing = f"{close_prefix}{spec.set_format_config.close}"
-    else:
-        opening = f"{line_prefix}{spec.sequence_open(data)}"
-        closing = f"{close_prefix}{spec.sequence_format_config.close}"
+    match data:
+        case dict() if is_ordered_map:
+            ordered_map_cfg = spec.ordered_map_format_config
+            open_str = ordered_map_cfg.ordered_map_open(data)
+            opening = f"{line_prefix}{open_str}"
+            closing = f"{close_prefix}{ordered_map_cfg.close}"
+        case dict():
+            dict_cfg = spec.dict_format_config
+            opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
+            closing = f"{close_prefix}{dict_cfg.close}"
+        case set():
+            sorted_set: list[Value] = sorted(
+                data,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            set_cfg = spec.set_format_config
+            opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
+            closing = f"{close_prefix}{set_cfg.close}"
+        case _:
+            opening = f"{line_prefix}{spec.sequence_open(data)}"
+            closing = f"{close_prefix}{spec.sequence_format_config.close}"
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
@@ -679,20 +680,22 @@ def _apply_variable_wrapper(
     """Optionally wrap *result* in a variable declaration or
     assignment.
     """
-    if variable_form is None:
-        return result
-    if isinstance(variable_form, NewVariable):
-        return language.format_variable_declaration(
-            variable_form.name,
-            result,
-            data,
-            variable_form.modifiers,
-        )
-    return language.format_variable_assignment(
-        variable_form.name,
-        result,
-        data,
-    )
+    match variable_form:
+        case None:
+            return result
+        case NewVariable(name=name, modifiers=modifiers):
+            return language.format_variable_declaration(
+                name,
+                result,
+                data,
+                modifiers,
+            )
+        case _:
+            return language.format_variable_assignment(
+                variable_form.name,
+                result,
+                data,
+            )
 
 
 @dataclasses.dataclass(frozen=True)
