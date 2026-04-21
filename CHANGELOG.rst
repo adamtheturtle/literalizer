@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for Racket:
+  ``Racket.format_call_stub`` now generates
+  ``make-keyword-procedure`` stub definitions, and a new
+  ``PrefixCallStyle`` call-style variant handles S-expression call
+  assembly ``(func arg1 arg2)`` for Lisp-family languages.
 - The ``lint-julia`` CI job now executes Julia golden files instead
   of only parsing them, catching ``UndefVarError`` and other runtime
   errors.

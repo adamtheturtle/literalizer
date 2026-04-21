@@ -28,6 +28,7 @@ from literalizer._language import (
     ObjectCallStyle,
     PositionalCallStyle,
     PostfixCallStyle,
+    PrefixCallStyle,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -1046,6 +1047,13 @@ def _format_call_args(
             return f"({{ {named} }})"
         case PostfixCallStyle(arg_separator=sep):
             return sep.join(formatted)
+        case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
+            if kw_prefix:
+                return sep.join(
+                    f"{kw_prefix}{name}{sep}{val}"
+                    for name, val in zip(params, formatted, strict=True)
+                )
+            return sep.join(formatted)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -1085,6 +1093,20 @@ def _assemble_call(
             call_expr = f"{target_function}{args_str}"
             if call_transform is not None:
                 call_expr = call_transform(call_expr)
+        case PrefixCallStyle(arg_separator=sep):
+            inside = (
+                f"{target_function}{sep}{args_str}"
+                if args_str
+                else target_function
+            )
+            call_expr = f"({inside})"
+            if call_transform is not None:
+                sentinel = "\x00"
+                wrapped = call_transform(sentinel)
+                idx = wrapped.index(sentinel)
+                wrapper = wrapped[:idx].rstrip("(").strip()
+                if wrapper:
+                    call_expr = f"({wrapper}{sep}{call_expr})"
         case _ as unreachable:
             assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
