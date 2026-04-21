@@ -85,13 +85,28 @@ class PerElementNotListError(Exception):
     """
 
 
-class UnsupportedCallStyleError(Exception):
-    """Raised when a language does not support function call rendering."""
+class CallsNotSupportedByLanguageError(Exception):
+    """Raised when the target language itself has no function call
+    syntax (e.g. pure data/markup formats like YAML, TOML, JSON5, Norg).
+    """
 
     def __init__(self, *, language_name: str) -> None:
-        """Create an ``UnsupportedCallStyleError``."""
+        """Create a ``CallsNotSupportedByLanguageError``."""
+        super().__init__(f"{language_name} has no function call syntax")
+        self.language_name = language_name
+
+
+class CallsNotSupportedByToolError(Exception):
+    """Raised when literalizer has not yet implemented function call
+    rendering for the target language, even though the language itself
+    has function call syntax.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``CallsNotSupportedByToolError``."""
         super().__init__(
-            f"{language_name} does not support function call rendering"
+            f"literalizer does not support function call rendering "
+            f"for {language_name}"
         )
         self.language_name = language_name
 

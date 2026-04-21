@@ -534,6 +534,6 @@ class Groovy(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyle | None:
+    def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return cast("CallStyle", self.call_style.value)

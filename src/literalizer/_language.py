@@ -197,6 +197,22 @@ CallStyle = PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
 """Tagged union describing how a language passes call arguments."""
 
 
+class CallSupport(enum.Enum):
+    """Sentinel describing why a language does not have a
+    :class:`CallStyle` configured.
+    """
+
+    NOT_IN_LANGUAGE = "not_in_language"
+    """The target language has no function call syntax (e.g. pure
+    data/markup formats like YAML, TOML, JSON5, Norg).
+    """
+
+    NOT_IMPLEMENTED_BY_TOOL = "not_implemented_by_tool"
+    """The target language has function call syntax but literalizer
+    has not yet implemented call rendering for it.
+    """
+
+
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
@@ -896,12 +912,15 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def call_style_config(self) -> CallStyle | None:
+    def call_style_config(self) -> CallStyle | CallSupport:
         """Describes how this language passes arguments in function
         calls.
 
-        ``None`` for languages with an empty :attr:`CallStyles` enum.
-        See :data:`CallStyle` for the variant types.
+        Returns a :class:`CallStyle` variant for supported languages,
+        or a :class:`CallSupport` sentinel for languages with an empty
+        :attr:`CallStyles` enum (distinguishing whether the language
+        has no call syntax at all, or literalizer has not yet
+        implemented call rendering for it).
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

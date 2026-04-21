@@ -21,6 +21,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._language import (
+    CallSupport,
     KeywordCallStyle,
     Language,
     ObjectCallStyle,
@@ -30,8 +31,9 @@ from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
     PerElementNotListError,
-    UnsupportedCallStyleError,
 )
 
 
@@ -1022,10 +1024,6 @@ def _format_call_args(
     literals which may use ``"; "`` (F#) or other separators.
     """
     style = language.call_style_config
-    if style is None:
-        raise UnsupportedCallStyleError(
-            language_name=type(language).__name__,
-        )
     formatted = [
         _format_value(value=v, spec=language, dict_open_override=None)
         for v in values
@@ -1033,6 +1031,14 @@ def _format_call_args(
     sep = ", "
 
     match style:
+        case CallSupport.NOT_IN_LANGUAGE:
+            raise CallsNotSupportedByLanguageError(
+                language_name=type(language).__name__,
+            )
+        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+            raise CallsNotSupportedByToolError(
+                language_name=type(language).__name__,
+            )
         case PositionalCallStyle():
             inner = sep.join(formatted)
         case KeywordCallStyle(separator=kw_sep):
@@ -1144,10 +1150,17 @@ def literalize_call(
         result = "\n".join(lines)
     else:
         check_data(data=data, spec=language)
-        if language.call_style_config is None:
-            raise UnsupportedCallStyleError(
-                language_name=type(language).__name__,
-            )
+        match language.call_style_config:
+            case CallSupport.NOT_IN_LANGUAGE:
+                raise CallsNotSupportedByLanguageError(
+                    language_name=type(language).__name__,
+                )
+            case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+                raise CallsNotSupportedByToolError(
+                    language_name=type(language).__name__,
+                )
+            case _:
+                pass
         lit = _literalize(
             data=data,
             language=language,
