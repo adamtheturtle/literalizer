@@ -1485,50 +1485,80 @@ def _build_variant_cases() -> list[_VariantCase]:
 _FORMAT_VARIANT_CASES = _build_variant_cases()
 
 
+def _group_variant_cases_by_language() -> dict[
+    literalizer.LanguageCls,
+    list[_VariantCase],
+]:
+    """Return ``_FORMAT_VARIANT_CASES`` grouped by language class.
+
+    Parametrizing on language and looping over variants inside the test
+    body collapses thousands of parametrized cases into ~30, which slashes
+    collection + per-test overhead on slow filesystems (Windows CI).
+    """
+    groups: dict[literalizer.LanguageCls, list[_VariantCase]] = {}
+    for case in _FORMAT_VARIANT_CASES:
+        groups.setdefault(case.variant.lang_cls, []).append(case)
+    return groups
+
+
+_FORMAT_VARIANT_CASES_BY_LANG = _group_variant_cases_by_language()
+
+
+_VARIANT_LANGUAGES = [
+    cls for cls in _SORTED_LANGUAGES if cls in _FORMAT_VARIANT_CASES_BY_LANG
+]
+
+
 @pytest.mark.parametrize(
-    argnames="variant_case",
-    argvalues=_FORMAT_VARIANT_CASES,
-    ids=[c.variant_name for c in _FORMAT_VARIANT_CASES],
+    argnames="lang_cls",
+    argvalues=_VARIANT_LANGUAGES,
+    ids=_lang_cls_name,
 )
 def test_format_variant_golden_file(
-    variant_case: _VariantCase,
+    lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test format-variant options (dates, sequences, sets, type hints)
     against golden files.
     """
-    case_dir = cases_dir / variant_case.case_dir_name
-    variant = variant_case.variant
-    yaml_string = (case_dir / "input.yaml").read_text()
-    golden_path = case_dir / (
-        variant_case.variant_name + variant.spec.extension
-    )
-    try:
-        result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=variant.spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=variant_case.variable_form,
-            wrap_in_file=True,
-        )
-    except NullInCollectionError:
-        pytest.skip("Format rejects null elements in this input")
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip("Format cannot represent this heterogeneous input")
-    except IncompatibleFormatsError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip("Format combination cannot represent this input")
-    _check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=variant.spec.extension,
-        newline=None,
-        golden_path=golden_path,
-    )
+    for variant_case in _FORMAT_VARIANT_CASES_BY_LANG[lang_cls]:
+        with subtests.test(
+            variant_name=variant_case.variant_name,
+            case_dir_name=variant_case.case_dir_name,
+        ):
+            case_dir = cases_dir / variant_case.case_dir_name
+            variant = variant_case.variant
+            yaml_string = (case_dir / "input.yaml").read_text()
+            golden_path = case_dir / (
+                variant_case.variant_name + variant.spec.extension
+            )
+            try:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=variant.spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=variant_case.variable_form,
+                    wrap_in_file=True,
+                )
+            except NullInCollectionError:
+                pytest.skip("Format rejects null elements in this input")
+            except HeterogeneousCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent this heterogeneous input")
+            except IncompatibleFormatsError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format combination cannot represent this input")
+            _check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=variant.spec.extension,
+                newline=None,
+                golden_path=golden_path,
+            )
 
 
 @dataclasses.dataclass
