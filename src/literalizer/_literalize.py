@@ -170,6 +170,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     return result
 
 
+@beartype
 def _maybe_wrap_child(
     *,
     parent_id: int,
@@ -193,6 +194,7 @@ def _maybe_wrap_child(
     )
 
 
+@beartype
 def _compute_wrap_ids(*, data: Value, spec: Language) -> frozenset[int]:
     """Return container ids whose scalar children should be wrapped.
 
@@ -527,6 +529,7 @@ def _wrap_body(
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
+@beartype
 def _append_entries(
     *,
     formatted_entries: Sequence[str],
@@ -543,6 +546,7 @@ def _append_entries(
         lines.append(f"{body_prefix}{entry}{sep}")
 
 
+@beartype
 def _format_collection_lines(
     *,
     data: dict[str, Value] | set[Scalar] | list[Value],
