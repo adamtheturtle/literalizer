@@ -497,7 +497,7 @@ class Sml(metaclass=LanguageCls):
         return "structure Check = struct\n\n" + content + "\n\nend"
 
     @staticmethod
-    def wrap_combined_in_file(  # pragma: no cover
+    def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,

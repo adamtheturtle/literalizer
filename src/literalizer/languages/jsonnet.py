@@ -336,7 +336,7 @@ class Jsonnet(metaclass=LanguageCls):
         return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 
     @staticmethod
-    def wrap_combined_in_file(  # pragma: no cover
+    def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
