@@ -353,6 +353,7 @@ def _all_scalars_mixed_buckets(values: Sequence[Value]) -> bool:
     """
     buckets: set[type] = set()
     for v in values:
+        bucket: type
         match v:
             case bool():
                 bucket = bool
@@ -523,7 +524,7 @@ def _build_tagged_enum_behavior(
         if isinstance(raw_value, (list, dict, set)):
             return formatted
         variant, inner = _heterogeneous_variant_for_scalar(
-            raw_value,
+            value=raw_value,
             date_type=date_type,
             datetime_type=datetime_type,
         )
@@ -558,7 +559,7 @@ def _build_tagged_enum_preamble(
         seen: set[str] = set()
         for scalar in scalars:
             variant, inner = _heterogeneous_variant_for_scalar(
-                scalar,
+                value=scalar,
                 date_type=date_type,
                 datetime_type=datetime_type,
             )
@@ -1100,7 +1101,7 @@ class Rust(metaclass=LanguageCls):
         span more than one Rust type.
         """
 
-        ERROR = enum.member(value=_ERROR_STRATEGY)
+        ERROR = _ERROR_STRATEGY
         """Raise
         :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
         (or :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
@@ -1109,7 +1110,7 @@ class Rust(metaclass=LanguageCls):
         strict-typing convention.
         """
 
-        TAGGED_ENUM = enum.member(value=_TAGGED_ENUM_STRATEGY)
+        TAGGED_ENUM = _TAGGED_ENUM_STRATEGY
         """Auto-generate a tagged ``enum`` in the preamble containing
         only the variants actually present in the data, and wrap each
         heterogeneous scalar value with ``{EnumName}::{Variant}(value)``.

@@ -18,7 +18,7 @@ _TAGGED = Rust(
 
 def test_default_strategy_is_error() -> None:
     """Default Rust spec still raises on heterogeneous scalars."""
-    with pytest.raises(HeterogeneousScalarCollectionError):
+    with pytest.raises(expected_exception=HeterogeneousScalarCollectionError):
         literalize(
             source='{"a": 1, "b": "x"}',
             input_format=InputFormat.JSON,
@@ -77,7 +77,7 @@ def test_sibling_lists_still_error_without_opt_in() -> None:
     """Default Rust spec raises ``HeterogeneousSiblingListsError`` for
     sibling-list heterogeneity.
     """
-    with pytest.raises(HeterogeneousSiblingListsError):
+    with pytest.raises(expected_exception=HeterogeneousSiblingListsError):
         literalize(
             source='[[1, 2], ["a", "b"]]',
             input_format=InputFormat.JSON,
@@ -184,7 +184,7 @@ def test_nested_heterogeneous_dicts() -> None:
     with only the inner dicts' values wrapped.
     """
     source = textwrap.dedent(
-        """\
+        text="""\
         - type: create
           pr_id: pr_1
           draft: true
