@@ -36,6 +36,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     CallStyle,
+    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -448,7 +449,9 @@ class Matlab(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | None] = None
+    call_style_config: ClassVar[CallStyle | CallSupport] = (
+        CallSupport.NOT_IMPLEMENTED_BY_TOOL
+    )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

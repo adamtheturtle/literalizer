@@ -78,9 +78,6 @@ _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
 
 
-_INTEGER_TYPES = ("i32", "i64", "i128")
-
-
 def _rust_integer_type(value: int) -> str:
     """Return the narrowest Rust integer type for *value*."""
     if _I32_MIN <= value <= _I32_MAX:
@@ -132,9 +129,11 @@ def _unify_rust_types(types: Sequence[str]) -> str:
     Callers must pass a non-empty sequence.
     """
     unique = list(dict.fromkeys(types))
-    if len(unique) == 1:
-        return unique[0]
-    return max(unique, key=_INTEGER_TYPES.index)
+    match unique:
+        case [only]:
+            return only
+        case _:
+            return max(unique, key=("i32", "i64", "i128").index)
 
 
 @beartype
@@ -1097,6 +1096,6 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyle | None:
+    def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value

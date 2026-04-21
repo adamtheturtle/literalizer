@@ -22,6 +22,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._language import (
     CallStyle,
+    CallSupport,
     KeywordCallStyle,
     Language,
     ObjectCallStyle,
@@ -32,8 +33,9 @@ from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
     PerElementNotListError,
-    UnsupportedCallStyleError,
 )
 
 
@@ -1127,11 +1129,17 @@ def literalize_call(
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
-    style = language.call_style_config
-    if style is None:
-        raise UnsupportedCallStyleError(
-            language_name=type(language).__name__,
-        )
+    match language.call_style_config:
+        case CallSupport.NOT_IN_LANGUAGE:
+            raise CallsNotSupportedByLanguageError(
+                language_name=type(language).__name__,
+            )
+        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+            raise CallsNotSupportedByToolError(
+                language_name=type(language).__name__,
+            )
+        case _ as style:
+            pass
 
     if per_element:
         if not isinstance(data, list):

@@ -73,6 +73,51 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+def _php_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return PHP stub declarations for a call name."""
+    param_list = ", ".join(f"${p}" for p in params)
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"function {parts[0]}({param_list}) {{}}",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = root.capitalize() + "Type"
+        return (
+            f"class {cls} {{ function {method}({param_list}) {{}} }}",
+            f"${root} = new {cls}();",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type"
+    lines.append(
+        f"class {inner_cls} {{ function {method}({param_list}) {{}} }}",
+    )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type"
+        field = fields[i + 1]
+        lines.append(
+            f"class {cls} {{ public ${field}; "
+            f"function __construct() {{ "
+            f"$this->{field} = new {prev_cls}(); }} }}"
+        )
+        prev_cls = cls
+    root_cls = root.capitalize() + "Type"
+    lines.append(
+        f"class {root_cls} {{ public ${fields[0]}; "
+        f"function __construct() {{ "
+        f"$this->{fields[0]} = new {prev_cls}(); }} }}"
+    )
+    lines.append(f"${root} = new {root_cls}();")
+    return tuple(lines)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Php(metaclass=LanguageCls):
@@ -427,7 +472,7 @@ class Php(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _php_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -555,6 +600,6 @@ class Php(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyle | None:
+    def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return cast("CallStyle", self.call_style.value)

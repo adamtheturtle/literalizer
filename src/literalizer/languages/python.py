@@ -206,9 +206,11 @@ def _format_inline_type_hint_declaration(
 def _element_union(*, types: list[str]) -> str:
     """Remove duplicate *types* and join them into a union."""
     unique: list[str] = list(dict.fromkeys(types))
-    if len(unique) == 1:
-        return unique[0]
-    return " | ".join(unique)
+    match unique:
+        case [only]:
+            return only
+        case _:
+            return " | ".join(unique)
 
 
 @beartype
@@ -1084,6 +1086,6 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
-    def call_style_config(self) -> CallStyle | None:
+    def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return cast("CallStyle", self.call_style.value)

@@ -1392,7 +1392,7 @@ class Haskell(metaclass=LanguageCls):
         return self._preamble.compute_body_preamble
 
     @cached_property
-    def call_style_config(self) -> CallStyle | None:
+    def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
 
