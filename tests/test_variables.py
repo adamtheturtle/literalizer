@@ -373,28 +373,13 @@ RUST_LAZY_STATIC = Rust(
 )
 
 
-def test_rust_lazy_static_dict_hash_map() -> None:
-    """Rust LAZY_STATIC wraps a ``HashMap`` literal in ``LazyLock``."""
-    result = literalize(
-        source='{"a": "b"}',
-        input_format=InputFormat.JSON,
-        language=RUST_LAZY_STATIC,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="hierarchy"),
-    )
-    expected = (
-        "static hierarchy: LazyLock<HashMap<&str, &str>> = "
-        "LazyLock::new(|| HashMap::from([\n"
-        '    ("a", "b"),\n'
-        "]));"
-    )
-    assert result.code == expected
-    assert "use std::sync::LazyLock;" in result.preamble
-
-
 def test_rust_lazy_static_dict_btree_map() -> None:
-    """Rust LAZY_STATIC composes with ``BTREE_MAP`` for sorted maps."""
+    """Rust LAZY_STATIC composes with ``BTREE_MAP`` for sorted maps.
+
+    The ``dict_format`` x ``declaration_style`` cross-product is
+    not part of the integration-test variant matrix, so the
+    combination is exercised here.
+    """
     lang = Rust(
         date_format=Rust.date_formats.ISO,
         datetime_format=Rust.datetime_formats.ISO,
@@ -417,80 +402,6 @@ def test_rust_lazy_static_dict_btree_map() -> None:
         "]));"
     )
     assert result.code == expected
-
-
-def test_rust_lazy_static_vec() -> None:
-    """Rust LAZY_STATIC with the default ``VEC`` sequence format."""
-    result = literalize(
-        source="[1, 2, 3]",
-        input_format=InputFormat.JSON,
-        language=RUST_LAZY_STATIC,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="nums"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        static nums: LazyLock<Vec<i32>> = LazyLock::new(|| vec![
-            1,
-            2,
-            3,
-        ]);"""
-    )
-    assert result.code == expected
-
-
-def test_rust_lazy_static_set() -> None:
-    """Rust LAZY_STATIC with a set wraps ``HashSet`` in ``LazyLock``."""
-    result = literalize(
-        source="!!set\n? a\n? b\n",
-        input_format=InputFormat.YAML,
-        language=RUST_LAZY_STATIC,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="names"),
-    )
-    expected = (
-        "static names: LazyLock<HashSet<&str>> = "
-        "LazyLock::new(|| HashSet::from([\n"
-        '    "a",\n'
-        '    "b",\n'
-        "]));"
-    )
-    assert result.code == expected
-
-
-def test_rust_lazy_static_empty_dict() -> None:
-    """Rust LAZY_STATIC with an empty dict uses default key/value
-    types.
-    """
-    result = literalize(
-        source="{}",
-        input_format=InputFormat.JSON,
-        language=RUST_LAZY_STATIC,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="empty"),
-    )
-    assert result.code == (
-        "static empty: LazyLock<HashMap<String, String>> = "
-        "LazyLock::new(|| HashMap::<String, String>::from([]));"
-    )
-
-
-def test_rust_lazy_static_scalar() -> None:
-    """Rust LAZY_STATIC accepts scalar data too."""
-    result = literalize(
-        source='"hello"',
-        input_format=InputFormat.JSON,
-        language=RUST_LAZY_STATIC,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="greeting"),
-    )
-    assert result.code == (
-        'static greeting: LazyLock<&str> = LazyLock::new(|| "hello");'
-    )
 
 
 def test_rust_lazy_static_preamble_includes_lazy_lock() -> None:
