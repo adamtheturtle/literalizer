@@ -346,6 +346,30 @@ def _format_lazy_static_declaration(
 
 
 @beartype
+def _lazy_static_placeholder_formatter(
+    _name: str,
+    _value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Unreachable placeholder for ``LAZY_STATIC``'s config formatter.
+
+    ``LAZY_STATIC`` needs the inferred Rust type to render
+    ``LazyLock<T>``, which the template-based config formatter cannot
+    provide.  :meth:`DeclarationStyles.build_formatter` routes
+    ``LAZY_STATIC`` to :func:`_format_lazy_static_declaration`
+    instead; this function exists only so the enum value is distinct
+    from ``STATIC`` (``ruff`` ``PIE796``).
+    """
+    msg = (
+        "Rust LAZY_STATIC requires the type-aware formatter built by "
+        "build_formatter; the DeclarationStyleConfig formatter is a "
+        "placeholder and must not be called directly."
+    )
+    raise NotImplementedError(msg)
+
+
+@beartype
 def _format_date_rust(value: datetime.date) -> str:
     """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call."""
     return (
@@ -1029,9 +1053,7 @@ class Rust(metaclass=LanguageCls):
             supports_redefinition=False,
         )
         LAZY_STATIC = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="static {name} = LazyLock::new(|| {value});"
-            ),
+            formatter=_lazy_static_placeholder_formatter,
             supports_redefinition=False,
         )
 
