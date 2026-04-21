@@ -132,9 +132,11 @@ def _unify_rust_types(types: Sequence[str]) -> str:
     Callers must pass a non-empty sequence.
     """
     unique = list(dict.fromkeys(types))
-    if len(unique) == 1:
-        return unique[0]
-    return max(unique, key=_INTEGER_TYPES.index)
+    match unique:
+        case [only]:
+            return only
+        case _:
+            return max(unique, key=_INTEGER_TYPES.index)
 
 
 @beartype

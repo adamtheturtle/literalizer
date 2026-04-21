@@ -20,7 +20,7 @@ jobs:
   pre-commit:
     strategy:
       matrix:
-        python-version: ['3.13']
+        python-version: ['3.12', '3.13', '3.14']
         platform: [ubuntu-latest, windows-latest]
         hook-stage: [pre-commit, pre-push, manual]
 

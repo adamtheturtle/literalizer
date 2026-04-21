@@ -90,9 +90,11 @@ def _ts_call_stub(
 def _ts_element_union(*, types: list[str]) -> str:
     """Remove duplicate types and join into a TypeScript union."""
     unique: list[str] = list(dict.fromkeys(types))
-    if len(unique) == 1:
-        return unique[0]
-    return " | ".join(unique)
+    match unique:
+        case [only]:
+            return only
+        case _:
+            return " | ".join(unique)
 
 
 @beartype

@@ -7,6 +7,9 @@ Next
 - Added ``literalize_call`` support for PHP: ``Php.format_call_stub``
   now generates function, class, and nested-object stubs for a call
   expression.
+- Lint workflow now runs pre-commit hooks against the full supported
+  Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch
+  version-specific lint issues.
 
 2026.04.21.1
 ------------
