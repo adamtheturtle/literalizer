@@ -307,6 +307,15 @@ _SORTED_LANGUAGES: list[LanguageCls] = sorted(
 )
 
 
+_UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
+    cls
+    for cls in _SORTED_LANGUAGES
+    if not any(
+        style.value.supports_redefinition for style in cls.DeclarationStyles
+    )
+]
+
+
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
@@ -321,33 +330,6 @@ def test_pygments_name_is_valid(
         return
     # Raises ClassNotFound if the name is not a valid Pygments alias.
     find_lexer_class_by_name(_alias=language_cls.pygments_name)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
-)
-def test_wrap_in_file_methods_callable(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every language's wrap_in_file and wrap_combined_in_file are
-    callable.
-    """
-    wrapped = language_cls.wrap_in_file(
-        content="x = 1",
-        variable_name="x",
-        body_preamble=(),
-    )
-    assert isinstance(wrapped, str)
-    combined = language_cls.wrap_combined_in_file(
-        declaration="x = 1",
-        assignment="x = 2",
-        variable_name="x",
-        body_preamble=(),
-    )
-    assert isinstance(combined, str)
 
 
 @pytest.mark.parametrize(
@@ -453,6 +435,51 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
             input_format=InputFormat.JSON,
             language=Python(),
             variable_form=BothVariableForms(name="x"),
+        )
+
+
+def test_both_variable_forms_without_redefinition_support_raises() -> None:
+    """BothVariableForms raises when the declaration_style does not
+    support redefinition.
+    """
+    expected = (
+        "BothVariableForms requires a declaration_style that supports "
+        "redefinition; 'ASSIGN' does not."
+    )
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=rf"^{re.escape(pattern=expected)}$",
+    ):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Yaml(),
+            variable_form=BothVariableForms(name="x"),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
+    ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
+)
+def test_wrap_combined_in_file_unsupported_raises(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Check wrap_combined_in_file raises when redefinition is unsupported.
+
+    :func:`literalizer.literalize` rejects ``BothVariableForms`` for
+    these languages before reaching ``wrap_combined_in_file``, but the
+    method itself must still satisfy the :class:`Language` protocol.
+    """
+    with pytest.raises(expected_exception=NotImplementedError):
+        language_cls.wrap_combined_in_file(
+            declaration="x = 1",
+            assignment="x = 2",
+            variable_name="x",
+            body_preamble=(),
         )
 
 

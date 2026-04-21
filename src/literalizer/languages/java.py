@@ -60,6 +60,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -771,6 +772,18 @@ class Java(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     modifiers = _JavaModifiers
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
+        ModifierCombination(
+            name="public_static_final",
+            modifiers=frozenset(
+                {
+                    _JavaModifiers.PUBLIC,
+                    _JavaModifiers.STATIC,
+                    _JavaModifiers.FINAL,
+                },
+            ),
+        ),
+    )
     validate_spec_for_data = no_validate_spec_for_data
 
     class VariableTypeHints(enum.Enum):

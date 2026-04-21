@@ -378,12 +378,11 @@ class Odin(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Odin declaration + assignment in a main procedure."""
-        return Odin.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+        """Unsupported: literalize() rejects BothVariableForms
+        upstream.
+        """
+        del declaration, assignment, variable_name, body_preamble
+        raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

@@ -57,7 +57,6 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
-    wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
@@ -293,13 +292,11 @@ class Yaml(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+        """Unsupported: literalize() rejects BothVariableForms
+        upstream.
+        """
+        del declaration, assignment, variable_name, body_preamble
+        raise NotImplementedError
 
     date_format: DateFormats = DateFormats.YAML
     datetime_format: DatetimeFormats = DatetimeFormats.YAML

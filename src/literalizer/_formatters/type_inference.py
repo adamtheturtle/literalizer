@@ -1,6 +1,6 @@
 """Type inference for homogeneous collections."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict as _ordereddict
@@ -25,9 +25,13 @@ class DictType:
 
     ``value_type`` is the inferred common value type across all dicts
     in a sequence, or ``None`` when values are empty or mixed.
+    ``values`` is the flattened sequence of dict values used to infer
+    ``value_type``; callers can reuse it to derive a language-specific
+    type (e.g. ``std::variant``) without re-walking the source items.
     """
 
     value_type: "type | ListType | DictType | None"
+    values: "tuple[Value, ...]" = field(compare=False)
 
 
 class MixedNumeric:
@@ -69,7 +73,10 @@ def infer_element_type(
         the_type = next(iter(element_types))
         if the_type is dict:
             value_type = infer_element_type(items=all_dict_values)
-            return DictType(value_type=value_type)
+            return DictType(
+                value_type=value_type,
+                values=tuple(all_dict_values),
+            )
         return the_type
     if element_types == {int, float}:
         return MixedNumeric
