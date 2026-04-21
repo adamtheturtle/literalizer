@@ -624,21 +624,6 @@ def test_literalize_call_parameter_count_mismatch_prefix_style() -> None:
         )
 
 
-def test_literalize_call_per_element_false_prefix_style() -> None:
-    """Per-element=False with prefix style emits a single call wrapping
-    the whole literalized data without doubling the surrounding parens.
-    """
-    result = literalize_call(
-        source="[1]",
-        input_format=InputFormat.JSON,
-        language=Racket(),
-        target_function="process",
-        parameter_names=[],
-        per_element=False,
-    )
-    assert result.declaration_code == "(process (list\n    1\n))"
-
-
 def test_literalize_call_parameter_count_mismatch_later_row() -> None:
     """Literalize_call raises when a later per_element row has a
     different value count than parameter_names.
