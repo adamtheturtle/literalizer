@@ -708,12 +708,11 @@ class PureScript(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap PureScript declaration + assignment in a module."""
-        return PureScript.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+        """Unsupported: literalize() rejects BothVariableForms
+        upstream.
+        """
+        del declaration, assignment, variable_name, body_preamble
+        raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

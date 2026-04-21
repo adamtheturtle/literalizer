@@ -964,11 +964,19 @@ def literalize(
             (e.g. heterogeneous scalar types in a language that requires
             homogeneous collections).
         ValueError: If *variable_form* is :class:`BothVariableForms`
-            and *wrap_in_file* is ``False``.
+            and *wrap_in_file* is ``False``, or if the language's
+            ``declaration_style`` does not support redefinition.
     """
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
             msg = "BothVariableForms requires wrap_in_file=True"
+            raise ValueError(msg)
+        if not language.declaration_style.value.supports_redefinition:
+            msg = (
+                "BothVariableForms requires a declaration_style that "
+                "supports redefinition; "
+                f"{language.declaration_style.name!r} does not."
+            )
             raise ValueError(msg)
         return _literalize_both_forms(
             source=source,
