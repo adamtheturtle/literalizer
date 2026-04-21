@@ -35,6 +35,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    ParameterCountMismatchError,
     PerElementNotListError,
 )
 
@@ -1138,12 +1139,20 @@ def _format_call_args(
         case PositionalCallStyle():
             return f"({', '.join(formatted)})"
         case KeywordCallStyle(separator=kw_sep):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
             inner = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
             return f"({inner})"
         case ObjectCallStyle(separator=kw_sep):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
             named = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
