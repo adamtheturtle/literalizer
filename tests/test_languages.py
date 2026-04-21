@@ -4,6 +4,7 @@ import dataclasses
 import json
 import re
 import textwrap
+from functools import cached_property
 from typing import ClassVar
 
 import pytest
@@ -17,11 +18,17 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer._language import LanguageCls
+from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
+    HeterogeneousBehavior,
+    LanguageCls,
+)
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     NullInCollectionError,
+    ParameterCountMismatchError,
     PerElementNotListError,
 )
 from literalizer.languages import (
@@ -31,6 +38,7 @@ from literalizer.languages import (
     FSharp,
     Go,
     Java,
+    JavaScript,
     Matlab,
     Python,
     Yaml,
@@ -189,6 +197,56 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         ]""",
     )
     assert result.code == expected
+
+
+def _flag_top_dict(data: Value) -> frozenset[int]:
+    """Return a set containing *data*'s id.
+
+    The test input is always a top-level dict, so flagging it
+    guarantees :func:`~literalizer._literalize._maybe_wrap_child`
+    dispatches to the language's ``wrap_scalar``.
+    """
+    return frozenset({id(data)})
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _IdentityWrapPython(Python):
+    """Python subclass whose :attr:`heterogeneous_behavior` flags
+    every dict but reuses
+    :data:`~literalizer._language.NO_HETEROGENEOUS_BEHAVIOR`'s
+    identity ``wrap_scalar``.
+
+    Used to exercise the identity ``wrap_scalar`` path through a real
+    ``literalize`` call — a scenario no production language triggers.
+    """
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return an identity-wrap behavior that flags every dict."""
+        return dataclasses.replace(
+            NO_HETEROGENEOUS_BEHAVIOR,
+            compute_wrap_ids=_flag_top_dict,
+        )
+
+
+def test_identity_wrap_scalar_leaves_formatted_output_unchanged() -> None:
+    """A language that flags containers but keeps
+    :data:`~literalizer._language.NO_HETEROGENEOUS_BEHAVIOR`'s
+    identity ``wrap_scalar`` produces output identical to the same
+    language without any wrapping.
+    """
+    source = '{"a": 1, "b": "x"}'
+    base = literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=Python(),
+    )
+    wrapped = literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=_IdentityWrapPython(),
+    )
+    assert wrapped.code == base.code
 
 
 def test_java_yaml_dict_null_values_with_comments() -> None:
@@ -634,6 +692,70 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             per_element=True,
+        )
+
+
+def test_literalize_call_parameter_count_too_few_raises() -> None:
+    """Literalize_call raises when fewer parameter_names than values."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 1 parameters but got 2 values$",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["a"],
+        )
+
+
+def test_literalize_call_parameter_count_too_many_raises() -> None:
+    """Literalize_call raises when more parameter_names than values."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 3 parameters but got 2 values$",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["a", "b", "c"],
+        )
+
+
+def test_literalize_call_parameter_count_mismatch_object_style() -> None:
+    """Literalize_call raises ParameterCountMismatchError for object
+    call styles (e.g. JavaScript) too.
+    """
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 2 parameters but got 1 values$",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=JavaScript(),
+            target_function="process",
+            parameter_names=["a", "b"],
+        )
+
+
+def test_literalize_call_parameter_count_mismatch_later_row() -> None:
+    """Literalize_call raises when a later per_element row has a
+    different value count than parameter_names.
+    """
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 2 parameters but got 1 values$",
+    ):
+        literalize_call(
+            source="[[1, 2], [3]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["a", "b"],
         )
 
 

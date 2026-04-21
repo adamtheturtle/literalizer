@@ -10,9 +10,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -36,6 +34,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_percent,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -44,6 +43,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -121,7 +121,7 @@ class Wren(metaclass=LanguageCls):
         """Sequence type options for Wren."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -139,7 +139,7 @@ class Wren(metaclass=LanguageCls):
         """Set type options for Wren."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="{"),
+            set_open=fixed_open(open_str="{"),
             close="}",
             empty_set=None,
             preamble_lines=(),
@@ -279,6 +279,16 @@ class Wren(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -329,6 +339,9 @@ class Wren(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.NEWLINE
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -367,6 +380,11 @@ class Wren(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -416,7 +434,7 @@ class Wren(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="{"),
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=self._dict_entry,
             empty_dict=None,
@@ -468,7 +486,7 @@ class Wren(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="{"),
+            ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
         )

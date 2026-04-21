@@ -1,9 +1,7 @@
 """Convert data structures to native language literal syntax."""
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._language import (
     CallStyle,
@@ -57,9 +55,7 @@ __all__ = [
     "SetFormatConfig",
     "TrailingCommaConfig",
     "VariableForm",
-    "fixed_dict_open",
-    "fixed_sequence_open",
-    "fixed_set_open",
+    "fixed_open",
     "literalize",
     "literalize_call",
 ]

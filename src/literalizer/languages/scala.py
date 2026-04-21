@@ -13,9 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -47,6 +45,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -54,6 +53,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -270,7 +270,7 @@ class Scala(metaclass=LanguageCls):
         """Sequence type options for Scala."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="List("),
+            sequence_open=fixed_open(open_str="List("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -284,7 +284,7 @@ class Scala(metaclass=LanguageCls):
             declared_type=None,
         )
         SEQ = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="Seq("),
+            sequence_open=fixed_open(open_str="Seq("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -298,7 +298,7 @@ class Scala(metaclass=LanguageCls):
             declared_type=None,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="Array("),
+            sequence_open=fixed_open(open_str="Array("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -316,7 +316,7 @@ class Scala(metaclass=LanguageCls):
         """Set type options for Scala."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set("),
+            set_open=fixed_open(open_str="Set("),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -324,7 +324,7 @@ class Scala(metaclass=LanguageCls):
             supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="TreeSet("),
+            set_open=fixed_open(open_str="TreeSet("),
             close=")",
             empty_set=None,
             preamble_lines=("import scala.collection.immutable.TreeSet",),
@@ -494,6 +494,16 @@ class Scala(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -545,6 +555,9 @@ class Scala(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
     call_style: CallStyles = CallStyles.KEYWORD
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -585,6 +598,11 @@ class Scala(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -737,7 +755,7 @@ class Scala(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str="scala.collection.immutable.ListMap("
             ),
             close=")",

@@ -85,6 +85,20 @@ class PerElementNotListError(Exception):
     """
 
 
+class ParameterCountMismatchError(Exception):
+    """Raised when the number of ``parameter_names`` does not match the
+    number of argument values in a function-call row.
+    """
+
+    def __init__(self, *, expected: int, got: int) -> None:
+        """Create a ``ParameterCountMismatchError``."""
+        super().__init__(
+            f"Expected {expected} parameters but got {got} values"
+        )
+        self.expected = expected
+        self.got = got
+
+
 class CallsNotSupportedByLanguageError(Exception):
     """Raised when the target language itself has no function call
     syntax (e.g. pure data/markup formats like YAML, TOML, JSON5, Norg).

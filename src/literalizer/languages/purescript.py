@@ -12,9 +12,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -42,6 +40,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -50,6 +49,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -536,7 +536,7 @@ class PureScript(metaclass=LanguageCls):
         """Sequence type options for PureScript."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="PList ["),
+            sequence_open=fixed_open(open_str="PList ["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -554,7 +554,7 @@ class PureScript(metaclass=LanguageCls):
         """Set type options for PureScript."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="PSet ["),
+            set_open=fixed_open(open_str="PSet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -689,6 +689,16 @@ class PureScript(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -735,6 +745,9 @@ class PureScript(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "P"
@@ -772,6 +785,11 @@ class PureScript(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -817,7 +835,7 @@ class PureScript(metaclass=LanguageCls):
         """Sequence opener built from the configured constructor
         prefix.
         """
-        return fixed_sequence_open(
+        return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
 
@@ -839,7 +857,7 @@ class PureScript(metaclass=LanguageCls):
         """Configuration for the chosen set format."""
         return dataclasses.replace(
             self.set_format.value,
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Set [",
             ),
         )
@@ -853,7 +871,7 @@ class PureScript(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
             ),
             close="]",
@@ -944,7 +962,7 @@ class PureScript(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
             ),
             close="]",

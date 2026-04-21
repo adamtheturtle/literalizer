@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -36,6 +34,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -44,6 +43,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -274,7 +274,7 @@ class Fortran(metaclass=LanguageCls):
         """Sequence type options for Fortran."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="flist([fval_t :: "),
+            sequence_open=fixed_open(open_str="flist([fval_t :: "),
             close="])",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -292,7 +292,7 @@ class Fortran(metaclass=LanguageCls):
         """Set type options for Fortran."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="fset([fval_t :: "),
+            set_open=fixed_open(open_str="fset([fval_t :: "),
             close="])",
             empty_set=None,
             preamble_lines=(),
@@ -421,6 +421,16 @@ class Fortran(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -500,6 +510,9 @@ class Fortran(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
     null_name: str = "fnull"
     bool_name: str = "fbool"
@@ -537,6 +550,11 @@ class Fortran(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -588,7 +606,7 @@ class Fortran(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         fmt = self.sequence_format.value
         return SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(
+            sequence_open=fixed_open(
                 open_str=f"{self.list_name}([fval_t :: ",
             ),
             close="])",
@@ -612,7 +630,7 @@ class Fortran(metaclass=LanguageCls):
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return SetFormatConfig(
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.set_name}([fval_t :: ",
             ),
             close="])",
@@ -631,7 +649,7 @@ class Fortran(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str=f"{self.map_name}([fval_t :: ",
             ),
             close="])",
@@ -699,7 +717,7 @@ class Fortran(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"{self.map_name}([fval_t :: ",
             ),
             close="])",

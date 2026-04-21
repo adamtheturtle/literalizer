@@ -10,9 +10,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -34,6 +32,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -42,6 +41,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -110,7 +110,7 @@ class Racket(metaclass=LanguageCls):
         """Sequence type options for Racket."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="(list "),
+            sequence_open=fixed_open(open_str="(list "),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -128,7 +128,7 @@ class Racket(metaclass=LanguageCls):
         """Set type options for Racket."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="(set "),
+            set_open=fixed_open(open_str="(set "),
             close=")",
             empty_set="(set)",
             preamble_lines=(),
@@ -257,6 +257,16 @@ class Racket(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -307,6 +317,9 @@ class Racket(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "(void)"
@@ -357,6 +370,11 @@ class Racket(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
+
+    @cached_property
     def type_hint_collection_preamble_lines(
         self,
     ) -> Callable[[frozenset[type]], tuple[str, ...]]:
@@ -396,7 +414,7 @@ class Racket(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="(hash "),
+            dict_open=fixed_open(open_str="(hash "),
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" ",
@@ -441,7 +459,7 @@ class Racket(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="(hash "),
+            ordered_map_open=fixed_open(open_str="(hash "),
             close=")",
             preamble_lines=(),
         )

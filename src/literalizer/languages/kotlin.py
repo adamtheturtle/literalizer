@@ -15,8 +15,7 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
-    fixed_dict_open,
-    fixed_sequence_open,
+    fixed_open,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -57,6 +56,7 @@ from literalizer._formatters.type_inference import (
     ListType,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -64,6 +64,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -494,7 +495,7 @@ class Kotlin(metaclass=LanguageCls):
             declared_type=None,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
+            sequence_open=fixed_open(open_str="arrayOf<Any?>("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -747,6 +748,16 @@ class Kotlin(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -801,6 +812,9 @@ class Kotlin(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
     call_style: CallStyles = CallStyles.KEYWORD
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -841,6 +855,11 @@ class Kotlin(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return _kotlin_biginteger_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -988,7 +1007,7 @@ class Kotlin(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=(
                     f"linkedMapOf<{self.default_dict_key_type}"
                     f", {self.default_dict_value_type}>("

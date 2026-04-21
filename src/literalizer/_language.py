@@ -274,6 +274,52 @@ class StubReturn(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
+class HeterogeneousBehavior:
+    """Per-language hook describing how heterogeneous scalar
+    collections are rendered.
+
+    ``skip_scalar_checks`` tells :func:`~literalizer._checks.check_data`
+    to skip the four scalar-heterogeneity checks when the language has
+    opted into a wrapping strategy that handles mixed scalars at
+    render time.
+
+    ``compute_wrap_ids`` pre-walks the data once and returns the ids
+    of containers whose scalar children must be wrapped.
+
+    ``wrap_scalar`` wraps a formatted scalar value (e.g. Rust's
+    tagged-enum ``Value::Variant(…)``).  For non-scalar inputs the
+    implementation is expected to return *formatted* unchanged.
+
+    Languages that do not wrap expose
+    :data:`NO_HETEROGENEOUS_BEHAVIOR`.
+    """
+
+    skip_scalar_checks: bool
+    compute_wrap_ids: Callable[[Value], frozenset[int]]
+    wrap_scalar: Callable[[Value, str], str]
+
+
+def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
+    """Return an empty wrap-id set — used by non-wrapping languages."""
+    return frozenset()
+
+
+def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
+    """Return *formatted* unchanged — used by non-wrapping languages."""
+    return formatted
+
+
+NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
+    skip_scalar_checks=False,
+    compute_wrap_ids=_no_compute_wrap_ids,
+    wrap_scalar=_no_wrap_scalar,
+)
+"""Shared behavior for languages that do not wrap heterogeneous scalar
+values.
+"""
+
+
+@dataclasses.dataclass(frozen=True)
 class ModifierCombination:
     """A named combination of declaration modifiers for a language.
 
@@ -320,6 +366,7 @@ class LanguageCls(type):
     LineEndings: type[enum.Enum]
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
+    HeterogeneousStrategies: type[enum.Enum]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
     extension: str
     pygments_name: str | None
@@ -522,6 +569,18 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def heterogeneous_strategies(self) -> type[enum.Enum]:
+        """Enum class whose members list the heterogeneous-scalar
+        strategies this language supports.
+
+        Languages that only know how to raise on heterogeneous scalar
+        collections expose a single-member enum whose only option is
+        ``ERROR``.  Languages with richer strategies (e.g. Rust's
+        ``TAGGED_ENUM``) expose additional members.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     extension: str
     """The file extension for this language, including the leading dot."""
 
@@ -554,7 +613,7 @@ class Language(Protocol):
 
         Receives the list of items about to be formatted, so the delimiter
         can depend on the element types when needed.  For a fixed delimiter
-        use :func:`~literalizer.fixed_sequence_open`.
+        use :func:`~literalizer.fixed_open`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -836,6 +895,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def heterogeneous_strategy(self) -> enum.Enum:
+        """The heterogeneous-scalar strategy chosen for this language
+        instance.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def static_preamble(self) -> Sequence[str]:
         """Lines (imports, package declarations, etc.) that are always
         emitted before the generated code, regardless of what types
@@ -898,6 +964,19 @@ class Language(Protocol):
         Most languages use :func:`no_data_preamble` (returns ``()``);
         C++ uses this to conditionally emit its ``Any`` helper struct
         only when the data contains heterogeneous collections.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Describes how this language handles heterogeneous scalar
+        collections.
+
+        Languages that don't wrap heterogeneous values expose
+        :data:`NO_HETEROGENEOUS_BEHAVIOR`.  Languages that wrap them
+        (e.g. Rust's ``HeterogeneousStrategies.TAGGED_ENUM``) return a
+        :class:`HeterogeneousBehavior` whose ``wrap_scalar`` and
+        ``compute_wrap_ids`` implement the wrapping.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

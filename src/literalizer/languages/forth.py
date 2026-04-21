@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
@@ -21,6 +19,7 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_floats import format_float_scientific
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -29,6 +28,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     PostfixCallStyle,
@@ -229,7 +229,7 @@ class Forth(metaclass=LanguageCls):
         """Sequence type options."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str=""),
+            sequence_open=fixed_open(open_str=""),
             close="",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -247,7 +247,7 @@ class Forth(metaclass=LanguageCls):
         """Set type options."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str=""),
+            set_open=fixed_open(open_str=""),
             close="",
             empty_set=None,
             preamble_lines=(),
@@ -378,6 +378,16 @@ class Forth(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -428,6 +438,9 @@ class Forth(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.ESCAPED
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.NONE
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "0"
@@ -473,6 +486,11 @@ class Forth(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
+
+    @cached_property
     def type_hint_collection_preamble_lines(
         self,
     ) -> Callable[[frozenset[type]], tuple[str, ...]]:
@@ -512,7 +530,7 @@ class Forth(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str=""),
+            dict_open=fixed_open(open_str=""),
             close="",
             format_entry=_format_forth_dict_entry,
             empty_dict=None,
@@ -559,7 +577,7 @@ class Forth(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str=""),
+            ordered_map_open=fixed_open(open_str=""),
             close="",
             preamble_lines=(),
         )

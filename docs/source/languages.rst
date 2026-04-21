@@ -100,7 +100,7 @@ and attributes:
 
    import enum
 
-   from literalizer._formatters.collection_openers import fixed_sequence_open
+   from literalizer._formatters.collection_openers import fixed_open
    from literalizer._formatters.format_entries import passthrough_sequence_entry
    from literalizer._language import LanguageCls, SequenceFormatConfig
 
@@ -112,7 +112,7 @@ and attributes:
 
        class SequenceFormats(enum.Enum):
            LIST = SequenceFormatConfig(
-               sequence_open=fixed_sequence_open(open_str="["),
+               sequence_open=fixed_open(open_str="["),
                close="]",
                supports_heterogeneity=True,
                single_element_trailing_comma=False,

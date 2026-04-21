@@ -15,9 +15,7 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
     typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
@@ -52,6 +50,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -59,6 +58,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
@@ -572,7 +572,7 @@ class Java(metaclass=LanguageCls):
         """Sequence type options for Java."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="new Object[]{"),
+            sequence_open=fixed_open(open_str="new Object[]{"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -604,7 +604,7 @@ class Java(metaclass=LanguageCls):
         """Set type options for Java."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set.of("),
+            set_open=fixed_open(open_str="Set.of("),
             close=")",
             empty_set=None,
             preamble_lines=("import java.util.Set;",),
@@ -612,7 +612,7 @@ class Java(metaclass=LanguageCls):
             supports_heterogeneity=True,
         )
         TREE_SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new TreeSet<>(Set.of("),
+            set_open=fixed_open(open_str="new TreeSet<>(Set.of("),
             close="))",
             empty_set="new TreeSet<>()",
             preamble_lines=(
@@ -654,7 +654,7 @@ class Java(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP_OF_ENTRIES = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="Map.ofEntries("),
+            dict_open=fixed_open(open_str="Map.ofEntries("),
             close=")",
             format_entry=dict_entry_with_template(
                 template="Map.entry({key}, {value})",
@@ -665,7 +665,7 @@ class Java(metaclass=LanguageCls):
             narrowed_open=None,
         )
         HASH_MAP = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="new HashMap<>(Map.ofEntries("),
+            dict_open=fixed_open(open_str="new HashMap<>(Map.ofEntries("),
             close="))",
             format_entry=dict_entry_with_template(
                 template="Map.entry({key}, {value})",
@@ -772,6 +772,16 @@ class Java(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     modifiers = _JavaModifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
             name="public_static_final",
@@ -940,6 +950,9 @@ class Java(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
     call_style: CallStyles = CallStyles.POSITIONAL
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -980,6 +993,11 @@ class Java(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return _java_biginteger_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -1111,7 +1129,7 @@ class Java(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=(
                     "new java.util.ArrayList<>(java.util.Arrays.asList("
                 ),

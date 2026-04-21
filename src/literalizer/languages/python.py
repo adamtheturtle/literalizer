@@ -14,9 +14,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -49,6 +47,7 @@ from literalizer._formatters.format_strings import (
     format_string_raw_python,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -56,6 +55,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -582,7 +582,7 @@ class Python(metaclass=LanguageCls):
         """Sequence type options for Python."""
 
         TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
+            sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
@@ -596,7 +596,7 @@ class Python(metaclass=LanguageCls):
             declared_type=None,
         )
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -619,7 +619,7 @@ class Python(metaclass=LanguageCls):
         """Set type options for Python."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="{"),
+            set_open=fixed_open(open_str="{"),
             close="}",
             empty_set="set()",
             preamble_lines=(),
@@ -627,7 +627,7 @@ class Python(metaclass=LanguageCls):
             supports_heterogeneity=True,
         )
         FROZENSET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="frozenset({"),
+            set_open=fixed_open(open_str="frozenset({"),
             close="})",
             empty_set="frozenset()",
             preamble_lines=(),
@@ -843,6 +843,16 @@ class Python(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -898,6 +908,9 @@ class Python(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
     call_style: CallStyles = CallStyles.KEYWORD
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None"
@@ -935,6 +948,11 @@ class Python(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
@@ -969,7 +987,7 @@ class Python(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="{"),
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",
@@ -1026,7 +1044,7 @@ class Python(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="OrderedDict(["),
+            ordered_map_open=fixed_open(open_str="OrderedDict(["),
             close="])",
             preamble_lines=("from collections import OrderedDict",),
         )

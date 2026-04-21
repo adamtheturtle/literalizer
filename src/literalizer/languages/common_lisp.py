@@ -10,9 +10,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -33,6 +31,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_double_minimal
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -41,6 +40,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -119,7 +119,7 @@ class CommonLisp(metaclass=LanguageCls):
         """Sequence type options for Common Lisp."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="(list "),
+            sequence_open=fixed_open(open_str="(list "),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -137,7 +137,7 @@ class CommonLisp(metaclass=LanguageCls):
         """Set type options for Common Lisp."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="(list "),
+            set_open=fixed_open(open_str="(list "),
             close=")",
             empty_set="nil",
             preamble_lines=(),
@@ -270,6 +270,16 @@ class CommonLisp(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -320,6 +330,9 @@ class CommonLisp(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nil"
@@ -370,6 +383,11 @@ class CommonLisp(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
+
+    @cached_property
     def type_hint_collection_preamble_lines(
         self,
     ) -> Callable[[frozenset[type]], tuple[str, ...]]:
@@ -409,7 +427,7 @@ class CommonLisp(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="(list "),
+            dict_open=fixed_open(open_str="(list "),
             close=")",
             format_entry=_format_cons_entry,
             empty_dict="nil",
@@ -451,7 +469,7 @@ class CommonLisp(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="(list "),
+            ordered_map_open=fixed_open(open_str="(list "),
             close=")",
             preamble_lines=(),
         )

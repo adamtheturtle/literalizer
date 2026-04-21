@@ -4,6 +4,31 @@ Changelog
 Next
 ----
 
+- **Breaking:** Replaced the three public collection-opener helpers
+  ``fixed_set_open``, ``fixed_sequence_open``, and ``fixed_dict_open``
+  with a single ``fixed_open``.  They had identical implementations
+  and differed only in the type hint of the unused parameter.  Replace
+  each call with ``fixed_open(open_str=...)``.
+- ``literalize_call`` now raises ``ParameterCountMismatchError`` with
+  a descriptive ``Expected N parameters but got M values`` message
+  when ``parameter_names`` does not match a row's value count,
+  replacing the opaque ``ValueError`` from ``zip(strict=True)``.
+
+2026.04.21.3
+------------
+
+
+- Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option
+  that auto-generates a small tagged ``enum`` in the preamble whenever
+  a dict, list, or sibling-list pair contains scalar values of more
+  than one Rust type.  Each heterogeneous value is wrapped at the
+  call site as ``{EnumName}::{Variant}(value)``; only the variants
+  actually present in the data are emitted, with integer variants
+  using Rust's narrowest-width names (``I32``, ``I64``, ``I128``).
+  The enum name defaults to ``Value`` and is configurable via the new
+  ``heterogeneous_value_enum_name`` constructor argument.  The
+  default remains ``HeterogeneousStrategies.ERROR`` (unchanged
+  behavior).
 - The ``lint-julia`` CI job now executes Julia golden files instead
   of only parsing them, catching ``UndefVarError`` and other runtime
   errors.
