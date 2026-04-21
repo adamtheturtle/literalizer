@@ -8,7 +8,7 @@ import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -371,39 +371,114 @@ def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
             assert_never(unreachable)
 
 
+_SCALAR_BUCKETS: tuple[type, ...] = (
+    bool,
+    int,
+    float,
+    str,
+    bytes,
+    datetime.datetime,
+    datetime.date,
+)
+
+
+@beartype
+def _scalar_bucket(value: Value) -> type | None:
+    """Return the scalar-bucket type for *value*, or ``None`` for
+    non-scalars.
+
+    More specific subclasses (``bool`` before ``int``,
+    ``datetime.datetime`` before ``datetime.date``) are checked first.
+    ``None`` values return ``type(None)``.
+    """
+    if value is None:
+        return type(None)
+    for bucket in _SCALAR_BUCKETS:
+        if isinstance(value, bucket):
+            return bucket
+    return None
+
+
 @beartype
 def _all_scalars_mixed_buckets(values: Sequence[Value]) -> bool:
-    """Return ``True`` when *values* are all scalars spanning >1 type
-    bucket.
+    """Return ``True`` when *values* are all scalars spanning more than
+    one type bucket.
     """
     buckets: set[type] = set()
     for v in values:
-        bucket: type
-        match v:
-            case bool():
-                bucket = bool
-            case int():
-                bucket = int
-            case float():
-                bucket = float
-            case str():
-                bucket = str
-            case bytes():
-                bucket = bytes
-            case datetime.datetime():
-                bucket = datetime.datetime
-            case datetime.date():
-                bucket = datetime.date
-            case None:
-                bucket = type(None)
-            case _:
-                return False
+        bucket = _scalar_bucket(value=v)
+        if bucket is None:
+            return False
         buckets.add(bucket)
     return len(buckets) > 1
 
 
 @beartype
-def _collect_heterogeneous_container_ids(  # noqa: C901
+def _flag_if_siblings_mixed(
+    *,
+    siblings: Sequence[Value],
+    total: int,
+    combined: list[Value],
+    ids: set[int],
+) -> None:
+    """Flag every sibling in *siblings* when *combined* has mixed
+    scalar buckets.
+
+    *total* is the parent list's element count: when the sibling count
+    differs, the parent contains non-matching children and the rule
+    does not apply.
+    """
+    if len(siblings) != total or len(siblings) <= 1:
+        return
+    if not _all_scalars_mixed_buckets(values=combined):
+        return
+    for sibling in siblings:
+        ids.add(id(sibling))
+
+
+@beartype
+def _collect_from_dict(
+    data: dict[str, Value],
+    *,
+    ids: set[int],
+) -> None:
+    """Collect ids for a dict and its children."""
+    values: list[Value] = list(data.values())
+    if _all_scalars_mixed_buckets(values=values):
+        ids.add(id(data))
+    for v in values:
+        _collect_heterogeneous_container_ids(data=v, ids=ids)
+
+
+@beartype
+def _collect_from_list(
+    data: list[Value],
+    *,
+    ids: set[int],
+) -> None:
+    """Collect ids for a list, its sibling children, and descendants."""
+    if _all_scalars_mixed_buckets(values=data):
+        ids.add(id(data))
+    sublists: list[list[Value]] = [v for v in data if isinstance(v, list)]
+    _flag_if_siblings_mixed(
+        siblings=sublists,
+        total=len(data),
+        combined=[e for sublist in sublists for e in sublist],
+        ids=ids,
+    )
+    subdicts: list[dict[str, Value]] = [v for v in data if isinstance(v, dict)]
+    _flag_if_siblings_mixed(
+        siblings=subdicts,
+        total=len(data),
+        combined=[v for d in subdicts for v in d.values()],
+        ids=ids,
+    )
+    for v in data:
+        _collect_heterogeneous_container_ids(data=v, ids=ids)
+
+
+@beartype
+def _collect_heterogeneous_container_ids(
     data: Value,
     *,
     ids: set[int],
@@ -423,40 +498,9 @@ def _collect_heterogeneous_container_ids(  # noqa: C901
     """
     match data:
         case ordereddict() | dict():
-            values = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            if _all_scalars_mixed_buckets(values=values):
-                ids.add(id(data))
-            for v in values:
-                _collect_heterogeneous_container_ids(data=v, ids=ids)
+            _collect_from_dict(data=data, ids=ids)
         case list():
-            if _all_scalars_mixed_buckets(values=data):
-                ids.add(id(data))
-            sublists = [v for v in data if isinstance(v, list)]
-            if (
-                len(sublists) == len(data)
-                and len(sublists) > 1
-                and _all_scalars_mixed_buckets(
-                    values=[e for sublist in sublists for e in sublist],
-                )
-            ):
-                for sublist in sublists:
-                    ids.add(id(sublist))
-            subdicts: list[dict[str, Value]] = [
-                v for v in data if isinstance(v, dict)
-            ]
-            if (
-                len(subdicts) == len(data)
-                and len(subdicts) > 1
-                and _all_scalars_mixed_buckets(
-                    values=[v for d in subdicts for v in d.values()],
-                )
-            ):
-                for subdict in subdicts:
-                    ids.add(id(subdict))
-            for v in data:
-                _collect_heterogeneous_container_ids(data=v, ids=ids)
-        case set():
-            pass
+            _collect_from_list(data=data, ids=ids)
         case _:
             pass
 
@@ -475,7 +519,7 @@ def _iter_wrapped_scalars(
     out: list[Scalar] = []
 
     def _walk(value: Value) -> None:
-        """Recurse into *value*, collecting wrapped scalars."""
+        """Walk *value* and collect scalars that will be wrapped."""
         match value:
             case ordereddict() | dict():
                 parent_wrapped = id(value) in wrap_ids
@@ -496,8 +540,6 @@ def _iter_wrapped_scalars(
                     ):
                         out.append(v)
                     _walk(value=v)
-            case set():
-                pass
             case _:
                 pass
 
@@ -514,7 +556,7 @@ class _HeterogeneousStrategyConfig:
     Rust instance.  ``build_preamble`` produces the data-dependent
     preamble callable (e.g. the tagged-enum declaration lines).  Both
     receive the Rust instance's configurable enum name and scalar
-    type names so the resulting callables can close over them.
+    type names so the resulting functions can close over them.
     """
 
     build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
@@ -559,11 +601,14 @@ def _build_tagged_enum_behavior(
         return frozenset(ids)
 
     def _wrap(raw_value: Value, formatted: str) -> str:
-        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
-        if isinstance(raw_value, (list, dict, set)):
-            return formatted
+        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``.
+
+        :func:`~literalizer._literalize._maybe_wrap_child` filters
+        non-scalar values before dispatching, so *raw_value* is always
+        a scalar.
+        """
         signature = _heterogeneous_variant_for_scalar(
-            value=raw_value,
+            value=cast("Scalar", raw_value),
             date_type=date_type,
             datetime_type=datetime_type,
         )
@@ -606,8 +651,6 @@ def _build_tagged_enum_preamble(
                 continue
             seen.add(signature.name)
             variants.append(signature)
-        if not variants:
-            return ()
         lines: list[str] = [f"enum {enum_name} {{"]
         for variant in variants:
             body = (

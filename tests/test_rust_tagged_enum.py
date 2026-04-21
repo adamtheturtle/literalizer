@@ -97,8 +97,8 @@ def test_integer_variants_use_narrowest_width() -> None:
 
 
 def test_configurable_enum_name() -> None:
-    """The emitted enum's name comes from
-    ``heterogeneous_value_enum_name``.
+    """The emitted enum name comes from the
+    ``heterogeneous_value_enum_name`` constructor argument.
     """
     result = literalize(
         source='{"a": 1, "b": "x"}',
@@ -192,6 +192,140 @@ def test_float_variant() -> None:
         '        ("a", Value::F64(1.5)),\n'
         '        ("b", Value::Str("x")),\n'
         "    ])\n"
+        "}"
+    )
+    assert result.code == expected
+
+
+def test_date_variants() -> None:
+    """Mixing a date with other scalar types emits a ``Date`` variant
+    carrying the format's produced Rust type.
+    """
+    source = 'a: 2024-01-15\nb: "x"\n'
+    result = literalize(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=_TAGGED,
+        wrap_in_file=True,
+    )
+    expected = (
+        "use chrono::NaiveDate;\n"
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    Date(NaiveDate),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::Date('
+        "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap())),\n"
+        '        ("b", Value::Str("x")),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
+
+
+def test_datetime_variants() -> None:
+    """Mixing a datetime with other scalar types emits a ``DateTime``
+    variant carrying the format's produced Rust type.
+    """
+    source = 'a: 2024-01-15T12:30:00\nb: "x"\n'
+    result = literalize(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=_TAGGED,
+        wrap_in_file=True,
+    )
+    expected = (
+        "use chrono::NaiveDate;\n"
+        "use chrono::NaiveDateTime;\n"
+        "use chrono::NaiveTime;\n"
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    DateTime(NaiveDateTime),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::DateTime(NaiveDateTime::new('
+        "NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), "
+        "NaiveTime::from_hms_opt(12, 30, 0).unwrap()))),\n"
+        '        ("b", Value::Str("x")),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
+
+
+def test_bytes_variant() -> None:
+    """Mixing bytes with other scalar types emits a ``Bytes`` variant."""
+    source = "a: !!binary SGVsbG8=\nb: 1\n"
+    result = literalize(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=_TAGGED,
+        wrap_in_file=True,
+    )
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    Bytes(&'static str),\n"
+        "    I32(i32),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("a", Value::Bytes("48656c6c6f")),\n'
+        '        ("b", Value::I32(1)),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
+
+
+def test_nested_dict_with_flagged_inner_dict() -> None:
+    """An outer dict whose value is a flagged inner dict wraps only
+    the inner scalars; the outer dict is untouched.
+    """
+    result = literalize(
+        source='{"outer": {"a": 1, "b": "x"}}',
+        input_format=InputFormat.JSON,
+        language=_TAGGED,
+        wrap_in_file=True,
+    )
+    expected = (
+        "use std::collections::HashMap;\n"
+        "enum Value {\n"
+        "    I32(i32),\n"
+        "    Str(&'static str),\n"
+        "}\n"
+        "fn main() {\n"
+        "    HashMap::from([\n"
+        '        ("outer", HashMap::from(['
+        '("a", Value::I32(1)), ("b", Value::Str("x"))])),\n'
+        "    ])\n"
+        "}"
+    )
+    assert result.code == expected
+
+
+def test_homogeneous_sibling_lists_emit_no_enum() -> None:
+    """Sibling lists whose combined scalars are homogeneous are a
+    no-op under the tagged-enum strategy (no enum declared, no
+    wrapping).
+    """
+    result = literalize(
+        source="[[1, 2], [3, 4]]",
+        input_format=InputFormat.JSON,
+        language=_TAGGED,
+        wrap_in_file=True,
+    )
+    expected = (
+        "fn main() {\n"
+        "    vec![\n"
+        "        vec![1, 2],\n"
+        "        vec![3, 4],\n"
+        "    ]\n"
         "}"
     )
     assert result.code == expected
