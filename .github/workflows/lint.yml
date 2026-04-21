@@ -949,12 +949,14 @@ jobs:
       # actually touches ~320 MB of it.
       - name: Expand memory headroom for Mojo
         if: steps.find-files.outputs.found == 'true'
+        # The GitHub runner already ships a /swapfile mounted as swap, so
+        # add a second file at a fresh path instead of overwriting it.
         run: |-
           sudo sysctl -w vm.overcommit_memory=1
-          sudo fallocate -l 4G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          sudo fallocate -l 4G /mnt/extra-swapfile
+          sudo chmod 600 /mnt/extra-swapfile
+          sudo mkswap /mnt/extra-swapfile
+          sudo swapon /mnt/extra-swapfile
       # Even with the headroom above, Mojo occasionally still crashes
       # non-deterministically (tracked in  # 558). Retry each file a few
       # times so one crash does not block the rest.
