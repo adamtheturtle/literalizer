@@ -364,9 +364,13 @@ def _compute_dict_open_override(
         return None
 
     # Types differ: combine all values to infer the widened type.
+    # Use the unfiltered dicts so that ``None`` values contribute
+    # "unknown type" to the widening — otherwise a dict that filters
+    # to ``{}`` would narrow the widened type to the other dicts'
+    # concrete value type, losing the null slot's uncertainty.
     combined: dict[str, Value] = {}
     idx = 0
-    for d in filtered_dicts:
+    for d in dicts:
         for v in d.values():
             combined[f"_k{idx}"] = v
             idx += 1
