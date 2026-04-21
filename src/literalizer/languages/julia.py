@@ -11,9 +11,7 @@ from typing import ClassVar, cast
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -197,7 +195,7 @@ class Julia(metaclass=LanguageCls):
         """Sequence type options for Julia."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -211,7 +209,7 @@ class Julia(metaclass=LanguageCls):
             declared_type=None,
         )
         TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
+            sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
@@ -229,7 +227,7 @@ class Julia(metaclass=LanguageCls):
         """Set type options for Julia."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set(["),
+            set_open=fixed_open(open_str="Set(["),
             close="])",
             empty_set="Set()",
             preamble_lines=(),
@@ -268,7 +266,7 @@ class Julia(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DICT = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="Dict("),
+            dict_open=fixed_open(open_str="Dict("),
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" => ",
@@ -279,7 +277,7 @@ class Julia(metaclass=LanguageCls):
             narrowed_open=None,
         )
         ORDERED = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="OrderedDict("),
+            dict_open=fixed_open(open_str="OrderedDict("),
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" => ",
@@ -586,7 +584,7 @@ class Julia(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="["),
+            ordered_map_open=fixed_open(open_str="["),
             close="]",
             preamble_lines=(),
         )

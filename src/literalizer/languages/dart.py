@@ -13,8 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
-    fixed_dict_open,
-    fixed_sequence_open,
+    fixed_open,
     typed_collection_open,
     typed_dict_open,
 )
@@ -276,7 +275,7 @@ class Dart(metaclass=LanguageCls):
         """Sequence type options for Dart."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -290,7 +289,7 @@ class Dart(metaclass=LanguageCls):
             declared_type=None,
         )
         TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
+            sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
@@ -774,7 +773,7 @@ class Dart(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="{"),
+            ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
         )

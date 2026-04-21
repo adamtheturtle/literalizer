@@ -11,8 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
+    fixed_open,
     make_element_to_type,
     make_type_to_opener,
     typed_collection_open,
@@ -296,7 +295,7 @@ class Go(metaclass=LanguageCls):
         """Sequence type options for Go."""
 
         SLICE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="[]any{"),
+            sequence_open=fixed_open(open_str="[]any{"),
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -740,7 +739,7 @@ class Go(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"[][2]{self.default_ordered_map_value_type}{{"
             ),
             close="}",

@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -274,7 +272,7 @@ class Fortran(metaclass=LanguageCls):
         """Sequence type options for Fortran."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="flist([fval_t :: "),
+            sequence_open=fixed_open(open_str="flist([fval_t :: "),
             close="])",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -292,7 +290,7 @@ class Fortran(metaclass=LanguageCls):
         """Set type options for Fortran."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="fset([fval_t :: "),
+            set_open=fixed_open(open_str="fset([fval_t :: "),
             close="])",
             empty_set=None,
             preamble_lines=(),
@@ -588,7 +586,7 @@ class Fortran(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         fmt = self.sequence_format.value
         return SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(
+            sequence_open=fixed_open(
                 open_str=f"{self.list_name}([fval_t :: ",
             ),
             close="])",
@@ -612,7 +610,7 @@ class Fortran(metaclass=LanguageCls):
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return SetFormatConfig(
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.set_name}([fval_t :: ",
             ),
             close="])",
@@ -631,7 +629,7 @@ class Fortran(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str=f"{self.map_name}([fval_t :: ",
             ),
             close="])",
@@ -699,7 +697,7 @@ class Fortran(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"{self.map_name}([fval_t :: ",
             ),
             close="])",

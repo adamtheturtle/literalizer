@@ -15,8 +15,7 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
-    fixed_dict_open,
-    fixed_sequence_open,
+    fixed_open,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -494,7 +493,7 @@ class Kotlin(metaclass=LanguageCls):
             declared_type=None,
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="arrayOf<Any?>("),
+            sequence_open=fixed_open(open_str="arrayOf<Any?>("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -988,7 +987,7 @@ class Kotlin(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=(
                     f"linkedMapOf<{self.default_dict_key_type}"
                     f", {self.default_dict_value_type}>("

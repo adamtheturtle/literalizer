@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- **Breaking:** Replaced the three public collection-opener helpers
+  ``fixed_set_open``, ``fixed_sequence_open``, and ``fixed_dict_open``
+  with a single ``fixed_open``.  They had identical implementations
+  and differed only in the type hint of the unused parameter.  Replace
+  each call with ``fixed_open(open_str=...)``.
 - The ``lint-julia`` CI job now executes Julia golden files instead
   of only parsing them, catching ``UndefVarError`` and other runtime
   errors.

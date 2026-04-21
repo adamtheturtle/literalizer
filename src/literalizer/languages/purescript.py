@@ -12,9 +12,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -536,7 +534,7 @@ class PureScript(metaclass=LanguageCls):
         """Sequence type options for PureScript."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="PList ["),
+            sequence_open=fixed_open(open_str="PList ["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -554,7 +552,7 @@ class PureScript(metaclass=LanguageCls):
         """Set type options for PureScript."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="PSet ["),
+            set_open=fixed_open(open_str="PSet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -817,7 +815,7 @@ class PureScript(metaclass=LanguageCls):
         """Sequence opener built from the configured constructor
         prefix.
         """
-        return fixed_sequence_open(
+        return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
 
@@ -839,7 +837,7 @@ class PureScript(metaclass=LanguageCls):
         """Configuration for the chosen set format."""
         return dataclasses.replace(
             self.set_format.value,
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Set [",
             ),
         )
@@ -853,7 +851,7 @@ class PureScript(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
             ),
             close="]",
@@ -944,7 +942,7 @@ class PureScript(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
             ),
             close="]",

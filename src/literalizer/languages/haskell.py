@@ -13,9 +13,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -609,7 +607,7 @@ def _build_sequence_setup(
     """Build sequence format config, customizing the opener for LIST."""
     fmt: SequenceFormatConfig = sequence_format.value
     if sequence_format.name == "LIST":
-        seq_open = fixed_sequence_open(
+        seq_open = fixed_open(
             open_str=f"{constructor_prefix}List [",
         )
         return _SequenceSetup(
@@ -903,7 +901,7 @@ class Haskell(metaclass=LanguageCls):
         """Sequence type options for Haskell."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="HList ["),
+            sequence_open=fixed_open(open_str="HList ["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -917,7 +915,7 @@ class Haskell(metaclass=LanguageCls):
             declared_type="Val",
         )
         TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="("),
+            sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -935,7 +933,7 @@ class Haskell(metaclass=LanguageCls):
         """Set type options for Haskell."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="HSet ["),
+            set_open=fixed_open(open_str="HSet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -1219,7 +1217,7 @@ class Haskell(metaclass=LanguageCls):
         """Configuration for the chosen set format."""
         return dataclasses.replace(
             self.set_format.value,
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Set [",
             ),
         )
@@ -1248,7 +1246,7 @@ class Haskell(metaclass=LanguageCls):
         """Configuration for dict formatting."""
         map_open = f"{self.constructor_prefix}Map ["
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str=map_open),
+            dict_open=fixed_open(open_str=map_open),
             close="]",
             format_entry=self._string_fmts.format_dict_entry,
             empty_dict=None,
@@ -1261,7 +1259,7 @@ class Haskell(metaclass=LanguageCls):
         """Configuration for ordered-map formatting."""
         map_open = f"{self.constructor_prefix}Map ["
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str=map_open),
+            ordered_map_open=fixed_open(open_str=map_open),
             close="]",
             preamble_lines=(),
         )

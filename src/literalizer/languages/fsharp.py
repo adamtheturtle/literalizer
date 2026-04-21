@@ -12,9 +12,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -295,7 +293,7 @@ class FSharp(metaclass=LanguageCls):
         """Sequence type options for F#."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="FList ["),
+            sequence_open=fixed_open(open_str="FList ["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -309,7 +307,7 @@ class FSharp(metaclass=LanguageCls):
             declared_type="Val",
         )
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="[|"),
+            sequence_open=fixed_open(open_str="[|"),
             close="|]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -327,7 +325,7 @@ class FSharp(metaclass=LanguageCls):
         """Set type options for F#."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="FSet ["),
+            set_open=fixed_open(open_str="FSet ["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -610,7 +608,7 @@ class FSharp(metaclass=LanguageCls):
             return fmt
         return dataclasses.replace(
             fmt,
-            sequence_open=fixed_sequence_open(
+            sequence_open=fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
             ),
         )
@@ -625,7 +623,7 @@ class FSharp(metaclass=LanguageCls):
         """Configuration for the chosen set format."""
         return dataclasses.replace(
             self.set_format.value,
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Set [",
             ),
         )
@@ -634,7 +632,7 @@ class FSharp(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Map [",
             ),
             close="]",
@@ -700,7 +698,7 @@ class FSharp(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Map [",
             ),
             close="]",

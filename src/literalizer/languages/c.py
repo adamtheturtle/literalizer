@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -161,7 +159,7 @@ class C(metaclass=LanguageCls):
         """Sequence type options for C."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(
+            sequence_open=fixed_open(
                 open_str="((CVal){.a = (CVal[]){",
             ),
             close="}})",
@@ -181,7 +179,7 @@ class C(metaclass=LanguageCls):
         """Set type options for C."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="((CVal){.a = (CVal[]){"),
+            set_open=fixed_open(open_str="((CVal){.a = (CVal[]){"),
             close="}})",
             empty_set=None,
             preamble_lines=(),
@@ -463,7 +461,7 @@ class C(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         fmt = self.sequence_format.value
         return SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str=self._seq_open_str),
+            sequence_open=fixed_open(open_str=self._seq_open_str),
             close="}})",
             supports_heterogeneity=fmt.supports_heterogeneity,
             single_element_trailing_comma=(fmt.single_element_trailing_comma),
@@ -485,7 +483,7 @@ class C(metaclass=LanguageCls):
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return SetFormatConfig(
-            set_open=fixed_set_open(open_str=self._seq_open_str),
+            set_open=fixed_open(open_str=self._seq_open_str),
             close="}})",
             empty_set=self.set_format.value.empty_set,
             preamble_lines=self.set_format.value.preamble_lines,
@@ -502,7 +500,7 @@ class C(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str=self._map_open_str),
+            dict_open=fixed_open(open_str=self._map_open_str),
             close="}})",
             format_entry=braced_dict_entry(
                 format_value=self._format_entry,
@@ -570,7 +568,7 @@ class C(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str=self._map_open_str),
+            ordered_map_open=fixed_open(open_str=self._map_open_str),
             close="}})",
             preamble_lines=(),
         )

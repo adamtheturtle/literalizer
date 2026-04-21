@@ -10,9 +10,7 @@ from typing import ClassVar, cast
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
@@ -209,7 +207,7 @@ class R(metaclass=LanguageCls):
         """Sequence type options for R."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="list("),
+            sequence_open=fixed_open(open_str="list("),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -227,7 +225,7 @@ class R(metaclass=LanguageCls):
         """Set type options for R."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="list("),
+            set_open=fixed_open(open_str="list("),
             close=")",
             empty_set=None,
             preamble_lines=(),
@@ -490,7 +488,7 @@ class R(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="list("),
+            dict_open=fixed_open(open_str="list("),
             close=")",
             format_entry=self.empty_dict_key,
             empty_dict=None,
@@ -537,7 +535,7 @@ class R(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="list("),
+            ordered_map_open=fixed_open(open_str="list("),
             close=")",
             preamble_lines=(),
         )

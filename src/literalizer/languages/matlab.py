@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -222,7 +220,7 @@ class Matlab(metaclass=LanguageCls):
         """Sequence type options for MATLAB."""
 
         CELL_ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="{"),
+            sequence_open=fixed_open(open_str="{"),
             close="}",
             empty_sequence="{}",
             supports_heterogeneity=True,
@@ -240,7 +238,7 @@ class Matlab(metaclass=LanguageCls):
         """Set type options for MATLAB."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="{"),
+            set_open=fixed_open(open_str="{"),
             close="}",
             empty_set="{}",
             preamble_lines=(),
@@ -279,7 +277,7 @@ class Matlab(metaclass=LanguageCls):
         """Dict/map format options."""
 
         STRUCT = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="struct("),
+            dict_open=fixed_open(open_str="struct("),
             close=")",
             format_entry=_format_matlab_dict_entry,
             empty_dict="struct()",
@@ -559,7 +557,7 @@ class Matlab(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="struct("),
+            ordered_map_open=fixed_open(open_str="struct("),
             close=")",
             preamble_lines=(),
         )

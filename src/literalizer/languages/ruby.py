@@ -11,9 +11,7 @@ from typing import ClassVar, cast
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -196,7 +194,7 @@ class Ruby(metaclass=LanguageCls):
         """Sequence type options for Ruby."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -214,7 +212,7 @@ class Ruby(metaclass=LanguageCls):
         """Set type options for Ruby."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="Set.new(["),
+            set_open=fixed_open(open_str="Set.new(["),
             close="])",
             empty_set="Set.new",
             preamble_lines=("require 'set'",),
@@ -519,7 +517,7 @@ class Ruby(metaclass=LanguageCls):
         """Configuration for dict formatting."""
         (format_entry,) = self.dict_entry_style.value
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="{"),
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=format_entry,
             empty_dict=None,
@@ -573,7 +571,7 @@ class Ruby(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="{"),
+            ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
         )

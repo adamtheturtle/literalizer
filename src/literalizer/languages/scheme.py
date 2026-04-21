@@ -10,9 +10,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -110,7 +108,7 @@ class Scheme(metaclass=LanguageCls):
         """Sequence type options for Scheme."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="(list "),
+            sequence_open=fixed_open(open_str="(list "),
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -128,7 +126,7 @@ class Scheme(metaclass=LanguageCls):
         """Set type options for Scheme."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="(list "),
+            set_open=fixed_open(open_str="(list "),
             close=")",
             empty_set="(list)",
             preamble_lines=(),
@@ -396,7 +394,7 @@ class Scheme(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="(list "),
+            dict_open=fixed_open(open_str="(list "),
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" ",
@@ -441,7 +439,7 @@ class Scheme(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="(list "),
+            ordered_map_open=fixed_open(open_str="(list "),
             close=")",
             preamble_lines=(),
         )

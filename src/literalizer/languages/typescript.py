@@ -14,9 +14,7 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
@@ -272,7 +270,7 @@ class TypeScript(metaclass=LanguageCls):
         """Sequence type options for TypeScript."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -286,7 +284,7 @@ class TypeScript(metaclass=LanguageCls):
             declared_type=None,
         )
         TUPLE = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="] as const",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -304,7 +302,7 @@ class TypeScript(metaclass=LanguageCls):
         """Set type options for TypeScript."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new Set(["),
+            set_open=fixed_open(open_str="new Set(["),
             close="])",
             empty_set="new Set()",
             preamble_lines=(),
@@ -382,7 +380,7 @@ class TypeScript(metaclass=LanguageCls):
         """Dict/map format options."""
 
         OBJECT = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="{"),
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",
@@ -393,7 +391,7 @@ class TypeScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
         MAP = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="new Map<string, unknown>(["),
+            dict_open=fixed_open(open_str="new Map<string, unknown>(["),
             close="])",
             format_entry=dict_entry_with_template(
                 template="[{key}, {value}]",
@@ -724,7 +722,7 @@ class TypeScript(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="{"),
+            ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
         )
