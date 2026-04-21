@@ -568,6 +568,18 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def heterogeneous_strategies(self) -> type[enum.Enum]:
+        """Enum class whose members list the heterogeneous-scalar
+        strategies this language supports.
+
+        Languages that only know how to raise on heterogeneous scalar
+        collections expose a single-member enum whose only option is
+        ``ERROR``.  Languages with richer strategies (e.g. Rust's
+        ``TAGGED_ENUM``) expose additional members.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     extension: str
     """The file extension for this language, including the leading dot."""
 
@@ -879,6 +891,13 @@ class Language(Protocol):
     @property
     def line_ending(self) -> enum.Enum:
         """The line ending option chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def heterogeneous_strategy(self) -> enum.Enum:
+        """The heterogeneous-scalar strategy chosen for this language
+        instance.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
