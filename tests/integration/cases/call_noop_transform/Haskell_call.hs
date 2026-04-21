@@ -11,7 +11,7 @@ instance Num Val where
 process _ = return ()
 main :: IO ()
 main = do
-    (process(HStr "hello"))
-    (process(42))
-    (process(HBool True))
+    process(HStr "hello")
+    process(42)
+    process(HBool True)
     pure ()

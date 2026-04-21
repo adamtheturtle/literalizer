@@ -6,6 +6,6 @@ type Val =
     | FStr of string
     | FList of Val list
 let process (_value: obj) : obj = null
-(process("hello"))
-(process(42))
-(process(FBool true))
+process("hello")
+process(42)
+process(FBool true)
