@@ -14,6 +14,16 @@ Next
   ``heterogeneous_value_union_name`` constructor argument.  The
   default remains ``HeterogeneousStrategies.ERROR`` (unchanged
   behavior).
+- Added ``literalize_call`` support for Common Lisp:
+  ``CommonLisp.format_call_stub`` emits ``defun`` stubs with
+  ``&rest args`` so generated definitions accept any mix of positional
+  and keyword arguments, and ``CommonLisp.CallStyles.PREFIX_KEYWORD``
+  renders calls as ``(func :name value)``.
+- Added ``literalize_call`` support for Racket:
+  ``Racket.format_call_stub`` now generates
+  ``make-keyword-procedure`` stub definitions, and a new
+  ``PrefixCallStyle`` call-style variant handles S-expression call
+  assembly ``(func arg1 arg2)`` for Lisp-family languages.
 
 2026.04.21.4
 ------------

@@ -28,6 +28,7 @@ from literalizer._language import (
     ObjectCallStyle,
     PositionalCallStyle,
     PostfixCallStyle,
+    PrefixCallStyle,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -1181,8 +1182,37 @@ def _format_call_args(
             return f"({{ {named} }})"
         case PostfixCallStyle(arg_separator=sep):
             return sep.join(formatted)
+        case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
+            return sep.join(
+                f"{kw_prefix}{name}{sep}{val}"
+                for name, val in zip(params, formatted, strict=True)
+            )
         case _ as unreachable:
             assert_never(unreachable)
+
+
+@beartype
+def _extract_call_transform_wrapper(
+    *,
+    call_transform: Callable[[str], str],
+) -> str:
+    """Extract the wrapper word from a Python-style *call_transform*.
+
+    Used by call styles that build the call expression by adding the
+    wrapper before or after the inner call rather than substituting
+    it into the transform's parenthesized template.  Probes
+    *call_transform* with a sentinel and returns the prefix preceding
+    the sentinel, stripped of the trailing ``(`` and any whitespace
+    (e.g. ``lambda c: f"emit({c})"`` yields ``"emit"``).
+    """
+    sentinel = "\x00"
+    wrapped = call_transform(sentinel)
+    idx = wrapped.index(sentinel)
+    return wrapped[:idx].rstrip("(").strip()
 
 
 @beartype
@@ -1210,16 +1240,28 @@ def _assemble_call(
                 else target_function
             )
             if call_transform is not None:
-                sentinel = "\x00"
-                wrapped = call_transform(sentinel)
-                idx = wrapped.index(sentinel)
-                wrapper = wrapped[:idx].rstrip("(").strip()
+                wrapper = _extract_call_transform_wrapper(
+                    call_transform=call_transform,
+                )
                 if wrapper:
                     call_expr = f"{call_expr} {wrapper}"
         case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
             call_expr = f"{target_function}{args_str}"
             if call_transform is not None:
                 call_expr = call_transform(call_expr)
+        case PrefixCallStyle(arg_separator=sep):
+            inside = (
+                f"{target_function}{sep}{args_str}"
+                if args_str
+                else target_function
+            )
+            call_expr = f"({inside})"
+            if call_transform is not None:
+                wrapper = _extract_call_transform_wrapper(
+                    call_transform=call_transform,
+                )
+                if wrapper:
+                    call_expr = f"({wrapper}{sep}{call_expr})"
         case _ as unreachable:
             assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"

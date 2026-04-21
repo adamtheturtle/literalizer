@@ -1,0 +1,6 @@
+(defun app (&rest args) (declare (ignore args)) nil)
+(defun app.client (&rest args) (declare (ignore args)) nil)
+(defun app.client.fetch (&rest args) (declare (ignore args)) nil)
+(app.client.fetch :payload "hello")
+(app.client.fetch :payload 42)
+(app.client.fetch :payload t)

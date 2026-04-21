@@ -41,6 +41,7 @@ from literalizer.languages import (
     JavaScript,
     Matlab,
     Python,
+    Racket,
     Yaml,
 )
 
@@ -737,6 +738,23 @@ def test_literalize_call_parameter_count_mismatch_object_style() -> None:
             source="[[1]]",
             input_format=InputFormat.JSON,
             language=JavaScript(),
+            target_function="process",
+            parameter_names=["a", "b"],
+        )
+
+
+def test_literalize_call_parameter_count_mismatch_prefix_style() -> None:
+    """Literalize_call raises ParameterCountMismatchError for prefix
+    (S-expression) call styles like Racket.
+    """
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 2 parameters but got 1 values$",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Racket(),
             target_function="process",
             parameter_names=["a", "b"],
         )
