@@ -209,9 +209,7 @@ def _rust_type_annotation(
     """
 
     def recurse(element: Value) -> str:
-        """Recurse into nested ``Value`` data, preserving
-        configuration.
-        """
+        """Delegate to module-level implementation."""
         return _rust_type_annotation(
             data=element,
             date_type=date_type,
