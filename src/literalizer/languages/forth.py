@@ -31,6 +31,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     LanguageCls,
     OrderedMapFormatConfig,
+    PostfixCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -153,6 +154,25 @@ def _format_forth_dict_entry(
     Example: ``s\" name" s\" Alice"``.
     """
     return f"{key} {formatted_value}"
+
+
+def _forth_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Forth stub word definitions for a call name.
+
+    For dotted names like ``throttler.check``, stubs are generated for
+    each prefix so that the root and intermediate names are defined.
+    """
+    parts = name.split(sep=".")
+    stubs: list[str] = []
+    for i in range(len(parts)):
+        word = ".".join(parts[: i + 1])
+        stubs.append(f": {word} ;")
+    return tuple(stubs)
 
 
 @beartype
@@ -350,6 +370,8 @@ class Forth(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Forth call style options."""
 
+        POSTFIX = PostfixCallStyle(arg_separator=" ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -422,7 +444,7 @@ class Forth(metaclass=LanguageCls):
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
     call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
+        CallStyles.POSTFIX.value
     )
 
     @cached_property
@@ -462,7 +484,7 @@ class Forth(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _forth_call_stub
 
     @cached_property
     def format_call_preamble_stub(
