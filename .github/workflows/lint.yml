@@ -940,10 +940,24 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: |-
           pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
-      # The Mojo runtime has a known bug where it randomly crashes
-      # with "mojo: error: execution crashed" (see #558).
-      # This is not caused by our code. Retry each file individually
-      # so that a crash on one file does not block the rest.
+      # Mojo reserves ~3.6 GB of virtual address space per invocation
+      # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
+      # kernel's default overcommit heuristic refuses the allocation and
+      # Mojo crashes in libKGENCompilerRTShared.so before producing any
+      # output. Allow overcommit and add a 4 GB swap file so the kernel
+      # has enough headroom to accept the reservation — Mojo only
+      # actually touches ~320 MB of it.
+      - name: Expand memory headroom for Mojo
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          sudo sysctl -w vm.overcommit_memory=1
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+      # Even with the headroom above, Mojo occasionally still crashes
+      # non-deterministically (tracked in  # 558). Retry each file a few
+      # times so one crash does not block the rest.
       - name: Check Mojo syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
