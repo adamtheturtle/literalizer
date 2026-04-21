@@ -4,7 +4,9 @@ Changelog
 Next
 ----
 
-
+- The ``lint-julia`` CI job now executes Julia golden files instead
+  of only parsing them, catching ``UndefVarError`` and other runtime
+  errors.
 - ``literalize_call`` now distinguishes two reasons a language has no
   call support.  The single ``UnsupportedCallStyleError`` has been
   replaced by ``CallsNotSupportedByLanguageError`` (raised for

@@ -681,7 +681,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
     ),
     _CallCaseConfig(
-        case_dir_name="call_noop_transform",
+        case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],
         call_transform=lambda c: c,
