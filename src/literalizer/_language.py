@@ -205,8 +205,30 @@ class PostfixCallStyle:
     arg_separator: str
 
 
+@dataclasses.dataclass(frozen=True)
+class PrefixCallStyle:
+    """S-expression-style calls: ``(func value1 value2)``.
+
+    Used by Lisp-family languages (Racket, Scheme, Common Lisp,
+    Clojure) where the function and its arguments are wrapped
+    together in one pair of parentheses.  *arg_separator* is the
+    string between arguments (typically a single space).
+
+    Arguments are emitted as
+    ``{keyword_prefix}{name}{arg_separator}{value}`` pairs (e.g.
+    Racket's ``#:user_id "u"``).
+    """
+
+    arg_separator: str
+    keyword_prefix: str
+
+
 CallStyle = (
-    PositionalCallStyle | KeywordCallStyle | ObjectCallStyle | PostfixCallStyle
+    PositionalCallStyle
+    | KeywordCallStyle
+    | ObjectCallStyle
+    | PostfixCallStyle
+    | PrefixCallStyle
 )
 """Tagged union describing how a language passes call arguments."""
 
