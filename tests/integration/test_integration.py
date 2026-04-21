@@ -35,15 +35,145 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
+    Crystal,
     CSharp,
+    Dart,
     Elm,
     Fortran,
     FSharp,
     Gleam,
+    Go,
     Haskell,
+    Kotlin,
+    Mojo,
     OCaml,
+    Odin,
     PureScript,
+    Python,
+    Rust,
+    Swift,
+    VisualBasic,
 )
+
+# ---------------------------------------------------------------------------
+# Test-only data keyed by language class.
+#
+# Keeping the language-specific test values here — keyed by the language
+# class itself, not by ``__name__`` — lets the parameterized tests below
+# iterate uniformly over ``ALL_LANGUAGES`` without any
+# ``if lang_cls.__name__ == "..."`` branches.  Genuine language facts
+# live on the language class; only arbitrary test fixtures (alternative
+# type names, fictional constructor prefixes, chosen field names, etc.)
+# belong in this block.
+# ---------------------------------------------------------------------------
+
+# Alternative type names passed to the various ``default_*_type`` kwargs.
+# Each value must differ from the language's own default *and* be a valid
+# type name for that language's linter / compiler.  ``"String"`` is used
+# as the fallback for any supported language not listed explicitly.
+_DEFAULT_TYPE_OVERRIDE_FALLBACK = "String"
+
+_DEFAULT_SET_ELEMENT_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
+    Crystal: "Int32",
+    Go: "string",
+    CSharp: "string",
+    Mojo: "Int",
+    Odin: "int",
+    Python: "int",
+    Rust: "i32",
+}
+
+_DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES: dict[
+    literalizer.LanguageCls, str
+] = {
+    Go: "interface{}",
+    CSharp: "string",
+    Mojo: "Int",
+    Python: "int",
+}
+
+_DEFAULT_DICT_VALUE_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
+    Crystal: "Int32",
+    Go: "interface{}",
+    CSharp: "object?",
+    Dart: "Object?",
+    Kotlin: "Comparable<*>?",
+    Mojo: "Int",
+    Python: "int",
+    Rust: "i32",
+}
+
+_DEFAULT_DICT_KEY_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
+    Crystal: "Int32",
+    Go: "any",
+    CSharp: "object",
+    Dart: "Object",
+    Kotlin: "Any",
+    Python: "int",
+    Rust: "&str",
+    Swift: "AnyHashable",
+    VisualBasic: "Object",
+}
+
+_DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES: dict[
+    literalizer.LanguageCls, str
+] = {Go: "interface{}"}
+
+# Languages that expose ``type_name`` / ``constructor_prefix`` kwargs for
+# the ADT they emit; the value is the test override to apply.
+_TYPE_NAME_OVERRIDES: dict[literalizer.LanguageCls, str] = {
+    Elm: "JsonVal",
+    FSharp: "JsonVal",
+    Gleam: "JsonVal",
+    Haskell: "JsonVal",
+    OCaml: "json_t",
+    PureScript: "JsonVal",
+}
+
+_CONSTRUCTOR_PREFIX_OVERRIDES: dict[literalizer.LanguageCls, str] = {
+    Elm: "J",
+    FSharp: "J",
+    Gleam: "J",
+    Haskell: "J",
+    OCaml: "J",
+    PureScript: "J",
+}
+
+# Languages that accept constructor-name kwargs (Fortran) or field-name
+# kwargs (C); the inner dict is the kwargs to pass to the constructor.
+_CONSTRUCTOR_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
+    Fortran: {
+        "null_name": "jnull",
+        "bool_name": "jbool",
+        "int_name": "jint",
+        "real_name": "jreal",
+        "str_name": "jstr",
+        "list_name": "jlist",
+        "map_name": "jmap",
+        "set_name": "jset",
+        "entry_name": "jentry",
+    },
+}
+
+_FIELD_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
+    C: {
+        "bool_field": "bl",
+        "int_field": "integer",
+        "float_field": "fp",
+        "string_field": "str",
+        "array_field": "arr",
+        "map_field": "dict",
+        "key_field": "key",
+        "value_field": "val",
+    },
+}
+
+# Declaration-style → alternative-sequence-format overrides, by enum name.
+# Rust CONST and STATIC raise ``IncompatibleFormatsError`` with the default
+# ``Vec`` sequence format, so the test falls back to ``Array``.
+_DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES: dict[
+    literalizer.LanguageCls, dict[str, str]
+] = {Rust: {"CONST": "ARRAY", "STATIC": "ARRAY"}}
 
 
 @pytest.fixture(name="cases_dir")
@@ -251,35 +381,19 @@ def _build_non_default_variants(
 
 @beartype
 def _build_default_set_element_type_variants() -> Iterable[_Variant]:
-    """Build default-set-type variants for languages that support it.
-
-    For each language that advertises ``supports_default_set_element_type``,
-    create a variant with a non-default value.
-    """
-    # The test value must differ from the language's own default *and* be
-    # a valid type name for that language's linter / compiler.
-    type_overrides: dict[str, str] = {
-        "Crystal": "Int32",
-        "Go": "string",
-        "CSharp": "string",
-        "Mojo": "Int",
-        "Odin": "int",
-        "Python": "int",
-        "Rust": "i32",
-    }
+    """Build default-set-type variants for languages that support it."""
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
-        lang_name = lang_cls.__name__
         if not lang_cls.supports_default_set_element_type:
             continue
-        string_type = type_overrides.get(lang_name, "String")
-        spec = lang_cls(
-            default_set_element_type=string_type,
+        type_name = _DEFAULT_SET_ELEMENT_TYPE_OVERRIDES.get(
+            lang_cls,
+            _DEFAULT_TYPE_OVERRIDE_FALLBACK,
         )
         variants.append(
             _Variant(
-                name=f"{lang_name}_default_set_element_type_string",
-                spec=spec,
+                name=f"{lang_cls.__name__}_default_set_element_type_string",
+                spec=lang_cls(default_set_element_type=type_name),
                 lang_cls=lang_cls,
             )
         )
@@ -288,30 +402,23 @@ def _build_default_set_element_type_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
-    """Build default-sequence-type variants for languages that support it.
-
-    For each language that advertises
-    ``supports_default_sequence_element_type``, create a variant with a
-    non-default value.
+    """Build default-sequence-type variants for languages that support
+    it.
     """
-    type_overrides: dict[str, str] = {
-        "Go": "interface{}",
-        "CSharp": "string",
-        "Mojo": "Int",
-        "Python": "int",
-    }
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
-        lang_name = lang_cls.__name__
         if not lang_cls.supports_default_sequence_element_type:
             continue
-        string_type = type_overrides.get(lang_name, "String")
+        type_name = _DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES.get(
+            lang_cls,
+            _DEFAULT_TYPE_OVERRIDE_FALLBACK,
+        )
         variants.append(
             _Variant(
-                name=f"{lang_name}_default_sequence_element_type_string",
-                spec=lang_cls(
-                    default_sequence_element_type=string_type,
+                name=(
+                    f"{lang_cls.__name__}_default_sequence_element_type_string"
                 ),
+                spec=lang_cls(default_sequence_element_type=type_name),
                 lang_cls=lang_cls,
             )
         )
@@ -320,31 +427,21 @@ def _build_default_sequence_element_type_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
-    """Build default-dict-type variants for languages that support it.
-
-    For each language that advertises ``supports_default_dict_value_type``,
-    create a variant with a non-default value.
+    """Build default-dict-value-type variants for languages that support
+    it.
     """
-    type_overrides: dict[str, str] = {
-        "Crystal": "Int32",
-        "Go": "interface{}",
-        "CSharp": "object?",
-        "Dart": "Object?",
-        "Kotlin": "Comparable<*>?",
-        "Mojo": "Int",
-        "Python": "int",
-        "Rust": "i32",
-    }
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
-        lang_name = lang_cls.__name__
         if not lang_cls.supports_default_dict_value_type:
             continue
-        string_type = type_overrides.get(lang_name, "String")
+        type_name = _DEFAULT_DICT_VALUE_TYPE_OVERRIDES.get(
+            lang_cls,
+            _DEFAULT_TYPE_OVERRIDE_FALLBACK,
+        )
         variants.append(
             _Variant(
-                name=f"{lang_name}_default_dict_value_type_string",
-                spec=lang_cls(default_dict_value_type=string_type),
+                name=f"{lang_cls.__name__}_default_dict_value_type_string",
+                spec=lang_cls(default_dict_value_type=type_name),
                 lang_cls=lang_cls,
             )
         )
@@ -353,32 +450,21 @@ def _build_default_dict_value_type_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
-    """Build default-dict-key-type variants for languages that support it.
-
-    For each language that advertises ``supports_default_dict_key_type``,
-    create a variant with a non-default key type.
+    """Build default-dict-key-type variants for languages that support
+    it.
     """
-    type_overrides: dict[str, str] = {
-        "Crystal": "Int32",
-        "Go": "any",
-        "CSharp": "object",
-        "Dart": "Object",
-        "Kotlin": "Any",
-        "Python": "int",
-        "Rust": "&str",
-        "Swift": "AnyHashable",
-        "VisualBasic": "Object",
-    }
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
-        lang_name = lang_cls.__name__
         if not lang_cls.supports_default_dict_key_type:
             continue
-        key_type = type_overrides.get(lang_name, "String")
+        type_name = _DEFAULT_DICT_KEY_TYPE_OVERRIDES.get(
+            lang_cls,
+            _DEFAULT_TYPE_OVERRIDE_FALLBACK,
+        )
         variants.append(
             _Variant(
-                name=f"{lang_name}_default_dict_key_type",
-                spec=lang_cls(default_dict_key_type=key_type),
+                name=f"{lang_cls.__name__}_default_dict_key_type",
+                spec=lang_cls(default_dict_key_type=type_name),
                 lang_cls=lang_cls,
             )
         )
@@ -387,28 +473,21 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
-    """Build default-ordered-map-value-type variants for languages that
-    support it.
-
-    For each language that advertises
-    ``supports_default_ordered_map_value_type``, create a variant with a
-    non-default value type.
+    """Build default-ordered-map-value-type variants for every language
+    that supports the option.
     """
-    type_overrides: dict[str, str] = {
-        "Go": "interface{}",
-    }
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
-        lang_name = lang_cls.__name__
         if not lang_cls.supports_default_ordered_map_value_type:
             continue
-        value_type = type_overrides.get(lang_name, "String")
+        type_name = _DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES.get(
+            lang_cls,
+            _DEFAULT_TYPE_OVERRIDE_FALLBACK,
+        )
         variants.append(
             _Variant(
-                name=f"{lang_name}_default_ordered_map_value_type",
-                spec=lang_cls(
-                    default_ordered_map_value_type=value_type,
-                ),
+                name=f"{lang_cls.__name__}_default_ordered_map_value_type",
+                spec=lang_cls(default_ordered_map_value_type=type_name),
                 lang_cls=lang_cls,
             )
         )
@@ -862,30 +941,22 @@ def test_golden_file_combined_variable_forms(
 
 @beartype
 def _build_constructor_name_variants() -> Iterable[_Variant]:
-    """Build constructor-name variants for Fortran.
-
-    Fortran emits constructor function calls (e.g. ``fnull``) in its
-    output.  The constructor name parameters let users customize those
-    names.
+    """Build constructor-name variants for languages listed in
+    :data:`_CONSTRUCTOR_NAME_OVERRIDES` (e.g. Fortran).
     """
-    lang_cls = Fortran
-    return [
-        _Variant(
-            name="Fortran_constructor_names_j",
-            spec=lang_cls(
-                null_name="jnull",
-                bool_name="jbool",
-                int_name="jint",
-                real_name="jreal",
-                str_name="jstr",
-                list_name="jlist",
-                map_name="jmap",
-                set_name="jset",
-                entry_name="jentry",
-            ),
-            lang_cls=lang_cls,
-        ),
-    ]
+    variants: list[_Variant] = []
+    for lang_cls in _sorted_languages():
+        kwargs = _CONSTRUCTOR_NAME_OVERRIDES.get(lang_cls)
+        if kwargs is None:
+            continue
+        variants.append(
+            _Variant(
+                name=f"{lang_cls.__name__}_constructor_names_j",
+                spec=lang_cls(**kwargs),
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
 
 
 @beartype
@@ -896,20 +967,14 @@ def _build_type_name_variants() -> Iterable[_Variant]:
     preamble (e.g. ``data Val = …`` in Haskell).  The ``type_name``
     constructor parameter lets users customize that name.
     """
-    custom_names: dict[literalizer.LanguageCls, str] = {
-        Elm: "JsonVal",
-        FSharp: "JsonVal",
-        Gleam: "JsonVal",
-        Haskell: "JsonVal",
-        OCaml: "json_t",
-        PureScript: "JsonVal",
-    }
     variants: list[_Variant] = []
-    for lang_cls, custom_name in custom_names.items():
-        lang_name = lang_cls.__name__
+    for lang_cls in _sorted_languages():
+        custom_name = _TYPE_NAME_OVERRIDES.get(lang_cls)
+        if custom_name is None:
+            continue
         variants.append(
             _Variant(
-                name=f"{lang_name}_type_name_{custom_name}",
+                name=f"{lang_cls.__name__}_type_name_{custom_name}",
                 spec=lang_cls(type_name=custom_name),
                 lang_cls=lang_cls,
             )
@@ -919,29 +984,18 @@ def _build_type_name_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_constructor_prefix_variants() -> Iterable[_Variant]:
-    """Build constructor-prefix variants for languages with custom ADTs.
-
-    These languages use a single-letter prefix for constructors
-    (e.g. ``ENull``, ``HBool``).  The ``constructor_prefix`` parameter
-    lets users customize that prefix.
+    """Build constructor-prefix variants for languages with custom
+    ADTs.
     """
-    custom_prefixes: dict[literalizer.LanguageCls, str] = {
-        Elm: "J",
-        FSharp: "J",
-        Gleam: "J",
-        Haskell: "J",
-        OCaml: "J",
-        PureScript: "J",
-    }
     variants: list[_Variant] = []
-    for lang_cls, custom_prefix in custom_prefixes.items():
-        lang_name = lang_cls.__name__
+    for lang_cls in _sorted_languages():
+        custom_prefix = _CONSTRUCTOR_PREFIX_OVERRIDES.get(lang_cls)
+        if custom_prefix is None:
+            continue
         variants.append(
             _Variant(
-                name=f"{lang_name}_prefix_{custom_prefix}",
-                spec=lang_cls(
-                    constructor_prefix=custom_prefix,
-                ),
+                name=f"{lang_cls.__name__}_prefix_{custom_prefix}",
+                spec=lang_cls(constructor_prefix=custom_prefix),
                 lang_cls=lang_cls,
             )
         )
@@ -950,28 +1004,22 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_c_field_name_variants() -> Iterable[_Variant]:
-    """Build field-name variants for the C language.
-
-    The C generator uses single-letter union field names by default.
-    The field name parameters let users customize those names.
+    """Build field-name variants for languages listed in
+    :data:`_FIELD_NAME_OVERRIDES` (e.g. C).
     """
-    lang_cls = C
-    return [
-        _Variant(
-            name="C_field_names_custom",
-            spec=lang_cls(
-                bool_field="bl",
-                int_field="integer",
-                float_field="fp",
-                string_field="str",
-                array_field="arr",
-                map_field="dict",
-                key_field="key",
-                value_field="val",
-            ),
-            lang_cls=lang_cls,
-        ),
-    ]
+    variants: list[_Variant] = []
+    for lang_cls in _sorted_languages():
+        kwargs = _FIELD_NAME_OVERRIDES.get(lang_cls)
+        if kwargs is None:
+            continue
+        variants.append(
+            _Variant(
+                name=f"{lang_cls.__name__}_field_names_custom",
+                spec=lang_cls(**kwargs),
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
 
 
 @beartype
@@ -1246,28 +1294,24 @@ def _build_variant_cases() -> list[_VariantCase]:
         cls: literalizer.LanguageCls,
         fmt: enum.Enum,
     ) -> literalizer.Language:
-        """Build spec, using ARRAY for Rust const/static styles.
+        """Build a spec for *fmt*, applying any per-language sequence-
+        format
+        override listed in
+        :data:`_DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES`.
 
-        Rust CONST and STATIC raise ``IncompatibleFormatsError``
-        with the default sequence format.  Use ARRAY so the golden
-        files produce valid Rust that the compiler accepts.
+        Some declaration styles are incompatible with the default sequence
+        format (e.g. Rust CONST/STATIC raise ``IncompatibleFormatsError``
+        when combined with ``VEC``).
         """
-        result: literalizer.Language
-        if cls.__name__ == "Rust" and fmt.name in {
-            "CONST",
-            "STATIC",
-        }:
-            spec = cls()
-            array_fmt = next(
-                f for f in spec.sequence_formats if f.name == "ARRAY"
-            )
-            result = cls(
-                declaration_style=fmt,
-                sequence_format=array_fmt,
-            )
-        else:
-            result = cls(declaration_style=fmt)
-        return result
+        overrides = _DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(cls, {})
+        seq_format_name = overrides.get(fmt.name)
+        if seq_format_name is None:
+            return cls(declaration_style=fmt)
+        spec = cls()
+        seq_fmt = next(
+            f for f in spec.sequence_formats if f.name == seq_format_name
+        )
+        return cls(declaration_style=fmt, sequence_format=seq_fmt)
 
     declaration_style = nv(
         category="declaration_style",
