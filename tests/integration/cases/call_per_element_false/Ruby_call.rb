@@ -1,2 +1,2 @@
 def process(*a); end
-process(1)
+process(data: 1)

@@ -1,3 +1,3 @@
 <?php
 function process($data) {}
-process(1);
+process(data: 1);

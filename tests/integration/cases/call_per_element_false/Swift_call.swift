@@ -1,2 +1,2 @@
 func process(data: Any = 0) -> Any { 0 }
-process(1);
+process(data: 1);

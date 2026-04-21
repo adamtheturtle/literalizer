@@ -1,4 +1,4 @@
 local process(data) = null;
 [
-    process(1),
+    process(data=1),
 ]

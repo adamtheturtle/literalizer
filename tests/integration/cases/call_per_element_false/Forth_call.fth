@@ -1,2 +1,2 @@
 : process ;
-(1) process
+1 process

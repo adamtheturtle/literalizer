@@ -1,3 +1,3 @@
 declare const process: any;
-process(1);
+process({ data: 1 });
 export {};

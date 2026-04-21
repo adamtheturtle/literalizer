@@ -1327,13 +1327,14 @@ def literalize_call(
         result = "\n".join(lines)
     else:
         check_data(data=data, spec=language)
-        lit = _literalize(
-            data=data,
+        call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
+        args_str = _format_call_args(
+            values=[data],
+            params=parameter_names,
             language=language,
-            line_prefix="",
-            include_delimiters=True,
+            wrap_ids=call_wrap_ids,
+            style=style,
         )
-        args_str = lit if isinstance(style, PrefixCallStyle) else f"({lit})"
         result = _assemble_call(
             target_function=target_function,
             args_str=args_str,
