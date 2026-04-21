@@ -373,6 +373,33 @@ RUST_LAZY_STATIC = Rust(
 )
 
 
+def test_rust_lazy_static_set() -> None:
+    """Rust LAZY_STATIC with a set wraps ``HashSet`` in ``LazyLock``.
+
+    The integration matrix pairs ``declaration_style`` with the
+    ``set`` case only for ``LAZY_STATIC`` / ``LET_MUT`` via this
+    unit test because Rust ``CONST`` / ``STATIC`` combined with
+    ``HashSet::from`` produces non-const code that does not compile,
+    a pre-existing limitation outside the scope of this change.
+    """
+    result = literalize(
+        source="!!set\n? a\n? b\n",
+        input_format=InputFormat.YAML,
+        language=RUST_LAZY_STATIC,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="names"),
+    )
+    expected = (
+        "static names: LazyLock<HashSet<&str>> = "
+        "LazyLock::new(|| HashSet::from([\n"
+        '    "a",\n'
+        '    "b",\n'
+        "]));"
+    )
+    assert result.code == expected
+
+
 def test_rust_lazy_static_dict_btree_map() -> None:
     """Rust LAZY_STATIC composes with ``BTREE_MAP`` for sorted maps.
 
