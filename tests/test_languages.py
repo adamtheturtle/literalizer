@@ -472,7 +472,7 @@ def test_wrap_combined_in_file_unsupported_raises(
 
     :func:`literalizer.literalize` rejects ``BothVariableForms`` for
     these languages before reaching ``wrap_combined_in_file``, but the
-    method itself still has to honour the :class:`Language` protocol.
+    method itself must still satisfy the :class:`Language` protocol.
     """
     with pytest.raises(expected_exception=NotImplementedError):
         language_cls.wrap_combined_in_file(
