@@ -315,15 +315,9 @@ def _compute_element_type_for_items(
     element_type = infer_element_type(items=items)
     if element_type is not None:
         match element_type:
-            case DictType(value_type=None):
-                all_dict_values: list[Value] = [
-                    v
-                    for item in items
-                    if isinstance(item, dict)  # pragma: no branch
-                    for v in item.values()
-                ]
+            case DictType(value_type=None, values=dict_values):
                 value_type = _compute_element_type_for_items(
-                    items=all_dict_values,
+                    items=list(dict_values),
                     element_to_type=element_to_type,
                 )
                 return f"std::map<std::string, {value_type}>"
