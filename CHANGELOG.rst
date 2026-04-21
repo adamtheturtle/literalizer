@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- Added ``Rust.DeclarationStyles.LAZY_STATIC``, which wraps the
+  initializer in ``std::sync::LazyLock`` so module-level
+  declarations can hold runtime-initialized collections such as
+  ``HashMap``, ``BTreeMap``, and ``Vec``.  Unlike ``CONST`` and
+  ``STATIC``, ``LAZY_STATIC`` composes with every dict, set, and
+  sequence format.  ``use std::sync::LazyLock;`` is added to the
+  preamble automatically.
+
 2026.04.21.4
 ------------
 
