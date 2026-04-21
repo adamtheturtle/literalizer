@@ -644,48 +644,77 @@ def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
 _CASES = _discover_cases()
 
 
+def _group_cases_by_language() -> dict[
+    literalizer.LanguageCls,
+    list[str],
+]:
+    """Return case names grouped by language class.
+
+    The test takes the language as its only pytest axis and iterates
+    that language's case names inside the test body with ``subtests``.
+    Folding thousands of cases into ~30 cuts collection and per-test
+    overhead on slower CI runners (notably Windows).
+    """
+    groups: dict[literalizer.LanguageCls, list[str]] = {}
+    for case_name, lang_cls in _CASES:
+        groups.setdefault(lang_cls, []).append(case_name)
+    return groups
+
+
+_CASES_BY_LANG = _group_cases_by_language()
+_GOLDEN_FILE_LANGUAGES = [
+    cls for cls in _SORTED_LANGUAGES if cls in _CASES_BY_LANG
+]
+
+
 @pytest.mark.parametrize(
-    argnames=("_case_name", "lang_cls"),
-    argvalues=_CASES,
-    ids=[f"{c[0]}/{c[1].__name__}" for c in _CASES],
+    argnames="lang_cls",
+    argvalues=_GOLDEN_FILE_LANGUAGES,
+    ids=_lang_cls_name,
 )
 def test_golden_file(
-    _case_name: str,
     lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
-    input_path = cases_dir / _case_name / "input.yaml"
     lang_name = lang_cls.__name__
-    yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (lang_name + lang_cls.extension)
-    try:
-        result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=_spec(lang_cls=lang_cls),
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=_wrap_variable_form(lang_cls=lang_cls),
-            wrap_in_file=True,
-        )
-    except UnrepresentableIntegerError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} cannot represent integer in this input")
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} cannot represent this heterogeneous input")
-    # newline="" prevents Python text-mode from converting \r\n to \n
-    # on Windows, which would corrupt golden files containing literal
-    # CR bytes (e.g. CommonLisp string_control_chars).
-    _check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=lang_cls.extension,
-        newline="",
-        golden_path=golden_path,
-    )
+    for case_name in _CASES_BY_LANG[lang_cls]:
+        with subtests.test(case_name=case_name):
+            input_path = cases_dir / case_name / "input.yaml"
+            yaml_string = input_path.read_text()
+            golden_path = input_path.parent / (lang_name + lang_cls.extension)
+            try:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=_spec(lang_cls=lang_cls),
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=_wrap_variable_form(lang_cls=lang_cls),
+                    wrap_in_file=True,
+                )
+            except UnrepresentableIntegerError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_name} cannot represent integer in this input",
+                )
+            except HeterogeneousCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_name} cannot represent this heterogeneous input",
+                )
+            # newline="" prevents Python text-mode from converting \r\n to
+            # \n on Windows, which would corrupt golden files containing
+            # literal CR bytes (e.g. CommonLisp string_control_chars).
+            _check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=lang_cls.extension,
+                newline="",
+                golden_path=golden_path,
+            )
 
 
 @dataclasses.dataclass
@@ -744,56 +773,88 @@ def _discover_combined_cases() -> list[_CombinedCase]:
 _COMBINED_CASES = _discover_combined_cases()
 
 
+def _group_combined_cases_by_language() -> dict[
+    literalizer.LanguageCls,
+    list[_CombinedCase],
+]:
+    """Return combined cases grouped by language class.
+
+    The test takes the language as its only pytest axis and iterates
+    that language's combined cases inside the test body with
+    ``subtests``.  Folding thousands of cases into ~30 cuts collection
+    and per-test overhead on slower CI runners (notably Windows).
+    """
+    groups: dict[literalizer.LanguageCls, list[_CombinedCase]] = {}
+    for case in _COMBINED_CASES:
+        groups.setdefault(case.lang_cls, []).append(case)
+    return groups
+
+
+_COMBINED_CASES_BY_LANG = _group_combined_cases_by_language()
+_COMBINED_LANGUAGES = [
+    cls for cls in _SORTED_LANGUAGES if cls in _COMBINED_CASES_BY_LANG
+]
+
+
 @pytest.mark.parametrize(
-    argnames="combined_case",
-    argvalues=_COMBINED_CASES,
-    ids=[f"{c.case_name}/{c.golden_file_name}" for c in _COMBINED_CASES],
+    argnames="lang_cls",
+    argvalues=_COMBINED_LANGUAGES,
+    ids=_lang_cls_name,
 )
 def test_golden_file_combined_variable_forms(
-    combined_case: _CombinedCase,
+    lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test that literalize with BothVariableForms produces expected
     golden output combining declaration and assignment in one file.
     """
-    input_path = cases_dir / combined_case.case_name / "input.yaml"
-    lang_cls = combined_case.lang_cls
-    spec = _spec(
-        lang_cls=lang_cls,
-        declaration_style=combined_case.declaration_style,
-    )
-    yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (
-        combined_case.golden_file_name + lang_cls.extension
-    )
-    try:
-        result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=literalizer.BothVariableForms(name="my_data"),
-            wrap_in_file=True,
-        )
-    except UnrepresentableIntegerError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent integer in this input"
-        )
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous input"
-        )
-    _check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=lang_cls.extension,
-        newline="",
-        golden_path=golden_path,
-    )
+    for combined_case in _COMBINED_CASES_BY_LANG[lang_cls]:
+        with subtests.test(
+            case_name=combined_case.case_name,
+            golden_file_name=combined_case.golden_file_name,
+        ):
+            input_path = cases_dir / combined_case.case_name / "input.yaml"
+            spec = _spec(
+                lang_cls=lang_cls,
+                declaration_style=combined_case.declaration_style,
+            )
+            yaml_string = input_path.read_text()
+            golden_path = input_path.parent / (
+                combined_case.golden_file_name + lang_cls.extension
+            )
+            try:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=literalizer.BothVariableForms(
+                        name="my_data",
+                    ),
+                    wrap_in_file=True,
+                )
+            except UnrepresentableIntegerError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_cls.__name__} cannot represent integer in "
+                    "this input"
+                )
+            except HeterogeneousCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_cls.__name__} cannot represent this "
+                    "heterogeneous input"
+                )
+            _check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=lang_cls.extension,
+                newline="",
+                golden_path=golden_path,
+            )
 
 
 @beartype
@@ -1461,50 +1522,81 @@ def _build_variant_cases() -> list[_VariantCase]:
 _FORMAT_VARIANT_CASES = _build_variant_cases()
 
 
+def _group_variant_cases_by_language() -> dict[
+    literalizer.LanguageCls,
+    list[_VariantCase],
+]:
+    """Return ``_FORMAT_VARIANT_CASES`` grouped by language class.
+
+    The test takes the language as its only pytest axis and iterates
+    that language's cases inside the test body with ``subtests``.
+    Folding ~2000 cases into ~30 cuts collection and per-test overhead
+    on slower CI runners (notably Windows).
+    """
+    groups: dict[literalizer.LanguageCls, list[_VariantCase]] = {}
+    for case in _FORMAT_VARIANT_CASES:
+        groups.setdefault(case.variant.lang_cls, []).append(case)
+    return groups
+
+
+_FORMAT_VARIANT_CASES_BY_LANG = _group_variant_cases_by_language()
+
+
+_VARIANT_LANGUAGES = [
+    cls for cls in _SORTED_LANGUAGES if cls in _FORMAT_VARIANT_CASES_BY_LANG
+]
+
+
 @pytest.mark.parametrize(
-    argnames="variant_case",
-    argvalues=_FORMAT_VARIANT_CASES,
-    ids=[c.variant_name for c in _FORMAT_VARIANT_CASES],
+    argnames="lang_cls",
+    argvalues=_VARIANT_LANGUAGES,
+    ids=_lang_cls_name,
 )
 def test_format_variant_golden_file(
-    variant_case: _VariantCase,
+    lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test format-variant options (dates, sequences, sets, type hints)
     against golden files.
     """
-    case_dir = cases_dir / variant_case.case_dir_name
-    variant = variant_case.variant
-    yaml_string = (case_dir / "input.yaml").read_text()
-    golden_path = case_dir / (
-        variant_case.variant_name + variant.spec.extension
-    )
-    try:
-        result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=variant.spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=variant_case.variable_form,
-            wrap_in_file=True,
-        )
-    except NullInCollectionError:
-        pytest.skip("Format rejects null elements in this input")
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip("Format cannot represent this heterogeneous input")
-    except IncompatibleFormatsError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip("Format combination cannot represent this input")
-    _check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=variant.spec.extension,
-        newline=None,
-        golden_path=golden_path,
-    )
+    for variant_case in _FORMAT_VARIANT_CASES_BY_LANG[lang_cls]:
+        with subtests.test(
+            variant_name=variant_case.variant_name,
+            case_dir_name=variant_case.case_dir_name,
+        ):
+            case_dir = cases_dir / variant_case.case_dir_name
+            variant = variant_case.variant
+            yaml_string = (case_dir / "input.yaml").read_text()
+            golden_path = case_dir / (
+                variant_case.variant_name + variant.spec.extension
+            )
+            try:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=variant.spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=variant_case.variable_form,
+                    wrap_in_file=True,
+                )
+            except NullInCollectionError:
+                pytest.skip("Format rejects null elements in this input")
+            except HeterogeneousCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent this heterogeneous input")
+            except IncompatibleFormatsError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format combination cannot represent this input")
+            _check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=variant.spec.extension,
+                newline=None,
+                golden_path=golden_path,
+            )
 
 
 @dataclasses.dataclass
