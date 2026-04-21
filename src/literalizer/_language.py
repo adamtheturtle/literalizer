@@ -202,7 +202,7 @@ class PostfixCallStyle:
     is the string placed between arguments.
     """
 
-    arg_separator: str = " "
+    arg_separator: str
 
 
 CallStyle = (
