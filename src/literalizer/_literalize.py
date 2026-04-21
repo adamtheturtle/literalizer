@@ -1162,6 +1162,10 @@ def _format_call_args(
         case PostfixCallStyle(arg_separator=sep):
             return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
             return sep.join(
                 f"{kw_prefix}{name}{sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
@@ -1325,7 +1329,7 @@ def literalize_call(
             line_prefix="",
             include_delimiters=True,
         )
-        args_str = f"({lit})"
+        args_str = lit if isinstance(style, PrefixCallStyle) else f"({lit})"
         result = _assemble_call(
             target_function=target_function,
             args_str=args_str,
