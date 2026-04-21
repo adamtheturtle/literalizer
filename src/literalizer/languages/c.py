@@ -38,8 +38,6 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
-    CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -49,6 +47,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -108,6 +107,69 @@ def _make_format_c_entry(
         )
 
     return _format_c_entry
+
+
+def _c_call_stub(
+    name: str,
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return C stub declarations for a call name.
+
+    C has no member functions and no type-generic function templates,
+    so dotted targets are modeled as a nested chain of ``struct`` types
+    whose leaf field is a function pointer declared with an
+    unspecified (K&R-style) argument list.  Simple targets are emitted
+    as forward declarations with the same unspecified list so the
+    caller may pass any arguments.  A leading pragma suppresses the
+    ``-Wdeprecated-non-prototype`` warning that clang emits for these
+    intentionally type-erased call sites.
+    """
+    del params
+    return_keyword = "int" if stub_return is StubReturn.VALUE else "void"
+    return_body = " return 0; " if stub_return is StubReturn.VALUE else ""
+    pragma = '#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"'
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (pragma, f"{return_keyword} {parts[0]}();")
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    stub_fn = "_".join((*parts, "stub_"))
+    if not fields:
+        type_name = f"{root}Type_"
+        return (
+            pragma,
+            f"static {return_keyword} {stub_fn}() {{{return_body}}}",
+            f"struct {type_name} {{ {return_keyword} (*{method})(); }};",
+            f"static const struct {type_name} {root} = "
+            f"{{ .{method} = {stub_fn} }};",
+        )
+    lines: list[str] = [
+        pragma,
+        f"static {return_keyword} {stub_fn}() {{{return_body}}}",
+    ]
+    inner_type = f"{fields[-1]}Type_"
+    lines.append(
+        f"struct {inner_type} {{ {return_keyword} (*{method})(); }};",
+    )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i]}Type_"
+        lines.append(
+            f"struct {curr_type} {{ struct {prev_type} {fields[i + 1]}; }};",
+        )
+        prev_type = curr_type
+    root_type = f"{root}Type_"
+    lines.append(
+        f"struct {root_type} {{ struct {prev_type} {fields[0]}; }};",
+    )
+    init = f"{{ .{method} = {stub_fn} }}"
+    for field in reversed(fields):
+        init = f"{{ .{field} = {init} }}"
+    lines.append(f"static const struct {root_type} {root} = {init};")
+    return tuple(lines)
 
 
 @beartype
@@ -312,6 +374,8 @@ class C(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """C call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -400,9 +464,12 @@ class C(metaclass=LanguageCls):
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ("#include <math.h>",)
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
+
+    @cached_property
+    def call_style_config(self) -> PositionalCallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -433,7 +500,7 @@ class C(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _c_call_stub
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
