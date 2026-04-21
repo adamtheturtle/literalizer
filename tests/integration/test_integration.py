@@ -680,6 +680,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         transform_stub_names=["emit"],
         per_element=True,
     ),
+    _CallCaseConfig(
+        case_dir_name="call_transform_no_wrapper",
+        target_function="client.api.request",
+        parameter_names=["data"],
+        call_transform=lambda c: c,
+        transform_stub_names=[],
+        per_element=True,
+    ),
     *[
         _CallCaseConfig(
             case_dir_name=f"call_{name}",
