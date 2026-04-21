@@ -7,6 +7,11 @@ Next
 - The ``lint-julia`` CI job now executes Julia golden files instead
   of only parsing them, catching ``UndefVarError`` and other runtime
   errors.
+
+2026.04.21.2
+------------
+
+
 - Added ``literalize_call`` support for PHP: ``Php.format_call_stub``
   now generates function, class, and nested-object stubs for a call
   expression.
