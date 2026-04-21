@@ -65,6 +65,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     KeywordCallStyle,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -80,6 +81,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import IncompatibleFormatsError
 
 
 class _CSharpModifiers(enum.Enum):
@@ -233,6 +235,16 @@ def _format_csharp_declaration(
 
     Falls back to ``var {name} = {value};`` when *modifiers* is empty.
     """
+    if _CSharpModifiers.CONST in modifiers and isinstance(
+        data,
+        list | dict | set,
+    ):
+        msg = (
+            "C# 'const' requires a compile-time constant initializer, "
+            "but collection literals are not constant expressions. "
+            "Use 'readonly' or remove the 'const' modifier."
+        )
+        raise IncompatibleFormatsError(msg)
     prefix = _csharp_modifier_prefix(modifiers=modifiers)
     if not prefix:
         return f"var {name} = {value};"
@@ -549,6 +561,18 @@ class CSharp(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     modifiers = _CSharpModifiers
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
+        ModifierCombination(
+            name="public_static_readonly",
+            modifiers=frozenset(
+                {
+                    _CSharpModifiers.PUBLIC,
+                    _CSharpModifiers.STATIC,
+                    _CSharpModifiers.READONLY,
+                },
+            ),
+        ),
+    )
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""

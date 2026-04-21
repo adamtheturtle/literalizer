@@ -243,6 +243,23 @@ class StubReturn(enum.Enum):
     VALUE = "value"
 
 
+@dataclasses.dataclass(frozen=True)
+class ModifierCombination:
+    """A named combination of declaration modifiers for a language.
+
+    Languages that support declaration modifiers (e.g. Java ``public
+    static final``, C# ``public static readonly``, C++ ``static const``)
+    expose their canonical multi-modifier combinations via
+    :attr:`LanguageCls.modifier_combinations`.
+    """
+
+    name: str
+    """Identifier for this combination, used in generated code."""
+
+    modifiers: frozenset[enum.Enum]
+    """The set of modifier enum members that make up this combination."""
+
+
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -273,6 +290,7 @@ class LanguageCls(type):
     LineEndings: type[enum.Enum]
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
+    modifier_combinations: tuple[ModifierCombination, ...] = ()
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
