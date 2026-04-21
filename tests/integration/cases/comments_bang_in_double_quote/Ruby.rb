@@ -1,3 +1,3 @@
 {
-    "key" => "\"bang!\"",  # real
+  "key" => "\"bang!\"",  # real
 }

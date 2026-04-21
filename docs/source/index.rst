@@ -41,7 +41,6 @@ Use :func:`literalizer.literalize` to convert data to native language literals:
    result = literalize(  # returns LiteralizeResult with .code and .preamble
        source=yaml_config,
        input_format=InputFormat.YAML,
-       error_on_coercion=False,
        language=Go(
            date_format=Go.date_formats.GO,
            datetime_format=Go.datetime_formats.GO,

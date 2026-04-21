@@ -1,4 +1,4 @@
 const my_data = [
-    // # section
-    "a",
+  // # section
+  "a",
 ];

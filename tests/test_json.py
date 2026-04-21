@@ -13,9 +13,9 @@ from literalizer import (
     literalize,
 )
 from literalizer.exceptions import (
-    HeterogeneousCoercionError,
     InvalidDictKeyError,
     JSONParseError,
+    MixedDictValuesError,
     ParseError,
 )
 from literalizer.languages import (
@@ -80,7 +80,6 @@ def test_dict_python() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
     assert result.code == expected
@@ -94,7 +93,6 @@ def test_dict_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -120,7 +118,6 @@ def test_dict_empty(*, include_delimiters: bool) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=include_delimiters,
-        error_on_coercion=False,
     )
     expected = "{}" if include_delimiters else ""
     assert result.code == expected
@@ -134,7 +131,6 @@ def test_integers() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -153,7 +149,6 @@ def test_floats() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -171,7 +166,6 @@ def test_string_escaping() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     lines = result.code.split(sep="\n")
     assert lines[0] == '"say \\"hi\\"",'
@@ -187,7 +181,6 @@ def test_nested_arrays() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "((1, 2), (3, 4)),"
 
@@ -200,7 +193,6 @@ def test_dicts() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == '{"name": "alice", "age": 30},'
 
@@ -213,7 +205,6 @@ def test_nested_dict_in_sequence() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == '("a", {"x": 1}),'
 
@@ -226,7 +217,6 @@ def test_nested_sequence_in_dict() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == '{"items": (1, 2)},'
 
@@ -239,7 +229,6 @@ def test_indent_spaces() -> None:
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "        True,\n        False,"
 
@@ -252,7 +241,6 @@ def test_indent_tabs() -> None:
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "\t\ttrue,\n\t\tfalse,"
 
@@ -265,7 +253,6 @@ def test_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -285,7 +272,6 @@ def test_include_delimiters_with_pre_indent_level() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = '    (\n        ("a", 1.0),\n    )'
     assert result.code == expected
@@ -307,7 +293,6 @@ def test_indent_override() -> None:
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = "(\n\tTrue,\n\tFalse,\n)"
     assert result.code == expected
@@ -327,7 +312,6 @@ def test_empty_data(*, include_delimiters: bool) -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=include_delimiters,
-        error_on_coercion=False,
     )
     expected = "()" if include_delimiters else ""
     assert result.code == expected
@@ -359,7 +343,6 @@ def test_scalar(
         language=language,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -372,7 +355,6 @@ def test_scalar_with_indent() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     assert result.code == "    42"
 
@@ -385,7 +367,6 @@ def test_scalar_include_delimiters_ignored() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     assert result.code == "42"
 
@@ -399,7 +380,6 @@ def test_literalize_json_array() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result.code == expected
@@ -414,7 +394,6 @@ def test_literalize_json_object() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -435,7 +414,6 @@ def test_literalize_json_invalid() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            error_on_coercion=False,
         )
 
 
@@ -453,7 +431,6 @@ def test_part1_sample_python() -> None:
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected_lines = [
         '        ("user_1", 1000.0),',
@@ -473,7 +450,6 @@ def test_part2_sample_go() -> None:
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     lines = result.code.split(sep="\n")
     assert lines[0] == '\t\t[]any{"user_1", 49, 1000.0},'
@@ -489,7 +465,6 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            error_on_coercion=False,
         )
 
 
@@ -499,89 +474,6 @@ MOJO = Mojo(
     bytes_format=Mojo.bytes_formats.HEX,
     sequence_format=Mojo.sequence_formats.LIST,
 )
-
-
-def test_error_on_coercion_json_raises() -> None:
-    """Error_on_coercion raises for heterogeneous JSON arrays."""
-    expected_msg = re.escape(
-        pattern="Collection contains heterogeneous scalar types "
-        "that would be coerced to strings (found types: float, int)"
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source="[1, 2.5, 3]",
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_no_raise_homogeneous() -> None:
-    """Error_on_coercion does not raise for homogeneous JSON arrays."""
-    result = literalize(
-        source="[1, 2, 3]",
-        input_format=InputFormat.JSON,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        [
-            1,
-            2,
-            3,
-        ]"""
-    )
-    assert result.code == expected
-
-
-def test_error_on_coercion_json_raises_sibling_lists() -> None:
-    """Error_on_coercion raises for heterogeneous sibling sub-lists."""
-    expected_msg = re.escape(
-        pattern="Collection contains heterogeneous scalar types "
-        "that would be coerced to strings (found types: int, str)"
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source='[[1, 2], ["a", "b"]]',
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_raises_nested_sibling_lists() -> None:
-    """Error_on_coercion raises for nested heterogeneous sibling
-    sub-lists.
-    """
-    expected_msg = re.escape(
-        pattern="Collection contains heterogeneous scalar types "
-        "that would be coerced to strings (found types: int, str)"
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source='[[[1, 2], ["a", "b"]]]',
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
 
 
 def test_cpp_array_null_list_fallback_json() -> None:
@@ -595,7 +487,6 @@ def test_cpp_array_null_list_fallback_json() -> None:
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -607,46 +498,30 @@ def test_cpp_array_null_list_fallback_json() -> None:
     assert result.code == expected
 
 
-def test_coerce_mixed_dict_values_none_with_list_json() -> None:
-    """Dicts with None alongside a list are coerced to strings."""
-    result = literalize(
-        source=json.dumps(obj={"tags": ["admin"], "extra": None}),
-        input_format=InputFormat.JSON,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "tags": "[\\"admin\\"]",
-            "extra": "None",
-        }"""
-    )
-    assert result.code == expected
+def test_mixed_dict_values_none_with_list_json_raises() -> None:
+    """Dicts with None alongside a list raise for Mojo."""
+    with pytest.raises(expected_exception=MixedDictValuesError):
+        literalize(
+            source=json.dumps(obj={"tags": ["admin"], "extra": None}),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+        )
 
 
-def test_coerce_mixed_dict_values_with_list_json() -> None:
-    """Dicts with string and list values are coerced to all strings."""
-    result = literalize(
-        source=json.dumps(
-            obj={"name": "Bob", "tags": ["admin", "user"]},
-        ),
-        input_format=InputFormat.JSON,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "name": "Bob",
-            "tags": "[\\"admin\\", \\"user\\"]",
-        }"""
-    )
-    assert result.code == expected
+def test_mixed_dict_values_with_list_json_raises() -> None:
+    """Dicts with string and list values raise for Mojo."""
+    with pytest.raises(expected_exception=MixedDictValuesError):
+        literalize(
+            source=json.dumps(
+                obj={"name": "Bob", "tags": ["admin", "user"]},
+            ),
+            input_format=InputFormat.JSON,
+            language=MOJO,
+            pre_indent_level=0,
+            include_delimiters=True,
+        )
 
 
 def test_r_empty_dict_key_positional_json() -> None:
@@ -664,7 +539,6 @@ def test_r_empty_dict_key_positional_json() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -699,7 +573,6 @@ def test_r_empty_dict_key_error_json() -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -718,7 +591,6 @@ def test_r_empty_dict_key_error_non_empty_key_ok_json() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -727,271 +599,6 @@ def test_r_empty_dict_key_error_non_empty_key_ok_json() -> None:
         )"""
     )
     assert result.code == expected
-
-
-def test_error_on_coercion_json_raises_for_heterogeneous_dict() -> None:
-    """Error_on_coercion raises when dict values have mixed scalar
-    types.
-    """
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize(
-            source=json.dumps(obj={"a": 1, "b": 2.5}),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_no_effect_without_coerce_flag() -> None:
-    """Error_on_coercion has no effect when language doesn't coerce."""
-    result = literalize(
-        source=json.dumps(obj=[1, 2.5, 3]),
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        (
-            1,
-            2.5,
-            3,
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_error_on_coercion_json_raises_for_nested_heterogeneous() -> None:
-    """Error_on_coercion raises for heterogeneous data nested in a
-    list.
-    """
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize(
-            source=json.dumps(obj=[[1, "hello"]]),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_no_raise_for_homogeneous_dict() -> None:
-    """Error_on_coercion does not raise for homogeneous dict values."""
-    result = literalize(
-        source=json.dumps(obj={"a": 1, "b": 2}),
-        input_format=InputFormat.JSON,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": 2,
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_error_on_coercion_json_raises_for_mixed_dict_values() -> None:
-    """Error_on_coercion raises when a dict has values of mixed types."""
-    expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, str)",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(
-                obj={"name": "Bob", "tags": ["admin", "user"]},
-            ),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_raises_for_nested_mixed_dict_values() -> None:
-    """Error_on_coercion raises when a nested dict has mixed types.
-
-    Uses a dict with multiple values where the first child (a
-    homogeneous dict) does not have mixed types, so the search must
-    skip past it and its scalar leaves before finding the mixed one.
-    """
-    expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, str)",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(
-                obj={
-                    "a": {"x": 1},
-                    "b": {"x": "hello", "y": [1]},
-                },
-            ),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_raises_for_nested_mixed_list_values() -> None:
-    """Error_on_coercion raises when a nested list has mixed types.
-
-    Uses a list whose first element is a homogeneous list, so the
-    search must skip past it before finding the mixed second element.
-    """
-    expected_msg = re.escape(
-        pattern="List contains elements of mixed types "
-        "that would be coerced to strings (found types: list, str)",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(
-                obj=[[1, 2], ["hello", ["nested"]]],
-            ),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_raises_for_mixed_list_values() -> None:
-    """Error_on_coercion raises when a list has mixed element types."""
-    expected_msg = re.escape(
-        pattern="List contains elements of mixed types "
-        "that would be coerced to strings (found types: list, str)",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(obj=["hello", ["nested"]]),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_mixed_dict_inside_mixed_list() -> None:
-    """Error message reports dict type families when a mixed dict is
-    nested inside a mixed list.
-
-    ``_find_first_mixed_values`` must only consider dicts (not lists)
-    when called from the ``_has_mixed_dict_values`` error path, otherwise
-    it finds the enclosing mixed list first and reports wrong types.
-    """
-    expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, str)",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(
-                obj={"wrapper": [{"a": "x", "b": [1]}, "text"]},
-            ),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_raises_for_mixed_dict_shapes() -> None:
-    """Error_on_coercion raises when a list has dicts with different
-    keys, including when the list is nested inside a dict.
-    """
-    data = {
-        "items": [
-            {"type": "create", "draft": True},
-            {"type": "update"},
-        ],
-    }
-    expected_msg = re.escape(
-        pattern="List contains dicts with different key sets "
-        "that would be padded with null values",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(obj=data),
-            input_format=InputFormat.JSON,
-            language=Dhall(),
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_json_no_raise_for_uniform_dict_shapes() -> None:
-    """Error_on_coercion does not raise when all dicts in a list have
-    the same keys.
-    """
-    data = [
-        {"type": "create", "name": "a"},
-        {"type": "update", "name": "b"},
-    ]
-    literalize(
-        source=json.dumps(obj=data),
-        input_format=InputFormat.JSON,
-        language=Dhall(),
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=True,
-    )
-
-
-def test_error_on_coercion_json_raises_for_mixed_dict_none_list() -> None:
-    """Error_on_coercion raises when a dict has None alongside a list."""
-    expected_msg = re.escape(
-        pattern="Dict contains values of mixed types "
-        "that would be coerced to strings (found types: list, none)",
-    )
-    with pytest.raises(
-        expected_exception=HeterogeneousCoercionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(
-                obj={"tags": ["admin"], "extra": None},
-            ),
-            input_format=InputFormat.JSON,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
 
 
 def test_dhall_empty_dict_key_error_json() -> None:
@@ -1011,7 +618,6 @@ def test_dhall_empty_dict_key_error_json() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -1024,7 +630,6 @@ def test_dhall_control_char_in_string_json() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     expected = 'let my_data = "\\u{0001}" in my_data'
     assert result.code == expected
@@ -1047,7 +652,6 @@ def test_dhall_control_char_key_error_json() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -1068,7 +672,6 @@ def test_nix_control_char_key_error_json() -> None:
             language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
-            error_on_coercion=False,
         )
 
 
@@ -1081,7 +684,6 @@ def test_dhall_backtick_label_unescaping_json() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

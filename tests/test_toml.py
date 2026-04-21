@@ -13,7 +13,6 @@ from literalizer import (
 )
 from literalizer._comments import extract_toml_comments
 from literalizer.exceptions import (
-    HeterogeneousCoercionError,
     ParseError,
     TOMLParseError,
 )
@@ -21,7 +20,6 @@ from literalizer.languages import (
     Go,
     Haskell,
     JavaScript,
-    Mojo,
     Python,
     VisualBasic,
 )
@@ -57,7 +55,6 @@ def test_dict_python() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
     assert result.code == expected
@@ -72,7 +69,6 @@ def test_dict_include_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -92,7 +88,6 @@ def test_empty_table() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     assert result.code == "{}"
 
@@ -106,7 +101,6 @@ def test_integers() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -126,7 +120,6 @@ def test_floats() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -146,7 +139,6 @@ def test_booleans() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -167,7 +159,6 @@ def test_nested_table() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -187,7 +178,6 @@ def test_array_of_tables() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -207,7 +197,6 @@ def test_date_python() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -227,7 +216,6 @@ def test_datetime_python() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = (
         "{\n"
@@ -248,7 +236,6 @@ def test_time_coerced_to_string() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -268,7 +255,6 @@ def test_invalid_toml() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            error_on_coercion=False,
         )
 
 
@@ -281,7 +267,6 @@ def test_invalid_toml_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            error_on_coercion=False,
         )
 
 
@@ -295,12 +280,11 @@ def test_variable_declaration() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
         const config = {
-            "name": "alice",
+          "name": "alice",
         };"""
     )
     assert result.code == expected
@@ -316,7 +300,6 @@ def test_variable_assignment() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=ExistingVariable(name="config"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -336,51 +319,8 @@ def test_go_output() -> None:
         language=GO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = 'map[string]any{\n\t"name": "test",\n\t"count": 42,\n}'
-    assert result.code == expected
-
-
-MOJO = Mojo(
-    date_format=Mojo.date_formats.ISO,
-    datetime_format=Mojo.datetime_formats.ISO,
-    bytes_format=Mojo.bytes_formats.HEX,
-    sequence_format=Mojo.sequence_formats.LIST,
-)
-
-
-def test_error_on_coercion_raises() -> None:
-    """Error_on_coercion raises for heterogeneous TOML arrays."""
-    toml_string = "values = [1, 2.5, 3]\n"
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize(
-            source=toml_string,
-            input_format=InputFormat.TOML,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            error_on_coercion=True,
-        )
-
-
-def test_error_on_coercion_no_raise_homogeneous() -> None:
-    """Error_on_coercion does not raise for homogeneous TOML arrays."""
-    toml_string = "values = [1, 2, 3]\n"
-    result = literalize(
-        source=toml_string,
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        error_on_coercion=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "values": (1, 2, 3),
-        }"""
-    )
     assert result.code == expected
 
 
@@ -404,7 +344,6 @@ def test_scalar_types(
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -424,7 +363,6 @@ def test_body_preamble() -> None:
         language=haskell,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected_preamble = "data Val = HStr String | HMap [(String, Val)]"
     assert result.body_preamble[0] == expected_preamble
@@ -454,7 +392,6 @@ def test_body_preamble_double_iso() -> None:
         language=haskell,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -478,7 +415,6 @@ def test_inline_comment_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -499,7 +435,6 @@ def test_before_comment_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -521,7 +456,6 @@ def test_trailing_comment_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -546,7 +480,6 @@ def test_mixed_comments_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -568,7 +501,6 @@ def test_comments_go_output() -> None:
         language=GO,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = (
         "map[string]any{\n"
@@ -589,7 +521,6 @@ def test_no_comments_unchanged() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -610,7 +541,6 @@ def test_comments_without_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        error_on_coercion=False,
     )
     expected = '# header\n"host": "localhost",  # inline\n"port": 8080,'
     assert result.code == expected
@@ -626,13 +556,12 @@ def test_comments_with_variable_declaration() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
         const config = {
-            // config
-            "host": "localhost",  // default
+          // config
+          "host": "localhost",  // default
         };"""
     )
     assert result.code == expected
@@ -656,7 +585,6 @@ def test_comments_language_without_collection_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -685,7 +613,6 @@ def test_comments_with_blank_lines() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\

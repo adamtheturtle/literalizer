@@ -17,6 +17,35 @@ class _StringFormatter(Protocol):
 
 
 @beartype
+def _backslash_escape(value: str, *, quote_char: str) -> str:
+    r"""Apply base backslash escapes to *value*.
+
+    Escapes backslashes, *quote_char*, ``\r``, ``\n``, and ``\t``.
+    Does **not** wrap the result in quotes.
+    """
+    return (
+        value.replace("\\", "\\\\")
+        .replace(quote_char, f"\\{quote_char}")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+
+
+@beartype
+def _apply_backslash_formatter(
+    value: str,
+    quote_char: str,
+    extra_replacements: Sequence[tuple[str, str]],
+) -> str:
+    """Format *value* using backslash escaping."""
+    escaped = _backslash_escape(value=value, quote_char=quote_char)
+    for old, new in extra_replacements:
+        escaped = escaped.replace(old, new)
+    return f"{quote_char}{escaped}{quote_char}"
+
+
+@beartype
 def _build_backslash_formatter(
     *,
     quote_char: str,
@@ -32,19 +61,13 @@ def _build_backslash_formatter(
     :meth:`str.replace`.
     """
 
-    @beartype
     def _format(value: str) -> str:
-        """Format *value* using backslash escaping."""
-        escaped = (
-            value.replace("\\", "\\\\")
-            .replace(quote_char, f"\\{quote_char}")
-            .replace("\r", "\\r")
-            .replace("\n", "\\n")
-            .replace("\t", "\\t")
+        """Delegate to module-level implementation."""
+        return _apply_backslash_formatter(
+            value=value,
+            quote_char=quote_char,
+            extra_replacements=extra_replacements,
         )
-        for old, new in extra_replacements:
-            escaped = escaped.replace(old, new)
-        return f"{quote_char}{escaped}{quote_char}"
 
     return _format
 
@@ -206,29 +229,51 @@ def format_string_concat_control(
     """
     empty = f"{quote_char}{quote_char}"
 
-    @beartype
     def _format(value: str) -> str:
-        """Format a string with control character concatenation."""
-        control_char_threshold = 32
-        parts: list[str] = []
-        for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
-            if not segment:
-                continue
-            if len(segment) == 1 and ord(segment) < control_char_threshold:
-                parts.append(control_char_template.format(ord(segment)))
-            else:
-                escaped = segment
-                if escape_backslash:
-                    escaped = escaped.replace("\\", "\\\\")
-                escaped = escaped.replace(quote_char, quote_escape)
-                parts.append(f"{quote_char}{escaped}{quote_char}")
-        if not parts:
-            return empty
-        if len(parts) == 1:
-            return parts[0]
-        return concat_operator.join(parts)
+        """Delegate to module-level implementation."""
+        return _apply_concat_control(
+            value=value,
+            quote_char=quote_char,
+            quote_escape=quote_escape,
+            control_char_template=control_char_template,
+            concat_operator=concat_operator,
+            escape_backslash=escape_backslash,
+            empty=empty,
+        )
 
     return _format
+
+
+@beartype
+def _apply_concat_control(
+    value: str,
+    *,
+    quote_char: str,
+    quote_escape: str,
+    control_char_template: str,
+    concat_operator: str,
+    escape_backslash: bool,
+    empty: str,
+) -> str:
+    """Format a string with control character concatenation."""
+    control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if len(segment) == 1 and ord(segment) < control_char_threshold:
+            parts.append(control_char_template.format(ord(segment)))
+        else:
+            escaped = segment
+            if escape_backslash:
+                escaped = escaped.replace("\\", "\\\\")
+            escaped = escaped.replace(quote_char, quote_escape)
+            parts.append(f"{quote_char}{escaped}{quote_char}")
+    if not parts:
+        return empty
+    if len(parts) == 1:
+        return parts[0]
+    return concat_operator.join(parts)
 
 
 @beartype
@@ -265,13 +310,7 @@ def format_string_backslash_control(
         format_string_backslash_control("\x01hi", control_char_fmt="\\x{:02x}")
         # => '"\\x01hi"'
     """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
+    escaped = _backslash_escape(value=value, quote_char='"')
     escaped = escape_control_chars(value=escaped, fmt=control_char_fmt)
     return f'"{escaped}"'
 

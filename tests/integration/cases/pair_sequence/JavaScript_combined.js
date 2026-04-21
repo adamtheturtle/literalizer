@@ -1,8 +1,8 @@
 let my_data = [
-    1,
-    "hello",
+  1,
+  "hello",
 ];
 my_data = [
-    1,
-    "hello",
+  1,
+  "hello",
 ];

@@ -12,14 +12,12 @@ from literalizer import (
     literalize,
 )
 from literalizer.exceptions import (
-    HeterogeneousCoercionError,
     JSON5ParseError,
     ParseError,
 )
 from literalizer.languages import (
     Go,
     JavaScript,
-    Mojo,
     Python,
 )
 
@@ -55,7 +53,6 @@ def test_dict_python() -> None:
         pre_indent_level=1,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
     assert result.code == expected
@@ -71,7 +68,6 @@ def test_dict_include_delimiters() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -93,7 +89,6 @@ def test_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -116,7 +111,6 @@ def test_unquoted_keys() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -138,7 +132,6 @@ def test_single_quoted_strings() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -159,7 +152,6 @@ def test_trailing_commas() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -187,7 +179,6 @@ def test_comments_stripped() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -209,7 +200,6 @@ def test_null() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -230,7 +220,6 @@ def test_booleans() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -252,7 +241,6 @@ def test_nested_objects() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -273,7 +261,6 @@ def test_invalid_json5() -> None:
             pre_indent_level=0,
             include_delimiters=False,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -287,7 +274,6 @@ def test_invalid_json5_is_parse_error() -> None:
             pre_indent_level=0,
             include_delimiters=False,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -301,12 +287,11 @@ def test_variable_declaration() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
         const config = {
-            "name": "alice",
+          "name": "alice",
         };"""
     )
     assert result.code == expected
@@ -322,7 +307,6 @@ def test_variable_assignment() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=ExistingVariable(name="config"),
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -343,33 +327,9 @@ def test_go_output() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = 'map[string]any{\n\t"name": "test",\n\t"count": 42,\n}'
     assert result.code == expected
-
-
-MOJO = Mojo(
-    date_format=Mojo.date_formats.ISO,
-    datetime_format=Mojo.datetime_formats.ISO,
-    bytes_format=Mojo.bytes_formats.HEX,
-    sequence_format=Mojo.sequence_formats.LIST,
-)
-
-
-def test_error_on_coercion_raises() -> None:
-    """Error on coercion raises for heterogeneous JSON5 arrays."""
-    source = "[1, 2.5, 3]"
-    with pytest.raises(expected_exception=HeterogeneousCoercionError):
-        literalize(
-            source=source,
-            input_format=InputFormat.JSON5,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-            error_on_coercion=True,
-        )
 
 
 @pytest.mark.parametrize(
@@ -394,7 +354,6 @@ def test_scalar_types(
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == expected
 
@@ -409,7 +368,6 @@ def test_scalar_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == '"hello"'
 
@@ -424,6 +382,5 @@ def test_scalar_number() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == "42"

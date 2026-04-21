@@ -112,7 +112,6 @@ beartype
 bool
 booleans
 chrono
-coercions
 commonjs
 config
 const
@@ -151,6 +150,7 @@ jsonnet
 kotlinc
 kroc
 kts
+kwargs
 linter
 literalize
 literalizer
@@ -184,8 +184,10 @@ pyjson5
 pyrefly
 pyright
 pytest
+pytest's
 rakudo
 regen
+repo
 reportAttributeAccessIssue
 reportMissingTypeStubs
 reportPrivateUsage

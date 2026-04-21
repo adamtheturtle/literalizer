@@ -50,14 +50,15 @@ optional-dependencies.dev = [
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.1",
     "pyproject-fmt==2.21.1",
-    "pyrefly==0.61.0",
+    "pyrefly==0.62.0",
     "pyright==1.1.408",
     "pyroma==5.0.1",
     "pytest==9.0.3",
+    "pytest-beartype-tests==2026.4.20",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
-    "ruff==0.15.10",
+    "ruff==0.15.11",
     # We add shellcheck-py not only for shell scripts and shell code blocks,
     # but also because having it installed means that ``actionlint-py`` will
     # use it to lint shell commands in GitHub workflow files.
@@ -69,7 +70,7 @@ optional-dependencies.dev = [
     "sphinx-pyproject==0.3.0",
     "sphinx-substitution-extensions==2026.1.12",
     "sphinxcontrib-spelling==8.0.2",
-    "ty==0.0.29",
+    "ty==0.0.32",
     "types-pygments==2.20.0.20260408",
     "vulture==2.16",
     "yamlfix==1.19.1",
@@ -217,6 +218,7 @@ MESSAGES-CONTROL.disable = [
     "too-many-locals",
     "too-many-arguments",
     "too-many-instance-attributes",
+    "too-many-public-methods",
     "too-many-return-statements",
     "too-many-statements",
     "too-many-lines",
@@ -278,7 +280,7 @@ ignore = [
 ]
 
 [tool.deptry]
-pep621_dev_dependency_groups = [
+optional_dependencies_dev_groups = [
     "dev",
     "release",
 ]
@@ -330,6 +332,7 @@ run.omit = [
 report.exclude_also = [
     "case _ as unreachable:\n\\s*assert_never\\(",
     "if TYPE_CHECKING:",
+    "raise NotImplementedError",
 ]
 report.show_missing = true
 
@@ -364,7 +367,6 @@ linewrap-full-docstring = true
 ignore_names = [
     # pytest configuration
     "pytest_collect_file",
-    "pytest_collection_modifyitems",
     "pytest_plugins",
     # pytest fixtures - we name fixtures like this for this purpose
     "fixture_*",
@@ -405,7 +407,7 @@ ignore_names = [
     "BTREE_MAP",
     "BTREE_SET",
     "call_styles",
-    "dot_access_styles",
+    "CONST",
     "CONTAINERS_MAP",
     "DICTIONARY",
     "HASH_MAP",
@@ -423,17 +425,18 @@ ignore_names = [
     "EPOCH",
     "FIXED",
     "FROZENSET",
+    "ELIXIR",
     "ERLANG",
     "EXPLICIT",
     "NO",
     "OBJECT",
     "PAREN",
-    "OVERLOADED_RECORD_DOT",
     "OCTAL",
     "OCTAL_C_STYLE",
     "RAW",
-    "RECORD_SELECTORS",
     "ORDERED",
+    "PRIVATE",
+    "PROTECTED",
     "ROCKET",
     "SEQ",
     "SCIENTIFIC",
@@ -441,6 +444,7 @@ ignore_names = [
     "SYMBOL",
     "SORTED_DICTIONARY",
     "SORTED_SET",
+    "STATIC",
     "TREE_SET",
     "TUPLE",
     "UNDERSCORE",

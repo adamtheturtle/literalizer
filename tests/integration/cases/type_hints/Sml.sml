@@ -3,7 +3,7 @@ structure Check = struct
 datatype val_t =
     SNull
   | SBool of bool
-  | SInt of int
+  | SInt of LargeInt.int
   | SStr of string
   | SDate of (int * int * int)
   | SDatetime of ((int * int * int) * (int * int * int))

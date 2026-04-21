@@ -30,16 +30,58 @@ class InvalidDictKeyError(Exception):
     """
 
 
-class HeterogeneousCoercionError(Exception):
-    """Raised when a collection contains heterogeneous scalar types and
-    the language would coerce them to strings, but the caller opted to
-    receive an error instead.
+class HeterogeneousCollectionError(Exception):
+    """Base class for errors raised when data is incompatible with the
+    target language's collection-shape constraints.
+    """
+
+
+class HeterogeneousScalarCollectionError(HeterogeneousCollectionError):
+    """Raised when a collection contains scalars of multiple types and
+    the target language requires homogeneous scalar collections.
+    """
+
+
+class HeterogeneousSiblingListsError(HeterogeneousCollectionError):
+    """Raised when sibling sub-lists contain scalars that, combined,
+    span multiple types and the target language requires homogeneous
+    scalar collections.
+    """
+
+
+class MixedDictValuesError(HeterogeneousCollectionError):
+    """Raised when a dict has values spanning multiple type families
+    and the target language requires homogeneous dict values.
+    """
+
+
+class MixedListValuesError(HeterogeneousCollectionError):
+    """Raised when a list has elements spanning multiple type families
+    and the target language requires homogeneous list elements.
+    """
+
+
+class MixedDictShapesError(HeterogeneousCollectionError):
+    """Raised when a list contains dicts with different key sets and
+    the target language requires uniform record shapes (e.g. Dhall).
+    """
+
+
+class HeterogeneousSetError(HeterogeneousCollectionError):
+    """Raised when a set contains scalars of multiple types and the
+    target language requires homogeneous set elements.
     """
 
 
 class NullInCollectionError(Exception):
     """Raised when a collection contains null elements and the chosen
     format does not support them (e.g. Java's ``List.of()``).
+    """
+
+
+class PerElementNotListError(Exception):
+    """Raised when ``per_element=True`` but the parsed data is not a
+    list.
     """
 
 
@@ -52,3 +94,24 @@ class UnsupportedCallStyleError(Exception):
             f"{language_name} does not support function call rendering"
         )
         self.language_name = language_name
+
+
+class IncompatibleFormatsError(Exception):
+    """Raised when a combination of format options produces invalid code.
+
+    For example, Rust ``CONST`` and ``STATIC`` declaration styles
+    require constant-expression initializers, but the ``VEC`` sequence
+    format produces ``vec![…]`` which is not a constant expression.
+    """
+
+
+class UnrepresentableIntegerError(Exception):
+    """Raised when an integer value exceeds the range the target
+    language can represent natively.
+
+    Used by languages whose fixed-width integer types cannot hold
+    values outside the signed 64-bit range (e.g. Fortran default
+    ``integer``, Cobol ``PIC S9(18)``, PureScript ``Int``) when no
+    external arbitrary-precision integer library is assumed to be
+    available.
+    """

@@ -1,5 +1,5 @@
 [
-    1,
-    "hello",
-    true,
+  1,
+  "hello",
+  true,
 ]

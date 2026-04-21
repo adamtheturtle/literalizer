@@ -1,9 +1,9 @@
 let my_data = [
-    "a",
-    // trailing
+  "a",
+  // trailing
 ];
 my_data = [
-    "a",
-    // trailing
+  "a",
+  // trailing
 ];
 export {};

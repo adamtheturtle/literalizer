@@ -52,7 +52,8 @@ type _JSONValue = _JSONScalar | list[_JSONValue] | dict[str, _JSONValue]
 json_text = st.text(
     alphabet=st.characters(
         categories=("L", "M", "N", "P", "S", "Z"), exclude_characters="\x00"
-    )
+    ),
+    max_size=20,
 )
 json_scalars = (
     st.none()
@@ -65,14 +66,17 @@ json_scalars = (
 json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     base=json_scalars,
     extend=lambda children: (
-        # ``max_size`` prevents unbounded nesting that causes test timeouts.
-        st.lists(elements=children, max_size=5)
-        | st.dictionaries(keys=json_text, values=children, max_size=5)
+        st.lists(elements=children, max_size=3)
+        | st.dictionaries(keys=json_text, values=children, max_size=3)
     ),
+    # ``max_leaves`` caps total nodes generated; the recursive strategy
+    # is by far the dominant cost in these tests, so a tight bound here
+    # is the biggest single performance lever without losing
+    # meaningful coverage.
+    max_leaves=15,
 )
-# ``max_size`` prevents very large inputs that would slow down tests.
-json_arrays = st.lists(elements=json_values, max_size=10)
-json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=10)
+json_arrays = st.lists(elements=json_values, max_size=5)
+json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=5)
 
 
 @settings(deadline=None)
@@ -86,7 +90,6 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
@@ -102,7 +105,6 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
@@ -123,7 +125,6 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
@@ -157,7 +158,6 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     code = result.code.rstrip(",")
     assert ast.literal_eval(node_or_string=code) == data.hex()
@@ -229,7 +229,6 @@ def test_roundtrip_yaml_binary_hex_languages(
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     code = result.code.rstrip(",")
     assert bytes.fromhex(code.strip('"')) == data
@@ -247,7 +246,6 @@ def test_roundtrip_yaml_binary_erlang(data: bytes) -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     code = result.code.rstrip(",")
     if not data:

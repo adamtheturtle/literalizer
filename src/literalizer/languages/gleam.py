@@ -5,9 +5,10 @@ import datetime
 import enum
 import math
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -25,6 +26,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -40,7 +42,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
-    CallStyleConfig,
+    CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -51,18 +53,25 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     infix_call_line,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
+    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+
+@beartype
+def _gleam_nonneg_only_impl(value: int, base: Callable[[int], str]) -> str:
+    """Format an integer, falling back to decimal for negatives."""
+    if value < 0:
+        return str(object=value)
+    return base(value)
 
 
 @beartype
@@ -74,14 +83,17 @@ def _gleam_nonneg_only(
     Gleam does not support negative hex/octal/binary literals.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format an integer, falling back to decimal for negatives."""
-        if value < 0:
-            return str(object=value)
-        return base(value)
+        """Delegate to module-level implementation."""
+        return _gleam_nonneg_only_impl(value=value, base=base)
 
     return _format
+
+
+@beartype
+def _apply_gleam_str_wrapped_date(value: datetime.date, prefix: str) -> str:
+    """Format a date as a Gleam string via ISO 8601."""
+    return f"{prefix}Str({format_date_iso(value=value)})"
 
 
 def _build_gleam_date_iso(
@@ -91,12 +103,19 @@ def _build_gleam_date_iso(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.date) -> str:
-        """Format a date as a Gleam string via ISO 8601."""
-        return f"{prefix}Str({format_date_iso(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_str_wrapped_date(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_str_wrapped_datetime(
+    value: datetime.datetime, prefix: str
+) -> str:
+    """Format a datetime as a Gleam string via ISO 8601."""
+    return f"{prefix}Str({format_datetime_iso(value=value)})"
 
 
 def _build_gleam_datetime_iso(
@@ -106,12 +125,17 @@ def _build_gleam_datetime_iso(
     constructors.
     """
 
-    @beartype
     def _format(value: datetime.datetime) -> str:
-        """Format a datetime as a Gleam string via ISO 8601."""
-        return f"{prefix}Str({format_datetime_iso(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_str_wrapped_datetime(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_bytes_hex(value: bytes, prefix: str) -> str:
+    """Format bytes as a Gleam hex string."""
+    return f"{prefix}Str({format_bytes_hex(value=value)})"
 
 
 def _build_gleam_bytes_hex(
@@ -121,12 +145,17 @@ def _build_gleam_bytes_hex(
     constructors.
     """
 
-    @beartype
     def _format(value: bytes) -> str:
-        """Format bytes as a Gleam hex string."""
-        return f"{prefix}Str({format_bytes_hex(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_bytes_hex(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_bytes_base64(value: bytes, prefix: str) -> str:
+    """Format bytes as a Gleam base64 string."""
+    return f"{prefix}Str({format_bytes_base64(value=value)})"
 
 
 def _build_gleam_bytes_base64(
@@ -136,12 +165,18 @@ def _build_gleam_bytes_base64(
     constructors.
     """
 
-    @beartype
     def _format(value: bytes) -> str:
-        """Format bytes as a Gleam base64 string."""
-        return f"{prefix}Str({format_bytes_base64(value=value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_bytes_base64(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_string(value: str, prefix: str) -> str:
+    """Format a string with a constructor prefix."""
+    escaped = format_string_backslash(value)
+    return f"{prefix}Str({escaped})"
 
 
 def _build_gleam_str_formatter(
@@ -151,13 +186,19 @@ def _build_gleam_str_formatter(
     constructors.
     """
 
-    @beartype
     def _format(value: str) -> str:
-        """Format a string with a constructor prefix."""
-        escaped = format_string_backslash(value)
-        return f"{prefix}Str({escaped})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_string(value=value, prefix=prefix)
 
     return _format
+
+
+@beartype
+def _apply_gleam_integer_wrapped(
+    value: int, prefix: str, base: Callable[[int], str]
+) -> str:
+    """Format an integer with a ``{prefix}Int`` constructor."""
+    return f"{prefix}Int({base(value)})"
 
 
 def _build_gleam_integer_wrapper(
@@ -168,12 +209,21 @@ def _build_gleam_integer_wrapper(
     constructors.
     """
 
-    @beartype
     def _format(value: int) -> str:
-        """Format an integer with a ``{prefix}Int`` constructor."""
-        return f"{prefix}Int({base(value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_integer_wrapped(
+            value=value, prefix=prefix, base=base
+        )
 
     return _format
+
+
+@beartype
+def _apply_gleam_float_wrapped(
+    value: float, prefix: str, inner: Callable[[float], str]
+) -> str:
+    """Format a float with a ``{prefix}Float`` constructor."""
+    return f"{prefix}Float({inner(value)})"
 
 
 def _build_gleam_float_wrapper(
@@ -184,12 +234,29 @@ def _build_gleam_float_wrapper(
     constructors.
     """
 
-    @beartype
     def _format(value: float) -> str:
-        """Format a float with a ``{prefix}Float`` constructor."""
-        return f"{prefix}Float({inner(value)})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_float_wrapped(
+            value=value, prefix=prefix, inner=inner
+        )
 
     return _format
+
+
+@beartype
+def _apply_gleam_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+    str_prefix: str,
+) -> str:
+    """Format a dict entry as a hash tuple with a plain-string key.
+
+    Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
+    constructor must be stripped from the formatted key.
+    """
+    key = key.removeprefix(str_prefix).removesuffix(")")
+    return f"#({key}, {formatted_value})"
 
 
 def _build_gleam_dict_entry(
@@ -200,15 +267,14 @@ def _build_gleam_dict_entry(
     """
     _str_prefix = f"{prefix}Str("
 
-    @beartype
     def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Format a dict entry as a hash tuple with a plain-string key.
-
-        Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
-        constructor must be stripped from the formatted key.
-        """
-        key = key.removeprefix(_str_prefix).removesuffix(")")
-        return f"#({key}, {formatted_value})"
+        """Delegate to module-level implementation."""
+        return _apply_gleam_dict_entry(
+            key=key,
+            _raw_value=_raw_value,
+            formatted_value=formatted_value,
+            str_prefix=_str_prefix,
+        )
 
     return _format
 
@@ -255,6 +321,7 @@ _GLEAM_BYTES_FORMATTERS: dict[
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Gleam(metaclass=LanguageCls):
     """Gleam language specification.
 
@@ -382,13 +449,6 @@ class Gleam(metaclass=LanguageCls):
             declared_type=None,
         )
 
-        @property
-        def supports_heterogeneity(self) -> bool:
-            """Whether this sequence format supports mixed-type
-            elements.
-            """
-            return self.value.supports_heterogeneity
-
     class SetFormats(enum.Enum):
         """Set type options for Gleam."""
 
@@ -398,7 +458,7 @@ class Gleam(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=(),
             set_opener_template="",
-            coerce_mixed_to_str=False,
+            supports_heterogeneity=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -413,7 +473,9 @@ class Gleam(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_formatter(template="let {name} = {value}"),
+            formatter=variable_declaration_formatter(
+                template="let {name} = {value}"
+            ),
             supports_redefinition=True,
         )
 
@@ -583,6 +645,12 @@ class Gleam(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
+    validate_spec_for_data = no_validate_spec_for_data
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -611,168 +679,264 @@ class Gleam(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    def __init__(  # noqa: PLR0915
+    date_format: DateFormats = DateFormats.ISO
+    datetime_format: DatetimeFormats = DatetimeFormats.ISO
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.LIST
+    set_format: SetFormats = SetFormats.SET
+    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.LET
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.YES
+    line_ending: LineEndings = LineEndings.NONE
+    indent: str = "  "
+    type_name: str = "GVal"
+    constructor_prefix: str = "G"
+
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = True
+    statement_terminator: ClassVar[str] = ""
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+    call_style_config: ClassVar[CallStyle | None] = None
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
         self,
-        *,
-        date_format: DateFormats = DateFormats.ISO,
-        datetime_format: DatetimeFormats = DatetimeFormats.ISO,
-        bytes_format: BytesFormats = BytesFormats.HEX,
-        sequence_format: SequenceFormats = SequenceFormats.LIST,
-        set_format: SetFormats = SetFormats.SET,
-        variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO,
-        comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH,
-        declaration_style: DeclarationStyles = DeclarationStyles.LET,
-        dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT,
-        dict_format: DictFormats = DictFormats.DEFAULT,
-        float_format: FloatFormats = FloatFormats.REPR,
-        integer_format: IntegerFormats = IntegerFormats.DECIMAL,
-        numeric_literal_suffix: NumericLiteralSuffixes = (
-            NumericLiteralSuffixes.NONE
-        ),
-        numeric_separator: NumericSeparators = NumericSeparators.NONE,
-        numeric_style: NumericStyles = NumericStyles.OVERLOADED,
-        string_format: StringFormats = StringFormats.DOUBLE,
-        trailing_comma: TrailingCommas = TrailingCommas.YES,
-        line_ending: LineEndings = LineEndings.NONE,
-        indent: str = "  ",
-        type_name: str = "GVal",
-        constructor_prefix: str = "G",
-    ) -> None:
-        """Initialize Gleam language specification."""
-        self.variable_type_hints = variable_type_hints
-        self.sequence_format = sequence_format
-        self.null_literal: str = f"{constructor_prefix}Null"
-        self.true_literal: str = f"{constructor_prefix}Bool(True)"
-        self.false_literal: str = f"{constructor_prefix}Bool(False)"
-        fmt = sequence_format.value
-        if sequence_format.name == "LIST":
-            _seq_open = fixed_sequence_open(
-                open_str=f"{constructor_prefix}List([",
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return stub declarations for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_line(
+        self,
+    ) -> Callable[
+        [str, str, Callable[[str], str] | None, str],
+        str,
+    ]:
+        """Assemble a complete call statement from its parts."""
+        return infix_call_line
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Literal representing ``None``."""
+        return f"{self.constructor_prefix}Null"
+
+    @cached_property
+    def true_literal(self) -> str:
+        """Literal representing ``True``."""
+        return f"{self.constructor_prefix}Bool(True)"
+
+    @cached_property
+    def false_literal(self) -> str:
+        """Literal representing ``False``."""
+        return f"{self.constructor_prefix}Bool(False)"
+
+    @cached_property
+    def _dict_entry(self) -> Callable[[str, Value, str], str]:
+        """Shared dict-entry formatter used by dict and ordered-map."""
+        return _build_gleam_dict_entry(prefix=self.constructor_prefix)
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        fmt = self.sequence_format.value
+        if self.sequence_format.name == "LIST":
+            return dataclasses.replace(
+                fmt,
+                sequence_open=fixed_sequence_open(
+                    open_str=f"{self.constructor_prefix}List([",
+                ),
             )
-            self.sequence_format_config: SequenceFormatConfig = (
-                dataclasses.replace(fmt, sequence_open=_seq_open)
-            )
-            self.sequence_open: Callable[[list[Value]], str] = _seq_open
-        else:
-            self.sequence_format_config = fmt
-            self.sequence_open = fmt.sequence_open
-        self.set_format = set_format
-        self.set_format_config: SetFormatConfig = dataclasses.replace(
-            set_format.value,
+        return fmt
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return self.sequence_format_config.sequence_open
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return dataclasses.replace(
+            self.set_format.value,
             set_open=fixed_set_open(
-                open_str=f"{constructor_prefix}Set([",
+                open_str=f"{self.constructor_prefix}Set([",
             ),
         )
 
-        _dict_entry = _build_gleam_dict_entry(prefix=constructor_prefix)
-        self.dict_format_config: DictFormatConfig = DictFormatConfig(
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
             dict_open=fixed_dict_open(
-                open_str=f"{constructor_prefix}Dict([",
+                open_str=f"{self.constructor_prefix}Dict([",
             ),
             close="])",
-            format_entry=_dict_entry,
+            format_entry=self._dict_entry,
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
         )
-        self.trailing_comma_config: TrailingCommaConfig = trailing_comma.value
-        if constructor_prefix == "G":
-            self.format_bytes: Callable[[bytes], str] = bytes_format
-            self.format_date: Callable[[datetime.date], str] = date_format
-            self.format_datetime: Callable[[datetime.datetime], str] = (
-                datetime_format
-            )
-            self.format_string: Callable[[str], str] = _format_gleam_string
-            self.format_integer: Callable[[int], str] = (
-                integer_format.get_formatter(
-                    numeric_separator=numeric_separator,
-                )
-            )
-            self.format_float: Callable[[float], str] = float_format
-        else:
-            self.format_bytes = _GLEAM_BYTES_FORMATTERS[bytes_format.name](
-                constructor_prefix
-            )
-            self.format_date = _build_gleam_date_iso(prefix=constructor_prefix)
-            self.format_datetime = _build_gleam_datetime_iso(
-                prefix=constructor_prefix
-            )
-            self.format_string = _build_gleam_str_formatter(
-                prefix=constructor_prefix
-            )
 
-            _int_base = _GLEAM_INT_BASE[
-                (integer_format.name, numeric_separator.name)
-            ]
-            self.format_integer = _build_gleam_integer_wrapper(
-                prefix=constructor_prefix,
-                base=_int_base,
-            )
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
 
-            _pos_inf = f"{constructor_prefix}Float(todo)"
-            _neg_inf = f"{constructor_prefix}Float(todo)"
-            _nan_val = f"{constructor_prefix}Float(todo)"
-            _float_finite = _build_gleam_float_wrapper(
-                prefix=constructor_prefix,
-                inner=_GLEAM_FLOAT_BASE[float_format.name],
-            )
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        if self.constructor_prefix == "G":
+            return self.bytes_format
+        return _GLEAM_BYTES_FORMATTERS[self.bytes_format.name](
+            self.constructor_prefix,
+        )
 
-            @beartype
-            def _format_float_with_specials(value: float) -> str:
-                """Format a float, handling inf and nan."""
-                if math.isinf(value):
-                    return _neg_inf if value < 0 else _pos_inf
-                if math.isnan(value):
-                    return _nan_val
-                return _float_finite(value)
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        if self.constructor_prefix == "G":
+            return self.date_format
+        return _build_gleam_date_iso(prefix=self.constructor_prefix)
 
-            self.format_float = _format_float_with_specials
-        self.format_sequence_entry: Callable[[Value, str], str] = (
-            passthrough_sequence_entry
-        )
-        self.format_set_entry: Callable[[Value, str], str] = (
-            passthrough_set_entry
-        )
-        self.comment_format = comment_format
-        self.declaration_style = declaration_style
-        self.dict_entry_style = dict_entry_style
-        self.dict_format = dict_format
-        self.float_format = float_format
-        self.integer_format = integer_format
-        self.numeric_literal_suffix = numeric_literal_suffix
-        self.numeric_separator = numeric_separator
-        self.numeric_style = numeric_style
-        self.string_format = string_format
-        self.trailing_comma = trailing_comma
-        self.line_ending = line_ending
-        self.comment_config: CommentConfig = comment_format.value
-        self.ordered_map_format_config: OrderedMapFormatConfig = (
-            OrderedMapFormatConfig(
-                open_str=f"{constructor_prefix}Dict([",
-                close="])",
-                preamble_lines=(),
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        if self.constructor_prefix == "G":
+            return self.datetime_format
+        return _build_gleam_datetime_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        if self.constructor_prefix == "G":
+            return _format_gleam_string
+        return _build_gleam_str_formatter(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        if self.constructor_prefix == "G":
+            return self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
             )
+        base = _GLEAM_INT_BASE[
+            (self.integer_format.name, self.numeric_separator.name)
+        ]
+        return _build_gleam_integer_wrapper(
+            prefix=self.constructor_prefix,
+            base=base,
         )
-        self.format_ordered_map_entry: Callable[[str, Value, str], str] = (
-            _dict_entry
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        if self.constructor_prefix == "G":
+            return self.float_format
+        _pos_inf = f"{self.constructor_prefix}Float(todo)"
+        _neg_inf = f"{self.constructor_prefix}Float(todo)"
+        _nan_val = f"{self.constructor_prefix}Float(todo)"
+        _float_finite = _build_gleam_float_wrapper(
+            prefix=self.constructor_prefix,
+            inner=_GLEAM_FLOAT_BASE[self.float_format.name],
         )
-        self.indent = indent
-        self.indent_closing_delimiter = False
-        self.element_separator = ", "
-        self.skip_null_dict_values = False
-        self.supports_collection_comments = True
-        self.supports_scalar_before_comments = True
-        self.supports_scalar_inline_comments = True
-        self.format_variable_declaration: Callable[[str, str, Value], str] = (
-            declaration_style.value.formatter
+
+        @beartype
+        def _format_float_with_specials(value: float) -> str:
+            """Format a float, handling inf and nan."""
+            if math.isinf(value):
+                return _neg_inf if value < 0 else _pos_inf
+            if math.isnan(value):
+                return _nan_val
+            return _float_finite(value)
+
+        return _format_float_with_specials
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_dict_open(
+                open_str=f"{self.constructor_prefix}Dict([",
+            ),
+            close="])",
+            preamble_lines=(),
         )
-        self.format_variable_assignment: Callable[[str, str, Value], str] = (
-            variable_formatter(template="let {name} = {value}")
-        )
-        self.static_preamble: Sequence[str] = ()
-        self.static_body_preamble: Sequence[str] = ()
-        p = constructor_prefix
-        self.scalar_preamble: dict[type, tuple[str, ...]] = dict.fromkeys(
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Callable that formats one ordered-map entry."""
+        return self._dict_entry
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a new variable declaration."""
+        return self.declaration_style.value.formatter
+
+    @cached_property
+    def format_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment to an existing variable."""
+        return variable_formatter(template="let {name} = {value}")
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble with Gleam type declaration."""
+        p = self.constructor_prefix
+        return dict.fromkeys(
             (
                 type(None),
                 bool,
@@ -787,31 +951,30 @@ class Gleam(metaclass=LanguageCls):
                 set,
             ),
             (
-                f"pub type {type_name} {{\n"
+                f"pub type {self.type_name} {{\n"
                 f"  {p}Null\n"
                 f"  {p}Bool(Bool)\n"
                 f"  {p}Int(Int)\n"
                 f"  {p}Float(Float)\n"
                 f"  {p}Str(String)\n"
-                f"  {p}List(List({type_name}))\n"
-                f"  {p}Dict(List(#(String, {type_name})))\n"
-                f"  {p}Set(List({type_name}))\n"
+                f"  {p}List(List({self.type_name}))\n"
+                f"  {p}Dict(List(#(String, {self.type_name})))\n"
+                f"  {p}Set(List({self.type_name}))\n"
                 "}",
             ),
         )
-        self.scalar_body_preamble: dict[type, tuple[str, ...]] = {}
-        self.compute_body_preamble: Callable[
-            [frozenset[type], Value], tuple[str, ...]
-        ] = body_preamble_from_scalars(
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Gleam needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
-
-        self.type_hint_collection_preamble_lines = no_type_hint_preamble
-        self.special_float_preamble: tuple[str, ...] = ()
-        self.call_style_config: CallStyleConfig | None = None
-        self.statement_terminator = ""
-        self.format_call_stub = no_call_stub
-        self.format_call_preamble_stub = no_call_stub
-        self.format_call_target = identity_call_target
-        self.format_call_line = infix_call_line

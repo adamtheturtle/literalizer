@@ -10,10 +10,7 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import (
     BothVariableForms,
-    CallStyleConfig,
-    CallStyleKind,
     InputFormat,
-    Language,
     NewVariable,
     literalize,
     literalize_call,
@@ -21,24 +18,18 @@ from literalizer import (
 from literalizer._language import LanguageCls
 from literalizer.exceptions import (
     NullInCollectionError,
+    PerElementNotListError,
     UnsupportedCallStyleError,
 )
 from literalizer.languages import (
     Cobol,
-    Cpp,
-    CSharp,
     Forth,
     Fortran,
+    FSharp,
     Go,
     Java,
-    JavaScript,
-    Kotlin,
     Matlab,
     Python,
-    Ruby,
-    Rust,
-    Toml,
-    TypeScript,
     Yaml,
 )
 
@@ -48,227 +39,19 @@ COBOL = Cobol(
     bytes_format=Cobol.bytes_formats.HEX,
     sequence_format=Cobol.sequence_formats.SEQUENCE,
 )
-CPP = Cpp(
-    date_format=Cpp.date_formats.CPP,
-    datetime_format=Cpp.datetime_formats.CPP,
-    bytes_format=Cpp.bytes_formats.HEX,
-    sequence_format=Cpp.sequence_formats.INITIALIZER_LIST,
-)
 FORTRAN = Fortran(
     date_format=Fortran.date_formats.ISO,
     datetime_format=Fortran.datetime_formats.ISO,
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
 )
-CSHARP = CSharp(
-    date_format=CSharp.date_formats.CSHARP,
-    datetime_format=CSharp.datetime_formats.CSHARP,
-    bytes_format=CSharp.bytes_formats.HEX,
-    sequence_format=CSharp.sequence_formats.ARRAY,
-)
-GO = Go(
-    date_format=Go.date_formats.GO,
-    datetime_format=Go.datetime_formats.GO,
-    bytes_format=Go.bytes_formats.HEX,
-    sequence_format=Go.sequence_formats.SLICE,
-)
+FSHARP = FSharp()
 JAVA = Java(
     date_format=Java.date_formats.JAVA,
     datetime_format=Java.datetime_formats.INSTANT,
     bytes_format=Java.bytes_formats.HEX,
     sequence_format=Java.sequence_formats.ARRAY,
 )
-JAVASCRIPT = JavaScript(
-    date_format=JavaScript.date_formats.JS,
-    datetime_format=JavaScript.datetime_formats.JS,
-    bytes_format=JavaScript.bytes_formats.HEX,
-    sequence_format=JavaScript.sequence_formats.ARRAY,
-)
-KOTLIN = Kotlin(
-    date_format=Kotlin.date_formats.KOTLIN,
-    datetime_format=Kotlin.datetime_formats.KOTLIN,
-    bytes_format=Kotlin.bytes_formats.HEX,
-    sequence_format=Kotlin.sequence_formats.LIST,
-)
-PYTHON = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.AUTO,
-)
-RUBY = Ruby(
-    date_format=Ruby.date_formats.RUBY,
-    datetime_format=Ruby.datetime_formats.RUBY,
-    bytes_format=Ruby.bytes_formats.HEX,
-    sequence_format=Ruby.sequence_formats.ARRAY,
-)
-RUST = Rust(
-    date_format=Rust.date_formats.RUST,
-    datetime_format=Rust.datetime_formats.RUST,
-    bytes_format=Rust.bytes_formats.HEX,
-    sequence_format=Rust.sequence_formats.VEC,
-)
-TOML = Toml(
-    date_format=Toml.date_formats.TOML,
-    datetime_format=Toml.datetime_formats.TOML,
-    bytes_format=Toml.bytes_formats.HEX,
-    sequence_format=Toml.sequence_formats.ARRAY,
-)
-TYPESCRIPT = TypeScript(
-    date_format=TypeScript.date_formats.JS,
-    datetime_format=TypeScript.datetime_formats.JS,
-    bytes_format=TypeScript.bytes_formats.HEX,
-    sequence_format=TypeScript.sequence_formats.ARRAY,
-)
-
-
-@pytest.mark.parametrize(
-    argnames=("language", "expected"),
-    argvalues=[
-        (PYTHON, '(True, None, "hi", (1, 2)),'),
-        (JAVASCRIPT, '[true, null, "hi", [1, 2]],'),
-        (TYPESCRIPT, '[true, null, "hi", [1, 2]],'),
-        (GO, '[]any{true, nil, "hi", []int{1, 2}},'),
-        (CPP, '{true, nullptr, "hi", std::vector<int>{1, 2}},'),
-        (JAVA, 'new Object[]{true, null, "hi", new int[]{1, 2}}'),
-        (CSHARP, 'new object[] {true, (object?)null, "hi", new int[] {1, 2}}'),
-        (RUBY, '[true, nil, "hi", [1, 2]],'),
-        (KOTLIN, 'listOf<Any?>(true, null, "hi", intArrayOf(1, 2)),'),
-        (RUST, 'vec!["True", "None", "hi", "[1, 2]"],'),
-    ],
-)
-def test_language_sequence(*, language: Language, expected: str) -> None:
-    """Each language produces the correct sequence literal."""
-    result = literalize(
-        source=json.dumps(obj=[[True, None, "hi", [1, 2]]]),
-        input_format=InputFormat.JSON,
-        language=language,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == expected
-
-
-def test_ruby_dict() -> None:
-    """Ruby dicts use => syntax and nil."""
-    result = literalize(
-        source=json.dumps(obj=[{"key": None}]),
-        input_format=InputFormat.JSON,
-        language=RUBY,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == '{"key" => nil},'
-
-
-def test_dict_ruby() -> None:
-    """Ruby dict renders with => syntax."""
-    result = literalize(
-        source=json.dumps(obj={"user_1": "team_alpha"}),
-        input_format=InputFormat.JSON,
-        language=RUBY,
-        pre_indent_level=1,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == '    "user_1" => "team_alpha",'
-
-
-def test_java_dict_include_delimiters_no_multiline_trailing_comma() -> None:
-    """Java Map.ofEntries() must not have a trailing comma before the
-    closing paren.
-    """
-    result = literalize(
-        source=json.dumps(obj={"name": "Alice", "age": 30}),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        Map.ofEntries(
-            Map.entry("name", "Alice"),
-            Map.entry("age", 30)
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_java_dict_skips_null_values() -> None:
-    """Java Map.ofEntries() omits entries with null values."""
-    data = {"name": "Alice", "score": None, "age": 30}
-    result = literalize(
-        source=json.dumps(obj=data),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        Map.ofEntries(
-            Map.entry("name", "Alice"),
-            Map.entry("age", 30)
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_java_dict_skips_null_values_no_include_delimiters() -> None:
-    """Java dict omits null entries even without include_delimiters."""
-    result = literalize(
-        source=json.dumps(obj={"a": None, "b": 1}),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = 'Map.entry("b", 1)'
-    assert result.code == expected
-
-
-def test_java_dict_all_null_values_include_delimiters() -> None:
-    """Java dict where all values are null produces empty
-    Map.ofEntries().
-    """
-    result = literalize(
-        source=json.dumps(obj={"a": None, "b": None}),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == "Map.ofEntries()"
-
-
-def test_java_dict_all_null_values_with_pre_indent_level() -> None:
-    """Java all-null dict with pre_indent_level includes line_prefix."""
-    result = literalize(
-        source=json.dumps(obj={"a": None, "b": None}),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=1,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == "    Map.ofEntries()"
 
 
 def test_java_yaml_dict_null_values_with_comments() -> None:
@@ -281,7 +64,6 @@ def test_java_yaml_dict_null_values_with_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -311,7 +93,6 @@ def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -341,7 +122,6 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
@@ -365,148 +145,8 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = "Map.ofEntries()\n    // trailing"
-    assert result.code == expected
-
-
-def test_java_yaml_ordered_map_skips_null_values() -> None:
-    """Java YAML ordered map nested in a list filters null values."""
-    yaml_string = textwrap.dedent(
-        text="""\
-        ---
-        - !!omap
-          - name: Alice
-          - score: null
-          - age: 30
-        """,
-    )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    ordered_map_inline = (
-        "new java.util.ArrayList<>(java.util.Arrays.asList("
-        'Map.entry("name", "Alice"), Map.entry("age", 30)))'
-    )
-    expected = f"new Object[]{{\n    {ordered_map_inline}\n}}"
-    assert result.code == expected
-
-
-def test_java_sequence_include_delimiters_uses_braces() -> None:
-    """Java wrapped sequences use ``new Object[]{…}``."""
-    result = literalize(
-        source=json.dumps(obj=[1, "hello", True]),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        new Object[]{
-            1,
-            "hello",
-            true
-        }"""
-    )
-    assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames=("json_input", "expected"),
-    argvalues=[
-        (
-            [1, 2, 3],
-            textwrap.dedent(
-                text="""\
-                new int[]{
-                    1,
-                    2,
-                    3
-                }"""
-            ),
-        ),
-        (
-            ["hello", "world"],
-            textwrap.dedent(
-                text="""\
-                new String[]{
-                    "hello",
-                    "world"
-                }"""
-            ),
-        ),
-        (
-            [1, "hello", True],
-            textwrap.dedent(
-                text="""\
-                new Object[]{
-                    1,
-                    "hello",
-                    true
-                }"""
-            ),
-        ),
-    ],
-    ids=["all_int", "all_string", "mixed"],
-)
-def test_java_typed_array_opener(
-    *, json_input: list[object], expected: str
-) -> None:
-    """Java uses typed array openers inferred from element types."""
-    result = literalize(
-        source=json.dumps(obj=json_input),
-        input_format=InputFormat.JSON,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames=("yaml_string", "expected"),
-    argvalues=[
-        ("hello\n", '"hello"'),
-        ('"hello\\nworld"\n', '"hello" + char(10) + "world"'),
-        ('"hello\\tworld"\n', '"hello" + char(9) + "world"'),
-        ('"back\\\\slash"\n', '"back\\\\slash"'),
-    ],
-)
-def test_matlab_string_escaping(*, yaml_string: str, expected: str) -> None:
-    r"""MATLAB string values escape backslashes and use char() for control
-    characters.
-
-    Backslashes are doubled (``\\`` -> ``\\\\``) because MATLAB
-    double-quoted strings interpret backslash escape sequences; control
-    characters (newlines, tabs, etc.) are represented as ``char(N)``
-    expressions joined with ``+``.
-    """
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=Matlab(
-            date_format=Matlab.date_formats.ISO,
-            datetime_format=Matlab.datetime_formats.ISO,
-            bytes_format=Matlab.bytes_formats.HEX,
-            sequence_format=Matlab.sequence_formats.CELL_ARRAY,
-        ),
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
     assert result.code == expected
 
 
@@ -529,62 +169,8 @@ def test_matlab_dict_key_with_quote() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     assert result.code == "'hello \"world\"', 1"
-
-
-def test_toml_integer_dict_key() -> None:
-    """TOML dict entry with an integer key passes through without
-    modification.
-
-    Integer keys are not quoted strings, so the bare-key optimisation is
-    skipped and the raw formatted key is used directly.
-    """
-    result = literalize(
-        source="1: value\n",
-        input_format=InputFormat.YAML,
-        language=TOML,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            1 = "value"
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_cobol_string_control_characters() -> None:
-    """COBOL string literals replace control characters with spaces."""
-    result = literalize(
-        source='"line1\\nline2"\n',
-        input_format=InputFormat.YAML,
-        language=COBOL,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == '"line1 line2"'
-
-
-def test_cobol_string_tab_characters() -> None:
-    """COBOL string literals replace tab characters with spaces."""
-    result = literalize(
-        source='"col1\\tcol2"\n',
-        input_format=InputFormat.YAML,
-        language=COBOL,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-        error_on_coercion=False,
-    )
-    assert result.code == '"col1 col2"'
 
 
 def test_cobol_level_number_cap() -> None:
@@ -612,7 +198,6 @@ def test_cobol_level_number_cap() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = (
         "\n"
@@ -642,7 +227,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        error_on_coercion=False,
     )
     for line in result.code.splitlines():
         stripped = line.strip()
@@ -661,40 +245,35 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         pre_indent_level=0,
         variable_form=NewVariable(name="cfg"),
         include_delimiters=True,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
         type(fval_t) :: cfg
         cfg = fmap([fval_t :: &
             fentry('host', fstr('it''s here')), &  ! a comment
-            fentry('port', fint(80)) &  ! another
+            fentry('port', fint(80_int64)) &  ! another
         ])""",
     )
     assert result.code == expected
 
 
-def test_java_list_format() -> None:
-    """Java LIST format uses ``List.of(...)`` for non-null sequences."""
-    spec = Java(
-        sequence_format=Java.sequence_formats.LIST,
-    )
+def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
+    """Bare F# scalar integer values above i64 range use the ``I``
+    suffix.
+    """
     result = literalize(
-        source=json.dumps(obj=[1, "hello", True]),
+        source="9223372036854775808",
         input_format=InputFormat.JSON,
-        language=spec,
+        language=FSHARP,
         pre_indent_level=0,
-        include_delimiters=True,
+        include_delimiters=False,
         variable_form=None,
-        error_on_coercion=False,
     )
     expected = textwrap.dedent(
         text="""\
-        List.of(
-            1,
-            "hello",
-            true
-        )"""
+        type Val =
+            | FInt of bigint
+        9223372036854775808I"""
     )
     assert result.code == expected
 
@@ -720,7 +299,6 @@ def test_java_list_rejects_null_elements() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            error_on_coercion=False,
         )
 
 
@@ -728,6 +306,15 @@ _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
     key=lambda c: c.__name__,
 )
+
+
+_UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
+    cls
+    for cls in _SORTED_LANGUAGES
+    if not any(
+        style.value.supports_redefinition for style in cls.DeclarationStyles
+    )
+]
 
 
 @pytest.mark.parametrize(
@@ -751,26 +338,24 @@ def test_pygments_name_is_valid(
     argvalues=_SORTED_LANGUAGES,
     ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
-def test_wrap_in_file_methods_callable(
+def test_protocol_properties_accessible(
     *,
     language_cls: LanguageCls,
 ) -> None:
-    """Every language's wrap_in_file and wrap_combined_in_file are
-    callable.
+    """Every Language exposes its Protocol attributes for any language.
+
+    Many ``@cached_property`` members are only exercised by tests for
+    the subset of languages that opt in to a feature (variable
+    reassignment, type-hint preambles, call stubs).  Accessing every
+    documented member here keeps coverage at 100% across the matrix.
     """
-    wrapped = language_cls.wrap_in_file(
-        content="x = 1",
-        variable_name="x",
-        body_preamble=(),
-    )
-    assert isinstance(wrapped, str)
-    combined = language_cls.wrap_combined_in_file(
-        declaration="x = 1",
-        assignment="x = 2",
-        variable_name="x",
-        body_preamble=(),
-    )
-    assert isinstance(combined, str)
+    spec = language_cls()
+    assert callable(spec.format_call_stub)
+    assert callable(spec.format_call_preamble_stub)
+    assert callable(spec.format_variable_declaration)
+    assert callable(spec.format_variable_assignment)
+    assert callable(spec.type_hint_collection_preamble_lines)
+    assert isinstance(spec.scalar_body_preamble, dict)
 
 
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
@@ -790,7 +375,6 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        error_on_coercion=False,
     )
     assert result.code == "my_data: dict[str, str] = {}"
     assert not result.preamble
@@ -842,7 +426,11 @@ def test_literalize_call_per_element_false() -> None:
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
-    with pytest.raises(expected_exception=ValueError, match="wrap_in_file"):
+    expected_msg = "BothVariableForms requires wrap_in_file=True"
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
         literalize(
             source="42",
             input_format=InputFormat.JSON,
@@ -851,35 +439,55 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
         )
 
 
-def test_literalize_call_missing_keyword_separator_raises() -> None:
-    """Literalize_call raises ValueError for keyword style without
-    separator.
+def test_both_variable_forms_without_redefinition_support_raises() -> None:
+    """BothVariableForms raises when the declaration_style does not
+    support redefinition.
     """
-
-    class BadLang(Python):
-        """Python variant with missing keyword_separator."""
-
-    lang = BadLang()
-    lang.call_style_config = CallStyleConfig(
-        kind=CallStyleKind.KEYWORD,
+    expected = (
+        "BothVariableForms requires a declaration_style that supports "
+        "redefinition; 'ASSIGN' does not."
     )
     with pytest.raises(
         expected_exception=ValueError,
-        match=r"^keyword_separator must be set for 'keyword' call style$",
+        match=rf"^{re.escape(pattern=expected)}$",
     ):
-        literalize_call(
-            source="- [1]",
-            input_format=InputFormat.YAML,
-            language=lang,
-            target_function="f",
-            parameter_names=["x"],
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Yaml(),
+            variable_form=BothVariableForms(name="x"),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
+    ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
+)
+def test_wrap_combined_in_file_unsupported_raises(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Check wrap_combined_in_file raises when redefinition is unsupported.
+
+    :func:`literalizer.literalize` rejects ``BothVariableForms`` for
+    these languages before reaching ``wrap_combined_in_file``, but the
+    method itself must still satisfy the :class:`Language` protocol.
+    """
+    with pytest.raises(expected_exception=NotImplementedError):
+        language_cls.wrap_combined_in_file(
+            declaration="x = 1",
+            assignment="x = 2",
+            variable_name="x",
+            body_preamble=(),
         )
 
 
 def test_literalize_call_per_element_non_list_raises() -> None:
-    """Literalize_call raises TypeError for non-list with per_element."""
+    """Literalize_call raises PerElementNotListError for non-list."""
     with pytest.raises(
-        expected_exception=TypeError,
+        expected_exception=PerElementNotListError,
         match=r"^per_element=True requires a top-level list, got str$",
     ):
         literalize_call(

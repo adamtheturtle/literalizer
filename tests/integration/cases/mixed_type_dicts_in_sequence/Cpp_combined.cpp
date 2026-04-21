@@ -2,17 +2,14 @@
 #include <string>
 #include <map>
 #include <vector>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <variant>
 void check_() {
-Any my_data = std::vector<std::map<std::string, Any>>{
-    {{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}},
-    {{"type", "create"}, {"pr_id", "pr_2"}},
+auto my_data = std::vector<std::map<std::string, std::variant<std::string, bool>>>{
+    std::map<std::string, std::variant<std::string, bool>>{{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}},
+    std::map<std::string, std::variant<std::string, bool>>{{"type", "create"}, {"pr_id", "pr_2"}},
 };
-my_data = std::vector<std::map<std::string, Any>>{
-    {{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}},
-    {{"type", "create"}, {"pr_id", "pr_2"}},
+my_data = std::vector<std::map<std::string, std::variant<std::string, bool>>>{
+    std::map<std::string, std::variant<std::string, bool>>{{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}},
+    std::map<std::string, std::variant<std::string, bool>>{{"type", "create"}, {"pr_id", "pr_2"}},
 };
 }

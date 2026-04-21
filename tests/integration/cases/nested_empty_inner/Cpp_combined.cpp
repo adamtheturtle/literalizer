@@ -1,16 +1,14 @@
 #include <initializer_list>
 #include <vector>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <cstddef>
+#include <variant>
 void check_() {
-Any my_data = {
-    {},
-    {},
+auto my_data = std::vector<std::vector<std::nullptr_t>>{
+    std::vector<std::nullptr_t>{},
+    std::vector<std::nullptr_t>{},
 };
-my_data = {
-    {},
-    {},
+my_data = std::vector<std::vector<std::nullptr_t>>{
+    std::vector<std::nullptr_t>{},
+    std::vector<std::nullptr_t>{},
 };
 }

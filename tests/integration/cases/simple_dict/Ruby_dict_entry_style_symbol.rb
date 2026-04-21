@@ -1,6 +1,6 @@
 {
-    name: "Alice",
-    age: 30,
-    active: true,
-    score: nil,
+  name: "Alice",
+  age: 30,
+  active: true,
+  score: nil,
 }

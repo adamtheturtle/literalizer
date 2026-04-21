@@ -2,12 +2,9 @@
 #include <string>
 #include <map>
 #include <vector>
-struct Any {
-    template<class T> Any(T&&) noexcept {}
-    Any(std::initializer_list<Any>) noexcept {}
-};
+#include <variant>
 void check_() {
-Any my_data = std::vector<std::map<std::string, Any>>{
-    {{"key", "hello   world"}, {"value", 1}},
+auto my_data = std::vector<std::map<std::string, std::variant<std::string, int>>>{
+    std::map<std::string, std::variant<std::string, int>>{{"key", "hello   world"}, {"value", 1}},
 };
 }

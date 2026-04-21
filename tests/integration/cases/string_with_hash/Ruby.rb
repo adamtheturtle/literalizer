@@ -1,4 +1,4 @@
 [
-    "issue #{42}",
-    "color #red",
+  "issue #{42}",
+  "color #red",
 ]
