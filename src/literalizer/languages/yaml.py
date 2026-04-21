@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import functools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -455,10 +454,15 @@ class Yaml(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        return functools.partial(
-            format_string_backslash_control,
-            control_char_fmt="\\x{:02x}",
-        )
+
+        def _format(value: str) -> str:
+            """Format a string as a YAML quoted literal."""
+            return format_string_backslash_control(
+                value=value,
+                control_char_fmt="\\x{:02x}",
+            )
+
+        return _format
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

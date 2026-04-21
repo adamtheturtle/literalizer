@@ -88,8 +88,8 @@ def _format_dart_bigint_literal(value: int) -> str:
 
 @beartype
 def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
-    data: Value,
     *,
+    data: Value,
     date_hint: str,
     datetime_hint: str,
     default_set_element_type: str,
@@ -157,11 +157,11 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
 
 @beartype
 def _format_dart_typed_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
-    *,
     keyword: str,
     date_hint: str,
     datetime_hint: str,
@@ -457,16 +457,31 @@ class Dart(metaclass=LanguageCls):
             """Return the variable declaration formatter."""
             if self is type(self).AUTO:
                 return auto_formatter
-            return functools.partial(
-                _format_dart_typed_declaration,
-                keyword=keyword,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                default_set_element_type=default_set_element_type,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-                sequence_is_tuple=sequence_is_tuple,
-            )
+
+            def _typed_formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt :func:`_format_dart_typed_declaration` to the
+                positional formatter interface.
+                """
+                return _format_dart_typed_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    _modifiers=modifiers,
+                    keyword=keyword,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    default_set_element_type=default_set_element_type,
+                    default_dict_key_type=default_dict_key_type,
+                    default_dict_value_type=default_dict_value_type,
+                    sequence_is_tuple=sequence_is_tuple,
+                )
+
+            return _typed_formatter
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles

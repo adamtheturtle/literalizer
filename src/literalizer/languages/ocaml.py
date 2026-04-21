@@ -136,10 +136,10 @@ _format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 @beartype
 def _apply_ocaml_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
-    *,
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
