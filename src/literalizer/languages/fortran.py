@@ -62,9 +62,9 @@ from literalizer._types import Value
 
 @beartype
 def _apply_fortran_entry(
+    *,
     original: Value,
     formatted: str,
-    *,
     int_name: str,
     real_name: str,
     str_name: str,

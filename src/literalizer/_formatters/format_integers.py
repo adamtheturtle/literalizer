@@ -93,7 +93,7 @@ def format_integer_binary_erlang(value: int) -> str:
 
 
 @beartype
-def _format_integer_grouped(value: int, *, separator: str) -> str:
+def _format_integer_grouped(*, value: int, separator: str) -> str:
     """Format an integer with digit-group separators every 3 digits.
 
     Example: ``_format_integer_grouped(1000000, separator="_")``
@@ -171,8 +171,8 @@ def _format_overflow_suffix(
 
 @beartype
 def make_overflow_suffix_formatter(
-    base: Callable[[int], str],
     *,
+    base: Callable[[int], str],
     min_value: int,
     max_value: int,
     suffix: str,

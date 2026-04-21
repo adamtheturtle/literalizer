@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import functools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -176,10 +175,10 @@ def _build_sml_entry_formatter(
 
 @beartype
 def _apply_sml_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
-    *,
     sequence_declared_type: str,
     scalar_declared_type: str,
     entry_formatter: Callable[[Value, str], str],
@@ -564,9 +563,15 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return functools.partial(
-            format_string_backslash_control, control_char_fmt="\\{:03d}"
-        )
+
+        def _format(value: str) -> str:
+            """Format a string as an SML quoted literal."""
+            return format_string_backslash_control(
+                value=value,
+                control_char_fmt="\\{:03d}",
+            )
+
+        return _format
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

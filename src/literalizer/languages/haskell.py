@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import functools
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -337,10 +336,13 @@ def _build_string_formatters(
     For ``DOUBLE`` format, values pass through unmodified, and dict
     entries use tuple formatting.
     """
-    base_format_string: Callable[[str], str] = functools.partial(
-        format_string_backslash_control,
-        control_char_fmt="\\x{:02x}",
-    )
+
+    def base_format_string(value: str) -> str:
+        r"""Format a Haskell string with ``\x..`` control-char escapes."""
+        return format_string_backslash_control(
+            value=value,
+            control_char_fmt="\\x{:02x}",
+        )
 
     if string_format_name != "EXPLICIT":
         return _StringFormatters(
@@ -634,11 +636,11 @@ class _DeclarationFormatters:
 
 @beartype
 def _format_haskell_declaration(
+    *,
     name: str,
     value: str,
     data: Value,
     modifiers: frozenset[enum.Enum],
-    *,
     base_declaration: Callable[[str, str, Value, frozenset[enum.Enum]], str],
     sequence_declared_type: str | None,
     type_name: str,

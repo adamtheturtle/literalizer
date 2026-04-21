@@ -71,10 +71,10 @@ from literalizer._types import Value
 
 @beartype
 def _apply_nim_variable_declaration(
+    *,
     name: str,
     value: str,
     _data: Value,
-    *,
     uses_typed_literal_for_scalars: bool,
     keyword: str,
     force_sequence: bool,
@@ -133,10 +133,10 @@ def _make_variable_declaration(
 
 @beartype
 def _apply_nim_variable_assignment(
+    *,
     name: str,
     value: str,
     _data: Value,
-    *,
     uses_typed_literal_for_scalars: bool,
 ) -> str:
     """Format an assignment, using ``@`` for flat sequences of
