@@ -170,7 +170,7 @@ _FIELD_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
 
 # Declaration-style → alternative-sequence-format overrides, by enum name.
 # Rust CONST and STATIC raise ``IncompatibleFormatsError`` with the default
-# VEC sequence format, so the test falls back to ARRAY.
+# ``Vec`` sequence format, so the test falls back to ``Array``.
 _DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES: dict[
     literalizer.LanguageCls, dict[str, str]
 ] = {Rust: {"CONST": "ARRAY", "STATIC": "ARRAY"}}
@@ -473,8 +473,8 @@ def _build_default_dict_key_type_variants() -> Iterable[_Variant]:
 
 @beartype
 def _build_default_ordered_map_value_type_variants() -> Iterable[_Variant]:
-    """Build default-ordered-map-value-type variants for supported
-    langs.
+    """Build default-ordered-map-value-type variants for every language
+    that supports the option.
     """
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
