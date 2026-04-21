@@ -690,9 +690,9 @@ def _apply_variable_wrapper(
                 data,
                 modifiers,
             )
-        case ExistingVariable(name=name):
+        case _:
             return language.format_variable_assignment(
-                name,
+                variable_form.name,
                 result,
                 data,
             )
