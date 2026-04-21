@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- Fixed ``pre_indent_level`` interaction with ``NewVariable`` and
+  ``ExistingVariable``: a multi-line value no longer inserts the
+  pre-indent between ``=`` and the value (and no longer doubly
+  indents continuation lines).  Every line of the wrapped declaration
+  or assignment is now uniformly offset by ``pre_indent_level``.
 - **Breaking:** Replaced the three public collection-opener helpers
   ``fixed_set_open``, ``fixed_sequence_open``, and ``fixed_dict_open``
   with a single ``fixed_open``.  They had identical implementations
