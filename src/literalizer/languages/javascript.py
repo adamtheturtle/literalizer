@@ -11,9 +11,7 @@ from typing import ClassVar, cast
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
@@ -167,7 +165,7 @@ class JavaScript(metaclass=LanguageCls):
         """Sequence type options for JavaScript."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -185,7 +183,7 @@ class JavaScript(metaclass=LanguageCls):
         """Set type options for JavaScript."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="new Set(["),
+            set_open=fixed_open(open_str="new Set(["),
             close="])",
             empty_set="new Set()",
             preamble_lines=(),
@@ -257,7 +255,7 @@ class JavaScript(metaclass=LanguageCls):
         """Dict/map format options."""
 
         OBJECT = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="{"),
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",
@@ -268,7 +266,7 @@ class JavaScript(metaclass=LanguageCls):
             narrowed_open=None,
         )
         MAP = DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="new Map(["),
+            dict_open=fixed_open(open_str="new Map(["),
             close="])",
             format_entry=dict_entry_with_template(
                 template="[{key}, {value}]",
@@ -592,7 +590,7 @@ class JavaScript(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="{"),
+            ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
         )

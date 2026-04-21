@@ -635,7 +635,7 @@ class Language(Protocol):
 
         Receives the list of items about to be formatted, so the delimiter
         can depend on the element types when needed.  For a fixed delimiter
-        use :func:`~literalizer.fixed_sequence_open`.
+        use :func:`~literalizer.fixed_open`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -129,7 +127,7 @@ class Occam(metaclass=LanguageCls):
         """Sequence type options for Occam."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(
+            sequence_open=fixed_open(
                 open_str="MOBILE LIT(lit.list; MOBILE []MOBILE LIT [",
             ),
             close="])",
@@ -149,7 +147,7 @@ class Occam(metaclass=LanguageCls):
         """Set type options for Occam."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(
+            set_open=fixed_open(
                 open_str="MOBILE LIT(lit.set; MOBILE []MOBILE LIT [",
             ),
             close="])",
@@ -461,7 +459,7 @@ class Occam(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(
+            dict_open=fixed_open(
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
             ),
             close="])",
@@ -505,7 +503,7 @@ class Occam(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(
+            ordered_map_open=fixed_open(
                 open_str="MOBILE LIT(lit.map; MOBILE []MOBILE LIT [",
             ),
             close="])",

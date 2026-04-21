@@ -13,9 +13,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -205,7 +203,7 @@ class Zig(metaclass=LanguageCls):
         """Sequence type options for Zig."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str=".{ .arr = &.{"),
+            sequence_open=fixed_open(open_str=".{ .arr = &.{"),
             close="}}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -223,7 +221,7 @@ class Zig(metaclass=LanguageCls):
         """Set type options for Zig."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str=".{ .set = &.{"),
+            set_open=fixed_open(open_str=".{ .set = &.{"),
             close="}}",
             empty_set=None,
             preamble_lines=(),
@@ -551,7 +549,7 @@ class Zig(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str=".{ .map = &.{"),
+            dict_open=fixed_open(open_str=".{ .map = &.{"),
             close="}}",
             format_entry=dict_entry_with_template(
                 template=".{{ .key = {key}, .val = {value} }}",
@@ -611,7 +609,7 @@ class Zig(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str=".{ .map = &.{"),
+            ordered_map_open=fixed_open(open_str=".{ .map = &.{"),
             close="}}",
             preamble_lines=(),
         )

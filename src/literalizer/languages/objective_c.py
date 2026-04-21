@@ -11,9 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
@@ -172,7 +170,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Sequence type options for Objective-C."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="@["),
+            sequence_open=fixed_open(open_str="@["),
             close="]",
             empty_sequence="@[]",
             supports_heterogeneity=True,
@@ -190,7 +188,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Set type options for Objective-C."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="[NSSet setWithArray:@["),
+            set_open=fixed_open(open_str="[NSSet setWithArray:@["),
             close="]]",
             empty_set="[NSSet set]",
             preamble_lines=(),
@@ -490,7 +488,7 @@ class ObjectiveC(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="@{"),
+            dict_open=fixed_open(open_str="@{"),
             close="}",
             format_entry=self._dict_entry,
             empty_dict="@{}",
@@ -537,7 +535,7 @@ class ObjectiveC(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="@{"),
+            ordered_map_open=fixed_open(open_str="@{"),
             close="}",
             preamble_lines=(),
         )

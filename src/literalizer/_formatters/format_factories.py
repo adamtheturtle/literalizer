@@ -6,9 +6,7 @@ from typing import Protocol, runtime_checkable
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._language import (
     DictFormatConfig,
@@ -65,7 +63,7 @@ def _build_sequence_format_config(
 ) -> SequenceFormatConfig:
     """Build a ``SequenceFormatConfig`` with the given default type."""
     return SequenceFormatConfig(
-        sequence_open=fixed_sequence_open(
+        sequence_open=fixed_open(
             open_str=open_template.format(type=default_type),
         ),
         close=close,
@@ -109,7 +107,7 @@ def sequence_format_factory(
     given type.
 
     Templates use ``{type}`` as the placeholder for the default type
-    name.  The ``open_template`` is wrapped in ``fixed_sequence_open``.
+    name.  The ``open_template`` is wrapped in ``fixed_open``.
     """
 
     def _build(default_type: str) -> SequenceFormatConfig:
@@ -144,7 +142,7 @@ def _build_set_format_config(
     """Build a ``SetFormatConfig`` with the given default type."""
     open_str = open_template.format(type=default_type)
     return SetFormatConfig(
-        set_open=fixed_set_open(open_str=open_str),
+        set_open=fixed_open(open_str=open_str),
         close=close.format(type=default_type),
         empty_set=(
             empty_template.format(type=default_type)
@@ -214,7 +212,7 @@ def _build_dict_format_config(
     """Build a ``DictFormatConfig`` with the given default type."""
     fmt_kwargs = {"type": default_type, "key_type": default_key_type}
     return DictFormatConfig(
-        dict_open=fixed_dict_open(
+        dict_open=fixed_open(
             open_str=open_template.format(**fmt_kwargs),
         ),
         close=close,
@@ -244,7 +242,7 @@ def dict_format_factory(
 
     Templates use ``{type}`` and optionally ``{key_type}`` as
     placeholders for the default value type and key type names.
-    The ``open_template`` is wrapped in ``fixed_dict_open``.
+    The ``open_template`` is wrapped in ``fixed_open``.
     """
 
     def _build(
@@ -279,7 +277,7 @@ def _build_ordered_map_format_config(
     """Build an ``OrderedMapFormatConfig`` with the given default type."""
     fmt_kwargs = {"type": default_type, "key_type": default_key_type}
     return OrderedMapFormatConfig(
-        ordered_map_open=fixed_dict_open(
+        ordered_map_open=fixed_open(
             open_str=open_template.format(**fmt_kwargs),
         ),
         close=close,

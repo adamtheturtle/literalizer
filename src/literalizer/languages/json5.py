@@ -12,9 +12,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
-    fixed_dict_open,
-    fixed_sequence_open,
-    fixed_set_open,
+    fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -148,7 +146,7 @@ class Json5(metaclass=LanguageCls):
         """Sequence type options for JSON5."""
 
         ARRAY = SequenceFormatConfig(
-            sequence_open=fixed_sequence_open(open_str="["),
+            sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
@@ -166,7 +164,7 @@ class Json5(metaclass=LanguageCls):
         """Set type options for JSON5."""
 
         SET = SetFormatConfig(
-            set_open=fixed_set_open(open_str="["),
+            set_open=fixed_open(open_str="["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -434,7 +432,7 @@ class Json5(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_dict_open(open_str="{"),
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=_format_json5_dict_entry,
             empty_dict=None,
@@ -484,7 +482,7 @@ class Json5(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_dict_open(open_str="{"),
+            ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
         )
