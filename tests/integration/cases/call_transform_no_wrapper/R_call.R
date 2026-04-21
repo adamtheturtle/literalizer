@@ -1,3 +1,3 @@
-client.api.request(data = "hello")
-client.api.request(data = 42)
-client.api.request(data = TRUE)
+process(value = "hello")
+process(value = 42)
+process(value = TRUE)

@@ -1,4 +1,4 @@
-client = {api = {request = function(...) end}}
-client.api.request("hello")
-client.api.request(42)
-client.api.request(true)
+function process(...) end
+process("hello")
+process(42)
+process(true)

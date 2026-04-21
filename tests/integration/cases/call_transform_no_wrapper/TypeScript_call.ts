@@ -1,5 +1,5 @@
-declare const client: any;
-client.api.request({ data: "hello" });
-client.api.request({ data: 42 });
-client.api.request({ data: true });
+declare const process: any;
+process({ value: "hello" });
+process({ value: 42 });
+process({ value: true });
 export {};

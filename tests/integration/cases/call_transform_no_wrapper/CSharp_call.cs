@@ -1,5 +1,5 @@
 using System;
-dynamic client = new System.Dynamic.ExpandoObject();
-client.api.request("hello");
-client.api.request(42);
-client.api.request(true);
+dynamic process(dynamic a) => null;
+process("hello");
+process(42);
+process(true);

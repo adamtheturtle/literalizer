@@ -1,11 +1,8 @@
 package main
-type apiType_ struct{}
-func (apiType_) request(args ...any) any { return nil }
-type clientType_ struct{ api apiType_ }
-var client clientType_
+func process(args ...any) any { return nil }
 
 func main() {
-client.api.request("hello");
-client.api.request(42);
-client.api.request(true);
+process("hello");
+process(42);
+process(true);
 }

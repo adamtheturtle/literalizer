@@ -1,3 +1,3 @@
-client.api.request("hello");
-client.api.request(42);
-client.api.request(1);
+process("hello");
+process(42);
+process(1);

@@ -1,9 +1,6 @@
 fn main() {
-    struct ApiType_;
-    impl ApiType_ { fn request<A>(&self, _data: A) {} }
-    struct ClientType_ { api: ApiType_ }
-    let client = ClientType_ { api: ApiType_ };
-    client.api.request("hello");
-    client.api.request(42);
-    client.api.request(true);
+    fn process<A>(_value: A) {}
+    process("hello");
+    process(42);
+    process(true);
 }

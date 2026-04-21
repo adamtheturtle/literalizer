@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedRecordDot #-}
 module Check where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
@@ -9,12 +8,10 @@ instance Num Val where
     signum a = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-data ApiType_ = ApiType_ { request :: Val -> IO () }
-data ClientType_ = ClientType_ { api :: ApiType_ }
-client = ClientType_ { api = ApiType_ { request = \_ -> return () } }
+process _ = return ()
 main :: IO ()
 main = do
-    client.api.request(HStr "hello")
-    client.api.request(42)
-    client.api.request(HBool True)
+    process(HStr "hello")
+    process(42)
+    process(HBool True)
     pure ()

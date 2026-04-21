@@ -1,6 +1,6 @@
-local client = { api: { request(data):: null } };
+local process(value) = null;
 [
-    client.api.request(data="hello"),
-    client.api.request(data=42),
-    client.api.request(data=true),
+    process(value="hello"),
+    process(value=42),
+    process(value=true),
 ]
