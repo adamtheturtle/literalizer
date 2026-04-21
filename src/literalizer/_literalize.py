@@ -36,6 +36,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    ParameterCountMismatchError,
     PerElementNotListError,
 )
 
@@ -169,6 +170,38 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     return result
 
 
+def _maybe_wrap_child(
+    *,
+    parent_id: int,
+    wrap_ids: frozenset[int],
+    raw_value: Value,
+    formatted_value: str,
+    spec: Language,
+) -> str:
+    """Wrap *formatted_value* when *parent_id* is in *wrap_ids*.
+
+    Delegates to
+    :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
+    on the spec's
+    :attr:`~literalizer._language.Language.heterogeneous_behavior`.
+    """
+    if parent_id not in wrap_ids:
+        return formatted_value
+    return spec.heterogeneous_behavior.wrap_scalar(
+        raw_value,
+        formatted_value,
+    )
+
+
+def _compute_wrap_ids(*, data: Value, spec: Language) -> frozenset[int]:
+    """Return container ids whose scalar children should be wrapped.
+
+    Delegates to the language spec's
+    :attr:`~literalizer._language.HeterogeneousBehavior.compute_wrap_ids`.
+    """
+    return spec.heterogeneous_behavior.compute_wrap_ids(data)
+
+
 @beartype
 def _build_dict_entry(
     *, key_str: str, raw_value: Value, formatted_value: str, spec: Language
@@ -204,6 +237,7 @@ def _format_ordered_map_value(
     *,
     value: ordereddict,
     spec: Language,
+    wrap_ids: frozenset[int],
 ) -> str:
     """Format an ordered map as a native language literal."""
     ordered_map_cfg = spec.ordered_map_format_config
@@ -213,18 +247,27 @@ def _format_ordered_map_value(
         for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
         if not (spec.skip_null_dict_values and v is None)
     ]
+    parent_id = id(value)
     pairs = [
         spec.format_ordered_map_entry(
             _format_value(
                 value=k,
                 spec=spec,
                 dict_open_override=None,
+                wrap_ids=wrap_ids,
             ),
             v,
-            _format_value(
-                value=v,
+            _maybe_wrap_child(
+                parent_id=parent_id,
+                wrap_ids=wrap_ids,
+                raw_value=v,
+                formatted_value=_format_value(
+                    value=v,
+                    spec=spec,
+                    dict_open_override=None,
+                    wrap_ids=wrap_ids,
+                ),
                 spec=spec,
-                dict_open_override=None,
             ),
         )
         for k, v in ordered_map_items
@@ -240,6 +283,7 @@ def _format_dict_value(
     value: dict[str, Value],
     spec: Language,
     open_override: str | None,
+    wrap_ids: frozenset[int],
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -251,18 +295,27 @@ def _format_dict_value(
     }
     if not dict_items and dict_cfg.empty_dict is not None:
         return dict_cfg.empty_dict
+    parent_id = id(value)
     pairs = [
         _build_dict_entry(
             key_str=_format_value(
                 value=k,
                 spec=spec,
                 dict_open_override=None,
+                wrap_ids=wrap_ids,
             ),
             raw_value=v,
-            formatted_value=_format_value(
-                value=v,
+            formatted_value=_maybe_wrap_child(
+                parent_id=parent_id,
+                wrap_ids=wrap_ids,
+                raw_value=v,
+                formatted_value=_format_value(
+                    value=v,
+                    spec=spec,
+                    dict_open_override=None,
+                    wrap_ids=wrap_ids,
+                ),
                 spec=spec,
-                dict_open_override=None,
             ),
             spec=spec,
         )
@@ -348,6 +401,7 @@ def _format_list_value(
     *,
     value: list[Value],
     spec: Language,
+    wrap_ids: frozenset[int],
 ) -> str:
     """Format a list as a native language literal."""
     sequence_cfg = spec.sequence_format_config
@@ -358,13 +412,21 @@ def _format_list_value(
         items=value,
         spec=spec,
     )
+    parent_id = id(value)
     items = [
         spec.format_sequence_entry(
             v,
-            _format_value(
-                value=v,
+            _maybe_wrap_child(
+                parent_id=parent_id,
+                wrap_ids=wrap_ids,
+                raw_value=v,
+                formatted_value=_format_value(
+                    value=v,
+                    spec=spec,
+                    dict_open_override=dict_open_override,
+                    wrap_ids=wrap_ids,
+                ),
                 spec=spec,
-                dict_open_override=dict_open_override,
             ),
         )
         for v in value
@@ -383,6 +445,7 @@ def _format_value(
     value: Value,
     spec: Language,
     dict_open_override: str | None,
+    wrap_ids: frozenset[int],
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -392,20 +455,34 @@ def _format_value(
     delimiter instead of inferring the type from their own values.
     This is used to widen map value types when dicts with differing
     inferred types appear in the same sequence.
+
+    *wrap_ids* is the set of container ids whose scalar children should
+    be wrapped by the spec's
+    :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
+    hook.
     """
     match value:
         case ordereddict():
-            return _format_ordered_map_value(value=value, spec=spec)
+            return _format_ordered_map_value(
+                value=value,
+                spec=spec,
+                wrap_ids=wrap_ids,
+            )
         case dict():
             return _format_dict_value(
                 value=value,
                 spec=spec,
                 open_override=dict_open_override,
+                wrap_ids=wrap_ids,
             )
         case set():
             return _format_set_value(value=value, spec=spec)
         case list():
-            return _format_list_value(value=value, spec=spec)
+            return _format_list_value(
+                value=value,
+                spec=spec,
+                wrap_ids=wrap_ids,
+            )
         case _:
             return _format_scalar(value=value, spec=spec)
 
@@ -469,9 +546,11 @@ def _format_collection_lines(
     body_prefix: str,
     trailing_comma: bool,
     is_ordered_map: bool,
+    wrap_ids: frozenset[int],
 ) -> list[str]:
     """Format collection elements as indented lines."""
     lines: list[str] = []
+    parent_id = id(data)
     match data:
         case dict() as dict_data:
             entries = [
@@ -485,11 +564,19 @@ def _format_collection_lines(
                     value=k,
                     spec=spec,
                     dict_open_override=None,
+                    wrap_ids=wrap_ids,
                 )
-                formatted_val = _format_value(
-                    value=v,
+                formatted_val = _maybe_wrap_child(
+                    parent_id=parent_id,
+                    wrap_ids=wrap_ids,
+                    raw_value=v,
+                    formatted_value=_format_value(
+                        value=v,
+                        spec=spec,
+                        dict_open_override=None,
+                        wrap_ids=wrap_ids,
+                    ),
                     spec=spec,
-                    dict_open_override=None,
                 )
                 entry = (
                     spec.format_ordered_map_entry(
@@ -523,6 +610,7 @@ def _format_collection_lines(
                         value=item,
                         spec=spec,
                         dict_open_override=None,
+                        wrap_ids=wrap_ids,
                     ),
                 )
                 for item in sorted_items
@@ -546,10 +634,17 @@ def _format_collection_lines(
             formatted_entries = [
                 spec.format_sequence_entry(
                     element,
-                    _format_value(
-                        value=element,
+                    _maybe_wrap_child(
+                        parent_id=parent_id,
+                        wrap_ids=wrap_ids,
+                        raw_value=element,
+                        formatted_value=_format_value(
+                            value=element,
+                            spec=spec,
+                            dict_open_override=dict_open_override,
+                            wrap_ids=wrap_ids,
+                        ),
                         spec=spec,
-                        dict_open_override=dict_open_override,
                     ),
                 )
                 for element in list_data
@@ -601,6 +696,8 @@ def _literalize(
     """
     check_data(data=data, spec=language)
 
+    wrap_ids = _compute_wrap_ids(data=data, spec=language)
+
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
     # date).
@@ -624,6 +721,7 @@ def _literalize(
             value=data,
             spec=language,
             dict_open_override=None,
+            wrap_ids=wrap_ids,
         )
         return f"{line_prefix}{formatted}"
 
@@ -643,6 +741,7 @@ def _literalize(
             value=empty_value,
             spec=language,
             dict_open_override=None,
+            wrap_ids=wrap_ids,
         )
         return f"{line_prefix}{formatted}"
 
@@ -658,6 +757,7 @@ def _literalize(
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
+        wrap_ids=wrap_ids,
     )
 
     body = "\n".join(lines)
@@ -1016,6 +1116,7 @@ def _format_call_args(
     values: list[Value],
     params: Sequence[str],
     language: Language,
+    wrap_ids: frozenset[int],
     style: CallStyle,
 ) -> str:
     """Format argument values for a single function call.
@@ -1026,7 +1127,12 @@ def _format_call_args(
     assemble ``args target`` directly.
     """
     formatted = [
-        _format_value(value=v, spec=language, dict_open_override=None)
+        _format_value(
+            value=v,
+            spec=language,
+            dict_open_override=None,
+            wrap_ids=wrap_ids,
+        )
         for v in values
     ]
 
@@ -1034,12 +1140,20 @@ def _format_call_args(
         case PositionalCallStyle():
             return f"({', '.join(formatted)})"
         case KeywordCallStyle(separator=kw_sep):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
             inner = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
             return f"({inner})"
         case ObjectCallStyle(separator=kw_sep):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
             named = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
@@ -1184,10 +1298,15 @@ def literalize_call(
             # which is never rendered as a sequence in per-element mode.
             for value in arg_values:
                 check_data(data=value, spec=language)
+            call_wrap_ids = _compute_wrap_ids(
+                data=cast("list[Value]", arg_values),
+                spec=language,
+            )
             args_str = _format_call_args(
                 values=cast("list[Value]", arg_values),
                 params=parameter_names,
                 language=language,
+                wrap_ids=call_wrap_ids,
                 style=style,
             )
             lines.append(
