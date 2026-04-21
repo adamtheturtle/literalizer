@@ -4,7 +4,6 @@ Changelog
 Next
 ----
 
-
 - Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option
   that auto-generates a small tagged ``enum`` in the preamble whenever
   a dict, list, or sibling-list pair contains scalar values of more
@@ -16,6 +15,9 @@ Next
   ``heterogeneous_value_enum_name`` constructor argument.  The
   default remains ``HeterogeneousStrategies.ERROR`` (unchanged
   behavior).
+- The ``lint-julia`` CI job now executes Julia golden files instead
+  of only parsing them, catching ``UndefVarError`` and other runtime
+  errors.
 - ``literalize_call`` now distinguishes two reasons a language has no
   call support.  The single ``UnsupportedCallStyleError`` has been
   replaced by ``CallsNotSupportedByLanguageError`` (raised for

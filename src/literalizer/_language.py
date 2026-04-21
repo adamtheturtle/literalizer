@@ -193,7 +193,21 @@ class ObjectCallStyle:
     separator: str
 
 
-CallStyle = PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
+@dataclasses.dataclass(frozen=True)
+class PostfixCallStyle:
+    """Postfix (stack) calls: ``value1 value2 func``.
+
+    Used by stack-based languages like Forth where arguments are
+    pushed onto the stack before the word is invoked.  *arg_separator*
+    is the string placed between arguments.
+    """
+
+    arg_separator: str
+
+
+CallStyle = (
+    PositionalCallStyle | KeywordCallStyle | ObjectCallStyle | PostfixCallStyle
+)
 """Tagged union describing how a language passes call arguments."""
 
 

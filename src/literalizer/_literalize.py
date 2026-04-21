@@ -21,11 +21,13 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._language import (
+    CallStyle,
     CallSupport,
     KeywordCallStyle,
     Language,
     ObjectCallStyle,
     PositionalCallStyle,
+    PostfixCallStyle,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -1113,17 +1115,15 @@ def _format_call_args(
     params: Sequence[str],
     language: Language,
     wrap_ids: frozenset[int],
+    style: CallStyle,
 ) -> str:
     """Format argument values for a single function call.
 
-    Returns the parenthesized argument list including the surrounding
-    ``(`` and ``)``.
-
-    Uses ``", "`` as the argument separator — function call arguments
-    are comma-separated in all supported languages, unlike collection
-    literals which may use ``"; "`` (F#) or other separators.
+    For infix styles returns the parenthesized argument list
+    ``(arg1, arg2)``.  For :class:`PostfixCallStyle` returns the
+    unwrapped, space-separated argument list so the caller can
+    assemble ``args target`` directly.
     """
-    style = language.call_style_config
     formatted = [
         _format_value(
             value=v,
@@ -1133,34 +1133,26 @@ def _format_call_args(
         )
         for v in values
     ]
-    sep = ", "
 
     match style:
-        case CallSupport.NOT_IN_LANGUAGE:
-            raise CallsNotSupportedByLanguageError(
-                language_name=type(language).__name__,
-            )
-        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
-            raise CallsNotSupportedByToolError(
-                language_name=type(language).__name__,
-            )
         case PositionalCallStyle():
-            inner = sep.join(formatted)
+            return f"({', '.join(formatted)})"
         case KeywordCallStyle(separator=kw_sep):
-            inner = sep.join(
+            inner = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
+            return f"({inner})"
         case ObjectCallStyle(separator=kw_sep):
-            named = sep.join(
+            named = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
-            inner = f"{{ {named} }}"
+            return f"({{ {named} }})"
+        case PostfixCallStyle(arg_separator=sep):
+            return sep.join(formatted)
         case _ as unreachable:
             assert_never(unreachable)
-
-    return f"({inner})"
 
 
 @beartype
@@ -1170,11 +1162,36 @@ def _assemble_call(
     args_str: str,
     call_transform: Callable[[str], str] | None,
     statement_terminator: str,
+    style: CallStyle,
 ) -> str:
-    """Build one complete call statement, optionally transformed."""
-    call_expr = f"{target_function}{args_str}"
-    if call_transform is not None:
-        call_expr = call_transform(call_expr)
+    """Build one complete call statement.
+
+    Infix styles produce ``target(args)``.  :class:`PostfixCallStyle`
+    produces ``args target``; when a *call_transform* like
+    ``lambda c: f"emit({c})"`` is provided, the wrapper word is
+    extracted via a sentinel and appended postfix, so the result is
+    e.g. ``args target emit``.
+    """
+    match style:
+        case PostfixCallStyle():
+            call_expr = (
+                f"{args_str} {target_function}"
+                if args_str
+                else target_function
+            )
+            if call_transform is not None:
+                sentinel = "\x00"
+                wrapped = call_transform(sentinel)
+                idx = wrapped.index(sentinel)
+                wrapper = wrapped[:idx].rstrip("(").strip()
+                if wrapper:
+                    call_expr = f"{call_expr} {wrapper}"
+        case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
+            call_expr = f"{target_function}{args_str}"
+            if call_transform is not None:
+                call_expr = call_transform(call_expr)
+        case _ as unreachable:
+            assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
 
 
@@ -1222,6 +1239,17 @@ def literalize_call(
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
+    match language.call_style_config:
+        case CallSupport.NOT_IN_LANGUAGE:
+            raise CallsNotSupportedByLanguageError(
+                language_name=type(language).__name__,
+            )
+        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+            raise CallsNotSupportedByToolError(
+                language_name=type(language).__name__,
+            )
+        case _ as style:
+            pass
 
     if per_element:
         if not isinstance(data, list):
@@ -1248,6 +1276,7 @@ def literalize_call(
                 params=parameter_names,
                 language=language,
                 wrap_ids=call_wrap_ids,
+                style=style,
             )
             lines.append(
                 _assemble_call(
@@ -1255,22 +1284,12 @@ def literalize_call(
                     args_str=args_str,
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
+                    style=style,
                 )
             )
         result = "\n".join(lines)
     else:
         check_data(data=data, spec=language)
-        match language.call_style_config:
-            case CallSupport.NOT_IN_LANGUAGE:
-                raise CallsNotSupportedByLanguageError(
-                    language_name=type(language).__name__,
-                )
-            case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
-                raise CallsNotSupportedByToolError(
-                    language_name=type(language).__name__,
-                )
-            case _:
-                pass
         lit = _literalize(
             data=data,
             language=language,
@@ -1283,6 +1302,7 @@ def literalize_call(
             args_str=args_str,
             call_transform=call_transform,
             statement_terminator=language.statement_terminator,
+            style=style,
         )
     computed = compute_preamble(
         data=data,
