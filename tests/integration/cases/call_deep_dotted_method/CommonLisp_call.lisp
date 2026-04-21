@@ -1,0 +1,7 @@
+(defun obj (&rest args) (declare (ignore args)) nil)
+(defun obj.api (&rest args) (declare (ignore args)) nil)
+(defun obj.api.client (&rest args) (declare (ignore args)) nil)
+(defun obj.api.client.post (&rest args) (declare (ignore args)) nil)
+(obj.api.client.post :data "hello")
+(obj.api.client.post :data 42)
+(obj.api.client.post :data t)

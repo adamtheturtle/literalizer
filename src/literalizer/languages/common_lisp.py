@@ -33,7 +33,6 @@ from literalizer._formatters.format_strings import format_string_double_minimal
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -43,6 +42,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
+    PrefixCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -66,6 +66,32 @@ def _format_cons_entry(
 ) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
     return f"(cons {key} {formatted_value})"
+
+
+def _common_lisp_call_stub(
+    name: str,
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Common Lisp stub definitions for a call name.
+
+    For dotted names like ``app.client.fetch``, one ``defun`` is
+    emitted per prefix so that intermediate identifiers are bound.
+    Each stub declares ``&rest args`` and ignores them, so the
+    generated function accepts any combination of positional and
+    keyword arguments — necessary because the same formatter is used
+    both for the call target (invoked with ``:key value`` pairs) and
+    for transform wrapper functions (invoked positionally).  Stub
+    bodies return ``nil`` for void stubs and ``0`` for value stubs.
+    """
+    body = "nil" if stub_return is StubReturn.VOID else "0"
+    parts = name.split(sep=".")
+    return tuple(
+        f"(defun {'.'.join(parts[: i + 1])} "
+        f"(&rest args) (declare (ignore args)) {body})"
+        for i in range(len(parts))
+    )
 
 
 @beartype
@@ -264,6 +290,11 @@ class CommonLisp(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """CommonLisp call style options."""
 
+        PREFIX_KEYWORD = PrefixCallStyle(
+            arg_separator=" ",
+            keyword_prefix=":",
+        )
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -329,6 +360,7 @@ class CommonLisp(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
+    call_style: CallStyles = CallStyles.PREFIX_KEYWORD
     line_ending: LineEndings = LineEndings.SEMICOLON
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -348,9 +380,11 @@ class CommonLisp(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for Common Lisp's call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -399,7 +433,7 @@ class CommonLisp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _common_lisp_call_stub
 
     @cached_property
     def format_call_preamble_stub(

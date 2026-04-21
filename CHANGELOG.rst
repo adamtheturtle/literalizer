@@ -11,6 +11,11 @@ Next
   ``STATIC``, ``LAZY_STATIC`` composes with every dict, set, and
   sequence format.  ``use std::sync::LazyLock;`` is added to the
   preamble automatically.
+- Added ``literalize_call`` support for Common Lisp:
+  ``CommonLisp.format_call_stub`` emits ``defun`` stubs with
+  ``&rest args`` so generated definitions accept any mix of positional
+  and keyword arguments, and ``CommonLisp.CallStyles.PREFIX_KEYWORD``
+  renders calls as ``(func :name value)``.
 - Added ``literalize_call`` support for Racket:
   ``Racket.format_call_stub`` now generates
   ``make-keyword-procedure`` stub definitions, and a new
