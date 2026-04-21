@@ -194,17 +194,22 @@ def _rust_type_annotation(
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
     set_format_type_annotation: Callable[[str], str],
+    dict_format_type_annotation: Callable[[str, str], str] | None,
     default_sequence_element_type: str,
     default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
 ) -> str:
     """Derive a Rust type annotation string from a ``Value``.
 
-    Only called for ``CONST`` / ``STATIC`` declarations, whose
-    :meth:`Rust.validate_spec_for_data` rejects dict data upstream
-    (Rust has no const-expression dict format).  A ``case dict()``
-    arm is still required so the final ``case _`` narrows to
-    ``Scalar`` for ``_rust_scalar_type``, but it is unreachable at
-    runtime.
+    When ``dict_format_type_annotation`` is ``None`` (``CONST`` /
+    ``STATIC``), :meth:`Rust.validate_spec_for_data` rejects dict data
+    upstream (Rust has no const-expression dict format), so the
+    ``case dict()`` arm is unreachable at runtime but still required
+    so the final ``case _`` narrows to ``Scalar`` for
+    ``_rust_scalar_type``.  When it is a callable (``LAZY_STATIC``),
+    dict data is supported and the arm emits ``HashMap<K, V>`` or
+    ``BTreeMap<K, V>``.
     """
     recurse = functools.partial(
         _rust_type_annotation,
@@ -213,8 +218,11 @@ def _rust_type_annotation(
         sequence_format_type_annotation=sequence_format_type_annotation,
         sequence_supports_heterogeneity=sequence_supports_heterogeneity,
         set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=dict_format_type_annotation,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
     )
     match data:
         case set():
@@ -237,16 +245,28 @@ def _rust_type_annotation(
                 default_type=default_sequence_element_type,
             )
             return sequence_format_type_annotation(element_type, len(data))
-        case dict():  # pragma: no cover
-            # Defensive: unreachable at runtime because
-            # validate_spec_for_data rejects dict data for CONST/STATIC
-            # before this function is called.  The arm exists solely
-            # to narrow ``data`` to ``Scalar`` for the ``case _`` below,
-            # which delegates to ``_rust_scalar_type``.
-            msg = (
-                "Rust CONST/STATIC reject dict data in validate_spec_for_data"
+        case dict():
+            if dict_format_type_annotation is None:  # pragma: no cover
+                # Defensive: unreachable at runtime because
+                # validate_spec_for_data rejects dict data for
+                # CONST/STATIC before this function is called.
+                msg = (
+                    "Rust CONST/STATIC reject dict data in "
+                    "validate_spec_for_data"
+                )
+                raise AssertionError(msg)
+            keys: list[Value] = list(data)
+            key_type = _rust_homogeneous_element_type(
+                elements=keys,
+                infer=recurse,
+                default_type=default_dict_key_type,
             )
-            raise AssertionError(msg)
+            value_type = _rust_homogeneous_element_type(
+                elements=list(data.values()),
+                infer=recurse,
+                default_type=default_dict_value_type,
+            )
+            return dict_format_type_annotation(key_type, value_type)
         case _:
             return _rust_scalar_type(
                 data=data,
@@ -281,10 +301,75 @@ def _format_typed_declaration(
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=None,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
+        default_dict_key_type="",
+        default_dict_value_type="",
     )
     return f"{keyword} {name}: {type_annotation} = {value};"
+
+
+@beartype
+def _format_lazy_static_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+    *,
+    date_type: str,
+    datetime_type: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
+    set_format_type_annotation: Callable[[str], str],
+    dict_format_type_annotation: Callable[[str, str], str],
+    default_sequence_element_type: str,
+    default_set_element_type: str,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Format a ``LazyLock``-wrapped ``static`` declaration."""
+    type_annotation = _rust_type_annotation(
+        data=data,
+        date_type=date_type,
+        datetime_type=datetime_type,
+        sequence_format_type_annotation=sequence_format_type_annotation,
+        sequence_supports_heterogeneity=sequence_supports_heterogeneity,
+        set_format_type_annotation=set_format_type_annotation,
+        dict_format_type_annotation=dict_format_type_annotation,
+        default_sequence_element_type=default_sequence_element_type,
+        default_set_element_type=default_set_element_type,
+        default_dict_key_type=default_dict_key_type,
+        default_dict_value_type=default_dict_value_type,
+    )
+    return (
+        f"static {name}: LazyLock<{type_annotation}> = "
+        f"LazyLock::new(|| {value});"
+    )
+
+
+@beartype
+def _lazy_static_placeholder_formatter(
+    _name: str,
+    _value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Unreachable placeholder for ``LAZY_STATIC``'s config formatter.
+
+    ``LAZY_STATIC`` needs the inferred Rust type to render
+    ``LazyLock<T>``, which the template-based config formatter cannot
+    provide.  :meth:`DeclarationStyles.build_formatter` routes
+    ``LAZY_STATIC`` to :func:`_format_lazy_static_declaration`
+    instead; this function exists only so the enum value is distinct
+    from ``STATIC`` (``ruff`` ``PIE796``).
+    """
+    msg = (
+        "Rust LAZY_STATIC requires the type-aware formatter built by "
+        "build_formatter; the DeclarationStyleConfig formatter is a "
+        "placeholder and must not be called directly."
+    )
+    raise NotImplementedError(msg)
 
 
 @beartype
@@ -790,6 +875,10 @@ class Rust(metaclass=LanguageCls):
             ),
             supports_redefinition=False,
         )
+        LAZY_STATIC = DeclarationStyleConfig(
+            formatter=_lazy_static_placeholder_formatter,
+            supports_redefinition=False,
+        )
 
         def build_formatter(
             self,
@@ -799,19 +888,47 @@ class Rust(metaclass=LanguageCls):
             sequence_format_type_annotation: Callable[[str, int], str],
             sequence_supports_heterogeneity: bool,
             set_format_type_annotation: Callable[[str], str],
+            dict_format_type_annotation: Callable[[str, str], str],
             default_sequence_element_type: str,
             default_set_element_type: str,
+            default_dict_key_type: str,
+            default_dict_value_type: str,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return a formatter for this declaration style.
 
             For ``LET`` and ``LET_MUT`` the formatter is used
             directly.  For ``CONST`` and ``STATIC`` a
             type-annotated formatter is built from the language
-            configuration.
+            configuration.  ``LAZY_STATIC`` additionally wraps the
+            inferred type in ``LazyLock<…>`` and the value in a
+            ``LazyLock::new(|| …)`` call, enabling module-level
+            declarations of runtime-initialized collections like
+            ``HashMap`` and ``Vec``.
             """
             cls = type(self)
+            if self is cls.LAZY_STATIC:
+                return functools.partial(
+                    _format_lazy_static_declaration,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                    sequence_format_type_annotation=(
+                        sequence_format_type_annotation
+                    ),
+                    sequence_supports_heterogeneity=(
+                        sequence_supports_heterogeneity
+                    ),
+                    set_format_type_annotation=set_format_type_annotation,
+                    dict_format_type_annotation=dict_format_type_annotation,
+                    default_sequence_element_type=(
+                        default_sequence_element_type
+                    ),
+                    default_set_element_type=default_set_element_type,
+                    default_dict_key_type=default_dict_key_type,
+                    default_dict_value_type=default_dict_value_type,
+                )
             if self not in {cls.CONST, cls.STATIC}:
-                return self.value.formatter
+                config: DeclarationStyleConfig = self.value
+                return config.formatter
             return functools.partial(
                 _format_typed_declaration,
                 keyword=self.name.lower(),
@@ -872,6 +989,17 @@ class Rust(metaclass=LanguageCls):
                 default_type,
                 default_key_type=default_key_type,
             )
+
+        def format_type_annotation(
+            self,
+            key_type: str,
+            value_type: str,
+        ) -> str:
+            """Return the Rust type annotation for this dict format."""
+            cls = type(self)
+            if self is cls.HASH_MAP:
+                return f"HashMap<{key_type}, {value_type}>"
+            return f"BTreeMap<{key_type}, {value_type}>"
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -1102,9 +1230,20 @@ class Rust(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file.
+
+        ``LAZY_STATIC`` adds ``use std::sync::LazyLock;``; other
+        declaration styles produce no static preamble.
+        """
+        cls = type(self.declaration_style)
+        if self.declaration_style is cls.LAZY_STATIC:
+            return ("use std::sync::LazyLock;",)
+        return ()
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -1333,8 +1472,13 @@ class Rust(metaclass=LanguageCls):
             set_format_type_annotation=(
                 self.set_format.format_type_annotation
             ),
+            dict_format_type_annotation=(
+                self.dict_format.format_type_annotation
+            ),
             default_sequence_element_type=self.default_sequence_element_type,
             default_set_element_type=self.default_set_element_type,
+            default_dict_key_type=self.default_dict_key_type,
+            default_dict_value_type=self.default_dict_value_type,
         )
 
     @cached_property
