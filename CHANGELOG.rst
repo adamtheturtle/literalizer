@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for PHP: ``Php.format_call_stub``
+  now generates function, class, and nested-object stubs for a call
+  expression.
+
 2026.04.21.1
 ------------
 
