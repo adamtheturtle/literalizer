@@ -236,7 +236,7 @@ def _rust_type_annotation(
             return set_format_type_annotation(element_type)
         case list():
             if sequence_supports_heterogeneity:
-                element_types = [recurse(e) for e in data]
+                element_types = [recurse(element=e) for e in data]
                 inner = ", ".join(element_types)
                 if len(element_types) == 1:
                     inner += ","
