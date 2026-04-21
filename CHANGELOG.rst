@@ -11,6 +11,11 @@ Next
   ``STATIC``, ``LAZY_STATIC`` composes with every dict, set, and
   sequence format.  ``use std::sync::LazyLock;`` is added to the
   preamble automatically.
+- Added ``literalize_call`` support for Racket:
+  ``Racket.format_call_stub`` now generates
+  ``make-keyword-procedure`` stub definitions, and a new
+  ``PrefixCallStyle`` call-style variant handles S-expression call
+  assembly ``(func arg1 arg2)`` for Lisp-family languages.
 
 2026.04.21.4
 ------------
