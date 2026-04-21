@@ -18,7 +18,7 @@ from literalizer.exceptions import (
 from literalizer.languages import Rust
 
 _TAGGED = Rust(
-    heterogeneous_strategy=Rust.HeterogeneousStrategies.TAGGED_ENUM,
+    heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
 )
 
 
@@ -104,7 +104,7 @@ def test_configurable_enum_name() -> None:
         source='{"a": 1, "b": "x"}',
         input_format=InputFormat.JSON,
         language=Rust(
-            heterogeneous_strategy=Rust.HeterogeneousStrategies.TAGGED_ENUM,
+            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
             heterogeneous_value_enum_name="JsonValue",
         ),
         wrap_in_file=True,

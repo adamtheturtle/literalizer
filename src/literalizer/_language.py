@@ -366,6 +366,7 @@ class LanguageCls(type):
     LineEndings: type[enum.Enum]
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
+    HeterogeneousStrategies: type[enum.Enum]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
     extension: str
     pygments_name: str | None
