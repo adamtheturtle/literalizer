@@ -1202,12 +1202,12 @@ def _extract_call_transform_wrapper(
 ) -> str:
     """Extract the wrapper word from a Python-style *call_transform*.
 
-    Used by call styles that build the call expression by appending
-    or prepending the wrapper rather than substituting it into the
-    transform's parenthesized template.  Probes *call_transform* with
-    a sentinel and returns the prefix preceding the sentinel,
-    stripped of the trailing ``(`` and any whitespace (e.g.
-    ``lambda c: f"emit({c})"`` yields ``"emit"``).
+    Used by call styles that build the call expression by adding the
+    wrapper before or after the inner call rather than substituting
+    it into the transform's parenthesized template.  Probes
+    *call_transform* with a sentinel and returns the prefix preceding
+    the sentinel, stripped of the trailing ``(`` and any whitespace
+    (e.g. ``lambda c: f"emit({c})"`` yields ``"emit"``).
     """
     sentinel = "\x00"
     wrapped = call_transform(sentinel)
