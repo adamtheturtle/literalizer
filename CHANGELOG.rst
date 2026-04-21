@@ -5,6 +5,14 @@ Next
 ----
 
 
+- ``literalize_call`` now distinguishes two reasons a language has no
+  call support.  The single ``UnsupportedCallStyleError`` has been
+  replaced by ``CallsNotSupportedByLanguageError`` (raised for
+  data/markup formats like YAML, TOML, JSON5, Norg that have no
+  function call syntax) and ``CallsNotSupportedByToolError`` (raised
+  for programming languages whose call rendering literalizer has not
+  yet implemented).  The new ``CallSupport`` enum on a language's
+  ``call_style_config`` attribute captures which case applies.
 - Lint workflow now runs pre-commit hooks against the full supported
   Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch
   version-specific lint issues.

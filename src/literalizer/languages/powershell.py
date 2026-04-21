@@ -34,6 +34,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._language import (
     CallStyle,
+    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -347,7 +348,9 @@ class PowerShell(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | None] = None
+    call_style_config: ClassVar[CallStyle | CallSupport] = (
+        CallSupport.NOT_IMPLEMENTED_BY_TOOL
+    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

@@ -45,6 +45,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     CallStyle,
+    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -466,7 +467,9 @@ class Zig(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = (
         'const std = @import("std");',
     )
-    call_style_config: ClassVar[CallStyle | None] = None
+    call_style_config: ClassVar[CallStyle | CallSupport] = (
+        CallSupport.NOT_IMPLEMENTED_BY_TOOL
+    )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
