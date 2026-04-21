@@ -45,6 +45,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -52,6 +53,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
+    HeterogeneousBehavior,
     KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -492,6 +494,16 @@ class Scala(metaclass=LanguageCls):
         """C++/Java/C#-style declaration modifiers: this language has none."""
 
     modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
@@ -543,6 +555,9 @@ class Scala(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
     call_style: CallStyles = CallStyles.KEYWORD
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -583,6 +598,11 @@ class Scala(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
 
     @cached_property
     def type_hint_collection_preamble_lines(
