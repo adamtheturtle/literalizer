@@ -50,11 +50,11 @@ optional-dependencies.dev = [
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.1",
     "pyproject-fmt==2.21.1",
-    "pyrefly==0.61.1",
+    "pyrefly==0.62.0",
     "pyright==1.1.408",
     "pyroma==5.0.1",
     "pytest==9.0.3",
-    "pytest-beartype-tests",
+    "pytest-beartype-tests==2026.4.20",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
@@ -70,7 +70,7 @@ optional-dependencies.dev = [
     "sphinx-pyproject==0.3.0",
     "sphinx-substitution-extensions==2026.1.12",
     "sphinxcontrib-spelling==8.0.2",
-    "ty==0.0.31",
+    "ty==0.0.32",
     "types-pygments==2.20.0.20260408",
     "vulture==2.16",
     "yamlfix==1.19.1",
@@ -101,9 +101,6 @@ packages.find.where = [
 #
 # Code to match this is in ``conf.py``.
 version_scheme = "post-release"
-
-[tool.uv]
-sources.pytest-beartype-tests = { git = "https://github.com/adamtheturtle/pytest-beartype-tests.git", rev = "bc81d99" }
 
 [tool.ruff]
 line-length = 79

@@ -67,6 +67,7 @@ from literalizer._language import (
     date_scalar_preamble,
     no_call_stub,
     no_type_hint_preamble,
+    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value, ValueKind
@@ -1097,6 +1098,7 @@ class Cpp(metaclass=LanguageCls):
             ),
         ),
     )
+    validate_spec_for_data = no_validate_spec_for_data
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""

@@ -725,6 +725,8 @@ def _literalize_pre_form(
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
 
+    language.validate_spec_for_data(data=data)
+
     result = _literalize(
         data=data,
         language=language,
