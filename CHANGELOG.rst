@@ -7,6 +7,9 @@ Next
 - The ``lint-julia`` CI job now executes Julia golden files instead
   of only parsing them, catching ``UndefVarError`` and other runtime
   errors.
+- Lint workflow now runs pre-commit hooks against the full supported
+  Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch
+  version-specific lint issues.
 
 2026.04.21.1
 ------------
