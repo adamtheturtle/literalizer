@@ -1491,9 +1491,10 @@ def _group_variant_cases_by_language() -> dict[
 ]:
     """Return ``_FORMAT_VARIANT_CASES`` grouped by language class.
 
-    Parametrizing on language and looping over variants inside the test
-    body collapses thousands of parametrized cases into ~30, which slashes
-    collection + per-test overhead on slow filesystems (Windows CI).
+    The test takes the language as its only pytest axis and iterates
+    that language's cases inside the test body with ``subtests``.
+    Folding ~2000 cases into ~30 cuts collection and per-test overhead
+    on slower CI runners (notably Windows).
     """
     groups: dict[literalizer.LanguageCls, list[_VariantCase]] = {}
     for case in _FORMAT_VARIANT_CASES:
