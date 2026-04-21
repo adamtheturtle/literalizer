@@ -14,6 +14,11 @@ Next
   ``heterogeneous_value_union_name`` constructor argument.  The
   default remains ``HeterogeneousStrategies.ERROR`` (unchanged
   behavior).
+
+2026.04.21.5
+------------
+
+
 - Added ``Rust.DeclarationStyles.LAZY_STATIC``, which wraps the
   initializer in ``std::sync::LazyLock`` so module-level
   declarations can hold runtime-initialized collections such as

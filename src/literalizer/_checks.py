@@ -106,6 +106,7 @@ def _values_mixed_types(*, values: Sequence[Value]) -> bool:
     return len(families) > 1
 
 
+@beartype
 def _collect_scalar_type_names(*, data: Value) -> set[str]:
     """Collect the names of scalar type buckets found in *data*."""
     names: set[str] = set()
@@ -124,6 +125,7 @@ def _collect_scalar_type_names(*, data: Value) -> set[str]:
     return names
 
 
+@beartype
 def _describe_heterogeneous_types(*, data: Value) -> str:
     """Return a sorted, comma-separated string of scalar type names in
     *data*.
@@ -131,6 +133,7 @@ def _describe_heterogeneous_types(*, data: Value) -> str:
     return ", ".join(sorted(_collect_scalar_type_names(data=data)))
 
 
+@beartype
 def _find_first_mixed_values(
     *,
     data: Value,
@@ -165,6 +168,7 @@ def _find_first_mixed_values(
     return []
 
 
+@beartype
 def _describe_mixed_type_families(
     *,
     data: Value,
