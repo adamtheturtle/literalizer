@@ -47,50 +47,68 @@ repos:
   - repo: meta
     hooks:
       - id: check-useless-excludes
+        priority: 10
         stages: [pre-commit]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
+        priority: 30
         stages: [pre-commit]
       - id: check-case-conflict
+        priority: 40
         stages: [pre-commit]
       - id: check-executables-have-shebangs
+        priority: 60
         stages: [pre-commit]
       - id: check-merge-conflict
+        priority: 20
         stages: [pre-commit]
       - id: check-shebang-scripts-are-executable
+        priority: 70
         stages: [pre-commit]
       - id: check-symlinks
+        priority: 50
         stages: [pre-commit]
       - id: check-json
+        priority: 90
         stages: [pre-commit]
       - id: check-toml
         # Integration test fixtures use TOML v1.1 (multiline inline tables),
         # which tomllib (used by check-toml) does not support.
         exclude: ^tests/integration/cases/
+        priority: 91
         stages: [pre-commit]
       - id: check-vcs-permalinks
+        priority: 80
         stages: [pre-commit]
       - id: check-yaml
+        priority: 92
         stages: [pre-commit]
       - id: end-of-file-fixer
+        priority: 100
         stages: [pre-commit]
       - id: file-contents-sorter
         files: spelling_private_dict\.txt$
+        priority: 110
         stages: [pre-commit]
       - id: trailing-whitespace
+        priority: 120
         stages: [pre-commit]
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
       - id: rst-directive-colons
+        priority: 410
         stages: [pre-commit]
       - id: rst-inline-touching-normal
+        priority: 420
         stages: [pre-commit]
       - id: text-unicode-replacement-char
+        priority: 430
         stages: [pre-commit]
       - id: rst-backticks
+        priority: 440
         stages: [pre-commit]
   - repo: local
     hooks:
@@ -101,6 +119,7 @@ repos:
         pass_filenames: false
         types_or: [yaml]
         additional_dependencies: [*uv_version]
+        priority: 500
         stages: [pre-commit]
 
       - id: shellcheck
@@ -110,6 +129,7 @@ repos:
         types_or: [shell]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 500
         stages: [pre-commit]
 
       - id: shellcheck-docs
@@ -119,6 +139,7 @@ repos:
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
+        priority: 500
         stages: [pre-commit]
 
       - id: shfmt
@@ -128,6 +149,7 @@ repos:
         types_or: [shell]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 130
         stages: [pre-commit]
 
       - id: shfmt-docs
@@ -137,6 +159,7 @@ repos:
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
+        priority: 140
         stages: [pre-commit]
 
       - id: pydocstringformatter
@@ -146,11 +169,13 @@ repos:
         types_or: [python]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 150
         stages: [pre-commit]
 
       - id: mypy
         name: mypy
         stages: [pre-push]
+        priority: 520
         entry: uv run --extra=dev -m mypy
         language: python
         types_or: [python, toml]
@@ -161,6 +186,7 @@ repos:
       - id: mypy-docs
         name: mypy-docs
         stages: [pre-push]
+        priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --language=python --command="mypy"
         language: python
         types_or: [markdown, rst]
@@ -169,6 +195,7 @@ repos:
       - id: check-manifest
         name: check-manifest
         stages: [pre-push]
+        priority: 520
         entry: uv run --extra=dev -m check_manifest
         language: python
         pass_filenames: false
@@ -177,6 +204,7 @@ repos:
       - id: pyright
         name: pyright
         stages: [pre-push]
+        priority: 520
         entry: uv run --extra=dev -m pyright .
         language: python
         types_or: [python, toml]
@@ -186,6 +214,7 @@ repos:
       - id: pyright-docs
         name: pyright-docs
         stages: [pre-push]
+        priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --example-workers 0 --language=python
           --command="pyright"
         language: python
@@ -195,6 +224,7 @@ repos:
       - id: pyright-verifytypes
         name: pyright-verifytypes
         stages: [pre-push]
+        priority: 530
         entry: uv run --extra=dev -m pyright --ignoreexternal --verifytypes literalizer
         language: python
         pass_filenames: false
@@ -204,6 +234,7 @@ repos:
       - id: ty
         name: ty
         stages: [pre-push]
+        priority: 520
         entry: uv run --extra=dev ty check
         language: python
         types_or: [python, toml]
@@ -213,6 +244,7 @@ repos:
       - id: ty-docs
         name: ty-docs
         stages: [pre-push]
+        priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --example-workers 0 --language=python
           --command="ty check"
         language: python
@@ -222,6 +254,7 @@ repos:
       - id: pyrefly
         name: pyrefly
         stages: [pre-push]
+        priority: 520
         entry: uv run --extra=dev pyrefly check
         language: python
         types_or: [python, toml]
@@ -231,6 +264,7 @@ repos:
       - id: pyrefly-docs
         name: pyrefly-docs
         stages: [pre-push]
+        priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --example-workers 0 --language=python
           --command="pyrefly check"
         language: python
@@ -244,6 +278,7 @@ repos:
         types_or: [python]
         pass_filenames: false
         additional_dependencies: [*uv_version]
+        priority: 510
         stages: [pre-commit]
 
       - id: vulture-docs
@@ -253,6 +288,7 @@ repos:
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
+        priority: 510
         stages: [pre-commit]
 
       - id: pyroma
@@ -262,6 +298,7 @@ repos:
         pass_filenames: false
         types_or: [toml]
         additional_dependencies: [*uv_version]
+        priority: 510
         stages: [pre-commit]
 
       - id: deptry
@@ -270,6 +307,7 @@ repos:
         language: python
         pass_filenames: false
         additional_dependencies: [*uv_version]
+        priority: 510
         stages: [pre-commit]
 
       - id: pylint
@@ -277,6 +315,7 @@ repos:
         entry: uv run --extra=dev -m pylint *.py src/ tests/ docs/
         language: python
         stages: [manual]
+        priority: 600
         pass_filenames: false
         additional_dependencies: [*uv_version]
 
@@ -286,6 +325,7 @@ repos:
           --command="pylint"
         language: python
         stages: [manual]
+        priority: 605
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
 
@@ -296,6 +336,7 @@ repos:
         types_or: [python]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 160
         stages: [pre-commit]
 
       - id: ruff-check-fix-docs
@@ -304,6 +345,7 @@ repos:
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
+        priority: 170
         stages: [pre-commit]
 
       - id: ruff-format-fix
@@ -313,6 +355,7 @@ repos:
         types_or: [python]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 180
         stages: [pre-commit]
 
       - id: ruff-format-fix-docs
@@ -322,6 +365,7 @@ repos:
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
+        priority: 190
         stages: [pre-commit]
 
       - id: doc8
@@ -330,6 +374,7 @@ repos:
         language: python
         types_or: [rst]
         additional_dependencies: [*uv_version]
+        priority: 500
         stages: [pre-commit]
 
       - id: interrogate
@@ -339,6 +384,7 @@ repos:
         types_or: [python]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 510
         stages: [pre-commit]
 
       - id: interrogate-docs
@@ -348,6 +394,7 @@ repos:
         language: python
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
+        priority: 510
         stages: [pre-commit]
 
       - id: pyproject-fmt-fix
@@ -357,33 +404,38 @@ repos:
         types_or: [toml]
         files: pyproject.toml
         additional_dependencies: [*uv_version]
+        priority: 200
         stages: [pre-commit]
 
       - id: linkcheck
         name: linkcheck
         entry: uv run --extra=dev sphinx-build -M linkcheck docs/source docs/build
-          -W
+          -W -d docs/build/.doctrees-linkcheck
         language: python
         types_or: [rst]
         stages: [manual]
+        priority: 610
         pass_filenames: false
         additional_dependencies: [*uv_version]
 
       - id: spelling
         name: spelling
         entry: uv run --extra=dev sphinx-build -M spelling docs/source docs/build
-          -W
+          -W -d docs/build/.doctrees-spelling
         language: python
         types_or: [rst]
         stages: [manual]
+        priority: 610
         pass_filenames: false
         additional_dependencies: [*uv_version]
 
       - id: docs
         name: Build Documentation
-        entry: uv run --extra=dev sphinx-build -M html docs/source docs/build -W
+        entry: uv run --extra=dev sphinx-build -M html docs/source docs/build -W -d
+          docs/build/.doctrees-html
         language: python
         stages: [manual]
+        priority: 610
         pass_filenames: false
         additional_dependencies: [*uv_version]
 
@@ -394,6 +446,7 @@ repos:
         types_or: [yaml]
         exclude: ^tests/integration/cases/
         additional_dependencies: [*uv_version]
+        priority: 210
         stages: [pre-commit]
 
       - id: zizmor
@@ -403,6 +456,7 @@ repos:
         pass_filenames: false
         types_or: [yaml]
         additional_dependencies: [*uv_version]
+        priority: 500
         stages: [pre-commit]
 
       - id: sphinx-lint
@@ -411,4 +465,5 @@ repos:
         language: python
         types_or: [rst]
         additional_dependencies: [*uv_version]
+        priority: 500
         stages: [pre-commit]
