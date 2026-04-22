@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
+    passthrough_call_arg,
     passthrough_sequence_entry,
     passthrough_set_entry,
     tuple_dict_entry,
@@ -1494,6 +1495,11 @@ class Rust(metaclass=LanguageCls):
             self._heterogeneous_variant_date_type,
             self._heterogeneous_variant_datetime_type,
         )
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap a formatted call argument."""
+        return passthrough_call_arg
 
     @cached_property
     def type_hint_collection_preamble_lines(

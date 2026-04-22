@@ -1051,6 +1051,21 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap a formatted call argument so it satisfies the call site's
+        prototype.
+
+        Called as ``format_call_arg(raw_value, formatted_value)``.  Most
+        languages return *formatted_value* unchanged
+        (:func:`passthrough_call_arg`).  C and Objective-C wrap arguments
+        in a uniform parameter type (a union literal for C, ``id`` via
+        ``@(...)`` boxing for Objective-C) so that call stubs can
+        declare concrete prototypes instead of K&R empty-parameter
+        lists.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_call_stub(
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:

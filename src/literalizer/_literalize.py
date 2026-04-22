@@ -1152,11 +1152,14 @@ def _format_call_args(
     assemble ``args target`` directly.
     """
     formatted = [
-        _format_value(
-            value=v,
-            spec=language,
-            dict_open_override=None,
-            wrap_ids=wrap_ids,
+        language.format_call_arg(
+            v,
+            _format_value(
+                value=v,
+                spec=language,
+                dict_open_override=None,
+                wrap_ids=wrap_ids,
+            ),
         )
         for v in values
     ]

@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
+    passthrough_call_arg,
     passthrough_sequence_entry,
     passthrough_set_entry,
     strip_key_quotes,
@@ -403,6 +404,11 @@ class Toml(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap a formatted call argument."""
+        return passthrough_call_arg
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:

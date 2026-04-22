@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- Removed K&R-style empty-prototype pragmas from C and Objective-C
+  call stubs.  ``C.format_call_preamble_stub`` and
+  ``ObjectiveC.format_call_preamble_stub`` now emit concrete
+  prototypes (``CVal`` parameters for C, ``id`` parameters for
+  Objective-C) sized to the call's parameter list, and a new
+  ``Language.format_call_arg`` hook wraps each call argument so the
+  call site matches the prototype.  Generated C and Objective-C call
+  goldens now compile cleanly under ``-Wstrict-prototypes
+  -Wdeprecated-non-prototype -Werror`` without suppression.
 - Added ``literalize_call`` support for Clojure:
   ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]``
   so generated definitions accept any mix of positional and keyword
