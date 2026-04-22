@@ -1007,6 +1007,13 @@ jobs:
             tmpdir=$(mktemp -d)
             nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
+      - name: Run Nim files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            tmpdir=$(mktemp -d)
+            nim c -r --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+          done < /tmp/files-to-lint
 
   lint-nix:
     runs-on: ubuntu-latest
