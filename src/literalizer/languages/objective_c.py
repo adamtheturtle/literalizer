@@ -34,8 +34,6 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
-    CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -45,6 +43,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -108,6 +107,68 @@ def _format_objc_bytes_base64(value: bytes) -> str:
     """
     encoded = base64.b64encode(s=value)
     return f'@"{encoded.decode(encoding="ascii")}"'
+
+
+def _objc_call_stub(
+    name: str,
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Objective-C stub declarations for a call name.
+
+    Objective-C is a superset of C, so call stubs reuse C's structure:
+    dotted targets become a nested chain of ``struct`` types whose leaf
+    field is a function pointer with an unspecified (K&R-style)
+    argument list, and simple targets are emitted as forward
+    declarations with the same unspecified list.  A leading pragma
+    silences the ``-Wdeprecated-non-prototype`` warning clang emits
+    for these intentionally type-erased call sites.
+    """
+    del params
+    return_keyword = "id" if stub_return is StubReturn.VALUE else "void"
+    return_body = " return nil; " if stub_return is StubReturn.VALUE else ""
+    pragma = '#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"'
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (pragma, f"{return_keyword} {parts[0]}();")
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    stub_fn = "_".join((*parts, "stub_"))
+    if not fields:
+        type_name = f"{root}Type_"
+        return (
+            pragma,
+            f"static {return_keyword} {stub_fn}() {{{return_body}}}",
+            f"struct {type_name} {{ {return_keyword} (*{method})(); }};",
+            f"static const struct {type_name} {root} = "
+            f"{{ .{method} = {stub_fn} }};",
+        )
+    lines: list[str] = [
+        pragma,
+        f"static {return_keyword} {stub_fn}() {{{return_body}}}",
+    ]
+    inner_type = f"{fields[-1]}Type_"
+    lines.append(
+        f"struct {inner_type} {{ {return_keyword} (*{method})(); }};",
+    )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i]}Type_"
+        lines.append(
+            f"struct {curr_type} {{ struct {prev_type} {fields[i + 1]}; }};",
+        )
+        prev_type = curr_type
+    root_type = f"{root}Type_"
+    lines.append(
+        f"struct {root_type} {{ struct {prev_type} {fields[0]}; }};",
+    )
+    init = f"{{ .{method} = {stub_fn} }}"
+    for field in reversed(fields):
+        init = f"{{ .{field} = {init} }}"
+    lines.append(f"static const struct {root_type} {root} = {init};")
+    return tuple(lines)
 
 
 @beartype
@@ -319,6 +380,8 @@ class ObjectiveC(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """ObjectiveC call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -348,9 +411,8 @@ class ObjectiveC(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return (
-            f"void check_(void) {{\n{content}\n    (void){variable_name};\n}}"
-        )
+        use_line = f"\n    (void){variable_name};" if variable_name else ""
+        return f"void check_(void) {{\n{content}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -406,9 +468,12 @@ class ObjectiveC(metaclass=LanguageCls):
     )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
+
+    @cached_property
+    def call_style_config(self) -> PositionalCallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -459,7 +524,7 @@ class ObjectiveC(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _objc_call_stub
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

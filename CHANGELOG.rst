@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for Objective-C:
+  ``ObjectiveC.format_call_preamble_stub`` emits C-style forward
+  declarations and nested ``struct`` chains with function-pointer
+  leaves for dotted targets, and ``ObjectiveC.CallStyles.POSITIONAL``
+  renders calls as ``func(arg1, arg2)``.
+
 2026.04.21.5
 ------------
 
