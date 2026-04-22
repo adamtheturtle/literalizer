@@ -13,7 +13,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void obj_api_client_post_stub_(CVal _a0) {}
+static void obj_api_client_post_stub_(CVal _a0) { (void)_a0; }
 struct clientType_ { void (*post)(CVal); };
 struct apiType_ { struct clientType_ client; };
 struct objType_ { struct apiType_ api; };

@@ -13,7 +13,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static CVal app_client_fetch_stub_(CVal _a0) { return (CVal){0}; }
+static CVal app_client_fetch_stub_(CVal _a0) { (void)_a0; return (CVal){0}; }
 struct clientType_ { CVal (*fetch)(CVal); };
 struct appType_ { struct clientType_ client; };
 static const struct appType_ app = { .client = { .fetch = app_client_fetch_stub_ } };

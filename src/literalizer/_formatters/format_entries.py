@@ -257,16 +257,6 @@ def passthrough_set_entry(_value: Value, item: str) -> str:
 
 
 @beartype
-def passthrough_call_arg(_value: Value, item: str) -> str:
-    """Return *item* unchanged.
-
-    Use this as ``format_call_arg`` for languages where call arguments
-    need no extra wrapping.
-    """
-    return item
-
-
-@beartype
 def _format_dict_entry_with_separator(
     key: str,
     raw_value: Value,

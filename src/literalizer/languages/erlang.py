@@ -22,7 +22,6 @@ from literalizer._formatters.format_entries import (
     braced_dict_entry,
     dict_entry_with_separator,
     format_bytes_base64,
-    passthrough_call_arg,
     passthrough_sequence_entry,
     passthrough_set_entry,
 )
@@ -451,11 +450,6 @@ class Erlang(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
-
-    @cached_property
-    def format_call_arg(self) -> Callable[[Value, str], str]:
-        """Wrap a formatted call argument."""
-        return passthrough_call_arg
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:

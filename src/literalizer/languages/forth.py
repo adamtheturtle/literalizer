@@ -15,7 +15,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
-    passthrough_call_arg,
     passthrough_sequence_entry,
 )
 from literalizer._formatters.format_floats import format_float_scientific
@@ -485,11 +484,6 @@ class Forth(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
-
-    @cached_property
-    def format_call_arg(self) -> Callable[[Value, str], str]:
-        """Wrap a formatted call argument."""
-        return passthrough_call_arg
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:

@@ -22,7 +22,6 @@ from literalizer._formatters.format_entries import (
     braced_dict_entry,
     format_bytes_base64,
     format_bytes_hex,
-    passthrough_call_arg,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_formatter,
@@ -1403,11 +1402,6 @@ class Cpp(metaclass=LanguageCls):
         headers).
         """
         return _build_variant_preamble(type_ctx=self._type_ctx)
-
-    @cached_property
-    def format_call_arg(self) -> Callable[[Value, str], str]:
-        """Wrap a formatted call argument."""
-        return passthrough_call_arg
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:

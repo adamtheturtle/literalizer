@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-static void obj_api_client_post_stub_(id _a0) {}
+static void obj_api_client_post_stub_(id _a0) { (void)_a0; }
 struct clientType_ { void (*post)(id); };
 struct apiType_ { struct clientType_ client; };
 struct objType_ { struct apiType_ api; };

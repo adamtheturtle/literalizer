@@ -4,14 +4,15 @@ Changelog
 Next
 ----
 
-- Removed K&R-style empty-prototype pragmas from C and Objective-C
-  call stubs.  ``C.format_call_preamble_stub`` and
+- Removed the K&R-style empty-prototype suppression directives from
+  C and Objective-C call stubs.
+  ``C.format_call_preamble_stub`` and
   ``ObjectiveC.format_call_preamble_stub`` now emit concrete
   prototypes (``CVal`` parameters for C, ``id`` parameters for
-  Objective-C) sized to the call's parameter list, and a new
-  ``Language.format_call_arg`` hook wraps each call argument so the
-  call site matches the prototype.  Generated C and Objective-C call
-  goldens now compile cleanly under ``-Wstrict-prototypes
+  Objective-C) sized to the call's parameter list, and an internal
+  ``format_call_arg`` hook wraps each call argument so the call site
+  matches the prototype.  Generated C and Objective-C call code now
+  compiles cleanly under ``-Wstrict-prototypes
   -Wdeprecated-non-prototype -Werror`` without suppression.
 - C++ container types now pick the narrowest integer type that holds
   the actual values in each collection: ``int`` when every value fits

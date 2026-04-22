@@ -128,7 +128,6 @@ def _c_call_stub(
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = "CVal" if is_value else "void"
-    return_body = " return (CVal){0}; " if is_value else ""
     proto = ", ".join(["CVal"] * len(params)) if params else "void"
     parts = name.split(sep=".")
     if len(parts) == 1:
@@ -139,19 +138,21 @@ def _c_call_stub(
     stub_fn = "_".join((*parts, "stub_"))
     stub_params = ", ".join(f"CVal _a{i}" for i in range(len(params)))
     stub_signature = stub_params or "void"
+    discards = "".join(f" (void)_a{i};" for i in range(len(params)))
+    return_stmt = " return (CVal){0};" if is_value else ""
+    has_body = discards or is_value
+    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
     if not fields:
         type_name = f"{root}Type_"
         return (
-            f"static {return_keyword} {stub_fn}({stub_signature}) "
-            f"{{{return_body}}}",
+            f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
             f"struct {type_name} "
             f"{{ {return_keyword} (*{method})({proto}); }};",
             f"static const struct {type_name} {root} = "
             f"{{ .{method} = {stub_fn} }};",
         )
     lines: list[str] = [
-        f"static {return_keyword} {stub_fn}({stub_signature}) "
-        f"{{{return_body}}}",
+        f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
     inner_type = f"{fields[-1]}Type_"
     lines.append(

@@ -20,7 +20,6 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
-    passthrough_call_arg,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_declaration_formatter,
@@ -667,11 +666,6 @@ class Dhall(metaclass=LanguageCls):
         return self.heterogeneous_strategy.value.build_preamble(
             self.heterogeneous_value_union_name,
         )
-
-    @cached_property
-    def format_call_arg(self) -> Callable[[Value, str], str]:
-        """Wrap a formatted call argument."""
-        return passthrough_call_arg
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:

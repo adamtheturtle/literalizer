@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-static void app_client_fetch_stub_(id _a0) {}
+static void app_client_fetch_stub_(id _a0) { (void)_a0; }
 struct clientType_ { void (*fetch)(id); };
 struct appType_ { struct clientType_ client; };
 static const struct appType_ app = { .client = { .fetch = app_client_fetch_stub_ } };
