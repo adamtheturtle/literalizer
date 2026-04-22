@@ -47,43 +47,43 @@ repos:
   - repo: meta
     hooks:
       - id: check-useless-excludes
-        priority: 300
+        priority: 10
         stages: [pre-commit]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        priority: 310
+        priority: 30
         stages: [pre-commit]
       - id: check-case-conflict
-        priority: 320
+        priority: 40
         stages: [pre-commit]
       - id: check-executables-have-shebangs
-        priority: 330
+        priority: 60
         stages: [pre-commit]
       - id: check-merge-conflict
-        priority: 340
+        priority: 20
         stages: [pre-commit]
       - id: check-shebang-scripts-are-executable
-        priority: 350
+        priority: 70
         stages: [pre-commit]
       - id: check-symlinks
-        priority: 360
+        priority: 50
         stages: [pre-commit]
       - id: check-json
-        priority: 370
+        priority: 90
         stages: [pre-commit]
       - id: check-toml
         # Integration test fixtures use TOML v1.1 (multiline inline tables),
         # which tomllib (used by check-toml) does not support.
         exclude: ^tests/integration/cases/
-        priority: 380
+        priority: 91
         stages: [pre-commit]
       - id: check-vcs-permalinks
-        priority: 390
+        priority: 80
         stages: [pre-commit]
       - id: check-yaml
-        priority: 400
+        priority: 92
         stages: [pre-commit]
       - id: end-of-file-fixer
         priority: 100
