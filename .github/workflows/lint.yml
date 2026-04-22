@@ -1359,6 +1359,21 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
           /tmp/files-to-lint
+      # Each fixture defines the same `fval_m` module, so parallel
+      # compilations would clobber each other's `fval_m.mod` in the
+      # working directory. Give every invocation a private module
+      # output directory via `-J`.
+      - name: Run Fortran files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf \"$tmpdir\"" EXIT
+            gfortran -std=f2008 -ffree-line-length-none -J "$tmpdir" \
+              "$0" -o "$tmpdir/run" || exit 1
+            "$tmpdir/run" || exit 1
+          ' < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
