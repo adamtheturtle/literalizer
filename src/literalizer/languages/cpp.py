@@ -13,7 +13,6 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     make_element_to_type,
-    make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -95,6 +94,90 @@ class _CppModifiers(enum.Enum):
     """Immutability: the variable cannot be reassigned."""
 
 
+_INT32_MIN = -(1 << 31)
+_INT32_MAX = (1 << 31) - 1
+
+
+_IntTypeResolver = Callable[[list[int]], str]
+
+
+@beartype
+def _narrowest_cpp_int_type(values: list[int]) -> str:
+    """Return the narrowest C++ integer type holding every value in
+    *values*: ``int`` when every value fits in 32 bits, else
+    ``long long``.  Empty inputs return ``"int"``.  ``long`` is skipped
+    because its width is platform-dependent (32-bit on Windows, 64-bit
+    on Unix).
+    """
+    if all(_INT32_MIN <= v <= _INT32_MAX for v in values):
+        return "int"
+    return "long long"
+
+
+@beartype
+def _static_int_resolver(int_type: str) -> _IntTypeResolver:
+    """Return a resolver that always yields *int_type*."""
+
+    def _resolve(_values: list[int]) -> str:
+        """Return the fixed int type, ignoring values."""
+        return int_type
+
+    return _resolve
+
+
+@beartype
+def _collect_int_leaves(
+    *,
+    items: list[Value],
+    element_type: type | ListType | DictType,
+) -> list[int]:
+    """Collect int values that would occupy the int leaf of
+    *element_type* when *items* is resolved to its C++ type.
+    """
+    if element_type is int:
+        return [
+            item
+            for item in items
+            if isinstance(item, int) and not isinstance(item, bool)
+        ]
+    if isinstance(element_type, ListType):
+        return [
+            leaf
+            for item in items
+            if isinstance(item, list)
+            for leaf in _collect_int_leaves(
+                items=item,
+                element_type=element_type.inner,
+            )
+        ]
+    if (
+        isinstance(element_type, DictType)
+        and element_type.value_type is not None
+    ):
+        return [
+            leaf
+            for item in items
+            if isinstance(item, dict)
+            for leaf in _collect_int_leaves(
+                items=list(item.values()),
+                element_type=element_type.value_type,
+            )
+        ]
+    return []
+
+
+@beartype
+def _collect_direct_ints(items: list[Value]) -> list[int]:
+    """Collect int values that are direct items (not nested in
+    sub-collections).  Excludes booleans.
+    """
+    return [
+        item
+        for item in items
+        if isinstance(item, int) and not isinstance(item, bool)
+    ]
+
+
 @beartype
 def _format_date_cpp(value: datetime.date) -> str:
     """Format a date as a C++ chrono year_month_day literal."""
@@ -145,38 +228,72 @@ def _make_cpp_element_to_type(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class _CppTypeCtx:
+    """Context for C++ type resolution with value-driven int narrowing.
+
+    Bundles the date/datetime type strings (which are static) with an
+    :data:`_IntTypeResolver` that picks the narrowest int type for a
+    given collection of values.  Used wherever a type string is emitted
+    so that the int type can be specialized per-collection.
+    """
+
+    int_resolver: _IntTypeResolver
+    date_type: str | None
+    datetime_type: str | None
+
+    def element_to_type(
+        self,
+        *,
+        int_type: str,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Build an element-to-type resolver with the given *int_type*."""
+        return _make_cpp_element_to_type(
+            int_type=int_type,
+            date_type=self.date_type,
+            datetime_type=self.datetime_type,
+        )
+
+
 @beartype
-def _cpp_array_open(items: list[Value]) -> str:
-    """Infer element type and return a ``std::array<T, N>`` opener."""
-    element_to_type = _make_cpp_element_to_type(
-        int_type="int",
-        date_type=None,
-        datetime_type=None,
-    )
-    type_name = element_to_type(type(items[0])) if items else None
-    if type_name is None or not all(
-        element_to_type(type(i)) == type_name for i in items
-    ):
-        return "{"
-    return f"std::array<{type_name}, {len(items)}>{{"
+def _build_cpp_array_open(
+    *,
+    type_ctx: _CppTypeCtx,
+) -> Callable[[list[Value]], str]:
+    """Build an opener that emits ``std::array<T, N>`` with the int
+    type narrowed to the narrowest that holds every int value.
+    """
+
+    def _open(items: list[Value]) -> str:
+        """Return the typed ``std::array`` opener, or ``{`` on
+        fallback.
+        """
+        int_type = type_ctx.int_resolver(
+            [
+                item
+                for item in items
+                if isinstance(item, int) and not isinstance(item, bool)
+            ],
+        )
+        element_to_type = type_ctx.element_to_type(int_type=int_type)
+        type_name = element_to_type(type(items[0])) if items else None
+        if type_name is None or not all(
+            element_to_type(type(i)) == type_name for i in items
+        ):
+            return "{"
+        return f"std::array<{type_name}, {len(items)}>{{"
+
+    return _open
 
 
 @beartype
 def _make_initializer_list_config(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> SequenceFormatConfig:
-    """Build an INITIALIZER_LIST sequence config for the given int
-    type.
-    """
+    """Build an INITIALIZER_LIST sequence config."""
     return SequenceFormatConfig(
-        sequence_open=_build_variant_sequence_open(
-            int_type=int_type,
-            date_type=date_type,
-            datetime_type=datetime_type,
-        ),
+        sequence_open=_build_variant_sequence_open(type_ctx=type_ctx),
         close="}",
         supports_heterogeneity=True,
         single_element_trailing_comma=False,
@@ -194,14 +311,11 @@ def _make_initializer_list_config(
 @beartype
 def _make_array_config(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> SequenceFormatConfig:
     """Return the ARRAY sequence config."""
-    del int_type, date_type, datetime_type
     return SequenceFormatConfig(
-        sequence_open=_cpp_array_open,
+        sequence_open=_build_cpp_array_open(type_ctx=type_ctx),
         close="}",
         supports_heterogeneity=False,
         single_element_trailing_comma=False,
@@ -228,7 +342,7 @@ class _DictFormatOption:
 class _NumericLiteralSuffixConfig:
     """Configuration for a numeric literal suffix option."""
 
-    int_type: str
+    int_resolver: _IntTypeResolver
     formatter_wrapper: Callable[[Callable[[int], str]], Callable[[int], str]]
 
 
@@ -241,30 +355,38 @@ def _identity_wrapper(
 
 @beartype
 def _compute_cpp_type(
+    *,
     item: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
 ) -> str:
-    """Return the C++ type string for a single value."""
+    """Return the C++ type string for a single value.
+
+    *element_to_type* must have the int type already narrowed for the
+    enclosing collection's variant arm (or homogeneous leaf).  When the
+    value is a sub-collection, recursion re-narrows independently via
+    *type_ctx*.
+    """
     match item:
         case ordereddict():
             omap_values = item.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
             values: list[Value] = list(omap_values)  # pyright: ignore[reportUnknownArgumentType]
             value_type = _compute_element_type_for_items(
                 items=values,
-                element_to_type=element_to_type,
+                type_ctx=type_ctx,
             )
             return f"std::vector<std::pair<std::string, {value_type}>>"
         case dict():
             values = list(item.values())
             value_type = _compute_element_type_for_items(
                 items=values,
-                element_to_type=element_to_type,
+                type_ctx=type_ctx,
             )
             return f"std::map<std::string, {value_type}>"
         case list():
             inner_type = _compute_element_type_for_items(
                 items=item,
-                element_to_type=element_to_type,
+                type_ctx=type_ctx,
             )
             return f"std::vector<{inner_type}>"
         case set():
@@ -274,7 +396,7 @@ def _compute_cpp_type(
             )
             inner_type = _compute_element_type_for_items(
                 items=sorted_items,
-                element_to_type=element_to_type,
+                type_ctx=type_ctx,
             )
             return f"std::initializer_list<{inner_type}>"
         case _:
@@ -286,8 +408,10 @@ def _compute_cpp_type(
 
 @beartype
 def _collect_unique_cpp_types(
+    *,
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
 ) -> list[str]:
     """Collect unique C++ type names for each item, preserving order."""
     unique_cpp_types: list[str] = []
@@ -296,6 +420,7 @@ def _collect_unique_cpp_types(
         item_type = _compute_cpp_type(
             item=item,
             element_to_type=element_to_type,
+            type_ctx=type_ctx,
         )
         if item_type not in seen:
             seen.add(item_type)
@@ -305,14 +430,16 @@ def _collect_unique_cpp_types(
 
 @beartype
 def _compute_element_type_for_items(
+    *,
     items: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
 ) -> str:
     """Return the C++ element type for a collection of items.
 
     Returns a single type name when all items have the same C++ type,
     or ``std::variant<T1, T2, ...>`` for mixed types.  Returns
-    ``std::nullptr_t`` for empty collections.
+    ``std::nullptr_t`` for empty collections.  Narrows int-valued leaves
+    to the narrowest C++ int type that holds the actual values.
     """
     if not items:
         return "std::nullptr_t"
@@ -322,16 +449,31 @@ def _compute_element_type_for_items(
             case DictType(value_type=None, values=dict_values):
                 value_type = _compute_element_type_for_items(
                     items=list(dict_values),
-                    element_to_type=element_to_type,
+                    type_ctx=type_ctx,
                 )
                 return f"std::map<std::string, {value_type}>"
             case _:
+                int_leaves = _collect_int_leaves(
+                    items=items,
+                    element_type=element_type,
+                )
+                homogeneous_int_type = type_ctx.int_resolver(int_leaves)
+                element_to_type = type_ctx.element_to_type(
+                    int_type=homogeneous_int_type,
+                )
                 cpp_type = element_to_type(element_type)
                 if cpp_type is not None:
                     return cpp_type
+    variant_int_type = type_ctx.int_resolver(
+        _collect_direct_ints(items=items),
+    )
+    variant_element_to_type = type_ctx.element_to_type(
+        int_type=variant_int_type,
+    )
     match _collect_unique_cpp_types(
         items=items,
-        element_to_type=element_to_type,
+        element_to_type=variant_element_to_type,
+        type_ctx=type_ctx,
     ):
         case [single]:
             return single
@@ -433,18 +575,12 @@ def _has_empty_collection(data: Value) -> bool:
 @beartype
 def _build_variant_preamble(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a ``data_dependent_preamble`` that emits
     ``#include <variant>`` when the data needs variant types.
     """
-    element_to_type = _make_cpp_element_to_type(
-        int_type=int_type,
-        date_type=date_type,
-        datetime_type=datetime_type,
-    )
+    element_to_type = type_ctx.element_to_type(int_type="long long")
 
     def _variant_preamble(data: Value, /) -> tuple[str, ...]:
         """Return headers required by variant/nullptr_t usage."""
@@ -460,70 +596,55 @@ def _build_variant_preamble(
 
 @beartype
 def _apply_cpp_variant_sequence_open(
+    *,
     items: list[Value],
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ``std::vector`` opener."""
-    element_type = infer_element_type(items=items)
-    if element_type is not None:
-        opener = type_to_opener(element_type)
-        if opener is not None:
-            return opener
-    inner = _compute_element_type_for_items(
-        items=items,
-        element_to_type=element_to_type,
-    )
+    inner = _compute_element_type_for_items(items=items, type_ctx=type_ctx)
     return f"std::vector<{inner}>{{"
 
 
 @beartype
 def _apply_cpp_variant_dict_open(
+    *,
     items: dict[str, Value],
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
     opener_template: str,
 ) -> str:
-    """Return a typed ``std::map`` opener."""
-    element_type = infer_element_type(items=list(items.values()))
-    if element_type is not None:
-        opener = type_to_opener(element_type)
-        if opener is not None:
-            return opener
+    """Return a typed ``std::map`` or ``std::unordered_map`` opener."""
     value_type = _compute_element_type_for_items(
         items=list(items.values()),
-        element_to_type=element_to_type,
+        type_ctx=type_ctx,
     )
-    if "unordered" in opener_template:
-        map_kind = "std::unordered_map"
-    else:
-        map_kind = "std::map"
+    map_kind = (
+        "std::unordered_map" if "unordered" in opener_template else "std::map"
+    )
     return f"{map_kind}<std::string, {value_type}>{{"
 
 
 @beartype
 def _apply_cpp_variant_set_open(
+    *,
     items: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ``std::initializer_list`` opener."""
-    inner = _compute_element_type_for_items(
-        items=items,
-        element_to_type=element_to_type,
-    )
+    inner = _compute_element_type_for_items(items=items, type_ctx=type_ctx)
     return f"std::initializer_list<{inner}>{{"
 
 
 @beartype
 def _apply_cpp_variant_ordered_map_open(
+    *,
     data: dict[str, Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ordered-map opener."""
     values: list[Value] = list(data.values())
     value_type = _compute_element_type_for_items(
         items=values,
-        element_to_type=element_to_type,
+        type_ctx=type_ctx,
     )
     return f"std::vector<std::pair<std::string, {value_type}>>{{"
 
@@ -531,30 +652,15 @@ def _apply_cpp_variant_ordered_map_open(
 @beartype
 def _build_variant_sequence_open(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> Callable[[list[Value]], str]:
     """Build a sequence opener that uses ``std::variant`` for
     heterogeneous lists.
     """
-    element_to_type = _make_cpp_element_to_type(
-        int_type=int_type,
-        date_type=date_type,
-        datetime_type=datetime_type,
-    )
-    type_to_opener = make_type_to_opener(
-        element_to_type=element_to_type,
-        opener_template="std::vector<{type_name}>{{",
-    )
 
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
-        return _apply_cpp_variant_sequence_open(
-            items=items,
-            type_to_opener=type_to_opener,
-            element_to_type=element_to_type,
-        )
+        return _apply_cpp_variant_sequence_open(items=items, type_ctx=type_ctx)
 
     return _open
 
@@ -562,30 +668,18 @@ def _build_variant_sequence_open(
 @beartype
 def _build_variant_dict_open(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
     opener_template: str,
 ) -> Callable[[dict[str, Value]], str]:
     """Build a dict opener that uses ``std::variant`` for
     heterogeneous dict values.
     """
-    element_to_type = _make_cpp_element_to_type(
-        int_type=int_type,
-        date_type=date_type,
-        datetime_type=datetime_type,
-    )
-    type_to_opener = make_type_to_opener(
-        element_to_type=element_to_type,
-        opener_template=opener_template,
-    )
 
     def _open(items: dict[str, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_dict_open(
             items=items,
-            type_to_opener=type_to_opener,
-            element_to_type=element_to_type,
+            type_ctx=type_ctx,
             opener_template=opener_template,
         )
 
@@ -595,22 +689,13 @@ def _build_variant_dict_open(
 @beartype
 def _build_variant_set_open(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> Callable[[list[Value]], str]:
     """Build a set opener that uses typed ``std::initializer_list``."""
-    element_to_type = _make_cpp_element_to_type(
-        int_type=int_type,
-        date_type=date_type,
-        datetime_type=datetime_type,
-    )
 
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
-        return _apply_cpp_variant_set_open(
-            items=items, element_to_type=element_to_type
-        )
+        return _apply_cpp_variant_set_open(items=items, type_ctx=type_ctx)
 
     return _open
 
@@ -618,23 +703,17 @@ def _build_variant_set_open(
 @beartype
 def _build_variant_ordered_map_open(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> Callable[[dict[str, Value]], str]:
     """Build an ordered-map opener that uses
     ``std::vector<std::pair<...>>``.
     """
-    element_to_type = _make_cpp_element_to_type(
-        int_type=int_type,
-        date_type=date_type,
-        datetime_type=datetime_type,
-    )
 
     def _open(data: dict[str, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_ordered_map_open(
-            data=data, element_to_type=element_to_type
+            data=data,
+            type_ctx=type_ctx,
         )
 
     return _open
@@ -643,17 +722,11 @@ def _build_variant_ordered_map_open(
 @beartype
 def _build_ordered_map_config(
     *,
-    int_type: str,
-    date_type: str | None,
-    datetime_type: str | None,
+    type_ctx: _CppTypeCtx,
 ) -> OrderedMapFormatConfig:
     """Build an ``OrderedMapFormatConfig`` with a variant opener."""
     return OrderedMapFormatConfig(
-        ordered_map_open=_build_variant_ordered_map_open(
-            int_type=int_type,
-            date_type=date_type,
-            datetime_type=datetime_type,
-        ),
+        ordered_map_open=_build_variant_ordered_map_open(type_ctx=type_ctx),
         close="}",
         preamble_lines=(
             "#include <utility>",
@@ -857,19 +930,11 @@ class Cpp(metaclass=LanguageCls):
         def get_config(
             self,
             *,
-            int_type: str,
-            date_type: str | None,
-            datetime_type: str | None,
+            type_ctx: _CppTypeCtx,
         ) -> SequenceFormatConfig:
-            """Return the sequence format config for the given int
-            type.
-            """
+            """Return the sequence format config for the given context."""
             factory: Callable[..., SequenceFormatConfig] = self.value
-            return factory(
-                int_type=int_type,
-                date_type=date_type,
-                datetime_type=datetime_type,
-            )
+            return factory(type_ctx=type_ctx)
 
     class SetFormats(enum.Enum):
         """Set type options for C++."""
@@ -886,18 +951,12 @@ class Cpp(metaclass=LanguageCls):
         def get_config(
             self,
             *,
-            int_type: str,
-            date_type: str,
-            datetime_type: str,
+            type_ctx: _CppTypeCtx,
         ) -> SetFormatConfig:
             """Return the set format config with variant opener."""
             return dataclasses.replace(
                 self.value,
-                set_open=_build_variant_set_open(
-                    int_type=int_type,
-                    date_type=date_type,
-                    datetime_type=datetime_type,
-                ),
+                set_open=_build_variant_set_open(type_ctx=type_ctx),
             )
 
     class CommentFormats(enum.Enum):
@@ -958,18 +1017,14 @@ class Cpp(metaclass=LanguageCls):
         def get_config(
             self,
             *,
-            int_type: str,
-            date_type: str,
-            datetime_type: str,
+            type_ctx: _CppTypeCtx,
         ) -> DictFormatConfig:
             """Return the dict format config with variant opener."""
             option: _DictFormatOption = self.value
             return dataclasses.replace(
                 option.config,
                 dict_open=_build_variant_dict_open(
-                    int_type=int_type,
-                    date_type=date_type,
-                    datetime_type=datetime_type,
+                    type_ctx=type_ctx,
                     opener_template=option.opener_template,
                 ),
             )
@@ -1034,19 +1089,19 @@ class Cpp(metaclass=LanguageCls):
         """Numeric literal suffix options."""
 
         NONE = _NumericLiteralSuffixConfig(
-            int_type="int",
+            int_resolver=_narrowest_cpp_int_type,
             formatter_wrapper=_identity_wrapper,
         )
         AUTO = _NumericLiteralSuffixConfig(
-            int_type="long",
+            int_resolver=_static_int_resolver(int_type="long"),
             formatter_wrapper=make_long_suffix_formatter,
         )
 
         @property
-        def int_type(self) -> str:
-            """Return the C++ integer type for this suffix."""
+        def int_resolver(self) -> _IntTypeResolver:
+            """Return the value-driven int type resolver."""
             config: _NumericLiteralSuffixConfig = self.value
-            return config.int_type
+            return config.int_resolver
 
         def wrap_integer_formatter(
             self,
@@ -1259,27 +1314,23 @@ class Cpp(metaclass=LanguageCls):
         return self.datetime_format.cpp_type
 
     @cached_property
-    def _int_type(self) -> str:
-        """Resolved C++ integer type for the chosen numeric suffix."""
-        return self.numeric_literal_suffix.int_type
+    def _type_ctx(self) -> _CppTypeCtx:
+        """Context bundle for C++ type resolution."""
+        return _CppTypeCtx(
+            int_resolver=self.numeric_literal_suffix.int_resolver,
+            date_type=self._cpp_date_type,
+            datetime_type=self._cpp_datetime_type,
+        )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.get_config(
-            int_type=self._int_type,
-            date_type=self._cpp_date_type,
-            datetime_type=self._cpp_datetime_type,
-        )
+        return self.sequence_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
-        return self.set_format.get_config(
-            int_type=self._int_type,
-            date_type=self._cpp_date_type,
-            datetime_type=self._cpp_datetime_type,
-        )
+        return self.set_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
@@ -1327,11 +1378,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return self.dict_format.get_config(
-            int_type=self._int_type,
-            date_type=self._cpp_date_type,
-            datetime_type=self._cpp_datetime_type,
-        )
+        return self.dict_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def comment_config(self) -> CommentConfig:
@@ -1341,11 +1388,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return _build_ordered_map_config(
-            int_type=self._int_type,
-            date_type=self._cpp_date_type,
-            datetime_type=self._cpp_datetime_type,
-        )
+        return _build_ordered_map_config(type_ctx=self._type_ctx)
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
@@ -1359,11 +1402,7 @@ class Cpp(metaclass=LanguageCls):
         """Build data-dependent preamble lines (variant and ``nullptr``
         headers).
         """
-        return _build_variant_preamble(
-            int_type=self._int_type,
-            date_type=self._cpp_date_type,
-            datetime_type=self._cpp_datetime_type,
-        )
+        return _build_variant_preamble(type_ctx=self._type_ctx)
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:

@@ -38,6 +38,7 @@ from literalizer.languages import (
     Crystal,
     CSharp,
     Dart,
+    Dhall,
     Elm,
     Fortran,
     FSharp,
@@ -144,6 +145,13 @@ _CONSTRUCTOR_PREFIX_OVERRIDES: dict[literalizer.LanguageCls, str] = {
 _HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES: dict[
     literalizer.LanguageCls, str
 ] = {Rust: "JsonValue"}
+
+# Languages whose heterogeneous-value union name is configurable
+# (Dhall's ``UNION_TYPE`` strategy); the value is the test override
+# to apply.
+_HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
+    literalizer.LanguageCls, str
+] = {Dhall: "JsonValue"}
 
 # Languages that accept constructor-name kwargs (Fortran) or field-name
 # kwargs (C); the inner dict is the kwargs to pass to the constructor.
@@ -717,17 +725,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
 ]
 
 
-_VARIANT_ONLY_CASE_DIRS: frozenset[str] = frozenset(
-    {
-        "dict_mixed_int_widths",
-    },
-)
-"""Case dirs that exist solely to exercise a format-variant golden
-(e.g. Rust's ``I64`` tagged-enum arm) and have no per-language default
-goldens.  Skipped by ``_discover_cases`` and ``_discover_combined_cases``.
-"""
-
-
 @functools.cache
 @beartype
 def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
@@ -740,8 +737,6 @@ def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
-            continue
-        if case_dir.name in _VARIANT_ONLY_CASE_DIRS:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         for lang_cls in _sorted_languages():
@@ -856,8 +851,6 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     cases: list[_CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
-            continue
-        if case_dir.name in _VARIANT_ONLY_CASE_DIRS:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         for lang_cls in _sorted_languages():
@@ -1088,6 +1081,41 @@ def _build_c_field_name_variants() -> Iterable[_Variant]:
             _Variant(
                 name=f"{lang_cls.__name__}_field_names_custom",
                 spec=lang_cls(**kwargs),
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
+
+
+@beartype
+def _build_heterogeneous_value_union_name_variants() -> Iterable[_Variant]:
+    """Build heterogeneous-value-union-name variants for languages that
+    generate a named union type for their heterogeneous strategy (e.g.
+    Dhall's ``UNION_TYPE``).  The ``heterogeneous_value_union_name``
+    constructor parameter lets users customize that name.
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _sorted_languages():
+        custom_name = _HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES.get(lang_cls)
+        if custom_name is None:
+            continue
+        default_spec = _spec(lang_cls=lang_cls)
+        union_type = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "UNION_TYPE"
+        )
+        spec = lang_cls(
+            heterogeneous_strategy=union_type,
+            heterogeneous_value_union_name=custom_name,
+        )
+        variants.append(
+            _Variant(
+                name=(
+                    f"{lang_cls.__name__}"
+                    f"_heterogeneous_value_union_name_{custom_name}"
+                ),
+                spec=spec,
                 lang_cls=lang_cls,
             )
         )
@@ -1607,10 +1635,15 @@ def _build_variant_cases() -> list[_VariantCase]:
         (_build_constructor_name_variants(), "simple_dict", ""),
         (type_hints_cross, "bool_list", ""),
         (type_hints_cross, "float_list", ""),
-        (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
         (heterogeneous_strategy, "dict_mixed_scalars", ""),
+        (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
         (
             _build_heterogeneous_value_name_variants(),
+            "dict_mixed_scalars",
+            "",
+        ),
+        (
+            _build_heterogeneous_value_union_name_variants(),
             "dict_mixed_scalars",
             "",
         ),

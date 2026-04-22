@@ -409,6 +409,7 @@ ignore_names = [
     "call_styles",
     "heterogeneous_strategies",
     "TAGGED_ENUM",
+    "UNION_TYPE",
     "CONST",
     "CONTAINERS_MAP",
     "DICTIONARY",
