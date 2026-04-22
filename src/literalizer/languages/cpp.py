@@ -270,13 +270,11 @@ def _build_cpp_array_open(
         """Return the typed ``std::array`` opener, or ``{`` on
         fallback.
         """
-        if not items:
-            return "{"
         int_type = type_ctx.int_resolver(
             [item for item in items if type(item) is int],
         )
         element_to_type = type_ctx.element_to_type(int_type=int_type)
-        type_name = element_to_type(type(items[0]))
+        type_name = element_to_type(type(items[0])) if items else None
         if type_name is None or not all(
             element_to_type(type(i)) == type_name for i in items
         ):
@@ -342,7 +340,6 @@ class _DictFormatOption:
 class _NumericLiteralSuffixConfig:
     """Configuration for a numeric literal suffix option."""
 
-    int_type: str
     int_resolver: _IntTypeResolver
     formatter_wrapper: Callable[[Callable[[int], str]], Callable[[int], str]]
 
@@ -1090,21 +1087,13 @@ class Cpp(metaclass=LanguageCls):
         """Numeric literal suffix options."""
 
         NONE = _NumericLiteralSuffixConfig(
-            int_type="long long",
             int_resolver=_narrowest_cpp_int_type,
             formatter_wrapper=_identity_wrapper,
         )
         AUTO = _NumericLiteralSuffixConfig(
-            int_type="long",
             int_resolver=_static_int_resolver(int_type="long"),
             formatter_wrapper=make_long_suffix_formatter,
         )
-
-        @property
-        def int_type(self) -> str:
-            """Return the fallback C++ integer type for this suffix."""
-            config: _NumericLiteralSuffixConfig = self.value
-            return config.int_type
 
         @property
         def int_resolver(self) -> _IntTypeResolver:
@@ -1321,11 +1310,6 @@ class Cpp(metaclass=LanguageCls):
     def _cpp_datetime_type(self) -> str:
         """Resolved C++ type name for the chosen datetime format."""
         return self.datetime_format.cpp_type
-
-    @cached_property
-    def _int_type(self) -> str:
-        """Resolved C++ integer type for the chosen numeric suffix."""
-        return self.numeric_literal_suffix.int_type
 
     @cached_property
     def _type_ctx(self) -> _CppTypeCtx:

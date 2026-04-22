@@ -677,6 +677,38 @@ def test_nix_control_char_key_error() -> None:
         )
 
 
+def test_cpp_narrowing_unsigned_long_long() -> None:
+    """C++ picks ``unsigned long long`` when all ints are positive and
+    at least one exceeds ``LLONG_MAX``.
+    """
+    yaml_string = "- 9223372036854775808\n- 1\n"
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=Cpp(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+    assert "std::vector<unsigned long long>" in result.code
+
+
+def test_cpp_narrowing_mixed_sign_overflow_fallback() -> None:
+    """C++ falls back to ``long long`` when a mixed-sign collection has
+    a positive value above ``LLONG_MAX`` (no clean C++ type fits).
+    """
+    yaml_string = "- -1\n- 9223372036854775808\n"
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=Cpp(),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+    assert "std::vector<long long>" in result.code
+
+
 def test_dhall_backtick_label_unescaping() -> None:
     """Dhall backtick labels contain raw content, not escape sequences."""
     yaml_string = '{"$ref": "value"}\n'
