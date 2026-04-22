@@ -1176,6 +1176,24 @@ jobs:
       - name: Check SML syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 mlton -stop tc < /tmp/files-to-lint
+      # Fixtures only declare `structure Check` with a `my_data` val;
+      # MLton never evaluates the body unless a top-level expression
+      # references it, so compile alongside a small force file that
+      # forces `Check.my_data` to be constructed.
+      - name: Run SML files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir/SML_LIB expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf $tmpdir" EXIT
+            cp "$0" "$tmpdir/check.sml"
+            printf "val _ = Check.my_data\n" > "$tmpdir/force.sml"
+            printf "\$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n" \
+              > "$tmpdir/main.mlb"
+            mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+            "$tmpdir/out" || exit 1
+          ' < /tmp/files-to-lint
 
   lint-scheme:
     runs-on: ubuntu-latest

@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each
+  Standard ML fixture end-to-end.  Because ``MLton`` never evaluates
+  a ``structure``'s body unless a top-level expression forces it,
+  the new step compiles each fixture via an ML Basis file that
+  concatenates the fixture with a small ``val _ = Check.my_data``
+  snippet and runs the resulting binary, catching runtime errors
+  such as references to undefined names, missing module imports,
+  or failed assertions.
 - Removed the K&R-style empty-prototype suppression directives from
   C and Objective-C call stubs.
   ``C.format_call_preamble_stub`` and
