@@ -53,6 +53,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -488,6 +489,13 @@ class R(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def format_call_target(self) -> Callable[[str], str]:
+        """Rewrite a dotted call target into the language's call
+        syntax.
+        """
+        return identity_call_target
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

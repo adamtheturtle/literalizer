@@ -774,6 +774,9 @@ jobs:
       - name: Check PHP syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 php -l < /tmp/files-to-lint
+      - name: Run PHP files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 php < /tmp/files-to-lint
 
   lint-r:
     runs-on: ubuntu-latest

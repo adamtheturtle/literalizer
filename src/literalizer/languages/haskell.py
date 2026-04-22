@@ -59,6 +59,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     date_scalar_preamble,
+    identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
@@ -1429,3 +1430,10 @@ class Haskell(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Callable that returns preamble stub declarations."""
         return _haskell_call_preamble_stub
+
+    @cached_property
+    def format_call_target(self) -> Callable[[str], str]:
+        """Rewrite a dotted call target into the language's call
+        syntax.
+        """
+        return identity_call_target
