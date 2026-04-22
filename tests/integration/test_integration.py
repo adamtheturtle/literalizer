@@ -725,17 +725,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
 ]
 
 
-_VARIANT_ONLY_CASE_DIRS: frozenset[str] = frozenset(
-    {
-        "dict_mixed_int_widths",
-    },
-)
-"""Case dirs that exist solely to exercise a format-variant golden
-(e.g. Rust's ``I64`` tagged-enum arm) and have no per-language default
-goldens.  Skipped by ``_discover_cases`` and ``_discover_combined_cases``.
-"""
-
-
 @functools.cache
 @beartype
 def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
@@ -748,8 +737,6 @@ def _discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
-            continue
-        if case_dir.name in _VARIANT_ONLY_CASE_DIRS:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         for lang_cls in _sorted_languages():
@@ -864,8 +851,6 @@ def _discover_combined_cases() -> list[_CombinedCase]:
     cases: list[_CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
-            continue
-        if case_dir.name in _VARIANT_ONLY_CASE_DIRS:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         for lang_cls in _sorted_languages():

@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- C++ container types now pick the narrowest integer type that holds
+  the actual values in each collection: ``int`` when every value fits
+  in 32 bits, otherwise ``long long``.  This mirrors the existing
+  per-value suffix logic in Rust and fixes a case where
+  ``std::variant<int, …>`` could not hold literals above ``INT_MAX``.
+  ``Cpp.NumericLiteralSuffixes.AUTO`` still emits ``long`` + ``L``
+  suffix for every integer.
 - Added ``Dhall.HeterogeneousStrategies`` with a ``UNION_TYPE`` option
   that auto-generates a Dhall union type in the preamble whenever a
   dict, list, or sibling-list pair contains scalar values of more
