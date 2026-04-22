@@ -678,8 +678,8 @@ def test_nix_control_char_key_error() -> None:
 
 
 def test_cpp_narrowing_unsigned_long_long() -> None:
-    """C++ picks ``unsigned long long`` when all ints are positive and
-    at least one exceeds ``LLONG_MAX``.
+    """C++ picks ``unsigned long long`` when every integer value is
+    non-negative and at least one exceeds ``LLONG_MAX``.
     """
     yaml_string = "- 9223372036854775808\n- 1\n"
     result = literalize(

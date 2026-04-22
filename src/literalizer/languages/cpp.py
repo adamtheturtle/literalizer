@@ -145,7 +145,11 @@ def _collect_int_leaves(
     *element_type* when *items* is resolved to its C++ type.
     """
     if element_type is int:
-        return [item for item in items if type(item) is int]
+        return [
+            item
+            for item in items
+            if isinstance(item, int) and not isinstance(item, bool)
+        ]
     if isinstance(element_type, ListType):
         return [
             leaf
@@ -177,7 +181,11 @@ def _collect_direct_ints(items: list[Value]) -> list[int]:
     """Collect int values that are direct items (not nested in
     sub-collections).  Excludes booleans.
     """
-    return [item for item in items if type(item) is int]
+    return [
+        item
+        for item in items
+        if isinstance(item, int) and not isinstance(item, bool)
+    ]
 
 
 @beartype
@@ -271,7 +279,11 @@ def _build_cpp_array_open(
         fallback.
         """
         int_type = type_ctx.int_resolver(
-            [item for item in items if type(item) is int],
+            [
+                item
+                for item in items
+                if isinstance(item, int) and not isinstance(item, bool)
+            ],
         )
         element_to_type = type_ctx.element_to_type(int_type=int_type)
         type_name = element_to_type(type(items[0])) if items else None
