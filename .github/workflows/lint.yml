@@ -433,7 +433,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.elm
-          extra_config_patterns: check_elm_syntax.py
+          extra_config_patterns: |
+            check_elm_syntax.py
+            run_elm.py
       - name: Install elm-format and elm
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm
@@ -452,6 +454,9 @@ jobs:
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
+      - name: Run Elm files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 uv run --no-project python run_elm.py < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
