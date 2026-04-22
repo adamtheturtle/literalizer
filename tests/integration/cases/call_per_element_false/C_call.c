@@ -13,8 +13,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
-void process();
+void process(CVal);
 void check_(void) {
-process(1);
+process(((CVal){.i = 1}));
 }

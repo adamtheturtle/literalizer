@@ -1,13 +1,9 @@
 #import <Foundation/Foundation.h>
-#pragma clang diagnostic ignored "-Wstrict-prototypes"
-#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
-static id throttler_check_stub_() { return nil; }
-struct throttlerType_ { id (*check)(); };
+static id throttler_check_stub_(id _a0, id _a1) { (void)_a0; (void)_a1; return nil; }
+struct throttlerType_ { id (*check)(id, id); };
 static const struct throttlerType_ throttler = { .check = throttler_check_stub_ };
-#pragma clang diagnostic ignored "-Wstrict-prototypes"
-#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
-void emit();
+void emit(id);
 void check_(void) {
-emit(throttler.check(@"user_1", 1000.0));
-emit(throttler.check(@"user_2", 2000.5));
+emit(throttler.check(@"user_1", @(1000.0)));
+emit(throttler.check(@"user_2", @(2000.5)));
 }
