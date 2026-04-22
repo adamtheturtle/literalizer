@@ -1362,6 +1362,7 @@ jobs:
 
   lint-fortran:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1370,9 +1371,6 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.f90
-      - name: Install gfortran
-        if: steps.find-files.outputs.found == 'true'
-        uses: fortran-lang/setup-fortran@v1
       - name: Check Fortran syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
