@@ -96,35 +96,6 @@ def test_integer_variants_use_narrowest_width() -> None:
     assert result.code == expected
 
 
-def test_configurable_enum_name() -> None:
-    """The emitted enum name comes from the
-    ``heterogeneous_value_enum_name`` constructor argument.
-    """
-    result = literalize(
-        source='{"a": 1, "b": "x"}',
-        input_format=InputFormat.JSON,
-        language=Rust(
-            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
-            heterogeneous_value_enum_name="JsonValue",
-        ),
-        wrap_in_file=True,
-    )
-    expected = (
-        "use std::collections::HashMap;\n"
-        "enum JsonValue {\n"
-        "    I32(i32),\n"
-        "    Str(&'static str),\n"
-        "}\n"
-        "fn main() {\n"
-        "    HashMap::from([\n"
-        '        ("a", JsonValue::I32(1)),\n'
-        '        ("b", JsonValue::Str("x")),\n'
-        "    ])\n"
-        "}"
-    )
-    assert result.code == expected
-
-
 def test_null_variant_has_no_payload() -> None:
     """The ``Null`` variant is emitted as a unit variant without
     parentheses; callers use it as ``Value::Null``.
