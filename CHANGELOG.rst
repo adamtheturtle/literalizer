@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- C++ container types now pick the narrowest integer type that holds
+  the actual values in each collection: ``int`` when every value fits
+  in 32 bits, ``long long`` when any value exceeds the 32-bit range,
+  and ``unsigned long long`` for positive values beyond
+  ``LLONG_MAX``.  This mirrors the existing per-value suffix logic in
+  Rust and fixes a case where ``std::variant<int, …>`` could not hold
+  literals above ``INT_MAX``.  ``Cpp.NumericLiteralSuffixes.AUTO``
+  still emits ``long`` + ``L`` suffix for every integer.
+
 2026.04.21.5
 ------------
 
