@@ -502,77 +502,72 @@ def _all_scalars_mixed_buckets(values: Sequence[Value]) -> bool:
 
 
 @beartype
-def _flag_if_siblings_mixed(
+def _siblings_mixed_ids(
     *,
     siblings: Sequence[Value],
     total: int,
     combined: list[Value],
-    ids: set[int],
-) -> None:
-    """Flag every sibling in *siblings* when *combined* has mixed
-    scalar buckets.
+) -> frozenset[int]:
+    """Return ids for *siblings* when *combined* spans mixed scalar
+    buckets.
 
     *total* is the parent list's element count: when the sibling count
     differs, the parent contains non-matching children and the rule
     does not apply.
     """
     if len(siblings) != total or len(siblings) <= 1:
-        return
+        return frozenset()
     if not _all_scalars_mixed_buckets(values=combined):
-        return
-    for sibling in siblings:
-        ids.add(id(sibling))
+        return frozenset()
+    return frozenset(id(sibling) for sibling in siblings)
 
 
 @beartype
-def _collect_from_dict(
-    *,
-    data: dict[str, Value],
-    ids: set[int],
-) -> None:
-    """Collect ids for a dict and its children."""
+def _collect_from_dict(data: dict[str, Value]) -> frozenset[int]:
+    """Return container ids for a dict and its descendants."""
     values: list[Value] = list(data.values())
-    if _all_scalars_mixed_buckets(values=values):
-        ids.add(id(data))
-    for v in values:
-        _collect_heterogeneous_container_ids(data=v, ids=ids)
+    own: frozenset[int] = (
+        frozenset({id(data)})
+        if _all_scalars_mixed_buckets(values=values)
+        else frozenset()
+    )
+    descendants = frozenset[int]().union(
+        *(_collect_heterogeneous_container_ids(data=v) for v in values)
+    )
+    return own | descendants
 
 
 @beartype
-def _collect_from_list(
-    *,
-    data: list[Value],
-    ids: set[int],
-) -> None:
-    """Collect ids for a list, its sibling children, and descendants."""
-    if _all_scalars_mixed_buckets(values=data):
-        ids.add(id(data))
+def _collect_from_list(data: list[Value]) -> frozenset[int]:
+    """Return container ids for a list, its sibling children, and
+    descendants.
+    """
+    own: frozenset[int] = (
+        frozenset({id(data)})
+        if _all_scalars_mixed_buckets(values=data)
+        else frozenset()
+    )
     sublists: list[list[Value]] = [v for v in data if isinstance(v, list)]
-    _flag_if_siblings_mixed(
+    sublist_ids = _siblings_mixed_ids(
         siblings=sublists,
         total=len(data),
         combined=[e for sublist in sublists for e in sublist],
-        ids=ids,
     )
     subdicts: list[dict[str, Value]] = [v for v in data if isinstance(v, dict)]
-    _flag_if_siblings_mixed(
+    subdict_ids = _siblings_mixed_ids(
         siblings=subdicts,
         total=len(data),
         combined=[v for d in subdicts for v in d.values()],
-        ids=ids,
     )
-    for v in data:
-        _collect_heterogeneous_container_ids(data=v, ids=ids)
+    descendants = frozenset[int]().union(
+        *(_collect_heterogeneous_container_ids(data=v) for v in data)
+    )
+    return own | sublist_ids | subdict_ids | descendants
 
 
 @beartype
-def _collect_heterogeneous_container_ids(
-    *,
-    data: Value,
-    ids: set[int],
-) -> None:
-    """Populate *ids* with container ids whose scalar children need
-    wrapping.
+def _collect_heterogeneous_container_ids(*, data: Value) -> frozenset[int]:
+    """Return container ids whose scalar children need wrapping.
 
     A container is a target when:
 
@@ -586,11 +581,11 @@ def _collect_heterogeneous_container_ids(
     """
     match data:
         case ordereddict() | dict():
-            _collect_from_dict(data=data, ids=ids)
+            return _collect_from_dict(data=data)
         case list():
-            _collect_from_list(data=data, ids=ids)
+            return _collect_from_list(data=data)
         case _:
-            pass
+            return frozenset()
 
 
 @beartype
@@ -604,34 +599,19 @@ def _iter_wrapped_scalars(
     Walks *data* and yields each scalar whose immediate container's id
     appears in *wrap_ids*.
     """
+    match data:
+        case ordereddict() | dict():
+            children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case list():
+            children = list(data)
+        case _:
+            return []
+    parent_wrapped = id(data) in wrap_ids
     out: list[Scalar] = []
-
-    def _walk(value: Value) -> None:
-        """Walk *value* and collect scalars that will be wrapped."""
-        match value:
-            case ordereddict() | dict():
-                parent_wrapped = id(value) in wrap_ids
-                dict_values: list[Value] = list(value.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                for v in dict_values:
-                    if parent_wrapped and not isinstance(
-                        v,
-                        (list, dict, set),
-                    ):
-                        out.append(v)
-                    _walk(value=v)
-            case list():
-                parent_wrapped = id(value) in wrap_ids
-                for v in value:
-                    if parent_wrapped and not isinstance(
-                        v,
-                        (list, dict, set),
-                    ):
-                        out.append(v)
-                    _walk(value=v)
-            case _:
-                pass
-
-    _walk(value=data)
+    for child in children:
+        if parent_wrapped and not isinstance(child, (list, dict, set)):
+            out.append(child)
+        out.extend(_iter_wrapped_scalars(data=child, wrap_ids=wrap_ids))
     return out
 
 
@@ -684,9 +664,7 @@ def _build_tagged_enum_behavior(
 
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should wrap."""
-        ids: set[int] = set()
-        _collect_heterogeneous_container_ids(data=data, ids=ids)
-        return frozenset(ids)
+        return _collect_heterogeneous_container_ids(data=data)
 
     def _wrap(raw_value: Value, formatted: str) -> str:
         """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``.
@@ -721,9 +699,7 @@ def _build_tagged_enum_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the tagged-enum declaration for *data*."""
-        ids: set[int] = set()
-        _collect_heterogeneous_container_ids(data=data, ids=ids)
-        wrap_ids = frozenset(ids)
+        wrap_ids = _collect_heterogeneous_container_ids(data=data)
         if not wrap_ids:
             return ()
         scalars = _iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)

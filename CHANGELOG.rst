@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for Clojure:
+  ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]``
+  so generated definitions accept any mix of positional and keyword
+  arguments, and ``Clojure.CallStyles.PREFIX_KEYWORD`` renders calls
+  as ``(func :name value)``.
+- Added ``literalize_call`` support for Objective-C:
+  ``ObjectiveC.format_call_preamble_stub`` emits C-style forward
+  declarations and nested ``struct`` chains with function-pointer
+  leaves for dotted targets, and ``ObjectiveC.CallStyles.POSITIONAL``
+  renders calls as ``func(arg1, arg2)``.
 - Added ``literalize_call`` support for Perl:
   ``Perl.format_call_stub`` emits an empty ``sub {}`` declaration for
   each dot-separated part of the target name, so call expressions
