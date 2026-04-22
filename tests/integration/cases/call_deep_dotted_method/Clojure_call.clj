@@ -1,0 +1,7 @@
+(defn obj [& _args] nil)
+(defn obj.api [& _args] nil)
+(defn obj.api.client [& _args] nil)
+(defn obj.api.client.post [& _args] nil)
+(obj.api.client.post :data "hello")
+(obj.api.client.post :data 42)
+(obj.api.client.post :data true)
