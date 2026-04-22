@@ -73,6 +73,14 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+def _php_format_call_target(name: str, /) -> str:
+    """Rewrite a dotted call target into PHP's ``$obj->method`` form."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return name
+    return "$" + parts[0] + "".join(f"->{p}" for p in parts[1:])
+
+
 def _php_call_stub(
     name: str,
     params: Sequence[str],
@@ -491,6 +499,13 @@ class Php(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _php_call_stub
+
+    @cached_property
+    def format_call_target(self) -> Callable[[str], str]:
+        """Rewrite a dotted call target into PHP's ``$obj->method``
+        form.
+        """
+        return _php_format_call_target
 
     @cached_property
     def format_call_preamble_stub(

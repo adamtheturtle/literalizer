@@ -1327,6 +1327,8 @@ def literalize_call(
         case _ as style:
             pass
 
+    target_function = language.format_call_target(target_function)
+
     if per_element:
         if not isinstance(data, list):
             msg = (

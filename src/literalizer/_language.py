@@ -1093,6 +1093,17 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def format_call_target(self) -> Callable[[str], str]:
+        """Rewrite a dotted call target (``"app.client.fetch"``) into
+        the form required by this language's call expression syntax.
+
+        Most languages accept dotted member-access as-is and use
+        :data:`identity_call_target`.  PHP overrides this to produce
+        ``$app->client->fetch``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -1139,6 +1150,15 @@ no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
     _no_call_stub
 )
 """Shared callable for languages that need no call stubs."""
+
+
+def _identity_call_target(name: str, /) -> str:
+    """Return *name* unchanged."""
+    return name
+
+
+identity_call_target: Callable[[str], str] = _identity_call_target
+"""Shared callable for languages that need no call-target rewriting."""
 
 
 def _no_type_hint_preamble(

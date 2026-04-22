@@ -75,6 +75,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
     no_validate_spec_for_data,
@@ -896,6 +897,13 @@ class Kotlin(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def format_call_target(self) -> Callable[[str], str]:
+        """Rewrite a dotted call target into the language's call
+        syntax.
+        """
+        return identity_call_target
 
     @cached_property
     def _date_type_name(self) -> str | None:
