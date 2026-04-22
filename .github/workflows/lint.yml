@@ -724,6 +724,9 @@ jobs:
       - name: Check Perl syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-to-lint
+      - name: Run Perl files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 perl < /tmp/files-to-lint
 
   lint-lua:
     runs-on: ubuntu-latest
