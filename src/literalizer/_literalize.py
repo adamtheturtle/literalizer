@@ -1136,6 +1136,17 @@ def literalize(
 
 
 @beartype
+def _identity_call_arg(_value: Value, formatted: str) -> str:
+    """Return *formatted* unchanged.
+
+    Default for :func:`_format_call_args` when a language does not
+    define ``format_call_arg``.  C and Objective-C override this to
+    wrap each argument in their canonical parameter type.
+    """
+    return formatted
+
+
+@beartype
 def _format_call_args(
     *,
     values: list[Value],
@@ -1151,12 +1162,20 @@ def _format_call_args(
     unwrapped, space-separated argument list so the caller can
     assemble ``args target`` directly.
     """
+    wrap_arg: Callable[[Value, str], str] = getattr(
+        language,
+        "format_call_arg",
+        _identity_call_arg,
+    )
     formatted = [
-        _format_value(
-            value=v,
-            spec=language,
-            dict_open_override=None,
-            wrap_ids=wrap_ids,
+        wrap_arg(
+            v,
+            _format_value(
+                value=v,
+                spec=language,
+                dict_open_override=None,
+                wrap_ids=wrap_ids,
+            ),
         )
         for v in values
     ]

@@ -898,6 +898,21 @@ jobs:
       - name: Check Crystal syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
+      # Crystal derives the compiled binary name from the source file's
+      # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp).
+      # Many fixtures share basenames, so parallel `crystal run` invocations
+      # clobber each other's binaries. Give each invocation a private cache.
+      - name: Run Crystal files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir/$rc expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$0"
+            rc=$?
+            rm -rf "$tmpdir"
+            exit "$rc"
+          ' < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -1009,6 +1024,13 @@ jobs:
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
             nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+          done < /tmp/files-to-lint
+      - name: Run Nim files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            tmpdir=$(mktemp -d)
+            nim c -r --hints:off --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
 
   lint-nix:

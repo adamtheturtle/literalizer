@@ -120,40 +120,44 @@ def _c_call_stub(
 
     C has no member functions and no type-generic function templates,
     so dotted targets are modeled as a nested chain of ``struct`` types
-    whose leaf field is a function pointer declared with an
-    unspecified (K&R-style) argument list.  Simple targets are emitted
-    as forward declarations with the same unspecified list so the
-    caller may pass any arguments.  A leading pragma suppresses the
-    ``-Wdeprecated-non-prototype`` warning that clang emits for these
-    intentionally type-erased call sites.
+    whose leaf field is a function pointer.  Each prototype declares
+    one ``CVal`` parameter per call argument so call sites pass values
+    through the union-typed wrapper defined in the static preamble; this
+    avoids the K&R unspecified-parameter syntax (and the
+    ``-Wdeprecated-non-prototype`` clang warning it triggers) while
+    still letting the same stub accept any mix of argument types.
     """
-    del params
-    return_keyword = "int" if stub_return is StubReturn.VALUE else "void"
-    return_body = " return 0; " if stub_return is StubReturn.VALUE else ""
-    pragma = '#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"'
+    is_value = stub_return is StubReturn.VALUE
+    return_keyword = "CVal" if is_value else "void"
+    proto = ", ".join(["CVal"] * len(params)) if params else "void"
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (pragma, f"{return_keyword} {parts[0]}();")
+        return (f"{return_keyword} {parts[0]}({proto});",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     stub_fn = "_".join((*parts, "stub_"))
+    stub_params = ", ".join(f"CVal _a{i}" for i in range(len(params)))
+    stub_signature = stub_params or "void"
+    discards = "".join(f" (void)_a{i};" for i in range(len(params)))
+    return_stmt = " return (CVal){0};" if is_value else ""
+    has_body = discards or is_value
+    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
     if not fields:
         type_name = f"{root}Type_"
         return (
-            pragma,
-            f"static {return_keyword} {stub_fn}() {{{return_body}}}",
-            f"struct {type_name} {{ {return_keyword} (*{method})(); }};",
+            f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
+            f"struct {type_name} "
+            f"{{ {return_keyword} (*{method})({proto}); }};",
             f"static const struct {type_name} {root} = "
             f"{{ .{method} = {stub_fn} }};",
         )
     lines: list[str] = [
-        pragma,
-        f"static {return_keyword} {stub_fn}() {{{return_body}}}",
+        f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
     inner_type = f"{fields[-1]}Type_"
     lines.append(
-        f"struct {inner_type} {{ {return_keyword} (*{method})(); }};",
+        f"struct {inner_type} {{ {return_keyword} (*{method})({proto}); }};",
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -509,6 +513,13 @@ class C(metaclass=LanguageCls):
         syntax.
         """
         return identity_call_target
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap each call argument in the ``CVal`` union so call sites
+        match the concrete prototype emitted by :func:`_c_call_stub`.
+        """
+        return self._format_entry
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 
@@ -33,6 +33,10 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import (
     escape_control_chars,
 )
+from literalizer._heterogeneous import (
+    collect_heterogeneous_container_ids,
+    iter_wrapped_scalars,
+)
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
@@ -58,7 +62,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import InvalidDictKeyError
 
 _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$")
@@ -152,6 +156,154 @@ def _format_dhall_dict_entry(
         )
         raise InvalidDictKeyError(msg)
     return f"`{raw}` = {formatted_value}"
+
+
+@dataclasses.dataclass(frozen=True)
+class _VariantSignature:
+    """Name and optional inner-type string for one Dhall union variant.
+
+    ``inner_type`` is ``None`` for unit variants (e.g. ``Null``); for
+    payload-carrying variants it's the Dhall type rendered after the
+    ``:``, e.g. ``"Text"`` for ``Str : Text``.
+    """
+
+    name: str
+    inner_type: str | None
+
+
+@beartype
+def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:  # noqa: PLR0911
+    """Return the Dhall union-type variant signature for *value*.
+
+    Dhall has no per-width integer types, so all integers map to a
+    single ``Int : Integer`` variant.  ``date``, ``datetime``, and
+    ``bytes`` are all rendered as ``Text`` by Dhall's built-in
+    formatters, so their variants share that inner type but keep
+    distinct names for self-documentation.
+    """
+    match value:
+        case bool():
+            return _VariantSignature(name="Bool", inner_type="Bool")
+        case int():
+            return _VariantSignature(name="Int", inner_type="Integer")
+        case float():
+            return _VariantSignature(name="Double", inner_type="Double")
+        case str():
+            return _VariantSignature(name="Str", inner_type="Text")
+        case bytes():
+            return _VariantSignature(name="Bytes", inner_type="Text")
+        case datetime.datetime():
+            return _VariantSignature(name="DateTime", inner_type="Text")
+        case datetime.date():
+            return _VariantSignature(name="Date", inner_type="Text")
+        case None:
+            return _VariantSignature(name="Null", inner_type=None)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@dataclasses.dataclass(frozen=True)
+class _HeterogeneousStrategyConfig:
+    """Configuration for one Dhall heterogeneous-values strategy.
+
+    ``build_behavior`` produces the
+    :class:`~literalizer._language.HeterogeneousBehavior` exposed on a
+    Dhall instance.  ``build_preamble`` produces the data-dependent
+    preamble callable (e.g. the ``let Value = < … > in`` declaration).
+    Both receive the Dhall instance's configurable union name so the
+    resulting functions can close over it.
+    """
+
+    build_behavior: Callable[[str], HeterogeneousBehavior]
+    build_preamble: Callable[[str], Callable[[Value], tuple[str, ...]]]
+
+
+def _build_error_behavior(_union_name: str, /) -> HeterogeneousBehavior:
+    """ERROR strategy: no wrapping, no skipping of checks."""
+    return NO_HETEROGENEOUS_BEHAVIOR
+
+
+def _build_error_preamble(
+    _union_name: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """ERROR strategy: no data-dependent preamble."""
+    return no_data_preamble
+
+
+def _build_union_type_behavior(
+    union_name: str,
+    /,
+) -> HeterogeneousBehavior:
+    """UNION_TYPE strategy: wrap scalars and skip scalar checks."""
+
+    def _compute(data: Value) -> frozenset[int]:
+        """Return container ids whose scalar children should wrap."""
+        return collect_heterogeneous_container_ids(data=data)
+
+    def _wrap(raw_value: Value, formatted: str) -> str:
+        """Wrap a scalar as ``{union_name}.{Variant} payload``.
+
+        :func:`~literalizer._literalize._maybe_wrap_child` filters
+        non-scalar values before dispatching, so *raw_value* is always
+        a scalar.
+        """
+        signature = _dhall_variant_for_scalar(
+            value=cast("Scalar", raw_value),
+        )
+        if signature.inner_type is None:
+            return f"{union_name}.{signature.name}"
+        return f"{union_name}.{signature.name} {formatted}"
+
+    return HeterogeneousBehavior(
+        skip_scalar_checks=True,
+        compute_wrap_ids=_compute,
+        wrap_scalar=_wrap,
+    )
+
+
+def _build_union_type_preamble(
+    union_name: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """UNION_TYPE strategy: emit a minimal ``let`` binding declaring
+    the union type used to wrap heterogeneous scalars.
+    """
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Build the union-type declaration for *data*."""
+        wrap_ids = collect_heterogeneous_container_ids(data=data)
+        if not wrap_ids:
+            return ()
+        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        variants: list[_VariantSignature] = []
+        seen: set[str] = set()
+        for scalar in scalars:
+            signature = _dhall_variant_for_scalar(value=scalar)
+            if signature.name in seen:
+                continue
+            seen.add(signature.name)
+            variants.append(signature)
+        parts = [
+            variant.name
+            if variant.inner_type is None
+            else f"{variant.name} : {variant.inner_type}"
+            for variant in variants
+        ]
+        body = " | ".join(parts)
+        return (f"let {union_name} = < {body} > in",)
+
+    return _preamble
+
+
+_ERROR_STRATEGY = _HeterogeneousStrategyConfig(
+    build_behavior=_build_error_behavior,
+    build_preamble=_build_error_preamble,
+)
+_UNION_TYPE_STRATEGY = _HeterogeneousStrategyConfig(
+    build_behavior=_build_union_type_behavior,
+    build_preamble=_build_union_type_preamble,
+)
 
 
 @beartype
@@ -376,11 +528,29 @@ class Dhall(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for representing dicts or lists whose scalar values
+        span more than one Dhall type.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = _ERROR_STRATEGY
+        """Raise
+        :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
+        (or
+        :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
+        when scalar values of mixed types appear in a container that
+        cannot represent them.  This is the default, matching Dhall's
+        strict-typing convention.
+        """
+
+        UNION_TYPE = _UNION_TYPE_STRATEGY
+        """Auto-generate a Dhall union type in the preamble containing
+        only the variants actually present in the data, and wrap each
+        heterogeneous scalar value as ``{UnionName}.{Variant} payload``.
+
+        The union name is configurable via
+        :attr:`Dhall.heterogeneous_value_union_name` (default
+        ``"Value"``).
+        """
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -435,6 +605,7 @@ class Dhall(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    heterogeneous_value_union_name: str = "Value"
     indent: str = "  "
 
     null_literal: ClassVar[str] = '""'
@@ -486,13 +657,23 @@ class Dhall(metaclass=LanguageCls):
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        For ``HeterogeneousStrategies.UNION_TYPE`` emits a ``let``
+        binding declaring a union type containing only the variants
+        actually used in heterogeneous positions in the data.  Other
+        strategies produce no preamble.
+        """
+        return self.heterogeneous_strategy.value.build_preamble(
+            self.heterogeneous_value_union_name,
+        )
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self.heterogeneous_strategy.value.build_behavior(
+            self.heterogeneous_value_union_name,
+        )
 
     @cached_property
     def type_hint_collection_preamble_lines(

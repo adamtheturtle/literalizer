@@ -13,13 +13,11 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
-static int throttler_check_stub_() { return 0; }
-struct throttlerType_ { int (*check)(); };
+static CVal throttler_check_stub_(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; return (CVal){0}; }
+struct throttlerType_ { CVal (*check)(CVal, CVal); };
 static const struct throttlerType_ throttler = { .check = throttler_check_stub_ };
-#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
-void emit();
+void emit(CVal);
 void check_(void) {
-emit(throttler.check("user_1", 1000.0));
-emit(throttler.check("user_2", 2000.5));
+emit(throttler.check(((CVal){.s = "user_1"}), ((CVal){.f = 1000.0})));
+emit(throttler.check(((CVal){.s = "user_2"}), ((CVal){.f = 2000.5})));
 }
