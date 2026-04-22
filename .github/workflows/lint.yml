@@ -895,6 +895,9 @@ jobs:
       - name: Check Crystal syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
+      - name: Run Crystal files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 crystal run < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
