@@ -121,17 +121,22 @@ def _objc_call_stub(
     dotted targets become a nested chain of ``struct`` types whose leaf
     field is a function pointer with an unspecified (K&R-style)
     argument list, and simple targets are emitted as forward
-    declarations with the same unspecified list.  A leading pragma
-    silences the ``-Wdeprecated-non-prototype`` warning clang emits
-    for these intentionally type-erased call sites.
+    declarations with the same unspecified list.  Two leading
+    ``#pragma clang diagnostic ignored`` directives silence both
+    ``-Wstrict-prototypes`` (Apple Clang) and
+    ``-Wdeprecated-non-prototype`` (upstream Clang 15+) for these
+    intentionally type-erased call sites.
     """
     del params
     return_keyword = "id" if stub_return is StubReturn.VALUE else "void"
     return_body = " return nil; " if stub_return is StubReturn.VALUE else ""
-    pragma = '#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"'
+    pragmas = (
+        '#pragma clang diagnostic ignored "-Wstrict-prototypes"',
+        '#pragma clang diagnostic ignored "-Wdeprecated-non-prototype"',
+    )
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (pragma, f"{return_keyword} {parts[0]}();")
+        return (*pragmas, f"{return_keyword} {parts[0]}();")
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -139,14 +144,14 @@ def _objc_call_stub(
     if not fields:
         type_name = f"{root}Type_"
         return (
-            pragma,
+            *pragmas,
             f"static {return_keyword} {stub_fn}() {{{return_body}}}",
             f"struct {type_name} {{ {return_keyword} (*{method})(); }};",
             f"static const struct {type_name} {root} = "
             f"{{ .{method} = {stub_fn} }};",
         )
     lines: list[str] = [
-        pragma,
+        *pragmas,
         f"static {return_keyword} {stub_fn}() {{{return_body}}}",
     ]
     inner_type = f"{fields[-1]}Type_"

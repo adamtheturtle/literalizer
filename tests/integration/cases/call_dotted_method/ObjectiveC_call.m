@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#pragma clang diagnostic ignored "-Wstrict-prototypes"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 static void app_client_fetch_stub_() {}
 struct clientType_ { void (*fetch)(); };

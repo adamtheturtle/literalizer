@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#pragma clang diagnostic ignored "-Wstrict-prototypes"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 static void obj_api_client_post_stub_() {}
 struct clientType_ { void (*post)(); };
