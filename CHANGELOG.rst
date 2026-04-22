@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for Clojure:
+  ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& args]``
+  so generated definitions accept any mix of positional and keyword
+  arguments, and ``Clojure.CallStyles.PREFIX_KEYWORD`` renders calls
+  as ``(func :name value)``.
+
 2026.04.21.5
 ------------
 

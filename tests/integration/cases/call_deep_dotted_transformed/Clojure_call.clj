@@ -1,0 +1,7 @@
+(defn app [& args] 0)
+(defn app.client [& args] 0)
+(defn app.client.fetch [& args] 0)
+(defn emit [& args] nil)
+(emit (app.client.fetch :payload "hello"))
+(emit (app.client.fetch :payload 42))
+(emit (app.client.fetch :payload true))

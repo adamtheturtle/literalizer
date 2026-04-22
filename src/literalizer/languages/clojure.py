@@ -34,7 +34,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -44,6 +43,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
+    PrefixCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -57,6 +57,31 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+def _clojure_call_stub(
+    name: str,
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Clojure stub definitions for a call name.
+
+    For dotted names like ``app.client.fetch``, one ``defn`` is
+    emitted per prefix so that intermediate identifiers are bound.
+    Each stub declares ``[& args]`` and ignores them, so the generated
+    function accepts any combination of positional and keyword-style
+    arguments — necessary because the same formatter is used both for
+    the call target (invoked with ``:key value`` pairs) and for
+    transform wrapper functions (invoked positionally).  Stub bodies
+    return ``nil`` for void stubs and ``0`` for value stubs.
+    """
+    body = "nil" if stub_return is StubReturn.VOID else "0"
+    parts = name.split(sep=".")
+    return tuple(
+        f"(defn {'.'.join(parts[: i + 1])} [& args] {body})"
+        for i in range(len(parts))
+    )
 
 
 @beartype
@@ -247,6 +272,11 @@ class Clojure(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Clojure call style options."""
 
+        PREFIX_KEYWORD = PrefixCallStyle(
+            arg_separator=" ",
+            keyword_prefix=":",
+        )
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -312,6 +342,7 @@ class Clojure(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
+    call_style: CallStyles = CallStyles.PREFIX_KEYWORD
     line_ending: LineEndings = LineEndings.SEMICOLON
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -331,9 +362,11 @@ class Clojure(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for Clojure's call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -377,7 +410,7 @@ class Clojure(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _clojure_call_stub
 
     @cached_property
     def format_call_preamble_stub(
