@@ -69,17 +69,18 @@ def _clojure_call_stub(
 
     For dotted names like ``app.client.fetch``, one ``defn`` is
     emitted per prefix so that intermediate identifiers are bound.
-    Each stub declares ``[& args]`` and ignores them, so the generated
-    function accepts any combination of positional and keyword-style
-    arguments — necessary because the same formatter is used both for
-    the call target (invoked with ``:key value`` pairs) and for
-    transform wrapper functions (invoked positionally).  Stub bodies
-    return ``nil`` for void stubs and ``0`` for value stubs.
+    Each stub declares ``[& _args]`` and ignores them (the underscore
+    prefix silences clj-kondo's unused-binding warning), so the
+    generated function accepts any combination of positional and
+    keyword-style arguments — necessary because the same formatter is
+    used both for the call target (invoked with ``:key value`` pairs)
+    and for transform wrapper functions (invoked positionally).  Stub
+    bodies return ``nil`` for void stubs and ``0`` for value stubs.
     """
     body = "nil" if stub_return is StubReturn.VOID else "0"
     parts = name.split(sep=".")
     return tuple(
-        f"(defn {'.'.join(parts[: i + 1])} [& args] {body})"
+        f"(defn {'.'.join(parts[: i + 1])} [& _args] {body})"
         for i in range(len(parts))
     )
 

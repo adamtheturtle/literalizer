@@ -1,2 +1,2 @@
-(defn process [& args] nil)
+(defn process [& _args] nil)
 (process :data 1)

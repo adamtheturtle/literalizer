@@ -1,5 +1,5 @@
-(defn throttler [& args] 0)
-(defn throttler.check [& args] 0)
-(defn emit [& args] nil)
+(defn throttler [& _args] 0)
+(defn throttler.check [& _args] 0)
+(defn emit [& _args] nil)
 (emit (throttler.check :user_id "user_1" :ts 1000.0))
 (emit (throttler.check :user_id "user_2" :ts 2000.5))
