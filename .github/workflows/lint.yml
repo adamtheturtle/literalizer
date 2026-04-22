@@ -626,13 +626,26 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         uses: coursier/setup-action@v3
         with:
-          apps: scalac
+          apps: scala scalac
       - name: Check Scala syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
             scalac -d "$tmpdir" "$f" || exit 1
+          done < /tmp/files-to-lint
+      # Fixtures define `object Check { ... }` with no main method, so
+      # compile alongside a small @main wrapper that forces the object
+      # (and therefore its val initializers) to load.
+      - name: Run Scala files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            tmpdir=$(mktemp -d)
+            printf '@main def __run(): Unit = { val _ = Check }\n' \
+              > "$tmpdir/__Main.scala"
+            scalac -d "$tmpdir" "$f" "$tmpdir/__Main.scala" || exit 1
+            scala --main-class __run --classpath "$tmpdir" || exit 1
           done < /tmp/files-to-lint
 
   lint-dart:
