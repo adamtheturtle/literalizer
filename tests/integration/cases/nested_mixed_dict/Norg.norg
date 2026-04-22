@@ -1,0 +1,6 @@
+* my_data
+@code json
+{
+    "outer": {"a": 1, "b": "x", "c": null}
+}
+@end
