@@ -1210,6 +1210,9 @@ jobs:
       - name: Check Raku syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
+      - name: Run Raku files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 raku < /tmp/files-to-lint
 
   lint-zig:
     runs-on: ubuntu-latest
