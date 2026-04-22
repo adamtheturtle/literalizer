@@ -70,7 +70,7 @@ def _clojure_call_stub(
     For dotted names like ``app.client.fetch``, one ``defn`` is
     emitted per prefix so that intermediate identifiers are bound.
     Each stub declares ``[& _args]`` and ignores them (the underscore
-    prefix silences clj-kondo's unused-binding warning), so the
+    prefix marks the binding as intentionally unused), so the
     generated function accepts any combination of positional and
     keyword-style arguments — necessary because the same formatter is
     used both for the call target (invoked with ``:key value`` pairs)
