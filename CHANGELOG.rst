@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- Added ``Dhall.HeterogeneousStrategies`` with a ``UNION_TYPE`` option
+  that auto-generates a Dhall union type in the preamble whenever a
+  dict, list, or sibling-list pair contains scalar values of more
+  than one Dhall type.  Each heterogeneous value is wrapped at the
+  call site as ``{UnionName}.{Variant} payload``; only the variants
+  actually present in the data are emitted.  The union name defaults
+  to ``Value`` and is configurable via the new
+  ``heterogeneous_value_union_name`` constructor argument.  The
+  default remains ``HeterogeneousStrategies.ERROR`` (unchanged
+  behavior).
 - Added ``literalize_call`` support for Clojure:
   ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]``
   so generated definitions accept any mix of positional and keyword
