@@ -14,6 +14,11 @@ Next
   ``heterogeneous_value_union_name`` constructor argument.  The
   default remains ``HeterogeneousStrategies.ERROR`` (unchanged
   behavior).
+- Added ``literalize_call`` support for Clojure:
+  ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]``
+  so generated definitions accept any mix of positional and keyword
+  arguments, and ``Clojure.CallStyles.PREFIX_KEYWORD`` renders calls
+  as ``(func :name value)``.
 - Added ``literalize_call`` support for Objective-C:
   ``ObjectiveC.format_call_preamble_stub`` emits C-style forward
   declarations and nested ``struct`` chains with function-pointer
