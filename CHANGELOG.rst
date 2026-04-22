@@ -17,8 +17,8 @@ Next
 - Added ``literalize_call`` support for Perl:
   ``Perl.format_call_stub`` emits an empty ``sub {}`` declaration for
   each dot-separated part of the target name, so call expressions
-  (including dotted targets, where ``.`` is Perl's string-concat
-  operator) compile cleanly under ``perl -c``.
+  (including dotted targets, where ``.`` is Perl's string
+  concatenation operator) compile cleanly under ``perl -c``.
 
 2026.04.21.5
 ------------
