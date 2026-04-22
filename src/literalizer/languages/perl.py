@@ -82,7 +82,7 @@ def _perl_call_stub(
 
     Perl's ``.`` is string concatenation, so a dotted target such as
     ``app.client.fetch("hello")`` parses as
-    ``app() . client() . fetch("hello")`` when each bareword is a
+    ``app() . client() . fetch("hello")`` when each name is a
     declared subroutine.  Declaring one empty ``sub`` per dotted part
     makes the expression compile cleanly.
     """
