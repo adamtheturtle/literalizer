@@ -422,6 +422,19 @@ jobs:
             cp "$f" "$tmpdir/check.ex"
             (cd "$tmpdir" && elixirc check.ex) || exit 1
           done < /tmp/files-to-lint
+      # Fixtures only declare `defmodule Check` with a `def x` body, so
+      # `elixir` compiles the module but never invokes it. Append a call
+      # to `Check.x()` so the function body — and any references inside
+      # it — actually executes.
+      - name: Run Elixir files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            tmpdir=$(mktemp -d)
+            cp "$f" "$tmpdir/check.ex"
+            printf '\nCheck.x()\n' >> "$tmpdir/check.ex"
+            (cd "$tmpdir" && elixir check.ex) || exit 1
+          done < /tmp/files-to-lint
 
   lint-elm:
     runs-on: ubuntu-latest

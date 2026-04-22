@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``lint-elixir`` in ``.github/workflows/lint.yml`` now runs each
+  Elixir fixture end-to-end.  ``elixirc`` only compiled the
+  ``defmodule Check`` body, so calls to undefined names or runtime
+  errors inside ``def x`` slipped past CI.  The new ``Run Elixir
+  files`` step copies each fixture, appends ``Check.x()``, and
+  executes it with ``elixir``, catching references that survive
+  compilation but fail at runtime.
 - ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each
   Standard ML fixture end-to-end.  Because ``MLton`` never evaluates
   a ``structure``'s body unless a top-level expression forces it,
