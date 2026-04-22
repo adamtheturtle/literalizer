@@ -95,9 +95,6 @@ class _CppModifiers(enum.Enum):
 
 _INT32_MIN = -(1 << 31)
 _INT32_MAX = (1 << 31) - 1
-_INT64_MIN = -(1 << 63)
-_INT64_MAX = (1 << 63) - 1
-_UINT64_MAX = (1 << 64) - 1
 
 
 _IntTypeResolver = Callable[[list[int]], str]
@@ -106,21 +103,13 @@ _IntTypeResolver = Callable[[list[int]], str]
 @beartype
 def _narrowest_cpp_int_type(values: list[int]) -> str:
     """Return the narrowest C++ integer type holding every value in
-    *values*.
-
-    Picks from ``int`` (32-bit), ``long long`` (64-bit signed), and
-    ``unsigned long long`` (64-bit unsigned, positive-only).  ``long`` is
-    skipped because its width is platform-dependent (32-bit on Windows,
-    64-bit on Unix).  Empty inputs return ``"int"``.
+    *values*: ``int`` when every value fits in 32 bits, else
+    ``long long``.  Empty inputs return ``"int"``.  ``long`` is skipped
+    because its width is platform-dependent (32-bit on Windows, 64-bit
+    on Unix).
     """
-    if not values:
-        return "int"
     if all(_INT32_MIN <= v <= _INT32_MAX for v in values):
         return "int"
-    if all(_INT64_MIN <= v <= _INT64_MAX for v in values):
-        return "long long"
-    if all(0 <= v <= _UINT64_MAX for v in values):
-        return "unsigned long long"
     return "long long"
 
 

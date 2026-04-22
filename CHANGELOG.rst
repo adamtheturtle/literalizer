@@ -6,12 +6,11 @@ Next
 
 - C++ container types now pick the narrowest integer type that holds
   the actual values in each collection: ``int`` when every value fits
-  in 32 bits, ``long long`` when any value exceeds the 32-bit range,
-  and ``unsigned long long`` for positive values beyond
-  ``LLONG_MAX``.  This mirrors the existing per-value suffix logic in
-  Rust and fixes a case where ``std::variant<int, …>`` could not hold
-  literals above ``INT_MAX``.  ``Cpp.NumericLiteralSuffixes.AUTO``
-  still emits ``long`` + ``L`` suffix for every integer.
+  in 32 bits, otherwise ``long long``.  This mirrors the existing
+  per-value suffix logic in Rust and fixes a case where
+  ``std::variant<int, …>`` could not hold literals above ``INT_MAX``.
+  ``Cpp.NumericLiteralSuffixes.AUTO`` still emits ``long`` + ``L``
+  suffix for every integer.
 - Added ``literalize_call`` support for Clojure:
   ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]``
   so generated definitions accept any mix of positional and keyword
