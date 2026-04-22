@@ -1359,6 +1359,26 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
           /tmp/files-to-lint
+      # Every fixture defines its own `fval_m` module, and the syntax
+      # check above leaves an `fval_m.mod` in the working directory
+      # (gfortran emits .mod files even under `-fsyntax-only`). gfortran
+      # would then reuse that stale .mod instead of recompiling each
+      # file's inline module, masking references to names defined only
+      # in the current file. Compile each file from inside a private
+      # tmpdir so the stale .mod is not on the module search path and
+      # parallel runs cannot clobber each other's output.
+      - name: Run Fortran files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir/$src expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf \"$tmpdir\"" EXIT
+            src=$(realpath "$0")
+            cd "$tmpdir" || exit 1
+            gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+            ./run || exit 1
+          ' < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
