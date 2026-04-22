@@ -1,11 +1,10 @@
 """Unit tests for Rust's tagged-enum heterogeneous-value strategy.
 
-Golden-file coverage for the main rendering paths (dict-mixed,
-sibling-list, and sibling-dict heterogeneity) lives in
-``tests/integration/cases/*/Rust_heterogeneous_strategy_tagged_enum*.rs``.
-These unit tests cover error-raising on the default strategy, which
-has no golden-file surface (the integration framework catches and
-skips heterogeneous errors).
+Golden-file coverage for the rendering paths (dict-mixed, sibling-list,
+sibling-dict heterogeneity, and integer-width variant selection) lives
+in ``tests/integration/cases/*/Rust_heterogeneous_strategy_tagged_enum*.rs``.
+These unit tests cover the error contract, which the integration
+framework silently skips.
 """
 
 import pytest
