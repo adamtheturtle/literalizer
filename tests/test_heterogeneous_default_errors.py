@@ -1,10 +1,11 @@
-"""Unit tests for Rust's tagged-enum heterogeneous-value strategy.
+"""Cross-language tests for the default heterogeneous-strategy error
+contract.
 
-Golden-file coverage for the rendering paths (dict-mixed, sibling-list,
-sibling-dict heterogeneity, and integer-width variant selection) lives
-in ``tests/integration/cases/*/Rust_heterogeneous_strategy_tagged_enum*.rs``.
-These unit tests cover the error contract, which the integration
-framework silently skips.
+Languages with an opt-in wrapping strategy (e.g. Rust's ``TAGGED_ENUM``)
+must still raise on heterogeneous input under the default ``ERROR``
+strategy.  The integration framework catches
+``HeterogeneousCollectionError`` and silently skips, so the error
+contract has no golden-file surface and needs unit coverage.
 """
 
 import pytest
