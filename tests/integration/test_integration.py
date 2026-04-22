@@ -139,6 +139,12 @@ _CONSTRUCTOR_PREFIX_OVERRIDES: dict[literalizer.LanguageCls, str] = {
     PureScript: "J",
 }
 
+# Languages whose heterogeneous-value enum name is configurable (Rust's
+# ``TAGGED_ENUM`` strategy); the value is the test override to apply.
+_HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES: dict[
+    literalizer.LanguageCls, str
+] = {Rust: "JsonValue"}
+
 # Languages that accept constructor-name kwargs (Fortran) or field-name
 # kwargs (C); the inner dict is the kwargs to pass to the constructor.
 _CONSTRUCTOR_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
@@ -1019,6 +1025,41 @@ def _build_constructor_prefix_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_heterogeneous_value_name_variants() -> Iterable[_Variant]:
+    """Build heterogeneous-value-enum-name variants for languages that
+    generate a named type for their heterogeneous strategy (e.g. Rust's
+    ``TAGGED_ENUM``).  The ``heterogeneous_value_enum_name`` constructor
+    parameter lets users customize that name.
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _sorted_languages():
+        custom_name = _HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES.get(lang_cls)
+        if custom_name is None:
+            continue
+        default_spec = _spec(lang_cls=lang_cls)
+        tagged_enum = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "TAGGED_ENUM"
+        )
+        spec = lang_cls(
+            heterogeneous_strategy=tagged_enum,
+            heterogeneous_value_enum_name=custom_name,
+        )
+        variants.append(
+            _Variant(
+                name=(
+                    f"{lang_cls.__name__}"
+                    f"_heterogeneous_value_enum_name_{custom_name}"
+                ),
+                spec=spec,
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
+
+
+@beartype
 def _build_c_field_name_variants() -> Iterable[_Variant]:
     """Build field-name variants for languages listed in
     :data:`_FIELD_NAME_OVERRIDES` (e.g. C).
@@ -1553,6 +1594,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         (type_hints_cross, "float_list", ""),
         (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
         (heterogeneous_strategy, "dict_mixed_scalars", ""),
+        (
+            _build_heterogeneous_value_name_variants(),
+            "dict_mixed_scalars",
+            "",
+        ),
         (heterogeneous_strategy, "nested_mixed_types", "_sibling"),
         (heterogeneous_strategy, "nested_mixed_inner", "_inner"),
         (heterogeneous_strategy, "nested_mixed_dict", ""),
