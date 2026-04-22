@@ -73,6 +73,25 @@ from literalizer._types import Value
 
 
 @beartype
+def _perl_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Perl stub declarations for a call name.
+
+    Perl's ``.`` is string concatenation, so a dotted target such as
+    ``app.client.fetch("hello")`` parses as
+    ``app() . client() . fetch("hello")`` when each name is a
+    declared subroutine.  Declaring one empty ``sub`` per dotted part
+    makes the expression compile cleanly.
+    """
+    parts = name.split(sep=".")
+    return tuple(f"sub {part} {{}}" for part in parts)
+
+
+@beartype
 def _format_datetime_perl(value: datetime.datetime) -> str:
     """Format a datetime as a Perl ``DateTime`` constructor."""
     if value.tzinfo is not None:
@@ -465,7 +484,7 @@ class Perl(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _perl_call_stub
 
     @cached_property
     def format_call_preamble_stub(

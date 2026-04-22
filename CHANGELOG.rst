@@ -41,6 +41,11 @@ Next
   declarations and nested ``struct`` chains with function-pointer
   leaves for dotted targets, and ``ObjectiveC.CallStyles.POSITIONAL``
   renders calls as ``func(arg1, arg2)``.
+- Added ``literalize_call`` support for Perl:
+  ``Perl.format_call_stub`` emits an empty ``sub {}`` declaration for
+  each dot-separated part of the target name, so call expressions
+  (including dotted targets, where ``.`` is Perl's string
+  concatenation operator) compile cleanly under ``perl -c``.
 
 2026.04.21.5
 ------------
