@@ -1653,6 +1653,7 @@ def _build_variant_cases() -> list[_VariantCase]:
         (heterogeneous_strategy, "dict_all_scalar_types", ""),
         (heterogeneous_strategy, "nested_sequences", ""),
         (heterogeneous_strategy, "dict_mixed_int_widths", ""),
+        (heterogeneous_strategy, "ordered_map", ""),
     ]
     for variants, case_dir_name, suffix in variant_sources:
         cases.extend(
