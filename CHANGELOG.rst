@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- Sibling sequences that appear as values of the same dict now widen
+  to a common element type at each matching position, so a caller
+  iterating the dict values tuple-style sees a consistent element
+  type at each positional slot instead of one branch narrowed to a
+  concrete type and another collapsed to the fallback.  The widening
+  uses the language's fallback sequence opener when the inferred
+  types diverge and is skipped for variant-typed languages (e.g.
+  C++) whose fallback opener is element-specific rather than
+  universally accepting.
 - ``lint-haskell`` in ``.github/workflows/lint.yml`` now passes
   ``-Wall -Werror`` to both the syntax check and the end-to-end build,
   so warnings such as ``-Wunused-matches``, ``-Woverlapping-patterns``,
