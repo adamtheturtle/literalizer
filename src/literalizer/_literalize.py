@@ -381,6 +381,35 @@ def _compute_dict_open_override(
 
 
 @beartype
+def _compute_call_slot_overrides(
+    *,
+    elements: list[Value],
+    spec: Language,
+) -> list[str | None]:
+    """Compute per-slot dict-open overrides across sibling calls.
+
+    For each positional argument slot in per-element calls, gather the
+    values at that slot across all elements and compute a widened
+    dict opener so that dict arguments at the same slot share a
+    common type.  Sibling calls render as independent statements with
+    no enclosing sequence, so ``narrowed_open`` does not apply here —
+    each dict still needs its own full opener, just widened when
+    sibling dicts differ in inferred value type.
+    """
+    slots: list[list[Value]] = []
+    for element in elements:
+        arg_values = element if isinstance(element, list) else [element]
+        for slot_index, arg_value in enumerate(iterable=arg_values):
+            if slot_index >= len(slots):
+                slots.append([])
+            slots[slot_index].append(arg_value)
+    return [
+        _compute_dict_open_override(items=slot_values, spec=spec)
+        for slot_values in slots
+    ]
+
+
+@beartype
 def _compute_sequence_dict_override(
     *,
     items: list[Value],
@@ -1154,6 +1183,7 @@ def _format_call_args(
     language: Language,
     wrap_ids: frozenset[int],
     style: CallStyle,
+    dict_open_overrides: Sequence[str | None],
 ) -> str:
     """Format argument values for a single function call.
 
@@ -1161,6 +1191,10 @@ def _format_call_args(
     ``(arg1, arg2)``.  For :class:`PostfixCallStyle` returns the
     unwrapped, space-separated argument list so the caller can
     assemble ``args target`` directly.
+
+    *dict_open_overrides* supplies a per-positional dict opener so that
+    dict arguments at the same slot across sibling calls share a
+    widened type.  ``None`` at a given position means "no override".
     """
     wrap_arg: Callable[[Value, str], str] = getattr(
         language,
@@ -1169,15 +1203,15 @@ def _format_call_args(
     )
     formatted = [
         wrap_arg(
-            v,
+            arg_value,
             _format_value(
-                value=v,
+                value=arg_value,
                 spec=language,
-                dict_open_override=None,
+                dict_open_override=dict_open_overrides[slot_index],
                 wrap_ids=wrap_ids,
             ),
         )
-        for v in values
+        for slot_index, arg_value in enumerate(iterable=values)
     ]
 
     match style:
@@ -1356,6 +1390,10 @@ def literalize_call(
             )
             raise PerElementNotListError(msg)
 
+        slot_overrides = _compute_call_slot_overrides(
+            elements=data,
+            spec=language,
+        )
         lines: list[str] = []
         for element in data:
             arg_values = element if isinstance(element, list) else [element]
@@ -1374,6 +1412,7 @@ def literalize_call(
                 language=language,
                 wrap_ids=call_wrap_ids,
                 style=style,
+                dict_open_overrides=slot_overrides,
             )
             lines.append(
                 _assemble_call(
@@ -1394,6 +1433,7 @@ def literalize_call(
             language=language,
             wrap_ids=call_wrap_ids,
             style=style,
+            dict_open_overrides=[None],
         )
         result = _assemble_call(
             target_function=target_function,
