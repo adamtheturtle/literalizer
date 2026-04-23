@@ -286,17 +286,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
-      # Preloading the standard headers via PCH was tried here but made
-      # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
-      # enabling `clang-analyzer-*`, the preloaded AST exposes the
-      # entire standard library to the static analyzer per fixture,
-      # multiplying analysis cost. The PCH still helps the lint-cpp
-      # job, where only parsing (not symbolic execution) runs.
+      # Fixtures are ~280 tiny TUs whose cost is dominated by re-parsing
+      # the same standard headers and re-initializing `clang-analyzer-*`
+      # symbolic execution per file. Concatenate them all into one TU
+      # (each fixture wrapped in its own namespace so file-scope decls
+      # don't collide) so clang-tidy parses the STL once and analyzes
+      # everything in a single invocation.
+      - name: Generate concatenated fixture blob
+        run: python3 .github/scripts/generate-cpp-tidy-blob.py tests/integration/cases
+          /tmp/all-fixtures.cpp
       - name: Run clang-tidy
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
+        run: clang-tidy --config-file=.clang-tidy /tmp/all-fixtures.cpp -- -std=c++20
 
   lint-kotlin:
     runs-on: ubuntu-latest
