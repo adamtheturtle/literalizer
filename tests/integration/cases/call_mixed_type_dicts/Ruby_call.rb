@@ -1,4 +1,5 @@
-class MgrType; def Op(*a, **kw); end; end
-mgr = MgrType.new
-mgr.Op(operation: {"type" => "create", "pr_id" => "pr_1", "draft" => true})
-mgr.Op(operation: {"type" => "create", "pr_id" => "pr_2"})
+class MgrType; def op(*a, **kw); end; end
+class AppType; def mgr; MgrType.new; end; end
+app = AppType.new
+app.mgr.op(operation: {"type" => "create", "pr_id" => "pr_1", "draft" => true})
+app.mgr.op(operation: {"type" => "create", "pr_id" => "pr_2"})

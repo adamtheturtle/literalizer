@@ -1,7 +1,8 @@
 import std.json;
 void _check() {
-struct MgrType_ { int Op(T...)(T args) { return 0; } }
-MgrType_ mgr;
-mgr.Op(JSONValue(["type": JSONValue("create"), "pr_id": JSONValue("pr_1"), "draft": JSONValue(true)]));
-mgr.Op(JSONValue(["type": JSONValue("create"), "pr_id": JSONValue("pr_2")]));
+struct MgrType_ { int op(T...)(T args) { return 0; } }
+struct AppType_ { MgrType_ mgr; }
+AppType_ app;
+app.mgr.op(JSONValue(["type": JSONValue("create"), "pr_id": JSONValue("pr_1"), "draft": JSONValue(true)]));
+app.mgr.op(JSONValue(["type": JSONValue("create"), "pr_id": JSONValue("pr_2")]));
 }

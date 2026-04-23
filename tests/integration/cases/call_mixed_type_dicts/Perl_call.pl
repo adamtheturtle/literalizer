@@ -1,4 +1,5 @@
+sub app {}
 sub mgr {}
-sub Op {}
-mgr.Op({"type" => "create", "pr_id" => "pr_1", "draft" => 1});
-mgr.Op({"type" => "create", "pr_id" => "pr_2"});
+sub op {}
+app.mgr.op({"type" => "create", "pr_id" => "pr_1", "draft" => 1});
+app.mgr.op({"type" => "create", "pr_id" => "pr_2"});

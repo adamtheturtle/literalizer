@@ -1,5 +1,7 @@
 class _MgrType:
-    def Op(self, *_args: object, **_kwargs: object) -> object: ...
-mgr = _MgrType()
-mgr.Op(operation={"type": "create", "pr_id": "pr_1", "draft": True})
-mgr.Op(operation={"type": "create", "pr_id": "pr_2"})
+    def op(self, *_args: object, **_kwargs: object) -> object: ...
+class _AppType:
+    mgr = _MgrType()
+app = _AppType()
+app.mgr.op(operation={"type": "create", "pr_id": "pr_1", "draft": True})
+app.mgr.op(operation={"type": "create", "pr_id": "pr_2"})

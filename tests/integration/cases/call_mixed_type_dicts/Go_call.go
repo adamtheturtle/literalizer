@@ -1,9 +1,10 @@
 package main
 type mgrType_ struct{}
-func (mgrType_) Op(args ...any) any { return nil }
-var mgr mgrType_
+func (mgrType_) op(args ...any) any { return nil }
+type appType_ struct{ mgr mgrType_ }
+var app appType_
 
 func main() {
-mgr.Op(map[string]any{"type": "create", "pr_id": "pr_1", "draft": true});
-mgr.Op(map[string]any{"type": "create", "pr_id": "pr_2"});
+app.mgr.op(map[string]any{"type": "create", "pr_id": "pr_1", "draft": true});
+app.mgr.op(map[string]any{"type": "create", "pr_id": "pr_2"});
 }
