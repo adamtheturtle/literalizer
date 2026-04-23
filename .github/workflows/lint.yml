@@ -149,22 +149,7 @@ jobs:
       # some fixtures declare top-level classes with shared names.
       - name: Check and run Groovy files
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          cat > /tmp/lint.groovy <<'SCRIPT'
-          def content = new String(new File('/tmp/files-to-lint').bytes)
-          def paths = content.split('\0').findAll { it }
-          def failed = false
-          paths.each { p ->
-              try {
-                  new GroovyShell().parse(new File(p)).run()
-              } catch (Throwable t) {
-                  System.err.println("FAIL ${p}:\n${t.message}")
-                  failed = true
-              }
-          }
-          System.exit(failed ? 1 : 0)
-          SCRIPT
-          groovy /tmp/lint.groovy
+        run: groovy .github/scripts/lint-groovy.groovy < /tmp/files-to-lint
 
   lint-javascript:
     runs-on: ubuntu-latest
