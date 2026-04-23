@@ -491,14 +491,20 @@ jobs:
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
+      # Generate an FSX driver that `#load`s every fixture, then
+      # evaluate it in a single `dotnet fsi --exec` invocation so
+      # the .NET runtime and FSI compiler start up once instead of
+      # per fixture. Each fixture re-declares `module Check`; FSI
+      # shadows the previous definition, which is fine because the
+      # top-level bindings still execute at load time.
       - name: Check F# syntax
         run: |-
+          driver=$(mktemp -d)/driver.fsx
           while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
-              TMPDIR="$tmpdir" HOME="$tmpdir" \
-              dotnet fsi --nologo --exec "$f" || exit 1
-          done < /tmp/files-to-lint
+            printf '#load "%s"\n' "$(realpath "$f")"
+          done < /tmp/files-to-lint > "$driver"
+          DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
+            dotnet fsi --nologo --exec "$driver"
 
   lint-ocaml:
     runs-on: ubuntu-latest

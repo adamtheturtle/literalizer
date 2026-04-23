@@ -561,7 +561,13 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
 
 
 def test_literalize_call_wrap_in_file() -> None:
-    """Literalize_call with wrap_in_file returns a complete file."""
+    """Literalize_call with wrap_in_file returns a complete file.
+
+    Integration tests compose ``wrap_in_file`` manually around
+    ``literalize_call(..., wrap_in_file=False)`` so they can stub the
+    target function; this unit test keeps coverage on the
+    ``wrap_in_file=True`` branch of :func:`literalize_call` itself.
+    """
     # Go has a static preamble ("package main") — covers the preamble
     # prepend branch.
     result = literalize_call(
@@ -588,20 +594,6 @@ def test_literalize_call_wrap_in_file() -> None:
     )
     assert "process(" in result_no_preamble.code
     assert not result_no_preamble.preamble
-
-
-def test_literalize_call_per_element_false() -> None:
-    """Literalize_call with per_element=False passes the whole value."""
-    result = literalize_call(
-        source="[1, 2, 3]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["data"],
-        per_element=False,
-    )
-    assert "process(" in result.code
-    assert "1," in result.code
 
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
@@ -835,4 +827,87 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
             target_function="f",
             parameter_names=["data"],
             per_element=False,
+        )
+
+
+def test_literalize_call_arg_ref_all_refs() -> None:
+    """A call whose every argument is a ref still renders correctly;
+    the empty non-ref list must not break wrap-id computation.
+    """
+    result = literalize_call(
+        source='[[{"$ref": "a"}, {"$ref": "b"}]]',
+        input_format=InputFormat.JSON,
+        language=Go(),
+        target_function="combine",
+        parameter_names=["x", "y"],
+    )
+    assert "combine(a, b)" in result.code
+
+
+def test_literalize_call_arg_ref_top_level_element() -> None:
+    """A bare ref marker at the top level of a per_element list works
+    without an inner list wrapper; each element becomes a one-argument
+    call whose argument is the referenced identifier.
+    """
+    result = literalize_call(
+        source='[{"$ref": "a"}, {"$ref": "b"}]',
+        input_format=InputFormat.JSON,
+        language=Go(),
+        target_function="run",
+        parameter_names=["x"],
+    )
+    assert "run(a)" in result.code
+    assert "run(b)" in result.code
+
+
+def test_literalize_call_arg_ref_per_element_false() -> None:
+    """A top-level ref in per_element=False mode emits the identifier
+    as the single argument.
+    """
+    result = literalize_call(
+        source='{"$ref": "payload"}',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="publish",
+        parameter_names=["body"],
+        per_element=False,
+    )
+    assert "publish(body=payload)" in result.code
+
+
+def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
+    """A dict without the exact ``{"$ref": str}`` shape renders as a
+    normal dict literal (e.g. two-key dicts, or non-string ``$ref``
+    values).
+    """
+    two_key = literalize_call(
+        source='[[{"$ref": "x", "extra": 1}]]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["data"],
+    )
+    assert 'process(data={"$ref": "x", "extra": 1})' in two_key.code
+    non_string_ref = literalize_call(
+        source='[[{"$ref": 42}]]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["data"],
+    )
+    assert 'process(data={"$ref": 42})' in non_string_ref.code
+
+
+def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
+    """Refs count as arguments; parameter-count mismatch still raises."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 1 parameters but got 2 values$",
+    ):
+        literalize_call(
+            source='[[{"$ref": "a"}, {"$ref": "b"}]]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=["only"],
         )
