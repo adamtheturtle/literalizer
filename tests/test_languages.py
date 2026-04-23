@@ -250,21 +250,9 @@ def test_identity_wrap_scalar_leaves_formatted_output_unchanged() -> None:
     assert wrapped.code == base.code
 
 
-def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
-    """All-null Java YAML dict with trailing comments does not duplicate
-    delimiters.
-
-    Kept as a unit test rather than moved to the
-    ``tests/integration/cases/`` golden-file suite because the golden
-    path wraps the result in ``NewVariable(name="my_data")``, which
-    appends a terminating ``;`` after the content.  For this input,
-    the content ends with ``// trailing``, so the ``;`` gets absorbed
-    into the comment and the Java file fails to compile (see
-    https://github.com/adamtheturtle/literalizer/issues/1501).  This
-    test uses ``variable_form=None`` so it exercises only the
-    dict/comment behavior.
-    """
-    yaml_string = "a: null\nb: null\n# trailing\n"
+def test_java_yaml_dict_null_values_with_comments() -> None:
+    """Java YAML dict with null values and comments does not crash."""
+    yaml_string = "# comment\nname: Alice\nscore: null\n"
     result = literalize(
         source=yaml_string,
         input_format=InputFormat.YAML,
@@ -273,7 +261,71 @@ def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
         include_delimiters=True,
         variable_form=None,
     )
-    expected = "Map.ofEntries()\n    // trailing"
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            // comment
+            Map.entry("name", "Alice")
+        )"""
+    )
+    assert result.code == expected
+
+
+def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
+    """Inline comment on a null-valued dict entry is preserved as a before
+    comment on the next non-null entry when skip_null_dict_values=True.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        host: localhost
+        port: null  # not configured yet
+        debug: true
+        """,
+    )
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=JAVA,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("host", "localhost"),
+            // not configured yet
+            Map.entry("debug", true)
+        )"""
+    )
+    assert result.code == expected
+
+
+def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
+    """Inline comment on a null-valued dict entry at the end becomes a
+    trailing comment when skip_null_dict_values=True.
+    """
+    yaml_string = textwrap.dedent(
+        text="""\
+        host: localhost
+        port: null  # not configured yet
+        """,
+    )
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=JAVA,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        Map.ofEntries(
+            Map.entry("host", "localhost")
+            // not configured yet
+        )"""
+    )
     assert result.code == expected
 
 

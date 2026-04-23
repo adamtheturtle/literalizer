@@ -30,8 +30,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    variable_declaration_formatter,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -362,6 +360,74 @@ def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _JavaTerminatedValue:
+    r"""A Java value rewritten so a terminating ``;`` lands on the code
+    line, not on a trailing ``//`` line comment.
+
+    Attributes:
+        code: The portion of the original value preceding any trailing
+            ``//`` line comments.  The terminating ``;`` is appended
+            here.
+        trailing: The trailing ``//`` line comments (including the
+            leading ``\n`` separator) that follow the terminator.  Empty
+            when the value did not end with a line comment.
+    """
+
+    code: str
+    trailing: str
+
+
+@beartype
+def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
+    """Split *value* at the boundary before any trailing ``//`` line
+    comments so a terminating ``;`` can be placed on the code line
+    rather than inside the comment.
+    """
+    lines = value.split(sep="\n")
+    split_index = next(
+        (
+            index + 1
+            for index, line in reversed(list(enumerate(iterable=lines)))
+            if not line.lstrip().startswith("//")
+        ),
+        0,
+    )
+    if split_index == len(lines):
+        return _JavaTerminatedValue(code=value, trailing="")
+    code = "\n".join(lines[:split_index])
+    trailing = "\n" + "\n".join(lines[split_index:])
+    return _JavaTerminatedValue(code=code, trailing=trailing)
+
+
+@beartype
+def _format_java_var_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a ``var`` declaration, terminating before any trailing
+    ``//`` line comment in *value*.
+    """
+    terminated = _java_split_trailing_line_comments(value=value)
+    return f"var {name} = {terminated.code};{terminated.trailing}"
+
+
+@beartype
+def _format_java_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
+    """Format a Java assignment, terminating before any trailing ``//``
+    line comment in *value*.
+    """
+    terminated = _java_split_trailing_line_comments(value=value)
+    return f"{name} = {terminated.code};{terminated.trailing}"
+
+
+@beartype
 def _format_java_typed_declaration(
     *,
     name: str,
@@ -386,7 +452,8 @@ def _format_java_typed_declaration(
         set_outer=set_outer,
     )
     prefix = _java_modifier_prefix(modifiers=modifiers)
-    return f"{prefix}{hint} {name} = {value};"
+    terminated = _java_split_trailing_line_comments(value=value)
+    return f"{prefix}{hint} {name} = {terminated.code};{terminated.trailing}"
 
 
 @beartype
@@ -405,7 +472,8 @@ def _apply_java_object_nil_declaration(
     if modifiers:
         return typed_formatter(name, value, data, modifiers)
     if data is None:
-        return f"Object {name} = {value};"
+        terminated = _java_split_trailing_line_comments(value=value)
+        return f"Object {name} = {terminated.code};{terminated.trailing}"
     return base_formatter(name, value, data, modifiers)
 
 
@@ -640,9 +708,7 @@ class Java(metaclass=LanguageCls):
         """Declaration style options."""
 
         VAR = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="var {name} = {value};",
-            ),
+            formatter=_format_java_var_declaration,
             supports_redefinition=True,
         )
 
@@ -1002,7 +1068,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return variable_formatter(template="{name} = {value};")
+        return _format_java_assignment
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

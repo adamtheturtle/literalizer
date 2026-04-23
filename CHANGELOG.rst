@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- ``Java`` declarations and reassignments whose value ends in a ``//``
+  line comment now place the terminating ``;`` on the code line rather
+  than on the comment line, where ``javac`` previously parsed it as
+  part of the comment and rejected the program with ``';' expected``.
+- ``Mojo.skip_null_dict_values`` is now ``True`` so dicts containing
+  null values render as the empty ``Dict[String, String]()`` literal
+  (previously they emitted ``{"k": None, ...}``, which the Mojo
+  compiler rejects because ``NoneType`` is not a usable dict value
+  type).  Mixed-type inputs continue to raise
+  ``HeterogeneousScalarCollectionError`` as before; this only affects
+  dicts whose values are entirely ``null``.
 - ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at
   argument positions, emitting ``name`` as a bare identifier instead
   of formatting the value as a literal.  Refs and literals can be
