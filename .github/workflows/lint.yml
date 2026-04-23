@@ -1101,7 +1101,7 @@ jobs:
           while IFS= read -r -d '' f; do
             ok=0
             for attempt in 1 2 3; do
-              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$f"; then
+              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
                 ok=1
                 break
               fi
