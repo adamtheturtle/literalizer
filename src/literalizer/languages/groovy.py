@@ -66,12 +66,16 @@ from literalizer._types import Value
 
 def _groovy_call_stub(
     name: str,
-    params: Sequence[str],
+    _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Groovy stub declarations for a call name."""
-    param_list = ", ".join(params)
+    # Use ``Object...`` so the stub accepts both positional and
+    # named-argument calls. Named arguments are passed as a single
+    # ``LinkedHashMap`` first parameter, which a fixed parameter list
+    # would reject.
+    param_list = "Object... _args"
     parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}) {{ null }}",)

@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- ``lint-groovy`` in ``.github/workflows/lint.yml`` now runs each
+  Groovy fixture end-to-end, catching runtime errors (calls to
+  undefined functions, missing module imports, failed assertions)
+  that the existing ``groovyc`` compile-only step let through.
+  ``Groovy.format_call_stub`` now emits ``Object... _args`` varargs
+  method signatures so stubs accept both positional and named-argument
+  call styles — previously the keyword-args fixture tripped
+  ``MissingMethodException`` because Groovy passes named arguments as
+  a single ``LinkedHashMap`` that a positional parameter list rejects.
 - ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each
   Standard ML fixture end-to-end.  Because ``MLton`` never evaluates
   a ``structure``'s body unless a top-level expression forces it,
