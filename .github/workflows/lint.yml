@@ -1383,19 +1383,17 @@ jobs:
       # preload it in the syntax-check and build-and-run steps so the
       # parsed AST is reused instead of re-parsed per fixture. clang-tidy
       # deliberately skips the PCH — see the note on `lint-cpp-tidy`.
+      #
+      # PCH is compiler-version specific, so all clang invocations that
+      # read it must use Apple's clang. The `Install clang-tidy` step
+      # below prepends Homebrew's llvm to `PATH`, which would shadow
+      # `clang` with an incompatible build, so every Objective-C compile
+      # step runs before that install.
       - name: Build precompiled header
         run: clang -x objective-c-header .github/scripts/lint-objc-pch.h -o /tmp/pch.h.pch
       - name: Check Objective-C syntax
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror -include-pch
           /tmp/pch.h.pch < /tmp/files-to-lint
-      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
-      # from Homebrew's llvm formula.
-      - name: Install clang-tidy
-        run: |-
-          brew install --quiet llvm
-          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
-      - name: Run clang-tidy
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
       # Fixtures define `check_(void)` with no main entry point, so
       # compile each alongside a tiny wrapper that calls it. Link
       # against Foundation and execute to surface runtime errors. Each
@@ -1411,6 +1409,14 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
+      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
+      # from Homebrew's llvm formula.
+      - name: Install clang-tidy
+        run: |-
+          brew install --quiet llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+      - name: Run clang-tidy
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
 
   lint-wren:
     runs-on: ubuntu-latest
