@@ -7,8 +7,8 @@ Next
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs each
   Swift fixture end-to-end via ``swift`` in script mode, catching
   runtime errors that ``swiftc -typecheck`` alone could miss
-  (for example, integer literals that overflow ``Int``).  To keep
-  every emitted fixture compilable, ``Swift.format_integer`` now
+  (for example, integer literals that overflow ``Int``).  So that
+  every emitted fixture compiles, ``Swift.format_integer`` now
   raises ``UnrepresentableIntegerError`` for values outside the
   signed 64-bit range, matching the behavior of other languages
   without native arbitrary-precision integer support.
