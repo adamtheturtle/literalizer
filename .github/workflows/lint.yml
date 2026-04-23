@@ -342,10 +342,20 @@ jobs:
       - name: Install Kotlin
         if: steps.find-files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
+        with:
+          # 2.3.10's kotlin-scripting-jvm references a legacy
+          # ``ScriptExpectedLocation`` class that is no longer shipped,
+          # so ``K2JVMCompiler.exec("-script", ...)`` from inside a
+          # ``.main.kts`` host blows up with NoClassDefFoundError.
+          # 2.3.20 drops the stale reference.
+          version: 2.3.20
+      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      # spawning one `kotlinc -script` per fixture. The JVM + compiler
+      # classes load once and each fixture is compiled against the warm
+      # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          xargs -0 -P "$(nproc)" -n 1 kotlinc -script < /tmp/files-to-lint
+        run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
   lint-rust:
     runs-on: ubuntu-latest
