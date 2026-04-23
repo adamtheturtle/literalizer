@@ -1126,6 +1126,10 @@ jobs:
       # `setarch -R` disables ASLR so Mojo's ~3.6 GB reservation can
       # land in one contiguous virtual-address range, avoiding the
       # libKGENCompilerRTShared.so crash seen under fragmented layouts.
+      # Even with that and the memory-headroom workarounds above, Mojo
+      # still crashes non-deterministically on a minority of
+      # invocations (tracked in  # 558), so retry each file up to three
+      # times.
       - name: Check Mojo syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
@@ -1133,8 +1137,17 @@ jobs:
           index=0
           while IFS= read -r -d '' f; do
             if [ "$((index % SHARD_COUNT))" -eq "$SHARD_INDEX" ]; then
-              if ! setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
-                echo "::error::Failed: $f"
+              ok=0
+              for attempt in 1 2 3; do
+                if setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
+                  ok=1
+                  break
+                fi
+                echo "::warning::Attempt $attempt failed for $f, retrying..."
+                sleep 2
+              done
+              if [ "$ok" -eq 0 ]; then
+                echo "::error::Failed after 3 attempts: $f"
                 failed=1
               fi
             fi
