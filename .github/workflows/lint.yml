@@ -1083,7 +1083,7 @@ jobs:
       cancel-in-progress: false
     env:
       SHARD_INDEX: ${{ matrix.shard }}
-      SHARD_COUNT: 4
+      SHARD_COUNT: ${{ strategy.job-total }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1132,6 +1132,8 @@ jobs:
       # times.
       - name: Check Mojo syntax
         if: steps.find-files.outputs.found == 'true'
+        # Sort the file list so every shard sees the same ordering —
+        # `find` output is readdir-ordered, which varies per filesystem.
         run: |-
           failed=0
           index=0
@@ -1152,7 +1154,7 @@ jobs:
               fi
             fi
             index=$((index + 1))
-          done < /tmp/files-to-lint
+          done < <(sort -z /tmp/files-to-lint)
           exit "$failed"
 
   lint-nim:
