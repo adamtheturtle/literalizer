@@ -15,7 +15,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Python, Rust
+from literalizer.languages import CSharp, Nim, Python, Rust
 
 PYTHON_ALWAYS_HINTS = Python(
     date_format=Python.date_formats.PYTHON,
@@ -497,4 +497,28 @@ def test_csharp_const_with_non_constant_raises(source: str) -> None:
                 modifiers=frozenset({CSharp.modifiers.CONST}),
             ),
             wrap_in_file=True,
+        )
+
+
+def test_nim_object_variant_const_raises() -> None:
+    """Nim ``CONST`` rejects the ``OBJECT_VARIANT`` strategy.
+
+    ``OBJECT_VARIANT`` renders dicts as ``{…}.toTable`` and sequences
+    as ``@[…]``, both of which are runtime constructors and cannot
+    initialize a ``const`` declaration.
+    """
+    expected_msg = (
+        "Nim CONST requires a constant-expression initializer, "
+        "but OBJECT_VARIANT produces runtime .toTable / @[] calls "
+        "which are not constant expressions. Use VAR or LET instead."
+    )
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
+        Nim(
+            heterogeneous_strategy=(
+                Nim.heterogeneous_strategies.OBJECT_VARIANT
+            ),
+            declaration_style=Nim.declaration_styles.CONST,
         )

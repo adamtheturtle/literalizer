@@ -15,6 +15,23 @@ Next
   to ``_a0``.  A new ``call_multi_args`` integration case exercises
   the single-name + multi-parameter combination across the
   call-capable languages.
+- Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT``
+  option that auto-generates a Nim object variant in the preamble
+  whenever a dict, list, or sibling-list pair contains scalar values
+  of more than one Nim type.  Each heterogeneous value is wrapped at
+  the call site as ``{VariantName}(kind: vkX, xVal: value)``; only
+  the branches actually present in the data are emitted.  The
+  strategy switches the dict syntax from ``%* {key: value}`` to
+  ``{key: value}.toTable`` (importing ``tables`` instead of ``json``)
+  so the object variants can be stored directly, and nested sequences
+  render as ``@[...]`` at every level.  The variant-type name
+  defaults to ``Value`` and is configurable via the new
+  ``heterogeneous_value_variant_name`` constructor argument.
+  ``OBJECT_VARIANT`` is incompatible with
+  ``DeclarationStyles.CONST`` because ``.toTable`` and ``@[]`` are
+  runtime constructors; the constructor raises
+  ``IncompatibleFormatsError`` for that combination.  The default
+  remains ``HeterogeneousStrategies.ERROR`` (unchanged behavior).
 - The ``heterogeneous_strategy`` variant case list now includes the
   ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
   ``UNION_TYPE`` rendering on ``!!omap`` inputs.

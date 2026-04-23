@@ -183,10 +183,7 @@ jobs:
         run: npm install -g json5
       - name: Check JSON5 syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            json5 "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-to-lint > /dev/null
 
   lint-jsonnet:
     runs-on: ubuntu-latest
@@ -205,10 +202,7 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check Jsonnet syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            jsonnet "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-to-lint > /dev/null
 
   lint-typescript:
     runs-on: ubuntu-latest
@@ -291,10 +285,22 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: .github/scripts/cpp_main.cpp
+          extra_config_patterns: |
+            .github/scripts/cpp_main.cpp
+            .github/scripts/lint-cpp-pch.hpp
+      # Fixtures are tiny TUs whose cost is dominated by re-parsing the
+      # same standard headers 269 times. Build a precompiled header once
+      # covering every header any fixture includes, then preload it in
+      # each compile invocation so the parsed AST is reused instead of
+      # re-parsed per file.
+      - name: Build precompiled header
+        if: steps.find-files.outputs.found == 'true'
+        run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
+          /tmp/pch.hpp.pch
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
+        run: xargs -0 clang++ -fsyntax-only -std=c++20 -include-pch /tmp/pch.hpp.pch
+          < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # `.github/scripts/cpp_main.cpp` which invokes it and link into a
       # runnable binary.
@@ -304,8 +310,8 @@ jobs:
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang++ -std=c++20 "$1" .github/scripts/cpp_main.cpp \
-            -o "$tmpdir/run" || exit 1
+          clang++ -std=c++20 -include-pch /tmp/pch.hpp.pch "$1" \
+            .github/scripts/cpp_main.cpp -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
@@ -321,6 +327,12 @@ jobs:
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
           extra_config_patterns: .clang-tidy
+      # Preloading the standard headers via PCH was tried here but made
+      # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
+      # enabling `clang-analyzer-*`, the preloaded AST exposes the
+      # entire standard library to the static analyzer per fixture,
+      # multiplying analysis cost. The PCH still helps the lint-cpp
+      # job, where only parsing (not symbolic execution) runs.
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
@@ -529,14 +541,24 @@ jobs:
           otp-version: '27'
           install-rebar: false
           install-hex: false
+      # Compile every fixture in a single erlc invocation to pay the
+      # BEAM VM startup cost once. Erlang requires the module name to
+      # match the filename, so fixtures (all declared `-module(check).`)
+      # are renamed to `fixture_N.erl` with the module declaration
+      # rewritten; the mapping is printed so failures still point back
+      # to the original path.
       - name: Check Erlang syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
+          tmpdir=$(mktemp -d)
+          i=0
           while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            cp "$f" "$tmpdir/check.erl"
-            (cd "$tmpdir" && erlc check.erl) || exit 1
+            name="fixture_$i"
+            sed "1s/^-module(check)\./-module($name)./" "$f" > "$tmpdir/$name.erl"
+            printf '%s.erl <- %s\n' "$name" "$f"
+            i=$((i+1))
           done < /tmp/files-to-lint
+          (cd "$tmpdir" && erlc fixture_*.erl)
 
   lint-fsharp:
     runs-on: ubuntu-latest
@@ -670,10 +692,9 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check HCL syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            hcl2json "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: >-
+          xargs -0 -P "$(nproc)" -n1 hcl2json
+          < /tmp/files-to-lint > /dev/null
 
   lint-clojure:
     runs-on: ubuntu-latest
@@ -775,9 +796,10 @@ jobs:
       - name: Check Dhall syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          while IFS= read -r -d '' f; do
-            dhall < "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+          cat > /tmp/check-dhall.sh <<'SCRIPT'
+          dhall < "$1" > /dev/null
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-to-lint
 
   lint-julia:
     runs-on: ubuntu-latest
@@ -928,13 +950,12 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ps1
+      # Parse every fixture inside a single pwsh invocation so the .NET
+      # and PowerShell startup cost is paid once instead of per fixture.
       - name: Check PowerShell syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            pwsh -NoProfile -NonInteractive -Command \
-              "\$null = [scriptblock]::Create((Get-Content -Raw '$f'))" || exit 1
-          done < /tmp/files-to-lint
+        run: pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1
+          < /tmp/files-to-lint
 
   lint-ada:
     runs-on: ubuntu-latest
@@ -1112,6 +1133,82 @@ jobs:
 
   lint-nim:
     runs-on: ubuntu-latest
+    # Promote every Nim warning to a CI failure. Nim's
+    # ``--warningAsError`` rejects ``all:on`` and bare ``on``, so list
+    # each warning name explicitly. The catalogue comes from
+    # ``nim check --warnings:list`` — revisit when Nim is upgraded in
+    # case new warnings have been added. Shared across both the syntax
+    # check and the run step via a job-level env var.
+    env:
+      NIM_WARNING_FLAGS: >-
+        --warningAsError:AboveMaxSizeSet:on
+        --warningAsError:AmbiguousLink:on
+        --warningAsError:AnyEnumConv:on
+        --warningAsError:BareExcept:on
+        --warningAsError:BrokenLink:on
+        --warningAsError:CStringConv:on
+        --warningAsError:CannotOpen:on
+        --warningAsError:CannotOpenFile:on
+        --warningAsError:CaseTransition:on
+        --warningAsError:CastSizes:on
+        --warningAsError:CommentXIgnored:on
+        --warningAsError:ConfigDeprecated:on
+        --warningAsError:CycleCreated:on
+        --warningAsError:Deprecated:on
+        --warningAsError:Destructor:on
+        --warningAsError:DotLikeOps:on
+        --warningAsError:EachIdentIsTuple:on
+        --warningAsError:Effect:on
+        --warningAsError:EnumConv:on
+        --warningAsError:FieldXNotSupported:on
+        --warningAsError:FileChanged:on
+        --warningAsError:GcMem:on
+        --warningAsError:GcUnsafe:on
+        --warningAsError:GcUnsafe2:on
+        --warningAsError:GlobalVarConstructorTemporary:on
+        --warningAsError:HoleEnumConv:on
+        --warningAsError:IgnoredSymbolInjection:on
+        --warningAsError:ImplicitDefaultValue:on
+        --warningAsError:ImplicitRangeConversion:on
+        --warningAsError:ImplicitTemplateRedefinition:on
+        --warningAsError:IndexCheck:on
+        --warningAsError:InheritFromException:on
+        --warningAsError:LanguageXNotSupported:on
+        --warningAsError:LockLevel:on
+        --warningAsError:LongLiterals:on
+        --warningAsError:ObservableStores:on
+        --warningAsError:OctalEscape:on
+        --warningAsError:ProveField:on
+        --warningAsError:ProveIndex:on
+        --warningAsError:ProveInit:on
+        --warningAsError:PtrToCstringConv:on
+        --warningAsError:RedefinitionOfLabel:on
+        --warningAsError:ResultShadowed:on
+        --warningAsError:ResultUsed:on
+        --warningAsError:SmallLshouldNotBeUsed:on
+        --warningAsError:Spacing:on
+        --warningAsError:StdPrefix:on
+        --warningAsError:StmtListLambda:on
+        --warningAsError:StrictNotNil:on
+        --warningAsError:TypelessParam:on
+        --warningAsError:Uninit:on
+        --warningAsError:UnknownMagic:on
+        --warningAsError:UnknownNotes:on
+        --warningAsError:UnknownSubstitutionX:on
+        --warningAsError:UnnamedBreak:on
+        --warningAsError:UnreachableCode:on
+        --warningAsError:UnreachableElse:on
+        --warningAsError:UnsafeCode:on
+        --warningAsError:UnsafeDefault:on
+        --warningAsError:UnsafeSetLen:on
+        --warningAsError:UnusedImport:on
+        --warningAsError:UnusedImportdoc:on
+        --warningAsError:UseBase:on
+        --warningAsError:User:on
+        --warningAsError:WriteToForeignHeap:on
+        --warningAsError:XIsNeverRead:on
+        --warningAsError:XmightNotBeenInit:on
+        --warningAsError:warnRstStyle:on
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1126,16 +1223,20 @@ jobs:
       - name: Check Nim syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
+          read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
-            nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+            nim check --hints:off "${warning_flags[@]}" \
+              --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
       - name: Run Nim files
         if: steps.find-files.outputs.found == 'true'
         run: |-
+          read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
-            nim c -r --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+            nim c -r --hints:off "${warning_flags[@]}" \
+              --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
 
   lint-nix:

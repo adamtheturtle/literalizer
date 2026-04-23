@@ -410,6 +410,7 @@ ignore_names = [
     "BTREE_SET",
     "call_styles",
     "heterogeneous_strategies",
+    "OBJECT_VARIANT",
     "TAGGED_ENUM",
     "UNION_TYPE",
     "CONST",

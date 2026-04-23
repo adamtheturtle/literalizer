@@ -1,0 +1,5 @@
+(defn app [& _args] nil)
+(defn app.mgr [& _args] nil)
+(defn app.mgr.op [& _args] nil)
+(app.mgr.op :operation {"type" "create" "pr_id" "pr_1" "draft" true})
+(app.mgr.op :operation {"type" "create" "pr_id" "pr_2"})
