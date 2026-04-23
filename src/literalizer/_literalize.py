@@ -620,10 +620,16 @@ def _format_list_value(
         )
         for position, v in enumerate(iterable=value)
     ]
-    joined = spec.element_separator.join(items)
+    # Drop items that render to the empty string before joining, so a
+    # nested empty sub-list inside a non-empty list (possible in
+    # languages like Forth whose empty-sequence opener and close are
+    # both empty) does not leave a dangling separator in the output.
+    non_empty_items = [item for item in items if item]
+    joined = spec.element_separator.join(non_empty_items)
     # Some languages (e.g. Python) require a trailing comma on
     # single-element sequences to avoid syntactic ambiguity.
-    if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
+    single_element = len(non_empty_items) == 1
+    if single_element and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
     opener = (
         sequence_open_override
