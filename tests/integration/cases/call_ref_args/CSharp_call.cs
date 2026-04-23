@@ -1,5 +1,5 @@
 using System;
-dynamic process(dynamic a) => null;
+dynamic process(dynamic _a0, dynamic _a1) => null;
 var my_var = (
     1,
     2,

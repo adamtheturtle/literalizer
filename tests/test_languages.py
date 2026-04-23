@@ -794,7 +794,7 @@ def test_literalize_call_arg_ref_all_refs() -> None:
 
 def test_literalize_call_arg_ref_top_level_element() -> None:
     """A bare ref marker at the top level of a per_element list works
-    without an inner list wrapper; each element becomes a single-arg
+    without an inner list wrapper; each element becomes a one-argument
     call whose argument is the referenced identifier.
     """
     result = literalize_call(
@@ -824,8 +824,9 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
 
 
 def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
-    """A dict without the exact ``{"$ref": str}`` shape is literalized
-    normally (e.g. two-key dicts, or non-string ``$ref`` values).
+    """A dict without the exact ``{"$ref": str}`` shape renders as a
+    normal dict literal (e.g. two-key dicts, or non-string ``$ref``
+    values).
     """
     two_key = literalize_call(
         source='[[{"$ref": "x", "extra": 1}]]',

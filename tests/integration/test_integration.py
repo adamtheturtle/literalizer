@@ -663,7 +663,7 @@ class _CallCaseConfig:
 
     When *ref_declarations* is non-empty, each entry maps a
     ``{"$ref": "name"}`` marker in ``input.yaml`` to a JSON source
-    string that is literalized into a variable declaration via
+    string that is rendered as a variable declaration via
     :func:`literalizer.literalize`.  The declarations are emitted
     before the call so the resulting file is self-contained.  Only
     meaningful when at least one call argument in ``input.yaml`` uses
@@ -2080,10 +2080,11 @@ def test_format_enumeration_properties(
 # golden that passes its language-specific lint step for a
 # ``ref_declarations``-using case.  The feature itself renders the ref
 # marker as an identifier correctly; the limitations below are about
-# how the resulting declarations+calls compose into a runnable file or
-# how names line up with the declaration site — see
+# how the resulting declarations+calls compose into a complete file
+# or how names line up with the declaration site — see
 # https://github.com/adamtheturtle/literalizer/issues/1473 for the
-# per-language renamer that will close the name-mangling gaps.
+# per-language identifier rename hook that will close the
+# name-mangling gaps.
 _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
     {
         # ``defparameter`` adds ``*name*`` earmuffs at the declaration
@@ -2102,8 +2103,8 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         Jsonnet,
         # Variables declare with a ``my $name`` sigil that ``$ref``
         # does not emit at the call site.  The default ``perl -c``
-        # tolerates the bareword (interpreting it as the string
-        # ``"my_var"``), but the call no longer references the
+        # tolerates the unquoted identifier (interpreting it as the
+        # string ``"my_var"``), but the call no longer references the
         # declared variable, so the golden misrepresents the feature
         # and the file fails ``use strict``.
         Perl,

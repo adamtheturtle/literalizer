@@ -269,14 +269,21 @@ class _CSharpDictSpec:
 
 def _csharp_call_stub(
     name: str,
-    _params: Sequence[str],
+    params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return C# stub declarations for a call name."""
+    """Return C# stub declarations for a call name.
+
+    For a single-name target the stub is a free function whose
+    parameter list matches the count of *params*; for a dotted target
+    an ``ExpandoObject`` root is emitted so dynamic dispatch absorbs
+    any number of arguments.
+    """
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"dynamic {parts[0]}(dynamic a) => null;",)
+        param_list = ", ".join(f"dynamic _a{i}" for i in range(len(params)))
+        return (f"dynamic {parts[0]}({param_list}) => null;",)
     root = parts[0]
     return (f"dynamic {root} = new System.Dynamic.ExpandoObject();",)
 
