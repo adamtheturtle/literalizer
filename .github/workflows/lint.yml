@@ -292,13 +292,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: .clang-tidy
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
-      - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # a tiny wrapper that invokes it and link into a runnable binary.
       - name: Run C++ files
@@ -313,6 +309,21 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+
+  lint-cpp-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.cpp
+          extra_config_patterns: .clang-tidy
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -1585,6 +1596,7 @@ jobs:
       - lint-c
       - lint-cobol
       - lint-cpp
+      - lint-cpp-tidy
       - lint-kotlin
       - lint-rust
       - lint-swift
