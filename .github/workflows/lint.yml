@@ -814,12 +814,11 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-to-lint
+      # Parse every fixture inside a single pwsh invocation so the .NET
+      # and PowerShell startup cost is paid once instead of per fixture.
       - name: Check PowerShell syntax
-        run: |-
-          while IFS= read -r -d '' f; do
-            pwsh -NoProfile -NonInteractive -Command \
-              "\$null = [scriptblock]::Create((Get-Content -Raw '$f'))" || exit 1
-          done < /tmp/files-to-lint
+        run: pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1
+          < /tmp/files-to-lint
 
   lint-ada:
     runs-on: ubuntu-latest
