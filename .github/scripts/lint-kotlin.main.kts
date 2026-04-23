@@ -1,5 +1,5 @@
-@file:DependsOn("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.3.10")
-@file:DependsOn("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.10")
+@file:DependsOn("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.3.20")
+@file:DependsOn("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20")
 
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
