@@ -101,14 +101,7 @@ jobs:
       - name: Prime Gleam Hex cache
         run: |-
           tmpdir=$(mktemp -d)
-          cat > "$tmpdir/gleam.toml" <<'TOML'
-          name = "check"
-          version = "1.0.0"
-          target = "erlang"
-
-          [dependencies]
-          gleam_stdlib = ">= 0.44.0 and < 2.0.0"
-          TOML
+          cp .github/scripts/lint-gleam.toml "$tmpdir/gleam.toml"
           mkdir "$tmpdir/src"
           (cd "$tmpdir" && gleam deps download)
       - name: Check Gleam compiles
