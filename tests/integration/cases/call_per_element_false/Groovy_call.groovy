@@ -1,2 +1,2 @@
-def process(Object... _args) { null }
+def process(Map _args) { null }
 process(data: 1)
