@@ -395,11 +395,13 @@ jobs:
       - name: Check Swift syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          while IFS= read -r -d '' f; do
+          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
             tmpdir=$(mktemp -d)
-            cp "$f" "$tmpdir/check.swift"
+            trap "rm -rf $tmpdir" EXIT
+            cp "$0" "$tmpdir/check.swift"
             swiftc -typecheck "$tmpdir/check.swift" || exit 1
-          done < /tmp/files-to-lint
+          ' < /tmp/files-to-lint
       - name: Run Swift files
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint

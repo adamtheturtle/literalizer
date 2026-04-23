@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+- ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
+  ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
+  the previous serial ``while`` loop so the job no longer cold-starts
+  the compiler one fixture at a time.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs each
   Swift fixture end-to-end via ``swift`` in script mode, catching
   runtime errors that ``swiftc -typecheck`` alone could miss
