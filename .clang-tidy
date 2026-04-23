@@ -19,6 +19,7 @@ Checks: >
   -misc-include-cleaner,
   -misc-use-internal-linkage,
   -modernize-raw-string-literal,
+  -performance-unnecessary-value-param,
   -readability-magic-numbers,
   -readability-named-parameter,
   -readability-redundant-parentheses,
