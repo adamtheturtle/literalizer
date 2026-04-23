@@ -298,6 +298,22 @@ def _format_dict_value(
     if not dict_items and dict_cfg.empty_dict is not None:
         return dict_cfg.empty_dict
     parent_id = id(value)
+    # Widen nested sequences that occupy matching positions across
+    # sibling list-valued dict entries, so consumers iterating these
+    # values (e.g. tuple-style) see a consistent element type at each
+    # position instead of one branch narrowed to a concrete type and
+    # another collapsed to the fallback.
+    sibling_list_values: list[list[Value]] = [
+        v for v in dict_items.values() if isinstance(v, list)
+    ]
+    outer_sequence_override = _compute_sequence_open_override(
+        items=sibling_list_values,
+        spec=spec,
+    )
+    position_overrides = _compute_sibling_list_position_overrides(
+        list_values=sibling_list_values,
+        spec=spec,
+    )
     pairs = [
         _build_dict_entry(
             key_str=_format_value(
@@ -311,11 +327,12 @@ def _format_dict_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_value(
+                formatted_value=_format_dict_entry_value(
                     value=v,
                     spec=spec,
-                    dict_open_override=None,
                     wrap_ids=wrap_ids,
+                    outer_sequence_override=outer_sequence_override,
+                    position_overrides=position_overrides,
                 ),
                 spec=spec,
             ),
@@ -330,6 +347,41 @@ def _format_dict_value(
         else dict_cfg.dict_open(dict_items)
     )
     return opener + joined + dict_cfg.close
+
+
+@beartype
+def _format_dict_entry_value(
+    *,
+    value: Value,
+    spec: Language,
+    wrap_ids: frozenset[int],
+    outer_sequence_override: str | None,
+    position_overrides: Sequence[str | None],
+) -> str:
+    """Format a dict entry's value, threading sequence-opener overrides
+    into list-typed values so the outer and inner sequences render with
+    types that are consistent across sibling dict entries.
+
+    *outer_sequence_override* is the widened opener for the list itself
+    (so sibling list-valued entries share one outer type).
+    *position_overrides* supplies per-position openers for the list's
+    immediate child lists (so nested sequences at matching positions
+    across sibling entries share a widened type).
+    """
+    if isinstance(value, list):
+        return _format_list_value(
+            value=value,
+            spec=spec,
+            wrap_ids=wrap_ids,
+            sequence_open_override=outer_sequence_override,
+            child_sequence_open_overrides=position_overrides,
+        )
+    return _format_value(
+        value=value,
+        spec=spec,
+        dict_open_override=None,
+        wrap_ids=wrap_ids,
+    )
 
 
 @beartype
@@ -432,13 +484,110 @@ def _compute_sequence_dict_override(
 
 
 @beartype
+def _compute_sequence_open_override(
+    *,
+    items: Sequence[Value],
+    spec: Language,
+) -> str | None:
+    """Return a widened sequence opener when lists in *items* infer
+    different element types, or ``None`` when no widening is needed.
+
+    Analogous to :func:`_compute_dict_open_override` but operates on
+    nested sequences.  ``items`` are the sibling values at a matching
+    position across several sibling containers; only list-typed items
+    participate in the widening.  When the element types diverge the
+    override widens to the language's fallback opener — the opener
+    returned for an empty sequence — so every sibling renders with the
+    "accepts anything" type instead of narrowing one branch to its
+    concrete element type.
+
+    Languages that use variant-based typing (e.g. C++'s
+    ``std::variant``) expose an element-specific opener for every
+    shape — their empty-sequence opener is not a true fallback, so
+    applying this widening would cascade type mismatches into the
+    containing declaration.  Detect that case by comparing the
+    empty-sequence opener with the opener for a mixed list; if they
+    differ the language has no stable fallback and no widening is
+    applied.
+    """
+    lists: list[list[Value]] = [
+        item for item in items if isinstance(item, list)
+    ]
+    # Widening compares openers across lists, so we need at least two
+    # to have anything to compare.
+    min_lists_for_widening = 2
+    if len(lists) < min_lists_for_widening:
+        return None
+
+    openers = {spec.sequence_open(lst) for lst in lists}
+    if len(openers) <= 1:
+        return None
+
+    fallback = spec.sequence_open([])
+    if fallback != spec.sequence_open(_FALLBACK_PROBE):
+        return None
+    return fallback
+
+
+# Two scalars of incompatible types, used to probe whether a language's
+# sequence opener collapses to a stable "any"-like fallback for mixed
+# content.  When the opener for this probe equals the opener for an
+# empty sequence the language has a true fallback; otherwise it builds
+# a content-specific type (variant, union, etc.) that we must leave
+# alone to avoid cascading type mismatches.
+_FALLBACK_PROBE: list[Value] = [1, "probe"]
+
+
+@beartype
+def _compute_sibling_list_position_overrides(
+    *,
+    list_values: list[list[Value]],
+    spec: Language,
+) -> list[str | None]:
+    """Compute per-position sequence-open overrides across sibling lists.
+
+    For each position ``i`` across the given sibling lists, gather the
+    items at that position and compute a widened sequence opener so
+    that sub-lists sharing the same positional slot across siblings
+    render with a common element type.  ``None`` at a given position
+    means no widening is needed there.
+
+    Returns an empty list when fewer than two sibling lists are
+    provided, since widening requires siblings to compare against.
+    """
+    min_lists_for_widening = 2
+    if len(list_values) < min_lists_for_widening:
+        return []
+    max_len = max(len(lst) for lst in list_values)
+    slots: list[list[Value]] = [[] for _ in range(max_len)]
+    for lst in list_values:
+        for position, item in enumerate(iterable=lst):
+            slots[position].append(item)
+    return [
+        _compute_sequence_open_override(items=slot_values, spec=spec)
+        for slot_values in slots
+    ]
+
+
+@beartype
 def _format_list_value(
     *,
     value: list[Value],
     spec: Language,
     wrap_ids: frozenset[int],
+    sequence_open_override: str | None = None,
+    child_sequence_open_overrides: Sequence[str | None] = (),
 ) -> str:
-    """Format a list as a native language literal."""
+    """Format a list as a native language literal.
+
+    *sequence_open_override* overrides the opener for this list itself
+    (used when a parent has widened nested sequence types across
+    sibling positions).
+
+    *child_sequence_open_overrides* supplies per-position sequence
+    openers for child lists, so nested sequences at matching positions
+    across sibling containers can share a widened type.
+    """
     sequence_cfg = spec.sequence_format_config
 
     if not value and sequence_cfg.empty_sequence is not None:
@@ -460,18 +609,28 @@ def _format_list_value(
                     spec=spec,
                     dict_open_override=dict_open_override,
                     wrap_ids=wrap_ids,
+                    sequence_open_override=(
+                        child_sequence_open_overrides[position]
+                        if position < len(child_sequence_open_overrides)
+                        else None
+                    ),
                 ),
                 spec=spec,
             ),
         )
-        for v in value
+        for position, v in enumerate(iterable=value)
     ]
     joined = spec.element_separator.join(items)
     # Some languages (e.g. Python) require a trailing comma on
     # single-element sequences to avoid syntactic ambiguity.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
-    return f"{spec.sequence_open(value)}{joined}{sequence_cfg.close}"
+    opener = (
+        sequence_open_override
+        if sequence_open_override is not None
+        else spec.sequence_open(value)
+    )
+    return f"{opener}{joined}{sequence_cfg.close}"
 
 
 @beartype
@@ -481,6 +640,7 @@ def _format_value(
     spec: Language,
     dict_open_override: str | None,
     wrap_ids: frozenset[int],
+    sequence_open_override: str | None = None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -490,6 +650,11 @@ def _format_value(
     delimiter instead of inferring the type from their own values.
     This is used to widen map value types when dicts with differing
     inferred types appear in the same sequence.
+
+    When *sequence_open_override* is set, list values use it as the
+    opening delimiter instead of inferring their element type.  This
+    widens nested sequence types at matching positions across sibling
+    containers.
 
     *wrap_ids* is the set of container ids whose scalar children should
     be wrapped by the spec's
@@ -517,6 +682,7 @@ def _format_value(
                 value=value,
                 spec=spec,
                 wrap_ids=wrap_ids,
+                sequence_open_override=sequence_open_override,
             )
         case _:
             return _format_scalar(value=value, spec=spec)
@@ -595,6 +761,17 @@ def _format_collection_lines(
                 for k, v in dict_data.items()
                 if not (spec.skip_null_dict_values and v is None)
             ]
+            sibling_list_values: list[list[Value]] = [
+                v for _, v in entries if isinstance(v, list)
+            ]
+            outer_sequence_override = _compute_sequence_open_override(
+                items=sibling_list_values,
+                spec=spec,
+            )
+            position_overrides = _compute_sibling_list_position_overrides(
+                list_values=sibling_list_values,
+                spec=spec,
+            )
             formatted_entries: list[str] = []
             for k, v in entries:
                 formatted_key = _format_value(
@@ -607,11 +784,12 @@ def _format_collection_lines(
                     parent_id=parent_id,
                     wrap_ids=wrap_ids,
                     raw_value=v,
-                    formatted_value=_format_value(
+                    formatted_value=_format_dict_entry_value(
                         value=v,
                         spec=spec,
-                        dict_open_override=None,
                         wrap_ids=wrap_ids,
+                        outer_sequence_override=outer_sequence_override,
+                        position_overrides=position_overrides,
                     ),
                     spec=spec,
                 )

@@ -1,0 +1,7 @@
+* my_data
+@code json
+{
+    "lint": [2, [1]],
+    "test": [5, [7]]
+}
+@end
