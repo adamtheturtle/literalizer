@@ -1,0 +1,5 @@
+(list
+    "a" '()
+    "b" '()
+    ; trailing
+)

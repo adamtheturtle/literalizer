@@ -16,16 +16,6 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._types import Scalar, Value
 
-_SCALAR_BUCKETS: tuple[type, ...] = (
-    bool,
-    int,
-    float,
-    str,
-    bytes,
-    datetime.datetime,
-    datetime.date,
-)
-
 
 @beartype
 def _scalar_bucket(value: Value) -> type | None:
@@ -38,7 +28,16 @@ def _scalar_bucket(value: Value) -> type | None:
     """
     if value is None:
         return type(None)
-    for bucket in _SCALAR_BUCKETS:
+    buckets: tuple[type, ...] = (
+        bool,
+        int,
+        float,
+        str,
+        bytes,
+        datetime.datetime,
+        datetime.date,
+    )
+    for bucket in buckets:
         if isinstance(value, bucket):
             return bucket
     return None

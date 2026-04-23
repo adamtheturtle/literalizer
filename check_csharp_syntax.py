@@ -7,10 +7,21 @@ import sys
 import tempfile
 from pathlib import Path
 
-_DOTNET_ENV = {
-    "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
-    "DOTNET_NOLOGO": "1",
-}
+
+def _dotnet_env(tmp_home: Path) -> dict[str, str]:
+    """Return an environment for invoking ``dotnet`` rooted at
+    ``tmp_home``.
+    """
+    env = os.environ.copy()
+    env.update(
+        {
+            "TMPDIR": tmp_home.as_posix(),
+            "HOME": tmp_home.as_posix(),
+            "DOTNET_SKIP_FIRST_TIME_EXPERIENCE": "1",
+            "DOTNET_NOLOGO": "1",
+        }
+    )
+    return env
 
 
 def _target_framework(dotnet_path: str) -> str:
@@ -20,20 +31,12 @@ def _target_framework(dotnet_path: str) -> str:
     with tempfile.TemporaryDirectory() as tmpdir:
         dotnet_tmp = Path(tmpdir) / "tmp"
         dotnet_tmp.mkdir()
-        env = os.environ.copy()
-        env.update(
-            {
-                "TMPDIR": dotnet_tmp.as_posix(),
-                "HOME": dotnet_tmp.as_posix(),
-                **_DOTNET_ENV,
-            }
-        )
         result = subprocess.run(
             args=[dotnet_path, "--version"],
             capture_output=True,
             text=True,
             check=False,
-            env=env,
+            env=_dotnet_env(tmp_home=dotnet_tmp),
         )
     version = result.stdout.strip()
     major_minor = ".".join(version.split(sep=".")[:2])
@@ -72,20 +75,12 @@ def main() -> None:
         csproj_path.write_text(data=csproj, encoding="utf-8")
         dotnet_tmp = Path(tmpdir) / "tmp"
         dotnet_tmp.mkdir()
-        env = os.environ.copy()
-        env.update(
-            {
-                "TMPDIR": dotnet_tmp.as_posix(),
-                "HOME": dotnet_tmp.as_posix(),
-                **_DOTNET_ENV,
-            }
-        )
         result = subprocess.run(
             args=[dotnet_path, "build", csproj_path.as_posix()],
             capture_output=True,
             text=True,
             check=False,
-            env=env,
+            env=_dotnet_env(tmp_home=dotnet_tmp),
         )
     if result.returncode != 0:
         msg = (

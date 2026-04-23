@@ -6,7 +6,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-_GLEAM_TOML = """\
+
+def main() -> None:
+    """Check syntax of the given Gleam golden file."""
+    gleam_toml = """\
 name = "check"
 version = "1.0.0"
 target = "erlang"
@@ -14,17 +17,13 @@ target = "erlang"
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 """
-
-
-def main() -> None:
-    """Check syntax of the given Gleam golden file."""
     filename = sys.argv[1]
     gleam_path = shutil.which(cmd="gleam") or "gleam"
     with tempfile.TemporaryDirectory() as tmpdir:
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir()
         gleam_toml_path = Path(tmpdir) / "gleam.toml"
-        gleam_toml_path.write_text(data=_GLEAM_TOML, encoding="utf-8")
+        gleam_toml_path.write_text(data=gleam_toml, encoding="utf-8")
         deps_result = subprocess.run(
             args=[gleam_path, "deps", "download"],
             capture_output=True,

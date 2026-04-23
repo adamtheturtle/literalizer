@@ -397,16 +397,6 @@ def _build_object_variant_preamble(
     return _preamble
 
 
-_ERROR_STRATEGY = _HeterogeneousStrategyConfig(
-    build_behavior=_build_error_behavior,
-    build_preamble=_build_error_preamble,
-)
-_OBJECT_VARIANT_STRATEGY = _HeterogeneousStrategyConfig(
-    build_behavior=_build_object_variant_behavior,
-    build_preamble=_build_object_variant_preamble,
-)
-
-
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Nim(metaclass=LanguageCls):
@@ -708,7 +698,10 @@ class Nim(metaclass=LanguageCls):
         span more than one Nim type.
         """
 
-        ERROR = _ERROR_STRATEGY
+        ERROR = _HeterogeneousStrategyConfig(
+            build_behavior=_build_error_behavior,
+            build_preamble=_build_error_preamble,
+        )
         """Raise
         :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
         (or
@@ -719,7 +712,10 @@ class Nim(metaclass=LanguageCls):
         used without JSON wrapping.
         """
 
-        OBJECT_VARIANT = _OBJECT_VARIANT_STRATEGY
+        OBJECT_VARIANT = _HeterogeneousStrategyConfig(
+            build_behavior=_build_object_variant_behavior,
+            build_preamble=_build_object_variant_preamble,
+        )
         """Auto-generate a Nim object variant in the preamble containing
         only the branches actually present in the data, and wrap each
         heterogeneous scalar value as
