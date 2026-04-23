@@ -770,7 +770,7 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.lua' -print0 > /tmp/files-to-lint
       - name: Install Lua
-        uses: leafo/gh-actions-lua@v12
+        uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: '5.4'
       - name: Check Lua syntax
