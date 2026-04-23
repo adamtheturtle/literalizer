@@ -1521,14 +1521,9 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          cat > "$tmpdir/__main.m" <<'EOF'
-          # import <Foundation/Foundation.h>
-          extern void check_(void);
-          int main(void) { @autoreleasepool { check_(); } return 0; }
-          EOF
           while IFS= read -r -d '' f; do
             out="$tmpdir/out"
-            clang -framework Foundation "$f" "$tmpdir/__main.m" -o "$out" || exit 1
+            clang -framework Foundation "$f" .github/scripts/objc_main.m -o "$out" || exit 1
             "$out" || exit 1
           done < /tmp/files-to-lint
 
