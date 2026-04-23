@@ -715,6 +715,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
     ),
     _CallCaseConfig(
+        case_dir_name="call_multi_args",
+        target_function="process",
+        parameter_names=["value", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
+    _CallCaseConfig(
         case_dir_name="call_dotted_method",
         target_function="app.client.fetch",
         parameter_names=["payload"],
