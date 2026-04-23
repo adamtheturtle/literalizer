@@ -6,28 +6,26 @@ import sys
 import tempfile
 from pathlib import Path
 
-_PRELUDE_PURS = """\
+
+def main() -> None:
+    """Check syntax of a single PureScript file."""
+    prelude_purs_content = """\
 module Prelude where
 foreign import negate :: forall a. a -> a
 foreign import div :: forall a. a -> a -> a
 infixl 7 div as /
 """
-
-_PRELUDE_JS = """\
+    prelude_js_content = """\
 export const negate = x => -x;
 export const div = x => y => x / y;
 """
-
-
-def main() -> None:
-    """Check syntax of a single PureScript file."""
     filename = sys.argv[1]
     purs_path: str = shutil.which(cmd="purs") or "purs"
     with tempfile.TemporaryDirectory() as tmpdir:
         prelude_purs = Path(tmpdir) / "Prelude.purs"
         prelude_js = Path(tmpdir) / "Prelude.js"
-        prelude_purs.write_text(data=_PRELUDE_PURS, encoding="utf-8")
-        prelude_js.write_text(data=_PRELUDE_JS, encoding="utf-8")
+        prelude_purs.write_text(data=prelude_purs_content, encoding="utf-8")
+        prelude_js.write_text(data=prelude_js_content, encoding="utf-8")
         output_dir = Path(tmpdir) / "output"
 
         result = subprocess.run(

@@ -577,16 +577,6 @@ def _build_tagged_enum_preamble(
     return _preamble
 
 
-_ERROR_STRATEGY = _HeterogeneousStrategyConfig(
-    build_behavior=_build_error_behavior,
-    build_preamble=_build_error_preamble,
-)
-_TAGGED_ENUM_STRATEGY = _HeterogeneousStrategyConfig(
-    build_behavior=_build_tagged_enum_behavior,
-    build_preamble=_build_tagged_enum_preamble,
-)
-
-
 def _rust_call_stub(
     name: str,
     params: Sequence[str],
@@ -1177,7 +1167,10 @@ class Rust(metaclass=LanguageCls):
         span more than one Rust type.
         """
 
-        ERROR = _ERROR_STRATEGY
+        ERROR = _HeterogeneousStrategyConfig(
+            build_behavior=_build_error_behavior,
+            build_preamble=_build_error_preamble,
+        )
         """Raise
         :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
         (or :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
@@ -1186,7 +1179,10 @@ class Rust(metaclass=LanguageCls):
         strict-typing convention.
         """
 
-        TAGGED_ENUM = _TAGGED_ENUM_STRATEGY
+        TAGGED_ENUM = _HeterogeneousStrategyConfig(
+            build_behavior=_build_tagged_enum_behavior,
+            build_preamble=_build_tagged_enum_preamble,
+        )
         """Auto-generate a tagged ``enum`` in the preamble containing
         only the variants actually present in the data, and wrap each
         heterogeneous scalar value with ``{EnumName}::{Variant}(value)``.

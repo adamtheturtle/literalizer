@@ -296,16 +296,6 @@ def _build_union_type_preamble(
     return _preamble
 
 
-_ERROR_STRATEGY = _HeterogeneousStrategyConfig(
-    build_behavior=_build_error_behavior,
-    build_preamble=_build_error_preamble,
-)
-_UNION_TYPE_STRATEGY = _HeterogeneousStrategyConfig(
-    build_behavior=_build_union_type_behavior,
-    build_preamble=_build_union_type_preamble,
-)
-
-
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Dhall(metaclass=LanguageCls):
@@ -532,7 +522,10 @@ class Dhall(metaclass=LanguageCls):
         span more than one Dhall type.
         """
 
-        ERROR = _ERROR_STRATEGY
+        ERROR = _HeterogeneousStrategyConfig(
+            build_behavior=_build_error_behavior,
+            build_preamble=_build_error_preamble,
+        )
         """Raise
         :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
         (or
@@ -542,7 +535,10 @@ class Dhall(metaclass=LanguageCls):
         strict-typing convention.
         """
 
-        UNION_TYPE = _UNION_TYPE_STRATEGY
+        UNION_TYPE = _HeterogeneousStrategyConfig(
+            build_behavior=_build_union_type_behavior,
+            build_preamble=_build_union_type_preamble,
+        )
         """Auto-generate a Dhall union type in the preamble containing
         only the variants actually present in the data, and wrap each
         heterogeneous scalar value as ``{UnionName}.{Variant} payload``.
