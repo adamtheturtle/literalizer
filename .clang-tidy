@@ -7,7 +7,6 @@ Checks: >
   -clang-analyzer-deadcode.DeadStores,
   -clang-diagnostic-implicitly-unsigned-literal,
   -cppcoreguidelines-avoid-magic-numbers,
-  -cppcoreguidelines-missing-std-forward,
   -cppcoreguidelines-narrowing-conversions,
   -fuchsia-default-arguments-calls,
   -google-explicit-constructor,
