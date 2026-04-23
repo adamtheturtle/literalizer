@@ -1076,7 +1076,10 @@ jobs:
       matrix:
         shard: [0, 1, 2, 3]
     concurrency:
-      group: lint-mojo-${{ matrix.shard }}
+      # Use `:` — forbidden in git refs — so this can never collide with
+      # the workflow-level `lint-<head_ref>` group for a branch named
+      # e.g. `mojo-0`.
+      group: lint-mojo:${{ matrix.shard }}
       cancel-in-progress: false
     env:
       SHARD_INDEX: ${{ matrix.shard }}
