@@ -1883,7 +1883,7 @@ def test_line_ending_combined_variable_forms(
 @dataclasses.dataclass
 class _HeterogeneousStrategyCombinedCase:
     """A combined-variable-forms test case with a non-default
-    heterogeneous strategy.
+    heterogeneous-scalar strategy.
     """
 
     name: str
@@ -1898,14 +1898,10 @@ def _build_heterogeneous_strategy_combined_cases() -> list[
     _HeterogeneousStrategyCombinedCase
 ]:
     """Collect combined (declaration + assignment) test cases for
-    non-default heterogeneous strategies.
-
-    Exercises the variable-assignment render path for languages whose
-    opt-in heterogeneous-scalar strategy rewrites the default dict /
-    sequence syntax (e.g. the Nim ``OBJECT_VARIANT``, which drops the
-    ``%*`` prefix that the default ``ERROR`` strategy uses).
+    non-default heterogeneous-scalar strategies.
     """
     cases: list[_HeterogeneousStrategyCombinedCase] = []
+    case_dir_name = "dict_mixed_scalars"
     for lang_cls in _sorted_languages():
         lang_name = lang_cls.__name__
         spec = _spec(lang_cls=lang_cls)
@@ -1915,19 +1911,18 @@ def _build_heterogeneous_strategy_combined_cases() -> list[
         for strategy in spec.heterogeneous_strategies:
             if strategy is default_strategy:
                 continue
-            for case_dir_name in ("dict_mixed_scalars",):
-                name = (
-                    f"{lang_name}_heterogeneous_strategy"
-                    f"_{strategy.name.lower()}_combined"
+            name = (
+                f"{lang_name}_heterogeneous_strategy"
+                f"_{strategy.name.lower()}_combined"
+            )
+            cases.append(
+                _HeterogeneousStrategyCombinedCase(
+                    name=name,
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=strategy,
+                    case_dir_name=case_dir_name,
                 )
-                cases.append(
-                    _HeterogeneousStrategyCombinedCase(
-                        name=name,
-                        lang_cls=lang_cls,
-                        heterogeneous_strategy=strategy,
-                        case_dir_name=case_dir_name,
-                    )
-                )
+            )
     return cases
 
 
@@ -1941,8 +1936,8 @@ def test_heterogeneous_strategy_combined_variable_forms(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
-    """Combined (declaration + assignment) output under a non-default
-    heterogeneous strategy matches the golden file.
+    """Test that combined (declaration + assignment) output with a
+    non-default heterogeneous-scalar strategy matches the golden file.
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
@@ -2106,6 +2101,14 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             cases_dir
             / line_ending_case.case_dir_name
             / (line_ending_case.name + line_ending_spec.extension)
+        )
+
+    for strategy_case in _build_heterogeneous_strategy_combined_cases():
+        ext = strategy_case.lang_cls.extension
+        expected.add(
+            cases_dir
+            / strategy_case.case_dir_name
+            / (strategy_case.name + ext)
         )
 
     for pre_indent_case in _build_pre_indent_cases():

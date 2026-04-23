@@ -149,22 +149,7 @@ jobs:
       # some fixtures declare top-level classes with shared names.
       - name: Check and run Groovy files
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          cat > /tmp/lint.groovy <<'SCRIPT'
-          def content = new String(new File('/tmp/files-to-lint').bytes)
-          def paths = content.split('\0').findAll { it }
-          def failed = false
-          paths.each { p ->
-              try {
-                  new GroovyShell().parse(new File(p)).run()
-              } catch (Throwable t) {
-                  System.err.println("FAIL ${p}:\n${t.message}")
-                  failed = true
-              }
-          }
-          System.exit(failed ? 1 : 0)
-          SCRIPT
-          groovy /tmp/lint.groovy
+        run: groovy .github/scripts/lint-groovy.groovy < /tmp/files-to-lint
 
   lint-javascript:
     runs-on: ubuntu-latest
@@ -307,27 +292,38 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: .clang-tidy
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
-      - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # a tiny wrapper that invokes it and link into a runnable binary.
       - name: Run C++ files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            printf "void check_();\nint main(){ check_(); return 0; }\n" \
-              > "$tmpdir/__main.cpp"
-            clang++ -std=c++20 "$0" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-cpp.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          printf 'void check_();\nint main(){ check_(); return 0; }\n' \
+            > "$tmpdir/__main.cpp"
+          clang++ -std=c++20 "$1" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+
+  lint-cpp-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.cpp
+          extra_config_patterns: .clang-tidy
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -342,10 +338,20 @@ jobs:
       - name: Install Kotlin
         if: steps.find-files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
+        with:
+          # 2.3.10's kotlin-scripting-jvm references a legacy
+          # ``ScriptExpectedLocation`` class that is no longer shipped,
+          # so ``K2JVMCompiler.exec("-script", ...)`` from inside a
+          # ``.main.kts`` host blows up with NoClassDefFoundError.
+          # 2.3.20 drops the stale reference.
+          version: 2.3.20
+      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      # spawning one `kotlinc -script` per fixture. The JVM + compiler
+      # classes load once and each fixture is compiled against the warm
+      # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          xargs -0 -P "$(nproc)" -n 1 kotlinc -script < /tmp/files-to-lint
+        run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
   lint-rust:
     runs-on: ubuntu-latest
@@ -395,13 +401,13 @@ jobs:
       - name: Check Swift syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/check.swift"
-            swiftc -typecheck "$tmpdir/check.swift" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/check-swift.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.swift"
+          swiftc -typecheck "$tmpdir/check.swift" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
@@ -610,14 +616,13 @@ jobs:
           # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
           xargs -0 -P "$(nproc)" -n1 bash -c '
             tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
+            trap "rm -rf \"$tmpdir\"" EXIT
             cp "$0" "$tmpdir/Check.hs"
             if grep -qE "^main " "$0"; then
               ghc -main-is Check -outputdir "$tmpdir" \
                 -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
             else
-              printf "module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n" \
-                > "$tmpdir/Main.hs"
+              cp .github/scripts/haskell_main.hs "$tmpdir/Main.hs"
               ghc -outputdir "$tmpdir" \
                 -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
             fi
@@ -1001,14 +1006,14 @@ jobs:
       - name: Run Crystal files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/$rc expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$0"
-            rc=$?
-            rm -rf "$tmpdir"
-            exit "$rc"
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-crystal.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$1"
+          rc=$?
+          rm -rf "$tmpdir"
+          exit "$rc"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-crystal.sh < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -1059,7 +1064,11 @@ jobs:
       - name: Install Mojo
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
+          pixi init "$RUNNER_TEMP/mojo-env" \
+            -c https://conda.modular.com/max \
+            -c conda-forge
+          pixi add --manifest-path "$RUNNER_TEMP/mojo-env/pixi.toml" mojo
+          echo "MOJO_PIXI_MANIFEST=$RUNNER_TEMP/mojo-env/pixi.toml" >> "$GITHUB_ENV"
       # Mojo reserves ~3.6 GB of virtual address space per invocation
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
       # kernel's default overcommit heuristic refuses the allocation and
@@ -1087,7 +1096,7 @@ jobs:
           while IFS= read -r -d '' f; do
             ok=0
             for attempt in 1 2 3; do
-              if mojo run --Werror "$f"; then
+              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
                 ok=1
                 break
               fi
@@ -1263,17 +1272,16 @@ jobs:
       - name: Run SML files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/SML_LIB expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/check.sml"
-            printf "val _ = Check.my_data\n" > "$tmpdir/force.sml"
-            printf "\$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n" \
-              > "$tmpdir/main.mlb"
-            mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
-            "$tmpdir/out" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-sml.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.sml"
+          cp .github/scripts/sml_force.sml "$tmpdir/force.sml"
+          cp .github/scripts/sml_main.mlb "$tmpdir/main.mlb"
+          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          "$tmpdir/out" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-to-lint
 
   lint-scheme:
     runs-on: ubuntu-latest
@@ -1469,15 +1477,15 @@ jobs:
       - name: Run Fortran files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/$src expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf \"$tmpdir\"" EXIT
-            src=$(realpath "$0")
-            cd "$tmpdir" || exit 1
-            gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
-            ./run || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-fortran.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          src=$(realpath "$1")
+          cd "$tmpdir" || exit 1
+          gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+          ./run || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
@@ -1511,14 +1519,9 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          cat > "$tmpdir/__main.m" <<'EOF'
-          # import <Foundation/Foundation.h>
-          extern void check_(void);
-          int main(void) { @autoreleasepool { check_(); } return 0; }
-          EOF
           while IFS= read -r -d '' f; do
             out="$tmpdir/out"
-            clang -framework Foundation "$f" "$tmpdir/__main.m" -o "$out" || exit 1
+            clang -framework Foundation "$f" .github/scripts/objc_main.m -o "$out" || exit 1
             "$out" || exit 1
           done < /tmp/files-to-lint
 
@@ -1586,6 +1589,7 @@ jobs:
       - lint-c
       - lint-cobol
       - lint-cpp
+      - lint-cpp-tidy
       - lint-kotlin
       - lint-rust
       - lint-swift
