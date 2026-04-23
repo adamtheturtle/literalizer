@@ -289,12 +289,16 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
-      # Preloading the standard headers via PCH was tried here but made
-      # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
-      # enabling `clang-analyzer-*`, the preloaded AST exposes the
-      # entire standard library to the static analyzer per fixture,
-      # multiplying analysis cost. The PCH still helps the lint-cpp
-      # job, where only parsing (not symbolic execution) runs.
+      # Ubuntu's packaged clang-tidy is several releases behind and is
+      # the dominant cost of this job on runners. Pull a recent build
+      # from PyPI via uv instead.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Install clang-tidy
+        run: uv tool install clang-tidy
       - name: Run clang-tidy
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
