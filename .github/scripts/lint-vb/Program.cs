@@ -92,9 +92,17 @@ for (var i = 0; i < paths.Count; i++)
     catch (Exception ex)
     {
         allOk = false;
-        var inner = ex is TargetInvocationException tie && tie.InnerException is not null
-            ? tie.InnerException
-            : ex;
+        // `RunClassConstructor` wraps cctor failures in
+        // `TypeInitializationException`, and `MethodInfo.Invoke` wraps
+        // callee failures in `TargetInvocationException`; peel both
+        // layers so the reported error points at the fixture's actual
+        // runtime failure.
+        var inner = ex;
+        while (inner is TargetInvocationException or TypeInitializationException
+            && inner.InnerException is not null)
+        {
+            inner = inner.InnerException;
+        }
         Console.Error.WriteLine($"{path}: VB runtime error: {inner}");
     }
 }
