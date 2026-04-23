@@ -248,13 +248,22 @@ jobs:
 
   lint-cpp:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
+        run: |
+          find tests/integration/cases -name '*.cpp' -print0 \
+            | sort -z \
+            | gawk -v s=${{ matrix.shard }} -v n=4 \
+                'BEGIN{RS=ORS="\0"} (NR-1) % n == s' \
+            > /tmp/files-to-lint
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers 269 times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
@@ -282,13 +291,22 @@ jobs:
 
   lint-cpp-tidy:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
+        run: |
+          find tests/integration/cases -name '*.cpp' -print0 \
+            | sort -z \
+            | gawk -v s=${{ matrix.shard }} -v n=4 \
+                'BEGIN{RS=ORS="\0"} (NR-1) % n == s' \
+            > /tmp/files-to-lint
       # Preloading the standard headers via PCH was tried here but made
       # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
       # enabling `clang-analyzer-*`, the preloaded AST exposes the
