@@ -1334,7 +1334,7 @@ jobs:
       - name: Build VB lint host
         run: dotnet publish .github/scripts/lint-vb/lint-vb.csproj -c Release -o /tmp/lint-vb
           --nologo
-      - name: Check VB.NET syntax
+      - name: Check and run VB.NET files
         run: dotnet /tmp/lint-vb/lint-vb.dll < /tmp/files-to-lint
 
   lint-forth:
