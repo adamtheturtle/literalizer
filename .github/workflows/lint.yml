@@ -149,22 +149,7 @@ jobs:
       # some fixtures declare top-level classes with shared names.
       - name: Check and run Groovy files
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          cat > /tmp/lint.groovy <<'SCRIPT'
-          def content = new String(new File('/tmp/files-to-lint').bytes)
-          def paths = content.split('\0').findAll { it }
-          def failed = false
-          paths.each { p ->
-              try {
-                  new GroovyShell().parse(new File(p)).run()
-              } catch (Throwable t) {
-                  System.err.println("FAIL ${p}:\n${t.message}")
-                  failed = true
-              }
-          }
-          System.exit(failed ? 1 : 0)
-          SCRIPT
-          groovy /tmp/lint.groovy
+        run: groovy .github/scripts/lint-groovy.groovy < /tmp/files-to-lint
 
   lint-javascript:
     runs-on: ubuntu-latest
@@ -253,13 +238,12 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.java
+          extra_config_patterns: CheckJavaSyntax.java
+      # Drive compilation through the JavaCompiler API in a single JVM
+      # rather than cold-starting `javac` per fixture.
       - name: Check Java syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            javac -d "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 java CheckJavaSyntax.java < /tmp/files-to-lint
 
   lint-c:
     runs-on: ubuntu-latest
@@ -307,27 +291,39 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: .clang-tidy
+          extra_config_patterns: .github/scripts/cpp_main.cpp
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
-      - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
-      # a tiny wrapper that invokes it and link into a runnable binary.
+      # `.github/scripts/cpp_main.cpp` which invokes it and link into a
+      # runnable binary.
       - name: Run C++ files
         if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          printf 'void check_();\nint main(){ check_(); return 0; }\n' \
-            > "$tmpdir/__main.cpp"
-          clang++ -std=c++20 "$1" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
+          clang++ -std=c++20 "$1" .github/scripts/cpp_main.cpp \
+            -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+
+  lint-cpp-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.cpp
+          extra_config_patterns: .clang-tidy
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -617,22 +613,21 @@ jobs:
       - name: Run Haskell files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          cat > /tmp/run-haskell.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/Check.hs"
-          if grep -qE '^main ' "$1"; then
-            ghc -main-is Check -outputdir "$tmpdir" \
-              -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
-          else
-            printf 'module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n' \
-              > "$tmpdir/Main.hs"
-            ghc -outputdir "$tmpdir" \
-              -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
-          fi
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-haskell.sh < /tmp/files-to-lint
+          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf \"$tmpdir\"" EXIT
+            cp "$0" "$tmpdir/Check.hs"
+            if grep -qE "^main " "$0"; then
+              ghc -main-is Check -outputdir "$tmpdir" \
+                -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
+            else
+              cp .github/scripts/haskell_main.hs "$tmpdir/Main.hs"
+              ghc -outputdir "$tmpdir" \
+                -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
+            fi
+            "$tmpdir/run" || exit 1
+          ' < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -1069,7 +1064,11 @@ jobs:
       - name: Install Mojo
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
+          pixi init "$RUNNER_TEMP/mojo-env" \
+            -c https://conda.modular.com/max \
+            -c conda-forge
+          pixi add --manifest-path "$RUNNER_TEMP/mojo-env/pixi.toml" mojo
+          echo "MOJO_PIXI_MANIFEST=$RUNNER_TEMP/mojo-env/pixi.toml" >> "$GITHUB_ENV"
       # Mojo reserves ~3.6 GB of virtual address space per invocation
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
       # kernel's default overcommit heuristic refuses the allocation and
@@ -1097,7 +1096,7 @@ jobs:
           while IFS= read -r -d '' f; do
             ok=0
             for attempt in 1 2 3; do
-              if mojo run --Werror "$f"; then
+              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
                 ok=1
                 break
               fi
@@ -1277,9 +1276,8 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.sml"
-          printf 'val _ = Check.my_data\n' > "$tmpdir/force.sml"
-          printf '$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n' \
-            > "$tmpdir/main.mlb"
+          cp .github/scripts/sml_force.sml "$tmpdir/force.sml"
+          cp .github/scripts/sml_main.mlb "$tmpdir/main.mlb"
           mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
@@ -1521,14 +1519,9 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          cat > "$tmpdir/__main.m" <<'EOF'
-          # import <Foundation/Foundation.h>
-          extern void check_(void);
-          int main(void) { @autoreleasepool { check_(); } return 0; }
-          EOF
           while IFS= read -r -d '' f; do
             out="$tmpdir/out"
-            clang -framework Foundation "$f" "$tmpdir/__main.m" -o "$out" || exit 1
+            clang -framework Foundation "$f" .github/scripts/objc_main.m -o "$out" || exit 1
             "$out" || exit 1
           done < /tmp/files-to-lint
 
@@ -1596,6 +1589,7 @@ jobs:
       - lint-c
       - lint-cobol
       - lint-cpp
+      - lint-cpp-tidy
       - lint-kotlin
       - lint-rust
       - lint-swift

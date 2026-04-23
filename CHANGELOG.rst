@@ -11,6 +11,9 @@ Next
   JSON5, YAML, TOML).  Ref dicts are excluded from data-shape
   validation and data-driven preamble inference so they do not drag in
   imports for the ``{str: str}`` shape of the marker itself.
+- The ``heterogeneous_strategy`` variant case list now includes the
+  ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
+  ``UNION_TYPE`` rendering on ``!!omap`` inputs.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
   ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
   the previous serial ``while`` loop so the job no longer cold-starts
