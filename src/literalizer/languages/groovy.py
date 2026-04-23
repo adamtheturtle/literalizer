@@ -64,42 +64,59 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
-def _groovy_call_stub(
-    name: str,
-    params: Sequence[str],
-    _stub_return: StubReturn,
-    /,
-) -> tuple[str, ...]:
-    """Return Groovy stub declarations for a call name."""
-    param_list = ", ".join(params)
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"def {parts[0]}({param_list}) {{ null }}",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    if not fields:
-        cls = f"_{root.title()}Type"
-        return (
-            f"class {cls} {{ def {method}({param_list}) {{ null }} }}",
-            f"def {root} = new {cls}()",
-        )
-    lines: list[str] = []
-    inner_cls = f"_{fields[-1].title()}Type"
-    lines.append(
-        f"class {inner_cls} {{ def {method}({param_list}) {{ null }} }}"
-    )
-    prev_cls = inner_cls
-    for i in range(len(fields) - 2, -1, -1):
-        cls = f"_{fields[i].title()}Type"
+def _groovy_call_stub_factory(
+    *,
+    keyword_style: bool,
+) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    """Return a Groovy stub generator for the given call style.
+
+    Named-argument calls pack every argument into a single
+    ``LinkedHashMap`` first parameter, so stubs for ``KEYWORD`` calls
+    must declare a single ``Map`` parameter.  ``POSITIONAL`` stubs keep
+    the concrete parameter list, which documents the expected argument
+    names.
+    """
+
+    def _stub(
+        name: str,
+        params: Sequence[str],
+        _stub_return: StubReturn,
+        /,
+    ) -> tuple[str, ...]:
+        """Return Groovy stub declarations for a call name."""
+        param_list = "Map _args" if keyword_style else ", ".join(params)
+        parts = name.split(sep=".")
+        if len(parts) == 1:
+            return (f"def {parts[0]}({param_list}) {{ null }}",)
+        root = parts[0]
+        method = parts[-1]
+        fields = parts[1:-1]
+        if not fields:
+            cls = f"_{root.title()}Type"
+            return (
+                f"class {cls} {{ def {method}({param_list}) {{ null }} }}",
+                f"def {root} = new {cls}()",
+            )
+        lines: list[str] = []
+        inner_cls = f"_{fields[-1].title()}Type"
         lines.append(
-            f"class {cls} {{ def {fields[i + 1]} = new {prev_cls}() }}"
+            f"class {inner_cls} {{ def {method}({param_list}) {{ null }} }}"
         )
-        prev_cls = cls
-    root_cls = f"_{root.title()}Type"
-    lines.append(f"class {root_cls} {{ def {fields[0]} = new {prev_cls}() }}")
-    lines.append(f"def {root} = new {root_cls}()")
-    return tuple(lines)
+        prev_cls = inner_cls
+        for i in range(len(fields) - 2, -1, -1):
+            cls = f"_{fields[i].title()}Type"
+            lines.append(
+                f"class {cls} {{ def {fields[i + 1]} = new {prev_cls}() }}"
+            )
+            prev_cls = cls
+        root_cls = f"_{root.title()}Type"
+        lines.append(
+            f"class {root_cls} {{ def {fields[0]} = new {prev_cls}() }}"
+        )
+        lines.append(f"def {root} = new {root_cls}()")
+        return tuple(lines)
+
+    return _stub
 
 
 @beartype
@@ -433,7 +450,9 @@ class Groovy(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _groovy_call_stub
+        return _groovy_call_stub_factory(
+            keyword_style=isinstance(self.call_style.value, KeywordCallStyle),
+        )
 
     @cached_property
     def format_call_preamble_stub(

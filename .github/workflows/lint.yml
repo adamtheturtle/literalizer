@@ -149,6 +149,9 @@ jobs:
             tmpdir=$(mktemp -d)
             groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1
           done < /tmp/files-to-lint
+      - name: Run Groovy files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 groovy < /tmp/files-to-lint
 
   lint-javascript:
     runs-on: ubuntu-latest
@@ -681,30 +684,23 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.scala
-      - name: Install Scala
+      - name: Install scala-cli
         if: steps.find-files.outputs.found == 'true'
-        uses: coursier/setup-action@v3
-        with:
-          apps: scala scalac
-      - name: Check Scala syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            scalac -d "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+        uses: VirtusLab/scala-cli-setup@v1
       # Fixtures define `object Check { ... }` with no main method, so
       # compile alongside a small @main wrapper that forces the object
-      # (and therefore its val initializers) to load.
+      # (and therefore its val initializers) to load. scala-cli runs
+      # against a persistent Bloop compile server, so the compiler JVM
+      # stays warm across fixtures instead of cold-starting per file.
       - name: Run Scala files
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
+            workspace=$(mktemp -d)
+            cp "$f" "$workspace/Fixture.scala"
             printf '@main def __run(): Unit = { val _ = Check }\n' \
-              > "$tmpdir/__Main.scala"
-            scalac -d "$tmpdir" "$f" "$tmpdir/__Main.scala" || exit 1
-            scala --main-class __run --classpath "$tmpdir" || exit 1
+              > "$workspace/Main.scala"
+            scala-cli run "$workspace" --main-class __run || exit 1
           done < /tmp/files-to-lint
 
   lint-dart:
