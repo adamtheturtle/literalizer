@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``lint-cpp`` now compiles each fixture alongside
+  ``.github/scripts/cpp_main.cpp`` (a checked-in C++ source file that
+  defines ``main`` and calls the fixture's ``check_``), replacing the
+  inline ``printf`` that emitted the same wrapper into a temp directory
+  on every invocation.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
   ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
   the previous serial ``while`` loop so the job no longer cold-starts
