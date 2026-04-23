@@ -130,15 +130,6 @@ def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     return " ".join(keywords) + " "
 
 
-_CSHARP_SCALAR_TYPES: dict[type, str] = {
-    bool: "bool",
-    int: "int",
-    float: "double",
-    str: "string",
-    bytes: "string",
-}
-
-
 @beartype
 def _csharp_scalar_type(
     *,
@@ -151,7 +142,14 @@ def _csharp_scalar_type(
         return datetime_hint
     if isinstance(value, datetime.date):
         return date_hint
-    return _CSHARP_SCALAR_TYPES.get(type(value), "object")
+    scalar_types: dict[type, str] = {
+        bool: "bool",
+        int: "int",
+        float: "double",
+        str: "string",
+        bytes: "string",
+    }
+    return scalar_types.get(type(value), "object")
 
 
 @beartype
