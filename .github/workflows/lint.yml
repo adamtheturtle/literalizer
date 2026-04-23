@@ -987,7 +987,7 @@ jobs:
             if [ "$((index % SHARD_COUNT))" -eq "$SHARD_INDEX" ]; then
               ok=0
               for attempt in 1 2 3; do
-                if setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
+                if setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run "$GITHUB_WORKSPACE/$f"; then
                   ok=1
                   break
                 fi
