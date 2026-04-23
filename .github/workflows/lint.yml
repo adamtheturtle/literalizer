@@ -970,6 +970,21 @@ jobs:
           sudo chmod 600 /mnt/extra-swapfile
           sudo mkswap /mnt/extra-swapfile
           sudo swapon /mnt/extra-swapfile
+      # The fixtures are generated against Mojo 0.26.x stdlib paths
+      # (`std.collections`, `std.math`), but we've pinned to 0.25.7.0
+      # — which uses the pre-namespacing paths — to dodge the
+      # libKGENCompilerRTShared.so crash. Rewrite the imports in place
+      # on the runner so the fixtures parse. These files only exist in
+      # the runner's workspace; the source tree is not touched.
+      - name: Rewrite Mojo stdlib imports for 0.25.7.0
+        run: |-
+          while IFS= read -r -d '' f; do
+            sed -i \
+              -e 's|from std\.collections|from collections|g' \
+              -e 's|import std\.math|import math|g' \
+              -e 's|std\.math\.|math.|g' \
+              "$f"
+          done < /tmp/files-to-lint
       # `setarch -R` disables ASLR so Mojo's ~3.6 GB reservation can
       # land in one contiguous virtual-address range, avoiding the
       # libKGENCompilerRTShared.so crash seen under fragmented layouts.
