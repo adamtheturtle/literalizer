@@ -142,13 +142,29 @@ jobs:
         uses: wtfjoke/setup-groovy@v3
         with:
           groovy-version: 4.x
-      - name: Check Groovy syntax
+      # Parse and run every fixture inside a single Groovy JVM via
+      # GroovyShell, so the compiler stays warm across iterations
+      # instead of cold-starting groovyc/groovy per file. A fresh
+      # GroovyShell per fixture keeps classloaders isolated, since
+      # some fixtures declare top-level classes with shared names.
+      - name: Check and run Groovy files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1
-          done < /tmp/files-to-lint
+          cat > /tmp/lint.groovy <<'SCRIPT'
+          def content = new String(new File('/tmp/files-to-lint').bytes)
+          def paths = content.split('\0').findAll { it }
+          def failed = false
+          paths.each { p ->
+              try {
+                  new GroovyShell().parse(new File(p)).run()
+              } catch (Throwable t) {
+                  System.err.println("FAIL ${p}:\n${t.message}")
+                  failed = true
+              }
+          }
+          System.exit(failed ? 1 : 0)
+          SCRIPT
+          groovy /tmp/lint.groovy
 
   lint-javascript:
     runs-on: ubuntu-latest
@@ -303,15 +319,15 @@ jobs:
       - name: Run C++ files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            printf "void check_();\nint main(){ check_(); return 0; }\n" \
-              > "$tmpdir/__main.cpp"
-            clang++ -std=c++20 "$0" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-cpp.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          printf 'void check_();\nint main(){ check_(); return 0; }\n' \
+            > "$tmpdir/__main.cpp"
+          clang++ -std=c++20 "$1" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -326,10 +342,20 @@ jobs:
       - name: Install Kotlin
         if: steps.find-files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
+        with:
+          # 2.3.10's kotlin-scripting-jvm references a legacy
+          # ``ScriptExpectedLocation`` class that is no longer shipped,
+          # so ``K2JVMCompiler.exec("-script", ...)`` from inside a
+          # ``.main.kts`` host blows up with NoClassDefFoundError.
+          # 2.3.20 drops the stale reference.
+          version: 2.3.20
+      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      # spawning one `kotlinc -script` per fixture. The JVM + compiler
+      # classes load once and each fixture is compiled against the warm
+      # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          xargs -0 -P "$(nproc)" -n 1 kotlinc -script < /tmp/files-to-lint
+        run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
   lint-rust:
     runs-on: ubuntu-latest
@@ -379,11 +405,16 @@ jobs:
       - name: Check Swift syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            cp "$f" "$tmpdir/check.swift"
-            swiftc -typecheck "$tmpdir/check.swift" || exit 1
-          done < /tmp/files-to-lint
+          cat > /tmp/check-swift.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.swift"
+          swiftc -typecheck "$tmpdir/check.swift" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
+      - name: Run Swift files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
 
   lint-csharp:
     runs-on: ubuntu-latest
@@ -586,22 +617,22 @@ jobs:
       - name: Run Haskell files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/Check.hs"
-            if grep -qE "^main " "$0"; then
-              ghc -main-is Check -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
-            else
-              printf "module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n" \
-                > "$tmpdir/Main.hs"
-              ghc -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
-            fi
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-haskell.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/Check.hs"
+          if grep -qE '^main ' "$1"; then
+            ghc -main-is Check -outputdir "$tmpdir" \
+              -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
+          else
+            printf 'module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n' \
+              > "$tmpdir/Main.hs"
+            ghc -outputdir "$tmpdir" \
+              -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
+          fi
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-haskell.sh < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -678,30 +709,23 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.scala
-      - name: Install Scala
+      - name: Install scala-cli
         if: steps.find-files.outputs.found == 'true'
-        uses: coursier/setup-action@v3
-        with:
-          apps: scala scalac
-      - name: Check Scala syntax
-        if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            scalac -d "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+        uses: VirtusLab/scala-cli-setup@v1
       # Fixtures define `object Check { ... }` with no main method, so
       # compile alongside a small @main wrapper that forces the object
-      # (and therefore its val initializers) to load.
+      # (and therefore its val initializers) to load. scala-cli runs
+      # against a persistent Bloop compile server, so the compiler JVM
+      # stays warm across fixtures instead of cold-starting per file.
       - name: Run Scala files
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
+            workspace=$(mktemp -d)
+            cp "$f" "$workspace/Fixture.scala"
             printf '@main def __run(): Unit = { val _ = Check }\n' \
-              > "$tmpdir/__Main.scala"
-            scalac -d "$tmpdir" "$f" "$tmpdir/__Main.scala" || exit 1
-            scala --main-class __run --classpath "$tmpdir" || exit 1
+              > "$workspace/Main.scala"
+            scala-cli run "$workspace" --main-class __run || exit 1
           done < /tmp/files-to-lint
 
   lint-dart:
@@ -717,15 +741,25 @@ jobs:
       - name: Install Dart
         if: steps.find-files.outputs.found == 'true'
         uses: dart-lang/setup-dart@v1
+      # Each fixture is its own implicit Dart library (no `library`
+      # or `part` directives), so copying them all into one package
+      # and analyzing in a single `dart analyze` invocation pays the
+      # Dart VM startup cost once instead of per fixture. Fixtures are
+      # renamed to `fixture_N.dart` because several fixtures share a
+      # basename (e.g. `Dart.dart`); the mapping is printed so failures
+      # still point back to the original path.
       - name: Check Dart syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
+          tmpdir=$(mktemp -d)
+          printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
+          i=0
           while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
-            cp "$f" "$tmpdir/check.dart"
-            dart analyze --fatal-infos "$tmpdir/check.dart" || exit 1
+            cp "$f" "$tmpdir/fixture_$i.dart"
+            printf 'fixture_%s.dart <- %s\n' "$i" "$f"
+            i=$((i+1))
           done < /tmp/files-to-lint
+          dart analyze --fatal-infos "$tmpdir"
 
   lint-dhall:
     runs-on: ubuntu-latest
@@ -977,14 +1011,14 @@ jobs:
       - name: Run Crystal files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/$rc expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$0"
-            rc=$?
-            rm -rf "$tmpdir"
-            exit "$rc"
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-crystal.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$1"
+          rc=$?
+          rm -rf "$tmpdir"
+          exit "$rc"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-crystal.sh < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -1239,17 +1273,17 @@ jobs:
       - name: Run SML files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/SML_LIB expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/check.sml"
-            printf "val _ = Check.my_data\n" > "$tmpdir/force.sml"
-            printf "\$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n" \
-              > "$tmpdir/main.mlb"
-            mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
-            "$tmpdir/out" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-sml.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.sml"
+          printf 'val _ = Check.my_data\n' > "$tmpdir/force.sml"
+          printf '$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n' \
+            > "$tmpdir/main.mlb"
+          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          "$tmpdir/out" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-to-lint
 
   lint-scheme:
     runs-on: ubuntu-latest
@@ -1445,15 +1479,15 @@ jobs:
       - name: Run Fortran files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/$src expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf \"$tmpdir\"" EXIT
-            src=$(realpath "$0")
-            cd "$tmpdir" || exit 1
-            gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
-            ./run || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-fortran.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          src=$(realpath "$1")
+          cd "$tmpdir" || exit 1
+          gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+          ./run || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
@@ -1464,14 +1498,39 @@ jobs:
       - uses: ./.github/actions/find-lint-files
         id: find-files
         with:
-          lang_patterns: tests/integration/cases/**/objective_c*.m
+          lang_patterns: tests/integration/cases/**/ObjectiveC*.m
           extra_config_patterns: .clang-tidy
       - name: Check Objective-C syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
+      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
+      # from Homebrew's llvm formula.
+      - name: Install clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          brew install --quiet llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
+      # Fixtures define `check_(void)` with no main entry point, so
+      # compile each alongside a tiny wrapper that calls it. Link
+      # against Foundation and execute to surface runtime errors.
+      - name: Run Objective-C files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cat > "$tmpdir/__main.m" <<'EOF'
+          # import <Foundation/Foundation.h>
+          extern void check_(void);
+          int main(void) { @autoreleasepool { check_(); } return 0; }
+          EOF
+          while IFS= read -r -d '' f; do
+            out="$tmpdir/out"
+            clang -framework Foundation "$f" "$tmpdir/__main.m" -o "$out" || exit 1
+            "$out" || exit 1
+          done < /tmp/files-to-lint
 
   lint-wren:
     runs-on: ubuntu-latest

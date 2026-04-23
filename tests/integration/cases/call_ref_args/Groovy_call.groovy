@@ -1,4 +1,4 @@
-def process(data, count) { null }
+def process(Map _args) { null }
 def my_var = [
     1,
     2,

@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void process(id, id);
+static void process(id _a0, id _a1) { (void)_a0; (void)_a1; }
 void check_(void) {
 id my_var = @[
     @(1),
