@@ -940,12 +940,15 @@ jobs:
         run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
       - name: Install pixi
         uses: fabasoad/setup-mojo-action@v3
+      # Pinned to 0.26.1.0 because 0.26.2.0 crashes deterministically
+      # in libKGENCompilerRTShared.so on several dict/set-literal
+      # fixtures (abort inside the runtime after a libc `raise()`).
       - name: Install Mojo
         run: |-
           pixi init "$RUNNER_TEMP/mojo-env" \
             -c https://conda.modular.com/max \
             -c conda-forge
-          pixi add --manifest-path "$RUNNER_TEMP/mojo-env/pixi.toml" mojo
+          pixi add --manifest-path "$RUNNER_TEMP/mojo-env/pixi.toml" mojo=0.26.1.0
           echo "MOJO_PIXI_MANIFEST=$RUNNER_TEMP/mojo-env/pixi.toml" >> "$GITHUB_ENV"
       # Mojo reserves ~3.6 GB of virtual address space per invocation
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
