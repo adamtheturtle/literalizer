@@ -710,6 +710,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         transform_stub_names=[],
         per_element=False,
     ),
+    _CallCaseConfig(
+        case_dir_name="call_mixed_type_dicts",
+        target_function="m.Op",
+        parameter_names=["operation"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
     *[
         _CallCaseConfig(
             case_dir_name=f"call_{name}",
@@ -2093,15 +2101,24 @@ def test_call_golden_file(
     spec = _spec(lang_cls=lang_cls, **kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    result = literalizer.literalize_call(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        target_function=config.target_function,
-        parameter_names=config.parameter_names,
-        call_transform=config.call_transform,
-        per_element=config.per_element,
-    )
+    lang_name = lang_cls.__name__
+    golden_name = f"{lang_name}_call"
+    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    try:
+        result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} cannot represent this heterogeneous input",
+        )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
@@ -2150,12 +2167,10 @@ def test_call_golden_file(
     )
     all_preamble = result.preamble + tuple(preamble_stubs)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
-    lang_name = lang_cls.__name__
-    golden_name = f"{lang_name}_call"
     _check_golden(
         file_regression=file_regression,
         contents=wrapped + "\n",
         extension=lang_cls.extension,
         newline="",
-        golden_path=input_path.parent / (golden_name + lang_cls.extension),
+        golden_path=golden_path,
     )
