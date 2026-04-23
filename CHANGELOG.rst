@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- ``lint-groovy`` in ``.github/workflows/lint.yml`` now runs each
+  Groovy fixture end-to-end, catching runtime errors (calls to
+  undefined functions, missing module imports, failed assertions)
+  that the existing ``groovyc`` compile-only step let through.
+  ``Groovy.format_call_stub`` now emits a single ``Map _args`` method
+  parameter when ``call_style`` is ``KEYWORD`` — previously the
+  ``call_keyword_args`` fixture tripped ``MissingMethodException``
+  because Groovy passes named arguments as a single ``LinkedHashMap``
+  that a positional parameter list rejects.  ``POSITIONAL`` stubs
+  keep the concrete parameter list unchanged.
 - ``lint-objectivec`` now executes each fixture end-to-end instead of
   only syntax-checking it, mirroring ``lint-bash`` /
   ``lint-javascript`` / ``lint-perl`` etc.  To make this possible,

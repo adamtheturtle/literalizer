@@ -149,6 +149,9 @@ jobs:
             tmpdir=$(mktemp -d)
             groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1
           done < /tmp/files-to-lint
+      - name: Run Groovy files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 groovy < /tmp/files-to-lint
 
   lint-javascript:
     runs-on: ubuntu-latest
