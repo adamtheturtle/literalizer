@@ -387,6 +387,9 @@ jobs:
             cp "$f" "$tmpdir/check.swift"
             swiftc -typecheck "$tmpdir/check.swift" || exit 1
           done < /tmp/files-to-lint
+      - name: Run Swift files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
 
   lint-csharp:
     runs-on: ubuntu-latest
