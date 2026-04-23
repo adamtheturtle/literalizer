@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.VisualBasic;
 
@@ -56,6 +58,52 @@ for (var i = 0; i < paths.Count; i++)
         {
             Console.Error.WriteLine($"  {diag}");
         }
+        continue;
+    }
+
+    var assembly = Assembly.Load(ms.ToArray());
+    var checkType = assembly.GetType("Check");
+    if (checkType is null)
+    {
+        allOk = false;
+        Console.Error.WriteLine($"{path}: expected `Module Check` but it was not found");
+        continue;
+    }
+    try
+    {
+        // Module-level `Dim` initializers run in the type's cctor, so
+        // forcing it exercises fixtures that define `my_data` directly
+        // in `Module Check`.
+        RuntimeHelpers.RunClassConstructor(checkType.TypeHandle);
+        // Fixtures that wrap `my_data` inside `Sub _declaration()` and
+        // `Sub _assignment()` only execute those bodies when the subs
+        // are invoked, so call every declared parameterless shared sub.
+        var methods = checkType.GetMethods(
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+        foreach (var method in methods)
+        {
+            if (method.GetParameters().Length == 0
+                && method.ReturnType == typeof(void))
+            {
+                method.Invoke(obj: null, parameters: null);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        allOk = false;
+        // `RunClassConstructor` wraps cctor failures in
+        // `TypeInitializationException`, and `MethodInfo.Invoke` wraps
+        // callee failures in `TargetInvocationException`; peel both
+        // layers so the reported error points at the fixture's actual
+        // runtime failure.
+        var inner = ex;
+        while (inner is TargetInvocationException or TypeInitializationException
+            && inner.InnerException is not null)
+        {
+            inner = inner.InnerException;
+        }
+        Console.Error.WriteLine($"{path}: VB runtime error: {inner}");
     }
 }
 
