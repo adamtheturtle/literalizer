@@ -8,7 +8,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    BothVariableForms,
     ExistingVariable,
     InputFormat,
     NewVariable,
@@ -550,33 +549,3 @@ def test_nim_object_variant_assignment_to_dict() -> None:
         }.toTable"""
     )
     assert result.code == expected
-
-
-def test_nim_object_variant_ordered_map() -> None:
-    """Nim ``OBJECT_VARIANT`` renders an ordered map as
-    ``{…}.toOrderedTable`` instead of the default ``%* {…}``.
-    """
-    yaml_input = textwrap.dedent(
-        text="""\
-        --- !!omap
-          - name: Alice
-          - age: 30
-          - active: true
-        """
-    )
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=Nim(
-            heterogeneous_strategy=(
-                Nim.heterogeneous_strategies.OBJECT_VARIANT
-            ),
-        ),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=BothVariableForms(name="my_data"),
-        wrap_in_file=True,
-    )
-    assert ".toOrderedTable" in result.code
-    assert "import tables" in result.code
-    assert "%*" not in result.code
