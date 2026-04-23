@@ -1,5 +1,5 @@
 <?php
-class MType { function Op($operation) {} }
-$m = new MType();
-$m->Op(operation: ["type" => "create", "pr_id" => "pr_1", "draft" => true]);
-$m->Op(operation: ["type" => "create", "pr_id" => "pr_2"]);
+class MgrType { function Op($operation) {} }
+$mgr = new MgrType();
+$mgr->Op(operation: ["type" => "create", "pr_id" => "pr_1", "draft" => true]);
+$mgr->Op(operation: ["type" => "create", "pr_id" => "pr_2"]);

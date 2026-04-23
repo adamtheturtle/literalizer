@@ -712,7 +712,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
     ),
     _CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
-        target_function="m.Op",
+        target_function="mgr.Op",
         parameter_names=["operation"],
         call_transform=None,
         transform_stub_names=[],

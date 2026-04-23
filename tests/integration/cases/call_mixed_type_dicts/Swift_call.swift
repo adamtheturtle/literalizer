@@ -1,4 +1,4 @@
-class _mType { func Op(operation: Any = 0) -> Any { 0 } }
-let m = _mType()
-m.Op(operation: ["type": "create", "pr_id": "pr_1", "draft": true]);
-m.Op(operation: ["type": "create", "pr_id": "pr_2"]);
+class _mgrType { func Op(operation: Any = 0) -> Any { 0 } }
+let mgr = _mgrType()
+mgr.Op(operation: ["type": "create", "pr_id": "pr_1", "draft": true]);
+mgr.Op(operation: ["type": "create", "pr_id": "pr_2"]);

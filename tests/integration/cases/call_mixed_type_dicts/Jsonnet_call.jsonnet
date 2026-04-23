@@ -1,5 +1,5 @@
-local m = { Op(operation):: null };
+local mgr = { Op(operation):: null };
 [
-    m.Op(operation={type: "create", pr_id: "pr_1", draft: true}),
-    m.Op(operation={type: "create", pr_id: "pr_2"}),
+    mgr.Op(operation={type: "create", pr_id: "pr_1", draft: true}),
+    mgr.Op(operation={type: "create", pr_id: "pr_2"}),
 ]
