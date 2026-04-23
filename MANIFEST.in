@@ -1,3 +1,2 @@
-include *.java
 include *.py
 include *.toml
