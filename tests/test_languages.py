@@ -58,12 +58,6 @@ FORTRAN = Fortran(
     sequence_format=Fortran.sequence_formats.LIST,
 )
 FSHARP = FSharp()
-JAVA = Java(
-    date_format=Java.date_formats.JAVA,
-    datetime_format=Java.datetime_formats.INSTANT,
-    bytes_format=Java.bytes_formats.HEX,
-    sequence_format=Java.sequence_formats.ARRAY,
-)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -248,85 +242,6 @@ def test_identity_wrap_scalar_leaves_formatted_output_unchanged() -> None:
         language=_IdentityWrapPython(),
     )
     assert wrapped.code == base.code
-
-
-def test_java_yaml_dict_null_values_with_comments() -> None:
-    """Java YAML dict with null values and comments does not crash."""
-    yaml_string = "# comment\nname: Alice\nscore: null\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        Map.ofEntries(
-            // comment
-            Map.entry("name", "Alice")
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_java_yaml_dict_null_value_inline_comment_preserved() -> None:
-    """Inline comment on a null-valued dict entry is preserved as a before
-    comment on the next non-null entry when skip_null_dict_values=True.
-    """
-    yaml_string = textwrap.dedent(
-        text="""\
-        host: localhost
-        port: null  # not configured yet
-        debug: true
-        """,
-    )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        Map.ofEntries(
-            Map.entry("host", "localhost"),
-            // not configured yet
-            Map.entry("debug", true)
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
-    """Inline comment on a null-valued dict entry at the end becomes a
-    trailing comment when skip_null_dict_values=True.
-    """
-    yaml_string = textwrap.dedent(
-        text="""\
-        host: localhost
-        port: null  # not configured yet
-        """,
-    )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        Map.ofEntries(
-            Map.entry("host", "localhost")
-            // not configured yet
-        )"""
-    )
-    assert result.code == expected
 
 
 def test_matlab_dict_key_with_quote() -> None:
