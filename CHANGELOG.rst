@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- ``CSharp.format_call_stub`` now emits a parameter list sized to the
+  call's ``parameter_names`` count for single-name targets
+  (``dynamic process(dynamic _a0, dynamic _a1) => null;``) instead of
+  hard-coding a single ``dynamic a`` parameter, so a single-name call
+  target wired up with two or more parameter names produces a stub
+  that ``dotnet build`` accepts rather than rejecting it with
+  ``CS1501 No overload for method 'process' takes 2 arguments``.
+  Pre-existing single-parameter goldens are renamed from ``a`` to
+  ``_a0``.  A new ``call_multi_args`` integration case exercises the
+  single-name + multi-parameter combination across the call-capable
+  languages.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
   ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
   the previous serial ``while`` loop so the job no longer cold-starts
