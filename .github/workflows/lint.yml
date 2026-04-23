@@ -992,8 +992,14 @@ jobs:
               ok=0
               warned=0
               for attempt in 1 2 3; do
-                output=$(setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run "$GITHUB_WORKSPACE/$f" 2>&1)
-                rc=$?
+                # `if` suppresses `set -e` on the assignment, so a
+                # failing mojo run doesn't abort the whole step before
+                # we can capture the exit code.
+                if output=$(setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run "$GITHUB_WORKSPACE/$f" 2>&1); then
+                  rc=0
+                else
+                  rc=$?
+                fi
                 printf '%s\n' "$output"
                 if [ "$rc" -eq 0 ]; then
                   if printf '%s\n' "$output" | grep -qE ': warning:'; then
