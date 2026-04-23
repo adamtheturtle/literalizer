@@ -12,6 +12,15 @@ Next
   from data-shape validation and data-driven preamble inference so
   they do not drag in imports for the ``{str: str}`` shape of the
   marker itself.
+- ``lint-objectivec`` in ``.github/workflows/lint.yml`` now passes
+  ``-Werror`` to both ``clang -fsyntax-only`` and the end-to-end
+  ``clang`` compile step so warnings such as
+  ``-Wimplicitly-unsigned-literal`` fail the job instead of being
+  silently logged.  ``ObjectiveC.format_integer`` now appends a
+  ``ULL`` suffix to values above ``LLONG_MAX`` (matching the C
+  fallback) and raises ``UnrepresentableIntegerError`` for values
+  below ``LLONG_MIN``, so emitted fixtures compile cleanly under the
+  stricter workflow.
 - Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT``
   option that auto-generates a Nim object variant in the preamble
   whenever a dict, list, or sibling-list pair contains scalar values
