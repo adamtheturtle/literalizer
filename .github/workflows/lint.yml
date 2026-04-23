@@ -1124,19 +1124,162 @@ jobs:
       - name: Install Nim
         if: steps.find-files.outputs.found == 'true'
         uses: jiro4989/setup-nim-action@v2
+      # Promote every Nim warning to a CI failure. Nim's
+      # ``--warningAsError`` only accepts ``all:off`` (not ``all:on``),
+      # so we list each warning name explicitly. The full catalogue
+      # comes from ``nim check --warnings:list`` — revisit when Nim is
+      # upgraded in case new warnings have been added.
       - name: Check Nim syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
-            nim check --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+            nim check --hints:off \
+              --warningAsError:AboveMaxSizeSet:on \
+              --warningAsError:AmbiguousLink:on \
+              --warningAsError:AnyEnumConv:on \
+              --warningAsError:BareExcept:on \
+              --warningAsError:BrokenLink:on \
+              --warningAsError:CStringConv:on \
+              --warningAsError:CannotOpen:on \
+              --warningAsError:CannotOpenFile:on \
+              --warningAsError:CaseTransition:on \
+              --warningAsError:CastSizes:on \
+              --warningAsError:CommentXIgnored:on \
+              --warningAsError:ConfigDeprecated:on \
+              --warningAsError:CycleCreated:on \
+              --warningAsError:Deprecated:on \
+              --warningAsError:Destructor:on \
+              --warningAsError:DotLikeOps:on \
+              --warningAsError:EachIdentIsTuple:on \
+              --warningAsError:Effect:on \
+              --warningAsError:EnumConv:on \
+              --warningAsError:FieldXNotSupported:on \
+              --warningAsError:FileChanged:on \
+              --warningAsError:GcMem:on \
+              --warningAsError:GcUnsafe:on \
+              --warningAsError:GcUnsafe2:on \
+              --warningAsError:GlobalVarConstructorTemporary:on \
+              --warningAsError:HoleEnumConv:on \
+              --warningAsError:IgnoredSymbolInjection:on \
+              --warningAsError:ImplicitDefaultValue:on \
+              --warningAsError:ImplicitRangeConversion:on \
+              --warningAsError:ImplicitTemplateRedefinition:on \
+              --warningAsError:IndexCheck:on \
+              --warningAsError:InheritFromException:on \
+              --warningAsError:LanguageXNotSupported:on \
+              --warningAsError:LockLevel:on \
+              --warningAsError:LongLiterals:on \
+              --warningAsError:ObservableStores:on \
+              --warningAsError:OctalEscape:on \
+              --warningAsError:ProveField:on \
+              --warningAsError:ProveIndex:on \
+              --warningAsError:ProveInit:on \
+              --warningAsError:PtrToCstringConv:on \
+              --warningAsError:RedefinitionOfLabel:on \
+              --warningAsError:ResultShadowed:on \
+              --warningAsError:ResultUsed:on \
+              --warningAsError:SmallLshouldNotBeUsed:on \
+              --warningAsError:Spacing:on \
+              --warningAsError:StdPrefix:on \
+              --warningAsError:StmtListLambda:on \
+              --warningAsError:StrictNotNil:on \
+              --warningAsError:TypelessParam:on \
+              --warningAsError:Uninit:on \
+              --warningAsError:UnknownMagic:on \
+              --warningAsError:UnknownNotes:on \
+              --warningAsError:UnknownSubstitutionX:on \
+              --warningAsError:UnnamedBreak:on \
+              --warningAsError:UnreachableCode:on \
+              --warningAsError:UnreachableElse:on \
+              --warningAsError:UnsafeCode:on \
+              --warningAsError:UnsafeDefault:on \
+              --warningAsError:UnsafeSetLen:on \
+              --warningAsError:UnusedImport:on \
+              --warningAsError:UnusedImportdoc:on \
+              --warningAsError:UseBase:on \
+              --warningAsError:User:on \
+              --warningAsError:WriteToForeignHeap:on \
+              --warningAsError:XIsNeverRead:on \
+              --warningAsError:XmightNotBeenInit:on \
+              --warningAsError:warnRstStyle:on \
+              --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
       - name: Run Nim files
         if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
-            nim c -r --hints:off --nimcache:"$tmpdir" "$f" || exit 1
+            nim c -r --hints:off \
+              --warningAsError:AboveMaxSizeSet:on \
+              --warningAsError:AmbiguousLink:on \
+              --warningAsError:AnyEnumConv:on \
+              --warningAsError:BareExcept:on \
+              --warningAsError:BrokenLink:on \
+              --warningAsError:CStringConv:on \
+              --warningAsError:CannotOpen:on \
+              --warningAsError:CannotOpenFile:on \
+              --warningAsError:CaseTransition:on \
+              --warningAsError:CastSizes:on \
+              --warningAsError:CommentXIgnored:on \
+              --warningAsError:ConfigDeprecated:on \
+              --warningAsError:CycleCreated:on \
+              --warningAsError:Deprecated:on \
+              --warningAsError:Destructor:on \
+              --warningAsError:DotLikeOps:on \
+              --warningAsError:EachIdentIsTuple:on \
+              --warningAsError:Effect:on \
+              --warningAsError:EnumConv:on \
+              --warningAsError:FieldXNotSupported:on \
+              --warningAsError:FileChanged:on \
+              --warningAsError:GcMem:on \
+              --warningAsError:GcUnsafe:on \
+              --warningAsError:GcUnsafe2:on \
+              --warningAsError:GlobalVarConstructorTemporary:on \
+              --warningAsError:HoleEnumConv:on \
+              --warningAsError:IgnoredSymbolInjection:on \
+              --warningAsError:ImplicitDefaultValue:on \
+              --warningAsError:ImplicitRangeConversion:on \
+              --warningAsError:ImplicitTemplateRedefinition:on \
+              --warningAsError:IndexCheck:on \
+              --warningAsError:InheritFromException:on \
+              --warningAsError:LanguageXNotSupported:on \
+              --warningAsError:LockLevel:on \
+              --warningAsError:LongLiterals:on \
+              --warningAsError:ObservableStores:on \
+              --warningAsError:OctalEscape:on \
+              --warningAsError:ProveField:on \
+              --warningAsError:ProveIndex:on \
+              --warningAsError:ProveInit:on \
+              --warningAsError:PtrToCstringConv:on \
+              --warningAsError:RedefinitionOfLabel:on \
+              --warningAsError:ResultShadowed:on \
+              --warningAsError:ResultUsed:on \
+              --warningAsError:SmallLshouldNotBeUsed:on \
+              --warningAsError:Spacing:on \
+              --warningAsError:StdPrefix:on \
+              --warningAsError:StmtListLambda:on \
+              --warningAsError:StrictNotNil:on \
+              --warningAsError:TypelessParam:on \
+              --warningAsError:Uninit:on \
+              --warningAsError:UnknownMagic:on \
+              --warningAsError:UnknownNotes:on \
+              --warningAsError:UnknownSubstitutionX:on \
+              --warningAsError:UnnamedBreak:on \
+              --warningAsError:UnreachableCode:on \
+              --warningAsError:UnreachableElse:on \
+              --warningAsError:UnsafeCode:on \
+              --warningAsError:UnsafeDefault:on \
+              --warningAsError:UnsafeSetLen:on \
+              --warningAsError:UnusedImport:on \
+              --warningAsError:UnusedImportdoc:on \
+              --warningAsError:UseBase:on \
+              --warningAsError:User:on \
+              --warningAsError:WriteToForeignHeap:on \
+              --warningAsError:XIsNeverRead:on \
+              --warningAsError:XmightNotBeenInit:on \
+              --warningAsError:warnRstStyle:on \
+              --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
 
   lint-nix:
