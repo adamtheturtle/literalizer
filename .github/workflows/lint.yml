@@ -980,21 +980,36 @@ jobs:
       - name: Check Mojo syntax
         # Sort the file list so every shard sees the same ordering —
         # `find` output is readdir-ordered, which varies per filesystem.
+        # 0.25.7.0 has no `--Werror`, so after a successful run we
+        # grep the output for `warning:` and treat any hit as an error
+        # — mirroring the flag's semantics in shell. Warnings are
+        # deterministic, so we don't retry on that path.
         run: |-
           failed=0
           index=0
           while IFS= read -r -d '' f; do
             if [ "$((index % SHARD_COUNT))" -eq "$SHARD_INDEX" ]; then
               ok=0
+              warned=0
               for attempt in 1 2 3; do
-                if setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run "$GITHUB_WORKSPACE/$f"; then
-                  ok=1
+                output=$(setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run "$GITHUB_WORKSPACE/$f" 2>&1)
+                rc=$?
+                printf '%s\n' "$output"
+                if [ "$rc" -eq 0 ]; then
+                  if printf '%s\n' "$output" | grep -qE ': warning:'; then
+                    echo "::error::Warning emitted (treated as error): $f"
+                    warned=1
+                  else
+                    ok=1
+                  fi
                   break
                 fi
                 echo "::warning::Attempt $attempt failed for $f, retrying..."
                 sleep 2
               done
-              if [ "$ok" -eq 0 ]; then
+              if [ "$warned" -eq 1 ]; then
+                failed=1
+              elif [ "$ok" -eq 0 ]; then
                 echo "::error::Failed after 3 attempts: $f"
                 failed=1
               fi
