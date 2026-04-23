@@ -1455,18 +1455,19 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
-      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull a
-      # recent build from PyPI via uv. This job is split from the syntax
-      # and build-and-run job (`lint-objectivec`) so the install runs in
-      # parallel with the Apple-clang compile steps instead of
-      # serializing after them.
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
+      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
+      # from Homebrew's llvm formula. The PyPI clang-tidy (used in the
+      # Ubuntu jobs) doesn't work here: it can't find Apple's Foundation
+      # framework headers and mis-parses Objective-C literal initializers.
+      # This job is split from the syntax and build-and-run job
+      # (`lint-objectivec`) so the Homebrew install runs in parallel with
+      # the Apple-clang compile steps instead of serializing after them —
+      # Homebrew's llvm would otherwise prepend itself to `PATH` and
+      # shadow the Apple clang that the PCH was built against.
       - name: Install clang-tidy
-        run: uv tool install clang-tidy
+        run: |-
+          brew install --quiet llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
       - name: Run clang-tidy
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
 

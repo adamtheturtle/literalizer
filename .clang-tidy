@@ -20,6 +20,7 @@ Checks: >
   -misc-use-internal-linkage,
   -modernize-raw-string-literal,
   -performance-unnecessary-value-param,
+  -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-named-parameter,
   -readability-redundant-parentheses,
