@@ -91,10 +91,10 @@ Variable references as arguments
 --------------------------------
 
 An argument can be a **reference to a named variable** instead of an
-inlined literal.  Use a ``{"$ref": "name"}`` marker at the argument
-position and :func:`~literalizer.literalize_call` emits the identifier
-verbatim at that slot.  Other arguments are still literalized as usual,
-so refs and literals can be mixed freely.
+inline literal value.  Use a ``{"$ref": "name"}`` marker at the
+argument position and :func:`~literalizer.literalize_call` emits the
+identifier verbatim at that slot.  Other arguments are still rendered
+as literals as usual, so refs and literals can be mixed freely.
 
 For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to
 :func:`~literalizer.literalize_call` with ``parameter_names=["data",
@@ -104,7 +104,8 @@ For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to
 This composes with
 :class:`~literalizer.NewVariable`: declare the data once with
 :func:`~literalizer.literalize` and then refer to it from a call rendered
-by :func:`~literalizer.literalize_call`, without re-inlining the value.
+by :func:`~literalizer.literalize_call`, without repeating the literal
+value at the call site.
 
 The identifier is emitted verbatim — no case conversion is performed, so
 the caller is responsible for spelling the name correctly for the target

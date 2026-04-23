@@ -5,12 +5,13 @@ Next
 ----
 
 - ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at
-  argument positions, emitting ``name`` as a bare identifier instead of
-  literalizing the value.  Refs and literals can be mixed in the same
-  call, and the marker is detected across all four input formats (JSON,
-  JSON5, YAML, TOML).  Ref dicts are excluded from data-shape
-  validation and data-driven preamble inference so they do not drag in
-  imports for the ``{str: str}`` shape of the marker itself.
+  argument positions, emitting ``name`` as a bare identifier instead
+  of formatting the value as a literal.  Refs and literals can be
+  mixed in the same call, and the marker is detected across all four
+  input formats (JSON, JSON5, YAML, TOML).  Ref dicts are excluded
+  from data-shape validation and data-driven preamble inference so
+  they do not drag in imports for the ``{str: str}`` shape of the
+  marker itself.
 - Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT``
   option that auto-generates a Nim object variant in the preamble
   whenever a dict, list, or sibling-list pair contains scalar values
