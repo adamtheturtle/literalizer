@@ -955,15 +955,13 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
-      - name: Install pixi
-        uses: fabasoad/setup-mojo-action@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
-        run: |-
-          pixi init "$RUNNER_TEMP/mojo-env" \
-            -c https://conda.modular.com/max \
-            -c conda-forge
-          pixi add --manifest-path "$RUNNER_TEMP/mojo-env/pixi.toml" mojo
-          echo "MOJO_PIXI_MANIFEST=$RUNNER_TEMP/mojo-env/pixi.toml" >> "$GITHUB_ENV"
+        run: uv tool install mojo-compiler
       # Mojo reserves ~3.6 GB of virtual address space per invocation
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
       # kernel's default overcommit heuristic refuses the allocation and
@@ -989,7 +987,7 @@ jobs:
           while IFS= read -r -d '' f; do
             ok=0
             for attempt in 1 2 3; do
-              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
+              if mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
                 ok=1
                 break
               fi
