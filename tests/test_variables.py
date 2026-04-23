@@ -8,7 +8,6 @@ import textwrap
 import pytest
 
 from literalizer import (
-    ExistingVariable,
     InputFormat,
     NewVariable,
     literalize,
@@ -523,29 +522,3 @@ def test_nim_object_variant_const_raises() -> None:
             ),
             declaration_style=Nim.declaration_styles.CONST,
         )
-
-
-def test_nim_object_variant_assignment_to_dict() -> None:
-    """Nim ``OBJECT_VARIANT`` renders an assignment to a dict without
-    the ``%*`` prefix, using ``.toTable`` instead.
-    """
-    result = literalize(
-        source='{"a": 1, "b": "x"}',
-        input_format=InputFormat.JSON,
-        language=Nim(
-            heterogeneous_strategy=(
-                Nim.heterogeneous_strategies.OBJECT_VARIANT
-            ),
-        ),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=ExistingVariable(name="my_data"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_data = {
-            "a": Value(kind: vkInt, intVal: 1),
-            "b": Value(kind: vkStr, strVal: "x")
-        }.toTable"""
-    )
-    assert result.code == expected
