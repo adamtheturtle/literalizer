@@ -608,7 +608,7 @@ def _format_list_value(
     sequence_cfg = spec.sequence_format_config
 
     # When a parent has widened this position's opener, skip the
-    # hardcoded ``empty_sequence`` literal so the empty list still
+    # default ``empty_sequence`` literal so the empty list still
     # renders with the widened opener and stays type-consistent with
     # its non-empty siblings.
     if (
