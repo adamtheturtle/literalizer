@@ -93,6 +93,24 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # Populate the shared Hex package cache once up front. Parallel
+      # `gleam deps download` invocations would otherwise race on the
+      # cache and fail with "Unable to locate Hex package contents.tar.gz"
+      # when one worker is mid-download and another reads the partial
+      # file.
+      - name: Prime Gleam Hex cache
+        run: |-
+          tmpdir=$(mktemp -d)
+          cat > "$tmpdir/gleam.toml" <<'TOML'
+          name = "check"
+          version = "1.0.0"
+          target = "erlang"
+
+          [dependencies]
+          gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+          TOML
+          mkdir "$tmpdir/src"
+          (cd "$tmpdir" && gleam deps download)
       - name: Check Gleam compiles
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py
           < /tmp/files-to-lint
