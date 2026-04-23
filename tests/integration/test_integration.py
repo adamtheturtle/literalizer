@@ -2085,13 +2085,6 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             / (variant_case.variant_name + ext)
         )
 
-    for hetero_case in _build_heterogeneous_strategy_combined_cases():
-        expected.add(
-            cases_dir
-            / hetero_case.case_dir_name
-            / (hetero_case.name + hetero_case.lang_cls.extension)
-        )
-
     for line_ending_case in _build_line_ending_combined_cases():
         line_ending_spec = _spec(
             lang_cls=line_ending_case.lang_cls,
