@@ -183,10 +183,7 @@ jobs:
         run: npm install -g json5
       - name: Check JSON5 syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            json5 "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-to-lint > /dev/null
 
   lint-jsonnet:
     runs-on: ubuntu-latest
