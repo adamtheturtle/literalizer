@@ -50,6 +50,7 @@ from literalizer.languages import (
     Jsonnet,
     Kotlin,
     Mojo,
+    Nim,
     OCaml,
     Odin,
     Perl,
@@ -157,6 +158,13 @@ _HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES: dict[
 _HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
     literalizer.LanguageCls, str
 ] = {Dhall: "JsonValue"}
+
+# Languages whose heterogeneous-value variant name is configurable
+# (the Nim ``OBJECT_VARIANT`` strategy); the value is the test
+# override to apply.
+_HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES: dict[
+    literalizer.LanguageCls, str
+] = {Nim: "JsonValue"}
 
 # Languages that accept constructor-name kwargs (Fortran) or field-name
 # kwargs (C); the inner dict is the kwargs to pass to the constructor.
@@ -1179,6 +1187,42 @@ def _build_heterogeneous_value_union_name_variants() -> Iterable[_Variant]:
 
 
 @beartype
+def _build_heterogeneous_value_variant_name_variants() -> Iterable[_Variant]:
+    """Build heterogeneous-value-variant-name variants for languages
+    that generate a named object variant for their heterogeneous
+    strategy (e.g. the Nim ``OBJECT_VARIANT``).  The
+    ``heterogeneous_value_variant_name`` constructor parameter lets
+    users customize that name.
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _sorted_languages():
+        custom_name = _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES.get(lang_cls)
+        if custom_name is None:
+            continue
+        default_spec = _spec(lang_cls=lang_cls)
+        object_variant = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "OBJECT_VARIANT"
+        )
+        spec = lang_cls(
+            heterogeneous_strategy=object_variant,
+            heterogeneous_value_variant_name=custom_name,
+        )
+        variants.append(
+            _Variant(
+                name=(
+                    f"{lang_cls.__name__}"
+                    f"_heterogeneous_value_variant_name_{custom_name}"
+                ),
+                spec=spec,
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
+
+
+@beartype
 def _build_string_format_cross_variants(
     *,
     other_kwarg: str,
@@ -1700,6 +1744,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         ),
         (
             _build_heterogeneous_value_union_name_variants(),
+            "dict_mixed_scalars",
+            "",
+        ),
+        (
+            _build_heterogeneous_value_variant_name_variants(),
             "dict_mixed_scalars",
             "",
         ),
