@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- The ``lint-objectivec`` job in ``.github/workflows/lint.yml`` has
+  been split into two jobs that run in parallel: ``lint-objectivec``
+  keeps the PCH build, ``-fsyntax-only`` check, and build-and-run
+  steps, while the new ``lint-objectivec-tidy`` job runs
+  ``clang-tidy`` on its own after installing Homebrew's ``llvm``.
+  The Homebrew install no longer serializes behind the Apple-clang
+  compile steps, and the PCH/``PATH`` ordering hazard in the old
+  single job is gone now that Homebrew's ``clang`` never shares a
+  runner with the PCH consumers.
 - ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at
   argument positions, emitting ``name`` as a bare identifier instead
   of formatting the value as a literal.  Refs and literals can be

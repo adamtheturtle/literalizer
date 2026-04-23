@@ -1388,13 +1388,8 @@ jobs:
       # cost dominates each tiny TU. Precompile Foundation once and
       # preload it in the syntax-check and build-and-run steps so the
       # parsed AST is reused instead of re-parsed per fixture. clang-tidy
-      # deliberately skips the PCH — see the note on `lint-cpp-tidy`.
-      #
-      # PCH is compiler-version specific, so all clang invocations that
-      # read it must use Apple's clang. The `Install clang-tidy` step
-      # below prepends Homebrew's llvm to `PATH`, which would shadow
-      # `clang` with an incompatible build, so every Objective-C compile
-      # step runs before that install.
+      # runs in a separate job (`lint-objectivec-tidy`) and deliberately
+      # skips the PCH — see the note on `lint-cpp-tidy`.
       - name: Build precompiled header
         run: clang -x objective-c-header .github/scripts/lint-objc-pch.h -o /tmp/pch.h.pch
       - name: Check Objective-C syntax
@@ -1415,8 +1410,23 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
+
+  lint-objectivec-tidy:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
-      # from Homebrew's llvm formula.
+      # from Homebrew's llvm formula. This job is split from the syntax
+      # and build-and-run job (`lint-objectivec`) so the Homebrew install
+      # runs in parallel with the Apple-clang compile steps instead of
+      # serializing after them — Homebrew's llvm would otherwise prepend
+      # itself to `PATH` and shadow the Apple clang that the PCH was
+      # built against.
       - name: Install clang-tidy
         run: |-
           brew install --quiet llvm
@@ -1529,6 +1539,7 @@ jobs:
       - lint-forth
       - lint-fortran
       - lint-objectivec
+      - lint-objectivec-tidy
     runs-on: ubuntu-latest
     if: always()
     steps:
