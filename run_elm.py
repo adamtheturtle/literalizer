@@ -9,7 +9,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from _elm_common import ELM_JSON
+from elm_common import ELM_JSON
 
 # Wrap ``Check.my_data`` in a ``Platform.worker`` so loading the compiled
 # JavaScript evaluates the fixture's top-level value, surfacing runtime

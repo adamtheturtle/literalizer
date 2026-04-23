@@ -7,7 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from _elm_common import ELM_JSON
+from elm_common import ELM_JSON
 
 
 def main() -> None:
