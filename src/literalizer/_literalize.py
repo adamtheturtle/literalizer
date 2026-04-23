@@ -655,9 +655,11 @@ def _format_list_value(
     non_empty_items = [item for item in items if item]
     joined = spec.element_separator.join(non_empty_items)
     # Some languages (e.g. Python) require a trailing comma on
-    # single-element sequences to avoid syntactic ambiguity.
-    single_element = len(non_empty_items) == 1
-    if single_element and sequence_cfg.single_element_trailing_comma:
+    # single-element sequences to avoid syntactic ambiguity.  The
+    # decision uses the original element count so filtered-away empty
+    # sub-lists do not flip a multi-element list into the trailing-
+    # comma branch.
+    if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
     opener = (
         sequence_open_override
