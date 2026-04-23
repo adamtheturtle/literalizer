@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``.clang-tidy`` re-enables
+  ``cppcoreguidelines-missing-std-forward``; the check guards
+  against forwarding references that are not ``std::forward``-ed,
+  and the current C++ generator output has no such patterns, so no
+  fixture changes were needed.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
   ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
   the previous serial ``while`` loop so the job no longer cold-starts
