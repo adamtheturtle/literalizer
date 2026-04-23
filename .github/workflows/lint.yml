@@ -1277,9 +1277,8 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.sml"
-          printf 'val _ = Check.my_data\n' > "$tmpdir/force.sml"
-          printf '$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n' \
-            > "$tmpdir/main.mlb"
+          cp .github/scripts/sml_force.sml "$tmpdir/force.sml"
+          cp .github/scripts/sml_main.mlb "$tmpdir/main.mlb"
           mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
