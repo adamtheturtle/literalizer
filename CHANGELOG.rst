@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at
+  argument positions, emitting ``name`` as a bare identifier instead of
+  literalizing the value.  Refs and literals can be mixed in the same
+  call, and the marker is detected across all four input formats (JSON,
+  JSON5, YAML, TOML).  Ref dicts are excluded from data-shape
+  validation and data-driven preamble inference so they do not drag in
+  imports for the ``{str: str}`` shape of the marker itself.
 - ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm
   fixture end-to-end.  A new ``Run Elm files`` step compiles each
   fixture alongside a small ``Main.elm`` wrapper whose

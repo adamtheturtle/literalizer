@@ -1,0 +1,4 @@
+(list
+    (cons "host" "localhost")
+    (cons "port" nil)  ; not configured yet
+)

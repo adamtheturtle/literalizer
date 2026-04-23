@@ -1,0 +1,5 @@
+{
+    // comment
+    name: "Alice",
+    score: null,
+}

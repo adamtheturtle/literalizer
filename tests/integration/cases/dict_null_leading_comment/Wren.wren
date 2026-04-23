@@ -1,0 +1,4 @@
+var my_data = {
+    // comment
+    "name": "Alice",
+}

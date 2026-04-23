@@ -1146,6 +1146,92 @@ def _identity_call_arg(_value: Value, formatted: str) -> str:
     return formatted
 
 
+_CALL_ARG_REF_KEY = "$ref"
+
+
+@beartype
+def _extract_call_arg_ref_name(*, value: Value) -> str | None:
+    """Return the identifier name for a ``{"$ref": "name"}`` marker.
+
+    Returns ``None`` when *value* is not a variable-reference marker.
+    In :func:`literalize_call` such markers render as the bare
+    identifier instead of being literalized.
+    """
+    if not isinstance(value, dict) or len(value) != 1:
+        return None
+    ref_value = value.get(_CALL_ARG_REF_KEY)
+    if not isinstance(ref_value, str):
+        return None
+    return ref_value
+
+
+@beartype
+def _strip_call_arg_refs_for_preamble(
+    *,
+    data: Value,
+    per_element: bool,
+) -> Value:
+    """Return *data* with call-argument ref markers removed.
+
+    Ref markers represent a variable declared elsewhere, not real data,
+    so they would pollute data-driven preamble inference (e.g. dragging
+    in ``Data.Map`` imports for Haskell just because the marker happens
+    to be a ``{str: str}`` dict).  Drop them before computing the
+    preamble while leaving :func:`_format_call_args` to render them.
+
+    When *per_element* is ``True``, *data* is a list of argument lists
+    and refs are stripped from each inner list.  Otherwise a
+    top-level ref becomes an empty list, standing in for "no data".
+    """
+    if per_element:
+        if not isinstance(data, list):
+            return data
+        result: list[Value] = []
+        for element in data:
+            if isinstance(element, list):
+                result.append(
+                    [
+                        v
+                        for v in element
+                        if _extract_call_arg_ref_name(value=v) is None
+                    ]
+                )
+            elif _extract_call_arg_ref_name(value=element) is None:
+                result.append(element)
+        return result
+    if _extract_call_arg_ref_name(value=data) is not None:
+        return []
+    return data
+
+
+@beartype
+def _format_single_call_arg(
+    *,
+    value: Value,
+    language: Language,
+    wrap_ids: frozenset[int],
+    wrap_arg: Callable[[Value, str], str],
+) -> str:
+    """Format one argument value for a function call.
+
+    A ``{"$ref": "name"}`` marker renders as the bare identifier; the
+    ``format_call_arg`` hook is skipped for refs because the referenced
+    variable already has the call's parameter type.
+    """
+    ref_name = _extract_call_arg_ref_name(value=value)
+    if ref_name is not None:
+        return ref_name
+    return wrap_arg(
+        value,
+        _format_value(
+            value=value,
+            spec=language,
+            dict_open_override=None,
+            wrap_ids=wrap_ids,
+        ),
+    )
+
+
 @beartype
 def _format_call_args(
     *,
@@ -1161,6 +1247,11 @@ def _format_call_args(
     ``(arg1, arg2)``.  For :class:`PostfixCallStyle` returns the
     unwrapped, space-separated argument list so the caller can
     assemble ``args target`` directly.
+
+    A value shaped like ``{"$ref": "name"}`` renders as the bare
+    identifier ``name`` instead of being literalized, so callers can
+    refer to a variable declared elsewhere (e.g. via
+    :class:`NewVariable`).
     """
     wrap_arg: Callable[[Value, str], str] = getattr(
         language,
@@ -1168,14 +1259,11 @@ def _format_call_args(
         _identity_call_arg,
     )
     formatted = [
-        wrap_arg(
-            v,
-            _format_value(
-                value=v,
-                spec=language,
-                dict_open_override=None,
-                wrap_ids=wrap_ids,
-            ),
+        _format_single_call_arg(
+            value=v,
+            language=language,
+            wrap_ids=wrap_ids,
+            wrap_arg=wrap_arg,
         )
         for v in values
     ]
@@ -1348,6 +1436,11 @@ def literalize_call(
 
     target_function = language.format_call_target(target_function)
 
+    data_for_preamble = _strip_call_arg_refs_for_preamble(
+        data=data,
+        per_element=per_element,
+    )
+
     if per_element:
         if not isinstance(data, list):
             msg = (
@@ -1362,10 +1455,18 @@ def literalize_call(
             # Each element produces an independent call; check its
             # argument list on its own rather than the top-level list,
             # which is never rendered as a sequence in per-element mode.
-            for value in arg_values:
+            # Variable-reference markers (``{"$ref": "name"}``) are
+            # syntactic pointers rather than real data, so skip them
+            # from validation and wrap-id computation.
+            non_ref_args = [
+                v
+                for v in arg_values
+                if _extract_call_arg_ref_name(value=v) is None
+            ]
+            for value in non_ref_args:
                 check_data(data=value, spec=language)
             call_wrap_ids = _compute_wrap_ids(
-                data=cast("list[Value]", arg_values),
+                data=non_ref_args,
                 spec=language,
             )
             args_str = _format_call_args(
@@ -1386,8 +1487,13 @@ def literalize_call(
             )
         result = "\n".join(lines)
     else:
-        check_data(data=data, spec=language)
-        call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
+        # A single top-level ref marker renders as just the identifier;
+        # skip shape validation and wrap-id computation in that case.
+        if _extract_call_arg_ref_name(value=data) is None:
+            check_data(data=data, spec=language)
+            call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
+        else:
+            call_wrap_ids = frozenset[int]()
         args_str = _format_call_args(
             values=[data],
             params=parameter_names,
@@ -1403,14 +1509,14 @@ def literalize_call(
             style=style,
         )
     computed = compute_preamble(
-        data=data,
+        data=data_for_preamble,
         language=language,
         has_variable_declaration=False,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data)
+        + language.data_dependent_preamble(data_for_preamble)
     )
 
     if wrap_in_file:
