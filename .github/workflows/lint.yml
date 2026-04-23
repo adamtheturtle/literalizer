@@ -94,7 +94,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
-        run: xargs -0 -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py
+          < /tmp/files-to-lint
 
   lint-go:
     runs-on: ubuntu-latest
