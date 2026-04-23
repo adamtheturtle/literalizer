@@ -6,17 +6,14 @@ import sys
 import tempfile
 from pathlib import Path
 
+_GLEAM_TOML_PATH = (
+    Path(__file__).parent / ".github" / "scripts" / "lint-gleam.toml"
+)
+
 
 def main() -> None:
     """Check syntax of the given Gleam golden file."""
-    gleam_toml = """\
-name = "check"
-version = "1.0.0"
-target = "erlang"
-
-[dependencies]
-gleam_stdlib = ">= 0.44.0 and < 2.0.0"
-"""
+    gleam_toml = _GLEAM_TOML_PATH.read_text(encoding="utf-8")
     filename = sys.argv[1]
     gleam_path = shutil.which(cmd="gleam") or "gleam"
     with tempfile.TemporaryDirectory() as tmpdir:
