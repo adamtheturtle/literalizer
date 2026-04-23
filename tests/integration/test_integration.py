@@ -758,6 +758,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "my_other": "[4, 5, 6]",
         },
     ),
+    _CallCaseConfig(
+        case_dir_name="call_mixed_type_dicts",
+        target_function="app.mgr.op",
+        parameter_names=["operation"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
     *[
         _CallCaseConfig(
             case_dir_name=f"call_{name}",
@@ -2278,27 +2286,36 @@ def test_call_golden_file(
     spec = _spec(lang_cls=lang_cls, **kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    # Literalize each ``{"$ref": "name"}`` target into a variable
-    # declaration so the generated file is self-contained and the
-    # golden file can lint cleanly.
-    decl_results: list[literalizer.LiteralizeResult] = [
-        literalizer.literalize(
-            source=ref_source,
-            input_format=literalizer.InputFormat.JSON,
+    lang_name = lang_cls.__name__
+    golden_name = f"{lang_name}_call"
+    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    try:
+        # Literalize each ``{"$ref": "name"}`` target into a variable
+        # declaration so the generated file is self-contained and the
+        # golden file can lint cleanly.
+        decl_results: list[literalizer.LiteralizeResult] = [
+            literalizer.literalize(
+                source=ref_source,
+                input_format=literalizer.InputFormat.JSON,
+                language=spec,
+                variable_form=literalizer.NewVariable(name=ref_name),
+            )
+            for ref_name, ref_source in config.ref_declarations.items()
+        ]
+        result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
             language=spec,
-            variable_form=literalizer.NewVariable(name=ref_name),
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
         )
-        for ref_name, ref_source in config.ref_declarations.items()
-    ]
-    result = literalizer.literalize_call(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        target_function=config.target_function,
-        parameter_names=config.parameter_names,
-        call_transform=config.call_transform,
-        per_element=config.per_element,
-    )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} cannot represent this heterogeneous input",
+        )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
@@ -2358,12 +2375,10 @@ def test_call_golden_file(
         lines=decl_preambles + result.preamble + tuple(preamble_stubs)
     )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
-    lang_name = lang_cls.__name__
-    golden_name = f"{lang_name}_call"
     _check_golden(
         file_regression=file_regression,
         contents=wrapped + "\n",
         extension=lang_cls.extension,
         newline="",
-        golden_path=input_path.parent / (golden_name + lang_cls.extension),
+        golden_path=golden_path,
     )

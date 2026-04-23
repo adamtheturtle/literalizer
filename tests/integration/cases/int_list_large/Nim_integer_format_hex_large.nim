@@ -1,4 +1,3 @@
-import json
 var my_data = @[
     0xf4240,
     -0x4d2,

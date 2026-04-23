@@ -381,6 +381,40 @@ def _compute_dict_open_override(
 
 
 @beartype
+def _compute_call_slot_overrides(
+    *,
+    elements: list[Value],
+    spec: Language,
+) -> list[str | None]:
+    """Compute per-slot dict-open overrides across sibling calls.
+
+    For each positional argument slot in per-element calls, gather the
+    values at that slot across all elements and compute a widened
+    dict opener so that dict arguments at the same slot share a
+    common type.  Sibling calls render as independent statements with
+    no enclosing sequence, so ``narrowed_open`` does not apply here —
+    each dict still needs its own full opener, just widened when
+    sibling dicts differ in inferred value type.
+
+    ``{"$ref": "name"}`` markers are filtered out of each slot's
+    values: the marker isn't rendered as a dict at the call site, so
+    its shape must not influence widening.
+    """
+    slots: list[list[Value]] = []
+    for element in elements:
+        arg_values = element if isinstance(element, list) else [element]
+        for slot_index, arg_value in enumerate(iterable=arg_values):
+            if slot_index >= len(slots):
+                slots.append([])
+            if _extract_call_arg_ref_name(value=arg_value) is None:
+                slots[slot_index].append(arg_value)
+    return [
+        _compute_dict_open_override(items=slot_values, spec=spec)
+        for slot_values in slots
+    ]
+
+
+@beartype
 def _compute_sequence_dict_override(
     *,
     items: list[Value],
@@ -1211,6 +1245,7 @@ def _format_single_call_arg(
     language: Language,
     wrap_ids: frozenset[int],
     wrap_arg: Callable[[Value, str], str],
+    dict_open_override: str | None,
 ) -> str:
     """Format one argument value for a function call.
 
@@ -1226,7 +1261,7 @@ def _format_single_call_arg(
         _format_value(
             value=value,
             spec=language,
-            dict_open_override=None,
+            dict_open_override=dict_open_override,
             wrap_ids=wrap_ids,
         ),
     )
@@ -1240,6 +1275,7 @@ def _format_call_args(
     language: Language,
     wrap_ids: frozenset[int],
     style: CallStyle,
+    dict_open_overrides: Sequence[str | None],
 ) -> str:
     """Format argument values for a single function call.
 
@@ -1252,6 +1288,10 @@ def _format_call_args(
     identifier ``name`` instead of being formatted as a literal, so
     callers can refer to a variable declared elsewhere (e.g. via
     :class:`NewVariable`).
+
+    *dict_open_overrides* supplies a per-positional dict opener so that
+    dict arguments at the same slot across sibling calls share a
+    widened type.  ``None`` at a given position means "no override".
     """
     wrap_arg: Callable[[Value, str], str] = getattr(
         language,
@@ -1260,12 +1300,13 @@ def _format_call_args(
     )
     formatted = [
         _format_single_call_arg(
-            value=v,
+            value=arg_value,
             language=language,
             wrap_ids=wrap_ids,
             wrap_arg=wrap_arg,
+            dict_open_override=dict_open_overrides[slot_index],
         )
-        for v in values
+        for slot_index, arg_value in enumerate(iterable=values)
     ]
 
     match style:
@@ -1394,7 +1435,14 @@ def _render_call_per_element(
     pointers rather than real data, so they are skipped during
     data-shape validation and wrap-id computation while still
     appearing as identifiers in the rendered call.
+    :func:`_compute_call_slot_overrides` similarly filters them out so
+    the marker's ``{str: str}`` shape does not influence per-slot
+    dict-opener widening.
     """
+    slot_overrides = _compute_call_slot_overrides(
+        elements=data,
+        spec=language,
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1415,6 +1463,7 @@ def _render_call_per_element(
             language=language,
             wrap_ids=call_wrap_ids,
             style=style,
+            dict_open_overrides=slot_overrides,
         )
         lines.append(
             _assemble_call(
@@ -1454,6 +1503,7 @@ def _render_call_whole(
         language=language,
         wrap_ids=call_wrap_ids,
         style=style,
+        dict_open_overrides=[None],
     )
     return _assemble_call(
         target_function=target_function,
