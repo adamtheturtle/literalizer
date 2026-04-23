@@ -340,10 +340,13 @@ jobs:
         if: steps.find-files.outputs.found == 'true'
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
+      # Pass -include-pch as two separate args; clang's driver treats it
+      # as a Separate option, so the joined `-include-pch=PATH` form is
+      # parsed as `-include -pch=PATH` and fails to find the file.
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 --extra-arg=-include-pch=/tmp/pch.hpp.pch
-          < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 --extra-arg=-include-pch
+          --extra-arg=/tmp/pch.hpp.pch < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
