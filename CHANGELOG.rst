@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``lint-dart`` in ``.github/workflows/lint.yml`` now copies every
+  fixture into one package and runs a single ``dart analyze``
+  invocation, instead of cold-starting the Dart VM per fixture
+  inside a serial ``while`` loop.  Mirrors the Bloop-backed warm-up
+  added to ``lint-scala`` in the prior change.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs each
   Swift fixture end-to-end via ``swift`` in script mode, catching
   runtime errors that ``swiftc -typecheck`` alone could miss
