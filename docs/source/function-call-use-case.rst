@@ -96,22 +96,10 @@ position and :func:`~literalizer.literalize_call` emits the identifier
 verbatim at that slot.  Other arguments are still literalized as usual,
 so refs and literals can be mixed freely.
 
-.. code-block:: python
-
-   """Generate a call that reads a previously-declared variable."""
-
-   from literalizer import InputFormat, literalize_call
-   from literalizer.languages import Python
-
-   result = literalize_call(
-       source='[[{"$ref": "my_var"}, 42]]',
-       input_format=InputFormat.JSON,
-       language=Python(),
-       target_function="process",
-       parameter_names=["data", "count"],
-   )
-
-   assert result.code == "process(data=my_var, count=42)"
+For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to
+:func:`~literalizer.literalize_call` with ``parameter_names=["data",
+"count"]`` and ``language=Python()`` yields
+``process(data=my_var, count=42)``.
 
 This composes with
 :class:`~literalizer.NewVariable`: declare the data once with
