@@ -1831,6 +1831,93 @@ def test_line_ending_combined_variable_forms(
 
 
 @dataclasses.dataclass
+class _HeterogeneousStrategyCombinedCase:
+    """A combined-variable-forms test case with a non-default
+    heterogeneous-scalar strategy.
+    """
+
+    name: str
+    lang_cls: literalizer.LanguageCls
+    heterogeneous_strategy: enum.Enum
+    case_dir_name: str
+
+
+@functools.cache
+@beartype
+def _build_heterogeneous_strategy_combined_cases() -> list[
+    _HeterogeneousStrategyCombinedCase
+]:
+    """Collect combined (declaration + assignment) test cases for
+    non-default heterogeneous-scalar strategies.
+    """
+    cases: list[_HeterogeneousStrategyCombinedCase] = []
+    case_dir_name = "dict_mixed_scalars"
+    for lang_cls in _sorted_languages():
+        lang_name = lang_cls.__name__
+        spec = _spec(lang_cls=lang_cls)
+        if not _find_redefinition_styles(spec=spec):
+            continue
+        default_strategy = spec.heterogeneous_strategy
+        for strategy in spec.heterogeneous_strategies:
+            if strategy is default_strategy:
+                continue
+            name = (
+                f"{lang_name}_heterogeneous_strategy"
+                f"_{strategy.name.lower()}_combined"
+            )
+            cases.append(
+                _HeterogeneousStrategyCombinedCase(
+                    name=name,
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=strategy,
+                    case_dir_name=case_dir_name,
+                )
+            )
+    return cases
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=_build_heterogeneous_strategy_combined_cases(),
+    ids=[c.name for c in _build_heterogeneous_strategy_combined_cases()],
+)
+def test_heterogeneous_strategy_combined_variable_forms(
+    case: _HeterogeneousStrategyCombinedCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that combined (declaration + assignment) output with a
+    non-default heterogeneous-scalar strategy matches the golden file.
+    """
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    base_spec = _spec(lang_cls=case.lang_cls)
+    redef_styles = _find_redefinition_styles(spec=base_spec)
+    assert redef_styles
+    spec = _spec(
+        lang_cls=case.lang_cls,
+        heterogeneous_strategy=case.heterogeneous_strategy,
+        declaration_style=redef_styles[0],
+    )
+    result = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=literalizer.BothVariableForms(name="my_data"),
+        wrap_in_file=True,
+    )
+    _check_golden(
+        file_regression=file_regression,
+        contents=result.code + "\n",
+        extension=spec.extension,
+        newline=None,
+        golden_path=input_path.parent / (case.name + spec.extension),
+    )
+
+
+@dataclasses.dataclass
 class _PreIndentCase:
     """A ``pre_indent_level`` golden-file test case.
 
@@ -1957,6 +2044,14 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             cases_dir
             / line_ending_case.case_dir_name
             / (line_ending_case.name + line_ending_spec.extension)
+        )
+
+    for strategy_case in _build_heterogeneous_strategy_combined_cases():
+        ext = strategy_case.lang_cls.extension
+        expected.add(
+            cases_dir
+            / strategy_case.case_dir_name
+            / (strategy_case.name + ext)
         )
 
     for pre_indent_case in _build_pre_indent_cases():
