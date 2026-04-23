@@ -21,6 +21,9 @@ Next
   runtime constructors; the constructor raises
   ``IncompatibleFormatsError`` for that combination.  The default
   remains ``HeterogeneousStrategies.ERROR`` (unchanged behavior).
+- The ``heterogeneous_strategy`` variant case list now includes the
+  ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
+  ``UNION_TYPE`` rendering on ``!!omap`` inputs.
 - ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
   ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
   the previous serial ``while`` loop so the job no longer cold-starts

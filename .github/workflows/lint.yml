@@ -238,13 +238,12 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.java
+          extra_config_patterns: CheckJavaSyntax.java
+      # Drive compilation through the JavaCompiler API in a single JVM
+      # rather than cold-starting `javac` per fixture.
       - name: Check Java syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            javac -d "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 java CheckJavaSyntax.java < /tmp/files-to-lint
 
   lint-c:
     runs-on: ubuntu-latest
@@ -292,20 +291,21 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
+          extra_config_patterns: .github/scripts/cpp_main.cpp
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
-      # a tiny wrapper that invokes it and link into a runnable binary.
+      # `.github/scripts/cpp_main.cpp` which invokes it and link into a
+      # runnable binary.
       - name: Run C++ files
         if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          printf 'void check_();\nint main(){ check_(); return 0; }\n' \
-            > "$tmpdir/__main.cpp"
-          clang++ -std=c++20 "$1" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
+          clang++ -std=c++20 "$1" .github/scripts/cpp_main.cpp \
+            -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
