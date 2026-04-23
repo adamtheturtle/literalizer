@@ -8,6 +8,8 @@ import textwrap
 import pytest
 
 from literalizer import (
+    BothVariableForms,
+    ExistingVariable,
     InputFormat,
     NewVariable,
     literalize,
@@ -15,7 +17,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Python, Rust
+from literalizer.languages import CSharp, Nim, Python, Rust
 
 PYTHON_ALWAYS_HINTS = Python(
     date_format=Python.date_formats.PYTHON,
@@ -498,3 +500,83 @@ def test_csharp_const_with_non_constant_raises(source: str) -> None:
             ),
             wrap_in_file=True,
         )
+
+
+def test_nim_object_variant_const_raises() -> None:
+    """Nim ``CONST`` rejects the ``OBJECT_VARIANT`` strategy.
+
+    ``OBJECT_VARIANT`` renders dicts as ``{…}.toTable`` and sequences
+    as ``@[…]``, both of which are runtime constructors and cannot
+    initialize a ``const`` declaration.
+    """
+    expected_msg = (
+        "Nim CONST requires a constant-expression initializer, "
+        "but OBJECT_VARIANT produces runtime .toTable / @[] calls "
+        "which are not constant expressions. Use VAR or LET instead."
+    )
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
+        Nim(
+            heterogeneous_strategy=(
+                Nim.heterogeneous_strategies.OBJECT_VARIANT
+            ),
+            declaration_style=Nim.declaration_styles.CONST,
+        )
+
+
+def test_nim_object_variant_assignment_to_dict() -> None:
+    """Nim ``OBJECT_VARIANT`` renders an assignment to a dict without
+    the ``%*`` prefix, using ``.toTable`` instead.
+    """
+    result = literalize(
+        source='{"a": 1, "b": "x"}',
+        input_format=InputFormat.JSON,
+        language=Nim(
+            heterogeneous_strategy=(
+                Nim.heterogeneous_strategies.OBJECT_VARIANT
+            ),
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=ExistingVariable(name="my_data"),
+    )
+    expected = textwrap.dedent(
+        text="""\
+        my_data = {
+            "a": Value(kind: vkInt, intVal: 1),
+            "b": Value(kind: vkStr, strVal: "x")
+        }.toTable"""
+    )
+    assert result.code == expected
+
+
+def test_nim_object_variant_ordered_map() -> None:
+    """Nim ``OBJECT_VARIANT`` renders an ordered map as
+    ``{…}.toOrderedTable`` instead of the default ``%* {…}``.
+    """
+    yaml_input = textwrap.dedent(
+        text="""\
+        --- !!omap
+          - name: Alice
+          - age: 30
+          - active: true
+        """
+    )
+    result = literalize(
+        source=yaml_input,
+        input_format=InputFormat.YAML,
+        language=Nim(
+            heterogeneous_strategy=(
+                Nim.heterogeneous_strategies.OBJECT_VARIANT
+            ),
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=BothVariableForms(name="my_data"),
+        wrap_in_file=True,
+    )
+    assert ".toOrderedTable" in result.code
+    assert "import tables" in result.code
+    assert "%*" not in result.code
