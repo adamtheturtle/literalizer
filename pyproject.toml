@@ -274,6 +274,7 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "check_csharp_syntax.py",
+    "CheckJavaSyntax.java",
     ".clj-kondo",
     ".clj-kondo/**",
     ".clang-tidy",
