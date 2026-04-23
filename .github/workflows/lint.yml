@@ -142,16 +142,29 @@ jobs:
         uses: wtfjoke/setup-groovy@v3
         with:
           groovy-version: 4.x
-      - name: Check Groovy syntax
+      # Parse and run every fixture inside a single Groovy JVM via
+      # GroovyShell, so the compiler stays warm across iterations
+      # instead of cold-starting groovyc/groovy per file. A fresh
+      # GroovyShell per fixture keeps classloaders isolated, since
+      # some fixtures declare top-level classes with shared names.
+      - name: Check and run Groovy files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            groovyc -d "$tmpdir" "$(realpath "$f")" || exit 1
-          done < /tmp/files-to-lint
-      - name: Run Groovy files
-        if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 groovy < /tmp/files-to-lint
+          cat > /tmp/lint.groovy <<'SCRIPT'
+          def content = new String(new File('/tmp/files-to-lint').bytes)
+          def paths = content.split('\0').findAll { it }
+          def failed = false
+          paths.each { p ->
+              try {
+                  new GroovyShell().parse(new File(p)).run()
+              } catch (Throwable t) {
+                  System.err.println("FAIL ${p}:\n${t.message}")
+                  failed = true
+              }
+          }
+          System.exit(failed ? 1 : 0)
+          SCRIPT
+          groovy /tmp/lint.groovy
 
   lint-javascript:
     runs-on: ubuntu-latest
