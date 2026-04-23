@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- ``lint-objectivec`` in ``.github/workflows/lint.yml`` now passes
+  ``-Werror`` to both ``clang -fsyntax-only`` and the end-to-end
+  ``clang`` compile step so warnings such as
+  ``-Wimplicitly-unsigned-literal`` fail the job instead of being
+  silently logged.  ``ObjectiveC.format_integer`` now appends a
+  ``ULL`` suffix to values above ``LLONG_MAX`` (matching the C
+  fallback) and raises ``UnrepresentableIntegerError`` for values
+  below ``LLONG_MIN``, so emitted fixtures compile cleanly under the
+  stricter workflow.
 - The ``heterogeneous_strategy`` variant case list now includes the
   ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
   ``UNION_TYPE`` rendering on ``!!omap`` inputs.
