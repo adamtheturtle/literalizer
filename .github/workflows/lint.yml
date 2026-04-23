@@ -387,14 +387,15 @@ jobs:
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
+      # Build a small Roslyn host once, then feed every fixture through
+      # its stdin so the .NET runtime and C# compiler load once instead
+      # of per fixture. Replaces `dotnet build` per fixture, which paid
+      # MSBuild + NuGet restore + compiler startup each time.
+      - name: Build C# lint host
+        run: dotnet publish .github/scripts/lint-csharp/lint-csharp.csproj -c Release
+          -o /tmp/lint-csharp --nologo
       - name: Check C# syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_csharp_syntax.py
-          < /tmp/files-to-lint
+        run: dotnet /tmp/lint-csharp/lint-csharp.dll < /tmp/files-to-lint
 
   lint-elixir:
     runs-on: ubuntu-latest
