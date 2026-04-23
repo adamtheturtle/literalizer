@@ -2,14 +2,13 @@ module Check where
 data Val = HFloat Double
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
-    a + b = error "not implemented"
-    a * b = error "not implemented"
-    abs a = error "not implemented"
-    signum a = error "not implemented"
+    _ + _ = error "not implemented"
+    _ * _ = error "not implemented"
+    abs _ = error "not implemented"
+    signum _ = error "not implemented"
     negate (HFloat f) = HFloat (negate f)
-    negate _ = error "not implemented"
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
-    a / b = error "not implemented"
+    _ / _ = error "not implemented"
 my_data :: Val
 my_data = 3.14

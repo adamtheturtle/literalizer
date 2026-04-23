@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -84,15 +83,32 @@ def _haskell_call_preamble_stub(
 def _build_haskell_call_stub_lines(
     name: str,
     params: Sequence[str],
-    _stub_return: StubReturn,
+    stub_return: StubReturn,
     type_name: str,
 ) -> tuple[str, ...]:
     """Return Haskell stub declarations for a call name."""
-    ret = "IO ()"
-    body = "return ()"
+    if stub_return is StubReturn.VALUE:
+        ret = f"IO {type_name}"
+        body = "return undefined"
+    else:
+        ret = "IO ()"
+        body = "return ()"
     parts = name.split(sep=".")
+    # Transform-wrapper stubs are passed a single placeholder param
+    # starting with ``_`` and receive the (already typed) result of
+    # another call. Declare them with a polymorphic argument so GHC
+    # never needs to default the wrapped expression's type.
+    is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
     if len(parts) == 1:
-        return (f"{parts[0]} _ = {body}",)
+        if is_wrapper_stub:
+            sig = f"{parts[0]} :: a -> IO ()"
+        else:
+            if len(params) == 1:
+                arg_type = type_name
+            else:
+                arg_type = "(" + ", ".join(type_name for _ in params) + ")"
+            sig = f"{parts[0]} :: {arg_type} -> {ret}"
+        return (sig, f"{parts[0]} _ = {body}")
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -105,6 +121,7 @@ def _build_haskell_call_stub_lines(
         cls = root.capitalize() + "Type_"
         return (
             f"data {cls} = {cls} {{ {method} :: {field_type} }}",
+            f"{root} :: {cls}",
             f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
         )
     lines: list[str] = []
@@ -128,6 +145,7 @@ def _build_haskell_call_stub_lines(
         cls = fields[i].capitalize() + "Type_"
         construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
     construction = f"{root_cls} {{ {fields[0]} = {construction} }}"
+    lines.append(f"{root} :: {root_cls}")
     lines.append(f"{root} = {construction}")
     return tuple(lines)
 
@@ -142,14 +160,14 @@ def _build_haskell_call_stub(
     def _haskell_call_stub(
         name: str,
         params: Sequence[str],
-        _stub_return: StubReturn,
+        stub_return: StubReturn,
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
         return _build_haskell_call_stub_lines(
             name=name,
             params=params,
-            _stub_return=_stub_return,
+            stub_return=stub_return,
             type_name=type_name,
         )
 
@@ -398,10 +416,17 @@ def _num_instance(
     *,
     has_int: bool,
     has_float: bool,
+    needs_catchall: bool,
     type_name: str,
     constructor_prefix: str,
 ) -> str:
-    """Build the ``Num`` instance with only relevant constructors."""
+    """Build the ``Num`` instance with only relevant constructors.
+
+    *needs_catchall* controls whether a trailing ``negate _`` clause is
+    emitted. When the ``Val`` type has only numeric constructors, the
+    specific ``negate (HInt n)`` / ``negate (HFloat f)`` patterns are
+    exhaustive, and a catch-all would be redundant.
+    """
     if has_int:
         from_integer = f"    fromInteger = {constructor_prefix}Int"
     else:
@@ -419,15 +444,16 @@ def _num_instance(
             f"    negate ({constructor_prefix}Float f) = "
             f"{constructor_prefix}Float (negate f)"
         )
-    negate_parts.append('    negate _ = error "not implemented"')
+    if needs_catchall:
+        negate_parts.append('    negate _ = error "not implemented"')
     return "\n".join(
         [
             f"instance Num {type_name} where",
             from_integer,
-            '    a + b = error "not implemented"',
-            '    a * b = error "not implemented"',
-            '    abs a = error "not implemented"',
-            '    signum a = error "not implemented"',
+            '    _ + _ = error "not implemented"',
+            '    _ * _ = error "not implemented"',
+            '    abs _ = error "not implemented"',
+            '    signum _ = error "not implemented"',
             *negate_parts,
         ]
     )
@@ -449,16 +475,42 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
     return False
 
 
+def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
+    """Return whether *data* contains any datetime without
+    microseconds.
+    """
+    if isinstance(data, datetime.datetime):
+        return not data.microsecond
+    if isinstance(data, datetime.date):
+        return False
+    if isinstance(data, (ordereddict, dict)):
+        return any(
+            _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+        )
+    if isinstance(data, (list, set)):
+        return any(_has_nonmicrosecond_datetime(data=v) for v in data)
+    return False
+
+
 def _datetime_import_items(
     *,
     has_from_gregorian: bool,
     has_microsecond: bool,
+    has_nonmicrosecond: bool,
 ) -> list[str]:
-    """Return ``Data.Time`` import names needed for datetime values."""
+    """Return ``Data.Time`` import names needed for datetime values.
+
+    ``secondsToDiffTime`` is imported only when at least one datetime
+    has no microsecond component; otherwise every datetime is rendered
+    via ``picosecondsToDiffTime`` and the seconds helper would be
+    flagged as unused.
+    """
     items = ["UTCTime(..)"]
     if not has_from_gregorian:
         items.append("fromGregorian")
-    items.append("secondsToDiffTime")
+    if has_nonmicrosecond:
+        items.append("secondsToDiffTime")
     if has_microsecond:
         items.append("picosecondsToDiffTime")
     return items
@@ -538,6 +590,9 @@ def _build_scalar_body_preamble(
                 _datetime_import_items(
                     has_from_gregorian="fromGregorian" in import_items,
                     has_microsecond=_has_microsecond_datetime(data=data),
+                    has_nonmicrosecond=_has_nonmicrosecond_datetime(
+                        data=data,
+                    ),
                 ),
             )
 
@@ -572,10 +627,18 @@ def _build_scalar_body_preamble(
         has_float = float in types
         has_int = int in types
         if emit_num and (has_float or has_int):
+            # The numeric catch-all for ``negate`` is redundant when
+            # ``Val`` has only numeric constructors, because the
+            # specific ``HInt`` / ``HFloat`` clauses cover the type.
+            num_constructor_count = (1 if has_int else 0) + (
+                1 if has_float else 0
+            )
+            needs_catchall = len(data_val_parts) > num_constructor_count
             instances.append(
                 _num_instance(
                     has_int=has_int,
                     has_float=has_float,
+                    needs_catchall=needs_catchall,
                     type_name=type_name,
                     constructor_prefix=constructor_prefix,
                 ),
@@ -584,7 +647,7 @@ def _build_scalar_body_preamble(
             instances.append(
                 f"instance Fractional {type_name} where\n"
                 f"    fromRational r = {p}Float (realToFrac r)\n"
-                '    a / b = error "not implemented"'
+                '    _ / _ = error "not implemented"'
             )
 
         lines: list[str] = imports
@@ -650,7 +713,11 @@ def _format_haskell_declaration(
     base = base_declaration(name, value, data, modifiers)
     if isinstance(data, list):
         if sequence_declared_type is None:
-            return base
+            # TUPLE sequence format: pin each slot to ``Val`` so bare
+            # numeric literals in the tuple resolve via ``fromInteger``
+            # instead of triggering ``-Wtype-defaults``.
+            tuple_type = "(" + ", ".join(type_name for _ in data) + ")"
+            return f"{name} :: {tuple_type}\n{base}"
         return f"{name} :: {sequence_declared_type}\n{base}"
     return f"{name} :: {type_name}\n{base}"
 
@@ -1112,8 +1179,15 @@ class Haskell(metaclass=LanguageCls):
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module
-            # top level in Haskell, so wrap them in ``main``.
-            indented = textwrap.indent(text=content, prefix="    ")
+            # top level in Haskell, so wrap them in ``main``. Each call
+            # statement is bound via ``_ <- `` so that stubs returning
+            # ``IO Val`` (``StubReturn.VALUE``) do not trigger
+            # ``-Wunused-do-bind``. ``_ <-`` is also valid when the
+            # action returns ``IO ()``.
+            indented = "\n".join(
+                f"    _ <- {line}" if line.strip() else line
+                for line in content.split(sep="\n")
+            )
             return (
                 "module Check where\n"
                 + preamble
