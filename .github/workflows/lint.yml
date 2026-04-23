@@ -1071,9 +1071,16 @@ jobs:
 
   lint-mojo:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     concurrency:
-      group: lint-mojo
+      group: lint-mojo-${{ matrix.shard }}
       cancel-in-progress: false
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+      SHARD_COUNT: 4
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1097,40 +1104,38 @@ jobs:
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
       # kernel's default overcommit heuristic refuses the allocation and
       # Mojo crashes in libKGENCompilerRTShared.so before producing any
-      # output. Allow overcommit and add a 4 GB swap file so the kernel
-      # has enough headroom to accept the reservation — Mojo only
-      # actually touches ~320 MB of it.
+      # output. Stop idle services to free RAM, allow overcommit, and
+      # add a 10 GB swap file so the kernel has enough headroom to
+      # accept the reservation — Mojo only actually touches ~320 MB.
       - name: Expand memory headroom for Mojo
         if: steps.find-files.outputs.found == 'true'
         # The GitHub runner already ships a /swapfile mounted as swap, so
         # add a second file at a fresh path instead of overwriting it.
         run: |-
+          sudo systemctl stop docker.service docker.socket containerd snapd mono-xsp4 2>/dev/null || true
+          sudo sync
+          echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
           sudo sysctl -w vm.overcommit_memory=1
-          sudo fallocate -l 4G /mnt/extra-swapfile
+          sudo fallocate -l 10G /mnt/extra-swapfile
           sudo chmod 600 /mnt/extra-swapfile
           sudo mkswap /mnt/extra-swapfile
           sudo swapon /mnt/extra-swapfile
-      # Even with the headroom above, Mojo occasionally still crashes
-      # non-deterministically (tracked in  # 558). Retry each file a few
-      # times so one crash does not block the rest.
+      # `setarch -R` disables ASLR so Mojo's ~3.6 GB reservation can
+      # land in one contiguous virtual-address range, avoiding the
+      # libKGENCompilerRTShared.so crash seen under fragmented layouts.
       - name: Check Mojo syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
           failed=0
+          index=0
           while IFS= read -r -d '' f; do
-            ok=0
-            for attempt in 1 2 3; do
-              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
-                ok=1
-                break
+            if [ "$((index % SHARD_COUNT))" -eq "$SHARD_INDEX" ]; then
+              if ! setarch "$(uname -m)" -R pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
+                echo "::error::Failed: $f"
+                failed=1
               fi
-              echo "::warning::Attempt $attempt failed for $f, retrying..."
-              sleep 2
-            done
-            if [ "$ok" -eq 0 ]; then
-              echo "::error::Failed after 3 attempts: $f"
-              failed=1
             fi
+            index=$((index + 1))
           done < /tmp/files-to-lint
           exit "$failed"
 
