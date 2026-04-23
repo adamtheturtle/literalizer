@@ -250,6 +250,17 @@ def _format_ordered_map_value(
         if not (spec.skip_null_dict_values and v is None)
     ]
     parent_id = id(value)
+    sibling_list_values: list[list[Value]] = [
+        v for _, v in ordered_map_items if isinstance(v, list)
+    ]
+    outer_sequence_override = _compute_sequence_open_override(
+        items=sibling_list_values,
+        spec=spec,
+    )
+    position_overrides = _compute_sibling_list_position_overrides(
+        list_values=sibling_list_values,
+        spec=spec,
+    )
     pairs = [
         spec.format_ordered_map_entry(
             _format_value(
@@ -263,11 +274,12 @@ def _format_ordered_map_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_value(
+                formatted_value=_format_dict_entry_value(
                     value=v,
                     spec=spec,
-                    dict_open_override=None,
                     wrap_ids=wrap_ids,
+                    outer_sequence_override=outer_sequence_override,
+                    position_overrides=position_overrides,
                 ),
                 spec=spec,
             ),
@@ -595,7 +607,15 @@ def _format_list_value(
     """
     sequence_cfg = spec.sequence_format_config
 
-    if not value and sequence_cfg.empty_sequence is not None:
+    # When a parent has widened this position's opener, skip the
+    # hardcoded ``empty_sequence`` literal so the empty list still
+    # renders with the widened opener and stays type-consistent with
+    # its non-empty siblings.
+    if (
+        not value
+        and sequence_cfg.empty_sequence is not None
+        and sequence_open_override is None
+    ):
         return sequence_cfg.empty_sequence
     dict_open_override = _compute_sequence_dict_override(
         items=value,
