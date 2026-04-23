@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 
@@ -41,6 +41,10 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._heterogeneous import (
+    collect_heterogeneous_container_ids,
+    iter_wrapped_scalars,
+)
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
@@ -63,11 +67,11 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
+from literalizer.exceptions import IncompatibleFormatsError
 
 
 @beartype
@@ -79,6 +83,7 @@ def _apply_nim_variable_declaration(
     uses_typed_literal_for_scalars: bool,
     keyword: str,
     force_sequence: bool,
+    uses_json_wrap: bool,
 ) -> str:
     """Format a declaration, using ``@`` for flat sequences of
     simple scalars.
@@ -99,7 +104,7 @@ def _apply_nim_variable_declaration(
     )
     if use_sequence:
         return f"{keyword} {name} = @{value}"
-    if force_sequence:
+    if force_sequence or not uses_json_wrap:
         return f"{keyword} {name} = {value}"
     return f"{keyword} {name} = %* {value}"
 
@@ -110,6 +115,7 @@ def _make_variable_declaration(
     uses_typed_literal_for_scalars: bool,
     keyword: str,
     force_sequence: bool,
+    uses_json_wrap: bool,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Create a Nim variable declaration formatter."""
 
@@ -127,6 +133,7 @@ def _make_variable_declaration(
             uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
             keyword=keyword,
             force_sequence=force_sequence,
+            uses_json_wrap=uses_json_wrap,
         )
 
     return _format
@@ -139,6 +146,7 @@ def _apply_nim_variable_assignment(
     value: str,
     _data: Value,
     uses_typed_literal_for_scalars: bool,
+    uses_json_wrap: bool,
 ) -> str:
     """Format an assignment, using ``@`` for flat sequences of
     simple scalars.
@@ -152,6 +160,8 @@ def _apply_nim_variable_assignment(
         )
     ):
         return f"{name} = @{value}"
+    if not uses_json_wrap:
+        return f"{name} = {value}"
     return f"{name} = %* {value}"
 
 
@@ -159,6 +169,7 @@ def _apply_nim_variable_assignment(
 def _make_variable_assignment(
     *,
     uses_typed_literal_for_scalars: bool,
+    uses_json_wrap: bool,
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable assignment formatter."""
 
@@ -169,9 +180,230 @@ def _make_variable_assignment(
             value=value,
             _data=_data,
             uses_typed_literal_for_scalars=uses_typed_literal_for_scalars,
+            uses_json_wrap=uses_json_wrap,
         )
 
     return _format
+
+
+@dataclasses.dataclass(frozen=True)
+class _VariantSignature:
+    """Name and optional field info for one Nim object variant branch.
+
+    ``field_name`` and ``field_type`` are ``None`` for unit variants
+    (e.g. ``vkNull``); for payload-carrying variants they're the field
+    identifier and Nim type used inside the ``of`` branch.
+    """
+
+    kind_name: str
+    field_name: str | None
+    field_type: str | None
+
+
+@beartype
+def _nim_variant_for_scalar(  # noqa: PLR0911
+    *,
+    value: Scalar,
+    date_type: str,
+    datetime_type: str,
+) -> _VariantSignature:
+    """Return the Nim object-variant signature for *value*."""
+    match value:
+        case bool():
+            return _VariantSignature(
+                kind_name="vkBool",
+                field_name="boolVal",
+                field_type="bool",
+            )
+        case int():
+            return _VariantSignature(
+                kind_name="vkInt",
+                field_name="intVal",
+                field_type="int",
+            )
+        case float():
+            return _VariantSignature(
+                kind_name="vkFloat",
+                field_name="floatVal",
+                field_type="float",
+            )
+        case str():
+            return _VariantSignature(
+                kind_name="vkStr",
+                field_name="strVal",
+                field_type="string",
+            )
+        case bytes():
+            return _VariantSignature(
+                kind_name="vkBytes",
+                field_name="bytesVal",
+                field_type="string",
+            )
+        case datetime.datetime():
+            return _VariantSignature(
+                kind_name="vkDateTime",
+                field_name="dateTimeVal",
+                field_type=datetime_type,
+            )
+        case datetime.date():
+            return _VariantSignature(
+                kind_name="vkDate",
+                field_name="dateVal",
+                field_type=date_type,
+            )
+        case None:
+            return _VariantSignature(
+                kind_name="vkNull",
+                field_name=None,
+                field_type=None,
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@dataclasses.dataclass(frozen=True)
+class _HeterogeneousStrategyConfig:
+    """Configuration for one Nim heterogeneous-values strategy.
+
+    ``build_behavior`` produces the
+    :class:`~literalizer._language.HeterogeneousBehavior` exposed on a
+    Nim instance.  ``build_preamble`` produces the data-dependent
+    preamble callable (e.g. the object-variant type declaration).  Both
+    receive the Nim instance's configurable variant-type name and
+    scalar type names so the resulting functions can close over them.
+    """
+
+    build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
+    build_preamble: Callable[
+        [str, str, str],
+        Callable[[Value], tuple[str, ...]],
+    ]
+
+
+def _build_error_behavior(
+    _variant_name: str,
+    _date_type: str,
+    _datetime_type: str,
+    /,
+) -> HeterogeneousBehavior:
+    """ERROR strategy: no wrapping, no skipping of checks."""
+    return NO_HETEROGENEOUS_BEHAVIOR
+
+
+def _build_error_preamble(
+    _variant_name: str,
+    _date_type: str,
+    _datetime_type: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """ERROR strategy: no data-dependent preamble."""
+    return no_data_preamble
+
+
+def _needs_json_wrap_for_field(field_type: str | None) -> bool:
+    """Return whether *field_type* requires ``%*`` to convert a
+    formatted scalar into the variant payload.
+
+    The Nim ``NIM`` date / datetime formats emit a table-literal string
+    like ``{"year": ..., ...}`` that only becomes a value when
+    ``%*``-converted to a :class:`json.JsonNode`.
+    """
+    return field_type == "JsonNode"
+
+
+def _build_object_variant_behavior(
+    variant_name: str,
+    date_type: str,
+    datetime_type: str,
+    /,
+) -> HeterogeneousBehavior:
+    """OBJECT_VARIANT strategy: wrap scalars and skip scalar checks."""
+
+    def _compute(data: Value) -> frozenset[int]:
+        """Return container ids whose scalar children should wrap."""
+        return collect_heterogeneous_container_ids(data=data)
+
+    def _wrap(raw_value: Value, formatted: str) -> str:
+        """Wrap a scalar as ``{variant_name}(kind: ..., ...Val: ...)``."""
+        signature = _nim_variant_for_scalar(
+            value=cast("Scalar", raw_value),
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+        if signature.field_name is None:
+            return f"{variant_name}(kind: {signature.kind_name})"
+        payload = (
+            f"%*{formatted}"
+            if _needs_json_wrap_for_field(field_type=signature.field_type)
+            else formatted
+        )
+        return (
+            f"{variant_name}(kind: {signature.kind_name}, "
+            f"{signature.field_name}: {payload})"
+        )
+
+    return HeterogeneousBehavior(
+        skip_scalar_checks=True,
+        compute_wrap_ids=_compute,
+        wrap_scalar=_wrap,
+    )
+
+
+def _build_object_variant_preamble(
+    variant_name: str,
+    date_type: str,
+    datetime_type: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """OBJECT_VARIANT strategy: emit an object-variant ``type`` block."""
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Build the object-variant type declaration for *data*."""
+        wrap_ids = collect_heterogeneous_container_ids(data=data)
+        if not wrap_ids:
+            return ()
+        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        variants: list[_VariantSignature] = []
+        seen: set[str] = set()
+        for scalar in scalars:
+            signature = _nim_variant_for_scalar(
+                value=scalar,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+            if signature.kind_name in seen:
+                continue
+            seen.add(signature.kind_name)
+            variants.append(signature)
+        kind_type = f"{variant_name}Kind"
+        lines: list[str] = [
+            "type",
+            f"  {kind_type} = enum",
+            "    " + ", ".join(v.kind_name for v in variants),
+            f"  {variant_name} = object",
+            f"    case kind: {kind_type}",
+        ]
+        for variant in variants:
+            if variant.field_name is None:
+                lines.append(f"    of {variant.kind_name}: discard")
+            else:
+                lines.append(
+                    f"    of {variant.kind_name}: "
+                    f"{variant.field_name}: {variant.field_type}"
+                )
+        return tuple(lines)
+
+    return _preamble
+
+
+_ERROR_STRATEGY = _HeterogeneousStrategyConfig(
+    build_behavior=_build_error_behavior,
+    build_preamble=_build_error_preamble,
+)
+_OBJECT_VARIANT_STRATEGY = _HeterogeneousStrategyConfig(
+    build_behavior=_build_object_variant_behavior,
+    build_preamble=_build_object_variant_preamble,
+)
 
 
 @beartype
@@ -471,15 +703,52 @@ class Nim(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for representing dicts or lists whose scalar values
+        span more than one Nim type.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = _ERROR_STRATEGY
+        """Raise
+        :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
+        (or
+        :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
+        when scalar values of mixed types appear in a container that
+        cannot represent them.  This is the default, matching Nim's
+        strict-typing convention when tables and sequences are used
+        without JSON wrapping.
+        """
+
+        OBJECT_VARIANT = _OBJECT_VARIANT_STRATEGY
+        """Auto-generate a Nim object variant in the preamble containing
+        only the branches actually present in the data, and wrap each
+        heterogeneous scalar value as
+        ``{VariantName}(kind: vkX, xVal: value)``.
+
+        Switches the dict rendering from ``%* {key: value}`` (which
+        relies on the ``json`` module) to ``{key: value}.toTable`` so
+        that the object-variant values can be stored directly.  Nested
+        sequences emit ``@[...]`` at every level, and the ``json``
+        import is dropped unless a date or datetime format still
+        produces a ``JsonNode`` payload.
+
+        The variant-type name is configurable via
+        :attr:`Nim.heterogeneous_value_variant_name` (default
+        ``"Value"``).  Incompatible with ``DeclarationStyles.CONST``:
+        ``.toTable`` and ``@[]`` are runtime constructors, so
+        ``CONST`` requires a compile-time-expressible initializer.
+        """
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        ``OBJECT_VARIANT`` swaps the dict syntax for runtime
+        ``.toTable`` calls that ``CONST`` cannot evaluate at compile
+        time.  The declaration-style check is in :meth:`__post_init__`;
+        this method is the ``Language`` protocol's no-op entry point.
+        """
+        del data
 
     @staticmethod
     def wrap_in_file(
@@ -532,7 +801,30 @@ class Nim(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    heterogeneous_value_variant_name: str = "Value"
     indent: str = "    "
+
+    def __post_init__(self) -> None:
+        """Validate that incompatible formats are not combined.
+
+        ``OBJECT_VARIANT`` replaces Nim's JSON-based rendering with
+        runtime ``.toTable`` / ``@[]`` constructors, so ``CONST``
+        (which requires a compile-time-expressible initializer)
+        cannot be combined with it.
+        """
+        _decl_cls = type(self.declaration_style)
+        _strategy_cls = type(self.heterogeneous_strategy)
+        if (
+            self.declaration_style is _decl_cls.CONST
+            and self.heterogeneous_strategy is _strategy_cls.OBJECT_VARIANT
+        ):
+            msg = (
+                "Nim CONST requires a constant-expression initializer, "
+                "but OBJECT_VARIANT produces runtime .toTable / @[] "
+                "calls which are not constant expressions. "
+                "Use VAR or LET instead."
+            )
+            raise IncompatibleFormatsError(msg)
 
     null_literal: ClassVar[str] = "nil"
     true_literal: ClassVar[str] = "true"
@@ -567,14 +859,55 @@ class Nim(metaclass=LanguageCls):
         return passthrough_set_entry
 
     @cached_property
+    def _heterogeneous_variant_date_type(self) -> str:
+        """Nim type used for :class:`datetime.date` variant payloads."""
+        return (
+            "string"
+            if self.date_format.value.type_produced is str
+            else "JsonNode"
+        )
+
+    @cached_property
+    def _heterogeneous_variant_datetime_type(self) -> str:
+        """Nim type used for :class:`datetime.datetime` variant
+        payloads.
+        """
+        return (
+            "string"
+            if self.datetime_format.value.type_produced is str
+            else "JsonNode"
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits a Nim
+        ``type`` block declaring the object variant used to wrap
+        heterogeneous scalars.  Other strategies produce no preamble.
+        """
+        return self.heterogeneous_strategy.value.build_preamble(
+            self.heterogeneous_value_variant_name,
+            self._heterogeneous_variant_date_type,
+            self._heterogeneous_variant_datetime_type,
+        )
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self.heterogeneous_strategy.value.build_behavior(
+            self.heterogeneous_value_variant_name,
+            self._heterogeneous_variant_date_type,
+            self._heterogeneous_variant_datetime_type,
+        )
+
+    @cached_property
+    def _uses_object_variant(self) -> bool:
+        """Whether the instance is configured for the OBJECT_VARIANT
+        heterogeneous strategy.
+        """
+        cls = type(self.heterogeneous_strategy)
+        return self.heterogeneous_strategy is cls.OBJECT_VARIANT
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -606,8 +939,23 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        """Configuration for the chosen sequence format.
+
+        ``OBJECT_VARIANT`` replaces the JSON-array opener with
+        ``@[`` so nested sequences render as Nim-native ``seq``
+        literals at every level (the declaration formatter no longer
+        adds a leading ``@`` because ``uses_typed_literal_for_scalars``
+        is turned off).
+        """
+        base = self.sequence_format.value
+        if not self._uses_object_variant:
+            return base
+        return dataclasses.replace(
+            base,
+            sequence_open=fixed_open(open_str="@["),
+            uses_typed_literal_for_scalars=False,
+            preamble_lines=(),
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
@@ -617,11 +965,28 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
-        return self.sequence_format.value.sequence_open
+        return self.sequence_format_config.sequence_open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
+        """Configuration for dict formatting.
+
+        ``OBJECT_VARIANT`` appends ``.toTable`` to the closing brace so
+        every rendered dict becomes a runtime :class:`tables.Table`,
+        and imports the ``tables`` module instead of ``json``.
+        """
+        if self._uses_object_variant:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="{"),
+                close="}.toTable",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=None,
+                preamble_lines=("import tables",),
+                narrowed_open=None,
+            )
         return DictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
@@ -677,6 +1042,12 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._uses_object_variant:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(open_str="{"),
+                close="}.toOrderedTable",
+                preamble_lines=("import tables",),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
@@ -699,10 +1070,11 @@ class Nim(metaclass=LanguageCls):
         is_const = self.declaration_style is self.declaration_styles.CONST
         return _make_variable_declaration(
             uses_typed_literal_for_scalars=(
-                self.sequence_format.value.uses_typed_literal_for_scalars
+                self.sequence_format_config.uses_typed_literal_for_scalars
             ),
             keyword=self.declaration_style.name.lower(),
             force_sequence=is_const,
+            uses_json_wrap=not self._uses_object_variant,
         )
 
     @cached_property
@@ -712,13 +1084,39 @@ class Nim(metaclass=LanguageCls):
         """Callable that formats an assignment to an existing variable."""
         return _make_variable_assignment(
             uses_typed_literal_for_scalars=(
-                self.sequence_format.value.uses_typed_literal_for_scalars
+                self.sequence_format_config.uses_typed_literal_for_scalars
             ),
+            uses_json_wrap=not self._uses_object_variant,
         )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble for Nim scalar types."""
+        """Per-instance scalar preamble for Nim scalar types.
+
+        Under the default ``ERROR`` heterogeneous strategy every
+        scalar requires ``import json`` so the ``%*`` macro can
+        convert it to a :class:`json.JsonNode`.  Under
+        ``OBJECT_VARIANT`` scalars are emitted as native Nim values,
+        so ``import json`` is dropped except when the chosen
+        ``NIM`` date / datetime format still produces a
+        :class:`json.JsonNode` payload.
+        """
+        if self._uses_object_variant:
+            json_import = ("import json",)
+            date_preamble = (
+                ()
+                if self.date_format.value.type_produced is str
+                else json_import
+            )
+            datetime_preamble = (
+                ()
+                if self.datetime_format.value.type_produced is str
+                else json_import
+            )
+            return {
+                datetime.date: date_preamble,
+                datetime.datetime: datetime_preamble,
+            }
         json_import = ("import json",)
         return {
             str: json_import,
