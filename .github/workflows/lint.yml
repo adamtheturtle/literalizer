@@ -950,13 +950,12 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.ps1
+      # Parse every fixture inside a single pwsh invocation so the .NET
+      # and PowerShell startup cost is paid once instead of per fixture.
       - name: Check PowerShell syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            pwsh -NoProfile -NonInteractive -Command \
-              "\$null = [scriptblock]::Create((Get-Content -Raw '$f'))" || exit 1
-          done < /tmp/files-to-lint
+        run: pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1
+          < /tmp/files-to-lint
 
   lint-ada:
     runs-on: ubuntu-latest
