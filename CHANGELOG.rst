@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- ``CSharp.format_call_stub`` now emits a parameter list sized to the
+  call's ``parameter_names`` count for single-name targets
+  (``dynamic process(dynamic _a0, dynamic _a1) => null;``) instead of
+  hard-coding a single ``dynamic a`` parameter, so a single-name call
+  target wired up with two or more parameter names produces a stub
+  that ``dotnet build`` accepts rather than rejecting it with
+  ``CS1501 No overload for method 'process' takes 2 arguments``.
+  Pre-existing single-parameter golden files are renamed from ``a``
+  to ``_a0``.  A new ``call_multi_args`` integration case exercises
+  the single-name + multi-parameter combination across the
+  call-capable languages.
 - Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT``
   option that auto-generates a Nim object variant in the preamble
   whenever a dict, list, or sibling-list pair contains scalar values
