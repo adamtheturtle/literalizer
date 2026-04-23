@@ -47,6 +47,7 @@ from literalizer.languages import (
     Haskell,
     Kotlin,
     Mojo,
+    Nim,
     OCaml,
     Odin,
     PureScript,
@@ -152,6 +153,13 @@ _HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES: dict[
 _HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
     literalizer.LanguageCls, str
 ] = {Dhall: "JsonValue"}
+
+# Languages whose heterogeneous-value variant name is configurable
+# (the Nim ``OBJECT_VARIANT`` strategy); the value is the test
+# override to apply.
+_HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES: dict[
+    literalizer.LanguageCls, str
+] = {Nim: "JsonValue"}
 
 # Languages that accept constructor-name kwargs (Fortran) or field-name
 # kwargs (C); the inner dict is the kwargs to pass to the constructor.
@@ -671,6 +679,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
     ),
     _CallCaseConfig(
+        case_dir_name="call_multi_args",
+        target_function="process",
+        parameter_names=["value", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+    ),
+    _CallCaseConfig(
         case_dir_name="call_dotted_method",
         target_function="app.client.fetch",
         parameter_names=["payload"],
@@ -709,6 +725,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=False,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_mixed_type_dicts",
+        target_function="app.mgr.op",
+        parameter_names=["operation"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
     ),
     *[
         _CallCaseConfig(
@@ -1114,6 +1138,42 @@ def _build_heterogeneous_value_union_name_variants() -> Iterable[_Variant]:
                 name=(
                     f"{lang_cls.__name__}"
                     f"_heterogeneous_value_union_name_{custom_name}"
+                ),
+                spec=spec,
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
+
+
+@beartype
+def _build_heterogeneous_value_variant_name_variants() -> Iterable[_Variant]:
+    """Build heterogeneous-value-variant-name variants for languages
+    that generate a named object variant for their heterogeneous
+    strategy (e.g. the Nim ``OBJECT_VARIANT``).  The
+    ``heterogeneous_value_variant_name`` constructor parameter lets
+    users customize that name.
+    """
+    variants: list[_Variant] = []
+    for lang_cls in _sorted_languages():
+        custom_name = _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES.get(lang_cls)
+        if custom_name is None:
+            continue
+        default_spec = _spec(lang_cls=lang_cls)
+        object_variant = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "OBJECT_VARIANT"
+        )
+        spec = lang_cls(
+            heterogeneous_strategy=object_variant,
+            heterogeneous_value_variant_name=custom_name,
+        )
+        variants.append(
+            _Variant(
+                name=(
+                    f"{lang_cls.__name__}"
+                    f"_heterogeneous_value_variant_name_{custom_name}"
                 ),
                 spec=spec,
                 lang_cls=lang_cls,
@@ -1644,6 +1704,11 @@ def _build_variant_cases() -> list[_VariantCase]:
         ),
         (
             _build_heterogeneous_value_union_name_variants(),
+            "dict_mixed_scalars",
+            "",
+        ),
+        (
+            _build_heterogeneous_value_variant_name_variants(),
             "dict_mixed_scalars",
             "",
         ),
@@ -2189,15 +2254,24 @@ def test_call_golden_file(
     spec = _spec(lang_cls=lang_cls, **kwargs)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    result = literalizer.literalize_call(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        target_function=config.target_function,
-        parameter_names=config.parameter_names,
-        call_transform=config.call_transform,
-        per_element=config.per_element,
-    )
+    lang_name = lang_cls.__name__
+    golden_name = f"{lang_name}_call"
+    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    try:
+        result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} cannot represent this heterogeneous input",
+        )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
@@ -2246,12 +2320,10 @@ def test_call_golden_file(
     )
     all_preamble = result.preamble + tuple(preamble_stubs)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
-    lang_name = lang_cls.__name__
-    golden_name = f"{lang_name}_call"
     _check_golden(
         file_regression=file_regression,
         contents=wrapped + "\n",
         extension=lang_cls.extension,
         newline="",
-        golden_path=input_path.parent / (golden_name + lang_cls.extension),
+        golden_path=golden_path,
     )
