@@ -10,10 +10,10 @@ Next
   that the existing ``groovyc`` compile-only step let through.
   ``Groovy.format_call_stub`` now emits a single ``Map _args`` method
   parameter when ``call_style`` is ``KEYWORD`` — previously the
-  keyword-args fixture tripped ``MissingMethodException`` because
-  Groovy passes named arguments as a single ``LinkedHashMap`` that a
-  positional parameter list rejects.  ``POSITIONAL`` stubs keep the
-  concrete parameter list unchanged.
+  ``call_keyword_args`` fixture tripped ``MissingMethodException``
+  because Groovy passes named arguments as a single ``LinkedHashMap``
+  that a positional parameter list rejects.  ``POSITIONAL`` stubs
+  keep the concrete parameter list unchanged.
 - ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm
   fixture end-to-end.  A new ``Run Elm files`` step compiles each
   fixture alongside a small ``Main.elm`` wrapper whose
