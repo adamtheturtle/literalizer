@@ -67,6 +67,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -713,9 +714,9 @@ class Nim(metaclass=LanguageCls):
         (or
         :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
         when scalar values of mixed types appear in a container that
-        cannot represent them.  This is the default, matching Nim's
-        strict-typing convention when tables and sequences are used
-        without JSON wrapping.
+        cannot represent them.  This is the default, matching the
+        strict-typing convention of Nim when tables and sequences are
+        used without JSON wrapping.
         """
 
         OBJECT_VARIANT = _OBJECT_VARIANT_STRATEGY
@@ -740,15 +741,7 @@ class Nim(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    def validate_spec_for_data(self, data: Value) -> None:
-        """Raise if the spec cannot produce valid code for *data*.
-
-        ``OBJECT_VARIANT`` swaps the dict syntax for runtime
-        ``.toTable`` calls that ``CONST`` cannot evaluate at compile
-        time.  The declaration-style check is in :meth:`__post_init__`;
-        this method is the ``Language`` protocol's no-op entry point.
-        """
-        del data
+    validate_spec_for_data = no_validate_spec_for_data
 
     @staticmethod
     def wrap_in_file(
@@ -807,8 +800,8 @@ class Nim(metaclass=LanguageCls):
     def __post_init__(self) -> None:
         """Validate that incompatible formats are not combined.
 
-        ``OBJECT_VARIANT`` replaces Nim's JSON-based rendering with
-        runtime ``.toTable`` / ``@[]`` constructors, so ``CONST``
+        ``OBJECT_VARIANT`` replaces the JSON-based rendering for Nim
+        with runtime ``.toTable`` / ``@[]`` constructors, so ``CONST``
         (which requires a compile-time-expressible initializer)
         cannot be combined with it.
         """

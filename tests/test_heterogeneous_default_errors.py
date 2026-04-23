@@ -2,11 +2,11 @@
 contract.
 
 Languages with an opt-in wrapping strategy (Rust's ``TAGGED_ENUM``,
-Dhall's ``UNION_TYPE``, Nim's ``OBJECT_VARIANT``) must still raise on
-heterogeneous input under the default ``ERROR`` strategy.  The
-integration framework catches ``HeterogeneousCollectionError`` and
-silently skips, so the error contract has no golden-file surface and
-needs unit coverage.
+Dhall's ``UNION_TYPE``, and the Nim ``OBJECT_VARIANT``) must still
+raise on heterogeneous input under the default ``ERROR`` strategy.
+The integration framework catches ``HeterogeneousCollectionError``
+and silently skips, so the error contract has no golden-file surface
+and needs unit coverage.
 """
 
 import pytest

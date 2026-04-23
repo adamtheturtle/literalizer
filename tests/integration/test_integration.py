@@ -155,8 +155,8 @@ _HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
 ] = {Dhall: "JsonValue"}
 
 # Languages whose heterogeneous-value variant name is configurable
-# (Nim's ``OBJECT_VARIANT`` strategy); the value is the test override
-# to apply.
+# (the Nim ``OBJECT_VARIANT`` strategy); the value is the test
+# override to apply.
 _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES: dict[
     literalizer.LanguageCls, str
 ] = {Nim: "JsonValue"}
@@ -1134,7 +1134,7 @@ def _build_heterogeneous_value_union_name_variants() -> Iterable[_Variant]:
 def _build_heterogeneous_value_variant_name_variants() -> Iterable[_Variant]:
     """Build heterogeneous-value-variant-name variants for languages
     that generate a named object variant for their heterogeneous
-    strategy (e.g. Nim's ``OBJECT_VARIANT``).  The
+    strategy (e.g. the Nim ``OBJECT_VARIANT``).  The
     ``heterogeneous_value_variant_name`` constructor parameter lets
     users customize that name.
     """
