@@ -385,12 +385,14 @@ def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
     rather than inside the comment.
     """
     lines = value.split(sep="\n")
-    split_index = len(lines)
-    for index in range(len(lines) - 1, -1, -1):
-        if lines[index].lstrip().startswith("//"):
-            split_index = index
-            continue
-        break
+    split_index = next(
+        (
+            index + 1
+            for index, line in reversed(list(enumerate(iterable=lines)))
+            if not line.lstrip().startswith("//")
+        ),
+        0,
+    )
     if split_index == len(lines):
         return _JavaTerminatedValue(code=value, trailing="")
     code = "\n".join(lines[:split_index])
