@@ -11,10 +11,10 @@ Next
   target wired up with two or more parameter names produces a stub
   that ``dotnet build`` accepts rather than rejecting it with
   ``CS1501 No overload for method 'process' takes 2 arguments``.
-  Pre-existing single-parameter goldens are renamed from ``a`` to
-  ``_a0``.  A new ``call_multi_args`` integration case exercises the
-  single-name + multi-parameter combination across the call-capable
-  languages.
+  Pre-existing single-parameter golden files are renamed from ``a``
+  to ``_a0``.  A new ``call_multi_args`` integration case exercises
+  the single-name + multi-parameter combination across the
+  call-capable languages.
 - The ``heterogeneous_strategy`` variant case list now includes the
   ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
   ``UNION_TYPE`` rendering on ``!!omap`` inputs.
