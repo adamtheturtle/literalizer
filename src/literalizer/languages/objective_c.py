@@ -29,6 +29,8 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal_c_style,
+    make_overflow_fallback_formatter,
+    make_ull_fallback,
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -633,8 +635,18 @@ class ObjectiveC(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format
+        """Callable that formats an int value as a literal.
+
+        Values above ``LLONG_MAX`` get a ``ULL`` suffix so clang does
+        not reinterpret the literal as an unsigned type and emit the
+        warning the lint workflow treats as an error; values below
+        ``LLONG_MIN`` raise ``UnrepresentableIntegerError`` since no
+        signed or unsigned 64-bit integer can hold them.
+        """
+        return make_overflow_fallback_formatter(
+            base=self.integer_format,
+            fallback=make_ull_fallback(language_name="Objective-C"),
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

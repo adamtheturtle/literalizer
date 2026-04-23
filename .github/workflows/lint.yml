@@ -1379,7 +1379,8 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
       - name: Check Objective-C syntax
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror <
+          /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula.
       - name: Install clang-tidy
@@ -1397,7 +1398,7 @@ jobs:
           trap 'rm -rf "$tmpdir"' EXIT
           while IFS= read -r -d '' f; do
             out="$tmpdir/out"
-            clang -framework Foundation "$f" .github/scripts/objc_main.m -o "$out" || exit 1
+            clang -framework Foundation -Werror "$f" .github/scripts/objc_main.m -o "$out" || exit 1
             "$out" || exit 1
           done < /tmp/files-to-lint
 
