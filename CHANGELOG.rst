@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.23
+----------
+
+
 - Sibling sequences that appear as values of the same dict now widen
   to a common element type at each matching position, so a caller
   iterating the dict values tuple-style sees a consistent element
