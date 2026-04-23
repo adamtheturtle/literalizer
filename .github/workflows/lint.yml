@@ -670,10 +670,9 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check HCL syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            hcl2json "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: >-
+          xargs -0 -P "$(nproc)" -n1 hcl2json
+          < /tmp/files-to-lint > /dev/null
 
   lint-clojure:
     runs-on: ubuntu-latest
