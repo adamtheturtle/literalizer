@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- ``lint-objectivec`` in ``.github/workflows/lint.yml`` now passes
+  ``-Werror`` to both ``clang -fsyntax-only`` and the end-to-end
+  ``clang`` compile step so warnings such as
+  ``-Wimplicitly-unsigned-literal`` fail the job instead of being
+  silently logged.  ``ObjectiveC.format_integer`` now appends a
+  ``ULL`` suffix to values above ``LLONG_MAX`` (matching the C
+  fallback) and raises ``UnrepresentableIntegerError`` for values
+  below ``LLONG_MIN``, so emitted fixtures compile cleanly under the
+  stricter workflow.
 - ``CSharp.format_call_stub`` now emits a parameter list sized to the
   call's ``parameter_names`` count for single-name targets
   (``dynamic process(dynamic _a0, dynamic _a1) => null;``) instead of
