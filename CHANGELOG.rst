@@ -16,6 +16,24 @@ Next
   terminator.  A pre-existing casing bug in the workflow's
   ``lang_patterns`` (``objective_c*.m`` instead of ``ObjectiveC*.m``)
   that silently skipped every fixture is also fixed.
+- ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm
+  fixture end-to-end.  A new ``Run Elm files`` step compiles each
+  fixture alongside a small ``Main.elm`` wrapper whose
+  ``Platform.worker`` init forces ``Check.my_data``, emits
+  JavaScript via ``elm make``, and executes it with Node so
+  runtime crashes such as ``Debug.todo`` surface in CI.  The
+  ``scalar_int_very_negative_large`` fixture is skipped because
+  the Elm 0.19.1 code generator emits ``--<digits>`` (two unary
+  minuses) for integers at the int64 boundary, which JavaScript
+  rejects as a prefix-decrement syntax error.
+- ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each
+  Standard ML fixture end-to-end.  Because ``MLton`` never evaluates
+  a ``structure``'s body unless a top-level expression forces it,
+  the new step compiles each fixture via an ML Basis file that
+  concatenates the fixture with a small ``val _ = Check.my_data``
+  snippet and runs the resulting binary, catching runtime errors
+  such as references to undefined names, missing module imports,
+  or failed assertions.
 - Removed the K&R-style empty-prototype suppression directives from
   C and Objective-C call stubs.
   ``C.format_call_preamble_stub`` and

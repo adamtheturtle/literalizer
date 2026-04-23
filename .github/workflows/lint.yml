@@ -298,6 +298,20 @@ jobs:
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
+      # Fixtures define `void check_()` with no main, so compile alongside
+      # a tiny wrapper that invokes it and link into a runnable binary.
+      - name: Run C++ files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf $tmpdir" EXIT
+            printf "void check_();\nint main(){ check_(); return 0; }\n" \
+              > "$tmpdir/__main.cpp"
+            clang++ -std=c++20 "$0" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
+            "$tmpdir/run" || exit 1
+          ' < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -433,7 +447,9 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.elm
-          extra_config_patterns: check_elm_syntax.py
+          extra_config_patterns: |
+            check_elm_syntax.py
+            run_elm.py
       - name: Install elm-format and elm
         if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm
@@ -452,6 +468,9 @@ jobs:
       - name: Check Elm compiles
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
+      - name: Run Elm files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 uv run --no-project python run_elm.py < /tmp/files-to-lint
 
   lint-erlang:
     runs-on: ubuntu-latest
@@ -546,6 +565,30 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           xargs -0 -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
+      # Most fixtures declare only `module Check` with a `my_data` val; GHC
+      # never evaluates its body unless a top-level expression references it,
+      # so compile alongside a small Main wrapper that forces `Check.my_data`.
+      # Fixtures that already define their own `main` compile with
+      # `-main-is Check` instead.
+      - name: Run Haskell files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf $tmpdir" EXIT
+            cp "$0" "$tmpdir/Check.hs"
+            if grep -qE "^main " "$0"; then
+              ghc -main-is Check -outputdir "$tmpdir" \
+                -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
+            else
+              printf "module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n" \
+                > "$tmpdir/Main.hs"
+              ghc -outputdir "$tmpdir" \
+                -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
+            fi
+            "$tmpdir/run" || exit 1
+          ' < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -1176,6 +1219,24 @@ jobs:
       - name: Check SML syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 mlton -stop tc < /tmp/files-to-lint
+      # Fixtures only declare `structure Check` with a `my_data` val;
+      # MLton never evaluates the body unless a top-level expression
+      # references it, so compile alongside a small force file that
+      # forces `Check.my_data` to be constructed.
+      - name: Run SML files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir/SML_LIB expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf $tmpdir" EXIT
+            cp "$0" "$tmpdir/check.sml"
+            printf "val _ = Check.my_data\n" > "$tmpdir/force.sml"
+            printf "\$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n" \
+              > "$tmpdir/main.mlb"
+            mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+            "$tmpdir/out" || exit 1
+          ' < /tmp/files-to-lint
 
   lint-scheme:
     runs-on: ubuntu-latest
@@ -1210,6 +1271,9 @@ jobs:
       - name: Check Raku syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
+      - name: Run Raku files
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 raku < /tmp/files-to-lint
 
   lint-zig:
     runs-on: ubuntu-latest
@@ -1344,6 +1408,7 @@ jobs:
 
   lint-fortran:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1352,13 +1417,30 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.f90
-      - name: Install gfortran
-        if: steps.find-files.outputs.found == 'true'
-        uses: fortran-lang/setup-fortran@v1
       - name: Check Fortran syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
           /tmp/files-to-lint
+      # Every fixture defines its own `fval_m` module, and the syntax
+      # check above leaves an `fval_m.mod` in the working directory
+      # (gfortran emits .mod files even under `-fsyntax-only`). gfortran
+      # would then reuse that stale .mod instead of recompiling each
+      # file's inline module, masking references to names defined only
+      # in the current file. Compile each file from inside a private
+      # tmpdir so the stale .mod is not on the module search path and
+      # parallel runs cannot clobber each other's output.
+      - name: Run Fortran files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          # shellcheck disable=SC2016  # $0/$tmpdir/$src expand in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            tmpdir=$(mktemp -d)
+            trap "rm -rf \"$tmpdir\"" EXIT
+            src=$(realpath "$0")
+            cd "$tmpdir" || exit 1
+            gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+            ./run || exit 1
+          ' < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
