@@ -978,28 +978,11 @@ jobs:
           sudo chmod 600 /mnt/extra-swapfile
           sudo mkswap /mnt/extra-swapfile
           sudo swapon /mnt/extra-swapfile
-      # Even with the headroom above, Mojo occasionally still crashes
-      # non-deterministically (tracked in  # 558). Retry each file a few
-      # times so one crash does not block the rest.
       - name: Check Mojo syntax
         run: |-
-          failed=0
           while IFS= read -r -d '' f; do
-            ok=0
-            for attempt in 1 2 3; do
-              if mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
-                ok=1
-                break
-              fi
-              echo "::warning::Attempt $attempt failed for $f, retrying..."
-              sleep 2
-            done
-            if [ "$ok" -eq 0 ]; then
-              echo "::error::Failed after 3 attempts: $f"
-              failed=1
-            fi
+            mojo run --Werror "$GITHUB_WORKSPACE/$f" || exit 1
           done < /tmp/files-to-lint
-          exit "$failed"
 
   lint-nim:
     runs-on: ubuntu-latest
