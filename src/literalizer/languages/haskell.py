@@ -1186,7 +1186,7 @@ class Haskell(metaclass=LanguageCls):
             # action returns ``IO ()``.
             indented = "\n".join(
                 f"    _ <- {line}" if line.strip() else line
-                for line in content.split("\n")
+                for line in content.split(sep="\n")
             )
             return (
                 "module Check where\n"
