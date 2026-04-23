@@ -238,13 +238,12 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.java
+          extra_config_patterns: CheckJavaSyntax.java
+      # Drive compilation through the JavaCompiler API in a single JVM
+      # rather than cold-starting `javac` per fixture.
       - name: Check Java syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          tmpdir=$(mktemp -d)
-          while IFS= read -r -d '' f; do
-            javac -d "$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 java CheckJavaSyntax.java < /tmp/files-to-lint
 
   lint-c:
     runs-on: ubuntu-latest
