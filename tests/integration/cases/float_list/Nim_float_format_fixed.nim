@@ -1,4 +1,3 @@
-import json
 var my_data = @[
     1.100000,
     -2.200000,

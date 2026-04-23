@@ -61,7 +61,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     identity_call_target,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
     wrap_combined_in_file_noop,
@@ -214,11 +213,11 @@ class Nim(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template='{{"year": {year}, "month": {month}, "day": {day}}}',
             ),
-            preamble_lines=("import json",),
+            preamble_lines=(),
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
-            preamble_lines=("import json",),
+            preamble_lines=(),
             type_produced=str,
         )
 
@@ -235,11 +234,11 @@ class Nim(metaclass=LanguageCls):
                 '"day": {day}, "hour": {hour}, '
                 '"minute": {minute}, "second": {second}}}',
             ),
-            preamble_lines=("import json",),
+            preamble_lines=(),
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            preamble_lines=("import json",),
+            preamble_lines=(),
             type_produced=str,
         )
 
@@ -267,7 +266,7 @@ class Nim(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
             empty_sequence=None,
-            preamble_lines=("import json",),
+            preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=True,
@@ -281,7 +280,7 @@ class Nim(metaclass=LanguageCls):
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
             empty_sequence=None,
-            preamble_lines=("import json",),
+            preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
@@ -296,7 +295,7 @@ class Nim(metaclass=LanguageCls):
             set_open=fixed_open(open_str="["),
             close="]",
             empty_set=None,
-            preamble_lines=("import json",),
+            preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
         )
@@ -568,8 +567,37 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return ``("import json",)`` when the rendered output will use
+        the ``%*`` JSON-construction operator, ``()`` otherwise.
+
+        ``%*`` is emitted by every variable declaration/assignment except
+        ``const`` declarations and ``@``-prefixed sequences of simple
+        scalars. Importing ``json`` unconditionally would trigger the
+        compiler's ``UnusedImport`` warning for those cases.
+        """
+        is_const = self.declaration_style is self.declaration_styles.CONST
+        uses_typed_literal = (
+            self.sequence_format.value.uses_typed_literal_for_scalars
+        )
+
+        def _preamble(data: Value, /) -> tuple[str, ...]:
+            """Decide whether ``import json`` is required for *data*."""
+            if is_const:
+                return ()
+            renders_as_at_sequence = (
+                isinstance(data, list)
+                and bool(data)
+                and uses_typed_literal
+                and all(
+                    isinstance(item, (str, int, float, bool, bytes))
+                    for item in data
+                )
+            )
+            if renders_as_at_sequence:
+                return ()
+            return ("import json",)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -630,7 +658,7 @@ class Nim(metaclass=LanguageCls):
                 format_value=passthrough_sequence_entry,
             ),
             empty_dict=None,
-            preamble_lines=("import json",),
+            preamble_lines=(),
             narrowed_open=None,
         )
 
@@ -680,7 +708,7 @@ class Nim(metaclass=LanguageCls):
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
-            preamble_lines=("import json",),
+            preamble_lines=(),
         )
 
     @cached_property
@@ -718,15 +746,12 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble for Nim scalar types."""
-        json_import = ("import json",)
+        """Per-instance scalar preamble for Nim scalar types.
+
+        ``import json`` is added separately by :attr:`data_dependent_preamble`
+        only when the rendered output uses ``%*``.
+        """
         return {
-            str: json_import,
-            int: json_import,
-            float: json_import,
-            bool: json_import,
-            type(None): json_import,
-            bytes: json_import,
             datetime.date: self.date_format.value.preamble_lines,
             datetime.datetime: self.datetime_format.value.preamble_lines,
         }
