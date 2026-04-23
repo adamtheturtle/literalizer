@@ -149,22 +149,7 @@ jobs:
       # some fixtures declare top-level classes with shared names.
       - name: Check and run Groovy files
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          cat > /tmp/lint.groovy <<'SCRIPT'
-          def content = new String(new File('/tmp/files-to-lint').bytes)
-          def paths = content.split('\0').findAll { it }
-          def failed = false
-          paths.each { p ->
-              try {
-                  new GroovyShell().parse(new File(p)).run()
-              } catch (Throwable t) {
-                  System.err.println("FAIL ${p}:\n${t.message}")
-                  failed = true
-              }
-          }
-          System.exit(failed ? 1 : 0)
-          SCRIPT
-          groovy /tmp/lint.groovy
+        run: groovy .github/scripts/lint-groovy.groovy < /tmp/files-to-lint
 
   lint-javascript:
     runs-on: ubuntu-latest
@@ -307,15 +292,10 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: |
-            .clang-tidy
-            .github/scripts/cpp_main.cpp
+          extra_config_patterns: .github/scripts/cpp_main.cpp
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
-      - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # `.github/scripts/cpp_main.cpp` which invokes it and link into a
       # runnable binary.
@@ -330,6 +310,21 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+
+  lint-cpp-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.cpp
+          extra_config_patterns: .clang-tidy
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -1071,7 +1066,11 @@ jobs:
       - name: Install Mojo
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          pixi global install --channel conda-forge --channel https://conda.modular.com/max mojo
+          pixi init "$RUNNER_TEMP/mojo-env" \
+            -c https://conda.modular.com/max \
+            -c conda-forge
+          pixi add --manifest-path "$RUNNER_TEMP/mojo-env/pixi.toml" mojo
+          echo "MOJO_PIXI_MANIFEST=$RUNNER_TEMP/mojo-env/pixi.toml" >> "$GITHUB_ENV"
       # Mojo reserves ~3.6 GB of virtual address space per invocation
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
       # kernel's default overcommit heuristic refuses the allocation and
@@ -1099,7 +1098,7 @@ jobs:
           while IFS= read -r -d '' f; do
             ok=0
             for attempt in 1 2 3; do
-              if mojo run --Werror "$f"; then
+              if pixi run --manifest-path "$MOJO_PIXI_MANIFEST" mojo run --Werror "$GITHUB_WORKSPACE/$f"; then
                 ok=1
                 break
               fi
@@ -1598,6 +1597,7 @@ jobs:
       - lint-c
       - lint-cobol
       - lint-cpp
+      - lint-cpp-tidy
       - lint-kotlin
       - lint-rust
       - lint-swift
