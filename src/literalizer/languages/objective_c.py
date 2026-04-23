@@ -637,11 +637,11 @@ class ObjectiveC(metaclass=LanguageCls):
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
-        Values outside the signed 64-bit range get a ``ULL`` suffix so
-        clang does not interpret the literal as an unsigned type
-        implicitly (``-Wimplicitly-unsigned-literal``); values below
-        ``-2^63`` raise ``UnrepresentableIntegerError`` since no signed
-        or unsigned 64-bit integer can hold them.
+        Values above ``LLONG_MAX`` get a ``ULL`` suffix so clang does
+        not reinterpret the literal as an unsigned type and emit the
+        warning the lint workflow treats as an error; values below
+        ``LLONG_MIN`` raise ``UnrepresentableIntegerError`` since no
+        signed or unsigned 64-bit integer can hold them.
         """
         return make_overflow_fallback_formatter(
             base=self.integer_format,
