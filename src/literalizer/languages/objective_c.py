@@ -20,8 +20,6 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
     passthrough_sequence_entry,
-    variable_declaration_formatter,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -60,16 +58,38 @@ from literalizer._types import Value
 
 
 @beartype
-def _format_objc_entry(_original: Value, formatted: str) -> str:
+def _format_objc_entry(original: Value, formatted: str, /) -> str:
     """Wrap a formatted entry for use inside an Objective-C collection.
 
     Only bare numeric values (``int`` / ``float``, but not ``bool``)
     need ``@(...)`` wrapping; everything else is already a valid
     Objective-C object expression.
     """
-    if isinstance(_original, (int, float)) and not isinstance(_original, bool):
+    if isinstance(original, (int, float)) and not isinstance(original, bool):
         return f"@({formatted})"
     return formatted
+
+
+@beartype
+def _format_objc_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format an Objective-C ``id`` declaration, boxing primitive scalars.
+
+    Same reason as :func:`_format_objc_entry`: an ``id`` is a pointer
+    type, so bare ``int``/``float`` values must be boxed as ``NSNumber``
+    before assignment.
+    """
+    return f"id {name} = {_format_objc_entry(data, value)};"
+
+
+@beartype
+def _format_objc_assignment(name: str, value: str, data: Value) -> str:
+    """Format an Objective-C reassignment, boxing primitive scalars."""
+    return f"{name} = {_format_objc_entry(data, value)};"
 
 
 @beartype
@@ -126,23 +146,30 @@ def _objc_call_stub(
     Objective-C object.  This avoids K&R unspecified-parameter syntax
     and the ``-Wstrict-prototypes`` / ``-Wdeprecated-non-prototype``
     warnings that clang would otherwise emit.
+
+    Single-name calls emit a ``static`` definition so the fixture links
+    under the lint workflow's run step — a bare prototype without a body
+    would otherwise fail at link time.
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = "id" if is_value else "void"
     proto = ", ".join(["id"] * len(params)) if params else "void"
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"{return_keyword} {parts[0]}({proto});",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    stub_fn = "_".join((*parts, "stub_"))
     stub_params = ", ".join(f"id _a{i}" for i in range(len(params)))
     stub_signature = stub_params or "void"
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
     return_stmt = " return nil;" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (
+            f"static {return_keyword} {parts[0]}({stub_signature}) "
+            f"{stub_body}",
+        )
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    stub_fn = "_".join((*parts, "stub_"))
     if not fields:
         type_name = f"{root}Type_"
         return (
@@ -279,9 +306,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="id {name} = {value};"
-            ),
+            formatter=_format_objc_declaration,
             supports_redefinition=True,
         )
 
@@ -467,7 +492,7 @@ class ObjectiveC(metaclass=LanguageCls):
     skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = True
-    supports_scalar_inline_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = (
         "#import <Foundation/Foundation.h>",
@@ -499,7 +524,7 @@ class ObjectiveC(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return variable_formatter(template="{name} = {value};")
+        return _format_objc_assignment
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
