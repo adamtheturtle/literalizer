@@ -642,20 +642,28 @@ jobs:
         run: find tests/integration/cases -name '*.scala' -print0 > /tmp/files-to-lint
       - name: Install scala-cli
         uses: VirtusLab/scala-cli-setup@v1
-      # Fixtures define `object Check { ... }` with no main method, so
-      # compile alongside a small @main wrapper that forces the object
-      # (and therefore its val initializers) to load. scala-cli runs
-      # against a persistent Bloop compile server, so the compiler JVM
-      # stays warm across fixtures instead of cold-starting per file.
+      # Compile every fixture in a single scala-cli invocation to pay
+      # the Scala compile + Bloop daemon startup cost once instead of
+      # per fixture. Fixtures all declare `object Check { ... }`, so
+      # they are renamed to a unique `object FixtureN` to avoid
+      # collisions; a generated `@main` references each one to force
+      # its val initializers to load. The mapping is printed so
+      # failures still point back to the original path.
       - name: Run Scala files
         run: |-
+          workspace=$(mktemp -d)
+          main="$workspace/Main.scala"
+          printf '@main def __run(): Unit = {\n' > "$main"
+          i=0
           while IFS= read -r -d '' f; do
-            workspace=$(mktemp -d)
-            cp "$f" "$workspace/Fixture.scala"
-            printf '@main def __run(): Unit = { val _ = Check }\n' \
-              > "$workspace/Main.scala"
-            scala-cli run "$workspace" --main-class __run || exit 1
+            sed "s/^object Check {/object Fixture$i {/" "$f" \
+              > "$workspace/Fixture$i.scala"
+            printf 'Fixture%s.scala <- %s\n' "$i" "$f"
+            printf '  val _%s = Fixture%s\n' "$i" "$i" >> "$main"
+            i=$((i+1))
           done < /tmp/files-to-lint
+          printf '}\n' >> "$main"
+          scala-cli run "$workspace" --main-class __run
 
   lint-dart:
     runs-on: ubuntu-latest
