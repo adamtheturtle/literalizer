@@ -333,22 +333,16 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: |
-            .clang-tidy
-            .github/scripts/lint-cpp-pch.hpp
-      # Preload the standard headers once via a precompiled header so
-      # clang-tidy does not re-parse them for each of the 269 fixtures.
-      - name: Build precompiled header
-        if: steps.find-files.outputs.found == 'true'
-        run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
-          /tmp/pch.hpp.pch
-      # Pass -include-pch as two separate args; clang's driver treats it
-      # as a Separate option, so the joined `-include-pch=PATH` form is
-      # parsed as `-include -pch=PATH` and fails to find the file.
+          extra_config_patterns: .clang-tidy
+      # Preloading the standard headers via PCH was tried here but made
+      # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
+      # enabling `clang-analyzer-*`, the preloaded AST exposes the
+      # entire standard library to the static analyzer per fixture,
+      # multiplying analysis cost. The PCH still helps the lint-cpp
+      # job, where only parsing (not symbolic execution) runs.
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 --extra-arg=-include-pch
-          --extra-arg=/tmp/pch.hpp.pch < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
