@@ -1,8 +1,6 @@
 ---
 fail_fast: true
 
-.uv_version: &uv_version uv==0.11.7
-
 ci:
   skip:
     - actionlint
@@ -118,7 +116,7 @@ repos:
         language: python
         pass_filenames: false
         types_or: [yaml]
-        additional_dependencies: [*uv_version]
+        additional_dependencies: [&uv_version uv==0.11.7]
         priority: 500
         stages: [pre-commit]
 
