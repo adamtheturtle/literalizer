@@ -319,15 +319,15 @@ jobs:
       - name: Run C++ files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            printf "void check_();\nint main(){ check_(); return 0; }\n" \
-              > "$tmpdir/__main.cpp"
-            clang++ -std=c++20 "$0" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-cpp.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          printf 'void check_();\nint main(){ check_(); return 0; }\n' \
+            > "$tmpdir/__main.cpp"
+          clang++ -std=c++20 "$1" "$tmpdir/__main.cpp" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -395,13 +395,13 @@ jobs:
       - name: Check Swift syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/check.swift"
-            swiftc -typecheck "$tmpdir/check.swift" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/check-swift.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.swift"
+          swiftc -typecheck "$tmpdir/check.swift" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
@@ -607,22 +607,22 @@ jobs:
       - name: Run Haskell files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/Check.hs"
-            if grep -qE "^main " "$0"; then
-              ghc -main-is Check -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
-            else
-              printf "module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n" \
-                > "$tmpdir/Main.hs"
-              ghc -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
-            fi
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-haskell.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/Check.hs"
+          if grep -qE '^main ' "$1"; then
+            ghc -main-is Check -outputdir "$tmpdir" \
+              -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
+          else
+            printf 'module Main where\nimport Check\nmain :: IO ()\nmain = seq Check.my_data (return ())\n' \
+              > "$tmpdir/Main.hs"
+            ghc -outputdir "$tmpdir" \
+              -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
+          fi
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-haskell.sh < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -1001,14 +1001,14 @@ jobs:
       - name: Run Crystal files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/$rc expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$0"
-            rc=$?
-            rm -rf "$tmpdir"
-            exit "$rc"
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-crystal.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$1"
+          rc=$?
+          rm -rf "$tmpdir"
+          exit "$rc"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-crystal.sh < /tmp/files-to-lint
 
   lint-matlab:
     runs-on: ubuntu-latest
@@ -1263,17 +1263,17 @@ jobs:
       - name: Run SML files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/SML_LIB expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
-            cp "$0" "$tmpdir/check.sml"
-            printf "val _ = Check.my_data\n" > "$tmpdir/force.sml"
-            printf "\$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n" \
-              > "$tmpdir/main.mlb"
-            mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
-            "$tmpdir/out" || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-sml.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.sml"
+          printf 'val _ = Check.my_data\n' > "$tmpdir/force.sml"
+          printf '$(SML_LIB)/basis/basis.mlb\ncheck.sml\nforce.sml\n' \
+            > "$tmpdir/main.mlb"
+          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          "$tmpdir/out" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-to-lint
 
   lint-scheme:
     runs-on: ubuntu-latest
@@ -1469,15 +1469,15 @@ jobs:
       - name: Run Fortran files
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          # shellcheck disable=SC2016  # $0/$tmpdir/$src expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf \"$tmpdir\"" EXIT
-            src=$(realpath "$0")
-            cd "$tmpdir" || exit 1
-            gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
-            ./run || exit 1
-          ' < /tmp/files-to-lint
+          cat > /tmp/run-fortran.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          src=$(realpath "$1")
+          cd "$tmpdir" || exit 1
+          gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+          ./run || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
