@@ -4,6 +4,19 @@ Changelog
 Next
 ----
 
+- ``lint-haskell`` in ``.github/workflows/lint.yml`` now passes
+  ``-Wall -Werror`` to both the syntax check and the end-to-end build,
+  so warnings such as ``-Wunused-matches``, ``-Woverlapping-patterns``,
+  and ``-Wtype-defaults`` fail the job instead of being silently
+  logged.  ``Haskell`` generated output was updated to compile clean
+  under ``-Wall``: the ``Num`` / ``Fractional`` instances use ``_``
+  for unused parameters, the catch-all ``negate _`` clause is now
+  omitted when ``Val`` has only numeric constructors, tuple-sequence
+  bindings carry a ``(Val, Val, ...)`` annotation, call stubs get
+  explicit type signatures, transform-wrapper stubs use a polymorphic
+  argument type, ``main`` binds each call result with ``_ <-``, and
+  the ``Data.Time`` import set drops ``secondsToDiffTime`` when every
+  datetime has microseconds.
 - ``Java`` declarations and reassignments whose value ends in a ``//``
   line comment now place the terminating ``;`` on the code line rather
   than on the comment line, where ``javac`` previously parsed it as

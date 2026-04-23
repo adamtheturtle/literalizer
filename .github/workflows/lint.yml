@@ -539,7 +539,8 @@ jobs:
       - name: Check Haskell syntax
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
+          xargs -0 -n1 ghc -fno-code -Wall -Werror -outputdir "$tmpdir" \
+            < /tmp/files-to-lint
       # Most fixtures declare only `module Check` with a `my_data` val; GHC
       # never evaluates its body unless a top-level expression references it,
       # so compile alongside a small Main wrapper that forces `Check.my_data`.
@@ -553,11 +554,11 @@ jobs:
             trap "rm -rf \"$tmpdir\"" EXIT
             cp "$0" "$tmpdir/Check.hs"
             if grep -qE "^main " "$0"; then
-              ghc -main-is Check -outputdir "$tmpdir" \
+              ghc -Wall -Werror -main-is Check -outputdir "$tmpdir" \
                 -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
             else
               cp .github/scripts/haskell_main.hs "$tmpdir/Main.hs"
-              ghc -outputdir "$tmpdir" \
+              ghc -Wall -Werror -outputdir "$tmpdir" \
                 -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
             fi
             "$tmpdir/run" || exit 1
