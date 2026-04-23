@@ -4,13 +4,6 @@ Changelog
 Next
 ----
 
-- ``lint-scala`` in ``.github/workflows/lint.yml`` now batches every
-  fixture into a single ``scala-cli`` workspace and runs one
-  compile/run pass instead of invoking ``scala-cli run`` per file.
-  Each fixture's ``object Check`` is renamed to a unique
-  ``object Fixture$i`` and a generated ``@main`` references all of
-  them so initializers still execute.  This pays the Scala compile
-  and Bloop daemon startup cost once across all fixtures.
 - ``lint-haskell`` in ``.github/workflows/lint.yml`` now passes
   ``-Wall -Werror`` to both the syntax check and the end-to-end build,
   so warnings such as ``-Wunused-matches``, ``-Woverlapping-patterns``,
