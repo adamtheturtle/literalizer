@@ -1071,6 +1071,9 @@ jobs:
 
   lint-mojo:
     runs-on: ubuntu-latest
+    concurrency:
+      group: lint-mojo
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
         with:
