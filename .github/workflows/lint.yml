@@ -202,10 +202,7 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check Jsonnet syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          while IFS= read -r -d '' f; do
-            jsonnet "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-to-lint > /dev/null
 
   lint-typescript:
     runs-on: ubuntu-latest
