@@ -268,6 +268,7 @@ def _format_ordered_map_value(
                 spec=spec,
                 dict_open_override=None,
                 wrap_ids=wrap_ids,
+                sequence_open_override=None,
             ),
             v,
             _maybe_wrap_child(
@@ -333,6 +334,7 @@ def _format_dict_value(
                 spec=spec,
                 dict_open_override=None,
                 wrap_ids=wrap_ids,
+                sequence_open_override=None,
             ),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
@@ -393,6 +395,7 @@ def _format_dict_entry_value(
         spec=spec,
         dict_open_override=None,
         wrap_ids=wrap_ids,
+        sequence_open_override=None,
     )
 
 
@@ -592,8 +595,8 @@ def _format_list_value(
     value: list[Value],
     spec: Language,
     wrap_ids: frozenset[int],
-    sequence_open_override: str | None = None,
-    child_sequence_open_overrides: Sequence[str | None] = (),
+    sequence_open_override: str | None,
+    child_sequence_open_overrides: Sequence[str | None],
 ) -> str:
     """Format a list as a native language literal.
 
@@ -671,7 +674,7 @@ def _format_value(
     spec: Language,
     dict_open_override: str | None,
     wrap_ids: frozenset[int],
-    sequence_open_override: str | None = None,
+    sequence_open_override: str | None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -714,6 +717,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
                 sequence_open_override=sequence_open_override,
+                child_sequence_open_overrides=(),
             )
         case _:
             return _format_scalar(value=value, spec=spec)
@@ -810,6 +814,7 @@ def _format_collection_lines(
                     spec=spec,
                     dict_open_override=None,
                     wrap_ids=wrap_ids,
+                    sequence_open_override=None,
                 )
                 formatted_val = _maybe_wrap_child(
                     parent_id=parent_id,
@@ -857,6 +862,7 @@ def _format_collection_lines(
                         spec=spec,
                         dict_open_override=None,
                         wrap_ids=wrap_ids,
+                        sequence_open_override=None,
                     ),
                 )
                 for item in sorted_items
@@ -889,6 +895,7 @@ def _format_collection_lines(
                             spec=spec,
                             dict_open_override=dict_open_override,
                             wrap_ids=wrap_ids,
+                            sequence_open_override=None,
                         ),
                         spec=spec,
                     ),
@@ -968,6 +975,7 @@ def _literalize(
             spec=language,
             dict_open_override=None,
             wrap_ids=wrap_ids,
+            sequence_open_override=None,
         )
         return f"{line_prefix}{formatted}"
 
@@ -988,6 +996,7 @@ def _literalize(
             spec=language,
             dict_open_override=None,
             wrap_ids=wrap_ids,
+            sequence_open_override=None,
         )
         return f"{line_prefix}{formatted}"
 
@@ -1467,6 +1476,7 @@ def _format_single_call_arg(
             spec=language,
             dict_open_override=dict_open_override,
             wrap_ids=wrap_ids,
+            sequence_open_override=None,
         ),
     )
 
