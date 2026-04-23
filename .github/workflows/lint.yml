@@ -227,6 +227,16 @@ jobs:
         run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       - name: Check C syntax
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint
+      # Ubuntu's packaged clang-tidy is several releases behind and is
+      # the dominant cost of this job on runners. Pull a recent build
+      # from PyPI via uv instead.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Install clang-tidy
+        run: uv tool install clang-tidy
       - name: Run clang-tidy
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c11 < /tmp/files-to-lint
 
@@ -1445,17 +1455,18 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
-      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
-      # from Homebrew's llvm formula. This job is split from the syntax
-      # and build-and-run job (`lint-objectivec`) so the Homebrew install
-      # runs in parallel with the Apple-clang compile steps instead of
-      # serializing after them — Homebrew's llvm would otherwise prepend
-      # itself to `PATH` and shadow the Apple clang that the PCH was
-      # built against.
+      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull a
+      # recent build from PyPI via uv. This job is split from the syntax
+      # and build-and-run job (`lint-objectivec`) so the install runs in
+      # parallel with the Apple-clang compile steps instead of
+      # serializing after them.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
-        run: |-
-          brew install --quiet llvm
-          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+        run: uv tool install clang-tidy
       - name: Run clang-tidy
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
 
