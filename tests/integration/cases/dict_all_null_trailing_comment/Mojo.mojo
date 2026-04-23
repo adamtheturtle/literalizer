@@ -1,7 +1,4 @@
 def main():
-    var my_data = {
-        "a": None,
-        "b": None,
+    var my_data = Dict[String, String]()
         # trailing
-    }
     _ = my_data
