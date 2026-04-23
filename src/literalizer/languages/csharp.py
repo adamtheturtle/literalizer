@@ -138,18 +138,22 @@ def _csharp_scalar_type(
     datetime_hint: str,
 ) -> str:
     """Return the C# type name for a scalar value."""
-    if isinstance(value, datetime.datetime):
-        return datetime_hint
-    if isinstance(value, datetime.date):
-        return date_hint
-    scalar_types: dict[type, str] = {
-        bool: "bool",
-        int: "int",
-        float: "double",
-        str: "string",
-        bytes: "string",
-    }
-    return scalar_types.get(type(value), "object")
+    match value:
+        case datetime.datetime():
+            return datetime_hint
+        case datetime.date():
+            return date_hint
+        case bool():
+            result = "bool"
+        case int():
+            result = "int"
+        case float():
+            result = "double"
+        case str() | bytes():
+            result = "string"
+        case _:
+            result = "object"
+    return result
 
 
 @beartype
