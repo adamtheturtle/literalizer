@@ -2,7 +2,6 @@
 runtime errors that survive the compile-only check.
 """
 
-import json
 import os
 import shutil
 import subprocess
@@ -10,18 +9,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-_ELM_JSON = json.dumps(
-    obj={
-        "type": "application",
-        "source-directories": ["src"],
-        "elm-version": "0.19.1",
-        "dependencies": {
-            "direct": {"elm/core": "1.0.5"},
-            "indirect": {"elm/json": "1.1.3"},
-        },
-        "test-dependencies": {"direct": {}, "indirect": {}},
-    },
-)
+from elm_common import ELM_JSON
 
 # Wrap ``Check.my_data`` in a ``Platform.worker`` so loading the compiled
 # JavaScript evaluates the fixture's top-level value, surfacing runtime
@@ -118,7 +106,7 @@ def main() -> None:
         tmpdir = Path(tmpdir_str)
         src_dir = tmpdir / "src"
         src_dir.mkdir()
-        (tmpdir / "elm.json").write_text(data=_ELM_JSON, encoding="utf-8")
+        (tmpdir / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
         (src_dir / "Main.elm").write_text(data=_MAIN_ELM, encoding="utf-8")
         elm_home = tmpdir / ".elm"
         elm_home.mkdir()

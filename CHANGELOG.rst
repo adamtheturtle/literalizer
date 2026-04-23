@@ -14,6 +14,18 @@ Next
   because Groovy passes named arguments as a single ``LinkedHashMap``
   that a positional parameter list rejects.  ``POSITIONAL`` stubs
   keep the concrete parameter list unchanged.
+- ``lint-objectivec`` now executes each fixture end-to-end instead of
+  only syntax-checking it, mirroring ``lint-bash`` /
+  ``lint-javascript`` / ``lint-perl`` etc.  To make this possible,
+  Objective-C declarations and reassignments now box primitive
+  scalars the same way collection entries do
+  (``id x = 42;`` → ``id x = @(42);``), single-name call stubs emit a
+  ``static`` definition so fixtures link, and
+  ``ObjectiveC.supports_scalar_inline_comments`` is now ``False`` —
+  previously the trailing ``//`` comment swallowed the statement
+  terminator.  A pre-existing casing bug in the workflow's
+  ``lang_patterns`` (``objective_c*.m`` instead of ``ObjectiveC*.m``)
+  that silently skipped every fixture is also fixed.
 - ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm
   fixture end-to-end.  A new ``Run Elm files`` step compiles each
   fixture alongside a small ``Main.elm`` wrapper whose

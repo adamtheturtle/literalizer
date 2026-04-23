@@ -303,6 +303,7 @@ follow_untyped_imports = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
 project_excludes = []
+search_path = [ ".", "src" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false

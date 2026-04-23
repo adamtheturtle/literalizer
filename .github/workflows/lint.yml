@@ -439,6 +439,19 @@ jobs:
             cp "$f" "$tmpdir/check.ex"
             (cd "$tmpdir" && elixirc check.ex) || exit 1
           done < /tmp/files-to-lint
+      # Fixtures only declare `defmodule Check` with a `def x` body, so
+      # `elixir` compiles the module but never invokes it. Append a call
+      # to `Check.x()` so the function body — and any references inside
+      # it — actually executes.
+      - name: Run Elixir files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          while IFS= read -r -d '' f; do
+            tmpdir=$(mktemp -d)
+            cp "$f" "$tmpdir/check.ex"
+            printf '\nCheck.x()\n' >> "$tmpdir/check.ex"
+            (cd "$tmpdir" && elixir check.ex) || exit 1
+          done < /tmp/files-to-lint
 
   lint-elm:
     runs-on: ubuntu-latest
@@ -1454,14 +1467,39 @@ jobs:
       - uses: ./.github/actions/find-lint-files
         id: find-files
         with:
-          lang_patterns: tests/integration/cases/**/objective_c*.m
+          lang_patterns: tests/integration/cases/**/ObjectiveC*.m
           extra_config_patterns: .clang-tidy
       - name: Check Objective-C syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only < /tmp/files-to-lint
+      # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
+      # from Homebrew's llvm formula.
+      - name: Install clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          brew install --quiet llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
       - name: Run clang-tidy
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
+      # Fixtures define `check_(void)` with no main entry point, so
+      # compile each alongside a tiny wrapper that calls it. Link
+      # against Foundation and execute to surface runtime errors.
+      - name: Run Objective-C files
+        if: steps.find-files.outputs.found == 'true'
+        run: |-
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cat > "$tmpdir/__main.m" <<'EOF'
+          # import <Foundation/Foundation.h>
+          extern void check_(void);
+          int main(void) { @autoreleasepool { check_(); } return 0; }
+          EOF
+          while IFS= read -r -d '' f; do
+            out="$tmpdir/out"
+            clang -framework Foundation "$f" "$tmpdir/__main.m" -o "$out" || exit 1
+            "$out" || exit 1
+          done < /tmp/files-to-lint
 
   lint-wren:
     runs-on: ubuntu-latest

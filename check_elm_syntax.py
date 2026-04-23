@@ -1,6 +1,5 @@
 """Check syntax of Elm golden files using ``elm make``."""
 
-import json
 import os
 import shutil
 import subprocess
@@ -8,18 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-_ELM_JSON = json.dumps(
-    obj={
-        "type": "application",
-        "source-directories": ["src"],
-        "elm-version": "0.19.1",
-        "dependencies": {
-            "direct": {"elm/core": "1.0.5"},
-            "indirect": {"elm/json": "1.1.3"},
-        },
-        "test-dependencies": {"direct": {}, "indirect": {}},
-    },
-)
+from elm_common import ELM_JSON
 
 
 def main() -> None:
@@ -31,7 +19,7 @@ def main() -> None:
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir()
         elm_json_path = Path(tmpdir) / "elm.json"
-        elm_json_path.write_text(data=_ELM_JSON, encoding="utf-8")
+        elm_json_path.write_text(data=ELM_JSON, encoding="utf-8")
         elm_home = Path(tmpdir) / ".elm"
         elm_home.mkdir()
         env = {**os.environ, "ELM_HOME": str(object=elm_home)}
