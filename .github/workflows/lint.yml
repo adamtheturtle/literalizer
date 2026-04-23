@@ -329,10 +329,13 @@ jobs:
       - name: Install Kotlin
         if: steps.find-files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
+      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      # spawning one `kotlinc -script` per fixture. The JVM + compiler
+      # classes load once and each fixture is compiled against the warm
+      # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         if: steps.find-files.outputs.found == 'true'
-        run: |-
-          xargs -0 -P "$(nproc)" -n 1 kotlinc -script < /tmp/files-to-lint
+        run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
   lint-rust:
     runs-on: ubuntu-latest
