@@ -292,14 +292,12 @@ jobs:
         id: find-files
         with:
           lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: |
-            .clang-tidy
-            .github/scripts/lint-cpp-pch.hpp
+          extra_config_patterns: .github/scripts/lint-cpp-pch.hpp
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers 269 times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
-      # each compile and clang-tidy invocation so the parsed AST is
-      # reused instead of re-parsed per file.
+      # each compile invocation so the parsed AST is reused instead of
+      # re-parsed per file.
       - name: Build precompiled header
         if: steps.find-files.outputs.found == 'true'
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
@@ -307,10 +305,6 @@ jobs:
       - name: Check C++ syntax
         if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 -include-pch /tmp/pch.hpp.pch
-          < /tmp/files-to-lint
-      - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 --extra-arg=-include-pch=/tmp/pch.hpp.pch
           < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # a tiny wrapper that invokes it and link into a runnable binary.
@@ -326,6 +320,30 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+
+  lint-cpp-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/find-lint-files
+        id: find-files
+        with:
+          lang_patterns: tests/integration/cases/**/*.cpp
+          extra_config_patterns: |
+            .clang-tidy
+            .github/scripts/lint-cpp-pch.hpp
+      # Preload the standard headers once via a precompiled header so
+      # clang-tidy does not re-parse them for each of the 269 fixtures.
+      - name: Build precompiled header
+        if: steps.find-files.outputs.found == 'true'
+        run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
+          /tmp/pch.hpp.pch
+      - name: Run clang-tidy
+        if: steps.find-files.outputs.found == 'true'
+        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 --extra-arg=-include-pch=/tmp/pch.hpp.pch
+          < /tmp/files-to-lint
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -1598,6 +1616,7 @@ jobs:
       - lint-c
       - lint-cobol
       - lint-cpp
+      - lint-cpp-tidy
       - lint-kotlin
       - lint-rust
       - lint-swift
