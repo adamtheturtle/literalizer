@@ -875,8 +875,6 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
-      - name: Check Crystal syntax
-        run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
       # Crystal derives the compiled binary name from the source file's
       # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp).
       # Many fixtures share basenames, so parallel `crystal run` invocations
