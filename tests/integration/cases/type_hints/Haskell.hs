@@ -3,10 +3,10 @@ import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
 instance Num Val where
     fromInteger = HInt
-    a + b = error "not implemented"
-    a * b = error "not implemented"
-    abs a = error "not implemented"
-    signum a = error "not implemented"
+    _ + _ = error "not implemented"
+    _ * _ = error "not implemented"
+    abs _ = error "not implemented"
+    signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
 my_data :: Val
