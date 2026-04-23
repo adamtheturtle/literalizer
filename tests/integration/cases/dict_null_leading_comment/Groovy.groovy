@@ -1,0 +1,5 @@
+def my_data = [
+    // comment
+    "name": "Alice",
+    "score": null,
+]

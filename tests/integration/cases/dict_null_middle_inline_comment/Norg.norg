@@ -1,0 +1,8 @@
+* my_data
+@code json
+{
+    "host": "localhost",
+    "port": null,  % not configured yet%
+    "debug": true
+}
+@end

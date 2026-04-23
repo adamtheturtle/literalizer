@@ -395,6 +395,10 @@ def _compute_call_slot_overrides(
     no enclosing sequence, so ``narrowed_open`` does not apply here —
     each dict still needs its own full opener, just widened when
     sibling dicts differ in inferred value type.
+
+    ``{"$ref": "name"}`` markers are filtered out of each slot's
+    values: the marker isn't rendered as a dict at the call site, so
+    its shape must not influence widening.
     """
     slots: list[list[Value]] = []
     for element in elements:
@@ -402,7 +406,8 @@ def _compute_call_slot_overrides(
         for slot_index, arg_value in enumerate(iterable=arg_values):
             if slot_index >= len(slots):
                 slots.append([])
-            slots[slot_index].append(arg_value)
+            if _extract_call_arg_ref_name(value=arg_value) is None:
+                slots[slot_index].append(arg_value)
     return [
         _compute_dict_open_override(items=slot_values, spec=spec)
         for slot_values in slots
@@ -1175,6 +1180,93 @@ def _identity_call_arg(_value: Value, formatted: str) -> str:
     return formatted
 
 
+_CALL_ARG_REF_KEY = "$ref"
+
+
+@beartype
+def _extract_call_arg_ref_name(*, value: Value) -> str | None:
+    """Return the identifier name for a ``{"$ref": "name"}`` marker.
+
+    Returns ``None`` when *value* is not a variable-reference marker.
+    In :func:`literalize_call` such markers render as the bare
+    identifier instead of being formatted as a literal value.
+    """
+    if not isinstance(value, dict) or len(value) != 1:
+        return None
+    ref_value = value.get(_CALL_ARG_REF_KEY)
+    if not isinstance(ref_value, str):
+        return None
+    return ref_value
+
+
+@beartype
+def _strip_call_arg_refs_for_preamble(
+    *,
+    data: Value,
+    per_element: bool,
+) -> Value:
+    """Return *data* with call-argument ref markers removed.
+
+    Ref markers represent a variable declared elsewhere, not real data,
+    so they would pollute data-driven preamble inference (e.g. dragging
+    in ``Data.Map`` imports for Haskell just because the marker happens
+    to be a ``{str: str}`` dict).  Drop them before computing the
+    preamble while leaving :func:`_format_call_args` to render them.
+
+    When *per_element* is ``True``, *data* is a list of argument lists
+    and refs are stripped from each inner list.  Otherwise a
+    top-level ref becomes an empty list, standing in for "no data".
+    """
+    if per_element:
+        if not isinstance(data, list):
+            return data
+        result: list[Value] = []
+        for element in data:
+            if isinstance(element, list):
+                result.append(
+                    [
+                        v
+                        for v in element
+                        if _extract_call_arg_ref_name(value=v) is None
+                    ]
+                )
+            elif _extract_call_arg_ref_name(value=element) is None:
+                result.append(element)
+        return result
+    if _extract_call_arg_ref_name(value=data) is not None:
+        return []
+    return data
+
+
+@beartype
+def _format_single_call_arg(
+    *,
+    value: Value,
+    language: Language,
+    wrap_ids: frozenset[int],
+    wrap_arg: Callable[[Value, str], str],
+    dict_open_override: str | None,
+) -> str:
+    """Format one argument value for a function call.
+
+    A ``{"$ref": "name"}`` marker renders as the bare identifier; the
+    ``format_call_arg`` hook is skipped for refs because the referenced
+    variable already has the call's parameter type.
+    """
+    ref_name = _extract_call_arg_ref_name(value=value)
+    if ref_name is not None:
+        return ref_name
+    return wrap_arg(
+        value,
+        _format_value(
+            value=value,
+            spec=language,
+            dict_open_override=dict_open_override,
+            wrap_ids=wrap_ids,
+        ),
+    )
+
+
 @beartype
 def _format_call_args(
     *,
@@ -1192,6 +1284,11 @@ def _format_call_args(
     unwrapped, space-separated argument list so the caller can
     assemble ``args target`` directly.
 
+    A value shaped like ``{"$ref": "name"}`` renders as the bare
+    identifier ``name`` instead of being formatted as a literal, so
+    callers can refer to a variable declared elsewhere (e.g. via
+    :class:`NewVariable`).
+
     *dict_open_overrides* supplies a per-positional dict opener so that
     dict arguments at the same slot across sibling calls share a
     widened type.  ``None`` at a given position means "no override".
@@ -1202,14 +1299,12 @@ def _format_call_args(
         _identity_call_arg,
     )
     formatted = [
-        wrap_arg(
-            arg_value,
-            _format_value(
-                value=arg_value,
-                spec=language,
-                dict_open_override=dict_open_overrides[slot_index],
-                wrap_ids=wrap_ids,
-            ),
+        _format_single_call_arg(
+            value=arg_value,
+            language=language,
+            wrap_ids=wrap_ids,
+            wrap_arg=wrap_arg,
+            dict_open_override=dict_open_overrides[slot_index],
         )
         for slot_index, arg_value in enumerate(iterable=values)
     ]
@@ -1325,6 +1420,101 @@ def _assemble_call(
 
 
 @beartype
+def _render_call_per_element(
+    *,
+    data: list[Value],
+    language: Language,
+    style: CallStyle,
+    target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[str], str] | None,
+) -> str:
+    """Render one call per top-level list element.
+
+    Variable-reference markers (``{"$ref": "name"}``) are syntactic
+    pointers rather than real data, so they are skipped during
+    data-shape validation and wrap-id computation while still
+    appearing as identifiers in the rendered call.
+    :func:`_compute_call_slot_overrides` similarly filters them out so
+    the marker's ``{str: str}`` shape does not influence per-slot
+    dict-opener widening.
+    """
+    slot_overrides = _compute_call_slot_overrides(
+        elements=data,
+        spec=language,
+    )
+    lines: list[str] = []
+    for element in data:
+        arg_values = element if isinstance(element, list) else [element]
+        non_ref_args = [
+            v
+            for v in arg_values
+            if _extract_call_arg_ref_name(value=v) is None
+        ]
+        for value in non_ref_args:
+            check_data(data=value, spec=language)
+        call_wrap_ids = _compute_wrap_ids(
+            data=non_ref_args,
+            spec=language,
+        )
+        args_str = _format_call_args(
+            values=cast("list[Value]", arg_values),
+            params=parameter_names,
+            language=language,
+            wrap_ids=call_wrap_ids,
+            style=style,
+            dict_open_overrides=slot_overrides,
+        )
+        lines.append(
+            _assemble_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                statement_terminator=language.statement_terminator,
+                style=style,
+            )
+        )
+    return "\n".join(lines)
+
+
+@beartype
+def _render_call_whole(
+    *,
+    data: Value,
+    language: Language,
+    style: CallStyle,
+    target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[str], str] | None,
+) -> str:
+    """Render a single call from the whole parsed value.
+
+    A single top-level ref marker renders as just the identifier; in
+    that case shape validation and wrap-id computation are skipped.
+    """
+    if _extract_call_arg_ref_name(value=data) is None:
+        check_data(data=data, spec=language)
+        call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
+    else:
+        call_wrap_ids = frozenset[int]()
+    args_str = _format_call_args(
+        values=[data],
+        params=parameter_names,
+        language=language,
+        wrap_ids=call_wrap_ids,
+        style=style,
+        dict_open_overrides=[None],
+    )
+    return _assemble_call(
+        target_function=target_function,
+        args_str=args_str,
+        call_transform=call_transform,
+        statement_terminator=language.statement_terminator,
+        style=style,
+    )
+
+
+@beartype
 def literalize_call(
     *,
     source: str,
@@ -1382,6 +1572,11 @@ def literalize_call(
 
     target_function = language.format_call_target(target_function)
 
+    data_for_preamble = _strip_call_arg_refs_for_preamble(
+        data=data,
+        per_element=per_element,
+    )
+
     if per_element:
         if not isinstance(data, list):
             msg = (
@@ -1389,68 +1584,32 @@ def literalize_call(
                 f"got {type(data).__name__}"
             )
             raise PerElementNotListError(msg)
-
-        slot_overrides = _compute_call_slot_overrides(
-            elements=data,
-            spec=language,
-        )
-        lines: list[str] = []
-        for element in data:
-            arg_values = element if isinstance(element, list) else [element]
-            # Each element produces an independent call; check its
-            # argument list on its own rather than the top-level list,
-            # which is never rendered as a sequence in per-element mode.
-            for value in arg_values:
-                check_data(data=value, spec=language)
-            call_wrap_ids = _compute_wrap_ids(
-                data=cast("list[Value]", arg_values),
-                spec=language,
-            )
-            args_str = _format_call_args(
-                values=cast("list[Value]", arg_values),
-                params=parameter_names,
-                language=language,
-                wrap_ids=call_wrap_ids,
-                style=style,
-                dict_open_overrides=slot_overrides,
-            )
-            lines.append(
-                _assemble_call(
-                    target_function=target_function,
-                    args_str=args_str,
-                    call_transform=call_transform,
-                    statement_terminator=language.statement_terminator,
-                    style=style,
-                )
-            )
-        result = "\n".join(lines)
-    else:
-        check_data(data=data, spec=language)
-        call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
-        args_str = _format_call_args(
-            values=[data],
-            params=parameter_names,
+        result = _render_call_per_element(
+            data=data,
             language=language,
-            wrap_ids=call_wrap_ids,
             style=style,
-            dict_open_overrides=[None],
-        )
-        result = _assemble_call(
             target_function=target_function,
-            args_str=args_str,
+            parameter_names=parameter_names,
             call_transform=call_transform,
-            statement_terminator=language.statement_terminator,
+        )
+    else:
+        result = _render_call_whole(
+            data=data,
+            language=language,
             style=style,
+            target_function=target_function,
+            parameter_names=parameter_names,
+            call_transform=call_transform,
         )
     computed = compute_preamble(
-        data=data,
+        data=data_for_preamble,
         language=language,
         has_variable_declaration=False,
     )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data)
+        + language.data_dependent_preamble(data_for_preamble)
     )
 
     if wrap_in_file:

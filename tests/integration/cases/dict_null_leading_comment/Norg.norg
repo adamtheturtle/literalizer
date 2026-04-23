@@ -1,0 +1,8 @@
+* my_data
+@code json
+{
+    % comment%
+    "name": "Alice",
+    "score": null
+}
+@end
