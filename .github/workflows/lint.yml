@@ -175,10 +175,7 @@ jobs:
           go install github.com/google/go-jsonnet/cmd/jsonnet@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check Jsonnet syntax
-        run: |-
-          while IFS= read -r -d '' f; do
-            jsonnet "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-to-lint > /dev/null
 
   lint-typescript:
     runs-on: ubuntu-latest
@@ -246,8 +243,17 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
+      # Fixtures are tiny TUs whose cost is dominated by re-parsing the
+      # same standard headers 269 times. Build a precompiled header once
+      # covering every header any fixture includes, then preload it in
+      # each compile invocation so the parsed AST is reused instead of
+      # re-parsed per file.
+      - name: Build precompiled header
+        run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
+          /tmp/pch.hpp.pch
       - name: Check C++ syntax
-        run: xargs -0 clang++ -fsyntax-only -std=c++20 < /tmp/files-to-lint
+        run: xargs -0 clang++ -fsyntax-only -std=c++20 -include-pch /tmp/pch.hpp.pch
+          < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # `.github/scripts/cpp_main.cpp` which invokes it and link into a
       # runnable binary.
@@ -256,8 +262,8 @@ jobs:
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang++ -std=c++20 "$1" .github/scripts/cpp_main.cpp \
-            -o "$tmpdir/run" || exit 1
+          clang++ -std=c++20 -include-pch /tmp/pch.hpp.pch "$1" \
+            .github/scripts/cpp_main.cpp -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
@@ -271,6 +277,12 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
+      # Preloading the standard headers via PCH was tried here but made
+      # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
+      # enabling `clang-analyzer-*`, the preloaded AST exposes the
+      # entire standard library to the static analyzer per fixture,
+      # multiplying analysis cost. The PCH still helps the lint-cpp
+      # job, where only parsing (not symbolic execution) runs.
       - name: Run clang-tidy
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
