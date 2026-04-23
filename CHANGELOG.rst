@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+- ``Java`` declarations and reassignments whose value ends in a ``//``
+  line comment now place the terminating ``;`` on the code line rather
+  than on the comment line, where ``javac`` previously parsed it as
+  part of the comment and rejected the program with ``';' expected``.
 - The ``heterogeneous_strategy`` variant case list now includes the
   ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
   ``UNION_TYPE`` rendering on ``!!omap`` inputs.

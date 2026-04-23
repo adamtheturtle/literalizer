@@ -1,0 +1,8 @@
+* my_data
+@code json
+{
+    "a": null,
+    "b": null
+    % trailing%
+}
+@end

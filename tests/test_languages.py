@@ -329,23 +329,6 @@ def test_java_yaml_null_value_inline_comment_as_trailing() -> None:
     assert result.code == expected
 
 
-def test_java_yaml_all_null_dict_with_trailing_comments() -> None:
-    """All-null Java YAML dict with trailing comments does not duplicate
-    delimiters.
-    """
-    yaml_string = "a: null\nb: null\n# trailing\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=JAVA,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = "Map.ofEntries()\n    // trailing"
-    assert result.code == expected
-
-
 def test_matlab_dict_key_with_quote() -> None:
     """MATLAB struct keys containing double quotes are decoded correctly.
 
