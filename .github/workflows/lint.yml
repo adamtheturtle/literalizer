@@ -1314,14 +1314,15 @@ jobs:
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
+      # Build a small Roslyn host once, then feed every fixture through
+      # its stdin so the .NET runtime and VB compiler load once instead
+      # of per fixture. Replaces `dotnet build` per fixture, which paid
+      # MSBuild + NuGet restore + compiler startup each time.
+      - name: Build VB lint host
+        run: dotnet publish .github/scripts/lint-vb/lint-vb.csproj -c Release -o /tmp/lint-vb
+          --nologo
       - name: Check VB.NET syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_vb_syntax.py
-          < /tmp/files-to-lint
+        run: dotnet /tmp/lint-vb/lint-vb.dll < /tmp/files-to-lint
 
   lint-forth:
     runs-on: ubuntu-latest
