@@ -774,9 +774,10 @@ jobs:
       - name: Check Dhall syntax
         if: steps.find-files.outputs.found == 'true'
         run: |-
-          while IFS= read -r -d '' f; do
-            dhall < "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
+          cat > /tmp/check-dhall.sh <<'SCRIPT'
+          dhall < "$1" > /dev/null
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-to-lint
 
   lint-julia:
     runs-on: ubuntu-latest
