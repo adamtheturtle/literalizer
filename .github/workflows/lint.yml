@@ -52,15 +52,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.sh
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.sh' -print0 > /tmp/files-to-lint
       - name: Check Bash syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 bash -n < /tmp/files-to-lint
       - name: Run Bash files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-to-lint
 
   lint-ruby:
@@ -69,15 +66,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.rb
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.rb' -print0 > /tmp/files-to-lint
       - name: Check Ruby syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-to-lint
       - name: Run Ruby files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-to-lint
 
   lint-gleam:
@@ -86,25 +80,20 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.gleam
-          extra_config_patterns: check_gleam_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-to-lint
       - name: Install Gleam
-        if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1
         with:
           gleam-version: latest
           otp-version: 27
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Gleam compiles
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-to-lint
 
   lint-go:
@@ -113,18 +102,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.go
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.go' -print0 > /tmp/files-to-lint
       - name: Check Go syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gofmt -e < /tmp/files-to-lint
       - name: Check Go compilation
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
       - name: Run Go files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-to-lint
 
   lint-groovy:
@@ -133,12 +118,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.groovy
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-to-lint
       - name: Install Groovy
-        if: steps.find-files.outputs.found == 'true'
         uses: wtfjoke/setup-groovy@v3
         with:
           groovy-version: 4.x
@@ -148,7 +131,6 @@ jobs:
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
       - name: Check and run Groovy files
-        if: steps.find-files.outputs.found == 'true'
         run: groovy .github/scripts/lint-groovy.groovy < /tmp/files-to-lint
 
   lint-javascript:
@@ -157,15 +139,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.js
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.js' -print0 > /tmp/files-to-lint
       - name: Check JavaScript syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-to-lint
       - name: Run JavaScript files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 node < /tmp/files-to-lint
 
   lint-json5:
@@ -174,15 +153,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.json5
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.json5' -print0 > /tmp/files-to-lint
       - name: Install json5
-        if: steps.find-files.outputs.found == 'true'
         run: npm install -g json5
       - name: Check JSON5 syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-to-lint > /dev/null
 
   lint-jsonnet:
@@ -191,17 +167,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.jsonnet
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.jsonnet' -print0 > /tmp/files-to-lint
       - name: Install jsonnet
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           go install github.com/google/go-jsonnet/cmd/jsonnet@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check Jsonnet syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-to-lint > /dev/null
 
   lint-typescript:
@@ -210,15 +183,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.ts
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.ts' -print0 > /tmp/files-to-lint
       - name: Install TypeScript
-        if: steps.find-files.outputs.found == 'true'
         run: npm install -g typescript
       - name: Check TypeScript syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib
           es2015 < /tmp/files-to-lint
 
@@ -228,15 +198,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.java
-          extra_config_patterns: CheckJavaSyntax.java
-      # Drive compilation through the JavaCompiler API in a single JVM
-      # rather than cold-starting `javac` per fixture.
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.java' -print0 > /tmp/files-to-lint
       - name: Check Java syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 java CheckJavaSyntax.java < /tmp/files-to-lint
 
   lint-c:
@@ -245,16 +210,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.c
-          extra_config_patterns: .clang-tidy
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       - name: Check C syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint
       - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c11 < /tmp/files-to-lint
 
   lint-cobol:
@@ -263,16 +224,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # Install before find-lint-files because the action wipes /tmp.
+      # Install before writing /tmp/files-to-lint because the action wipes /tmp.
       # https://github.com/fabasoad/setup-cobol-action/issues/146
       - name: Install GnuCOBOL
         uses: fabasoad/setup-cobol-action@v1
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.cob
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.cob' -print0 > /tmp/files-to-lint
       - name: Check COBOL syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
 
   lint-cpp:
@@ -281,31 +240,24 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: |
-            .github/scripts/cpp_main.cpp
-            .github/scripts/lint-cpp-pch.hpp
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers 269 times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
       # each compile invocation so the parsed AST is reused instead of
       # re-parsed per file.
       - name: Build precompiled header
-        if: steps.find-files.outputs.found == 'true'
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
       - name: Check C++ syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clang++ -fsyntax-only -std=c++20 -include-pch /tmp/pch.hpp.pch
           < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # `.github/scripts/cpp_main.cpp` which invokes it and link into a
       # runnable binary.
       - name: Run C++ files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
@@ -322,11 +274,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.cpp
-          extra_config_patterns: .clang-tidy
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
       # Preloading the standard headers via PCH was tried here but made
       # clang-tidy ~2x slower on the Ubuntu runner: with `Checks: *`
       # enabling `clang-analyzer-*`, the preloaded AST exposes the
@@ -334,7 +284,6 @@ jobs:
       # multiplying analysis cost. The PCH still helps the lint-cpp
       # job, where only parsing (not symbolic execution) runs.
       - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
 
   lint-kotlin:
@@ -343,12 +292,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.kts
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.kts' -print0 > /tmp/files-to-lint
       - name: Install Kotlin
-        if: steps.find-files.outputs.found == 'true'
         uses: fwilhe2/setup-kotlin@v1
         with:
           # 2.3.10's kotlin-scripting-jvm references a legacy
@@ -362,7 +309,6 @@ jobs:
       # classes load once and each fixture is compiled against the warm
       # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
-        if: steps.find-files.outputs.found == 'true'
         run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
   lint-rust:
@@ -371,14 +317,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.rs
-      # Compile and run in one step because the compiled binary lives in a
-      # temp directory that is cleaned up when the step exits.
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
       - name: Check Rust syntax and run binaries
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -401,17 +343,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.swift
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.swift' -print0 > /tmp/files-to-lint
       - name: Install Swift
-        if: steps.find-files.outputs.found == 'true'
         uses: SwiftyLab/setup-swift@v1
         with:
           cache-snapshot: true
       - name: Check Swift syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/check-swift.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
@@ -421,7 +360,6 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
 
   lint-csharp:
@@ -430,24 +368,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.cs
-          extra_config_patterns: check_csharp_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.cs' -print0 > /tmp/files-to-lint
       - name: Initialize .NET runtime
-        if: steps.find-files.outputs.found == 'true'
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check C# syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_csharp_syntax.py
           < /tmp/files-to-lint
 
@@ -457,18 +390,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.ex
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.ex' -print0 > /tmp/files-to-lint
       - name: Install Elixir
-        if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
           otp-version: '27'
       - name: Check Elixir syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
@@ -480,7 +410,6 @@ jobs:
       # to `Check.x()` so the function body — and any references inside
       # it — actually executes.
       - name: Run Elixir files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
@@ -495,33 +424,24 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.elm
-          extra_config_patterns: |
-            check_elm_syntax.py
-            run_elm.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.elm' -print0 > /tmp/files-to-lint
       - name: Install elm-format and elm
-        if: steps.find-files.outputs.found == 'true'
         run: npm install -g elm-format elm
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Elm formatting
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-to-lint
       - name: Check Elm compiles
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
       - name: Run Elm files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 uv run --no-project python run_elm.py < /tmp/files-to-lint
 
   lint-erlang:
@@ -530,12 +450,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.erl
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.erl' -print0 > /tmp/files-to-lint
       - name: Install Erlang
-        if: steps.find-files.outputs.found == 'true'
         uses: erlef/setup-beam@v1
         with:
           otp-version: '27'
@@ -548,7 +466,6 @@ jobs:
       # rewritten; the mapping is printed so failures still point back
       # to the original path.
       - name: Check Erlang syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           i=0
@@ -566,19 +483,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: |
-            tests/integration/cases/**/*.fs
-            tests/integration/cases/**/*.fsi
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases \( -name '*.fs' -o -name '*.fsi' \) -print0
+          > /tmp/files-to-lint
       - name: Initialize .NET runtime
-        if: steps.find-files.outputs.found == 'true'
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
       - name: Check F# syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             tmpdir=$(mktemp -d)
@@ -593,17 +506,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.ml
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.ml' -print0 > /tmp/files-to-lint
       - name: Install OCaml
-        if: steps.find-files.outputs.found == 'true'
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5
       - name: Check OCaml syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
@@ -614,16 +524,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.hs
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.hs' -print0 > /tmp/files-to-lint
       - uses: haskell-actions/setup@v2
-        if: steps.find-files.outputs.found == 'true'
         with:
           ghc-version: latest
       - name: Check Haskell syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           xargs -0 -n1 ghc -fno-code -outputdir "$tmpdir" < /tmp/files-to-lint
@@ -633,7 +540,6 @@ jobs:
       # Fixtures that already define their own `main` compile with
       # `-main-is Check` instead.
       - name: Run Haskell files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
           xargs -0 -P "$(nproc)" -n1 bash -c '
@@ -659,15 +565,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.lisp
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.lisp' -print0 > /tmp/files-to-lint
       - name: Install SBCL
-        if: steps.find-files.outputs.found == 'true'
         uses: 40ants/setup-lisp@v4
       - name: Check Common Lisp syntax
-        if: steps.find-files.outputs.found == 'true'
         run: >-
           xargs -0 -P "$(nproc)" -I{} ros run
           --eval '(sb-ext:disable-debugger)'
@@ -681,17 +584,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.hcl
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-to-lint
       - name: Install hcl2json
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           go install github.com/tmccombs/hcl2json@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Check HCL syntax
-        if: steps.find-files.outputs.found == 'true'
         run: >-
           xargs -0 -P "$(nproc)" -n1 hcl2json
           < /tmp/files-to-lint > /dev/null
@@ -702,17 +602,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.clj
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.clj' -print0 > /tmp/files-to-lint
       - name: Install clj-kondo
-        if: steps.find-files.outputs.found == 'true'
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
       - name: Check Clojure syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 clj-kondo --lint < /tmp/files-to-lint
 
   lint-scala:
@@ -721,12 +618,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.scala
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.scala' -print0 > /tmp/files-to-lint
       - name: Install scala-cli
-        if: steps.find-files.outputs.found == 'true'
         uses: VirtusLab/scala-cli-setup@v1
       # Fixtures define `object Check { ... }` with no main method, so
       # compile alongside a small @main wrapper that forces the object
@@ -734,7 +629,6 @@ jobs:
       # against a persistent Bloop compile server, so the compiler JVM
       # stays warm across fixtures instead of cold-starting per file.
       - name: Run Scala files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             workspace=$(mktemp -d)
@@ -750,12 +644,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.dart
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.dart' -print0 > /tmp/files-to-lint
       - name: Install Dart
-        if: steps.find-files.outputs.found == 'true'
         uses: dart-lang/setup-dart@v1
       # Each fixture is its own implicit Dart library (no `library`
       # or `part` directives), so copying them all into one package
@@ -765,7 +657,6 @@ jobs:
       # basename (e.g. `Dart.dart`); the mapping is printed so failures
       # still point back to the original path.
       - name: Check Dart syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
@@ -783,18 +674,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.dhall
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-to-lint
       - name: Install dhall
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
             | tar -xj
           echo "$PWD/bin" >> "$GITHUB_PATH"
       - name: Check Dhall syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/check-dhall.sh <<'SCRIPT'
           dhall < "$1" > /dev/null
@@ -807,21 +695,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.jl
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.jl' -print0 > /tmp/files-to-lint
       - name: Install Julia
-        if: steps.find-files.outputs.found == 'true'
         uses: julia-actions/setup-julia@v3
       - name: Set up Julia project
-        if: steps.find-files.outputs.found == 'true'
         run: |
           mkdir -p /tmp/julia-lint
           julia --startup-file=no --project=/tmp/julia-lint -e \
             'using Pkg; Pkg.add("DataStructures"); Pkg.precompile()'
       - name: Run Julia golden files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no --project=/tmp/julia-lint
           < /tmp/files-to-lint
 
@@ -831,21 +715,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.pl
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.pl' -print0 > /tmp/files-to-lint
       - name: Install Perl dependencies
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           sudo apt-get update -qq
           sudo apt-get install -y -qq cpanminus
           sudo cpanm --notest DateTime
       - name: Check Perl syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-to-lint
       - name: Run Perl files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 perl < /tmp/files-to-lint
 
   lint-lua:
@@ -854,17 +734,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.lua
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.lua' -print0 > /tmp/files-to-lint
       - name: Install Lua
-        if: steps.find-files.outputs.found == 'true'
         uses: leafo/gh-actions-lua@v12
         with:
           luaVersion: '5.4'
       - name: Check Lua syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 luac -p < /tmp/files-to-lint
 
   lint-tcl:
@@ -873,15 +750,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.tcl
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-to-lint
       - name: Install Tcl
-        if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update && sudo apt-get install -y tcl
       - name: Check Tcl syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-to-lint
 
   lint-php:
@@ -890,15 +764,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.php
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.php' -print0 > /tmp/files-to-lint
       - name: Check PHP syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 php -l < /tmp/files-to-lint
       - name: Run PHP files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 php < /tmp/files-to-lint
 
   lint-r:
@@ -907,17 +778,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.R
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.R' -print0 > /tmp/files-to-lint
       - name: Install R
-        if: steps.find-files.outputs.found == 'true'
         uses: r-lib/actions/setup-r@v2
         with:
           windows-path-include-rtools: false
       - name: Check R syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
           < /tmp/files-to-lint
 
@@ -927,17 +795,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.d
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.d' -print0 > /tmp/files-to-lint
       - name: Install DMD
-        if: steps.find-files.outputs.found == 'true'
         uses: dlang-community/setup-dlang@v2
         with:
           compiler: dmd-latest
       - name: Check D syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
 
   lint-powershell:
@@ -946,14 +811,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.ps1
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-to-lint
       # Parse every fixture inside a single pwsh invocation so the .NET
       # and PowerShell startup cost is paid once instead of per fixture.
       - name: Check PowerShell syntax
-        if: steps.find-files.outputs.found == 'true'
         run: pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1
           < /tmp/files-to-lint
 
@@ -963,22 +826,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.adb
-          extra_config_patterns: check_ada_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.adb' -print0 > /tmp/files-to-lint
       - name: Install GNAT
-        if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Ada syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py
           < /tmp/files-to-lint
 
@@ -988,19 +846,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.occ
-          extra_config_patterns: check_occam_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.occ' -print0 > /tmp/files-to-lint
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Occam-pi syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_occam_syntax.py
           < /tmp/files-to-lint
 
@@ -1010,22 +864,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.cr
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
-        if: steps.find-files.outputs.found == 'true'
         uses: crystal-lang/install-crystal@v1
       - name: Check Crystal syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
       # Crystal derives the compiled binary name from the source file's
       # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp).
       # Many fixtures share basenames, so parallel `crystal run` invocations
       # clobber each other's binaries. Give each invocation a private cache.
       - name: Run Crystal files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/run-crystal.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
@@ -1042,12 +892,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/Matlab*.m
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-to-lint
       - name: Install Octave
-        if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq octave
       # Octave is a practical CI substitute, but it does not support
       # every MATLAB builtin.  Skip files that use features Octave lacks:
@@ -1055,7 +903,6 @@ jobs:
       #  - ""-escaped quotes: Octave accepts some backslash escapes
       #    (e.g. \") that MATLAB rejects, so the check would be misleading
       - name: Check MATLAB syntax (Octave-compatible files)
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             if grep -q '""' "$f"; then
@@ -1075,15 +922,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.mojo
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
       - name: Install pixi
-        if: steps.find-files.outputs.found == 'true'
         uses: fabasoad/setup-mojo-action@v3
       - name: Install Mojo
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           pixi init "$RUNNER_TEMP/mojo-env" \
             -c https://conda.modular.com/max \
@@ -1098,7 +942,6 @@ jobs:
       # has enough headroom to accept the reservation — Mojo only
       # actually touches ~320 MB of it.
       - name: Expand memory headroom for Mojo
-        if: steps.find-files.outputs.found == 'true'
         # The GitHub runner already ships a /swapfile mounted as swap, so
         # add a second file at a fresh path instead of overwriting it.
         run: |-
@@ -1111,7 +954,6 @@ jobs:
       # non-deterministically (tracked in  # 558). Retry each file a few
       # times so one crash does not block the rest.
       - name: Check Mojo syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           failed=0
           while IFS= read -r -d '' f; do
@@ -1213,15 +1055,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.nim
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.nim' -print0 > /tmp/files-to-lint
       - name: Install Nim
-        if: steps.find-files.outputs.found == 'true'
         uses: jiro4989/setup-nim-action@v2
       - name: Check Nim syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
           while IFS= read -r -d '' f; do
@@ -1230,7 +1069,6 @@ jobs:
               --nimcache:"$tmpdir" "$f" || exit 1
           done < /tmp/files-to-lint
       - name: Run Nim files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
           while IFS= read -r -d '' f; do
@@ -1245,15 +1083,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.nix
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.nix' -print0 > /tmp/files-to-lint
       - name: Install Nix
-        if: steps.find-files.outputs.found == 'true'
         uses: cachix/install-nix-action@v31
       - name: Check Nix syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-to-lint
           > /dev/null
 
@@ -1263,15 +1098,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.norg
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.norg' -print0 > /tmp/files-to-lint
       - name: Install tree-sitter CLI
-        if: steps.find-files.outputs.found == 'true'
         run: npm install tree-sitter-cli
       - name: Build tree-sitter-norg parser
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           git clone --depth=1 https://github.com/nvim-neorg/tree-sitter-norg.git /tmp/tree-sitter-norg
           cc -shared -fPIC -o /tmp/norg.so \
@@ -1280,7 +1112,6 @@ jobs:
             -x c++ /tmp/tree-sitter-norg/src/scanner.cc \
             -lstdc++
       - name: Check Norg syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 npx tree-sitter parse --lib-path /tmp/norg.so --lang-name norg
           --quiet < /tmp/files-to-lint
 
@@ -1290,23 +1121,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.purs
-          extra_config_patterns: check_purescript_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.purs' -print0 > /tmp/files-to-lint
       - uses: purescript-contrib/setup-purescript@main
-        if: steps.find-files.outputs.found == 'true'
         with:
           purescript: latest
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check PureScript syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n 1 uv run --no-project python check_purescript_syntax.py
           < /tmp/files-to-lint
 
@@ -1316,14 +1142,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.rkt
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.rkt' -print0 > /tmp/files-to-lint
       - uses: Bogdanp/setup-racket@v1.15
-        if: steps.find-files.outputs.found == 'true'
       - name: Check Racket syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 raco make < /tmp/files-to-lint
 
   lint-odin:
@@ -1332,17 +1155,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.odin
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.odin' -print0 > /tmp/files-to-lint
       - name: Install Odin
-        if: steps.find-files.outputs.found == 'true'
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check Odin
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             odin check "$f" -file || exit 1
@@ -1354,24 +1174,20 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.sml
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.sml' -print0 > /tmp/files-to-lint
       - name: Install MLton
-        if: steps.find-files.outputs.found == 'true'
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
       - name: Check SML syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 mlton -stop tc < /tmp/files-to-lint
       # Fixtures only declare `structure Check` with a `my_data` val;
       # MLton never evaluates the body unless a top-level expression
       # references it, so compile alongside a small force file that
       # forces `Check.my_data` to be constructed.
       - name: Run SML files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/run-sml.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
@@ -1390,15 +1206,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.scm
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.scm' -print0 > /tmp/files-to-lint
       - name: Install Guile
-        if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq guile-3.0
       - name: Check Scheme syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-to-lint
 
   lint-raku:
@@ -1407,18 +1220,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.raku
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.raku' -print0 > /tmp/files-to-lint
       - name: Install Raku
-        if: steps.find-files.outputs.found == 'true'
         uses: Raku/setup-raku@v1
       - name: Check Raku syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
       - name: Run Raku files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 raku < /tmp/files-to-lint
 
   lint-zig:
@@ -1427,17 +1236,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.zig
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.zig' -print0 > /tmp/files-to-lint
       - name: Install Zig
-        if: steps.find-files.outputs.found == 'true'
         uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
       - name: Check Zig
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
 
   lint-toml:
@@ -1446,20 +1252,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.toml
-          extra_config_patterns: |
-            pyproject.toml
-            check_toml_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.toml' -print0 > /tmp/files-to-lint
       - uses: astral-sh/setup-uv@v7
-        if: steps.find-files.outputs.found == 'true'
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check TOML syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project
           python check_toml_syntax.py < /tmp/files-to-lint
 
@@ -1469,21 +1269,16 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: |
-            tests/integration/cases/**/*.yaml
-            !tests/integration/cases/**/input.yaml
-          exclude_patterns: input.yaml
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0
+          > /tmp/files-to-lint
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check YAML syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-to-lint
 
@@ -1493,15 +1288,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.sv
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.sv' -print0 > /tmp/files-to-lint
       - name: Install Verilator
-        if: steps.find-files.outputs.found == 'true'
         uses: veryl-lang/setup-verilator@v2
       - name: Check SystemVerilog syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
           -Wno-REALCVT < /tmp/files-to-lint
 
@@ -1511,24 +1303,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.vb
-          extra_config_patterns: check_vb_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.vb' -print0 > /tmp/files-to-lint
       - name: Initialize .NET runtime
-        if: steps.find-files.outputs.found == 'true'
         run: |
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check VB.NET syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_vb_syntax.py
           < /tmp/files-to-lint
 
@@ -1538,15 +1325,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.fth
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.fth' -print0 > /tmp/files-to-lint
       - name: Install Gforth
-        if: steps.find-files.outputs.found == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq gforth
       - name: Check Forth syntax
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           while IFS= read -r -d '' f; do
             gforth "$f" -e bye || exit 1
@@ -1559,12 +1343,10 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.f90
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.f90' -print0 > /tmp/files-to-lint
       - name: Check Fortran syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only <
           /tmp/files-to-lint
       # Every fixture defines its own `fval_m` module, and the syntax
@@ -1576,7 +1358,6 @@ jobs:
       # tmpdir so the stale .mod is not on the module search path and
       # parallel runs cannot clobber each other's output.
       - name: Run Fortran files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
@@ -1594,30 +1375,24 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/ObjectiveC*.m
-          extra_config_patterns: .clang-tidy
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
       - name: Check Objective-C syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror <
           /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula.
       - name: Install clang-tidy
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           brew install --quiet llvm
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
       - name: Run clang-tidy
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
       # Fixtures define `check_(void)` with no main entry point, so
       # compile each alongside a tiny wrapper that calls it. Link
       # against Foundation and execute to surface runtime errors.
       - name: Run Objective-C files
-        if: steps.find-files.outputs.found == 'true'
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -1633,18 +1408,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.wren
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.wren' -print0 > /tmp/files-to-lint
       - name: Install Wren CLI
-        if: steps.find-files.outputs.found == 'true'
         run: |
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
       - name: Run Wren files
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-to-lint
 
   lint-v:
@@ -1653,25 +1425,20 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: ./.github/actions/find-lint-files
-        id: find-files
-        with:
-          lang_patterns: tests/integration/cases/**/*.v
-          extra_config_patterns: check_v_syntax.py
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.v' -print0 > /tmp/files-to-lint
       - name: Install V
-        if: steps.find-files.outputs.found == 'true'
         run: |
           git clone --depth=1 https://github.com/vlang/v /tmp/vlang
           cd /tmp/vlang && make
           sudo ln -s /tmp/vlang/v /usr/local/bin/v
       - name: Install uv
-        if: steps.find-files.outputs.found == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
-        if: steps.find-files.outputs.found == 'true'
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
           < /tmp/files-to-lint
 
