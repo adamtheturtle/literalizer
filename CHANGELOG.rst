@@ -12,6 +12,16 @@ Next
   raises ``UnrepresentableIntegerError`` for values outside the
   signed 64-bit range, matching the behavior of other languages
   without native arbitrary-precision integer support.
+- ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm
+  fixture end-to-end.  A new ``Run Elm files`` step compiles each
+  fixture alongside a small ``Main.elm`` wrapper whose
+  ``Platform.worker`` init forces ``Check.my_data``, emits
+  JavaScript via ``elm make``, and executes it with Node so
+  runtime crashes such as ``Debug.todo`` surface in CI.  The
+  ``scalar_int_very_negative_large`` fixture is skipped because
+  the Elm 0.19.1 code generator emits ``--<digits>`` (two unary
+  minuses) for integers at the int64 boundary, which JavaScript
+  rejects as a prefix-decrement syntax error.
 - ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each
   Standard ML fixture end-to-end.  Because ``MLton`` never evaluates
   a ``structure``'s body unless a top-level expression forces it,
