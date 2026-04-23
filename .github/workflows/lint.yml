@@ -620,7 +620,7 @@ jobs:
           # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
           xargs -0 -P "$(nproc)" -n1 bash -c '
             tmpdir=$(mktemp -d)
-            trap "rm -rf $tmpdir" EXIT
+            trap "rm -rf \"$tmpdir\"" EXIT
             cp "$0" "$tmpdir/Check.hs"
             if grep -qE "^main " "$0"; then
               ghc -main-is Check -outputdir "$tmpdir" \
