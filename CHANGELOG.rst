@@ -13,6 +13,14 @@ Next
   types diverge and is skipped for variant-typed languages (e.g.
   C++) whose fallback opener is element-specific rather than
   universally accepting.
+- ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at
+  argument positions, emitting ``name`` as a bare identifier instead
+  of formatting the value as a literal.  Refs and literals can be
+  mixed in the same call, and the marker is detected across all four
+  input formats (JSON, JSON5, YAML, TOML).  Ref dicts are excluded
+  from data-shape validation and data-driven preamble inference so
+  they do not drag in imports for the ``{str: str}`` shape of the
+  marker itself.
 - ``lint-objectivec`` in ``.github/workflows/lint.yml`` now passes
   ``-Werror`` to both ``clang -fsyntax-only`` and the end-to-end
   ``clang`` compile step so warnings such as
@@ -22,17 +30,6 @@ Next
   fallback) and raises ``UnrepresentableIntegerError`` for values
   below ``LLONG_MIN``, so emitted fixtures compile cleanly under the
   stricter workflow.
-- ``CSharp.format_call_stub`` now emits a parameter list sized to the
-  call's ``parameter_names`` count for single-name targets
-  (``dynamic process(dynamic _a0, dynamic _a1) => null;``) instead of
-  hard-coding a single ``dynamic a`` parameter, so a single-name call
-  target wired up with two or more parameter names produces a stub
-  that ``dotnet build`` accepts rather than rejecting it with
-  ``CS1501 No overload for method 'process' takes 2 arguments``.
-  Pre-existing single-parameter golden files are renamed from ``a``
-  to ``_a0``.  A new ``call_multi_args`` integration case exercises
-  the single-name + multi-parameter combination across the
-  call-capable languages.
 - Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT``
   option that auto-generates a Nim object variant in the preamble
   whenever a dict, list, or sibling-list pair contains scalar values

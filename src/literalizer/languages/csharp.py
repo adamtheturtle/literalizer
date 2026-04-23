@@ -273,7 +273,13 @@ def _csharp_call_stub(
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return C# stub declarations for a call name."""
+    """Return C# stub declarations for a call name.
+
+    For a single-name target the stub is a free function whose
+    parameter list matches the count of ``params``; for a dotted
+    target an ``ExpandoObject`` root is emitted so dynamic dispatch
+    absorbs any number of arguments.
+    """
     parts = name.split(sep=".")
     if len(parts) == 1:
         param_list = ", ".join(f"dynamic _a{i}" for i in range(len(params)))
