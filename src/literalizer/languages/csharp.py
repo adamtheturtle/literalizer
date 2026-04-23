@@ -276,9 +276,9 @@ def _csharp_call_stub(
     """Return C# stub declarations for a call name.
 
     For a single-name target the stub is a free function whose
-    parameter list matches the count of *params*; for a dotted target
-    an ``ExpandoObject`` root is emitted so dynamic dispatch absorbs
-    any number of arguments.
+    parameter list matches the count of ``params``; for a dotted
+    target an ``ExpandoObject`` root is emitted so dynamic dispatch
+    absorbs any number of arguments.
     """
     parts = name.split(sep=".")
     if len(parts) == 1:
