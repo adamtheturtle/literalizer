@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+- ``lint-powershell`` in ``.github/workflows/lint.yml`` now parses every
+  fixture inside a single ``pwsh`` invocation instead of cold-starting
+  ``pwsh`` once per file, paying the .NET and PowerShell startup cost
+  once for the whole job.
 - The ``heterogeneous_strategy`` variant case list now includes the
   ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
   ``UNION_TYPE`` rendering on ``!!omap`` inputs.
