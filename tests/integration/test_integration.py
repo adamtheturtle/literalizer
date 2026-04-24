@@ -161,11 +161,11 @@ _HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
 ] = {Dhall: "JsonValue"}
 
 # Languages whose heterogeneous-value variant name is configurable
-# (the Nim ``OBJECT_VARIANT`` strategy); the value is the test
-# override to apply.
+# (the Nim ``OBJECT_VARIANT`` strategy and the Mojo ``VARIANT``
+# strategy); the value is the test override to apply.
 _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES: dict[
     literalizer.LanguageCls, str
-] = {Nim: "JsonValue"}
+] = {Nim: "JsonValue", Mojo: "JsonValue"}
 
 # Languages that accept constructor-name kwargs (Fortran) or field-name
 # kwargs (C); the inner dict is the kwargs to pass to the constructor.
@@ -1253,24 +1253,25 @@ def _build_heterogeneous_value_union_name_variants() -> Iterable[_Variant]:
 @beartype
 def _build_heterogeneous_value_variant_name_variants() -> Iterable[_Variant]:
     """Build heterogeneous-value-variant-name variants for languages
-    that generate a named object variant for their heterogeneous
-    strategy (e.g. the Nim ``OBJECT_VARIANT``).  The
+    that generate a named variant type for their heterogeneous strategy
+    (the Nim ``OBJECT_VARIANT`` and Mojo ``VARIANT``).  The
     ``heterogeneous_value_variant_name`` constructor parameter lets
     users customize that name.
     """
+    wrapping_strategy_names = {"OBJECT_VARIANT", "VARIANT"}
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
         custom_name = _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES.get(lang_cls)
         if custom_name is None:
             continue
         default_spec = _spec(lang_cls=lang_cls)
-        object_variant = next(
+        wrapping_strategy = next(
             strategy
             for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "OBJECT_VARIANT"
+            if strategy.name in wrapping_strategy_names
         )
         spec = lang_cls(
-            heterogeneous_strategy=object_variant,
+            heterogeneous_strategy=wrapping_strategy,
             heterogeneous_value_variant_name=custom_name,
         )
         variants.append(
