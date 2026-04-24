@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import assert_never, cast
+from typing import Any, assert_never, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.compat import ordereddict
@@ -1565,10 +1565,12 @@ def _format_call_args(
         "format_call_arg",
         _identity_call_arg,
     )
-    # Every LanguageCls injects this default via metaclass __new__;
-    # it's intentionally a class-level contract rather than a Protocol
-    # member to avoid duplicating the method across ~70 language files.
-    format_ref_identifier = language.format_call_ref_identifier  # type: ignore[attr-defined]
+    # Every LanguageCls injects this default via metaclass ``__new__``.
+    language_any = cast("Any", language)
+    format_ref_identifier = cast(
+        "Callable[[str], str]",
+        language_any.format_call_ref_identifier,
+    )
     formatted = [
         _format_single_call_arg(
             value=arg_value,
