@@ -1442,17 +1442,21 @@ jobs:
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror -include-pch
           /tmp/pch.h.pch < /tmp/files-to-lint
       # Fixtures define `check_(void)` with no main entry point, so
-      # compile each alongside a tiny wrapper that calls it. Link
-      # against Foundation and execute to surface runtime errors. Each
-      # invocation gets a private tmpdir so parallel builds don't clobber
-      # each other's output binary.
+      # compile each alongside a tiny wrapper that calls it. Compile
+      # `objc_main.m` once up front so each fixture link reuses the
+      # object instead of re-parsing the same TU. Link against Foundation
+      # and execute to surface runtime errors. Each invocation gets a
+      # private tmpdir so parallel builds don't clobber each other's
+      # output binary.
+      - name: Build objc_main object
+        run: clang -c .github/scripts/objc_main.m -o /tmp/objc_main.o
       - name: Run Objective-C files
         run: |-
           cat > /tmp/run-objc.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           clang -framework Foundation -Werror -include-pch /tmp/pch.h.pch "$1" \
-            .github/scripts/objc_main.m -o "$tmpdir/out" || exit 1
+            /tmp/objc_main.o -o "$tmpdir/out" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
