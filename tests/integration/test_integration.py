@@ -27,6 +27,7 @@ from ruamel.yaml import YAML
 import literalizer
 from literalizer._language import StubReturn
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     NullInCollectionError,
@@ -678,6 +679,13 @@ class _CallCaseConfig:
     before the call so the resulting file is self-contained.  Only
     meaningful when at least one call argument in ``input.yaml`` uses
     the ``{"$ref": "name"}`` marker.
+
+    When *ref_case_per_language* is ``True``, the harness picks each
+    language's first-listed ``IdentifierCases`` member as the
+    ``ref_case`` for that language, converts each
+    *ref_declarations* key to that case, and passes the same case
+    through to :func:`literalize_call` so the declaration site and
+    the call site agree on identifier spelling.
     """
 
     case_dir_name: str
@@ -690,6 +698,7 @@ class _CallCaseConfig:
     ref_declarations: dict[str, str]
     as_expression: bool
     bare_output: bool
+    ref_case_per_language: bool
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -711,6 +720,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -723,6 +733,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -735,6 +746,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -747,6 +759,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -759,6 +772,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -771,6 +785,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -783,6 +798,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -795,6 +811,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -810,6 +827,54 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         },
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "[1, 2, 3]",
+            "my_other": "[4, 5, 6]",
+        },
+        as_expression=False,
+        bare_output=False,
+        ref_case_per_language=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted_whole",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "[1, 2, 3]",
+        },
+        as_expression=False,
+        bare_output=False,
+        ref_case_per_language=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted_nonsnake",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "myVar": "[1, 2, 3]",
+            "MyOther": "[4, 5, 6]",
+        },
+        as_expression=False,
+        bare_output=False,
+        ref_case_per_language=True,
     ),
     _CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -822,6 +887,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_as_expression",
@@ -834,6 +900,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=True,
         bare_output=True,
+        ref_case_per_language=False,
     ),
     *[
         _CallCaseConfig(
@@ -847,6 +914,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             ref_declarations={},
             as_expression=False,
             bare_output=False,
+            ref_case_per_language=False,
         )
         for name, cls in _CALL_STYLE_VARIANTS
     ],
@@ -2411,6 +2479,20 @@ def _run_call_golden_case(
     yaml_string = input_path.read_text()
     extension = ".txt" if config.bare_output else lang_cls.extension
     golden_path = input_path.parent / (golden_name + extension)
+    effective_ref_case: literalizer.IdentifierCase | None
+    if config.ref_case_per_language:
+        # First element of ``identifier_cases`` is the language's
+        # default — convert declaration names to that case so the
+        # ref-site and declaration-site spellings agree.
+        default_case = spec.identifier_cases[0]
+        effective_ref_case = default_case
+        declarations = {
+            default_case.convert(name=ref_name): ref_source
+            for ref_name, ref_source in config.ref_declarations.items()
+        }
+    else:
+        effective_ref_case = None
+        declarations = config.ref_declarations
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
@@ -2422,7 +2504,7 @@ def _run_call_golden_case(
                 language=spec,
                 variable_form=literalizer.NewVariable(name=ref_name),
             )
-            for ref_name, ref_source in config.ref_declarations.items()
+            for ref_name, ref_source in declarations.items()
         ]
         result = literalizer.literalize_call(
             source=yaml_string,
@@ -2432,12 +2514,18 @@ def _run_call_golden_case(
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
             per_element=config.per_element,
+            ref_case=effective_ref_case,
             as_expression=config.as_expression,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_cls.__name__} cannot represent this heterogeneous input",
+        )
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} rejected call arg: {exc.reason}",
         )
     if config.bare_output:
         # Fragment-only golden: the raw ``literalize_call`` output

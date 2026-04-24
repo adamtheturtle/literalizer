@@ -13,6 +13,7 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import (
     BothVariableForms,
+    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
@@ -22,20 +23,25 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     HeterogeneousBehavior,
     LanguageCls,
+    StubReturn,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     NullInCollectionError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedIdentifierCaseError,
 )
 from literalizer.languages import (
+    Bash,
     Cobol,
     Dart,
     Fortran,
     FSharp,
+    Gleam,
     Go,
     Java,
     JavaScript,
@@ -510,6 +516,23 @@ def test_literalize_call_wrap_in_file() -> None:
     assert not result_no_preamble.preamble
 
 
+def test_gleam_call_preamble_stub_many_parameters() -> None:
+    """Gleam call stubs handle more than 26 parameters.
+
+    ``_gleam_type_var`` falls back to numeric suffixes past the 26-letter
+    alphabet, so a 27-parameter call must emit a ``z`` for the last
+    single-letter slot and an ``a1`` for the next one.
+    """
+    params = [f"p{i}" for i in range(27)]
+    (line,) = Gleam().format_call_preamble_stub(
+        "target",
+        params,
+        StubReturn.VOID,
+    )
+    assert "_p25: z" in line
+    assert "_p26: a1" in line
+
+
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
     expected_msg = "BothVariableForms requires wrap_in_file=True"
@@ -744,6 +767,68 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
         )
 
 
+def test_literalize_call_bash_rejects_list_arg() -> None:
+    """Bash raises ``CallArgNotSupportedError`` when a call argument
+    is a list, because ``cmd (1 2 3)`` parses as ``cmd`` followed by
+    a nested ``(...)`` child-process group, not an inline array
+    literal.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"^Bash cannot accept this value as a call argument: "
+            r"list values have no inline literal form"
+        ),
+    ):
+        literalize_call(
+            source="[[[1, 2, 3]]]",
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["items"],
+        )
+
+
+def test_literalize_call_bash_rejects_dict_arg() -> None:
+    """Bash raises ``CallArgNotSupportedError`` when a call argument
+    is a dict, because Bash associative-array literals cannot appear
+    as a single positional argument.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"^Bash cannot accept this value as a call argument: "
+            r"dict values have no inline literal form"
+        ),
+    ):
+        literalize_call(
+            source='[[{"k": 1}]]',
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["m"],
+        )
+
+
+def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
+    """Bash's call-argument guard also fires on the
+    ``per_element=False`` path where the whole parsed value is passed
+    as a single argument.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=r"^Bash cannot accept this value as a call argument",
+    ):
+        literalize_call(
+            source="[1, 2, 3]",
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["items"],
+            per_element=False,
+        )
+
+
 def test_literalize_call_arg_ref_all_refs() -> None:
     """A call whose every argument is a ref still renders correctly;
     the empty non-ref list must not break wrap-id computation.
@@ -823,4 +908,20 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
             language=Python(),
             target_function="f",
             parameter_names=["only"],
+        )
+
+
+def test_literalize_call_ref_case_unsupported_raises() -> None:
+    """``ref_case`` outside the language's ``IdentifierCases`` raises."""
+    with pytest.raises(
+        expected_exception=UnsupportedIdentifierCaseError,
+        match=r"^Python does not support identifier case 'CAMEL'$",
+    ):
+        literalize_call(
+            source='[[{"$ref": "user_obj"}, 42]]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["data", "count"],
+            ref_case=IdentifierCase.CAMEL,
         )
