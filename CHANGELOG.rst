@@ -14,6 +14,11 @@ Next
   TypeScript, ...), yielding ``process(...),;`` — a syntax error
   inside a list or array literal.  Defaults to ``False``, which
   preserves the existing behavior.
+
+2026.04.24.1
+------------
+
+
 - ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
   fixture end-to-end via ``lua``, catching runtime errors (calls to
   undefined functions, missing module imports, failed assertions)
