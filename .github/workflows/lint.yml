@@ -984,7 +984,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
-        run: uv tool install mojo-compiler
+        run: uv tool install 'mojo-compiler==0.25.6.0'
       # Mojo reserves ~3.6 GB of virtual address space per invocation
       # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
       # kernel's default overcommit heuristic refuses the allocation and
