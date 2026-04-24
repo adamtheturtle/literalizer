@@ -502,7 +502,7 @@ jobs:
             printf '%s.erl <- %s\n' "$name" "$f"
             i=$((i+1))
           done < /tmp/files-to-lint
-          (cd "$tmpdir" && erlc fixture_*.erl)
+          (cd "$tmpdir" && erlc -Werror fixture_*.erl)
 
   lint-fsharp:
     runs-on: ubuntu-latest
