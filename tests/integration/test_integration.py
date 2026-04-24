@@ -46,6 +46,8 @@ from literalizer.languages import (
     Gleam,
     Go,
     Haskell,
+    Hcl,
+    Jsonnet,
     Kotlin,
     Mojo,
     Nim,
@@ -2374,6 +2376,24 @@ def test_format_enumeration_properties(
 # --- literalize_call golden-file tests ---
 
 
+_REF_DECLARATION_WRAP_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = (
+    frozenset(
+        {
+            # ``wrap_in_file`` places content inside ``main = do``; a
+            # multi-line ``name = value`` binding needs ``let`` in a
+            # do-block, which the harness does not inject.
+            Haskell,
+            # ``wrap_in_file`` renames each content line as ``_N = …``,
+            # which breaks multi-line variable declarations.
+            Hcl,
+            # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
+            # list; variable declarations don't fit the shape.
+            Jsonnet,
+        }
+    )
+)
+
+
 @dataclasses.dataclass
 class _CallCase:
     """A parameterized call-style golden-file test case."""
@@ -2393,6 +2413,11 @@ def _discover_call_cases() -> list[_CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
+                continue
+            if (
+                config.ref_declarations
+                and lang_cls in _REF_DECLARATION_WRAP_INCOMPATIBLE
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -2538,6 +2563,13 @@ def _run_call_golden_case(
                 StubReturn.VOID,
             ),
         )
+    terminated_declarations: list[str] = []
+    for decl in decl_results:
+        code = decl.bare_code
+        terminator = spec.statement_terminator
+        if terminator and not code.rstrip().endswith(terminator):
+            code = code + terminator
+        terminated_declarations.append(code)
     decl_body_preambles = tuple(
         line for d in decl_results for line in d.body_preamble
     )
@@ -2545,9 +2577,7 @@ def _run_call_golden_case(
     call_body_preamble = _dedupe_ordered(
         lines=decl_body_preambles + result.body_preamble + tuple(body_stubs)
     )
-    content = "\n".join(
-        [d.bare_code for d in decl_results] + [result.bare_code]
-    )
+    content = "\n".join([*terminated_declarations, result.bare_code])
 
     wrapped = spec.wrap_in_file(
         content=content,

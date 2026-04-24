@@ -6,11 +6,11 @@ x() ->
         1,
         2,
         3
-    ]
+    ],
     My_other = [
         4,
         5,
         6
-    ]
+    ],
     process(My_var, 42),
     process(My_other, 7).

@@ -98,7 +98,7 @@ def _common_lisp_call_stub(
 
 @beartype
 def _common_lisp_format_call_ref_identifier(name: str, /) -> str:
-    """Format a call-site ref as a ``defparameter`` earmuffed symbol."""
+    """Format a call-site ref as a ``defparameter`` ear-muffed symbol."""
     return f"*{name}*"
 
 

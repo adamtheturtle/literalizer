@@ -6,6 +6,6 @@ MyVar := []int{
 	1,
 	2,
 	3,
-}
+};
 process(MyVar);
 }

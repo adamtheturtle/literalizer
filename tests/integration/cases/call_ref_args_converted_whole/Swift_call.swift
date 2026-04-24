@@ -3,5 +3,5 @@ let myVar: Any = [
     1,
     2,
     3,
-]
+];
 process(data: myVar);
