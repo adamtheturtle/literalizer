@@ -229,7 +229,9 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
-    formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
+    formatted = [
+        _format_scalar_unchecked(value=v, spec=spec) for v in sorted_items
+    ]
     entries = [
         spec.format_set_entry(v, item)
         for v, item in zip(sorted_items, formatted, strict=True)
@@ -279,7 +281,7 @@ def _format_ordered_map_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_dict_entry_value(
+                formatted_value=_format_dict_entry_value_unchecked(
                     value=v,
                     spec=spec,
                     wrap_ids=wrap_ids,
@@ -333,7 +335,7 @@ def _format_dict_value(
     )
     pairs = [
         _build_dict_entry(
-            key_str=_format_value(
+            key_str=_format_value_unchecked(
                 value=k,
                 spec=spec,
                 dict_open_override=None,
@@ -345,7 +347,7 @@ def _format_dict_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_dict_entry_value(
+                formatted_value=_format_dict_entry_value_unchecked(
                     value=v,
                     spec=spec,
                     wrap_ids=wrap_ids,
@@ -387,14 +389,14 @@ def _format_dict_entry_value(
     across sibling entries share a widened type).
     """
     if isinstance(value, list):
-        return _format_list_value(
+        return _format_list_value_unchecked(
             value=value,
             spec=spec,
             wrap_ids=wrap_ids,
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
         )
-    return _format_value(
+    return _format_value_unchecked(
         value=value,
         spec=spec,
         dict_open_override=None,
@@ -673,7 +675,7 @@ def _format_list_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_value(
+                formatted_value=_format_value_unchecked(
                     value=v,
                     spec=spec,
                     dict_open_override=dict_open_override,
@@ -740,22 +742,22 @@ def _format_value(
     """
     match value:
         case ordereddict():
-            return _format_ordered_map_value(
+            return _format_ordered_map_value_unchecked(
                 value=value,
                 spec=spec,
                 wrap_ids=wrap_ids,
             )
         case dict():
-            return _format_dict_value(
+            return _format_dict_value_unchecked(
                 value=value,
                 spec=spec,
                 open_override=dict_open_override,
                 wrap_ids=wrap_ids,
             )
         case set():
-            return _format_set_value(value=value, spec=spec)
+            return _format_set_value_unchecked(value=value, spec=spec)
         case list():
-            return _format_list_value(
+            return _format_list_value_unchecked(
                 value=value,
                 spec=spec,
                 wrap_ids=wrap_ids,
@@ -763,7 +765,16 @@ def _format_value(
                 child_sequence_open_overrides=(),
             )
         case _:
-            return _format_scalar(value=value, spec=spec)
+            return _format_scalar_unchecked(value=value, spec=spec)
+
+
+_format_scalar_unchecked = _format_scalar.__wrapped__
+_format_set_value_unchecked = _format_set_value.__wrapped__
+_format_ordered_map_value_unchecked = _format_ordered_map_value.__wrapped__
+_format_dict_value_unchecked = _format_dict_value.__wrapped__
+_format_dict_entry_value_unchecked = _format_dict_entry_value.__wrapped__
+_format_list_value_unchecked = _format_list_value.__wrapped__
+_format_value_unchecked = _format_value.__wrapped__
 
 
 @beartype
@@ -852,7 +863,7 @@ def _format_collection_lines(
             )
             formatted_entries: list[str] = []
             for k, v in entries:
-                formatted_key = _format_value(
+                formatted_key = _format_value_unchecked(
                     value=k,
                     spec=spec,
                     dict_open_override=None,
@@ -863,7 +874,7 @@ def _format_collection_lines(
                     parent_id=parent_id,
                     wrap_ids=wrap_ids,
                     raw_value=v,
-                    formatted_value=_format_dict_entry_value(
+                    formatted_value=_format_dict_entry_value_unchecked(
                         value=v,
                         spec=spec,
                         wrap_ids=wrap_ids,
@@ -900,7 +911,7 @@ def _format_collection_lines(
             formatted_entries = [
                 spec.format_set_entry(
                     item,
-                    _format_value(
+                    _format_value_unchecked(
                         value=item,
                         spec=spec,
                         dict_open_override=None,
@@ -933,7 +944,7 @@ def _format_collection_lines(
                         parent_id=parent_id,
                         wrap_ids=wrap_ids,
                         raw_value=element,
-                        formatted_value=_format_value(
+                        formatted_value=_format_value_unchecked(
                             value=element,
                             spec=spec,
                             dict_open_override=dict_open_override,
