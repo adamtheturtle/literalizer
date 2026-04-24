@@ -973,10 +973,10 @@ jobs:
   # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
   # crashes in libKGENCompilerRTShared.so before producing any output —
   # and even with overcommit + swap workarounds it could only run
-  # serially. Ubicloud's 16 GB runner comfortably fits `$(nproc)`
+  # serially. Blacksmith's 16 GB runner comfortably fits `$(nproc)`
   # parallel invocations without the workarounds.
   lint-mojo:
-    runs-on: ubicloud-standard-4
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v6
         with:
