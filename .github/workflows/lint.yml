@@ -919,20 +919,38 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
-      # Crystal derives the compiled binary name from the source file's
-      # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp).
-      # Many fixtures share basenames, so parallel `crystal run` invocations
-      # clobber each other's binaries. Give each invocation a private cache.
+      # Compile every fixture in a single `crystal run` invocation to
+      # pay Crystal's front-end + LLVM codegen + link cost once instead
+      # of per fixture. Each fixture is wrapped in a unique
+      # `module FixtureN ... end` to avoid collisions: many fixtures
+      # share a basename (111 copies of `Crystal.cr`), 6 declare the
+      # same `class ThrottlerType_` / `class ClientType_` / etc., and
+      # two reuse the top-level `def emit` / `def process`. `extend
+      # self` lets unqualified calls like `emit(...)` inside the module
+      # body resolve to the module's own `def emit`. A single
+      # `require "set"` on the driver covers the 18 fixtures that need
+      # it (stripped from each wrapped copy); the driver then
+      # `require`s every fixture so each module body executes at
+      # program start. The `fixture_N.cr <- original-path` mapping is
+      # printed so failures still point back to the source.
       - name: Run Crystal files
         run: |-
-          cat > /tmp/run-crystal.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$1"
-          rc=$?
-          rm -rf "$tmpdir"
-          exit "$rc"
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-crystal.sh < /tmp/files-to-lint
+          workspace=$(mktemp -d)
+          driver="$workspace/run_all.cr"
+          printf 'require "set"\n' > "$driver"
+          i=0
+          while IFS= read -r -d '' f; do
+            {
+              printf 'module Fixture%d\n' "$i"
+              printf 'extend self\n'
+              sed '/^require "set"$/d' "$f"
+              printf 'end\n'
+            } > "$workspace/fixture_$i.cr"
+            printf 'require "./fixture_%d"\n' "$i" >> "$driver"
+            printf 'fixture_%d.cr <- %s\n' "$i" "$f"
+            i=$((i+1))
+          done < /tmp/files-to-lint
+          crystal run "$driver"
 
   lint-matlab:
     runs-on: ubuntu-latest
