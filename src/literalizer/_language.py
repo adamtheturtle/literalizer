@@ -489,7 +489,7 @@ class LanguageCls(type):
     format_call_ref_identifier: Callable[[str], str]
 
     def __new__(
-        mcls,
+        mcs,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, object],
@@ -500,7 +500,7 @@ class LanguageCls(type):
             namespace["format_call_ref_identifier"] = staticmethod(
                 identity_call_ref_identifier
             )
-        return super().__new__(mcls, name, bases, namespace, **kwargs)
+        return super().__new__(mcs, name, bases, namespace, **kwargs)
 
     @staticmethod
     def wrap_in_file(

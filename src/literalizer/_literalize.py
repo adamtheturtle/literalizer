@@ -1565,7 +1565,7 @@ def _format_call_args(
         "format_call_arg",
         _identity_call_arg,
     )
-    # Every LanguageCls injects this default via metaclass ``__new__``.
+    # Every LanguageCls injects this default via its class-builder ``__new__``.
     language_any = cast("Any", language)
     format_ref_identifier = cast(
         "Callable[[str], str]",
