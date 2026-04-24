@@ -688,6 +688,12 @@ class _CallCaseConfig:
     ref_declarations: dict[str, str] = dataclasses.field(
         default_factory=dict[str, str],
     )
+    # When True, drive ``literalize_call(..., wrap_in_file=True)``
+    # directly instead of wrapping manually with injected stubs.  Only
+    # languages in :data:`_WRAP_IN_FILE_SUPPORTED_LANGUAGES` are run;
+    # others would call an undefined ``target_function`` and fail their
+    # per-language CI syntax check.
+    wrap_in_file: bool = False
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -781,6 +787,15 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_wrap_in_file",
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        wrap_in_file=True,
     ),
     *[
         _CallCaseConfig(
@@ -2285,6 +2300,20 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
 )
 
 
+# Languages a ``wrap_in_file=True`` call case is run against.  The
+# generated file calls an undefined ``target_function`` (there is no
+# place to inject a stub when :func:`literalize_call` does the wrapping
+# itself), so only languages whose per-language CI syntax check tolerates
+# unresolved names are included.
+#
+# * :class:`Go` covers the branch that prepends a static preamble
+#   (``package main``).
+# * :class:`Python` covers the no-preamble branch.
+_WRAP_IN_FILE_SUPPORTED_LANGUAGES: frozenset[literalizer.LanguageCls] = (
+    frozenset({Go, Python})
+)
+
+
 @dataclasses.dataclass
 class _CallCase:
     """A parameterized call-style golden-file test case."""
@@ -2306,6 +2335,11 @@ def _discover_call_cases() -> list[_CallCase]:
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
             if config.ref_declarations and lang_cls in _REF_CASE_INCOMPATIBLE:
+                continue
+            if (
+                config.wrap_in_file
+                and lang_cls not in _WRAP_IN_FILE_SUPPORTED_LANGUAGES
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -2345,6 +2379,36 @@ def _run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    if config.wrap_in_file:
+        # ``literalize_call`` does the wrapping itself, so there is no
+        # place to inject stubs for the target function — the case is
+        # restricted at discovery time to languages whose CI syntax
+        # check tolerates the unresolved name.
+        try:
+            wrap_result = literalizer.literalize_call(
+                source=yaml_string,
+                input_format=literalizer.InputFormat.YAML,
+                language=spec,
+                target_function=config.target_function,
+                parameter_names=config.parameter_names,
+                call_transform=config.call_transform,
+                per_element=config.per_element,
+                wrap_in_file=True,
+            )
+        except HeterogeneousCollectionError:
+            golden_path.unlink(missing_ok=True)
+            pytest.skip(
+                f"{lang_cls.__name__} cannot represent this "
+                "heterogeneous input",
+            )
+        _check_golden(
+            file_regression=file_regression,
+            contents=wrap_result.code + "\n",
+            extension=lang_cls.extension,
+            newline="",
+            golden_path=golden_path,
+        )
+        return
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
