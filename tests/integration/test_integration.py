@@ -707,7 +707,7 @@ class _CallCaseConfig:
     # ``variable_form=NewVariable(name=variable_form_name)`` to
     # :func:`literalize_call` so the expression list is wrapped in a
     # language-native sequence literal and bound to a variable.
-    variable_form_name: str | None = None
+    variable_form_name: str | None
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -730,6 +730,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -743,6 +744,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -756,6 +758,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -769,6 +772,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -782,6 +786,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -795,6 +800,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -808,6 +814,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -821,6 +828,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -837,6 +845,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args_converted",
@@ -853,6 +862,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=True,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args_converted_whole",
@@ -868,6 +878,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=True,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args_converted_nonsnake",
@@ -884,6 +895,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=True,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -897,6 +909,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=False,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     _CallCaseConfig(
         # ``as_expression=True`` + ``wrap_in_file=True`` +
@@ -931,6 +944,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         as_expression=False,
         wrap_in_file=True,
         ref_case_per_language=False,
+        variable_form_name=None,
     ),
     *[
         _CallCaseConfig(
@@ -945,6 +959,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             as_expression=False,
             wrap_in_file=False,
             ref_case_per_language=False,
+            variable_form_name=None,
         )
         for name, cls in _CALL_STYLE_VARIANTS
     ],
