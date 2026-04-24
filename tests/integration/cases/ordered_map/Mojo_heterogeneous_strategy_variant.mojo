@@ -1,4 +1,5 @@
-alias Value = Variant[String, Int, Bool]
+from std.utils.variant import Variant
+comptime Value = Variant[String, Int, Bool]
 def main():
     var my_data = [
         Tuple("name", Value(String("Alice"))),

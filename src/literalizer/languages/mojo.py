@@ -81,20 +81,23 @@ def _format_mojo_ordered_map_entry(
     return f"Tuple({key}, {formatted_value})"
 
 
+_VARIANT_PAYLOAD_VALUE_PLACEHOLDER = "{value}"
+
+
 @dataclasses.dataclass(frozen=True)
 class _VariantSignature:
     """Mojo ``Variant`` alternative for one scalar bucket.
 
     ``type_name`` is the Mojo type listed in the ``Variant[...]`` alias
-    (e.g. ``"Bool"``, ``"Int"``, ``"String"``, ``"NoneType"``).  ``cast``
-    is ``None`` when the formatted scalar can be passed straight to the
-    Variant constructor (``Value(True)``); otherwise it is a Mojo type
-    used to wrap the formatted value (``Value(String("x"))``) so the
-    constructor resolves to the intended alternative.
+    (e.g. ``"Bool"``, ``"Int"``, ``"String"``, ``"NoneType"``).
+    ``payload_template`` is the expression rendered between the outer
+    ``Value(...)`` parentheses; occurrences of ``{value}`` are replaced
+    with the formatted scalar, and a template without the placeholder
+    (e.g. ``"NoneType()"``) ignores the formatted scalar entirely.
     """
 
     type_name: str
-    cast: str | None
+    payload_template: str
 
 
 @beartype
@@ -103,16 +106,31 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
 
     Strings, bytes, dates, and datetimes all map to ``String`` because
     the default Mojo date / datetime formats produce ISO strings and
-    the bytes formats produce hex or base64 strings.
+    the bytes formats produce hex or base64 strings.  ``None`` maps to
+    ``NoneType`` and renders as ``Value(NoneType())`` because Mojo's
+    ``Variant`` constructor cannot infer ``NoneType`` from the bare
+    ``None`` literal.
     """
-    _string_signature = _VariantSignature(type_name="String", cast="String")
+    _string_signature = _VariantSignature(
+        type_name="String",
+        payload_template="String({value})",
+    )
     match value:
         case bool():
-            return _VariantSignature(type_name="Bool", cast=None)
+            return _VariantSignature(
+                type_name="Bool",
+                payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+            )
         case int():
-            return _VariantSignature(type_name="Int", cast=None)
+            return _VariantSignature(
+                type_name="Int",
+                payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+            )
         case float():
-            return _VariantSignature(type_name="Float64", cast="Float64")
+            return _VariantSignature(
+                type_name="Float64",
+                payload_template="Float64({value})",
+            )
         case str():
             return _string_signature
         case bytes():
@@ -122,7 +140,10 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
         case datetime.date():
             return _string_signature
         case None:
-            return _VariantSignature(type_name="NoneType", cast=None)
+            return _VariantSignature(
+                type_name="NoneType",
+                payload_template="NoneType()",
+            )
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -156,6 +177,9 @@ def _build_error_preamble(
     return no_data_preamble
 
 
+_VARIANT_IMPORT_LINE = "from std.utils.variant import Variant"
+
+
 def _build_variant_behavior(
     variant_name: str,
     /,
@@ -167,15 +191,14 @@ def _build_variant_behavior(
         return collect_heterogeneous_container_ids(data=data)
 
     def _wrap(raw_value: Value, formatted: str) -> str:
-        """Wrap a scalar as ``{variant_name}(value)`` or
-        ``{variant_name}({Cast}(value))`` when an explicit cast is
-        needed to select the Variant alternative.
+        """Wrap a scalar as ``{variant_name}({payload})`` where the
+        payload comes from the signature's ``payload_template`` (with
+        ``{value}`` substituted by the formatted scalar).
         """
         signature = _mojo_variant_for_scalar(cast("Scalar", raw_value))
-        payload = (
-            formatted
-            if signature.cast is None
-            else f"{signature.cast}({formatted})"
+        payload = signature.payload_template.replace(
+            _VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+            formatted,
         )
         return f"{variant_name}({payload})"
 
@@ -190,10 +213,12 @@ def _build_variant_preamble(
     variant_name: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
-    """VARIANT strategy: emit a ``Variant`` alias declaration."""
+    """VARIANT strategy: emit a ``Variant`` comptime declaration."""
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
-        """Build the ``alias`` declaration for *data*."""
+        """Build the ``Variant`` import + ``comptime`` declaration for
+        *data*.
+        """
         wrap_ids = collect_heterogeneous_container_ids(data=data)
         if not wrap_ids:
             return ()
@@ -207,7 +232,10 @@ def _build_variant_preamble(
             seen.add(signature.type_name)
             type_names.append(signature.type_name)
         joined = ", ".join(type_names)
-        return (f"alias {variant_name} = Variant[{joined}]",)
+        return (
+            _VARIANT_IMPORT_LINE,
+            f"comptime {variant_name} = Variant[{joined}]",
+        )
 
     return _preamble
 
@@ -220,9 +248,9 @@ class Mojo(metaclass=LanguageCls):
     By default Mojo raises on heterogeneous input because its native
     collections require a single element type.  Opt into
     :attr:`HeterogeneousStrategies.VARIANT` to wrap mixed scalars in a
-    generated ``alias Value = Variant[...]`` and render each scalar as
-    ``Value(...)`` so heterogeneous dicts and lists become homogeneous
-    in the Variant type.
+    generated ``comptime Value = Variant[...]`` and render each scalar
+    as ``Value(...)`` so heterogeneous dicts and lists become
+    homogeneous in the Variant type.
     """
 
     extension = ".mojo"
@@ -470,12 +498,14 @@ class Mojo(metaclass=LanguageCls):
             build_behavior=_build_variant_behavior,
             build_preamble=_build_variant_preamble,
         )
-        """Auto-generate an ``alias`` in the preamble binding the
+        """Auto-generate a ``comptime`` binding in the preamble for the
         configured name to a ``Variant[...]`` over only the Mojo types
-        actually present in heterogeneous positions, and wrap each such
-        scalar as ``{Name}(value)`` (with an explicit ``String(...)`` or
-        ``Float64(...)`` cast when needed so the constructor resolves to
-        the intended Variant alternative).
+        actually present in heterogeneous positions, together with a
+        ``from std.utils.variant import Variant`` import, and wrap each
+        such scalar as ``{Name}(value)`` (with an explicit ``String(...)``
+        or ``Float64(...)`` cast when needed so the constructor resolves
+        to the intended Variant alternative, and ``NoneType()`` for
+        nulls).
 
         The alias name is configurable via
         :attr:`Mojo.heterogeneous_value_variant_name` (default
