@@ -1586,9 +1586,10 @@ def _format_call_args(
                 for name, val in zip(params, formatted, strict=True)
             )
             return f"({{ {named} }})"
-        case PostfixCallStyle(arg_separator=sep):
-            return sep.join(formatted)
-        case CommandCallStyle(arg_separator=sep):
+        case (
+            PostfixCallStyle(arg_separator=sep)
+            | CommandCallStyle(arg_separator=sep)
+        ):
             return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
             if len(params) != len(formatted):

@@ -749,8 +749,9 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
 
 def test_literalize_call_bash_rejects_list_arg() -> None:
     """Bash raises ``CallArgNotSupportedError`` when a call argument
-    is a list, because ``cmd (1 2 3)`` parses as a subshell invocation
-    rather than an inline array literal.
+    is a list, because ``cmd (1 2 3)`` parses as ``cmd`` followed by
+    a nested ``(...)`` child-process group, not an inline array
+    literal.
     """
     with pytest.raises(
         expected_exception=CallArgNotSupportedError,
@@ -790,8 +791,9 @@ def test_literalize_call_bash_rejects_dict_arg() -> None:
 
 
 def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
-    """Bash's call-arg guard also fires on the ``per_element=False``
-    path where the whole parsed value is passed as a single argument.
+    """Bash's call-argument guard also fires on the
+    ``per_element=False`` path where the whole parsed value is passed
+    as a single argument.
     """
     with pytest.raises(
         expected_exception=CallArgNotSupportedError,

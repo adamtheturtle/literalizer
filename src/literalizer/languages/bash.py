@@ -349,10 +349,10 @@ class Bash(metaclass=LanguageCls):
 
         Bash commands take space-separated positional arguments and
         have no syntax for inline compound literals — ``cmd (1 2 3)``
-        parses as ``cmd`` followed by a subshell, and
-        ``cmd (["k"]=v)`` likewise.  Callers that need to pass a
-        collection must declare it as a variable first and pass the
-        name via a ``$ref`` marker.
+        parses as ``cmd`` followed by a nested ``(...)`` child-process
+        group, and ``cmd (["k"]=v)`` likewise.  Callers that need to
+        pass a collection must declare it as a variable first and
+        pass the name via a ``$ref`` marker.
         """
         if isinstance(value, (list, dict, set, frozenset)):
             raise CallArgNotSupportedError(

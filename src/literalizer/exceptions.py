@@ -131,7 +131,8 @@ class CallArgNotSupportedError(Exception):
 
     Used by languages whose call syntax does not accept compound
     literals as arguments — e.g. Bash, where ``cmd (1 2 3)`` parses
-    as a subshell invocation rather than an inline array value.
+    as a nested ``(...)`` child-process invocation rather than an
+    inline array value.
     """
 
     def __init__(self, *, language_name: str, reason: str) -> None:
