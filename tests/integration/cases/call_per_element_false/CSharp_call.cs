@@ -1,2 +1,6 @@
-dynamic process(dynamic _a0) => null;
+class Check {
+static object process(object data = null) => null;
+    public static void Main() {
 process(1);
+    }
+}
