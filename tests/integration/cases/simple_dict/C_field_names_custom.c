@@ -6,6 +6,7 @@ struct CVal {
     union {
         _Bool bl;
         long long integer;
+        unsigned long long uinteger;
         double fp;
         const char *str;
         const CVal *arr;
