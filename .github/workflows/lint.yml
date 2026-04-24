@@ -216,7 +216,7 @@ jobs:
       - name: Check Java syntax
         run: xargs -0 java CheckJavaSyntax.java < /tmp/files-to-lint
 
-  lint-c:
+  lint-c-syntax:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -227,6 +227,16 @@ jobs:
         run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       - name: Check C syntax
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint
+
+  lint-c-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       # Ubuntu's packaged clang-tidy is several releases behind and is
       # the dominant cost of this job on runners. Pull a recent build
       # from PyPI via uv instead.
@@ -1507,7 +1517,8 @@ jobs:
       - lint-jsonnet
       - lint-typescript
       - lint-java
-      - lint-c
+      - lint-c-syntax
+      - lint-c-tidy
       - lint-cobol
       - lint-cpp
       - lint-cpp-tidy
