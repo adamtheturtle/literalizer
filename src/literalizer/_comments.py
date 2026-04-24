@@ -2,13 +2,15 @@
 
 import dataclasses
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 
 from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import Comment, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
+
+from literalizer._types import Scalar, set_sort_key
 
 
 @dataclasses.dataclass(frozen=True)
@@ -163,10 +165,9 @@ def extract_yaml_comments(
     # CommentedSet elements are emitted in sorted order by _literalize,
     # so reorder to match that sort key to keep comments aligned.
     if isinstance(ruamel_data, CommentedSet):
-        output_keys: list[object] = sorted(
-            keys,
-            key=lambda v: (type(v).__name__, repr(v)),
-        )
+        scalar_keys = cast("list[Scalar]", keys)
+        sorted_scalars = sorted(scalar_keys, key=set_sort_key)
+        output_keys: list[object] = list(sorted_scalars)
     else:
         output_keys = keys
 

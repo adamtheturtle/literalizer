@@ -35,7 +35,7 @@ from literalizer._language import (
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
-from literalizer._types import Scalar, Value
+from literalizer._types import Scalar, Value, set_sort_key
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -152,17 +152,6 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 
 
 @beartype
-def _set_sort_key(value: Scalar) -> tuple[str, str]:
-    """Return a stable sort key for set elements.
-
-    Sets are unordered, so we sort by type name and then ``repr`` to get
-    a deterministic output that also copes with heterogeneous element
-    types that may not be mutually comparable.
-    """
-    return (type(value).__name__, repr(value))
-
-
-@beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     match value:
@@ -238,7 +227,7 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
-    sorted_items = sorted(value, key=_set_sort_key)
+    sorted_items = sorted(value, key=set_sort_key)
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
@@ -801,7 +790,7 @@ def _wrap_body(
                 opening = f"{line_prefix}{dict_cfg.dict_open(dict_data)}"
                 closing = f"{close_prefix}{dict_cfg.close}"
         case set() as set_data:
-            sorted_items = sorted(set_data, key=_set_sort_key)
+            sorted_items = sorted(set_data, key=set_sort_key)
             sorted_set: list[Value] = list(sorted_items)
             set_cfg = spec.set_format_config
             opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
@@ -903,7 +892,7 @@ def _format_collection_lines(
                 spec=spec,
             )
         case set() as set_data:
-            sorted_items = sorted(set_data, key=_set_sort_key)
+            sorted_items = sorted(set_data, key=set_sort_key)
             formatted_entries = [
                 spec.format_set_entry(
                     item,

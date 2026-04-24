@@ -73,7 +73,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value, ValueKind, set_sort_key
 
 
 class _CppModifiers(enum.Enum):
@@ -390,11 +390,9 @@ def _compute_cpp_type(
                 type_ctx=type_ctx,
             )
             return f"std::vector<{inner_type}>"
-        case set():
-            sorted_items: list[Value] = sorted(
-                item,
-                key=lambda v: (type(v).__name__, repr(v)),
-            )
+        case set() as set_item:
+            sorted_scalars = sorted(set_item, key=set_sort_key)
+            sorted_items: list[Value] = list(sorted_scalars)
             inner_type = _compute_element_type_for_items(
                 items=sorted_items,
                 type_ctx=type_ctx,
@@ -521,11 +519,9 @@ def _needs_variant_type(
     Used to determine whether ``#include <variant>`` is needed.
     """
     match data:
-        case set():
-            sorted_items: list[Value] = sorted(
-                data,
-                key=lambda v: (type(v).__name__, repr(v)),
-            )
+        case set() as set_data:
+            sorted_scalars = sorted(set_data, key=set_sort_key)
+            sorted_items: list[Value] = list(sorted_scalars)
             return _items_need_variant(
                 items=sorted_items,
                 element_to_type=element_to_type,
