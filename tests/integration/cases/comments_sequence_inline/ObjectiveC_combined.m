@@ -4,6 +4,7 @@ id my_data = @[
     @"a",  // note a
     @"b",  // note b
 ];
+(void)my_data;
 my_data = @[
     @"a",  // note a
     @"b",  // note b

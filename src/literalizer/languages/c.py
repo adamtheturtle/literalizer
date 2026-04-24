@@ -436,9 +436,15 @@ class C(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap C declaration + assignment in a function."""
+        """Wrap C declaration + assignment in a function.
+
+        Reads ``variable_name`` between the declaration and the
+        assignment so the initial value is not a dead store flagged by
+        clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
+        """
+        mid_use = f"(void){variable_name};\n"
         return C.wrap_in_file(
-            content=declaration + "\n" + assignment,
+            content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
             body_preamble=body_preamble,
         )

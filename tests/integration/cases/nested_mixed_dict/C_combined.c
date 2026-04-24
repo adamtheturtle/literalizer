@@ -18,6 +18,7 @@ void check_(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"outer", ((CVal){.m = (CKV[]){{"a", ((CVal){.i = 1})}, {"b", ((CVal){.s = "x"})}, {"c", ((CVal){.s = NULL})}}})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"outer", ((CVal){.m = (CKV[]){{"a", ((CVal){.i = 1})}, {"b", ((CVal){.s = "x"})}, {"c", ((CVal){.s = NULL})}}})},
 }});

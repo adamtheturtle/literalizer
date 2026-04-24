@@ -6,6 +6,7 @@ id my_data = @{
     // Port setting
     @"port": @(3000),
 };
+(void)my_data;
 my_data = @{
     // Configuration
     @"name": @"app",

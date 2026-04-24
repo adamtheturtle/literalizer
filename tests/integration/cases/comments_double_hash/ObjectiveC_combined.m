@@ -4,6 +4,7 @@ id my_data = @[
     // # section
     @"a",
 ];
+(void)my_data;
 my_data = @[
     // # section
     @"a",

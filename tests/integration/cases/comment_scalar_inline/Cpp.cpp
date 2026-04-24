@@ -2,4 +2,5 @@
 void check_() {
 // note
 auto my_data = 42;
+    (void)my_data;
 }

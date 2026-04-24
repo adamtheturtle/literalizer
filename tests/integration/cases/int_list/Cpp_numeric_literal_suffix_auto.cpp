@@ -6,4 +6,5 @@ auto my_data = std::vector<long>{
     2L,
     3L,
 };
+    (void)my_data;
 }

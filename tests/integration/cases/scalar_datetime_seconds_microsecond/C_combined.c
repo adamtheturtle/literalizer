@@ -16,6 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 void check_(void) {
 CVal my_data = ((CVal){.s = "2024-01-15T12:30:45.123456"});
+(void)my_data;
 my_data = ((CVal){.s = "2024-01-15T12:30:45.123456"});
     (void)my_data;
 }

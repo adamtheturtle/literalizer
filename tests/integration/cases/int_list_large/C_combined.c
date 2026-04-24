@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.i = 255}),
     ((CVal){.i = -10}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.i = 1000000}),
     ((CVal){.i = -1234}),

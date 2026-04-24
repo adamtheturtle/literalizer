@@ -7,4 +7,5 @@ auto my_data = std::vector<std::string>{
     //
     "b",
 };
+    (void)my_data;
 }

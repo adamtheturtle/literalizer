@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.b = true}),
     ((CVal){.s = NULL}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.i = 1}),
     ((CVal){.s = "hello"}),

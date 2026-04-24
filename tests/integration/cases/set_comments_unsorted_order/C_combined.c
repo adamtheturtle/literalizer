@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "banana"}),  // banana inline
     // trailing
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     // before apple
     ((CVal){.s = "apple"}),

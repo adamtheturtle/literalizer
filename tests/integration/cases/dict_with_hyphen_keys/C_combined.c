@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"another-key", ((CVal){.s = "value2"})},
     {"normal_key", ((CVal){.s = "value3"})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"my-key", ((CVal){.s = "value1"})},
     {"another-key", ((CVal){.s = "value2"})},

@@ -7,4 +7,5 @@ auto my_data = std::vector<double>{
     1.5e3,
     1.0e-3,
 };
+    (void)my_data;
 }

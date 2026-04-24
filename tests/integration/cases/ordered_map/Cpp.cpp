@@ -9,4 +9,5 @@ auto my_data = std::vector<std::pair<std::string, std::variant<std::string, int,
     {"age", 30},
     {"active", true},
 };
+    (void)my_data;
 }

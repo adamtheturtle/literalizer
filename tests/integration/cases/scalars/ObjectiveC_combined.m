@@ -7,6 +7,7 @@ id my_data = @[
     @NO,
     @"hello \"world\"",
 ];
+(void)my_data;
 my_data = @[
     @(42),
     @(3.14),

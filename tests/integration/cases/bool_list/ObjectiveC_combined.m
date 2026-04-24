@@ -5,6 +5,7 @@ id my_data = @[
     @NO,
     @YES,
 ];
+(void)my_data;
 my_data = @[
     @YES,
     @NO,

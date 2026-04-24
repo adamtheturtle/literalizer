@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.a = (CVal[]){}}),
     ((CVal){.a = (CVal[]){}}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.a = (CVal[]){}}),
     ((CVal){.a = (CVal[]){}}),
