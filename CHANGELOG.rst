@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``Gleam`` now emits a ``pub type GVal`` declaration containing only
+  the constructors actually needed for the data, rather than always
+  emitting all eight variants.  Scalar-only inputs (e.g.  ``GInt(42)``)
+  now produce a one-constructor type, matching what the class
+  docstring already promised and bringing Gleam in line with Elm and
+  Haskell.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to

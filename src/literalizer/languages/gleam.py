@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -56,13 +57,11 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    body_preamble_from_scalars,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
-    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -322,6 +321,53 @@ _GLEAM_BYTES_FORMATTERS: dict[
 
 
 @beartype
+def _build_gleam_body_preamble(
+    *,
+    type_name: str,
+    constructor_prefix: str,
+) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    """Build a callable that computes body-preamble lines for Gleam.
+
+    The callable receives the set of types present in the data and
+    returns a ``pub type`` declaration containing only the constructors
+    that are actually needed.
+    """
+
+    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
+        """Return body-preamble lines for the given *types*."""
+        del data  # unused
+        p = constructor_prefix
+        constructors = [
+            constructor
+            for type_set, constructor in (
+                (frozenset({type(None)}), f"{p}Null"),
+                (frozenset({bool}), f"{p}Bool(Bool)"),
+                (frozenset({int}), f"{p}Int(Int)"),
+                (frozenset({float}), f"{p}Float(Float)"),
+                (
+                    frozenset(
+                        {str, bytes, datetime.date, datetime.datetime},
+                    ),
+                    f"{p}Str(String)",
+                ),
+                (frozenset({list}), f"{p}List(List({type_name}))"),
+                (
+                    frozenset({dict, ordereddict}),
+                    f"{p}Dict(List(#(String, {type_name})))",
+                ),
+                (frozenset({set}), f"{p}Set(List({type_name}))"),
+            )
+            if types & type_set
+        ]
+        if not constructors:
+            return ()
+        body = "\n".join(f"  {c}" for c in constructors)
+        return (f"pub type {type_name} {{\n{body}\n}}",)
+
+    return _compute
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Gleam(metaclass=LanguageCls):
     """Gleam language specification.
@@ -329,23 +375,14 @@ class Gleam(metaclass=LanguageCls):
     The generated output uses custom constructors (``GNull``, ``GBool``,
     ``GList``, ``GDict``, ``GSet``) that are **not** built-in Gleam types.
     To compile the generated code, a ``GVal`` custom type is emitted in
-    the body preamble:
+    the body preamble, containing only the constructors actually used by
+    the data.  For example, data consisting solely of an integer yields:
 
     .. code-block:: gleam
 
-       type GVal {
-         GNull
-         GBool(Bool)
+       pub type GVal {
          GInt(Int)
-         GFloat(Float)
-         GStr(String)
-         GList(List(GVal))
-         GDict(List(#(String, GVal)))
-         GSet(List(GVal))
        }
-
-    The body preamble automatically emits only the constructors that are
-    actually used by the data.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
@@ -669,12 +706,14 @@ class Gleam(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Gleam let binding in a main function."""
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
-        )
         indented = textwrap.indent(text=content, prefix="  ")
-        return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+        main_func = (
+            f"pub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+        )
+        if body_preamble:
+            preamble_str = "\n".join(body_preamble)
+            return f"{preamble_str}\n\n{main_func}"
+        return main_func
 
     @staticmethod
     def wrap_combined_in_file(
@@ -952,35 +991,8 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble with Gleam type declaration."""
-        p = self.constructor_prefix
-        return dict.fromkeys(
-            (
-                type(None),
-                bool,
-                int,
-                float,
-                str,
-                bytes,
-                datetime.date,
-                datetime.datetime,
-                list,
-                dict,
-                set,
-            ),
-            (
-                f"pub type {self.type_name} {{\n"
-                f"  {p}Null\n"
-                f"  {p}Bool(Bool)\n"
-                f"  {p}Int(Int)\n"
-                f"  {p}Float(Float)\n"
-                f"  {p}Str(String)\n"
-                f"  {p}List(List({self.type_name}))\n"
-                f"  {p}Dict(List(#(String, {self.type_name})))\n"
-                f"  {p}Set(List({self.type_name}))\n"
-                "}",
-            ),
-        )
+        """Per-instance scalar preamble (Gleam needs none)."""
+        return {}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
@@ -991,8 +1003,10 @@ class Gleam(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
-        return body_preamble_from_scalars(
-            scalar_body_preamble=self.scalar_body_preamble,
-            format_lines=tuple,
+        """Compute body-preamble lines using the Gleam type
+        declaration.
+        """
+        return _build_gleam_body_preamble(
+            type_name=self.type_name,
+            constructor_prefix=self.constructor_prefix,
         )
