@@ -10,6 +10,22 @@ Next
   now produce a one-constructor type, matching what the class
   docstring already promised and bringing Gleam in line with Elm and
   Haskell.
+- ``C`` generated output now routes positive integers above
+  ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long``
+  union field instead of narrowing them into the signed ``long long``
+  field.  The ``CVal`` union gains a ``u`` member alongside ``i``, and
+  a new ``uint_field`` constructor argument lets users rename it.
+  clang-tidy's ``bugprone-narrowing-conversions`` and
+  ``cppcoreguidelines-narrowing-conversions`` checks, previously
+  suppressed in ``.clang-tidy`` because the union-initializer literal
+  silently truncated those values, are now enforced for both ``C``
+  and ``Cpp`` output.
+- ``Cpp`` generated output now wraps the ``INFINITY`` and ``NAN``
+  ``<cmath>`` macros in ``static_cast<double>`` (with the negation
+  applied outside the cast for ``-INFINITY``) so that brace-init of
+  ``std::vector<double>`` does not trip clang-tidy's
+  narrowing-conversions check on the implicit ``float``-to-``double``
+  conversion.
 - ``Erlang`` now supports ``literalize_call``.  Calls use positional
   argument syntax (``f(A, B)``); dotted targets like
   ``app.client.fetch`` are emitted as quoted-atom function names
