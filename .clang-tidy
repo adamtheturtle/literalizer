@@ -3,7 +3,6 @@ Checks: >
   *,
   -altera-struct-pack-align,
   -clang-analyzer-deadcode.DeadStores,
-  -clang-diagnostic-implicitly-unsigned-literal,
   -cppcoreguidelines-avoid-magic-numbers,
   -fuchsia-default-arguments-calls,
   -google-objc-function-naming,
