@@ -135,6 +135,7 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua
           xargs -0 luac -p < /tmp/files-lua
+          xargs -0 -P "$(nproc)" -n1 lua < /tmp/files-lua
 
       - name: Lint Nix
         run: |-

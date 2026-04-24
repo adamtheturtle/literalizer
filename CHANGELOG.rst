@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
+  fixture end-to-end via ``lua``, catching runtime errors (calls to
+  undefined functions, missing module imports, failed assertions)
+  that the existing ``luac -p`` parse-only step let through,
+  mirroring ``lint-bash`` / ``lint-javascript`` / ``lint-perl`` etc.
 - ``literalize_call(..., wrap_in_file=True)`` now injects a no-op
   stub for the ``target_function`` into the wrapped file, so the
   generated source compiles against strict checkers on its own.
