@@ -1007,9 +1007,8 @@ jobs:
       - name: Check Mojo syntax
         run: |-
           ulimit -v unlimited
-          while IFS= read -r -d '' f; do
-            mojo run --Werror "$GITHUB_WORKSPACE/$f" || exit 1
-          done < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -I{} mojo run --Werror "$GITHUB_WORKSPACE/{}" \
+            < /tmp/files-to-lint
 
   lint-nim:
     runs-on: ubuntu-latest
