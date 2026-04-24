@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` with ``per_element=True`` now widens Rust's
+  ``TAGGED_ENUM`` scalar wrapping across sibling calls at matching
+  argument slots.  Previously the wrap analysis ran per call, so a
+  locally-homogeneous sibling dict would emit unwrapped scalars
+  even when another call at the same slot was heterogeneous — a
+  second ``m.process(HashMap::from([("a", "x")]))`` would not match
+  the ``&HashMap<&'static str, Value>`` parameter implied by the
+  first heterogeneous call.  Mirrors the dict-opener widening
+  already applied for typed dict languages on the per-element call
+  path.
+
 2026.04.23
 ----------
 

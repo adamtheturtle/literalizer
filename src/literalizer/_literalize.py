@@ -448,6 +448,28 @@ def _compute_dict_open_override(
 
 
 @beartype
+def _gather_call_slot_values(
+    *,
+    elements: list[Value],
+) -> list[list[Value]]:
+    """Group non-ref argument values by positional slot across calls.
+
+    ``{"$ref": "name"}`` markers are filtered out: the marker isn't
+    rendered as a real value at the call site, so its shape must not
+    influence sibling-aware widening.
+    """
+    slots: list[list[Value]] = []
+    for element in elements:
+        arg_values = element if isinstance(element, list) else [element]
+        for slot_index, arg_value in enumerate(iterable=arg_values):
+            if slot_index >= len(slots):
+                slots.append([])
+            if _extract_call_arg_ref_name(value=arg_value) is None:
+                slots[slot_index].append(arg_value)
+    return slots
+
+
+@beartype
 def _compute_call_slot_overrides(
     *,
     elements: list[Value],
@@ -462,23 +484,38 @@ def _compute_call_slot_overrides(
     no enclosing sequence, so ``narrowed_open`` does not apply here —
     each dict still needs its own full opener, just widened when
     sibling dicts differ in inferred value type.
-
-    ``{"$ref": "name"}`` markers are filtered out of each slot's
-    values: the marker isn't rendered as a dict at the call site, so
-    its shape must not influence widening.
     """
-    slots: list[list[Value]] = []
-    for element in elements:
-        arg_values = element if isinstance(element, list) else [element]
-        for slot_index, arg_value in enumerate(iterable=arg_values):
-            if slot_index >= len(slots):
-                slots.append([])
-            if _extract_call_arg_ref_name(value=arg_value) is None:
-                slots[slot_index].append(arg_value)
+    slots = _gather_call_slot_values(elements=elements)
     return [
         _compute_dict_open_override(items=slot_values, spec=spec)
         for slot_values in slots
     ]
+
+
+@beartype
+def _compute_call_per_element_wrap_ids(
+    *,
+    elements: list[Value],
+    spec: Language,
+) -> frozenset[int]:
+    """Compute wrap_ids spanning sibling per-element calls.
+
+    For each positional argument slot, compute wrap_ids on the slot's
+    values as if they were siblings inside a single list, then union
+    the results.  This mirrors the dict-opener widening done by
+    :func:`_compute_call_slot_overrides` so that render-time wrapping
+    strategies (e.g. Rust's ``TAGGED_ENUM``) stay consistent across
+    sibling calls: a slot whose combined values are heterogeneous
+    triggers wrapping in every sibling at that slot, not just the
+    ones whose own argument is locally mixed.
+    """
+    slots = _gather_call_slot_values(elements=elements)
+    return frozenset[int]().union(
+        *(
+            _compute_wrap_ids(data=slot_values, spec=spec)
+            for slot_values in slots
+        )
+    )
 
 
 @beartype
@@ -1651,11 +1688,16 @@ def _render_call_per_element(
     pointers rather than real data, so they are skipped during
     data-shape validation and wrap-id computation while still
     appearing as identifiers in the rendered call.
-    :func:`_compute_call_slot_overrides` similarly filters them out so
-    the marker's ``{str: str}`` shape does not influence per-slot
-    dict-opener widening.
+    :func:`_compute_call_slot_overrides` and
+    :func:`_compute_call_per_element_wrap_ids` similarly filter them
+    out so the marker's ``{str: str}`` shape does not influence
+    per-slot widening.
     """
     slot_overrides = _compute_call_slot_overrides(
+        elements=data,
+        spec=language,
+    )
+    slot_wrap_ids = _compute_call_per_element_wrap_ids(
         elements=data,
         spec=language,
     )
@@ -1669,9 +1711,8 @@ def _render_call_per_element(
         ]
         for value in non_ref_args:
             check_data(data=value, spec=language)
-        call_wrap_ids = _compute_wrap_ids(
-            data=non_ref_args,
-            spec=language,
+        call_wrap_ids = (
+            _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
         args_str = _format_call_args(
             values=cast("list[Value]", arg_values),
