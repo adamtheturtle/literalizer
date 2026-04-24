@@ -1902,7 +1902,7 @@ def _wrap_call_result_in_file(
     raw_target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
-    variable_form: NewVariable | ExistingVariable | None,
+    variable_form: NewVariable | None,
     preamble: tuple[str, ...],
     computed_body: tuple[str, ...],
 ) -> str:
@@ -1941,7 +1941,7 @@ def _wrap_calls_in_variable_form(
     *,
     result: str,
     language: Language,
-    variable_form: NewVariable | ExistingVariable,
+    variable_form: NewVariable,
 ) -> str:
     """Wrap an ``as_expression=True`` call list in a sequence literal
     bound to a variable.
@@ -1975,20 +1975,12 @@ def _wrap_calls_in_variable_form(
     indented = "\n".join(indent + line for line in result.split(sep="\n"))
     body = f"{indented}{trailing}"
     wrapped_value = f"{opener}\n{body}\n{closer}"
-    match variable_form:
-        case NewVariable(name=name, modifiers=modifiers):
-            return language.format_variable_declaration(
-                name,
-                wrapped_value,
-                [],
-                modifiers,
-            )
-        case ExistingVariable(name=name):
-            return language.format_variable_assignment(
-                name,
-                wrapped_value,
-                [],
-            )
+    return language.format_variable_declaration(
+        variable_form.name,
+        wrapped_value,
+        [],
+        variable_form.modifiers,
+    )
 
 
 @beartype
@@ -2004,7 +1996,7 @@ def literalize_call(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     as_expression: bool = False,
-    variable_form: NewVariable | ExistingVariable | None = None,
+    variable_form: NewVariable | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -2059,20 +2051,17 @@ def literalize_call(
             ``";\n"`` for F# / OCaml) instead of ``"\n"``, so the
             output drops straight into an outer collection literal
             without any ``call_transform``.  Defaults to ``False``.
-        variable_form: Optional wrapper that collects the per-call
-            expressions into a language-native sequence literal and
-            binds it to a variable.  Only meaningful with
-            ``as_expression=True`` (so the expressions render without
-            statement terminators and join with ``",\n"``); combined
-            with ``wrap_in_file=True`` this yields a valid source file
-            whose body is ``var items = [process(...), process(...)]``
-            instead of a bag of comma-joined expressions.  Pass
-            :class:`NewVariable` to produce a declaration
-            (``const items = ...``), or :class:`ExistingVariable` for
-            a reassignment (``items = ...``).  The outer sequence uses
-            the language's generic "accepts anything" opener so the
-            declared type matches the call-result type rather than the
-            argument shape.
+        variable_form: Optional :class:`NewVariable` that collects the
+            per-call expressions into a language-native sequence
+            literal and binds it to a new variable
+            (``const items = [process(...), process(...)]``).  Only
+            meaningful with ``as_expression=True`` so the expressions
+            render without statement terminators; combined with
+            ``wrap_in_file=True`` this yields a valid source file
+            instead of a bag of comma-joined expressions.  The outer
+            sequence uses the language's generic "accepts anything"
+            opener so the declared type matches the call-result type
+            rather than the argument shape.
 
     Raises:
         ValueError: If *variable_form* is set without

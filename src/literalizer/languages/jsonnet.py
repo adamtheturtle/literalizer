@@ -337,10 +337,14 @@ class Jsonnet(metaclass=LanguageCls):
     ) -> str:
         """Wrap code in a valid Jsonnet file.
 
-        When *variable_name* is empty (call mode), wrap the content
-        lines in an array so the file evaluates to a single expression.
+        When *variable_name* is empty and ``body_preamble`` contains
+        stubs (call mode without a collecting variable), wrap the
+        content lines in an array so the file evaluates to a single
+        expression.  When *variable_name* is set, the caller has
+        already wrapped the content in a ``local items = [...]``
+        declaration, so only the stub preamble is prepended.
         """
-        if not body_preamble:
+        if not body_preamble or variable_name:
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,

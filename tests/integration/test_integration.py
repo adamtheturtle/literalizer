@@ -55,6 +55,7 @@ from literalizer.languages import (
     Kotlin,
     Mojo,
     Nim,
+    ObjectiveC,
     OCaml,
     Odin,
     Perl,
@@ -2475,12 +2476,19 @@ _CALL_AS_EXPRESSION_VARIANT_INCOMPATIBLE: _VariantIncompatible = frozenset(
         # the ``int``-returning stub used by ``call_as_expression``
         # variable-form wrapping.
         Cpp,
+        # FSharp's ``FList [Val]`` generic opener accepts ``Val``
+        # elements; the call stub returns ``obj``.
+        FSharp,
         # Gleam's ``GList(List(GVal))`` generic opener accepts only
         # ``GVal`` elements; the call stub returns ``Nil``.
         Gleam,
         # Haskell's ``HList [Val]`` generic opener accepts pure ``Val``
         # elements; the call stub returns ``IO Val``.
         Haskell,
+        # ObjectiveC's ``@[...]`` literal rejects ``nil`` at runtime
+        # (NSArray throws ``NSInvalidArgumentException``), and the
+        # ObjectiveC call stub returns ``nil``.
+        ObjectiveC,
     },
 )
 
