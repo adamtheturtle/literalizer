@@ -911,31 +911,38 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
-      # Crystal derives the compiled binary name from the source file's
-      # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp),
-      # and many fixtures share a basename (111 copies of Crystal.cr).
-      # Stage each source under a path-hashed unique basename so a
-      # single shared CRYSTAL_CACHE_DIR is safe across workers:
-      # identical-content fixtures then reuse each other's codegen
-      # artifacts (Crystal's cache is content-addressed) and stdlib
-      # parsing is cached after the first file instead of redone 257
-      # times.
+      # Compile every fixture in a single `crystal run` invocation to
+      # pay Crystal's front-end + LLVM codegen + link cost once instead
+      # of per fixture. Each fixture is wrapped in a unique
+      # `module FixtureN ... end` to avoid collisions: many fixtures
+      # share a basename (111 copies of `Crystal.cr`), 6 declare the
+      # same `class ThrottlerType_` / `class ClientType_` / etc., and
+      # two reuse the top-level `def emit` / `def process`. `extend
+      # self` lets unqualified calls like `emit(...)` inside the module
+      # body resolve to the module's own `def emit`. A single
+      # `require "set"` on the driver covers the 18 fixtures that need
+      # it (stripped from each wrapped copy); the driver then
+      # `require`s every fixture so each module body executes at
+      # program start. The `fixture_N.cr <- original-path` mapping is
+      # printed so failures still point back to the source.
       - name: Run Crystal files
         run: |-
-          export CRYSTAL_STAGING=/tmp/crystal-staging
-          export CRYSTAL_CACHE_DIR=/tmp/crystal-cache
-          mkdir -p "$CRYSTAL_STAGING" "$CRYSTAL_CACHE_DIR"
-          cat > /tmp/run-crystal.sh <<'SCRIPT'
-          orig="$1"
-          hash=$(printf '%s' "$orig" | sha1sum | cut -c1-12)
-          staged="$CRYSTAL_STAGING/$hash-$(basename "$orig")"
-          cp "$orig" "$staged"
-          if ! crystal run "$staged"; then
-            echo "crystal run failed: $orig (staged as $staged)" >&2
-            exit 1
-          fi
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-crystal.sh < /tmp/files-to-lint
+          workspace=$(mktemp -d)
+          driver="$workspace/run_all.cr"
+          printf 'require "set"\n' > "$driver"
+          i=0
+          while IFS= read -r -d '' f; do
+            {
+              printf 'module Fixture%d\n' "$i"
+              printf 'extend self\n'
+              sed '/^require "set"$/d' "$f"
+              printf 'end\n'
+            } > "$workspace/fixture_$i.cr"
+            printf 'require "./fixture_%d"\n' "$i" >> "$driver"
+            printf 'fixture_%d.cr <- %s\n' "$i" "$f"
+            i=$((i+1))
+          done < /tmp/files-to-lint
+          crystal run "$driver"
 
   lint-matlab:
     runs-on: ubuntu-latest
