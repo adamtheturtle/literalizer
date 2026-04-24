@@ -301,9 +301,14 @@ plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
 [tool.pyrefly]
+# Without this, pyrefly's built-in default `project-excludes` (e.g.
+# `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
+# appended to ours and combine with the `.gitignore`-based ignore files to
+# match our entire include pattern (`**/*.py*`), causing pyrefly to report
+# "no files matched" and fail the pre-push hook.
+disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
-project_excludes = []
 search_path = [ ".", "src" ]
 
 [tool.pyright]
