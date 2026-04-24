@@ -46,9 +46,10 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
 
-  # Fixture languages whose toolchains are preinstalled on ubuntu-latest.
-  # Grouped into one job because each sub-lint takes only seconds, so the
-  # runner startup cost is the dominant factor when they are split out.
+  # Fixture languages whose lint is a handful of seconds — either the
+  # toolchain is preinstalled on ubuntu-latest, or the install is quick
+  # enough that splitting them into separate runners would spend more
+  # time on runner startup than on linting.
   lint-fast:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -56,6 +57,16 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Install Lua
+        uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: '5.4'
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Install Odin
+        uses: laytan/setup-odin@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint Bash
         run: |-
@@ -68,13 +79,6 @@ jobs:
           find tests/integration/cases -name '*.rb' -print0 > /tmp/files-ruby
           xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-ruby
           xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-ruby
-
-      - name: Lint Go
-        run: |-
-          find tests/integration/cases -name '*.go' -print0 > /tmp/files-go
-          xargs -0 gofmt -e < /tmp/files-go
-          xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-go
-          xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-go
 
       - name: Lint JavaScript
         run: |-
@@ -127,23 +131,22 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-fortran
 
-      - name: Lint Rust
+      - name: Lint Lua
         run: |-
-          find tests/integration/cases -name '*.rs' -print0 > /tmp/files-rust
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cargo init "$tmpdir/chrono-check"
-          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
-          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
-          deps="$tmpdir/chrono-check/target/debug/deps"
-          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua
+          xargs -0 luac -p < /tmp/files-lua
+
+      - name: Lint Nix
+        run: |-
+          find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
+          xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
+
+      - name: Lint Odin
+        run: |-
+          find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
           while IFS= read -r -d '' f; do
-            rustc --edition 2021 \
-              -L "dependency=$deps" \
-              --extern "chrono=$chrono_rlib" \
-              "$f" -o "$tmpdir/out" 2>&1 || exit 1
-            "$tmpdir/out" || exit 1
-          done < /tmp/files-rust
+            odin check "$f" -file || exit 1
+          done < /tmp/files-odin
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
@@ -819,7 +822,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no --project=/tmp/julia-lint
           < /tmp/files-to-lint
 
-  lint-lua:
+  lint-go:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -827,13 +830,39 @@ jobs:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.lua' -print0 > /tmp/files-to-lint
-      - name: Install Lua
-        uses: leafo/gh-actions-lua@v13
+        run: find tests/integration/cases -name '*.go' -print0 > /tmp/files-to-lint
+      - name: Check Go syntax
+        run: xargs -0 gofmt -e < /tmp/files-to-lint
+      - name: Check Go compilation
+        run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
+      - name: Run Go files
+        run: xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-to-lint
+
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
         with:
-          luaVersion: '5.4'
-      - name: Check Lua syntax
-        run: xargs -0 luac -p < /tmp/files-to-lint
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
+      - name: Check Rust syntax and run binaries
+        run: |-
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cargo init "$tmpdir/chrono-check"
+          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
+          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
+          deps="$tmpdir/chrono-check/target/debug/deps"
+          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          while IFS= read -r -d '' f; do
+            rustc --edition 2021 \
+              -L "dependency=$deps" \
+              --extern "chrono=$chrono_rlib" \
+              "$f" -o "$tmpdir/out" 2>&1 || exit 1
+            "$tmpdir/out" || exit 1
+          done < /tmp/files-to-lint
 
   lint-r:
     runs-on: ubuntu-latest
@@ -1056,21 +1085,6 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-nim.sh < /tmp/files-to-lint
 
-  lint-nix:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.nix' -print0 > /tmp/files-to-lint
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-      - name: Check Nix syntax
-        run: xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-to-lint
-          > /dev/null
-
   lint-racket:
     runs-on: ubuntu-latest
     steps:
@@ -1083,25 +1097,6 @@ jobs:
       - uses: Bogdanp/setup-racket@v1.15
       - name: Check Racket syntax
         run: xargs -0 raco make < /tmp/files-to-lint
-
-  lint-odin:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.odin' -print0 > /tmp/files-to-lint
-      - name: Install Odin
-        uses: laytan/setup-odin@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Check Odin
-        run: |-
-          while IFS= read -r -d '' f; do
-            odin check "$f" -file || exit 1
-          done < /tmp/files-to-lint
 
   lint-raku:
     runs-on: ubuntu-latest
@@ -1256,17 +1251,16 @@ jobs:
       - lint-commonlisp
       - lint-scala
       - lint-dart
+      - lint-go
       - lint-julia
-      - lint-lua
       - lint-r
       - lint-d
       - lint-crystal
       - lint-mojo
       - lint-nim
-      - lint-nix
       - lint-racket
-      - lint-odin
       - lint-raku
+      - lint-rust
       - lint-zig
       - lint-systemverilog
       - lint-v
