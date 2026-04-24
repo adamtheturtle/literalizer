@@ -49,7 +49,7 @@ jobs:
   # Fixture languages whose toolchains are preinstalled on ubuntu-latest.
   # Grouped into one job because each sub-lint takes only seconds, so the
   # runner startup cost is the dominant factor when they are split out.
-  lint-fast-native:
+  lint-fast:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -1237,7 +1237,7 @@ jobs:
   completion-lint:
     needs:
       - pre-commit
-      - lint-fast-native
+      - lint-fast
       - lint-apt-basics
       - lint-go-installed
       - lint-npm-installed
