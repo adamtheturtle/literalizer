@@ -67,6 +67,8 @@ arguments are passed as ``name=value`` pairs.
 
 .. code-block:: python
 
+   """Keyword-style call example."""
+
    print(throttler.check(user_id="user_1", ts=1000.0))
 
 **Object** (e.g. JavaScript, TypeScript):
@@ -110,3 +112,34 @@ value at the call site.
 The identifier is emitted verbatim — no case conversion is performed, so
 the caller is responsible for spelling the name correctly for the target
 language.
+
+Rendering each call as an expression
+------------------------------------
+
+By default each call is emitted as a standalone statement, so
+statement-terminated languages (Go, Java, Rust, TypeScript, ...) receive
+a trailing ``;`` and rows are joined with ``"\n"``.  Passing
+``as_expression=True`` suppresses the terminator and switches the
+per-element joiner to ``",\n"``, so the output drops straight into an
+outer list / array / slice / vec literal:
+
+.. code-block:: python
+
+   """Render each call as a list-item expression."""
+
+   from literalizer import InputFormat, literalize_call
+   from literalizer.languages import Go
+
+   result = literalize_call(
+       source="[[1, 2], [3, 4]]",
+       input_format=InputFormat.JSON,
+       language=Go(),
+       target_function="process",
+       parameter_names=["a", "b"],
+       as_expression=True,
+   )
+   assert result.code == "process(1, 2),\nprocess(3, 4)"
+
+Callers who want an exotic separator (``";\n"``, ``" && "``, ...) can
+still reach for ``call_transform``; ``as_expression`` handles the
+common "one call per list element" case without one.
