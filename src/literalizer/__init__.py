@@ -5,6 +5,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._language import (
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -36,6 +37,7 @@ from literalizer._parsing import InputFormat
 __all__ = [
     "BothVariableForms",
     "CallStyle",
+    "CommandCallStyle",
     "CommentConfig",
     "DateFormatConfig",
     "DatetimeFormatConfig",

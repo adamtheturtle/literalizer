@@ -27,6 +27,7 @@ from ruamel.yaml import YAML
 import literalizer
 from literalizer._language import StubReturn
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     NullInCollectionError,
@@ -2371,6 +2372,11 @@ def _run_call_golden_case(
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_cls.__name__} cannot represent this heterogeneous input",
+        )
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} rejected call arg: {exc.reason}",
         )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []

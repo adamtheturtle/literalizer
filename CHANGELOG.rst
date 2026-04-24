@@ -4,6 +4,21 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for ``Bash``.  A new
+  :class:`CommandCallStyle` tagged-union member renders calls as
+  ``target arg1 arg2`` with space-separated arguments and no
+  surrounding parentheses; with a ``call_transform`` like
+  ``lambda c: f"emit({c})"`` the inner call is wrapped in
+  ``$(...)`` command substitution (``emit "$(target arg1 arg2)"``).
+  Bash's ``format_call_stub`` emits ``name() { :; }`` function
+  stubs that accept any arguments so generated files parse with
+  ``bash -n`` and run under ``bash``.  A new
+  ``CallArgNotSupportedError`` is raised at literalize time when a
+  list, dict, or set is passed as a Bash call argument — Bash has
+  no inline compound-literal syntax in command invocations, so
+  silently emitting ``cmd (1 2 3)`` (which parses as a subshell)
+  would leave users with a broken script; callers must declare the
+  collection as a variable and pass a ``$ref`` marker instead.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to

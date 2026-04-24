@@ -23,6 +23,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     CallStyle,
     CallSupport,
+    CommandCallStyle,
     KeywordCallStyle,
     Language,
     ObjectCallStyle,
@@ -1587,6 +1588,8 @@ def _format_call_args(
             return f"({{ {named} }})"
         case PostfixCallStyle(arg_separator=sep):
             return sep.join(formatted)
+        case CommandCallStyle(arg_separator=sep):
+            return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
             if len(params) != len(formatted):
                 raise ParameterCountMismatchError(
@@ -1621,6 +1624,86 @@ def _extract_call_transform_wrapper(
 
 
 @beartype
+def _assemble_postfix_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+) -> str:
+    """Build ``args target`` for :class:`PostfixCallStyle`.
+
+    With a wrapper transform the wrapper word is appended postfix,
+    so the result is e.g. ``args target emit``.
+    """
+    call_expr = (
+        f"{args_str} {target_function}" if args_str else target_function
+    )
+    if call_transform is not None:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if wrapper:
+            call_expr = f"{call_expr} {wrapper}"
+    return call_expr
+
+
+@beartype
+def _assemble_prefix_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+    arg_separator: str,
+) -> str:
+    """Build ``(target args)`` for :class:`PrefixCallStyle`.
+
+    With a wrapper transform the result is e.g.
+    ``(emit (target args))``.
+    """
+    inside = (
+        f"{target_function}{arg_separator}{args_str}"
+        if args_str
+        else target_function
+    )
+    call_expr = f"({inside})"
+    if call_transform is not None:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if wrapper:
+            call_expr = f"({wrapper}{arg_separator}{call_expr})"
+    return call_expr
+
+
+@beartype
+def _assemble_command_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+    arg_separator: str,
+) -> str:
+    """Build ``target arg1 arg2`` for :class:`CommandCallStyle`.
+
+    With a wrapper transform the inner call is captured via ``$(...)``
+    and passed as a quoted argument to the wrapper, e.g.
+    ``emit "$(target arg1 arg2)"``.
+    """
+    call_expr = (
+        f"{target_function}{arg_separator}{args_str}"
+        if args_str
+        else target_function
+    )
+    if call_transform is not None:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if wrapper:
+            call_expr = f'{wrapper} "$({call_expr})"'
+    return call_expr
+
+
+@beartype
 def _assemble_call(
     *,
     target_function: str,
@@ -1631,42 +1714,34 @@ def _assemble_call(
 ) -> str:
     """Build one complete call statement.
 
-    Infix styles produce ``target(args)``.  :class:`PostfixCallStyle`
-    produces ``args target``; when a *call_transform* like
-    ``lambda c: f"emit({c})"`` is provided, the wrapper word is
-    extracted via a sentinel and appended postfix, so the result is
-    e.g. ``args target emit``.
+    Dispatches to a per-style helper and appends the language's
+    statement terminator.
     """
     match style:
         case PostfixCallStyle():
-            call_expr = (
-                f"{args_str} {target_function}"
-                if args_str
-                else target_function
+            call_expr = _assemble_postfix_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
             )
-            if call_transform is not None:
-                wrapper = _extract_call_transform_wrapper(
-                    call_transform=call_transform,
-                )
-                if wrapper:
-                    call_expr = f"{call_expr} {wrapper}"
         case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
             call_expr = f"{target_function}{args_str}"
             if call_transform is not None:
                 call_expr = call_transform(call_expr)
         case PrefixCallStyle(arg_separator=sep):
-            inside = (
-                f"{target_function}{sep}{args_str}"
-                if args_str
-                else target_function
+            call_expr = _assemble_prefix_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                arg_separator=sep,
             )
-            call_expr = f"({inside})"
-            if call_transform is not None:
-                wrapper = _extract_call_transform_wrapper(
-                    call_transform=call_transform,
-                )
-                if wrapper:
-                    call_expr = f"({wrapper}{sep}{call_expr})"
+        case CommandCallStyle(arg_separator=sep):
+            call_expr = _assemble_command_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                arg_separator=sep,
+            )
         case _ as unreachable:
             assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
@@ -1701,6 +1776,11 @@ def _render_call_per_element(
         elements=data,
         spec=language,
     )
+    validate_call_arg: Callable[[Value], None] | None = getattr(
+        language,
+        "validate_call_arg",
+        None,
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1711,6 +1791,8 @@ def _render_call_per_element(
         ]
         for value in non_ref_args:
             check_data(data=value, spec=language)
+            if validate_call_arg is not None:
+                validate_call_arg(value)
         call_wrap_ids = (
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
@@ -1751,6 +1833,13 @@ def _render_call_whole(
     """
     if _extract_call_arg_ref_name(value=data) is None:
         check_data(data=data, spec=language)
+        validate_call_arg: Callable[[Value], None] | None = getattr(
+            language,
+            "validate_call_arg",
+            None,
+        )
+        if validate_call_arg is not None:
+            validate_call_arg(data)
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
