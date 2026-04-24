@@ -19,6 +19,13 @@ Next
   silently emitting ``cmd (1 2 3)`` (which parses as a subshell)
   would leave users with a broken script; callers must declare the
   collection as a variable and pass a ``$ref`` marker instead.
+- ``Erlang`` now supports ``literalize_call``.  Calls use positional
+  argument syntax (``f(A, B)``); dotted targets like
+  ``app.client.fetch`` are emitted as quoted-atom function names
+  (``'app.client.fetch'(...)``) since Erlang atoms do not allow
+  unquoted dots.  Call stubs are emitted as module-level function
+  definitions placed between ``-export`` and ``x()``, and ``x()``
+  separates call statements with ``,`` terminated by ``.``.
 - Added ``literalize_call`` support for Gleam:
   ``Gleam.format_call_preamble_stub`` emits module-level ``pub fn``
   declarations with fresh type variables per parameter and a
