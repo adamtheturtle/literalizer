@@ -1,4 +1,4 @@
-class ClientType_; def post(*a, **kw); 0; end; end
+class ClientType_; def post(data = nil); 0; end; end
 class ApiType_; def client; ClientType_.new; end; end
 class ObjType_; def api; ApiType_.new; end; end
 obj = ObjType_.new
