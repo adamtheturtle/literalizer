@@ -18,7 +18,6 @@ import functools
 import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import cast
 
 import pytest
 from beartype import beartype
@@ -2396,10 +2395,9 @@ def _run_call_golden_case(
         # First-listed ``identifier_cases`` member is the language's
         # default — convert declaration names to that case so the
         # ref-site and declaration-site spellings agree.
-        effective_ref_case = cast(
-            "literalizer.IdentifierCase",
-            next(iter(spec.identifier_cases)).value,
-        )
+        first_case_value = next(iter(spec.identifier_cases)).value
+        assert isinstance(first_case_value, literalizer.IdentifierCase)
+        effective_ref_case = first_case_value
         declarations = {
             effective_ref_case.convert(name=ref_name): ref_source
             for ref_name, ref_source in config.ref_declarations.items()
