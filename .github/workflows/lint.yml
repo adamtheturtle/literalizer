@@ -227,6 +227,16 @@ jobs:
         run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       - name: Check C syntax
         run: xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-to-lint
+
+  lint-c-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       # Ubuntu's packaged clang-tidy is several releases behind and is
       # the dominant cost of this job on runners. Pull a recent build
       # from PyPI via uv instead.
@@ -273,13 +283,12 @@ jobs:
       - name: Build precompiled header
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
-      - name: Check C++ syntax
-        run: xargs -0 clang++ -fsyntax-only -std=c++20 -include-pch /tmp/pch.hpp.pch
-          < /tmp/files-to-lint
       # Fixtures define `void check_()` with no main, so compile alongside
       # `.github/scripts/cpp_main.cpp` which invokes it and link into a
       # runnable binary. Compile `cpp_main.cpp` once up front so each
       # fixture link reuses the object instead of re-parsing the same TU.
+      # The build-and-run step also surfaces any syntax errors, so a
+      # separate `-fsyntax-only` pass would be redundant.
       - name: Build cpp_main object
         run: clang++ -std=c++20 -c .github/scripts/cpp_main.cpp -o /tmp/cpp_main.o
       - name: Run C++ files
@@ -1520,6 +1529,7 @@ jobs:
       - lint-typescript
       - lint-java
       - lint-c
+      - lint-c-tidy
       - lint-cobol
       - lint-cpp
       - lint-cpp-tidy
