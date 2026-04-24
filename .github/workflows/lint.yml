@@ -582,6 +582,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript
           xargs -0 -P "$(nproc)" -n 1 uv run --no-project python check_purescript_syntax.py < /tmp/files-purescript
+      - name: Run PureScript files
+        run: xargs -0 uv run --no-project python run_purescript.py < /tmp/files-purescript
 
   # Ubuntu's packaged clang-tidy is several releases behind and is the
   # dominant cost of this job on runners. Pull a recent build from PyPI
