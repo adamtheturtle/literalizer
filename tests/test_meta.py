@@ -22,8 +22,16 @@ def fixture_lint_workflow(
 def test_all_languages_have_lint_workflow(
     lint_workflow: dict[str, Any],
 ) -> None:
-    """Every language has a lint job in the lint workflow."""
+    """Every language is covered by a ``Lint <Class>`` step or
+    ``lint-<class>`` job.
+    """
     job_ids: set[str] = set(lint_workflow["jobs"])
+    step_names: set[str] = set()
+    for job in lint_workflow["jobs"].values():
+        steps: list[dict[str, Any]] = job.get("steps") or []
+        for step in steps:
+            if "name" in step:
+                step_names.add(step["name"])
 
     # Python is linted by the "build" job (pre-commit hooks),
     # not a dedicated lint workflow.
@@ -31,12 +39,16 @@ def test_all_languages_have_lint_workflow(
         {"Python"},
     )
 
-    expected_jobs = {
-        f"lint-{lang_cls.__name__.lower()}"
-        for lang_cls in ALL_LANGUAGES
-        if lang_cls.__name__ not in no_dedicated_workflow
-    }
-    assert expected_jobs <= job_ids
+    for lang_cls in ALL_LANGUAGES:
+        name = lang_cls.__name__
+        if name in no_dedicated_workflow:
+            continue
+        has_dedicated_job = f"lint-{name.lower()}" in job_ids
+        has_named_step = f"Lint {name}" in step_names
+        assert has_dedicated_job or has_named_step, (
+            f"No lint coverage for {name}: "
+            f"expected job 'lint-{name.lower()}' or step 'Lint {name}'"
+        )
 
 
 def test_all_lint_jobs_in_completion_gate(
