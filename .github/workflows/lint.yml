@@ -969,8 +969,14 @@ jobs:
           done < /tmp/files-to-lint
           crystal run "$driver"
 
+  # Mojo reserves ~3.6 GB of virtual address space per invocation
+  # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
+  # crashes in libKGENCompilerRTShared.so before producing any output —
+  # and even with overcommit + swap workarounds it could only run
+  # serially. Ubicloud's 16 GB runner comfortably fits `$(nproc)`
+  # parallel invocations without the workarounds.
   lint-mojo:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-4
     steps:
       - uses: actions/checkout@v6
         with:
@@ -985,35 +991,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
         run: uv tool install mojo-compiler
-      # Mojo reserves ~3.6 GB of virtual address space per invocation
-      # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
-      # kernel's default overcommit heuristic refuses the allocation and
-      # Mojo crashes in libKGENCompilerRTShared.so before producing any
-      # output. Allow overcommit and add a 4 GB swap file so the kernel
-      # has enough headroom to accept the reservation — Mojo only
-      # actually touches ~320 MB of it.
-      - name: Expand memory headroom for Mojo
-        # The GitHub runner already ships a /swapfile mounted as swap, so
-        # add a second file at a fresh path instead of overwriting it.
-        run: |-
-          sudo sysctl -w vm.overcommit_memory=1
-          sudo fallocate -l 4G /mnt/extra-swapfile
-          sudo chmod 600 /mnt/extra-swapfile
-          sudo mkswap /mnt/extra-swapfile
-          sudo swapon /mnt/extra-swapfile
-      # Lift the per-process virtual-address cap so the shell and each
-      # `mojo run` child inherit an unlimited `RLIMIT_AS`. Keep the
-      # executions serial: each invocation reserves ~3.6 GB virtual,
-      # so running one per core on a 7 GB runner still crashes even
-      # with overcommit + swap enabled. Recommended by the upstream
-      # bug author in HomericIntelligence/ProjectOdyssey#5274.
-      # Local tracking: https://github.com/adamtheturtle/literalizer/issues/1574
       - name: Check Mojo syntax
-        run: |-
-          ulimit -v unlimited
-          while IFS= read -r -d '' f; do
-            mojo run --Werror "$GITHUB_WORKSPACE/$f"
-          done < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
 
   lint-nim:
     runs-on: ubuntu-latest
