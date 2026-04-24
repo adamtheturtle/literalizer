@@ -57,6 +57,7 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v4
         with:
+          mode: simulation
           run: uv run --extra=dev pytest tests/benchmarks --codspeed
 
   completion-ci:
