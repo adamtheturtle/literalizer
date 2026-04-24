@@ -698,6 +698,9 @@ class _CallCaseConfig:
     ref_declarations: dict[str, str]
     as_expression: bool
     bare_output: bool
+    # When True, drive ``literalize_call(..., wrap_in_file=True)``
+    # directly instead of wrapping manually with injected stubs.
+    wrap_in_file: bool
     ref_case_per_language: bool
 
 
@@ -720,6 +723,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -733,6 +737,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -746,6 +751,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -759,6 +765,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -772,6 +779,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -785,6 +793,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -798,6 +807,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -811,6 +821,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -827,6 +838,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         },
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -843,6 +855,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         },
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=True,
     ),
     _CallCaseConfig(
@@ -858,6 +871,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         },
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=True,
     ),
     _CallCaseConfig(
@@ -874,6 +888,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         },
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=True,
     ),
     _CallCaseConfig(
@@ -887,6 +902,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=False,
         bare_output=False,
+        wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
@@ -900,6 +916,23 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         ref_declarations={},
         as_expression=True,
         bare_output=True,
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    _CallCaseConfig(
+        # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
+        # the generated file includes its own target-function stub.
+        case_dir_name="call_wrap_in_file",
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        as_expression=False,
+        bare_output=False,
+        wrap_in_file=True,
         ref_case_per_language=False,
     ),
     *[
@@ -914,6 +947,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             ref_declarations={},
             as_expression=False,
             bare_output=False,
+            wrap_in_file=False,
             ref_case_per_language=False,
         )
         for name, cls in _CALL_STYLE_VARIANTS
@@ -2493,6 +2527,26 @@ def _run_call_golden_case(
     else:
         effective_ref_case = None
         declarations = config.ref_declarations
+    if config.wrap_in_file:
+        wrap_result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+            wrap_in_file=True,
+            ref_case=effective_ref_case,
+        )
+        _check_golden(
+            file_regression=file_regression,
+            contents=wrap_result.code + "\n",
+            extension=lang_cls.extension,
+            newline="",
+            golden_path=golden_path,
+        )
+        return
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
