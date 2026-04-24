@@ -1,7 +1,6 @@
 pub type GVal {
   GInt(Int)
   GFloat(Float)
-  GStr(String)
   GList(List(GVal))
   GDict(List(#(String, GVal)))
 }

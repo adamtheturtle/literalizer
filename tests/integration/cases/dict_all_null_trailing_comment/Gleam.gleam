@@ -1,6 +1,5 @@
 pub type GVal {
   GNull
-  GStr(String)
   GDict(List(#(String, GVal)))
 }
 

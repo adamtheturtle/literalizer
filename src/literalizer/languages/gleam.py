@@ -373,7 +373,7 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
             child: frozenset[type] = frozenset()
             for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                 child = child | _collect_gleam_types(value=v)  # pyright: ignore[reportUnknownArgumentType]
-            return frozenset({dict, str}) | child
+            return frozenset({dict}) | child
         case set():
             child = frozenset()
             for v in value:
