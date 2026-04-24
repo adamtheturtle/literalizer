@@ -20,7 +20,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_iso,
 )
@@ -183,6 +182,23 @@ def _format_datetime_java_zoned(value: datetime.datetime) -> str:
         f"{value.hour}, {value.minute}, {value.second}, "
         f'{nanoseconds}, ZoneId.of("{timezone_name}"))'
     )
+
+
+@beartype
+def _format_datetime_java_instant(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``Instant.parse(...)`` call.
+
+    ``Instant.parse`` rejects strings without a timezone offset, so a
+    naive datetime (no :attr:`~datetime.datetime.tzinfo`) is rendered
+    with a trailing ``Z`` — Python's :meth:`~datetime.datetime.isoformat`
+    emits no offset for naive datetimes, which Java reads as invalid.
+    Treating naive values as UTC matches the ISO 8601 convention for
+    unqualified timestamps.
+    """
+    iso = value.isoformat()
+    if value.tzinfo is None:
+        iso += "Z"
+    return f'Instant.parse("{iso}")'
 
 
 @beartype
@@ -608,9 +624,7 @@ class Java(metaclass=LanguageCls):
         """Datetime formatting options for Java."""
 
         INSTANT = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='Instant.parse("{iso}")',
-            ),
+            formatter=_format_datetime_java_instant,
             preamble_lines=("import java.time.Instant;",),
         )
         ZONED = DatetimeFormatConfig(
