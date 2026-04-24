@@ -32,7 +32,6 @@ from literalizer._language import (
     PostfixCallStyle,
     PrefixCallStyle,
     StubReturn,
-    identity_call_ref_identifier,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -1566,11 +1565,7 @@ def _format_call_args(
         "format_call_arg",
         _identity_call_arg,
     )
-    format_ref_identifier: Callable[[str], str] = getattr(
-        language,
-        "format_call_ref_identifier",
-        identity_call_ref_identifier,
-    )
+    format_ref_identifier = language.format_call_ref_identifier
     formatted = [
         _format_single_call_arg(
             value=arg_value,
