@@ -8,12 +8,12 @@ Next
   When ``True``, each call is emitted without the language's
   :attr:`~Language.statement_terminator` and per-element rows are
   joined with ``",\n"`` instead of ``"\n"``, so the output drops
-  straight into an outer list / array / slice / vec literal without a
+  straight into an outer list, array, or slice literal without a
   caller-supplied ``call_transform``.  Previously a trailing ``;`` was
   always appended in typed-statement languages (Go, Java, Rust,
   TypeScript, ...), yielding ``process(...),;`` — a syntax error
   inside a list or array literal.  Defaults to ``False``, which
-  preserves the existing behaviour.
+  preserves the existing behavior.
 - ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
   fixture end-to-end via ``lua``, catching runtime errors (calls to
   undefined functions, missing module imports, failed assertions)
