@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.24
+----------
+
+
 - ``literalize_call`` with ``per_element=True`` now widens Rust's
   ``TAGGED_ENUM`` scalar wrapping across sibling calls at matching
   argument slots.  Previously the wrap analysis ran per call, so a
