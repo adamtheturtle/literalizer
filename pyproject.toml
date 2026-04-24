@@ -412,6 +412,7 @@ ignore_names = [
     "OBJECT_VARIANT",
     "TAGGED_ENUM",
     "UNION_TYPE",
+    "VARIANT",
     "CONST",
     "CONTAINERS_MAP",
     "DICTIONARY",
