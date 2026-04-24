@@ -1,4 +1,4 @@
-declare const process: any;
+const process: any = () => {};
 const myVar = [
   1,
   2,
