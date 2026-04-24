@@ -127,6 +127,24 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-fortran
 
+      - name: Lint Rust
+        run: |-
+          find tests/integration/cases -name '*.rs' -print0 > /tmp/files-rust
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cargo init "$tmpdir/chrono-check"
+          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
+          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
+          deps="$tmpdir/chrono-check/target/debug/deps"
+          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          while IFS= read -r -d '' f; do
+            rustc --edition 2021 \
+              -L "dependency=$deps" \
+              --extern "chrono=$chrono_rlib" \
+              "$f" -o "$tmpdir/out" 2>&1 || exit 1
+            "$tmpdir/out" || exit 1
+          done < /tmp/files-rust
+
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
   lint-apt-basics:
@@ -215,7 +233,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Install npm-sourced linters
-        run: npm install -g json5 tree-sitter-cli
+        run: npm install -g json5 tree-sitter-cli typescript elm-format elm
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Build tree-sitter-norg parser
         run: |-
@@ -235,6 +258,20 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg
           xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
+
+      - name: Lint TypeScript
+        run: |-
+          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
+          xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-ts
+
+      - name: Lint Elm
+        run: |-
+          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm
+          while IFS= read -r -d '' f; do
+            elm-format --stdin < "$f" > /dev/null || exit 1
+          done < /tmp/files-elm
+          xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-elm
+          xargs -0 uv run --no-project python run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
@@ -377,19 +414,41 @@ jobs:
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
           xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
 
-  # Erlang + Elixir share the BEAM runtime via setup-beam, so one
-  # install serves both syntax checks.
+  # Erlang + Elixir + Gleam all share the BEAM runtime via setup-beam,
+  # so one install serves all three.
   lint-beam:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Erlang and Elixir
+      - name: Install Erlang, Elixir and Gleam
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
+          gleam-version: latest
           otp-version: '27'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Populate the shared Hex package cache once up front. Parallel
+      # `gleam deps download` invocations would otherwise race on the
+      # cache and fail with "Unable to locate Hex package contents.tar.gz"
+      # when one worker is mid-download and another reads the partial
+      # file.
+      - name: Prime Gleam Hex cache
+        run: |-
+          tmpdir=$(mktemp -d)
+          cp .github/scripts/lint-gleam.toml "$tmpdir/gleam.toml"
+          mkdir "$tmpdir/src"
+          (cd "$tmpdir" && gleam deps download)
+
+      - name: Lint Gleam
+        run: |-
+          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-gleam
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
       # `elixir` compiles the module but never invokes it. Append a call
@@ -510,67 +569,15 @@ jobs:
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript
           xargs -0 -P "$(nproc)" -n 1 uv run --no-project python check_purescript_syntax.py < /tmp/files-purescript
 
-  lint-gleam:
+  # Ubuntu's packaged clang-tidy is several releases behind and is the
+  # dominant cost of this job on runners. Pull a recent build from PyPI
+  # via uv instead. Shared across C and C++ since it's the same tool.
+  lint-clang-tidy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-to-lint
-      - name: Install Gleam
-        uses: erlef/setup-beam@v1
-        with:
-          gleam-version: latest
-          otp-version: 27
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      # Populate the shared Hex package cache once up front. Parallel
-      # `gleam deps download` invocations would otherwise race on the
-      # cache and fail with "Unable to locate Hex package contents.tar.gz"
-      # when one worker is mid-download and another reads the partial
-      # file.
-      - name: Prime Gleam Hex cache
-        run: |-
-          tmpdir=$(mktemp -d)
-          cp .github/scripts/lint-gleam.toml "$tmpdir/gleam.toml"
-          mkdir "$tmpdir/src"
-          (cd "$tmpdir" && gleam deps download)
-      - name: Check Gleam compiles
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py
-          < /tmp/files-to-lint
-
-  lint-typescript:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.ts' -print0 > /tmp/files-to-lint
-      - name: Install TypeScript
-        run: npm install -g typescript
-      - name: Check TypeScript syntax
-        run: xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib
-          es2015 < /tmp/files-to-lint
-
-  lint-c-tidy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
-      # Ubuntu's packaged clang-tidy is several releases behind and is
-      # the dominant cost of this job on runners. Pull a recent build
-      # from PyPI via uv instead.
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -578,8 +585,14 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
-      - name: Run clang-tidy
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c11 < /tmp/files-to-lint
+      - name: Run clang-tidy on C files
+        run: |-
+          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c11 < /tmp/files-c-tidy
+      - name: Run clang-tidy on C++ files
+        run: |-
+          find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest
@@ -633,28 +646,6 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
 
-  lint-cpp-tidy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
-      # Ubuntu's packaged clang-tidy is several releases behind and is
-      # the dominant cost of this job on runners. Pull a recent build
-      # from PyPI via uv instead.
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      - name: Install clang-tidy
-        run: uv tool install clang-tidy
-      - name: Run clang-tidy
-        run: xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-to-lint
-
   lint-kotlin:
     runs-on: ubuntu-latest
     steps:
@@ -680,32 +671,6 @@ jobs:
       - name: Check Kotlin syntax
         run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
-  lint-rust:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
-      - name: Check Rust syntax and run binaries
-        run: |-
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cargo init "$tmpdir/chrono-check"
-          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
-          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
-          deps="$tmpdir/chrono-check/target/debug/deps"
-          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
-          while IFS= read -r -d '' f; do
-            rustc --edition 2021 \
-              -L "dependency=$deps" \
-              --extern "chrono=$chrono_rlib" \
-              "$f" -o "$tmpdir/out" 2>&1 || exit 1
-            "$tmpdir/out" || exit 1
-          done < /tmp/files-to-lint
-
   lint-swift:
     runs-on: ubuntu-latest
     steps:
@@ -730,32 +695,6 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
-
-  lint-elm:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.elm' -print0 > /tmp/files-to-lint
-      - name: Install elm-format and elm
-        run: npm install -g elm-format elm
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Elm formatting
-        run: |-
-          while IFS= read -r -d '' f; do
-            elm-format --stdin < "$f" > /dev/null || exit 1
-          done < /tmp/files-to-lint
-      - name: Check Elm compiles
-        run: xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-to-lint
-      - name: Run Elm files
-        run: xargs -0 uv run --no-project python run_elm.py < /tmp/files-to-lint
 
   lint-ocaml:
     runs-on: ubuntu-latest
@@ -1308,16 +1247,11 @@ jobs:
       - lint-beam
       - lint-jvm-mini
       - lint-haskell-family
-      - lint-gleam
-      - lint-typescript
-      - lint-c-tidy
+      - lint-clang-tidy
       - lint-cobol
       - lint-cpp
-      - lint-cpp-tidy
       - lint-kotlin
-      - lint-rust
       - lint-swift
-      - lint-elm
       - lint-ocaml
       - lint-commonlisp
       - lint-scala
