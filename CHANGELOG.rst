@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.24.1
+------------
+
+
 - ``Gleam`` now emits a ``pub type GVal`` declaration containing only
   the constructors actually needed for the data, rather than always
   emitting all eight variants.  Scalar-only inputs (e.g.  ``GInt(42)``)

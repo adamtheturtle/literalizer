@@ -801,17 +801,40 @@ jobs:
       # renamed to `fixture_N.dart` because several fixtures share a
       # basename (e.g. `Dart.dart`); the mapping is printed so failures
       # still point back to the original path.
-      - name: Check Dart syntax
+      #
+      # Fixtures only declare a top-level `final my_data = ...`, and
+      # Dart initializes top-level `final` lazily — `dart run` on a
+      # bare fixture would never evaluate its initializer. Generate a
+      # `main.dart` driver that imports every fixture and references
+      # each `my_data`, so one `dart run` forces all initializers to
+      # execute and surfaces runtime errors (e.g. a bad
+      # `DateTime.parse` argument). Paying Dart VM startup once across
+      # all fixtures keeps this step cheap.
+      - name: Check Dart syntax and run fixtures
         run: |-
           tmpdir=$(mktemp -d)
           printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
+          driver="$tmpdir/main.dart"
+          : > "$driver"
           i=0
           while IFS= read -r -d '' f; do
             cp "$f" "$tmpdir/fixture_$i.dart"
+            printf 'import "fixture_%d.dart" as f%d;\n' "$i" "$i" >> "$driver"
             printf 'fixture_%s.dart <- %s\n' "$i" "$f"
             i=$((i+1))
           done < /tmp/files-to-lint
+          {
+            printf 'void main() {\n'
+            printf '  final sink = <Object?>[\n'
+            for ((j=0; j<i; j++)); do
+              printf '    f%d.my_data,\n' "$j"
+            done
+            printf '  ];\n'
+            printf "  if (sink.isEmpty) throw StateError('unreachable');\n"
+            printf '}\n'
+          } >> "$driver"
           dart analyze --fatal-infos "$tmpdir"
+          (cd "$tmpdir" && dart run main.dart)
 
   lint-julia:
     runs-on: ubuntu-latest
