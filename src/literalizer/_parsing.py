@@ -221,7 +221,7 @@ def _yaml_needs_roundtrip(source: str) -> bool:
     (``#`` comments) or resolve differently between the two loaders
     (explicit ``!``/``!!`` tags such as ``!!omap``/``!!set``,
     anchors/aliases, and merge keys).  The checks are intentionally
-    conservative substring checks — a ``#`` inside a quoted string
+    conservative text-presence checks — a ``#`` inside a quoted string
     still forces the slow path, which is correct but slightly
     pessimistic.
     """
@@ -310,8 +310,8 @@ def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
 def _coerce_toml_values(*, data: object) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
-    ``tomlkit`` produces ``datetime.time`` values which are not
-    representable in the ``Value`` type, so they are converted to
+    ``tomlkit`` produces ``datetime.time`` values which cannot be
+    expressed in the ``Value`` type, so they are converted to
     their ISO-format string form.
     """
     match data:
