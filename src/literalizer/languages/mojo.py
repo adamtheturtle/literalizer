@@ -107,9 +107,9 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
     Strings, bytes, dates, and datetimes all map to ``String`` because
     the default Mojo date / datetime formats produce ISO strings and
     the bytes formats produce hex or base64 strings.  ``None`` maps to
-    ``NoneType`` and renders as ``Value(NoneType())`` because Mojo's
-    ``Variant`` constructor cannot infer ``NoneType`` from the bare
-    ``None`` literal.
+    ``NoneType`` and renders as ``Value(NoneType())`` because the
+    ``Variant`` constructor in Mojo cannot infer ``NoneType`` from the
+    bare ``None`` literal.
     """
     _string_signature = _VariantSignature(
         type_name="String",
@@ -213,7 +213,7 @@ def _build_variant_preamble(
     variant_name: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
-    """VARIANT strategy: emit a ``Variant`` comptime declaration."""
+    """VARIANT strategy: emit the ``Variant`` declaration preamble."""
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the ``Variant`` import + ``comptime`` declaration for
