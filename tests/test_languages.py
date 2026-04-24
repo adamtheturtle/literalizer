@@ -26,6 +26,7 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     NullInCollectionError,
@@ -34,6 +35,7 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
 )
 from literalizer.languages import (
+    Bash,
     Cobol,
     Dart,
     Fortran,
@@ -742,6 +744,68 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
             language=COBOL,
             target_function="f",
             parameter_names=["data"],
+            per_element=False,
+        )
+
+
+def test_literalize_call_bash_rejects_list_arg() -> None:
+    """Bash raises ``CallArgNotSupportedError`` when a call argument
+    is a list, because ``cmd (1 2 3)`` parses as ``cmd`` followed by
+    a nested ``(...)`` child-process group, not an inline array
+    literal.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"^Bash cannot accept this value as a call argument: "
+            r"list values have no inline literal form"
+        ),
+    ):
+        literalize_call(
+            source="[[[1, 2, 3]]]",
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["items"],
+        )
+
+
+def test_literalize_call_bash_rejects_dict_arg() -> None:
+    """Bash raises ``CallArgNotSupportedError`` when a call argument
+    is a dict, because Bash associative-array literals cannot appear
+    as a single positional argument.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"^Bash cannot accept this value as a call argument: "
+            r"dict values have no inline literal form"
+        ),
+    ):
+        literalize_call(
+            source='[[{"k": 1}]]',
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["m"],
+        )
+
+
+def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
+    """Bash's call-argument guard also fires on the
+    ``per_element=False`` path where the whole parsed value is passed
+    as a single argument.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=r"^Bash cannot accept this value as a call argument",
+    ):
+        literalize_call(
+            source="[1, 2, 3]",
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["items"],
             per_element=False,
         )
 
