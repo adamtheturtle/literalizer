@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
+  names for the ``static const struct`` globals that back dotted call
+  targets, so a user-written ``throttler.check(...)`` literalizes to
+  ``kThrottler.check(...)`` (and ``app.client.fetch`` to
+  ``kApp.client.fetch``).  clang-tidy's
+  ``google-objc-global-variable-declaration`` check, previously
+  suppressed in ``.clang-tidy`` because the bare root names did not
+  conform, is now enforced.
+
 2026.04.24
 ----------
 
