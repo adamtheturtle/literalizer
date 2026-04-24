@@ -13,6 +13,7 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import (
     BothVariableForms,
+    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
@@ -30,6 +31,7 @@ from literalizer.exceptions import (
     NullInCollectionError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedIdentifierCaseError,
 )
 from literalizer.languages import (
     Cobol,
@@ -823,4 +825,20 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
             language=Python(),
             target_function="f",
             parameter_names=["only"],
+        )
+
+
+def test_literalize_call_ref_case_unsupported_raises() -> None:
+    """``ref_case`` outside the language's ``IdentifierCases`` raises."""
+    with pytest.raises(
+        expected_exception=UnsupportedIdentifierCaseError,
+        match=r"^Python does not support identifier case 'CAMEL'$",
+    ):
+        literalize_call(
+            source='[[{"$ref": "user_obj"}, 42]]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["data", "count"],
+            ref_case=IdentifierCase.CAMEL,
         )

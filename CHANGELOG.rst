@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` gains a ``ref_case`` keyword argument that
+  converts ``{"$ref": "name"}`` identifiers to the target language's
+  idiomatic case at render time via ``pyhumps``.  Pass
+  ``IdentifierCase.SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or
+  ``KEBAB`` to drive one YAML source through multiple languages
+  without re-authoring the ref names (e.g. the same ``user_obj`` ref
+  renders as ``user_obj`` for Python, ``userObj`` for JavaScript,
+  ``UserObj`` for Go).  Each language exposes the subset it
+  understands via its ``identifier_cases`` tuple; passing an
+  unsupported case raises ``UnsupportedIdentifierCaseError``.  When
+  ``ref_case=None`` (the default) ref names are emitted verbatim,
+  preserving existing behavior.
 - ``Mojo`` now supports an opt-in
   ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an
   auto-generated ``comptime Value = Variant[...]`` over only the Mojo
