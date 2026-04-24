@@ -27,6 +27,14 @@ from literalizer.exceptions import (
     YAMLParseError,
 )
 
+type YamlCoercible = (
+    Scalar
+    | list[object]
+    | dict[object, object]
+    | CommentedOrderedMap
+    | CommentedSet
+)
+
 
 class InputFormat(enum.Enum):
     """Supported input serialization formats."""
@@ -54,7 +62,7 @@ class _ParsedInput:
 
 
 @beartype
-def _unwrap_yaml_scalar(*, value: object) -> object:
+def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
@@ -92,12 +100,18 @@ def _unwrap_yaml_scalar(*, value: object) -> object:
                 microsecond=value.microsecond,
                 tzinfo=value.tzinfo,
             )
-        case _:
+        case datetime.date():
             return value
+        case bytes():
+            return value
+        case None:
+            return value
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
-def _coerce_yaml_keys(*, data: object) -> Value:
+def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
     """Recursively convert non-string dict keys to their string form.
 
     YAML allows non-string mapping keys (e.g. integers); ``Value``
@@ -123,35 +137,34 @@ def _coerce_yaml_keys(*, data: object) -> Value:
             omap_src = cast("dict[object, object]", data)
             omap = ordereddict(
                 [
-                    (f"{k}", _coerce_yaml_keys(data=v))
+                    (f"{k}", _coerce_yaml_keys(data=cast("YamlCoercible", v)))
                     for k, v in omap_src.items()
                 ]
             )
             return cast("Value", omap)
         case dict():
             return {
-                f"{k}": _coerce_yaml_keys(data=v)
-                for k, v in cast("dict[object, object]", data).items()
+                f"{k}": _coerce_yaml_keys(data=cast("YamlCoercible", v))
+                for k, v in data.items()
             }
         case list():
             return [
-                _coerce_yaml_keys(data=item)
-                for item in cast("list[object]", data)
+                _coerce_yaml_keys(data=cast("YamlCoercible", item))
+                for item in data
             ]
         case CommentedSet():
-            members = cast("set[object]", set(data))
-            return {
-                cast("Scalar", _unwrap_yaml_scalar(value=item))
-                for item in members
-            }
-        # YAML sets always use ``!!set``, which forces the round-trip path.
-        case set():  # pragma: no cover
-            return {
-                cast("Scalar", _unwrap_yaml_scalar(value=item))
-                for item in cast("set[object]", data)
-            }
-        case _:
+            members = cast("set[Scalar]", set(data))
+            return {_unwrap_yaml_scalar(value=item) for item in members}
+        case bool() | int() | float() | str() | datetime.datetime():
             return cast("Value", _unwrap_yaml_scalar(value=data))
+        case datetime.date():
+            return cast("Value", _unwrap_yaml_scalar(value=data))
+        case bytes():
+            return cast("Value", _unwrap_yaml_scalar(value=data))
+        case None:
+            return cast("Value", _unwrap_yaml_scalar(value=data))
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
