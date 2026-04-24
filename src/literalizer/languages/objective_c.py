@@ -49,7 +49,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -132,6 +131,28 @@ def _format_objc_bytes_base64(value: bytes) -> str:
     return f'@"{encoded.decode(encoding="ascii")}"'
 
 
+@beartype
+def _objc_global_root(root: str, /) -> str:
+    """Return a ``k``-prefixed, title-cased root for an ObjC const
+    global, so the emitted name satisfies clang-tidy's
+    ``google-objc-global-variable-declaration`` check.
+    """
+    return f"k{root.title()}"
+
+
+@beartype
+def _objc_format_call_target(name: str, /) -> str:
+    """Rewrite the root of a dotted call target to its k-prefixed form
+    so the call site matches the renamed const global emitted by
+    :func:`_objc_call_stub`.  Single-name calls resolve to a ``static``
+    function (not a const global) and are returned unchanged.
+    """
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return name
+    return ".".join((_objc_global_root(parts[0]), *parts[1:]))
+
+
 def _objc_call_stub(
     name: str,
     params: Sequence[str],
@@ -148,6 +169,10 @@ def _objc_call_stub(
     Objective-C object.  This avoids K&R unspecified-parameter syntax
     and the ``-Wstrict-prototypes`` / ``-Wdeprecated-non-prototype``
     warnings that clang would otherwise emit.
+
+    The root of a dotted target is rewritten to ``k{Title}`` form (e.g.
+    ``throttler`` → ``kThrottler``) so the const global satisfies
+    clang-tidy's ``google-objc-global-variable-declaration`` check.
 
     Single-name calls emit a ``static`` definition so the fixture links
     under the lint workflow's run step — a bare prototype without a body
@@ -168,10 +193,10 @@ def _objc_call_stub(
             f"static {return_keyword} {parts[0]}({stub_signature}) "
             f"{stub_body}",
         )
-    root = parts[0]
+    root = _objc_global_root(parts[0])
     method = parts[-1]
     fields = parts[1:-1]
-    stub_fn = "_".join((*parts, "stub_"))
+    stub_fn = "_".join((root, *parts[1:], "stub_"))
     if not fields:
         type_name = f"{root}Type_"
         return (
@@ -561,10 +586,10 @@ class ObjectiveC(metaclass=LanguageCls):
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
+        """Rewrite a dotted call target so the root matches the
+        ``k``-prefixed const global emitted by :func:`_objc_call_stub`.
         """
-        return identity_call_target
+        return _objc_format_call_target
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:

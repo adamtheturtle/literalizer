@@ -9,7 +9,6 @@ Checks: >
   -cppcoreguidelines-narrowing-conversions,
   -fuchsia-default-arguments-calls,
   -google-objc-function-naming,
-  -google-objc-global-variable-declaration,
   -google-runtime-int,
   -hicpp-named-parameter,
   -llvm-include-order,
