@@ -102,8 +102,8 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
     """Return the Mojo Variant alternative for *value*.
 
     Strings, bytes, dates, and datetimes all map to ``String`` because
-    Mojo's default date / datetime formats produce ISO strings and
-    bytes formats produce hex or base64 strings.
+    the default Mojo date / datetime formats produce ISO strings and
+    the bytes formats produce hex or base64 strings.
     """
     _string_signature = _VariantSignature(type_name="String", cast="String")
     match value:
@@ -462,8 +462,8 @@ class Mojo(metaclass=LanguageCls):
         (or :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
         when scalar values of mixed types appear in a container that
         cannot represent them.  This is the default, matching the
-        single-element-type convention of Mojo's ``List``, ``Dict``,
-        and ``Set``.
+        single-element-type convention of the Mojo ``List``, ``Dict``,
+        and ``Set`` containers.
         """
 
         VARIANT = _HeterogeneousStrategyConfig(
