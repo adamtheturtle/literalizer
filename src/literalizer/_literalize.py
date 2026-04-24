@@ -31,6 +31,7 @@ from literalizer._language import (
     PositionalCallStyle,
     PostfixCallStyle,
     PrefixCallStyle,
+    StubReturn,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -1914,8 +1915,13 @@ def literalize_call(
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
-            complete, valid source file using the language's
-            ``wrap_in_file`` method and prepend :attr:`preamble`.
+            complete, self-contained source file using the language's
+            ``wrap_in_file`` method and prepend :attr:`preamble`.  A
+            no-op stub for *target_function* is also injected so the
+            generated file does not reference an undefined name; when
+            a *call_transform* is supplied the wrapper name it
+            introduces is not stubbed — callers that transform calls
+            are responsible for providing that definition themselves.
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
@@ -1945,12 +1951,12 @@ def literalize_call(
         case _ as style:
             pass
 
+    raw_target_function = target_function
     if ref_case is not None and ref_case not in language.identifier_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
-
     target_function = language.format_call_target(target_function)
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
@@ -1996,13 +2002,29 @@ def literalize_call(
     )
 
     if wrap_in_file:
+        # Emit a no-op stub for ``target_function`` so the wrapped file
+        # compiles on its own.  ``StubReturn.VALUE`` is used whenever a
+        # ``call_transform`` consumes the call's return value; otherwise
+        # the call result is discarded and a void stub suffices.
+        stub_return = (
+            StubReturn.VALUE if call_transform is not None else StubReturn.VOID
+        )
+        body_stubs = language.format_call_stub(
+            raw_target_function, parameter_names, stub_return
+        )
+        preamble_stubs = language.format_call_preamble_stub(
+            raw_target_function, parameter_names, stub_return
+        )
         wrapped = language.wrap_in_file(
             content=result,
             variable_name="",
-            body_preamble=computed.body,
+            body_preamble=body_stubs + computed.body,
         )
-        if preamble:
-            wrapped = "\n".join(preamble) + "\n" + wrapped
+        # Stubs follow the language's static preamble (e.g. Go's
+        # ``package main`` must come first).
+        full_preamble = preamble + preamble_stubs
+        if full_preamble:
+            wrapped = "\n".join(full_preamble) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
             preamble=(),

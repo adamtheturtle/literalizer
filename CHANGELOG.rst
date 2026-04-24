@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``literalize_call(..., wrap_in_file=True)`` now injects a no-op
+  stub for the ``target_function`` into the wrapped file, so the
+  generated source compiles against strict checkers on its own.
+  Callers that supply a ``call_transform`` are still responsible for
+  providing a definition for the wrapper function the transform
+  introduces.
 - Added ``literalize_call`` support for ``Bash``.  A new
   :class:`CommandCallStyle` tagged-union member renders calls as
   ``target arg1 arg2`` with space-separated arguments and no
