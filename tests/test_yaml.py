@@ -133,6 +133,26 @@ def test_literalize_yaml_after_invalid_uses_cached_instance() -> None:
     assert result.declaration_code == '{\n    "foo": "bar",\n}'
 
 
+def test_literalize_yaml_quoted_hash_is_not_comment() -> None:
+    """A quoted ``#`` still round-trips as plain scalar content."""
+    result = literalize(
+        source='"plain#value"\n',
+        input_format=InputFormat.YAML,
+        language=PYTHON,
+    )
+    assert result.declaration_code == '"plain#value"'
+
+
+def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
+    """Invalid YAML still raises on the round-trip parsing path."""
+    with pytest.raises(expected_exception=YAMLParseError):
+        literalize(
+            source="value: [1\n# force roundtrip path\n",
+            input_format=InputFormat.YAML,
+            language=PYTHON,
+        )
+
+
 def test_cpp_array_binary_typed() -> None:
     """C++ ARRAY format infers std::array<std::string, N> for binary
     data.
