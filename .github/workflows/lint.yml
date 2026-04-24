@@ -174,9 +174,7 @@ jobs:
       - name: Lint Forth
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
-          while IFS= read -r -d '' f; do
-            gforth "$f" -e bye || exit 1
-          done < /tmp/files-forth
+          xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
 
       - name: Lint Tcl
         run: |-
