@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
+  now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
+  and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so
+  every target (including dotted paths like ``app.client.fetch``) is a
+  bound function handle before it is invoked.  MATLAB's auto-vivifying
+  struct-field assignment means a single line defines the entire chain
+  regardless of depth, so the stub is one statement per call target.
 - ``lint-purescript`` in ``.github/workflows/lint.yml`` now runs each
   PureScript fixture end-to-end.  A new ``Run PureScript files`` step
   compiles each fixture with ``purs compile`` and loads the resulting
