@@ -995,6 +995,7 @@ jobs:
       # overcommit + swap step above has given the kernel enough
       # headroom. Recommended by the upstream bug author in
       # HomericIntelligence/ProjectOdyssey#5274.
+      # Local tracking: https://github.com/adamtheturtle/literalizer/issues/1574
       - name: Check Mojo syntax
         run: |-
           ulimit -v unlimited
