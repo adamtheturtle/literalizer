@@ -22,6 +22,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     // Enable debug mode
     {"debug", ((CVal){.b = true})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     // Server configuration
     {"host", ((CVal){.s = "localhost"})},  // default host

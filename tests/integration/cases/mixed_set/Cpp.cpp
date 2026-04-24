@@ -7,4 +7,5 @@ auto my_data = std::initializer_list<std::variant<bool, int, std::string>>{
     42,
     "apple",
 };
+    (void)my_data;
 }

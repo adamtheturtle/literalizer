@@ -7,10 +7,12 @@ auto my_data = std::vector<int>{
     255,
     -10,
 };
+(void)my_data;
 my_data = std::vector<int>{
     1000000,
     -1234,
     255,
     -10,
 };
+    (void)my_data;
 }

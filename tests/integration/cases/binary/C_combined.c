@@ -18,6 +18,7 @@ void check_(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "48656c6c6f"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "48656c6c6f"}),
 }});

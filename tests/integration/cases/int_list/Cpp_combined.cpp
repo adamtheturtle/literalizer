@@ -6,9 +6,11 @@ auto my_data = std::vector<int>{
     2,
     3,
 };
+(void)my_data;
 my_data = std::vector<int>{
     1,
     2,
     3,
 };
+    (void)my_data;
 }

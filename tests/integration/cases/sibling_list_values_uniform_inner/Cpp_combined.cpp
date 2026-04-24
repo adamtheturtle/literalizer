@@ -8,8 +8,10 @@ auto my_data = std::map<std::string, std::vector<std::variant<int, std::vector<i
     {"lint", std::vector<std::variant<int, std::vector<int>>>{2, std::vector<int>{1}}},
     {"test", std::vector<std::variant<int, std::vector<int>>>{5, std::vector<int>{7}}},
 };
+(void)my_data;
 my_data = std::map<std::string, std::vector<std::variant<int, std::vector<int>>>>{
     {"lint", std::vector<std::variant<int, std::vector<int>>>{2, std::vector<int>{1}}},
     {"test", std::vector<std::variant<int, std::vector<int>>>{5, std::vector<int>{7}}},
 };
+    (void)my_data;
 }

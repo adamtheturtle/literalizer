@@ -18,6 +18,7 @@ void check_(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"key", ((CVal){.s = "\"bang!\""})},  // real
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"key", ((CVal){.s = "\"bang!\""})},  // real
 }});

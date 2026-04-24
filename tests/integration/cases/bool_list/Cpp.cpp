@@ -6,4 +6,5 @@ auto my_data = std::vector<bool>{
     false,
     true,
 };
+    (void)my_data;
 }

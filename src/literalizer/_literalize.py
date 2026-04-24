@@ -1157,7 +1157,7 @@ def _literalize_pre_form(
     )
 
     resolved: ResolvedComments | None = None
-    if input_format is InputFormat.YAML:
+    if input_format is InputFormat.YAML and parsed.yaml_needs_comment_resolve:
         comment_cfg = language.comment_config
         cp = comment_cfg.prefix
         cs = comment_cfg.suffix

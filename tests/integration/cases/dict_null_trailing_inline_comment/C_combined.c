@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"host", ((CVal){.s = "localhost"})},
     {"port", ((CVal){.s = NULL})},  // not configured yet
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"host", ((CVal){.s = "localhost"})},
     {"port", ((CVal){.s = NULL})},  // not configured yet

@@ -5,6 +5,7 @@ id my_data = @{
     @"b": [NSNull null],
     // trailing
 };
+(void)my_data;
 my_data = @{
     @"a": [NSNull null],
     @"b": [NSNull null],

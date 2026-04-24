@@ -4,6 +4,7 @@ id my_data = @[
     @"price $10",
     @"$HOME",
 ];
+(void)my_data;
 my_data = @[
     @"price $10",
     @"$HOME",

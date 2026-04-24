@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"name", ((CVal){.s = "Alice"})},
     {"tags", ((CVal){.a = (CVal[]){((CVal){.b = true}), ((CVal){.i = 42}), ((CVal){.s = "apple"})}})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"name", ((CVal){.s = "Alice"})},
     {"tags", ((CVal){.a = (CVal[]){((CVal){.b = true}), ((CVal){.i = 42}), ((CVal){.s = "apple"})}})},

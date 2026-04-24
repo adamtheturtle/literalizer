@@ -24,6 +24,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "both \"quotes''' here"}),
     ((CVal){.s = "line1\\nline2\nwith newline"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "C:\\path\\to\\file"}),
     ((CVal){.s = "back\\\\slash"}),

@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "line1\rline2"}),
     ((CVal){.s = ""}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "line1\r\nline2"}),
     ((CVal){.s = "line1\rline2"}),

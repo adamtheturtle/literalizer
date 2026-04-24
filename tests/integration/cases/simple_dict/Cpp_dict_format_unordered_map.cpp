@@ -10,4 +10,5 @@ auto my_data = std::unordered_map<std::string, std::variant<std::string, int, bo
     {"active", true},
     {"score", nullptr},
 };
+    (void)my_data;
 }

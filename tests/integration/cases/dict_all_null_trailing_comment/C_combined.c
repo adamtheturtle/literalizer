@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"b", ((CVal){.s = NULL})},
     // trailing
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"a", ((CVal){.s = NULL})},
     {"b", ((CVal){.s = NULL})},

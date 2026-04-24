@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = -INFINITY}),
     ((CVal){.f = NAN}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = INFINITY}),
     ((CVal){.f = -INFINITY}),

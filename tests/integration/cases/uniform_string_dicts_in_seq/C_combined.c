@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.m = (CKV[]){{"first", ((CVal){.s = "Alice"})}, {"last", ((CVal){.s = "Smith"})}}}),
     ((CVal){.m = (CKV[]){{"first", ((CVal){.s = "Bob"})}, {"last", ((CVal){.s = "Jones"})}}}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.m = (CKV[]){{"first", ((CVal){.s = "Alice"})}, {"last", ((CVal){.s = "Smith"})}}}),
     ((CVal){.m = (CKV[]){{"first", ((CVal){.s = "Bob"})}, {"last", ((CVal){.s = "Jones"})}}}),

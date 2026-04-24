@@ -3,4 +3,5 @@
 void check_() {
 // note
 const auto* my_data = "hello # world";
+    (void)my_data;
 }

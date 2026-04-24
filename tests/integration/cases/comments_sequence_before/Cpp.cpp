@@ -8,4 +8,5 @@ auto my_data = std::vector<std::string>{
     // second
     "b",
 };
+    (void)my_data;
 }

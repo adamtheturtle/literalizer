@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"lint", ((CVal){.a = (CVal[]){((CVal){.i = 2}), ((CVal){.a = (CVal[]){}})}})},
     {"test", ((CVal){.a = (CVal[]){((CVal){.i = 5}), ((CVal){.a = (CVal[]){((CVal){.s = "compile"})}})}})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"lint", ((CVal){.a = (CVal[]){((CVal){.i = 2}), ((CVal){.a = (CVal[]){}})}})},
     {"test", ((CVal){.a = (CVal[]){((CVal){.i = 5}), ((CVal){.a = (CVal[]){((CVal){.s = "compile"})}})}})},

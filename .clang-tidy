@@ -2,7 +2,6 @@
 Checks: >
   *,
   -altera-struct-pack-align,
-  -clang-analyzer-deadcode.DeadStores,
   -cppcoreguidelines-avoid-magic-numbers,
   -fuchsia-default-arguments-calls,
   -google-objc-function-naming,

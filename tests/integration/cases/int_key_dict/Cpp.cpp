@@ -7,4 +7,5 @@ auto my_data = std::map<std::string, std::string>{
     {"2", "two"},
     {"42", "answer"},
 };
+    (void)my_data;
 }

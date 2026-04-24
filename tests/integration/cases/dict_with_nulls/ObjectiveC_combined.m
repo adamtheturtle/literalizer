@@ -5,6 +5,7 @@ id my_data = @{
     @"score": [NSNull null],
     @"age": @(30),
 };
+(void)my_data;
 my_data = @{
     @"name": @"Alice",
     @"score": [NSNull null],

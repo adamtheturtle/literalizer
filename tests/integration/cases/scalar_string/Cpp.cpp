@@ -2,4 +2,5 @@
 #include <string>
 void check_() {
 const auto* my_data = "hello";
+    (void)my_data;
 }

@@ -9,4 +9,5 @@ auto my_data = std::map<std::string, std::variant<std::string, int>>{
     // Port setting
     {"port", 3000},
 };
+    (void)my_data;
 }

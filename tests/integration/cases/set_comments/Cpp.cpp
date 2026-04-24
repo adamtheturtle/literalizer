@@ -7,4 +7,5 @@ auto my_data = std::initializer_list<std::string>{
     "banana",
     // trailing
 };
+    (void)my_data;
 }

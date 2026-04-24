@@ -8,4 +8,5 @@ auto my_data = std::unordered_map<std::string, std::variant<std::string, std::ve
     {"name", "Alice"},
     {"scores", std::vector<int>{10, 20, 30}},
 };
+    (void)my_data;
 }

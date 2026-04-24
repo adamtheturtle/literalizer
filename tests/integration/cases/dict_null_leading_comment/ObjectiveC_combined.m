@@ -5,6 +5,7 @@ id my_data = @{
     @"name": @"Alice",
     @"score": [NSNull null],
 };
+(void)my_data;
 my_data = @{
     // comment
     @"name": @"Alice",

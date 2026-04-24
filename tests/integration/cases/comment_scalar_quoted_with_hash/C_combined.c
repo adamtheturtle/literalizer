@@ -17,6 +17,7 @@ struct CKV { const char *k; CVal v; };
 void check_(void) {
 // note
 CVal my_data = ((CVal){.s = "hello # world"});
+(void)my_data;
 // note
 my_data = ((CVal){.s = "hello # world"});
     (void)my_data;
