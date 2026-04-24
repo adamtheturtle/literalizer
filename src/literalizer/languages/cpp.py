@@ -1037,9 +1037,9 @@ class Cpp(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="INFINITY",
-        negative_infinity="-INFINITY",
-        nan="NAN",
+        positive_infinity="static_cast<double>(INFINITY)",
+        negative_infinity="-static_cast<double>(INFINITY)",
+        nan="static_cast<double>(NAN)",
     ):
         """Float format options."""
 

@@ -186,6 +186,7 @@ _FIELD_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
     C: {
         "bool_field": "bl",
         "int_field": "integer",
+        "uint_field": "uinteger",
         "float_field": "fp",
         "string_field": "str",
         "array_field": "arr",
