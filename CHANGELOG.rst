@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- Added a ``benchmarks`` job to ``.github/workflows/ci.yml`` that runs
+  the ``tests/benchmarks/`` suite under `CodSpeed
+  <https://codspeed.io>`_ via ``pytest-codspeed``.  The job posts a
+  per-benchmark performance delta on every pull request, making it
+  easier to spot regressions in the YAML fast path, JSON formatting,
+  and heterogeneous-widening logic.
+
 2026.04.24.1
 ------------
 
