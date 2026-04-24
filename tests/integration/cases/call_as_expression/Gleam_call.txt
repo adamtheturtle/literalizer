@@ -1,2 +1,0 @@
-process(GInt(1), GInt(42)),
-process(GInt(2), GInt(100))

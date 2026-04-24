@@ -27,6 +27,7 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
+    AsExpressionNotSupportedError,
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -550,6 +551,76 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
         emit(process(a=1, b=2))""",
     )
     assert result.code == expected
+
+
+def test_literalize_call_as_expression_variable_form_wraps_in_sequence() -> (
+    None
+):
+    """``variable_form`` with ``as_expression=True`` wraps the
+    per-element call expressions in a language-native sequence literal
+    and binds the result to the named variable.  Combined with
+    ``wrap_in_file=True`` this produces a valid source file.
+    """
+    result = literalize_call(
+        source="[[1, 2], [3, 4]]",
+        input_format=InputFormat.JSON,
+        language=Go(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        as_expression=True,
+        wrap_in_file=True,
+        variable_form=NewVariable(name="items"),
+    )
+    expected = textwrap.dedent(
+        text="""\
+        package main
+        func process(args ...any) any { return nil }
+
+        func main() {
+        items := []any{
+        process(1, 2),
+        process(3, 4),
+        }
+        _ = items
+        }""",
+    )
+    assert result.code == expected
+
+
+def test_literalize_call_variable_form_without_as_expression_raises() -> None:
+    """``variable_form`` without ``as_expression=True`` raises
+    ValueError because wrapping statements in a sequence literal would
+    produce invalid code.
+    """
+    expected = "variable_form requires as_expression=True"
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"^{re.escape(pattern=expected)}$",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Go(),
+            target_function="process",
+            parameter_names=["a", "b"],
+            variable_form=NewVariable(name="items"),
+        )
+
+
+def test_literalize_call_as_expression_whitespace_style_raises() -> None:
+    """``as_expression=True`` raises on languages whose call syntax is
+    whitespace-separated (Bash, Forth, Lisp), since joining calls with
+    ``","`` produces invalid syntax in those languages.
+    """
+    with pytest.raises(expected_exception=AsExpressionNotSupportedError):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Racket(),
+            target_function="process",
+            parameter_names=["a", "b"],
+            as_expression=True,
+        )
 
 
 def test_gleam_call_preamble_stub_many_parameters() -> None:

@@ -178,3 +178,25 @@ class UnsupportedIdentifierCaseError(Exception):
         )
         self.language_name = language_name
         self.case_name = case_name
+
+
+class AsExpressionNotSupportedError(Exception):
+    r"""Raised when ``literalize_call(as_expression=True)`` targets a
+    language whose call syntax is not comma-separable.
+
+    ``as_expression=True`` joins per-element calls with ``",\n"`` so
+    the output drops into a comma-separated sequence literal.  For
+    languages whose call or sequence syntax uses whitespace separation
+    (Bash's ``cmd arg``, Forth's ``val val func``, Lisp-family
+    ``(func args)`` inside ``(list ...)``) a comma between calls is a
+    syntax error, so the output cannot be valid in the target language.
+    """
+
+    def __init__(self, *, language_name: str, style_name: str) -> None:
+        """Create an ``AsExpressionNotSupportedError``."""
+        super().__init__(
+            f"{language_name} uses {style_name}, whose calls cannot be "
+            f"joined with commas into a sequence literal"
+        )
+        self.language_name = language_name
+        self.style_name = style_name

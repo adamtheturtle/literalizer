@@ -27,6 +27,7 @@ from ruamel.yaml import YAML
 import literalizer
 from literalizer._language import StubReturn
 from literalizer.exceptions import (
+    AsExpressionNotSupportedError,
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
@@ -697,11 +698,16 @@ class _CallCaseConfig:
     call_style_type: type[literalizer.CallStyle] | None
     ref_declarations: dict[str, str]
     as_expression: bool
-    bare_output: bool
     # When True, drive ``literalize_call(..., wrap_in_file=True)``
     # directly instead of wrapping manually with injected stubs.
     wrap_in_file: bool
     ref_case_per_language: bool
+    # When non-None and combined with ``as_expression=True`` +
+    # ``wrap_in_file=True``, pass
+    # ``variable_form=NewVariable(name=variable_form_name)`` to
+    # :func:`literalize_call` so the expression list is wrapped in a
+    # language-native sequence literal and bound to a variable.
+    variable_form_name: str | None = None
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -722,7 +728,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -736,7 +741,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -750,7 +754,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -764,7 +767,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -778,7 +780,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -792,7 +793,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -806,7 +806,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -820,7 +819,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -837,7 +835,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "my_other": "[4, 5, 6]",
         },
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
@@ -854,7 +851,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "my_other": "[4, 5, 6]",
         },
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=True,
     ),
@@ -870,7 +866,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "my_var": "[1, 2, 3]",
         },
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=True,
     ),
@@ -887,7 +882,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "MyOther": "[4, 5, 6]",
         },
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=True,
     ),
@@ -901,11 +895,15 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=False,
         ref_case_per_language=False,
     ),
     _CallCaseConfig(
+        # ``as_expression=True`` + ``wrap_in_file=True`` +
+        # ``variable_form_name`` drives the expression list into a
+        # language-native sequence literal bound to a variable, so the
+        # golden file for each language is a valid source file
+        # rather than a bare expression fragment.
         case_dir_name="call_as_expression",
         target_function="process",
         parameter_names=["a", "b"],
@@ -915,9 +913,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=True,
-        bare_output=True,
-        wrap_in_file=False,
+        wrap_in_file=True,
         ref_case_per_language=False,
+        variable_form_name="items",
     ),
     _CallCaseConfig(
         # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
@@ -931,7 +929,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_style_type=None,
         ref_declarations={},
         as_expression=False,
-        bare_output=False,
         wrap_in_file=True,
         ref_case_per_language=False,
     ),
@@ -946,7 +943,6 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             call_style_type=cls,
             ref_declarations={},
             as_expression=False,
-            bare_output=False,
             wrap_in_file=False,
             ref_case_per_language=False,
         )
@@ -2336,11 +2332,7 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
         )
 
     for call_case in _discover_call_cases():
-        ext = (
-            ".txt"
-            if call_case.config.bare_output
-            else call_case.lang_cls.extension
-        )
+        ext = call_case.lang_cls.extension
         golden_name = f"{call_case.lang_cls.__name__}_call"
         expected.add(
             cases_dir / call_case.config.case_dir_name / (golden_name + ext)
@@ -2511,8 +2503,7 @@ def _run_call_golden_case(
     lang_cls = type(spec)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    extension = ".txt" if config.bare_output else lang_cls.extension
-    golden_path = input_path.parent / (golden_name + extension)
+    golden_path = input_path.parent / (golden_name + lang_cls.extension)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
         # First element of ``identifier_cases`` is the language's
@@ -2528,17 +2519,31 @@ def _run_call_golden_case(
         effective_ref_case = None
         declarations = config.ref_declarations
     if config.wrap_in_file:
-        wrap_result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            per_element=config.per_element,
-            wrap_in_file=True,
-            ref_case=effective_ref_case,
+        variable_form = (
+            literalizer.NewVariable(name=config.variable_form_name)
+            if config.variable_form_name is not None
+            else None
         )
+        try:
+            wrap_result = literalizer.literalize_call(
+                source=yaml_string,
+                input_format=literalizer.InputFormat.YAML,
+                language=spec,
+                target_function=config.target_function,
+                parameter_names=config.parameter_names,
+                call_transform=config.call_transform,
+                per_element=config.per_element,
+                wrap_in_file=True,
+                ref_case=effective_ref_case,
+                as_expression=config.as_expression,
+                variable_form=variable_form,
+            )
+        except AsExpressionNotSupportedError as exc:
+            golden_path.unlink(missing_ok=True)
+            pytest.skip(
+                f"{lang_cls.__name__} {exc.style_name} cannot join calls "
+                f"with commas",
+            )
         _check_golden(
             file_regression=file_regression,
             contents=wrap_result.code + "\n",
@@ -2581,23 +2586,6 @@ def _run_call_golden_case(
         pytest.skip(
             f"{lang_cls.__name__} rejected call arg: {exc.reason}",
         )
-    if config.bare_output:
-        # Fragment-only golden: the raw ``literalize_call`` output
-        # without any ``wrap_in_file`` scaffolding or stubs.  Used to
-        # verify the per-language *string* produced by the flag
-        # (analogous to ``include_delimiters=False`` for
-        # ``literalize``) without requiring per-language wrappers
-        # that produce a valid compilation unit.  The ``.txt``
-        # extension keeps these fragments outside every language's CI
-        # syntax-check ``find`` filter.
-        _check_golden(
-            file_regression=file_regression,
-            contents=result.bare_code + "\n",
-            extension=extension,
-            newline="",
-            golden_path=golden_path,
-        )
-        return
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
@@ -2660,7 +2648,7 @@ def _run_call_golden_case(
     _check_golden(
         file_regression=file_regression,
         contents=wrapped + "\n",
-        extension=extension,
+        extension=lang_cls.extension,
         newline="",
         golden_path=golden_path,
     )

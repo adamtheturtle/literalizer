@@ -13,7 +13,22 @@ Next
   always appended in typed-statement languages (Go, Java, Rust,
   TypeScript, ...), yielding ``process(...),;`` — a syntax error
   inside a list or array literal.  Defaults to ``False``, which
-  preserves the existing behavior.
+  preserves the existing behavior.  ``as_expression=True`` now raises
+  ``AsExpressionNotSupportedError`` for languages whose call syntax is
+  whitespace-separated (Bash, Forth, Clojure, CommonLisp, Racket) —
+  comma-joining calls would emit invalid code in those languages.
+- ``literalize_call`` gains a ``variable_form`` keyword argument that
+  wraps the per-element call expressions in a language-native sequence
+  literal and binds the result to a variable, mirroring the existing
+  ``variable_form`` parameter on :func:`literalize`.  Combined with
+  ``as_expression=True`` and ``wrap_in_file=True`` it produces a
+  valid source file whose body is ``var items = [process(...),
+  process(...)]`` instead of a bag of comma-joined expressions.  The
+  outer sequence uses the language's generic "accepts anything" opener
+  (Go's ``[]any{``, Java's ``new Object[]{``, ...) so the declared
+  type matches the unknown call-result type rather than the argument
+  shape.  Requires ``as_expression=True``; raises ``ValueError``
+  otherwise.
 
 2026.04.24.1
 ------------

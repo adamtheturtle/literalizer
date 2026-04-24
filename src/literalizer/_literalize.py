@@ -37,6 +37,7 @@ from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
+    AsExpressionNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     ParameterCountMismatchError,
@@ -1888,6 +1889,90 @@ def _render_call_whole(
 
 
 @beartype
+def _wrap_call_result_in_file(
+    *,
+    result: str,
+    language: Language,
+    raw_target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[str], str] | None,
+    variable_form: NewVariable | ExistingVariable | None,
+    preamble: tuple[str, ...],
+    computed_body: tuple[str, ...],
+) -> str:
+    """Wrap *result* in a self-contained source file with stubs.
+
+    Emits a no-op stub for ``target_function`` so the wrapped file
+    compiles on its own.  ``StubReturn.VALUE`` is used whenever a
+    ``call_transform`` consumes the call's return value; otherwise the
+    call result is discarded and a void stub suffices.
+    """
+    stub_return = (
+        StubReturn.VALUE if call_transform is not None else StubReturn.VOID
+    )
+    body_stubs = language.format_call_stub(
+        raw_target_function, parameter_names, stub_return
+    )
+    preamble_stubs = language.format_call_preamble_stub(
+        raw_target_function, parameter_names, stub_return
+    )
+    wrap_name = variable_form.name if variable_form is not None else ""
+    wrapped = language.wrap_in_file(
+        content=result,
+        variable_name=wrap_name,
+        body_preamble=body_stubs + computed_body,
+    )
+    # Stubs follow the language's static preamble (e.g. Go's
+    # ``package main`` must come first).
+    full_preamble = preamble + preamble_stubs
+    if full_preamble:
+        wrapped = "\n".join(full_preamble) + "\n" + wrapped
+    return wrapped
+
+
+@beartype
+def _wrap_calls_in_variable_form(
+    *,
+    result: str,
+    language: Language,
+    variable_form: NewVariable | ExistingVariable,
+) -> str:
+    """Wrap an ``as_expression=True`` call list in a sequence literal
+    bound to a variable.
+
+    Uses the language's generic "accepts anything" sequence opener
+    (e.g. Go's ``[]any{``, Java's ``new Object[]{``) so the declared
+    type matches the unknown call-result type rather than inferring
+    from the argument shape.  Appends a trailing comma when the
+    language's sequence syntax accepts one — Go and a handful of
+    others reject a newline between the last element and the closing
+    delimiter without it in a multi-line composite literal.
+    """
+    opener = language.sequence_open([])
+    closer = language.sequence_format_config.close
+    body = (
+        f"{result},"
+        if language.sequence_format_config.supports_trailing_comma
+        else result
+    )
+    wrapped_value = f"{opener}\n{body}\n{closer}"
+    match variable_form:
+        case NewVariable(name=name, modifiers=modifiers):
+            return language.format_variable_declaration(
+                name,
+                wrapped_value,
+                [],
+                modifiers,
+            )
+        case ExistingVariable(name=name):
+            return language.format_variable_assignment(
+                name,
+                wrapped_value,
+                [],
+            )
+
+
+@beartype
 def literalize_call(
     *,
     source: str,
@@ -1900,6 +1985,7 @@ def literalize_call(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     as_expression: bool = False,
+    variable_form: NewVariable | ExistingVariable | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -1953,7 +2039,28 @@ def literalize_call(
             ``"\n"``, so the output drops straight into an outer
             collection literal without any ``call_transform``.
             Defaults to ``False``.
+        variable_form: Optional wrapper that collects the per-call
+            expressions into a language-native sequence literal and
+            binds it to a variable.  Only meaningful with
+            ``as_expression=True`` (so the expressions render without
+            statement terminators and join with ``",\n"``); combined
+            with ``wrap_in_file=True`` this yields a valid source file
+            whose body is ``var items = [process(...), process(...)]``
+            instead of a bag of comma-joined expressions.  Pass
+            :class:`NewVariable` to produce a declaration
+            (``const items = ...``), or :class:`ExistingVariable` for
+            a reassignment (``items = ...``).  The outer sequence uses
+            the language's generic "accepts anything" opener so the
+            declared type matches the call-result type rather than the
+            argument shape.
+
+    Raises:
+        ValueError: If *variable_form* is set without
+            ``as_expression=True``.
     """
+    if variable_form is not None and not as_expression:
+        msg = "variable_form requires as_expression=True"
+        raise ValueError(msg)
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
     match language.call_style_config:
@@ -1967,6 +2074,13 @@ def literalize_call(
             )
         case _ as style:
             pass
+    if as_expression and isinstance(
+        style, PostfixCallStyle | PrefixCallStyle | CommandCallStyle
+    ):
+        raise AsExpressionNotSupportedError(
+            language_name=type(language).__name__,
+            style_name=type(style).__name__,
+        )
 
     raw_target_function = target_function
     if ref_case is not None and ref_case not in language.identifier_cases:
@@ -2009,10 +2123,30 @@ def literalize_call(
             ref_case=ref_case,
             as_expression=as_expression,
         )
+    if variable_form is not None:
+        result = _wrap_calls_in_variable_form(
+            result=result,
+            language=language,
+            variable_form=variable_form,
+        )
+        # Prepend an empty-list sibling so the preamble picks up the
+        # "generic sequence of anything" imports (e.g. Python's
+        # ``from typing import Any``) that the outer wrapper needs —
+        # the existing ``data_for_preamble`` only covers the inner
+        # call-argument types.
+        existing_items: list[Value] = (
+            list(data_for_preamble)
+            if isinstance(data_for_preamble, list)
+            else [cast("Value", data_for_preamble)]
+        )
+        data_for_preamble = cast(
+            "Value",
+            [cast("Value", []), *existing_items],
+        )
     computed = compute_preamble(
         data=data_for_preamble,
         language=language,
-        has_variable_declaration=False,
+        has_variable_declaration=isinstance(variable_form, NewVariable),
     )
     preamble = (
         tuple(language.static_preamble)
@@ -2021,29 +2155,16 @@ def literalize_call(
     )
 
     if wrap_in_file:
-        # Emit a no-op stub for ``target_function`` so the wrapped file
-        # compiles on its own.  ``StubReturn.VALUE`` is used whenever a
-        # ``call_transform`` consumes the call's return value; otherwise
-        # the call result is discarded and a void stub suffices.
-        stub_return = (
-            StubReturn.VALUE if call_transform is not None else StubReturn.VOID
+        wrapped = _wrap_call_result_in_file(
+            result=result,
+            language=language,
+            raw_target_function=raw_target_function,
+            parameter_names=parameter_names,
+            call_transform=call_transform,
+            variable_form=variable_form,
+            preamble=preamble,
+            computed_body=computed.body,
         )
-        body_stubs = language.format_call_stub(
-            raw_target_function, parameter_names, stub_return
-        )
-        preamble_stubs = language.format_call_preamble_stub(
-            raw_target_function, parameter_names, stub_return
-        )
-        wrapped = language.wrap_in_file(
-            content=result,
-            variable_name="",
-            body_preamble=body_stubs + computed.body,
-        )
-        # Stubs follow the language's static preamble (e.g. Go's
-        # ``package main`` must come first).
-        full_preamble = preamble + preamble_stubs
-        if full_preamble:
-            wrapped = "\n".join(full_preamble) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
             preamble=(),

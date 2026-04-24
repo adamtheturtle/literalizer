@@ -156,3 +156,15 @@ composite literal wants between its braces.
 Callers who want an exotic separator (``";\n"``, ``" && "``, ...) can
 still reach for ``call_transform``; ``as_expression`` handles the
 common "one call per list element" case without one.
+
+Pair ``as_expression=True`` with ``variable_form=NewVariable(name=...)``
+and ``wrap_in_file=True`` to lift the expression list into a
+language-native sequence literal bound to a variable, producing a
+valid source file rather than a bare fragment.  The outer sequence uses
+each language's generic "accepts anything" opener (Go's ``[]any{``,
+Java's ``new Object[]{``, Python's ``tuple[Any, ...]``, ...) so the
+declared type matches the unknown call-result type rather than the
+argument shape.  Languages whose call syntax is whitespace-separated
+(Bash, Forth, Clojure, CommonLisp, Racket) cannot be joined with commas
+into a sequence literal, so ``as_expression=True`` raises
+``AsExpressionNotSupportedError`` for them.

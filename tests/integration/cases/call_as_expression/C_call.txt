@@ -1,2 +1,0 @@
-process(((CVal){.i = 1}), ((CVal){.i = 42})),
-process(((CVal){.i = 2}), ((CVal){.i = 100}))
