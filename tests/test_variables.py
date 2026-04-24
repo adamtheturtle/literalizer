@@ -435,14 +435,14 @@ def test_rust_lazy_static_preamble_includes_lazy_lock() -> None:
     """``LAZY_STATIC`` adds ``use std::sync::LazyLock;`` to the
     preamble.
     """
-    assert "use std::sync::LazyLock;" in RUST_LAZY_STATIC.static_preamble
+    assert RUST_LAZY_STATIC.static_preamble == ("use std::sync::LazyLock;",)
 
 
 def test_rust_static_preamble_excludes_lazy_lock() -> None:
     """Non-``LAZY_STATIC`` declaration styles emit no ``LazyLock``
     import.
     """
-    assert "use std::sync::LazyLock;" not in RUST_CONST.static_preamble
+    assert RUST_CONST.static_preamble == ()
 
 
 def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:

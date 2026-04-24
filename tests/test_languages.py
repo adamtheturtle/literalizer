@@ -720,7 +720,7 @@ def test_literalize_call_arg_ref_all_refs() -> None:
         target_function="combine",
         parameter_names=["x", "y"],
     )
-    assert "combine(a, b)" in result.code
+    assert result.code == "combine(a, b);"
 
 
 def test_literalize_call_arg_ref_top_level_element() -> None:
@@ -735,8 +735,7 @@ def test_literalize_call_arg_ref_top_level_element() -> None:
         target_function="run",
         parameter_names=["x"],
     )
-    assert "run(a)" in result.code
-    assert "run(b)" in result.code
+    assert result.code == "run(a);\nrun(b);"
 
 
 def test_literalize_call_arg_ref_per_element_false() -> None:
@@ -751,7 +750,7 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
         parameter_names=["body"],
         per_element=False,
     )
-    assert "publish(body=payload)" in result.code
+    assert result.code == "publish(body=payload)"
 
 
 def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
@@ -766,7 +765,7 @@ def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
         target_function="process",
         parameter_names=["data"],
     )
-    assert 'process(data={"$ref": "x", "extra": 1})' in two_key.code
+    assert two_key.code == 'process(data={"$ref": "x", "extra": 1})'
     non_string_ref = literalize_call(
         source='[[{"$ref": 42}]]',
         input_format=InputFormat.JSON,
@@ -774,7 +773,7 @@ def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
         target_function="process",
         parameter_names=["data"],
     )
-    assert 'process(data={"$ref": 42})' in non_string_ref.code
+    assert non_string_ref.code == 'process(data={"$ref": 42})'
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
