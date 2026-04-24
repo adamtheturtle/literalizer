@@ -689,10 +689,7 @@ class _CallCaseConfig:
     call_style_type: type[literalizer.CallStyle] | None
     ref_declarations: dict[str, str]
     # When True, drive ``literalize_call(..., wrap_in_file=True)``
-    # directly instead of wrapping manually with injected stubs.  Only
-    # languages in :data:`_WRAP_IN_FILE_SUPPORTED_LANGUAGES` are run;
-    # others would call an undefined ``target_function`` and fail their
-    # per-language CI syntax check.
+    # directly instead of wrapping manually with injected stubs.
     wrap_in_file: bool
 
 
@@ -818,14 +815,10 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         wrap_in_file=False,
     ),
     _CallCaseConfig(
-        # Target ``dict`` (a Python builtin accepting arbitrary
-        # keyword arguments) so the Python golden satisfies strict
-        # type checkers without needing any tool-level overrides —
-        # there is no stub-injection site when ``literalize_call``
-        # does the wrapping itself.  ``dict`` is undefined in Go,
-        # but ``gofmt -e`` only parses and so accepts it.
+        # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
+        # the generated file includes its own target-function stub.
         case_dir_name="call_wrap_in_file",
-        target_function="dict",
+        target_function="process",
         parameter_names=["a", "b"],
         call_transform=None,
         transform_stub_names=[],
@@ -2343,20 +2336,6 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
 )
 
 
-# Languages a ``wrap_in_file=True`` call case is run against.  The
-# generated file calls an undefined ``target_function`` (there is no
-# place to inject a stub when :func:`literalize_call` does the wrapping
-# itself), so only languages whose per-language CI syntax check tolerates
-# unresolved names are included.
-#
-# * :class:`Go` covers the branch that emits a static preamble
-#   (``package main``) before the wrapped content.
-# * :class:`Python` covers the no-preamble branch.
-_WRAP_IN_FILE_SUPPORTED_LANGUAGES: frozenset[literalizer.LanguageCls] = (
-    frozenset({Go, Python})
-)
-
-
 @dataclasses.dataclass
 class _CallCase:
     """A parameterized call-style golden-file test case."""
@@ -2378,11 +2357,6 @@ def _discover_call_cases() -> list[_CallCase]:
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
             if config.ref_declarations and lang_cls in _REF_CASE_INCOMPATIBLE:
-                continue
-            if (
-                config.wrap_in_file
-                and lang_cls not in _WRAP_IN_FILE_SUPPORTED_LANGUAGES
-            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -2423,12 +2397,6 @@ def _run_call_golden_case(
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     if config.wrap_in_file:
-        # ``literalize_call`` does the wrapping itself, so there is no
-        # place to inject stubs for the target function — the case is
-        # restricted at discovery time to languages whose CI syntax
-        # check tolerates the unresolved name.  The supported-language
-        # set plus homogeneous inputs means ``HeterogeneousCollectionError``
-        # cannot be raised here.
         wrap_result = literalizer.literalize_call(
             source=yaml_string,
             input_format=literalizer.InputFormat.YAML,

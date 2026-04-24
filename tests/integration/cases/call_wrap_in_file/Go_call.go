@@ -1,6 +1,7 @@
 package main
+func process(args ...any) any { return nil }
 
 func main() {
-dict(1, 2);
-dict(3, 4);
+process(1, 2);
+process(3, 4);
 }
