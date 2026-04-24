@@ -43,7 +43,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,15 +52,16 @@ from literalizer._language import (
     HeterogeneousBehavior,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    identity_call_target,
+    body_preamble_from_scalars,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -320,22 +320,90 @@ _GLEAM_BYTES_FORMATTERS: dict[
 }
 
 
+def _gleam_call_preamble_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Gleam module-level function stubs for a call target.
+
+    Dotted names are flattened to underscored identifiers — Gleam
+    identifiers cannot contain ``.``, so ``app.client.fetch`` becomes
+    ``app_client_fetch``.  Each parameter gets a fresh type variable
+    so the stub is polymorphic across call sites that pass different
+    argument types.  Return type is ``Nil``; ``panic`` fills the body
+    so the stub unifies with any return-position type at the call
+    site.
+    """
+    flat_name = name.replace(".", "_")
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    param_list = ", ".join(
+        f"_{p}: {letters[i]}" for i, p in enumerate(iterable=params)
+    )
+    return (f"pub fn {flat_name}({param_list}) -> Nil {{ panic }}",)
+
+
+def _gleam_format_call_target(name: str) -> str:
+    """Flatten a dotted call target to an underscored Gleam identifier."""
+    return name.replace(".", "_")
+
+
 @beartype
-def _build_gleam_body_preamble(
+def _scalar_gleam_type(*, value: Value) -> type:
+    """Return the preamble-relevant type bucket for a scalar *value*."""
+    if isinstance(value, datetime.datetime):
+        return datetime.datetime
+    if isinstance(value, datetime.date):
+        return datetime.date
+    if value is None:
+        return type(None)
+    return type(value)
+
+
+@beartype
+def _collect_gleam_types(*, value: Value) -> frozenset[type]:
+    """Return the set of Python types present in *value*.
+
+    Recurses into lists, dicts, and sets, collecting the scalar types
+    needed to decide which ``GVal`` constructors to emit.
+    """
+    match value:
+        case ordereddict() | dict():
+            child: frozenset[type] = frozenset()
+            for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                child = child | _collect_gleam_types(value=v)  # pyright: ignore[reportUnknownArgumentType]
+            return frozenset({dict, str}) | child
+        case set():
+            child = frozenset()
+            for v in value:
+                child = child | _collect_gleam_types(value=v)
+            return frozenset({set}) | child
+        case list():
+            child = frozenset()
+            for v in value:
+                child = child | _collect_gleam_types(value=v)
+            return frozenset({list}) | child
+        case _:
+            return frozenset({_scalar_gleam_type(value=value)})
+
+
+@beartype
+def _build_gleam_data_dependent_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-    """Build a callable that computes body-preamble lines for Gleam.
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build a ``data_dependent_preamble`` callable for Gleam.
 
-    The callable receives the set of types present in the data and
-    returns a ``pub type`` declaration containing only the constructors
+    The callable walks *data* to collect the scalar types present and
+    emits a ``pub type`` declaration containing only the constructors
     that are actually needed.
     """
 
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
-        """Return body-preamble lines for the given *types*."""
-        del data  # unused
+    def _compute(data: Value, /) -> tuple[str, ...]:
+        """Return the ``pub type`` declaration for *data*."""
+        types = _collect_gleam_types(value=data)
         p = constructor_prefix
         constructors = [
             constructor
@@ -681,6 +749,8 @@ class Gleam(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Gleam call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -706,14 +776,13 @@ class Gleam(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Gleam let binding in a main function."""
-        indented = textwrap.indent(text=content, prefix="  ")
-        main_func = (
-            f"pub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+        content = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
         )
-        if body_preamble:
-            preamble_str = "\n".join(body_preamble)
-            return f"{preamble_str}\n\n{main_func}"
-        return main_func
+        indented = textwrap.indent(text=content, prefix="  ")
+        use_line = f"\n  let _ = {variable_name}" if variable_name else ""
+        return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -749,6 +818,7 @@ class Gleam(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.NONE
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -766,9 +836,11 @@ class Gleam(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for Gleam's call style."""
+        return self.call_style.value
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -782,8 +854,11 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return the ``pub type`` declaration tailored to *data*."""
+        return _build_gleam_data_dependent_preamble(
+            type_name=self.type_name,
+            constructor_prefix=self.constructor_prefix,
+        )
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -809,14 +884,14 @@ class Gleam(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _gleam_call_preamble_stub
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _gleam_format_call_target
 
     @cached_property
     def null_literal(self) -> str:
@@ -1003,10 +1078,8 @@ class Gleam(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines using the Gleam type
-        declaration.
-        """
-        return _build_gleam_body_preamble(
-            type_name=self.type_name,
-            constructor_prefix=self.constructor_prefix,
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
+            scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
         )
