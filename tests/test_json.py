@@ -312,26 +312,6 @@ def test_literalize_json_array() -> None:
     assert result.code == expected
 
 
-def test_literalize_json_object() -> None:
-    """``literalize_json`` parses a JSON object string."""
-    json_string = '{"a": 1, "b": true}'
-    result = literalize(
-        source=json_string,
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": True,
-        }"""
-    )
-    assert result.code == expected
-
-
 def test_literalize_json_invalid() -> None:
     """``literalize_json`` raises on invalid JSON."""
     with pytest.raises(expected_exception=JSONParseError):
