@@ -338,6 +338,9 @@ jobs:
         run: dotnet publish .github/scripts/lint-vb/lint-vb.csproj -c Release -o /tmp/lint-vb
           --nologo
 
+      # The host compiles each fixture into an in-memory assembly and
+      # invokes its entry point, so emit-success and runtime errors
+      # (e.g. undefined members on an unstubbed object) both fail here.
       - name: Lint CSharp
         run: |-
           find tests/integration/cases -name '*.cs' -print0 > /tmp/files-cs

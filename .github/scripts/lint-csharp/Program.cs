@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -43,6 +45,56 @@ for (var i = 0; i < paths.Count; i++)
         {
             Console.Error.WriteLine($"  {diag}");
         }
+        continue;
+    }
+
+    var assembly = Assembly.Load(ms.ToArray());
+    try
+    {
+        // Top-level-statement fixtures compile to a synthetic
+        // `<Program>$.<Main>$` whose body is the statement list, so
+        // invoking the entry point runs their `var my_data = ...`
+        // initializers.
+        var entryPoint = assembly.EntryPoint;
+        if (entryPoint is not null)
+        {
+            var parameters = entryPoint.GetParameters();
+            object?[]? entryArgs = parameters.Length == 0
+                ? null
+                : new object?[] { Array.Empty<string>() };
+            entryPoint.Invoke(obj: null, parameters: entryArgs);
+        }
+        // `class Check { ... Main() {} }` fixtures declare `my_data`
+        // as a field whose initializer only runs when the class is
+        // constructed; their `Main` is empty, so the entry point
+        // alone never exercises the initializer. Force the static
+        // cctor and — when there's a parameterless ctor — construct
+        // an instance so instance field initializers run too.
+        var checkType = assembly.GetType("Check");
+        if (checkType is not null)
+        {
+            RuntimeHelpers.RunClassConstructor(checkType.TypeHandle);
+            if (checkType.GetConstructor(Type.EmptyTypes) is not null)
+            {
+                Activator.CreateInstance(checkType);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        allOk = false;
+        // `RunClassConstructor` wraps cctor failures in
+        // `TypeInitializationException`, and `MethodInfo.Invoke` wraps
+        // callee failures in `TargetInvocationException`; peel both
+        // layers so the reported error points at the fixture's actual
+        // runtime failure.
+        var inner = ex;
+        while (inner is TargetInvocationException or TypeInitializationException
+            && inner.InnerException is not null)
+        {
+            inner = inner.InnerException;
+        }
+        Console.Error.WriteLine($"{path}: C# runtime error: {inner}");
     }
 }
 

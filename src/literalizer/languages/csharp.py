@@ -80,6 +80,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
+    prepend_body_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -277,17 +278,49 @@ def _csharp_call_stub(
 ) -> tuple[str, ...]:
     """Return C# stub declarations for a call name.
 
-    For a single-name target the stub is a free function whose
-    parameter list matches the count of ``params``; for a dotted
-    target an ``ExpandoObject`` root is emitted so dynamic dispatch
-    absorbs any number of arguments.
+    For a single-name target the stub is a static method whose
+    parameter list matches the given names; for a dotted target a
+    chain of nested stub classes is emitted so ``a.b.c.d(...)``
+    dispatches to a real method whose body returns ``null``.  Every
+    argument is spelled out by name with a ``null`` default so
+    named-argument call styles bind to real parameters instead of
+    failing at runtime.
     """
+    param_list = ", ".join(f"object {p} = null" for p in params)
     parts = name.split(sep=".")
     if len(parts) == 1:
-        param_list = ", ".join(f"dynamic _a{i}" for i in range(len(params)))
-        return (f"dynamic {parts[0]}({param_list}) => null;",)
+        return (f"static object {parts[0]}({param_list}) => null;",)
     root = parts[0]
-    return (f"dynamic {root} = new System.Dynamic.ExpandoObject();",)
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"class {type_name} {{"
+            f" public object {method}({param_list}) => null; }}",
+            f"static {type_name} {root} = new {type_name}();",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    lines.append(
+        f"class {inner_type} {{"
+        f" public object {method}({param_list}) => null; }}"
+    )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        lines.append(
+            f"class {curr_type} {{"
+            f" public {prev_type} {fields[i + 1]} = new {prev_type}(); }}"
+        )
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    lines.append(
+        f"class {root_type} {{"
+        f" public {prev_type} {fields[0]} = new {prev_type}(); }}"
+    )
+    lines.append(f"static {root_type} {root} = new {root_type}();")
+    return tuple(lines)
 
 
 @beartype
@@ -641,9 +674,18 @@ class CSharp(metaclass=LanguageCls):
         When *content* starts with a class-field modifier keyword (one
         of the visibility or storage keywords that C# only accepts on
         class members) the declaration is placed inside a ``class
-        Check`` body with a ``Main`` entry point; otherwise it's
-        emitted as a top-level statement, which is the only context
-        where ``var`` declarations are valid.
+        Check`` body with a ``Main`` entry point.
+
+        When *body_preamble* carries call-stub declarations (``class
+        Foo_ { ... }`` and ``static Foo_ foo = new Foo_();``) the whole
+        file is wrapped in ``class Check { ...stubs... static void
+        Main() { ...content... } }``.  C# requires type declarations to
+        follow top-level statements, so stubs cannot sit before
+        top-level calls — wrapping them as class members sidesteps
+        that ordering rule.
+
+        Otherwise the content is emitted as a top-level statement,
+        which is the only context where ``var`` declarations are valid.
         """
         first_token = (
             content.lstrip().split(sep=" ", maxsplit=1)[0]
@@ -666,6 +708,29 @@ class CSharp(metaclass=LanguageCls):
                 f"{content}\n"
                 "    public static void Main() {}\n"
                 "}"
+            )
+        stub_prefixes = ("class ", "static ")
+        stub_lines = tuple(
+            line for line in body_preamble if line.startswith(stub_prefixes)
+        )
+        other_lines = tuple(
+            line
+            for line in body_preamble
+            if not line.startswith(stub_prefixes)
+        )
+        if stub_lines:
+            stub_block = "\n".join(stub_lines) + "\n"
+            body = prepend_body_preamble(
+                content=content,
+                body_preamble=other_lines,
+            )
+            return (
+                f"class Check {{\n"
+                f"{stub_block}"
+                f"    public static void Main() {{\n"
+                f"{body}\n"
+                f"    }}\n"
+                f"}}"
             )
         return wrap_in_file_noop(
             content=content,
