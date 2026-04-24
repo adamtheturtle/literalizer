@@ -190,11 +190,11 @@ jobs:
       # Octave is a practical CI substitute, but it does not support
       # every MATLAB builtin.  The per-fixture skip rules (for ``""``
       # escaped quotes and the ``datetime`` builtin) are documented in
-      # .github/scripts/lint-matlab-fixture.
+      # .github/scripts/lint-matlab-fixture.sh.
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
-          xargs -0 -P "$(nproc)" -n1 .github/scripts/lint-matlab-fixture < /tmp/files-matlab
+          xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
       - name: Lint Perl
         run: |-
