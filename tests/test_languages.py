@@ -39,6 +39,7 @@ from literalizer.languages import (
     Bash,
     Cobol,
     Dart,
+    Erlang,
     Fortran,
     FSharp,
     Gleam,
@@ -907,6 +908,18 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
         per_element=False,
     )
     assert result.code == "publish(body=payload)"
+
+
+def test_literalize_call_arg_ref_empty_string_erlang() -> None:
+    """Erlang ``$ref`` formatter handles empty names without crashing."""
+    result = literalize_call(
+        source='[[{"$ref": ""}]]',
+        input_format=InputFormat.JSON,
+        language=Erlang(),
+        target_function="publish",
+        parameter_names=["payload"],
+    )
+    assert result.code == "publish(),"
 
 
 def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
