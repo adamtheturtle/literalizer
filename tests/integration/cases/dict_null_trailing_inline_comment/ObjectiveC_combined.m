@@ -4,6 +4,7 @@ id my_data = @{
     @"host": @"localhost",
     @"port": [NSNull null],  // not configured yet
 };
+(void)my_data;
 my_data = @{
     @"host": @"localhost",
     @"port": [NSNull null],  // not configured yet

@@ -4,10 +4,11 @@ Changelog
 Next
 ----
 
-- ``C`` and ``Cpp`` ``wrap_in_file`` / ``wrap_combined_in_file`` output
-  now emits ``(void)<variable_name>;`` after the declaration (and
-  between the declaration and the re-assignment in the combined form)
-  so the initial value is read before it is overwritten.  clang-tidy's
+- ``C``, ``Cpp``, and ``ObjectiveC``
+  ``wrap_in_file`` / ``wrap_combined_in_file`` output now emits
+  ``(void)<variable_name>;`` after the declaration (and between the
+  declaration and the re-assignment in the combined form) so the
+  initial value is read before it is overwritten.  clang-tidy's
   ``clang-analyzer-deadcode.DeadStores`` check, previously suppressed
   in ``.clang-tidy`` because the combined form and unused C++ scalars
   triggered dead-store warnings, is now enforced.

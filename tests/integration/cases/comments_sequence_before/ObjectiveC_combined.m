@@ -6,6 +6,7 @@ id my_data = @[
     // second
     @"b",
 ];
+(void)my_data;
 my_data = @[
     // first
     @"a",
