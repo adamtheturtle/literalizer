@@ -152,7 +152,10 @@ jobs:
       - name: Lint Odin
         run: |-
           find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          xargs -0 -P "$(nproc)" -n1 bash -c 'odin check "$0" -file' < /tmp/files-odin
+          cat > /tmp/check-odin.sh <<'SCRIPT'
+          odin check "$1" -file || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-odin.sh < /tmp/files-odin
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
