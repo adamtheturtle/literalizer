@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import assert_never, cast
+from typing import Any, assert_never, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.compat import ordereddict
@@ -768,13 +768,29 @@ def _format_value(
             return _format_scalar_unchecked(value=value, spec=spec)
 
 
-_format_scalar_unchecked = _format_scalar.__wrapped__
-_format_set_value_unchecked = _format_set_value.__wrapped__
-_format_ordered_map_value_unchecked = _format_ordered_map_value.__wrapped__
-_format_dict_value_unchecked = _format_dict_value.__wrapped__
-_format_dict_entry_value_unchecked = _format_dict_entry_value.__wrapped__
-_format_list_value_unchecked = _format_list_value.__wrapped__
-_format_value_unchecked = _format_value.__wrapped__
+_format_scalar_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]", cast("Any", _format_scalar).__wrapped__
+)
+_format_set_value_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]", cast("Any", _format_set_value).__wrapped__
+)
+_format_ordered_map_value_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]",
+    cast("Any", _format_ordered_map_value).__wrapped__,
+)
+_format_dict_value_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]", cast("Any", _format_dict_value).__wrapped__
+)
+_format_dict_entry_value_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]",
+    cast("Any", _format_dict_entry_value).__wrapped__,
+)
+_format_list_value_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]", cast("Any", _format_list_value).__wrapped__
+)
+_format_value_unchecked: Callable[..., str] = cast(
+    "Callable[..., str]", cast("Any", _format_value).__wrapped__
+)
 
 
 @beartype
