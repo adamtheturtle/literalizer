@@ -988,8 +988,17 @@ jobs:
           sudo chmod 600 /mnt/extra-swapfile
           sudo mkswap /mnt/extra-swapfile
           sudo swapon /mnt/extra-swapfile
+      # Lift the per-process virtual-address cap so the shell and
+      # each `mojo run` child inherit an unlimited `RLIMIT_AS`. Mojo
+      # reserves ~3.6 GB virtual per invocation; without this, a low
+      # default cap can make the reservation fail even when the
+      # overcommit + swap step above has given the kernel enough
+      # headroom. Recommended by the upstream bug author in
+      # HomericIntelligence/ProjectOdyssey#5274.
+      # Local tracking: https://github.com/adamtheturtle/literalizer/issues/1574
       - name: Check Mojo syntax
         run: |-
+          ulimit -v unlimited
           while IFS= read -r -d '' f; do
             mojo run --Werror "$GITHUB_WORKSPACE/$f" || exit 1
           done < /tmp/files-to-lint
