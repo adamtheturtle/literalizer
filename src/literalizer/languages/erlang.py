@@ -115,6 +115,8 @@ def _erlang_format_call_target(name: str, /) -> str:
 @beartype
 def _erlang_format_call_ref_identifier(name: str, /) -> str:
     """Format a call-site ref as an Erlang variable name."""
+    if not name:
+        return name
     return name[0].upper() + name[1:]
 
 
