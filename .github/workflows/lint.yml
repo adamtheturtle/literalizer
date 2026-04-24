@@ -919,6 +919,13 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
+      # Typecheck each fixture in isolation. The batched `crystal run`
+      # step below pre-loads `require "set"` on its driver and strips
+      # it from each wrapped fixture, so a fixture that uses `Set` but
+      # forgot `require "set"` would still compile there. This
+      # per-file pass is what catches that regression.
+      - name: Check Crystal syntax
+        run: xargs -0 -P "$(nproc)" -n1 crystal build --no-codegen < /tmp/files-to-lint
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
       # of per fixture. Each fixture is wrapped in a unique
