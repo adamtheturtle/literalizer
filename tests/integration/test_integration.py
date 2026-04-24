@@ -41,6 +41,7 @@ from literalizer.languages import (
     Dart,
     Dhall,
     Elm,
+    Erlang,
     Fortran,
     FSharp,
     Gleam,
@@ -2261,6 +2262,10 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # site, but ``$ref`` emits the bare name at the call site —
         # unbound variable at load.
         CommonLisp,
+        # Variables are capitalized at the declaration site (``My_var =
+        # ...``) but ``$ref`` emits the bare name, which Erlang parses
+        # as a lowercase atom rather than the declared variable.
+        Erlang,
         # ``wrap_in_file`` places content inside ``main = do``; a
         # multi-line ``name = value`` binding needs ``let`` in a
         # do-block, which the harness does not inject.
