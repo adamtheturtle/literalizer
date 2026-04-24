@@ -417,8 +417,7 @@ class Erlang(metaclass=LanguageCls):
         trimmed = content.rstrip().removesuffix(",")
         indented = textwrap.indent(text=trimmed, prefix="    ")
         parts = ["-module(check).", "-export([x/0])."]
-        if body_preamble:
-            parts.extend(body_preamble)
+        parts.extend(body_preamble)
         parts.append("x() ->")
         parts.append(f"{indented}.")
         return "\n".join(parts)
