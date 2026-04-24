@@ -6,14 +6,23 @@ Next
 
 - ``Mojo`` now supports an opt-in
   ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an
-  auto-generated ``alias Value = Variant[...]`` over only the Mojo
-  types actually present in the data.  Each wrapped scalar renders as
-  ``Value(...)`` (with an explicit ``String(...)`` or ``Float64(...)``
-  cast when needed to select the intended Variant alternative), so
+  auto-generated ``comptime Value = Variant[...]`` over only the Mojo
+  types actually present in the data, with a
+  ``from std.utils.variant import Variant`` preamble line.  Each
+  wrapped scalar renders as ``Value(...)`` (with an explicit
+  ``String(...)`` or ``Float64(...)`` cast when needed to select the
+  intended Variant alternative, and ``NoneType()`` for nulls), so
   heterogeneous dicts and lists become homogeneous in the Variant
   type.  The alias name is configurable via
   ``Mojo.heterogeneous_value_variant_name`` (default ``"Value"``).
   The default ``ERROR`` strategy still raises on heterogeneous input.
+- ``Erlang`` now supports ``literalize_call``.  Calls use positional
+  argument syntax (``f(A, B)``); dotted targets like
+  ``app.client.fetch`` are emitted as quoted-atom function names
+  (``'app.client.fetch'(...)``) since Erlang atoms do not allow
+  unquoted dots.  Call stubs are emitted as module-level function
+  definitions placed between ``-export`` and ``x()``, and ``x()``
+  separates call statements with ``,`` terminated by ``.``.
 - Added ``literalize_call`` support for Gleam:
   ``Gleam.format_call_preamble_stub`` emits module-level ``pub fn``
   declarations with fresh type variables per parameter and a
