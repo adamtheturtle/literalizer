@@ -928,9 +928,11 @@ jobs:
       # two reuse the top-level `def emit` / `def process`. `extend
       # self` lets unqualified calls like `emit(...)` inside the module
       # body resolve to the module's own `def emit`. Any
-      # `require "set"` from the original fixture is preserved inside
-      # its module so each fixture keeps its own dependencies; the
-      # driver then `require`s every fixture so each module body
+      # `require "set"` from the original fixture is hoisted to the top
+      # of its per-fixture file (before the module wrapper, since
+      # Crystal rejects `require` inside type declarations) and stripped
+      # from the wrapped body, so each fixture keeps its own dependency.
+      # The driver then `require`s every fixture so each module body
       # executes at program start. The `fixture_N.cr <- original-path`
       # mapping is printed so failures still point back to the source.
       - name: Run Crystal files
@@ -941,9 +943,12 @@ jobs:
           i=0
           while IFS= read -r -d '' f; do
             {
+              if grep -q '^require "set"$' "$f"; then
+                printf 'require "set"\n'
+              fi
               printf 'module Fixture%d\n' "$i"
               printf 'extend self\n'
-              cat "$f"
+              sed '/^require "set"$/d' "$f"
               printf 'end\n'
             } > "$workspace/fixture_$i.cr"
             printf 'require "./fixture_%d"\n' "$i" >> "$driver"
