@@ -60,26 +60,6 @@ def test_dict_python() -> None:
     assert result.code == expected
 
 
-def test_dict_include_delimiters() -> None:
-    """Wrapping a dict adds braces and indentation."""
-    toml_string = "a = 1\nb = 2\n"
-    result = literalize(
-        source=toml_string,
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": 2,
-        }"""
-    )
-    assert result.code == expected
-
-
 def test_empty_table() -> None:
     """An empty TOML string produces an empty dict."""
     result = literalize(

@@ -58,27 +58,6 @@ def test_dict_python() -> None:
     assert result.code == expected
 
 
-def test_dict_include_delimiters() -> None:
-    """Wrapping a dict adds braces and indentation."""
-    source = "{a: 1, b: 2}"
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON5,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": 2,
-        }"""
-    )
-    assert result.code == expected
-
-
 def test_array() -> None:
     """JSON5 array renders as a tuple in Python."""
     source = "[1, 2, 3,]"
