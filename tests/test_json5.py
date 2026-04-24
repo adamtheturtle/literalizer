@@ -144,13 +144,15 @@ def test_trailing_commas() -> None:
 
 def test_comments_stripped() -> None:
     """JSON5 comments are stripped during parsing."""
-    source = """\
-{
-    // This is a comment
-    name: "alice",
-    /* block comment */
-    age: 30,
-}"""
+    source = textwrap.dedent(
+        text="""\
+        {
+            // This is a comment
+            name: "alice",
+            /* block comment */
+            age: 30,
+        }""",
+    )
     result = literalize(
         source=source,
         input_format=InputFormat.JSON5,
