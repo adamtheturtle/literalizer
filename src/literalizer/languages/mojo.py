@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 
@@ -39,6 +39,10 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._heterogeneous import (
+    collect_heterogeneous_container_ids,
+    iter_wrapped_scalars,
+)
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
@@ -50,6 +54,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -64,7 +69,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -77,16 +82,176 @@ def _format_mojo_ordered_map_entry(
     return f"Tuple({key}, {formatted_value})"
 
 
+_VARIANT_PAYLOAD_VALUE_PLACEHOLDER = "{value}"
+
+
+@dataclasses.dataclass(frozen=True)
+class _VariantSignature:
+    """Mojo ``Variant`` alternative for one scalar bucket.
+
+    ``type_name`` is the Mojo type listed in the ``Variant[...]`` alias
+    (e.g. ``"Bool"``, ``"Int"``, ``"String"``, ``"NoneType"``).
+    ``payload_template`` is the expression rendered between the outer
+    ``Value(...)`` parentheses; occurrences of ``{value}`` are replaced
+    with the formatted scalar, and a template without the placeholder
+    (e.g. ``"NoneType()"``) ignores the formatted scalar entirely.
+    """
+
+    type_name: str
+    payload_template: str
+
+
+@beartype
+def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PLR0911
+    """Return the Mojo Variant alternative for *value*.
+
+    Strings, bytes, dates, and datetimes all map to ``String`` because
+    the default Mojo date / datetime formats produce ISO strings and
+    the bytes formats produce hex or base64 strings.  ``None`` maps to
+    ``NoneType`` and renders as ``Value(NoneType())`` because the
+    ``Variant`` constructor in Mojo cannot infer ``NoneType`` from the
+    bare ``None`` literal.
+    """
+    _string_signature = _VariantSignature(
+        type_name="String",
+        payload_template="String({value})",
+    )
+    match value:
+        case bool():
+            return _VariantSignature(
+                type_name="Bool",
+                payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+            )
+        case int():
+            return _VariantSignature(
+                type_name="Int",
+                payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+            )
+        case float():
+            return _VariantSignature(
+                type_name="Float64",
+                payload_template="Float64({value})",
+            )
+        case str():
+            return _string_signature
+        case bytes():
+            return _string_signature
+        case datetime.datetime():
+            return _string_signature
+        case datetime.date():
+            return _string_signature
+        case None:
+            return _VariantSignature(
+                type_name="NoneType",
+                payload_template="NoneType()",
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@dataclasses.dataclass(frozen=True)
+class _HeterogeneousStrategyConfig:
+    """Configuration for one Mojo heterogeneous-values strategy.
+
+    ``build_behavior`` produces the
+    :class:`~literalizer._language.HeterogeneousBehavior` exposed on a
+    Mojo instance.  ``build_preamble`` produces the data-dependent
+    preamble callable (e.g. the ``Variant`` alias declaration).  Both
+    receive the Mojo instance's configurable variant-type name so the
+    resulting functions can close over it.
+    """
+
+    build_behavior: Callable[[str], HeterogeneousBehavior]
+    build_preamble: Callable[[str], Callable[[Value], tuple[str, ...]]]
+
+
+def _build_error_behavior(_variant_name: str, /) -> HeterogeneousBehavior:
+    """ERROR strategy: no wrapping, no skipping of checks."""
+    return NO_HETEROGENEOUS_BEHAVIOR
+
+
+def _build_error_preamble(
+    _variant_name: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """ERROR strategy: no data-dependent preamble."""
+    return no_data_preamble
+
+
+_VARIANT_IMPORT_LINE = "from std.utils.variant import Variant"
+
+
+def _build_variant_behavior(
+    variant_name: str,
+    /,
+) -> HeterogeneousBehavior:
+    """VARIANT strategy: wrap scalars and skip scalar checks."""
+
+    def _compute(data: Value) -> frozenset[int]:
+        """Return container ids whose scalar children should wrap."""
+        return collect_heterogeneous_container_ids(data=data)
+
+    def _wrap(raw_value: Value, formatted: str) -> str:
+        """Wrap a scalar as ``{variant_name}({payload})`` where the
+        payload comes from the signature's ``payload_template`` (with
+        ``{value}`` substituted by the formatted scalar).
+        """
+        signature = _mojo_variant_for_scalar(cast("Scalar", raw_value))
+        payload = signature.payload_template.replace(
+            _VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+            formatted,
+        )
+        return f"{variant_name}({payload})"
+
+    return HeterogeneousBehavior(
+        skip_scalar_checks=True,
+        compute_wrap_ids=_compute,
+        wrap_scalar=_wrap,
+    )
+
+
+def _build_variant_preamble(
+    variant_name: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """VARIANT strategy: emit the ``Variant`` declaration preamble."""
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Build the ``Variant`` import + ``comptime`` declaration for
+        *data*.
+        """
+        wrap_ids = collect_heterogeneous_container_ids(data=data)
+        if not wrap_ids:
+            return ()
+        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        type_names: list[str] = []
+        seen: set[str] = set()
+        for scalar in scalars:
+            signature = _mojo_variant_for_scalar(scalar)
+            if signature.type_name in seen:
+                continue
+            seen.add(signature.type_name)
+            type_names.append(signature.type_name)
+        joined = ", ".join(type_names)
+        return (
+            _VARIANT_IMPORT_LINE,
+            f"comptime {variant_name} = Variant[{joined}]",
+        )
+
+    return _preamble
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 
-    Mojo does not support heterogeneous collections — every element in a
-    list or set must share a single type.  Input data containing
-    heterogeneous scalars or mixed-type collection values raises a
-    subclass of
-    :exc:`~literalizer.exceptions.HeterogeneousCollectionError`.
+    By default Mojo raises on heterogeneous input because its native
+    collections require a single element type.  Opt into
+    :attr:`HeterogeneousStrategies.VARIANT` to wrap mixed scalars in a
+    generated ``comptime Value = Variant[...]`` and render each scalar
+    as ``Value(...)`` so heterogeneous dicts and lists become
+    homogeneous in the Variant type.
     """
 
     extension = ".mojo"
@@ -313,13 +478,47 @@ class Mojo(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for representing dicts or lists whose scalar values
+        span more than one Mojo type.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = _HeterogeneousStrategyConfig(
+            build_behavior=_build_error_behavior,
+            build_preamble=_build_error_preamble,
+        )
+        """Raise
+        :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
+        (or :exc:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
+        when scalar values of mixed types appear in a container that
+        cannot represent them.  This is the default, matching the
+        single-element-type convention of the Mojo ``List``, ``Dict``,
+        and ``Set`` containers.
+        """
+
+        VARIANT = _HeterogeneousStrategyConfig(
+            build_behavior=_build_variant_behavior,
+            build_preamble=_build_variant_preamble,
+        )
+        """Auto-generate a ``comptime`` binding in the preamble for the
+        configured name to a ``Variant[...]`` over only the Mojo types
+        actually present in heterogeneous positions, together with a
+        ``from std.utils.variant import Variant`` import, and wrap each
+        such scalar as ``{Name}(value)`` (with an explicit ``String(...)``
+        or ``Float64(...)`` cast when needed so the constructor resolves
+        to the intended Variant alternative, and ``NoneType()`` for
+        nulls).
+
+        The alias name is configurable via
+        :attr:`Mojo.heterogeneous_value_variant_name` (default
+        ``"Value"``).
+        """
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -384,6 +583,7 @@ class Mojo(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    heterogeneous_value_variant_name: str = "Value"
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None"
@@ -391,7 +591,6 @@ class Mojo(metaclass=LanguageCls):
     false_literal: ClassVar[str] = "False"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
-    skip_null_dict_values: ClassVar[bool] = True
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
@@ -424,14 +623,36 @@ class Mojo(metaclass=LanguageCls):
         return passthrough_set_entry
 
     @cached_property
+    def skip_null_dict_values(self) -> bool:
+        """Drop ``None`` dict values for the default ERROR strategy so
+        the homogeneous-dict rendering stays valid Mojo.
+
+        ``VARIANT`` wraps every scalar as ``Value(...)``, so ``None``
+        values must flow through unchanged to be wrapped as
+        ``Value(None)`` against a ``NoneType`` Variant alternative.
+        """
+        cls = type(self.heterogeneous_strategy)
+        return self.heterogeneous_strategy is cls.ERROR
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        For ``HeterogeneousStrategies.VARIANT`` emits an ``alias`` line
+        declaring the ``Variant`` over only the Mojo types actually used
+        in heterogeneous positions.  Other strategies produce no
+        preamble.
+        """
+        return self.heterogeneous_strategy.value.build_preamble(
+            self.heterogeneous_value_variant_name,
+        )
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self.heterogeneous_strategy.value.build_behavior(
+            self.heterogeneous_value_variant_name,
+        )
 
     @cached_property
     def type_hint_collection_preamble_lines(

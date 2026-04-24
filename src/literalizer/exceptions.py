@@ -125,6 +125,26 @@ class CallsNotSupportedByToolError(Exception):
         self.language_name = language_name
 
 
+class CallArgNotSupportedError(Exception):
+    """Raised when a call argument value cannot be expressed as a
+    positional argument in the target language's call syntax.
+
+    Used by languages whose call syntax does not accept compound
+    literals as arguments — e.g. Bash, where ``cmd (1 2 3)`` parses
+    as a nested ``(...)`` child-process invocation rather than an
+    inline array value.
+    """
+
+    def __init__(self, *, language_name: str, reason: str) -> None:
+        """Create a ``CallArgNotSupportedError``."""
+        super().__init__(
+            f"{language_name} cannot accept this value as a call "
+            f"argument: {reason}"
+        )
+        self.language_name = language_name
+        self.reason = reason
+
+
 class IncompatibleFormatsError(Exception):
     """Raised when a combination of format options produces invalid code.
 
@@ -144,3 +164,17 @@ class UnrepresentableIntegerError(Exception):
     external arbitrary-precision integer library is assumed to be
     available.
     """
+
+
+class UnsupportedIdentifierCaseError(Exception):
+    """Raised when ``literalize_call`` is passed a ``ref_case`` that the
+    target language's ``IdentifierCases`` enum does not expose.
+    """
+
+    def __init__(self, *, language_name: str, case_name: str) -> None:
+        """Create an ``UnsupportedIdentifierCaseError``."""
+        super().__init__(
+            f"{language_name} does not support identifier case {case_name!r}"
+        )
+        self.language_name = language_name
+        self.case_name = case_name

@@ -35,7 +35,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -43,6 +43,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -59,6 +60,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import CallArgNotSupportedError
 
 
 @beartype
@@ -102,6 +104,17 @@ def _format_bash_dict_entry(
 ) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
     return f"[{key}]={_to_bash_value(item=formatted_value)}"
+
+
+@beartype
+def _bash_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return a Bash function stub that accepts any arguments."""
+    return (f"{name}() {{ :; }}",)
 
 
 @beartype
@@ -311,6 +324,8 @@ class Bash(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Bash call style options."""
 
+        COMMAND = CommandCallStyle(arg_separator=" ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -327,7 +342,34 @@ class Bash(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+    )
+
     validate_spec_for_data = no_validate_spec_for_data
+
+    @staticmethod
+    def validate_call_arg(value: Value) -> None:
+        """Reject list, dict, and set values as Bash call arguments.
+
+        Bash commands take space-separated positional arguments and
+        have no syntax for inline compound literals — ``cmd (1 2 3)``
+        parses as ``cmd`` followed by a nested ``(...)`` child-process
+        group, and ``cmd (["k"]=v)`` likewise.  Callers that need to
+        pass a collection must declare it as a variable first and
+        pass the name via a ``$ref`` marker.
+        """
+        if isinstance(value, (list, dict, set, frozenset)):
+            raise CallArgNotSupportedError(
+                language_name="Bash",
+                reason=(
+                    f"{type(value).__name__} values have no inline "
+                    "literal form in a Bash command invocation; "
+                    "declare the collection as a variable and pass "
+                    "it via a $ref marker instead"
+                ),
+            )
 
     @staticmethod
     def wrap_in_file(
@@ -377,6 +419,7 @@ class Bash(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.COMMAND
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -395,9 +438,6 @@ class Bash(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -436,7 +476,7 @@ class Bash(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _bash_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -444,6 +484,11 @@ class Bash(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:

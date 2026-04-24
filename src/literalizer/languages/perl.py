@@ -52,6 +52,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -381,6 +382,11 @@ class Perl(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.CAMEL,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
