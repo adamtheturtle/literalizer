@@ -133,8 +133,8 @@ with ``parameter_names=["data", "count"]`` produces:
   ``process(UserObj, 42)``.
 
 Snake case is the recommended authoring convention for ``$ref`` names:
-``pyhumps`` converts ``snake_case`` losslessly to every other case.
+``pyhumps`` converts ``snake_case`` to every other case without loss.
 Inputs in other conventions are normalized to ``snake_case`` first, so
 ``userObj`` or ``UserObj`` also convert correctly, but at the cost of
-losing any preserved acronyms (``HTTPRequest`` normalizes to
-``http_request`` and pascalizes back as ``HttpRequest``).
+losing any preserved acronyms: ``HTTPRequest`` normalizes to
+``http_request`` and converts back to Pascal case as ``HttpRequest``.

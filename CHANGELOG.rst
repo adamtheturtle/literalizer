@@ -15,7 +15,7 @@ Next
   understands via its ``identifier_cases`` tuple; passing an
   unsupported case raises ``UnsupportedIdentifierCaseError``.  When
   ``ref_case=None`` (the default) ref names are emitted verbatim,
-  preserving existing behaviour.
+  preserving existing behavior.
 - ``C`` generated output now routes positive integers above
   ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long``
   union field instead of narrowing them into the signed ``long long``
