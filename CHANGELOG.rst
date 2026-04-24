@@ -16,9 +16,10 @@ Next
   ``CallArgNotSupportedError`` is raised at literalize time when a
   list, dict, or set is passed as a Bash call argument — Bash has
   no inline compound-literal syntax in command invocations, so
-  silently emitting ``cmd (1 2 3)`` (which parses as a subshell)
-  would leave users with a broken script; callers must declare the
-  collection as a variable and pass a ``$ref`` marker instead.
+  silently emitting ``cmd (1 2 3)`` (which parses as a nested
+  ``(...)`` child-process group) would leave users with a broken
+  script; callers must declare the collection as a variable and
+  pass a ``$ref`` marker instead.
 - ``C`` generated output now routes positive integers above
   ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long``
   union field instead of narrowing them into the signed ``long long``
