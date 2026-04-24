@@ -23,6 +23,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     HeterogeneousBehavior,
     LanguageCls,
+    StubReturn,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
@@ -40,6 +41,7 @@ from literalizer.languages import (
     Dart,
     Fortran,
     FSharp,
+    Gleam,
     Go,
     Java,
     JavaScript,
@@ -512,6 +514,23 @@ def test_literalize_call_wrap_in_file() -> None:
     )
     assert result_no_preamble.code == "process(a=1, b=2)"
     assert not result_no_preamble.preamble
+
+
+def test_gleam_call_preamble_stub_many_parameters() -> None:
+    """Gleam call stubs handle more than 26 parameters.
+
+    ``_gleam_type_var`` falls back to numeric suffixes past the 26-letter
+    alphabet, so a 27-parameter call must emit a ``z`` for the last
+    single-letter slot and an ``a1`` for the next one.
+    """
+    params = [f"p{i}" for i in range(27)]
+    (line,) = Gleam().format_call_preamble_stub(
+        "target",
+        params,
+        StubReturn.VOID,
+    )
+    assert "_p25: z" in line
+    assert "_p26: a1" in line
 
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:

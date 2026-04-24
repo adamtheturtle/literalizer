@@ -321,6 +321,21 @@ _GLEAM_BYTES_FORMATTERS: dict[
 }
 
 
+def _gleam_type_var(index: int) -> str:
+    """Return a unique lowercase identifier for a type variable.
+
+    Indices ``0``..``25`` map to ``a``..``z``; higher indices append a
+    numeric suffix (``a1``..``z1``, ``a2``..``z2``, ...).  The numeric
+    suffix avoids collisions with Gleam reserved words like ``as`` and
+    ``fn`` that could otherwise appear in a pure-letter scheme.
+    """
+    letter = chr(ord("a") + index % 26)
+    group = index // 26
+    if group == 0:
+        return letter
+    return f"{letter}{group}"
+
+
 def _gleam_call_preamble_stub(
     name: str,
     params: Sequence[str],
@@ -338,9 +353,9 @@ def _gleam_call_preamble_stub(
     site.
     """
     flat_name = name.replace(".", "_")
-    letters = "abcdefghijklmnopqrstuvwxyz"
     param_list = ", ".join(
-        f"_{p}: {letters[i]}" for i, p in enumerate(iterable=params)
+        f"_{p}: {_gleam_type_var(index=i)}"
+        for i, p in enumerate(iterable=params)
     )
     return (f"pub fn {flat_name}({param_list}) -> Nil {{ panic }}",)
 
