@@ -1261,6 +1261,17 @@ identity_call_target: Callable[[str], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
 
 
+def _identity_call_ref_identifier(name: str, /) -> str:
+    """Return a call-site ``$ref`` identifier unchanged."""
+    return name
+
+
+identity_call_ref_identifier: Callable[[str], str] = (
+    _identity_call_ref_identifier
+)
+"""Shared callable for languages that use plain identifier refs."""
+
+
 def _no_type_hint_preamble(
     _empty_collection_types: frozenset[type],
     /,

@@ -36,27 +36,21 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
-    CommonLisp,
     Crystal,
     CSharp,
     Dart,
     Dhall,
     Elm,
-    Erlang,
     Fortran,
     FSharp,
     Gleam,
     Go,
     Haskell,
-    Hcl,
-    Jsonnet,
     Kotlin,
     Mojo,
     Nim,
     OCaml,
     Odin,
-    Perl,
-    Php,
     PureScript,
     Python,
     Rust,
@@ -2380,49 +2374,6 @@ def test_format_enumeration_properties(
 # --- literalize_call golden-file tests ---
 
 
-# Languages where the current integration harness cannot produce a
-# golden that passes its language-specific lint step for a
-# ``ref_declarations``-using case.  The feature itself renders the ref
-# marker as an identifier correctly; the limitations below are about
-# how the resulting declarations+calls compose into a complete file
-# or how names line up with the declaration site — see
-# https://github.com/adamtheturtle/literalizer/issues/1473 for the
-# per-language identifier rename hook that will close the
-# name-mangling gaps.
-_REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
-    {
-        # ``defparameter`` adds ``*name*`` earmuffs at the declaration
-        # site, but ``$ref`` emits the bare name at the call site —
-        # unbound variable at load.
-        CommonLisp,
-        # Variables are capitalized at the declaration site (``My_var =
-        # ...``) but ``$ref`` emits the bare name, which Erlang parses
-        # as a lowercase atom rather than the declared variable.
-        Erlang,
-        # ``wrap_in_file`` places content inside ``main = do``; a
-        # multi-line ``name = value`` binding needs ``let`` in a
-        # do-block, which the harness does not inject.
-        Haskell,
-        # ``wrap_in_file`` renames each content line as ``_N = …``,
-        # which breaks multi-line variable declarations.
-        Hcl,
-        # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
-        # list; variable declarations don't fit the shape.
-        Jsonnet,
-        # Variables declare with a ``my $name`` sigil that ``$ref``
-        # does not emit at the call site.  The default ``perl -c``
-        # tolerates the unquoted identifier (interpreting it as the
-        # string ``"my_var"``), but the call no longer references the
-        # declared variable, so the golden misrepresents the feature
-        # and the file fails ``use strict``.
-        Perl,
-        # Variables declare with a ``$`` sigil that ``$ref`` does not
-        # emit at the call site — undefined-constant error at runtime.
-        Php,
-    }
-)
-
-
 @dataclasses.dataclass
 class _CallCase:
     """A parameterized call-style golden-file test case."""
@@ -2442,8 +2393,6 @@ def _discover_call_cases() -> list[_CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
-                continue
-            if config.ref_declarations and lang_cls in _REF_CASE_INCOMPATIBLE:
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a

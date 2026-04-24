@@ -32,6 +32,7 @@ from literalizer._language import (
     PostfixCallStyle,
     PrefixCallStyle,
     StubReturn,
+    identity_call_ref_identifier,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -1501,6 +1502,7 @@ def _format_single_call_arg(
     language: Language,
     wrap_ids: frozenset[int],
     wrap_arg: Callable[[Value, str], str],
+    format_ref_identifier: Callable[[str], str],
     dict_open_override: str | None,
     ref_case: IdentifierCase | None,
 ) -> str:
@@ -1515,8 +1517,8 @@ def _format_single_call_arg(
     ref_name = _extract_call_arg_ref_name(value=value)
     if ref_name is not None:
         if ref_case is not None:
-            return ref_case.convert(name=ref_name)
-        return ref_name
+            ref_name = ref_case.convert(name=ref_name)
+        return format_ref_identifier(ref_name)
     return wrap_arg(
         value,
         _format_value(
@@ -1564,12 +1566,18 @@ def _format_call_args(
         "format_call_arg",
         _identity_call_arg,
     )
+    format_ref_identifier: Callable[[str], str] = getattr(
+        language,
+        "format_call_ref_identifier",
+        identity_call_ref_identifier,
+    )
     formatted = [
         _format_single_call_arg(
             value=arg_value,
             language=language,
             wrap_ids=wrap_ids,
             wrap_arg=wrap_arg,
+            format_ref_identifier=format_ref_identifier,
             dict_open_override=dict_open_overrides[slot_index],
             ref_case=ref_case,
         )

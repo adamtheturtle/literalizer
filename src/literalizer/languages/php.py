@@ -128,6 +128,12 @@ def _php_call_stub(
 
 
 @beartype
+def _php_format_call_ref_identifier(name: str, /) -> str:
+    """Format a call-site ref as a PHP variable."""
+    return f"${name}"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Php(metaclass=LanguageCls):
     """PHP language specification."""
@@ -514,6 +520,11 @@ class Php(metaclass=LanguageCls):
         form.
         """
         return _php_format_call_target
+
+    @cached_property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite call refs to PHP variable identifiers."""
+        return _php_format_call_ref_identifier
 
     @cached_property
     def format_call_preamble_stub(

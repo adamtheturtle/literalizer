@@ -113,6 +113,12 @@ def _erlang_format_call_target(name: str, /) -> str:
 
 
 @beartype
+def _erlang_format_call_ref_identifier(name: str, /) -> str:
+    """Format a call-site ref as an Erlang variable name."""
+    return name[0].upper() + name[1:]
+
+
+@beartype
 def _erlang_call_stub(
     name: str,
     params: Sequence[str],
@@ -544,6 +550,11 @@ class Erlang(metaclass=LanguageCls):
         syntax.
         """
         return _erlang_format_call_target
+
+    @cached_property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite call refs to Erlang variable identifiers."""
+        return _erlang_format_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

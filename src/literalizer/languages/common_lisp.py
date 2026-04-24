@@ -97,6 +97,12 @@ def _common_lisp_call_stub(
 
 
 @beartype
+def _common_lisp_format_call_ref_identifier(name: str, /) -> str:
+    """Format a call-site ref as a ``defparameter`` earmuffed symbol."""
+    return f"*{name}*"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CommonLisp(metaclass=LanguageCls):
     """Common Lisp language specification."""
@@ -454,6 +460,11 @@ class CommonLisp(metaclass=LanguageCls):
         syntax.
         """
         return identity_call_target
+
+    @cached_property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite call refs to ``*name*`` symbols."""
+        return _common_lisp_format_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

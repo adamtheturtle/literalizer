@@ -93,6 +93,12 @@ def _perl_call_stub(
 
 
 @beartype
+def _perl_format_call_ref_identifier(name: str, /) -> str:
+    """Format a call-site ref as a Perl scalar variable."""
+    return f"${name}"
+
+
+@beartype
 def _format_datetime_perl(value: datetime.datetime) -> str:
     """Format a datetime as a Perl ``DateTime`` constructor."""
     if value.tzinfo is not None:
@@ -505,6 +511,11 @@ class Perl(metaclass=LanguageCls):
         syntax.
         """
         return identity_call_target
+
+    @cached_property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite call refs to Perl scalar identifiers."""
+        return _perl_format_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
