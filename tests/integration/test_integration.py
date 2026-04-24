@@ -2357,7 +2357,7 @@ def _run_call_golden_case(
     variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
     ``ERROR`` strategy rejects).
     """
-    lang_cls: literalizer.LanguageCls = type(spec)  # pyright: ignore[reportAssignmentType]
+    lang_cls = type(spec)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     extension = ".txt" if config.bare_output else lang_cls.extension
