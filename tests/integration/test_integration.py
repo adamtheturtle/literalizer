@@ -319,27 +319,23 @@ def _dedupe_ordered(*, lines: Iterable[str]) -> tuple[str, ...]:
 
 @beartype
 def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
-    """Return preamble *blocks* with duplicate headers merged.
+    """Return preamble *blocks* with duplicate headers removed.
 
     Some languages emit multi-line preamble blocks whose first line is a
     stable header (for example, ``pub type GVal {`` in Gleam). When the
     call-test harness combines declaration preambles with call
-    preambles, the same header can appear twice with a narrower and a
-    broader definition. Keep one block per header, preferring the block
-    with the most lines.
+    preambles, the same header can appear multiple times with identical
+    bodies. Keep the first block per header.
     """
-    order: list[str] = []
-    by_header: dict[str, str] = {}
+    seen: set[str] = set()
+    result: list[str] = []
     for block in blocks:
         header = block.splitlines()[0] if block else ""
-        existing = by_header.get(header)
-        if existing is None:
-            order.append(header)
-            by_header[header] = block
+        if header in seen:
             continue
-        if len(block.splitlines()) > len(existing.splitlines()):
-            by_header[header] = block
-    return tuple(by_header[header] for header in order)
+        seen.add(header)
+        result.append(block)
+    return tuple(result)
 
 
 @dataclasses.dataclass
