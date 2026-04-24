@@ -195,17 +195,19 @@ jobs:
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
-          while IFS= read -r -d '' f; do
-            if grep -q '""' "$f"; then
+          # shellcheck disable=SC2016  # $0 expands in the inner shell
+          xargs -0 -P "$(nproc)" -n1 bash -c '
+            f="$0"
+            if grep -q "\"\"" "$f"; then
               echo "Skipping Octave parse check for MATLAB-escaped quotes in $f"
-              continue
+              exit 0
             fi
-            if grep -qw 'datetime' "$f"; then
+            if grep -qw datetime "$f"; then
               echo "Skipping $f — uses datetime(), which Octave does not implement"
-              continue
+              exit 0
             fi
             octave --norc --no-gui "$f" || exit 1
-          done < /tmp/files-matlab
+          ' < /tmp/files-matlab
 
       - name: Lint Perl
         run: |-

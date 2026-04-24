@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``lint-matlab`` (the Matlab step in the ``lint-apt-basics`` job in
+  ``.github/workflows/lint.yml``) now runs its ``octave`` invocations
+  in parallel via ``xargs -P``, replacing the previous serial
+  ``while`` loop so the job no longer pays Octave's cold-start cost
+  one fixture at a time.  The existing ``""``-escaped-quote and
+  ``datetime`` skip logic is preserved inside the ``xargs`` worker.
+
 2026.04.24.1
 ------------
 
