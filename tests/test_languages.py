@@ -475,17 +475,14 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
     assert not result.preamble
 
 
-def test_literalize_call_wrap_in_file() -> None:
-    """Literalize_call with wrap_in_file returns a complete file.
-
-    Integration tests compose ``wrap_in_file`` manually around
-    ``literalize_call(..., wrap_in_file=False)`` so they can stub the
-    target function; this unit test keeps coverage on the
-    ``wrap_in_file=True`` branch of :func:`literalize_call` itself.
+def test_literalize_call_wrap_in_file_emits_stubs() -> None:
+    """``wrap_in_file=True`` produces a self-contained file that
+    defines the ``target_function`` so the output compiles on its own.
     """
-    # Go has a static preamble ("package main") — covers the preamble
-    # prepend branch.
-    result = literalize_call(
+    # Go: stub lands in the file-scope preamble (Go can't declare
+    # functions inside ``main``).  The static ``package main`` preamble
+    # is also prepended.
+    go_result = literalize_call(
         source="[[1, 2]]",
         input_format=InputFormat.JSON,
         language=Go(),
@@ -493,12 +490,22 @@ def test_literalize_call_wrap_in_file() -> None:
         parameter_names=["a", "b"],
         wrap_in_file=True,
     )
-    expected = "package main\n\nfunc main() {\nprocess(1, 2);\n}"
-    assert result.code == expected
-    assert not result.preamble
-    assert not result.body_preamble
-    # Python has no static preamble — covers the no-preamble branch.
-    result_no_preamble = literalize_call(
+    expected_go = textwrap.dedent(
+        text="""\
+        package main
+        func process(args ...any) any { return nil }
+
+        func main() {
+        process(1, 2);
+        }""",
+    )
+    assert go_result.code == expected_go
+    assert not go_result.preamble
+    assert not go_result.body_preamble
+    # Python: stub lands inside the wrapper (no language wrapper here,
+    # so it sits above the call) and covers the no-static-preamble
+    # branch.
+    py_result = literalize_call(
         source="[[1, 2]]",
         input_format=InputFormat.JSON,
         language=Python(),
@@ -506,8 +513,37 @@ def test_literalize_call_wrap_in_file() -> None:
         parameter_names=["a", "b"],
         wrap_in_file=True,
     )
-    assert result_no_preamble.code == "process(a=1, b=2)"
-    assert not result_no_preamble.preamble
+    expected_py = textwrap.dedent(
+        text="""\
+        def process(*_args: object, **_kwargs: object) -> object: ...
+        process(a=1, b=2)""",
+    )
+    assert py_result.code == expected_py
+    assert not py_result.preamble
+
+
+def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
+    """When ``call_transform`` consumes the call result, the stub
+    returns a value instead of ``void``.
+    """
+    result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=lambda c: f"emit({c})",
+        wrap_in_file=True,
+    )
+    # ``process`` still gets a value-returning stub; ``emit`` is out of
+    # scope here — callers that use ``call_transform`` are responsible
+    # for providing their own wrapper definition.
+    expected = textwrap.dedent(
+        text="""\
+        def process(*_args: object, **_kwargs: object) -> object: ...
+        emit(process(a=1, b=2))""",
+    )
+    assert result.code == expected
 
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
