@@ -14,11 +14,10 @@ def main() -> None:
     filename = sys.argv[1]
     gleam_path = shutil.which(cmd="gleam") or "gleam"
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Copy the primed project (gleam.toml, manifest.toml, build/)
-        # so each parallel worker gets its own src/ and writable build/
-        # without re-running `gleam deps download` -- 168 parallel
-        # downloads otherwise hammer hex.pm and trip transient network
-        # failures.
+        # Copy the primed project so each parallel worker has its own
+        # writable working tree and skips `gleam deps download` -- 168
+        # parallel downloads otherwise hammer hex.pm and trip transient
+        # network failures.
         shutil.copytree(src=primed_dir, dst=tmpdir, dirs_exist_ok=True)
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir(exist_ok=True)
