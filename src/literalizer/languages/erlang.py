@@ -250,7 +250,7 @@ class Erlang(metaclass=LanguageCls):
         FloatSpecialsMixin,
         enum.Enum,
         positive_infinity="inf",
-        negative_infinity="-inf",
+        negative_infinity="'-inf'",
         nan="nan",
     ):
         """Float format options."""

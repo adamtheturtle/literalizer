@@ -14,6 +14,13 @@ Next
   first heterogeneous call.  Mirrors the dict-opener widening
   already applied for typed dict languages on the per-element call
   path.
+- ``lint-erlang`` in ``.github/workflows/lint.yml`` now passes
+  ``-Werror`` to ``erlc``, so warnings such as ``evaluation of operator
+  '-'/1 will fail with a 'badarith' exception`` fail the job instead of
+  being silently logged.  ``Erlang`` generated output for negative
+  infinity is now the quoted atom ``'-inf'`` instead of the bare
+  ``-inf``, which the compiler treated as unary negation of the atom
+  ``inf`` and flagged as a guaranteed runtime ``badarith``.
 
 2026.04.23
 ----------
