@@ -187,6 +187,7 @@ _FIELD_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
     C: {
         "bool_field": "bl",
         "int_field": "integer",
+        "uint_field": "uinteger",
         "float_field": "fp",
         "string_field": "str",
         "array_field": "arr",
@@ -685,10 +686,8 @@ class _CallCaseConfig:
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
     per_element: bool
-    call_style_type: type[literalizer.CallStyle] | None = None
-    ref_declarations: dict[str, str] = dataclasses.field(
-        default_factory=dict[str, str],
-    )
+    call_style_type: type[literalizer.CallStyle] | None
+    ref_declarations: dict[str, str]
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -706,6 +705,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -714,6 +715,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -722,6 +725,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -730,6 +735,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -738,6 +745,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -746,6 +755,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -754,6 +765,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: c,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -762,6 +775,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=False,
+        call_style_type=None,
+        ref_declarations={},
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -770,6 +785,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
         ref_declarations={
             "my_var": "[1, 2, 3]",
             "my_other": "[4, 5, 6]",
@@ -782,6 +798,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
     ),
     *[
         _CallCaseConfig(
@@ -792,6 +810,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             transform_stub_names=["emit"],
             per_element=True,
             call_style_type=cls,
+            ref_declarations={},
         )
         for name, cls in _CALL_STYLE_VARIANTS
     ],
