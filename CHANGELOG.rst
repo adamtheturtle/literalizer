@@ -19,6 +19,14 @@ Next
   silently emitting ``cmd (1 2 3)`` (which parses as a subshell)
   would leave users with a broken script; callers must declare the
   collection as a variable and pass a ``$ref`` marker instead.
+- Added ``literalize_call`` support for Gleam:
+  ``Gleam.format_call_preamble_stub`` emits module-level ``pub fn``
+  declarations with fresh type variables per parameter and a
+  ``panic`` body, and ``Gleam.format_call_target`` flattens dotted
+  targets (e.g. ``app.client.fetch``) to underscored identifiers
+  (``app_client_fetch``) because Gleam identifiers cannot contain
+  ``.``.  ``Gleam.CallStyles.POSITIONAL`` renders calls as
+  ``func(arg1, arg2)``.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to
