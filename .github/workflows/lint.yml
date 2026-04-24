@@ -188,26 +188,13 @@ jobs:
           xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
 
       # Octave is a practical CI substitute, but it does not support
-      # every MATLAB builtin. Skip files that use features Octave lacks:
-      #  - datetime(): not yet implemented in Octave
-      #  - ""-escaped quotes: Octave accepts some backslash escapes
-      #    (e.g. \") that MATLAB rejects, so the check would be misleading
+      # every MATLAB builtin.  The per-fixture skip rules (for ``""``
+      # escaped quotes and the ``datetime`` builtin) are documented in
+      # .github/scripts/lint-matlab-fixture.
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
-          # shellcheck disable=SC2016  # $0 expands in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            f="$0"
-            if grep -q "\"\"" "$f"; then
-              echo "Skipping Octave parse check for MATLAB-escaped quotes in $f"
-              exit 0
-            fi
-            if grep -qw datetime "$f"; then
-              echo "Skipping $f — uses datetime(), which Octave does not implement"
-              exit 0
-            fi
-            octave --norc --no-gui "$f" || exit 1
-          ' < /tmp/files-matlab
+          xargs -0 -P "$(nproc)" -n1 .github/scripts/lint-matlab-fixture < /tmp/files-matlab
 
       - name: Lint Perl
         run: |-
