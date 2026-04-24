@@ -104,10 +104,17 @@ jobs:
 
       # Parse every fixture inside a single pwsh invocation so the .NET
       # and PowerShell startup cost is paid once instead of per fixture.
+      # The run step reuses the same trick: one pwsh process iterates
+      # every fixture, executing its script block in a child scope so
+      # `$my_data` (and anything else) does not leak between fixtures.
       - name: Lint PowerShell
         run: |-
           find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1
           pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1 < /tmp/files-ps1
+
+      - name: Run PowerShell files
+        run: pwsh -NoProfile -NonInteractive -File .github/scripts/run-powershell.ps1
+          < /tmp/files-ps1
 
       # Every fixture defines its own `fval_m` module, and the syntax
       # check leaves an `fval_m.mod` in the working directory (gfortran
