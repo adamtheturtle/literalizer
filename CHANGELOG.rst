@@ -12,6 +12,12 @@ Next
   load-time crashes that the existing ``check_purescript_syntax.py``
   compile-only check would miss.  The shared Prelude stub used by both
   steps lives in a new ``purescript_common.py`` module.
+- Added a ``benchmarks`` job to ``.github/workflows/ci.yml`` that runs
+  the ``tests/benchmarks/`` suite under `CodSpeed
+  <https://codspeed.io>`_ via ``pytest-codspeed``.  The job posts a
+  per-benchmark performance delta on every pull request, making it
+  easier to spot regressions in the YAML fast path, JSON formatting,
+  and heterogeneous-widening logic.
 - ``C``, ``Cpp``, and ``ObjectiveC``
   ``wrap_in_file`` / ``wrap_combined_in_file`` output now emits
   ``(void)<variable_name>;`` after the declaration (and between the
@@ -25,6 +31,11 @@ Next
 ------------
 
 
+- ``Gleam`` now emits a ``pub type GVal`` declaration containing only
+  the constructors actually needed for the data, rather than always
+  emitting all eight variants.  Scalar-only inputs (e.g.  ``GInt(42)``)
+  now produce a one-constructor type, bringing Gleam in line with Elm
+  and Haskell.
 - ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
   fixture end-to-end via ``lua``, catching runtime errors (calls to
   undefined functions, missing module imports, failed assertions)

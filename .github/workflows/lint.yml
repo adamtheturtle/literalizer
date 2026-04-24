@@ -152,9 +152,10 @@ jobs:
       - name: Lint Odin
         run: |-
           find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          while IFS= read -r -d '' f; do
-            odin check "$f" -file || exit 1
-          done < /tmp/files-odin
+          cat > /tmp/check-odin.sh <<'SCRIPT'
+          odin check "$1" -file || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-odin.sh < /tmp/files-odin
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
@@ -188,24 +189,13 @@ jobs:
           xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
 
       # Octave is a practical CI substitute, but it does not support
-      # every MATLAB builtin. Skip files that use features Octave lacks:
-      #  - datetime(): not yet implemented in Octave
-      #  - ""-escaped quotes: Octave accepts some backslash escapes
-      #    (e.g. \") that MATLAB rejects, so the check would be misleading
+      # every MATLAB builtin.  The per-fixture skip rules (for ``""``
+      # escaped quotes and the ``datetime`` builtin) are documented in
+      # .github/scripts/lint-matlab-fixture.sh.
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
-          while IFS= read -r -d '' f; do
-            if grep -q '""' "$f"; then
-              echo "Skipping Octave parse check for MATLAB-escaped quotes in $f"
-              continue
-            fi
-            if grep -qw 'datetime' "$f"; then
-              echo "Skipping $f — uses datetime(), which Octave does not implement"
-              continue
-            fi
-            octave --norc --no-gui "$f" || exit 1
-          done < /tmp/files-matlab
+          xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
       - name: Lint Perl
         run: |-
@@ -447,19 +437,19 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # Populate the shared Hex package cache once up front. Parallel
-      # `gleam deps download` invocations would otherwise race on the
-      # cache and fail with "Unable to locate Hex package contents.tar.gz"
-      # when one worker is mid-download and another reads the partial
-      # file.
-      - name: Prime Gleam Hex cache
+      # Populate a shared primed project once up front so each parallel
+      # `check_gleam_syntax.py` worker can copy from it instead of
+      # running its own `gleam deps download`. 168 parallel downloads
+      # otherwise hammer hex.pm and trip transient network failures.
+      - name: Prime Gleam project
         run: |-
-          tmpdir=$(mktemp -d)
-          cp .github/scripts/lint-gleam.toml "$tmpdir/gleam.toml"
-          mkdir "$tmpdir/src"
-          (cd "$tmpdir" && gleam deps download)
+          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
+          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
 
       - name: Lint Gleam
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
           find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-gleam
@@ -982,8 +972,14 @@ jobs:
           done < /tmp/files-to-lint
           crystal run "$driver"
 
+  # Mojo reserves ~3.6 GB of virtual address space per invocation
+  # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
+  # crashes in libKGENCompilerRTShared.so before producing any output —
+  # and even with overcommit + swap workarounds it could only run
+  # serially. Ubicloud's 16 GB runner comfortably fits `$(nproc)`
+  # parallel invocations without the workarounds.
   lint-mojo:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-4
     steps:
       - uses: actions/checkout@v6
         with:
@@ -998,35 +994,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
         run: uv tool install mojo-compiler
-      # Mojo reserves ~3.6 GB of virtual address space per invocation
-      # (upstream: modular/modular#6433). On the 7 GB GitHub runner the
-      # kernel's default overcommit heuristic refuses the allocation and
-      # Mojo crashes in libKGENCompilerRTShared.so before producing any
-      # output. Allow overcommit and add a 4 GB swap file so the kernel
-      # has enough headroom to accept the reservation — Mojo only
-      # actually touches ~320 MB of it.
-      - name: Expand memory headroom for Mojo
-        # The GitHub runner already ships a /swapfile mounted as swap, so
-        # add a second file at a fresh path instead of overwriting it.
-        run: |-
-          sudo sysctl -w vm.overcommit_memory=1
-          sudo fallocate -l 4G /mnt/extra-swapfile
-          sudo chmod 600 /mnt/extra-swapfile
-          sudo mkswap /mnt/extra-swapfile
-          sudo swapon /mnt/extra-swapfile
-      # Lift the per-process virtual-address cap so the shell and
-      # each `mojo run` child inherit an unlimited `RLIMIT_AS`. Mojo
-      # reserves ~3.6 GB virtual per invocation; without this, a low
-      # default cap can make the reservation fail even when the
-      # overcommit + swap step above has given the kernel enough
-      # headroom. Recommended by the upstream bug author in
-      # HomericIntelligence/ProjectOdyssey#5274.
-      # Local tracking: https://github.com/adamtheturtle/literalizer/issues/1574
       - name: Check Mojo syntax
-        run: |-
-          ulimit -v unlimited
-          xargs -0 -P "$(nproc)" -I{} mojo run --Werror "$GITHUB_WORKSPACE/{}" \
-            < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
 
   lint-nim:
     runs-on: ubuntu-latest
