@@ -30,6 +30,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
     format_integer_hex,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
@@ -70,6 +71,7 @@ def _apply_format_c_entry(
     original: Value,
     formatted: str,
     int_field: str,
+    uint_field: str,
     float_field: str,
     string_field: str,
 ) -> str:
@@ -80,6 +82,11 @@ def _apply_format_c_entry(
         case bool():
             return formatted
         case int():
+            # Values above ``LLONG_MAX`` cannot be assigned to the signed
+            # ``long long`` field without an implementation-defined
+            # narrowing conversion; route them to the unsigned field.
+            if original > I64_MAX:
+                return f"((CVal){{.{uint_field} = {formatted}}})"
             return f"((CVal){{.{int_field} = {formatted}}})"
         case float():
             return f"((CVal){{.{float_field} = {formatted}}})"
@@ -91,6 +98,7 @@ def _apply_format_c_entry(
 def _make_format_c_entry(
     *,
     int_field: str,
+    uint_field: str,
     float_field: str,
     string_field: str,
 ) -> collections.abc.Callable[[Value, str], str]:
@@ -104,6 +112,7 @@ def _make_format_c_entry(
             original=original,
             formatted=formatted,
             int_field=int_field,
+            uint_field=uint_field,
             float_field=float_field,
             string_field=string_field,
         )
@@ -460,6 +469,7 @@ class C(metaclass=LanguageCls):
     indent: str = "    "
     bool_field: str = "b"
     int_field: str = "i"
+    uint_field: str = "u"
     float_field: str = "f"
     string_field: str = "s"
     array_field: str = "a"
@@ -540,6 +550,7 @@ class C(metaclass=LanguageCls):
         """
         return _make_format_c_entry(
             int_field=self.int_field,
+            uint_field=self.uint_field,
             float_field=self.float_field,
             string_field=self.string_field,
         )
@@ -738,6 +749,7 @@ class C(metaclass=LanguageCls):
             "    union {",
             f"        _Bool {self.bool_field};",
             f"        long long {self.int_field};",
+            f"        unsigned long long {self.uint_field};",
             f"        double {self.float_field};",
             f"        const char *{self.string_field};",
             f"        const CVal *{self.array_field};",

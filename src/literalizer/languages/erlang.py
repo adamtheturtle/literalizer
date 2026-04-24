@@ -38,7 +38,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -49,12 +48,12 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -98,6 +97,39 @@ def _format_datetime_erlang(value: datetime.datetime) -> str:
         f"{{{{{value.year}, {value.month}, {value.day}}}, "
         f"{{{value.hour}, {value.minute}, {value.second}}}}}"
     )
+
+
+@beartype
+def _erlang_format_call_target(name: str, /) -> str:
+    """Rewrite a call target for Erlang.
+
+    Dotted names like ``app.client.fetch`` are wrapped in single
+    quotes so they form a valid Erlang atom; bare names pass
+    through unchanged.
+    """
+    if "." in name:
+        return f"'{name}'"
+    return name
+
+
+@beartype
+def _erlang_call_stub(
+    name: str,
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return an Erlang module-level function stub for a call name.
+
+    Dotted names like ``app.client.fetch`` are emitted as a quoted
+    atom so the generated function name is syntactically valid.  A
+    single stub is emitted per call name; unused arguments use the
+    ``_`` pattern so no per-argument naming is needed.
+    """
+    body = "ok" if stub_return is StubReturn.VOID else "undefined"
+    target = _erlang_format_call_target(name)
+    arg_list = ", ".join("_" for _ in params)
+    return (f"{target}({arg_list}) -> {body}.",)
 
 
 @beartype
@@ -332,6 +364,8 @@ class Erlang(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Erlang call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -360,20 +394,38 @@ class Erlang(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Erlang variable binding in a module function."""
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
-        )
-        erlang_varname = variable_name[0].upper() + variable_name[1:]
-        indented = textwrap.indent(text=content, prefix="    ")
-        return (
-            f"-module(check).\n"
-            f"-export([x/0]).\n"
-            f"x() ->\n"
-            f"{indented},\n"
-            f"    {erlang_varname}."
-        )
+        """Wrap an Erlang snippet in a module function.
+
+        For the variable form, *body_preamble* lines are prepended
+        inside ``x()`` and the function returns the bound variable.
+        For the call form (empty *variable_name*), *body_preamble*
+        lines are treated as module-level function definitions
+        placed between ``-export`` and ``x()``; the call statements
+        in *content* are terminated with ``,`` via
+        :attr:`statement_terminator` and the trailing ``,`` is
+        rewritten to ``.`` so ``x()`` ends on a valid clause.
+        """
+        if variable_name:
+            body = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            erlang_varname = variable_name[0].upper() + variable_name[1:]
+            indented = textwrap.indent(text=body, prefix="    ")
+            return (
+                f"-module(check).\n"
+                f"-export([x/0]).\n"
+                f"x() ->\n"
+                f"{indented},\n"
+                f"    {erlang_varname}."
+            )
+        trimmed = content.rstrip().removesuffix(",")
+        indented = textwrap.indent(text=trimmed, prefix="    ")
+        parts = ["-module(check).", "-export([x/0])."]
+        parts.extend(body_preamble)
+        parts.append("x() ->")
+        parts.append(f"{indented}.")
+        return "\n".join(parts)
 
     @staticmethod
     def wrap_combined_in_file(
@@ -407,6 +459,7 @@ class Erlang(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
+    call_style: CallStyles = CallStyles.POSITIONAL
     line_ending: LineEndings = LineEndings.SEMICOLON
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -422,13 +475,10 @@ class Erlang(metaclass=LanguageCls):
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = False
-    statement_terminator: ClassVar[str] = ""
+    statement_terminator: ClassVar[str] = ","
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -470,11 +520,16 @@ class Erlang(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for Erlang's call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _erlang_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -488,7 +543,7 @@ class Erlang(metaclass=LanguageCls):
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _erlang_format_call_target
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

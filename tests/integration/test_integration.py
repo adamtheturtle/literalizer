@@ -41,6 +41,7 @@ from literalizer.languages import (
     Dart,
     Dhall,
     Elm,
+    Erlang,
     Fortran,
     FSharp,
     Gleam,
@@ -186,6 +187,7 @@ _FIELD_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
     C: {
         "bool_field": "bl",
         "int_field": "integer",
+        "uint_field": "uinteger",
         "float_field": "fp",
         "string_field": "str",
         "array_field": "arr",
@@ -691,11 +693,9 @@ class _CallCaseConfig:
     call_transform: Callable[[str], str] | None
     transform_stub_names: list[str]
     per_element: bool
-    call_style_type: type[literalizer.CallStyle] | None = None
-    ref_declarations: dict[str, str] = dataclasses.field(
-        default_factory=dict[str, str],
-    )
-    ref_case_per_language: bool = False
+    call_style_type: type[literalizer.CallStyle] | None
+    ref_declarations: dict[str, str]
+    ref_case_per_language: bool
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -713,6 +713,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -721,6 +724,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -729,6 +735,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -737,6 +746,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -745,6 +757,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -753,6 +768,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -761,6 +779,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=lambda c: c,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -769,6 +790,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -777,10 +801,12 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
         ref_declarations={
             "my_var": "[1, 2, 3]",
             "my_other": "[4, 5, 6]",
         },
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args_converted",
@@ -789,6 +815,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
         ref_declarations={
             "my_var": "[1, 2, 3]",
             "my_other": "[4, 5, 6]",
@@ -802,6 +829,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=False,
+        call_style_type=None,
         ref_declarations={
             "my_var": "[1, 2, 3]",
         },
@@ -814,6 +842,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
         ref_declarations={
             "myVar": "[1, 2, 3]",
             "MyOther": "[4, 5, 6]",
@@ -827,6 +856,9 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        ref_case_per_language=False,
     ),
     *[
         _CallCaseConfig(
@@ -837,6 +869,8 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             transform_stub_names=["emit"],
             per_element=True,
             call_style_type=cls,
+            ref_declarations={},
+            ref_case_per_language=False,
         )
         for name, cls in _CALL_STYLE_VARIANTS
     ],
@@ -2307,6 +2341,10 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # site, but ``$ref`` emits the bare name at the call site —
         # unbound variable at load.
         CommonLisp,
+        # Variables are capitalized at the declaration site (``My_var =
+        # ...``) but ``$ref`` emits the bare name, which Erlang parses
+        # as a lowercase atom rather than the declared variable.
+        Erlang,
         # ``wrap_in_file`` places content inside ``main = do``; a
         # multi-line ``name = value`` binding needs ``let`` in a
         # do-block, which the harness does not inject.

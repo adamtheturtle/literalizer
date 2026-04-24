@@ -2,10 +2,8 @@
 Checks: >
   *,
   -altera-struct-pack-align,
-  -bugprone-narrowing-conversions,
   -clang-analyzer-deadcode.DeadStores,
   -cppcoreguidelines-avoid-magic-numbers,
-  -cppcoreguidelines-narrowing-conversions,
   -fuchsia-default-arguments-calls,
   -google-objc-function-naming,
   -google-runtime-int,
