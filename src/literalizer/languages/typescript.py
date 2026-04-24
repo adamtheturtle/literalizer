@@ -83,9 +83,20 @@ def _ts_call_stub(
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return TypeScript stub declarations for a call name."""
+    """Return TypeScript stub declarations for a call name.
+
+    Mirrors :func:`_js_call_stub`: dotted roots become a ``Proxy`` that
+    returns a callable ``Proxy`` for any attribute access, so nested
+    member calls succeed; bare roots become a no-op function. The ``:
+    any`` annotation keeps the stub accepted by the type checker
+    regardless of how the fixture uses it.
+    """
     root = name.split(sep=".", maxsplit=1)[0]
-    return (f"declare const {root}: any;",)
+    if "." in name:
+        proxy = "new Proxy(function(){}, {get: g})"
+        handler = f"get: function g() {{ return {proxy}; }}"
+        return (f"const {root}: any = new Proxy({{}}, {{{handler}}});",)
+    return (f"const {root}: any = () => {{}};",)
 
 
 @beartype
