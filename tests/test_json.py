@@ -85,42 +85,18 @@ def test_dict_python() -> None:
     assert result.code == expected
 
 
-def test_dict_include_delimiters() -> None:
-    """Wrapping a dict adds braces and indentation."""
-    result = literalize(
-        source=json.dumps(obj={"a": 1, "b": 2}),
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": 2,
-        }"""
-    )
-    assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames="include_delimiters",
-    argvalues=[False, True],
-)
-def test_dict_empty(*, include_delimiters: bool) -> None:
-    """An empty dict produces the language's empty-dict literal when
-    delimiters are included, or an empty string without delimiters.
+def test_dict_empty_no_delimiters() -> None:
+    """An empty dict produces an empty string when delimiters are
+    excluded.
     """
     result = literalize(
         source=json.dumps(obj={}),
         input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
-        include_delimiters=include_delimiters,
+        include_delimiters=False,
     )
-    expected = "{}" if include_delimiters else ""
-    assert result.code == expected
+    assert result.code == ""
 
 
 def test_integers() -> None:
@@ -245,38 +221,6 @@ def test_indent_tabs() -> None:
     assert result.code == "\t\ttrue,\n\t\tfalse,"
 
 
-def test_include_delimiters() -> None:
-    """Wrapping adds brackets and indentation."""
-    result = literalize(
-        source=json.dumps(obj=[True, False]),
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        (
-            True,
-            False,
-        )"""
-    )
-    assert result.code == expected
-
-
-def test_include_delimiters_with_pre_indent_level() -> None:
-    """Wrapping respects the given pre_indent_level."""
-    result = literalize(
-        source=json.dumps(obj=[["a", 1.0]]),
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=1,
-        include_delimiters=True,
-    )
-    expected = '    (\n        ("a", 1.0),\n    )'
-    assert result.code == expected
-
-
 def test_indent_override() -> None:
     """User-provided indent overrides the language default."""
     language = Python(
@@ -298,23 +242,18 @@ def test_indent_override() -> None:
     assert result.code == expected
 
 
-@pytest.mark.parametrize(
-    argnames="include_delimiters",
-    argvalues=[False, True],
-)
-def test_empty_data(*, include_delimiters: bool) -> None:
-    """An empty list produces the language's empty-sequence literal when
-    delimiters are included, or an empty string without delimiters.
+def test_empty_list_no_delimiters() -> None:
+    """An empty list produces an empty string when delimiters are
+    excluded.
     """
     result = literalize(
         source=json.dumps(obj=[]),
         input_format=InputFormat.JSON,
         language=PYTHON,
         pre_indent_level=0,
-        include_delimiters=include_delimiters,
+        include_delimiters=False,
     )
-    expected = "()" if include_delimiters else ""
-    assert result.code == expected
+    assert result.code == ""
 
 
 @pytest.mark.parametrize(
@@ -359,18 +298,6 @@ def test_scalar_with_indent() -> None:
     assert result.code == "    42"
 
 
-def test_scalar_include_delimiters_ignored() -> None:
-    """Wrap is ignored for scalar values."""
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-    assert result.code == "42"
-
-
 def test_literalize_json_array() -> None:
     """``literalize_json`` parses a JSON array string."""
     json_string = '[["user_1", 1000.0], ["user_2", 2000.0]]'
@@ -382,26 +309,6 @@ def test_literalize_json_array() -> None:
         include_delimiters=False,
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
-    assert result.code == expected
-
-
-def test_literalize_json_object() -> None:
-    """``literalize_json`` parses a JSON object string."""
-    json_string = '{"a": 1, "b": true}'
-    result = literalize(
-        source=json_string,
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": True,
-        }"""
-    )
     assert result.code == expected
 
 

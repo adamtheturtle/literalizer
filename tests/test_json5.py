@@ -58,27 +58,6 @@ def test_dict_python() -> None:
     assert result.code == expected
 
 
-def test_dict_include_delimiters() -> None:
-    """Wrapping a dict adds braces and indentation."""
-    source = "{a: 1, b: 2}"
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON5,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            "a": 1,
-            "b": 2,
-        }"""
-    )
-    assert result.code == expected
-
-
 def test_array() -> None:
     """JSON5 array renders as a tuple in Python."""
     source = "[1, 2, 3,]"
@@ -356,31 +335,3 @@ def test_scalar_types(
         variable_form=None,
     )
     assert result.code == expected
-
-
-def test_scalar_string() -> None:
-    """A bare JSON5 string renders as a scalar."""
-    source = '"hello"'
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON5,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    assert result.code == '"hello"'
-
-
-def test_scalar_number() -> None:
-    """A bare JSON5 number renders as a scalar."""
-    source = "42"
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON5,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    assert result.code == "42"

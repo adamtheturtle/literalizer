@@ -12,10 +12,18 @@ Next
   without re-authoring the ref names (e.g. the same ``user_obj`` ref
   renders as ``user_obj`` for Python, ``userObj`` for JavaScript,
   ``UserObj`` for Go).  Each language exposes the subset it
-  understands via its nested ``IdentifierCases`` enum; passing an
+  understands via its ``identifier_cases`` tuple; passing an
   unsupported case raises ``UnsupportedIdentifierCaseError``.  When
   ``ref_case=None`` (the default) ref names are emitted verbatim,
   preserving existing behaviour.
+- Added ``literalize_call`` support for Gleam:
+  ``Gleam.format_call_preamble_stub`` emits module-level ``pub fn``
+  declarations with fresh type variables per parameter and a
+  ``panic`` body, and ``Gleam.format_call_target`` flattens dotted
+  targets (e.g. ``app.client.fetch``) to underscored identifiers
+  (``app_client_fetch``) because Gleam identifiers cannot contain
+  ``.``.  ``Gleam.CallStyles.POSITIONAL`` renders calls as
+  ``func(arg1, arg2)``.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to

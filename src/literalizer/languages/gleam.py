@@ -42,7 +42,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,12 +52,12 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -320,6 +319,35 @@ _GLEAM_BYTES_FORMATTERS: dict[
     "HEX": _build_gleam_bytes_hex,
     "BASE64": _build_gleam_bytes_base64,
 }
+
+
+def _gleam_call_preamble_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Gleam module-level function stubs for a call target.
+
+    Dotted names are flattened to underscored identifiers — Gleam
+    identifiers cannot contain ``.``, so ``app.client.fetch`` becomes
+    ``app_client_fetch``.  Each parameter gets a fresh type variable
+    so the stub is polymorphic across call sites that pass different
+    argument types.  Return type is ``Nil``; ``panic`` fills the body
+    so the stub unifies with any return-position type at the call
+    site.
+    """
+    flat_name = name.replace(".", "_")
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    param_list = ", ".join(
+        f"_{p}: {letters[i]}" for i, p in enumerate(iterable=params)
+    )
+    return (f"pub fn {flat_name}({param_list}) -> Nil {{ panic }}",)
+
+
+def _gleam_format_call_target(name: str) -> str:
+    """Flatten a dotted call target to an underscored Gleam identifier."""
+    return name.replace(".", "_")
 
 
 @beartype
@@ -645,6 +673,8 @@ class Gleam(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Gleam call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -680,7 +710,8 @@ class Gleam(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="  ")
-        return f"\npub fn main() {{\n{indented}\n  let _ = {variable_name}\n}}"
+        use_line = f"\n  let _ = {variable_name}" if variable_name else ""
+        return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -716,6 +747,7 @@ class Gleam(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.NONE
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -733,9 +765,11 @@ class Gleam(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for Gleam's call style."""
+        return self.call_style.value
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -776,14 +810,14 @@ class Gleam(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _gleam_call_preamble_stub
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _gleam_format_call_target
 
     @cached_property
     def null_literal(self) -> str:
