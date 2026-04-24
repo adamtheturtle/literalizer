@@ -427,8 +427,6 @@ def _build_gleam_data_dependent_preamble(
             )
             if types & type_set
         ]
-        if not constructors:
-            return ()
         body = "\n".join(f"  {c}" for c in constructors)
         return (f"pub type {type_name} {{\n{body}\n}}",)
 
