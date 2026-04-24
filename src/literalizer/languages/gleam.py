@@ -365,8 +365,8 @@ def _scalar_gleam_type(*, value: Value) -> type:
 def _collect_gleam_types(*, value: Value) -> frozenset[type]:
     """Return the set of Python types present in *value*.
 
-    Recurses into lists, dicts, and sets, collecting the scalar types
-    needed to decide which ``GVal`` constructors to emit.
+    Walks lists, dicts, and sets recursively, collecting the scalar
+    types needed to decide which ``GVal`` constructors to emit.
     """
     match value:
         case ordereddict() | dict():
