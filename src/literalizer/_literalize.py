@@ -1681,6 +1681,7 @@ def _render_call_per_element(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
+    as_expression: bool,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -1701,6 +1702,10 @@ def _render_call_per_element(
         elements=data,
         spec=language,
     )
+    statement_terminator = (
+        "" if as_expression else language.statement_terminator
+    )
+    joiner = ",\n" if as_expression else "\n"
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1727,11 +1732,11 @@ def _render_call_per_element(
                 target_function=target_function,
                 args_str=args_str,
                 call_transform=call_transform,
-                statement_terminator=language.statement_terminator,
+                statement_terminator=statement_terminator,
                 style=style,
             )
         )
-    return "\n".join(lines)
+    return joiner.join(lines)
 
 
 @beartype
@@ -1743,6 +1748,7 @@ def _render_call_whole(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
+    as_expression: bool,
 ) -> str:
     """Render a single call from the whole parsed value.
 
@@ -1762,11 +1768,14 @@ def _render_call_whole(
         style=style,
         dict_open_overrides=[None],
     )
+    statement_terminator = (
+        "" if as_expression else language.statement_terminator
+    )
     return _assemble_call(
         target_function=target_function,
         args_str=args_str,
         call_transform=call_transform,
-        statement_terminator=language.statement_terminator,
+        statement_terminator=statement_terminator,
         style=style,
     )
 
@@ -1782,6 +1791,7 @@ def literalize_call(
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
+    as_expression: bool = False,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -1812,6 +1822,13 @@ def literalize_call(
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
+        as_expression: If ``True``, emit each call as a bare expression
+            rather than a statement: the language's
+            :attr:`~Language.statement_terminator` is suppressed and
+            per-element rows are joined with ``",\n"`` instead of
+            ``"\n"``, so the output drops straight into an outer
+            list / array / slice / vec literal without any
+            ``call_transform``.  Defaults to ``False``.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
@@ -1848,6 +1865,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            as_expression=as_expression,
         )
     else:
         result = _render_call_whole(
@@ -1857,6 +1875,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            as_expression=as_expression,
         )
     computed = compute_preamble(
         data=data_for_preamble,

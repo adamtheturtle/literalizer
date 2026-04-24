@@ -688,6 +688,8 @@ class _CallCaseConfig:
     ref_declarations: dict[str, str] = dataclasses.field(
         default_factory=dict[str, str],
     )
+    as_expression: bool = False
+    bare_output: bool = False
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -781,6 +783,16 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_as_expression",
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        as_expression=True,
+        bare_output=True,
     ),
     *[
         _CallCaseConfig(
@@ -2177,7 +2189,11 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
         )
 
     for call_case in _discover_call_cases():
-        ext = call_case.lang_cls.extension
+        ext = (
+            ".txt"
+            if call_case.config.bare_output
+            else call_case.lang_cls.extension
+        )
         golden_name = f"{call_case.lang_cls.__name__}_call"
         expected.add(
             cases_dir / call_case.config.case_dir_name / (golden_name + ext)
@@ -2341,10 +2357,11 @@ def _run_call_golden_case(
     variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
     ``ERROR`` strategy rejects).
     """
-    lang_cls = type(spec)
+    lang_cls: literalizer.LanguageCls = type(spec)  # pyright: ignore[reportAssignmentType]
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    extension = ".txt" if config.bare_output else lang_cls.extension
+    golden_path = input_path.parent / (golden_name + extension)
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
@@ -2366,12 +2383,29 @@ def _run_call_golden_case(
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
             per_element=config.per_element,
+            as_expression=config.as_expression,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_cls.__name__} cannot represent this heterogeneous input",
         )
+    if config.bare_output:
+        # Fragment-only golden: the raw ``literalize_call`` output
+        # without any ``wrap_in_file`` scaffolding or stubs.  Used to
+        # verify the per-language *string* produced by the flag
+        # (analogous to ``include_delimiters=False`` for
+        # ``literalize``) without requiring per-language compilable
+        # wrappings.  The ``.txt`` extension keeps these fragments
+        # outside every language's CI syntax-check ``find`` filter.
+        _check_golden(
+            file_regression=file_regression,
+            contents=result.bare_code + "\n",
+            extension=extension,
+            newline="",
+            golden_path=golden_path,
+        )
+        return
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
@@ -2434,7 +2468,7 @@ def _run_call_golden_case(
     _check_golden(
         file_regression=file_regression,
         contents=wrapped + "\n",
-        extension=lang_cls.extension,
+        extension=extension,
         newline="",
         golden_path=golden_path,
     )

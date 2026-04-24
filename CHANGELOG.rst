@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` now accepts an ``as_expression`` keyword argument.
+  When ``True``, each call is emitted without the language's
+  :attr:`~Language.statement_terminator` and per-element rows are
+  joined with ``",\n"`` instead of ``"\n"``, so the output drops
+  straight into an outer list / array / slice / vec literal without a
+  caller-supplied ``call_transform``.  Previously a trailing ``;`` was
+  always appended in typed-statement languages (Go, Java, Rust,
+  TypeScript, ...), yielding ``process(...),;`` — a syntax error
+  inside a list or array literal.  Defaults to ``False``, which
+  preserves the existing behaviour.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to
