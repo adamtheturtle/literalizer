@@ -500,8 +500,7 @@ class LanguageCls(type):
             namespace["format_call_ref_identifier"] = staticmethod(
                 identity_call_ref_identifier
             )
-        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
-        return cast("LanguageCls", cls)
+        return super().__new__(mcls, name, bases, namespace, **kwargs)
 
     @staticmethod
     def wrap_in_file(
@@ -1217,16 +1216,6 @@ class Language(Protocol):
         Most languages accept dotted member-access as-is and use
         :data:`identity_call_target`.  PHP overrides this to produce
         ``$app->client->fetch``.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    def format_call_ref_identifier(self, name: str, /) -> str:
-        """Rewrite one ``{"$ref": "name"}`` identifier for call sites.
-
-        Languages whose variable syntax decorates names (e.g.
-        Perl/PHP ``$name``, Common Lisp ``*name*``, Erlang capitalized
-        variables) override this so call-site refs match declaration
-        spelling.  The default leaves the identifier unchanged.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

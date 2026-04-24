@@ -1565,7 +1565,10 @@ def _format_call_args(
         "format_call_arg",
         _identity_call_arg,
     )
-    format_ref_identifier = language.format_call_ref_identifier
+    # Every LanguageCls injects this default via metaclass __new__;
+    # it's intentionally a class-level contract rather than a Protocol
+    # member to avoid duplicating the method across ~70 language files.
+    format_ref_identifier = language.format_call_ref_identifier  # type: ignore[attr-defined]
     formatted = [
         _format_single_call_arg(
             value=arg_value,
