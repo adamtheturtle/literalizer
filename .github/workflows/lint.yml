@@ -216,7 +216,7 @@ jobs:
       - name: Check Java syntax
         run: xargs -0 java CheckJavaSyntax.java < /tmp/files-to-lint
 
-  lint-c-syntax:
+  lint-c:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -1517,7 +1517,7 @@ jobs:
       - lint-jsonnet
       - lint-typescript
       - lint-java
-      - lint-c-syntax
+      - lint-c
       - lint-c-tidy
       - lint-cobol
       - lint-cpp
