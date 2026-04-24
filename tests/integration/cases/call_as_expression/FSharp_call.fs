@@ -5,6 +5,6 @@ type Val =
     | FInt of int64
     | FList of Val list
 let items: Val = FList [
-process(1, 42),
-process(2, 100)
+    process(1, 42);
+    process(2, 100)
 ]

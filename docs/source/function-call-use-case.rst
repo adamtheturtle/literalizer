@@ -146,12 +146,13 @@ By default each call is emitted as a standalone statement, so
 statement-terminated languages (Go, Java, Rust, TypeScript, ...) receive
 a trailing ``;`` and rows are joined with ``"\n"``.  Passing
 ``as_expression=True`` to :func:`~literalizer.literalize_call`
-suppresses the terminator and switches the per-element joiner to
-``",\n"``, so the output drops straight into an outer list, array, or
-slice literal without a caller-supplied ``call_transform``.  For
-example, a Go call to ``process`` over ``[[1, 2], [3, 4]]`` produces
-``process(1, 2),\nprocess(3, 4)`` — exactly what a ``[]any{ ... }``
-composite literal wants between its braces.
+suppresses the terminator and switches the per-element joiner to the
+language's sequence separator (``",\n"`` in most languages, ``";\n"``
+in F# / OCaml), so the output drops straight into an outer list,
+array, or slice literal without a caller-supplied ``call_transform``.
+For example, a Go call to ``process`` over ``[[1, 2], [3, 4]]``
+produces ``process(1, 2),\nprocess(3, 4)`` — exactly what a
+``[]any{ ... }`` composite literal wants between its braces.
 
 Callers who want an exotic separator (``";\n"``, ``" && "``, ...) can
 still reach for ``call_transform``; ``as_expression`` handles the

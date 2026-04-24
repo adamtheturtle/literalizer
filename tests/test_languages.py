@@ -578,8 +578,8 @@ def test_literalize_call_as_expression_variable_form_wraps_in_sequence() -> (
 
         func main() {
         items := []any{
-        process(1, 2),
-        process(3, 4),
+        \tprocess(1, 2),
+        \tprocess(3, 4),
         }
         _ = items
         }""",

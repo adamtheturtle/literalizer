@@ -1801,7 +1801,13 @@ def _render_call_per_element(
     statement_terminator = (
         "" if as_expression else language.statement_terminator
     )
-    joiner = ",\n" if as_expression else "\n"
+    # ``as_expression`` joins per-element calls with the language's
+    # sequence element separator (``", "`` in most languages, ``"; "``
+    # in F# / OCaml) so the output drops into the language's native
+    # list literal.
+    joiner = (
+        f"{language.element_separator.strip()}\n" if as_expression else "\n"
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1904,12 +1910,12 @@ def _wrap_call_result_in_file(
 
     Emits a no-op stub for ``target_function`` so the wrapped file
     compiles on its own.  ``StubReturn.VALUE`` is used whenever a
-    ``call_transform`` consumes the call's return value; otherwise the
-    call result is discarded and a void stub suffices.
+    ``call_transform`` consumes the call's return value or the output
+    is collected into a ``variable_form`` sequence literal; otherwise
+    the call result is discarded and a void stub suffices.
     """
-    stub_return = (
-        StubReturn.VALUE if call_transform is not None else StubReturn.VOID
-    )
+    returns_value = call_transform is not None or variable_form is not None
+    stub_return = StubReturn.VALUE if returns_value else StubReturn.VOID
     body_stubs = language.format_call_stub(
         raw_target_function, parameter_names, stub_return
     )
@@ -1950,11 +1956,24 @@ def _wrap_calls_in_variable_form(
     """
     opener = language.sequence_open([])
     closer = language.sequence_format_config.close
-    body = (
-        f"{result},"
-        if language.sequence_format_config.supports_trailing_comma
-        else result
+    # Go and a handful of other languages reject a newline between the
+    # last element and the closing delimiter without a trailing
+    # separator in a multi-line composite literal; others such as
+    # Haskell and F# reject the trailing separator outright.
+    # ``multiline_trailing_comma`` captures languages that accept or
+    # require it; the separator character comes from the language's
+    # ``element_separator`` so F# and OCaml get ``;`` rather than ``,``.
+    trailing = (
+        language.element_separator.strip()
+        if language.trailing_comma_config.multiline_trailing_comma
+        else ""
     )
+    # Indent each rendered call by the language's standard indent so
+    # off-side layouts (F#, Haskell) parse the rows as list elements
+    # rather than top-level statements.
+    indent = language.indent
+    indented = "\n".join(indent + line for line in result.split(sep="\n"))
+    body = f"{indented}{trailing}"
     wrapped_value = f"{opener}\n{body}\n{closer}"
     match variable_form:
         case NewVariable(name=name, modifiers=modifiers):
@@ -2035,10 +2054,11 @@ def literalize_call(
         as_expression: If ``True``, emit each call as a bare expression
             rather than a statement: the language's
             :attr:`~Language.statement_terminator` is suppressed and
-            per-element rows are joined with ``",\n"`` instead of
-            ``"\n"``, so the output drops straight into an outer
-            collection literal without any ``call_transform``.
-            Defaults to ``False``.
+            per-element rows are joined with the language's sequence
+            ``element_separator`` (``",\n"`` for most languages,
+            ``";\n"`` for F# / OCaml) instead of ``"\n"``, so the
+            output drops straight into an outer collection literal
+            without any ``call_transform``.  Defaults to ``False``.
         variable_form: Optional wrapper that collects the per-call
             expressions into a language-native sequence literal and
             binds it to a variable.  Only meaningful with

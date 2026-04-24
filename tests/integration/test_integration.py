@@ -38,6 +38,7 @@ from literalizer.languages import (
     ALL_LANGUAGES,
     C,
     CommonLisp,
+    Cpp,
     Crystal,
     CSharp,
     Dart,
@@ -2467,6 +2468,23 @@ class _CallCase:
     lang_cls: literalizer.LanguageCls
 
 
+_VariantIncompatible = frozenset[literalizer.LanguageCls]
+_CALL_AS_EXPRESSION_VARIANT_INCOMPATIBLE: _VariantIncompatible = frozenset(
+    {
+        # Cpp's ``std::vector<std::nullptr_t>`` generic opener rejects
+        # the ``int``-returning stub used by ``call_as_expression``
+        # variable-form wrapping.
+        Cpp,
+        # Gleam's ``GList(List(GVal))`` generic opener accepts only
+        # ``GVal`` elements; the call stub returns ``Nil``.
+        Gleam,
+        # Haskell's ``HList [Val]`` generic opener accepts pure ``Val``
+        # elements; the call stub returns ``IO Val``.
+        Haskell,
+    },
+)
+
+
 @functools.cache
 @beartype
 def _discover_call_cases() -> list[_CallCase]:
@@ -2480,6 +2498,11 @@ def _discover_call_cases() -> list[_CallCase]:
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
             if config.ref_declarations and lang_cls in _REF_CASE_INCOMPATIBLE:
+                continue
+            if (
+                config.variable_form_name is not None
+                and lang_cls in _CALL_AS_EXPRESSION_VARIANT_INCOMPATIBLE
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a

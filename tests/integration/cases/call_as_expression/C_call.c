@@ -14,11 +14,11 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void process(CVal, CVal);
+CVal process(CVal, CVal);
 void check_(void) {
 CVal items = ((CVal){.a = (CVal[]){
-process(((CVal){.i = 1}), ((CVal){.i = 42})),
-process(((CVal){.i = 2}), ((CVal){.i = 100})),
+    process(((CVal){.i = 1}), ((CVal){.i = 42})),
+    process(((CVal){.i = 2}), ((CVal){.i = 100})),
 }});
     (void)items;
 }

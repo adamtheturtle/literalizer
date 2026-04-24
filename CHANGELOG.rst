@@ -7,12 +7,13 @@ Next
 - ``literalize_call`` now accepts an ``as_expression`` keyword argument.
   When ``True``, each call is emitted without the language's
   :attr:`~Language.statement_terminator` and per-element rows are
-  joined with ``",\n"`` instead of ``"\n"``, so the output drops
-  straight into an outer list, array, or slice literal without a
-  caller-supplied ``call_transform``.  Previously a trailing ``;`` was
-  always appended in typed-statement languages (Go, Java, Rust,
-  TypeScript, ...), yielding ``process(...),;`` — a syntax error
-  inside a list or array literal.  Defaults to ``False``, which
+  joined with the language's sequence separator (``",\n"`` for most
+  languages, ``";\n"`` for F# / OCaml) instead of ``"\n"``, so the
+  output drops straight into an outer list, array, or slice literal
+  without a caller-supplied ``call_transform``.  Previously a trailing
+  ``;`` was always appended in typed-statement languages (Go, Java,
+  Rust, TypeScript, ...), yielding ``process(...),;`` — a syntax
+  error inside a list or array literal.  Defaults to ``False``, which
   preserves the existing behavior.  ``as_expression=True`` now raises
   ``AsExpressionNotSupportedError`` for languages whose call syntax is
   whitespace-separated (Bash, Forth, Clojure, CommonLisp, Racket) —
