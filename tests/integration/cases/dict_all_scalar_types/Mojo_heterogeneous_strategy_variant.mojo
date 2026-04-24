@@ -1,0 +1,13 @@
+alias Value = Variant[String, Int, Float64, Bool, NoneType]
+def main():
+    var my_data = {
+        "s": Value(String("string")),
+        "i": Value(1),
+        "f": Value(Float64(1.5)),
+        "b": Value(True),
+        "n": Value(None),
+        "d": Value(String("2024-01-15")),
+        "dt": Value(String("2024-01-15T12:00:00")),
+        "by": Value(String("48656c6c6f")),
+    }
+    _ = my_data

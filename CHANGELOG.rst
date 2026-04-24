@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- ``Mojo`` now supports an opt-in
+  ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an
+  auto-generated ``alias Value = Variant[...]`` over only the Mojo
+  types actually present in the data.  Each wrapped scalar renders as
+  ``Value(...)`` (with an explicit ``String(...)`` or ``Float64(...)``
+  cast when needed to select the intended Variant alternative), so
+  heterogeneous dicts and lists become homogeneous in the Variant
+  type.  The alias name is configurable via
+  ``Mojo.heterogeneous_value_variant_name`` (default ``"Value"``).
+  The default ``ERROR`` strategy still raises on heterogeneous input.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to
