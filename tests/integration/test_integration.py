@@ -317,6 +317,27 @@ def _dedupe_ordered(*, lines: Iterable[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
+@beartype
+def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
+    """Return preamble *blocks* with duplicate headers removed.
+
+    Some languages emit multi-line preamble blocks whose first line is a
+    stable header (for example, ``pub type GVal {`` in Gleam). When the
+    call-test harness combines declaration preambles with call
+    preambles, the same header can appear multiple times with identical
+    bodies. Keep the first block per header.
+    """
+    seen: set[str] = set()
+    result: list[str] = []
+    for block in blocks:
+        header = block.splitlines()[0] if block else ""
+        if header in seen:
+            continue
+        seen.add(header)
+        result.append(block)
+    return tuple(result)
+
+
 @dataclasses.dataclass
 class _Variant:
     """A formatting variant for a language (date, sequence, set, etc.)."""
@@ -2584,8 +2605,8 @@ def _run_call_golden_case(
         variable_name="",
         body_preamble=call_body_preamble,
     )
-    all_preamble = _dedupe_ordered(
-        lines=decl_preambles + result.preamble + tuple(preamble_stubs)
+    all_preamble = _dedupe_preamble_blocks(
+        blocks=decl_preambles + result.preamble + tuple(preamble_stubs)
     )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     _check_golden(

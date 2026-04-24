@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -59,7 +60,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     no_call_stub,
-    no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
     prepend_body_preamble,
@@ -366,6 +366,90 @@ def _gleam_format_call_target(name: str) -> str:
 
 
 @beartype
+def _scalar_gleam_type(*, value: Value) -> type:
+    """Return the preamble-relevant type bucket for a scalar *value*."""
+    if isinstance(value, datetime.datetime):
+        return datetime.datetime
+    if isinstance(value, datetime.date):
+        return datetime.date
+    if value is None:
+        return type(None)
+    return type(value)
+
+
+@beartype
+def _collect_gleam_types(*, value: Value) -> frozenset[type]:
+    """Return the set of Python types present in *value*.
+
+    Walks lists, dicts, and sets recursively, collecting the scalar
+    types needed to decide which ``GVal`` constructors to emit.
+    """
+    match value:
+        case ordereddict() | dict():
+            child: frozenset[type] = frozenset()
+            for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+                child = child | _collect_gleam_types(value=v)  # pyright: ignore[reportUnknownArgumentType]
+            return frozenset({dict}) | child
+        case set():
+            child = frozenset()
+            for v in value:
+                child = child | _collect_gleam_types(value=v)
+            return frozenset({set}) | child
+        case list():
+            child = frozenset()
+            for v in value:
+                child = child | _collect_gleam_types(value=v)
+            return frozenset({list}) | child
+        case _:
+            return frozenset({_scalar_gleam_type(value=value)})
+
+
+@beartype
+def _build_gleam_data_dependent_preamble(
+    *,
+    type_name: str,
+    constructor_prefix: str,
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build a ``data_dependent_preamble`` callable for Gleam.
+
+    The callable walks *data* to collect the scalar types present and
+    emits a ``pub type`` declaration containing only the constructors
+    that are actually needed.
+    """
+
+    def _compute(data: Value, /) -> tuple[str, ...]:
+        """Return the ``pub type`` declaration for *data*."""
+        types = _collect_gleam_types(value=data)
+        p = constructor_prefix
+        constructors = [
+            constructor
+            for type_set, constructor in (
+                (frozenset({type(None)}), f"{p}Null"),
+                (frozenset({bool}), f"{p}Bool(Bool)"),
+                (frozenset({int}), f"{p}Int(Int)"),
+                (frozenset({float}), f"{p}Float(Float)"),
+                (
+                    frozenset(
+                        {str, bytes, datetime.date, datetime.datetime},
+                    ),
+                    f"{p}Str(String)",
+                ),
+                (frozenset({list}), f"{p}List(List({type_name}))"),
+                (
+                    frozenset({dict, ordereddict}),
+                    f"{p}Dict(List(#(String, {type_name})))",
+                ),
+                (frozenset({set}), f"{p}Set(List({type_name}))"),
+            )
+            if types & type_set
+        ]
+        body = "\n".join(f"  {c}" for c in constructors)
+        return (f"pub type {type_name} {{\n{body}\n}}",)
+
+    return _compute
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Gleam(metaclass=LanguageCls):
     """Gleam language specification.
@@ -373,23 +457,14 @@ class Gleam(metaclass=LanguageCls):
     The generated output uses custom constructors (``GNull``, ``GBool``,
     ``GList``, ``GDict``, ``GSet``) that are **not** built-in Gleam types.
     To compile the generated code, a ``GVal`` custom type is emitted in
-    the body preamble:
+    the body preamble, containing only the constructors actually used by
+    the data.  For example, data consisting solely of an integer yields:
 
     .. code-block:: gleam
 
-       type GVal {
-         GNull
-         GBool(Bool)
+       pub type GVal {
          GInt(Int)
-         GFloat(Float)
-         GStr(String)
-         GList(List(GVal))
-         GDict(List(#(String, GVal)))
-         GSet(List(GVal))
        }
-
-    The body preamble automatically emits only the constructors that are
-    actually used by the data.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
@@ -798,8 +873,11 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return the ``pub type`` declaration tailored to *data*."""
+        return _build_gleam_data_dependent_preamble(
+            type_name=self.type_name,
+            constructor_prefix=self.constructor_prefix,
+        )
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -1007,35 +1085,8 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble with Gleam type declaration."""
-        p = self.constructor_prefix
-        return dict.fromkeys(
-            (
-                type(None),
-                bool,
-                int,
-                float,
-                str,
-                bytes,
-                datetime.date,
-                datetime.datetime,
-                list,
-                dict,
-                set,
-            ),
-            (
-                f"pub type {self.type_name} {{\n"
-                f"  {p}Null\n"
-                f"  {p}Bool(Bool)\n"
-                f"  {p}Int(Int)\n"
-                f"  {p}Float(Float)\n"
-                f"  {p}Str(String)\n"
-                f"  {p}List(List({self.type_name}))\n"
-                f"  {p}Dict(List(#(String, {self.type_name})))\n"
-                f"  {p}Set(List({self.type_name}))\n"
-                "}",
-            ),
-        )
+        """Per-instance scalar preamble (Gleam needs none)."""
+        return {}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:

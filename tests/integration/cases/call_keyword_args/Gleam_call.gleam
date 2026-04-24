@@ -1,12 +1,7 @@
 pub type GVal {
-  GNull
-  GBool(Bool)
-  GInt(Int)
   GFloat(Float)
   GStr(String)
   GList(List(GVal))
-  GDict(List(#(String, GVal)))
-  GSet(List(GVal))
 }
 pub fn throttler_check(_user_id: a, _ts: b) -> Nil { panic }
 pub fn emit(__arg: a) -> Nil { panic }
