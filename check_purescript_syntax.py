@@ -4,33 +4,20 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import textwrap
 from pathlib import Path
+
+from purescript_common import PRELUDE_JS, PRELUDE_PURS
 
 
 def main() -> None:
     """Check syntax of a single PureScript file."""
-    prelude_purs_content = textwrap.dedent(
-        text="""\
-        module Prelude where
-        foreign import negate :: forall a. a -> a
-        foreign import div :: forall a. a -> a -> a
-        infixl 7 div as /
-        """,
-    )
-    prelude_js_content = textwrap.dedent(
-        text="""\
-        export const negate = x => -x;
-        export const div = x => y => x / y;
-        """,
-    )
     filename = sys.argv[1]
     purs_path: str = shutil.which(cmd="purs") or "purs"
     with tempfile.TemporaryDirectory() as tmpdir:
         prelude_purs = Path(tmpdir) / "Prelude.purs"
         prelude_js = Path(tmpdir) / "Prelude.js"
-        prelude_purs.write_text(data=prelude_purs_content, encoding="utf-8")
-        prelude_js.write_text(data=prelude_js_content, encoding="utf-8")
+        prelude_purs.write_text(data=PRELUDE_PURS, encoding="utf-8")
+        prelude_js.write_text(data=PRELUDE_JS, encoding="utf-8")
         output_dir = Path(tmpdir) / "output"
 
         result = subprocess.run(

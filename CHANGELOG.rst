@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- ``lint-purescript`` in ``.github/workflows/lint.yml`` now runs each
+  PureScript fixture end-to-end.  A new ``Run PureScript files`` step
+  compiles each fixture with ``purs compile`` and loads the resulting
+  ``Check`` module in Node so its top-level ``my_data`` binding is
+  evaluated, catching foreign-implementation failures and other
+  load-time crashes that the existing ``check_purescript_syntax.py``
+  compile-only check would miss.  The shared Prelude stub used by both
+  steps lives in a new ``purescript_common.py`` module.
 - Added a ``benchmarks`` job to ``.github/workflows/ci.yml`` that runs
   the ``tests/benchmarks/`` suite under `CodSpeed
   <https://codspeed.io>`_ via ``pytest-codspeed``.  The job posts a
