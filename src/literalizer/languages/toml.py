@@ -306,14 +306,9 @@ class Toml(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        SNAKE = IdentifierCase.SNAKE
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 

@@ -850,16 +850,11 @@ class Java(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        CAMEL = IdentifierCase.CAMEL
-        PASCAL = IdentifierCase.PASCAL
-        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.CAMEL,
+        IdentifierCase.PASCAL,
+        IdentifierCase.UPPER_SNAKE,
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

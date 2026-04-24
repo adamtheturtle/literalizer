@@ -296,14 +296,9 @@ class Clojure(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        KEBAB = IdentifierCase.KEBAB
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.KEBAB,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 

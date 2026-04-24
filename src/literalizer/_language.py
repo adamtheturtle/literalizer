@@ -441,7 +441,7 @@ class LanguageCls(type):
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
-    IdentifierCases: type[enum.Enum]
+    identifier_cases: tuple[IdentifierCase, ...]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
     extension: str
     pygments_name: str | None
@@ -657,17 +657,16 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def identifier_cases(self) -> type[enum.Enum]:
-        """Enum class whose members list the identifier case conventions
-        this language supports for ``$ref`` conversion.
+    def identifier_cases(self) -> tuple[IdentifierCase, ...]:
+        """Identifier case conventions this language supports for
+        ``$ref`` conversion.
 
-        Each member's value is a :class:`IdentifierCase` naming a
-        convention (e.g. ``CAMEL``, ``SNAKE``).  Passing a
-        :class:`IdentifierCase` to
-        :func:`~literalizer.literalize_call` via ``ref_case`` is
+        Ordered by idiomatic preference — the first element is the
+        language's default case.  Passing a :class:`IdentifierCase`
+        to :func:`~literalizer.literalize_call` via ``ref_case`` is
         rejected with
         :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
-        unless the language's ``identifier_cases`` exposes that value.
+        unless it is in this tuple.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

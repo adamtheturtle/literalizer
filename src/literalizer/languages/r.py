@@ -369,16 +369,11 @@ class R(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        SNAKE = IdentifierCase.SNAKE
-        CAMEL = IdentifierCase.CAMEL
-        PASCAL = IdentifierCase.PASCAL
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.CAMEL,
+        IdentifierCase.PASCAL,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 

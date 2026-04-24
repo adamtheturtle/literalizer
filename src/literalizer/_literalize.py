@@ -1855,13 +1855,11 @@ def literalize_call(
         case _ as style:
             pass
 
-    if ref_case is not None:
-        supported = {member.value for member in language.identifier_cases}
-        if ref_case not in supported:
-            raise UnsupportedIdentifierCaseError(
-                language_name=type(language).__name__,
-                case_name=ref_case.name,
-            )
+    if ref_case is not None and ref_case not in language.identifier_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
 
     target_function = language.format_call_target(target_function)
 

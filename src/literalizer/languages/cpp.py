@@ -1153,17 +1153,12 @@ class Cpp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        SNAKE = IdentifierCase.SNAKE
-        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
-        PASCAL = IdentifierCase.PASCAL
-        CAMEL = IdentifierCase.CAMEL
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+        IdentifierCase.CAMEL,
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

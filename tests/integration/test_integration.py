@@ -2391,15 +2391,15 @@ def _run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
-        # First-listed ``identifier_cases`` member is the language's
+        # First element of ``identifier_cases`` is the language's
         # default — convert declaration names to that case so the
         # ref-site and declaration-site spellings agree.
-        first_case_value = next(iter(spec.identifier_cases)).value
-        assert isinstance(first_case_value, literalizer.IdentifierCase)
-        effective_ref_case = first_case_value
+        default_case = spec.identifier_cases[0]
+        effective_ref_case = default_case
         declarations = {
-            effective_ref_case.convert(name=ref_name): ref_source
+            default_case.convert(name=ref_name): ref_source
             for ref_name, ref_source in config.ref_declarations.items()
         }
     else:

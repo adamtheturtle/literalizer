@@ -429,15 +429,10 @@ class Julia(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        SNAKE = IdentifierCase.SNAKE
-        PASCAL = IdentifierCase.PASCAL
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.PASCAL,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 

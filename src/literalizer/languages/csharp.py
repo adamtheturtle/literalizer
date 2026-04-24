@@ -584,16 +584,11 @@ class CSharp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        PASCAL = IdentifierCase.PASCAL
-        CAMEL = IdentifierCase.CAMEL
-        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.PASCAL,
+        IdentifierCase.CAMEL,
+        IdentifierCase.UPPER_SNAKE,
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

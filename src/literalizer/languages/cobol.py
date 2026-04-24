@@ -452,14 +452,9 @@ class Cobol(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class IdentifierCases(enum.Enum):
-        """Identifier case conventions supported for ``$ref``
-        conversion.
-        """
-
-        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
-
-    identifier_cases = IdentifierCases
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.UPPER_SNAKE,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
