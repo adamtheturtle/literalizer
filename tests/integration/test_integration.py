@@ -2306,8 +2306,8 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
 # itself), so only languages whose per-language CI syntax check tolerates
 # unresolved names are included.
 #
-# * :class:`Go` covers the branch that prepends a static preamble
-#   (``package main``).
+# * :class:`Go` covers the branch that emits a static preamble
+#   (``package main``) before the wrapped content.
 # * :class:`Python` covers the no-preamble branch.
 _WRAP_IN_FILE_SUPPORTED_LANGUAGES: frozenset[literalizer.LanguageCls] = (
     frozenset({Go, Python})
@@ -2383,24 +2383,19 @@ def _run_call_golden_case(
         # ``literalize_call`` does the wrapping itself, so there is no
         # place to inject stubs for the target function — the case is
         # restricted at discovery time to languages whose CI syntax
-        # check tolerates the unresolved name.
-        try:
-            wrap_result = literalizer.literalize_call(
-                source=yaml_string,
-                input_format=literalizer.InputFormat.YAML,
-                language=spec,
-                target_function=config.target_function,
-                parameter_names=config.parameter_names,
-                call_transform=config.call_transform,
-                per_element=config.per_element,
-                wrap_in_file=True,
-            )
-        except HeterogeneousCollectionError:
-            golden_path.unlink(missing_ok=True)
-            pytest.skip(
-                f"{lang_cls.__name__} cannot represent this "
-                "heterogeneous input",
-            )
+        # check tolerates the unresolved name.  The supported-language
+        # set plus homogeneous inputs means ``HeterogeneousCollectionError``
+        # cannot be raised here.
+        wrap_result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+            wrap_in_file=True,
+        )
         _check_golden(
             file_regression=file_regression,
             contents=wrap_result.code + "\n",
