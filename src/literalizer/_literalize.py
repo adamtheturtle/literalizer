@@ -23,12 +23,15 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     CallStyle,
     CallSupport,
+    CommandCallStyle,
+    IdentifierCase,
     KeywordCallStyle,
     Language,
     ObjectCallStyle,
     PositionalCallStyle,
     PostfixCallStyle,
     PrefixCallStyle,
+    StubReturn,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -38,6 +41,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedIdentifierCaseError,
 )
 
 
@@ -1153,7 +1157,7 @@ def _literalize_pre_form(
     )
 
     resolved: ResolvedComments | None = None
-    if input_format is InputFormat.YAML:
+    if input_format is InputFormat.YAML and parsed.yaml_needs_comment_resolve:
         comment_cfg = language.comment_config
         cp = comment_cfg.prefix
         cs = comment_cfg.suffix
@@ -1498,15 +1502,20 @@ def _format_single_call_arg(
     wrap_ids: frozenset[int],
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format one argument value for a function call.
 
     A ``{"$ref": "name"}`` marker renders as the bare identifier; the
     ``format_call_arg`` hook is skipped for refs because the referenced
-    variable already has the call's parameter type.
+    variable already has the call's parameter type.  When *ref_case*
+    is not ``None``, the ref name is converted to that case before
+    being emitted.
     """
     ref_name = _extract_call_arg_ref_name(value=value)
     if ref_name is not None:
+        if ref_case is not None:
+            return ref_case.convert(name=ref_name)
         return ref_name
     return wrap_arg(
         value,
@@ -1529,6 +1538,7 @@ def _format_call_args(
     wrap_ids: frozenset[int],
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format argument values for a single function call.
 
@@ -1545,6 +1555,9 @@ def _format_call_args(
     *dict_open_overrides* supplies a per-positional dict opener so that
     dict arguments at the same slot across sibling calls share a
     widened type.  ``None`` at a given position means "no override".
+
+    *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
+    identifier to that :class:`IdentifierCase` before emitting it.
     """
     wrap_arg: Callable[[Value, str], str] = getattr(
         language,
@@ -1558,6 +1571,7 @@ def _format_call_args(
             wrap_ids=wrap_ids,
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
+            ref_case=ref_case,
         )
         for slot_index, arg_value in enumerate(iterable=values)
     ]
@@ -1585,7 +1599,10 @@ def _format_call_args(
                 for name, val in zip(params, formatted, strict=True)
             )
             return f"({{ {named} }})"
-        case PostfixCallStyle(arg_separator=sep):
+        case (
+            PostfixCallStyle(arg_separator=sep)
+            | CommandCallStyle(arg_separator=sep)
+        ):
             return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
             if len(params) != len(formatted):
@@ -1621,6 +1638,86 @@ def _extract_call_transform_wrapper(
 
 
 @beartype
+def _assemble_postfix_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+) -> str:
+    """Build ``args target`` for :class:`PostfixCallStyle`.
+
+    With a wrapper transform the wrapper word is appended postfix,
+    so the result is e.g. ``args target emit``.
+    """
+    call_expr = (
+        f"{args_str} {target_function}" if args_str else target_function
+    )
+    if call_transform is not None:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if wrapper:
+            call_expr = f"{call_expr} {wrapper}"
+    return call_expr
+
+
+@beartype
+def _assemble_prefix_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+    arg_separator: str,
+) -> str:
+    """Build ``(target args)`` for :class:`PrefixCallStyle`.
+
+    With a wrapper transform the result is e.g.
+    ``(emit (target args))``.
+    """
+    inside = (
+        f"{target_function}{arg_separator}{args_str}"
+        if args_str
+        else target_function
+    )
+    call_expr = f"({inside})"
+    if call_transform is not None:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if wrapper:
+            call_expr = f"({wrapper}{arg_separator}{call_expr})"
+    return call_expr
+
+
+@beartype
+def _assemble_command_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[str], str] | None,
+    arg_separator: str,
+) -> str:
+    """Build ``target arg1 arg2`` for :class:`CommandCallStyle`.
+
+    With a wrapper transform the inner call is captured via ``$(...)``
+    and passed as a quoted argument to the wrapper, e.g.
+    ``emit "$(target arg1 arg2)"``.
+    """
+    call_expr = (
+        f"{target_function}{arg_separator}{args_str}"
+        if args_str
+        else target_function
+    )
+    if call_transform is not None:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if wrapper:
+            call_expr = f'{wrapper} "$({call_expr})"'
+    return call_expr
+
+
+@beartype
 def _assemble_call(
     *,
     target_function: str,
@@ -1631,42 +1728,34 @@ def _assemble_call(
 ) -> str:
     """Build one complete call statement.
 
-    Infix styles produce ``target(args)``.  :class:`PostfixCallStyle`
-    produces ``args target``; when a *call_transform* like
-    ``lambda c: f"emit({c})"`` is provided, the wrapper word is
-    extracted via a sentinel and appended postfix, so the result is
-    e.g. ``args target emit``.
+    Dispatches to a per-style helper and appends the language's
+    statement terminator.
     """
     match style:
         case PostfixCallStyle():
-            call_expr = (
-                f"{args_str} {target_function}"
-                if args_str
-                else target_function
+            call_expr = _assemble_postfix_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
             )
-            if call_transform is not None:
-                wrapper = _extract_call_transform_wrapper(
-                    call_transform=call_transform,
-                )
-                if wrapper:
-                    call_expr = f"{call_expr} {wrapper}"
         case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
             call_expr = f"{target_function}{args_str}"
             if call_transform is not None:
                 call_expr = call_transform(call_expr)
         case PrefixCallStyle(arg_separator=sep):
-            inside = (
-                f"{target_function}{sep}{args_str}"
-                if args_str
-                else target_function
+            call_expr = _assemble_prefix_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                arg_separator=sep,
             )
-            call_expr = f"({inside})"
-            if call_transform is not None:
-                wrapper = _extract_call_transform_wrapper(
-                    call_transform=call_transform,
-                )
-                if wrapper:
-                    call_expr = f"({wrapper}{sep}{call_expr})"
+        case CommandCallStyle(arg_separator=sep):
+            call_expr = _assemble_command_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                arg_separator=sep,
+            )
         case _ as unreachable:
             assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
@@ -1681,6 +1770,7 @@ def _render_call_per_element(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -1701,6 +1791,11 @@ def _render_call_per_element(
         elements=data,
         spec=language,
     )
+    validate_call_arg: Callable[[Value], None] | None = getattr(
+        language,
+        "validate_call_arg",
+        None,
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1711,6 +1806,8 @@ def _render_call_per_element(
         ]
         for value in non_ref_args:
             check_data(data=value, spec=language)
+            if validate_call_arg is not None:
+                validate_call_arg(value)
         call_wrap_ids = (
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
@@ -1721,6 +1818,7 @@ def _render_call_per_element(
             wrap_ids=call_wrap_ids,
             style=style,
             dict_open_overrides=slot_overrides,
+            ref_case=ref_case,
         )
         lines.append(
             _assemble_call(
@@ -1743,6 +1841,7 @@ def _render_call_whole(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Render a single call from the whole parsed value.
 
@@ -1751,6 +1850,13 @@ def _render_call_whole(
     """
     if _extract_call_arg_ref_name(value=data) is None:
         check_data(data=data, spec=language)
+        validate_call_arg: Callable[[Value], None] | None = getattr(
+            language,
+            "validate_call_arg",
+            None,
+        )
+        if validate_call_arg is not None:
+            validate_call_arg(data)
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
@@ -1761,6 +1867,7 @@ def _render_call_whole(
         wrap_ids=call_wrap_ids,
         style=style,
         dict_open_overrides=[None],
+        ref_case=ref_case,
     )
     return _assemble_call(
         target_function=target_function,
@@ -1782,6 +1889,7 @@ def literalize_call(
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
+    ref_case: IdentifierCase | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -1807,11 +1915,27 @@ def literalize_call(
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
-            complete, valid source file using the language's
-            ``wrap_in_file`` method and prepend :attr:`preamble`.
+            complete, self-contained source file using the language's
+            ``wrap_in_file`` method and prepend :attr:`preamble`.  A
+            no-op stub for *target_function* is also injected so the
+            generated file does not reference an undefined name; when
+            a *call_transform* is supplied the wrapper name it
+            introduces is not stubbed — callers that transform calls
+            are responsible for providing that definition themselves.
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
+        ref_case: Optional :class:`IdentifierCase` controlling how
+            ``{"$ref": "name"}`` identifiers are cased in the
+            rendered output.  When ``None`` (default) ref names are
+            emitted verbatim.  When set, each ref identifier is
+            normalized to ``snake_case`` and then converted to the
+            requested case via ``pyhumps``, so the same source can
+            drive idiomatic identifiers across multiple languages.
+            When *language*'s ``identifier_cases`` does not expose
+            the requested case,
+            :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
+            is raised.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
@@ -1827,6 +1951,12 @@ def literalize_call(
         case _ as style:
             pass
 
+    raw_target_function = target_function
+    if ref_case is not None and ref_case not in language.identifier_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
     target_function = language.format_call_target(target_function)
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
@@ -1848,6 +1978,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            ref_case=ref_case,
         )
     else:
         result = _render_call_whole(
@@ -1857,6 +1988,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            ref_case=ref_case,
         )
     computed = compute_preamble(
         data=data_for_preamble,
@@ -1870,13 +2002,29 @@ def literalize_call(
     )
 
     if wrap_in_file:
+        # Emit a no-op stub for ``target_function`` so the wrapped file
+        # compiles on its own.  ``StubReturn.VALUE`` is used whenever a
+        # ``call_transform`` consumes the call's return value; otherwise
+        # the call result is discarded and a void stub suffices.
+        stub_return = (
+            StubReturn.VALUE if call_transform is not None else StubReturn.VOID
+        )
+        body_stubs = language.format_call_stub(
+            raw_target_function, parameter_names, stub_return
+        )
+        preamble_stubs = language.format_call_preamble_stub(
+            raw_target_function, parameter_names, stub_return
+        )
         wrapped = language.wrap_in_file(
             content=result,
             variable_name="",
-            body_preamble=computed.body,
+            body_preamble=body_stubs + computed.body,
         )
-        if preamble:
-            wrapped = "\n".join(preamble) + "\n" + wrapped
+        # Stubs follow the language's static preamble (e.g. Go's
+        # ``package main`` must come first).
+        full_preamble = preamble + preamble_stubs
+        if full_preamble:
+            wrapped = "\n".join(full_preamble) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
             preamble=(),

@@ -50,6 +50,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
@@ -83,24 +84,26 @@ def _format_crystal_i128_literal(value: int) -> str:
 
 @beartype
 def _crystal_call_stub(
-    name: str, _params: Sequence[str], _stub_return: StubReturn, /
+    name: str, params: Sequence[str], _stub_return: StubReturn, /
 ) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
+    param_list = ", ".join(f"{param} = nil" for param in params)
+    method_stub = f"def {{name}}({param_list}); 0; end"
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"def {parts[0]}(*a, **kw); 0; end",)
+        return (method_stub.format(name=parts[0]),)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if not fields:
         cls = root.capitalize() + "Type_"
         return (
-            f"class {cls}; def {method}(*a, **kw); 0; end; end",
+            f"class {cls}; {method_stub.format(name=method)}; end",
             f"{root} = {cls}.new",
         )
     lines: list[str] = []
     inner_cls = fields[-1].capitalize() + "Type_"
-    lines.append(f"class {inner_cls}; def {method}(*a, **kw); 0; end; end")
+    lines.append(f"class {inner_cls}; {method_stub.format(name=method)}; end")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = fields[i].capitalize() + "Type_"
@@ -389,6 +392,12 @@ class Crystal(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 

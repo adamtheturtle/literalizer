@@ -27,10 +27,16 @@ dynamic = [
 ]
 dependencies = [
     "beartype>=0.22.9,<1",
+    "pyhumps>=3.8",
     "pyjson5>=2",
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
     # which has a maximum ruamel.yaml version of 0.18.16.
     "ruamel-yaml>=0.18.16",
+    # ruamel.yaml.clib backs the ``typ='safe', pure=False`` loader used by
+    # the comment-free YAML fast path in ``_parse_yaml``.  ruamel.yaml does
+    # not depend on it directly, so we pin it here to guarantee the fast
+    # path is available on every platform where a wheel is published.
+    "ruamel-yaml-clib>=0.2.15; platform_python_implementation=='CPython'",
     "tomlkit>=0.12",
 ]
 optional-dependencies.dev = [
@@ -412,6 +418,7 @@ ignore_names = [
     "OBJECT_VARIANT",
     "TAGGED_ENUM",
     "UNION_TYPE",
+    "VARIANT",
     "CONST",
     "CONTAINERS_MAP",
     "DICTIONARY",

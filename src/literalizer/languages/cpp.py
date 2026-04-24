@@ -56,6 +56,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
@@ -1151,6 +1152,13 @@ class Cpp(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+        IdentifierCase.CAMEL,
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

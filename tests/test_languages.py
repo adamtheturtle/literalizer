@@ -13,6 +13,7 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import (
     BothVariableForms,
+    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
@@ -22,20 +23,25 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     HeterogeneousBehavior,
     LanguageCls,
+    StubReturn,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     NullInCollectionError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedIdentifierCaseError,
 )
 from literalizer.languages import (
+    Bash,
     Cobol,
     Dart,
     Fortran,
     FSharp,
+    Gleam,
     Go,
     Java,
     JavaScript,
@@ -475,17 +481,14 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
     assert not result.preamble
 
 
-def test_literalize_call_wrap_in_file() -> None:
-    """Literalize_call with wrap_in_file returns a complete file.
-
-    Integration tests compose ``wrap_in_file`` manually around
-    ``literalize_call(..., wrap_in_file=False)`` so they can stub the
-    target function; this unit test keeps coverage on the
-    ``wrap_in_file=True`` branch of :func:`literalize_call` itself.
+def test_literalize_call_wrap_in_file_emits_stubs() -> None:
+    """``wrap_in_file=True`` produces a self-contained file that
+    defines the ``target_function`` so the output compiles on its own.
     """
-    # Go has a static preamble ("package main") — covers the preamble
-    # prepend branch.
-    result = literalize_call(
+    # Go: stub lands in the file-scope preamble (Go can't declare
+    # functions inside ``main``).  The static ``package main`` preamble
+    # is also prepended.
+    go_result = literalize_call(
         source="[[1, 2]]",
         input_format=InputFormat.JSON,
         language=Go(),
@@ -493,12 +496,22 @@ def test_literalize_call_wrap_in_file() -> None:
         parameter_names=["a", "b"],
         wrap_in_file=True,
     )
-    expected = "package main\n\nfunc main() {\nprocess(1, 2);\n}"
-    assert result.code == expected
-    assert not result.preamble
-    assert not result.body_preamble
-    # Python has no static preamble — covers the no-preamble branch.
-    result_no_preamble = literalize_call(
+    expected_go = textwrap.dedent(
+        text="""\
+        package main
+        func process(args ...any) any { return nil }
+
+        func main() {
+        process(1, 2);
+        }""",
+    )
+    assert go_result.code == expected_go
+    assert not go_result.preamble
+    assert not go_result.body_preamble
+    # Python: stub lands inside the wrapper (no language wrapper here,
+    # so it sits above the call) and covers the no-static-preamble
+    # branch.
+    py_result = literalize_call(
         source="[[1, 2]]",
         input_format=InputFormat.JSON,
         language=Python(),
@@ -506,8 +519,54 @@ def test_literalize_call_wrap_in_file() -> None:
         parameter_names=["a", "b"],
         wrap_in_file=True,
     )
-    assert result_no_preamble.code == "process(a=1, b=2)"
-    assert not result_no_preamble.preamble
+    expected_py = textwrap.dedent(
+        text="""\
+        def process(*_args: object, **_kwargs: object) -> object: ...
+        process(a=1, b=2)""",
+    )
+    assert py_result.code == expected_py
+    assert not py_result.preamble
+
+
+def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
+    """When ``call_transform`` consumes the call result, the stub
+    returns a value instead of ``void``.
+    """
+    result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=lambda c: f"emit({c})",
+        wrap_in_file=True,
+    )
+    # ``process`` still gets a value-returning stub; ``emit`` is out of
+    # scope here — callers that use ``call_transform`` are responsible
+    # for providing their own wrapper definition.
+    expected = textwrap.dedent(
+        text="""\
+        def process(*_args: object, **_kwargs: object) -> object: ...
+        emit(process(a=1, b=2))""",
+    )
+    assert result.code == expected
+
+
+def test_gleam_call_preamble_stub_many_parameters() -> None:
+    """Gleam call stubs handle more than 26 parameters.
+
+    ``_gleam_type_var`` falls back to numeric suffixes past the 26-letter
+    alphabet, so a 27-parameter call must emit a ``z`` for the last
+    single-letter slot and an ``a1`` for the next one.
+    """
+    params = [f"p{i}" for i in range(27)]
+    (line,) = Gleam().format_call_preamble_stub(
+        "target",
+        params,
+        StubReturn.VOID,
+    )
+    assert "_p25: z" in line
+    assert "_p26: a1" in line
 
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
@@ -744,6 +803,68 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
         )
 
 
+def test_literalize_call_bash_rejects_list_arg() -> None:
+    """Bash raises ``CallArgNotSupportedError`` when a call argument
+    is a list, because ``cmd (1 2 3)`` parses as ``cmd`` followed by
+    a nested ``(...)`` child-process group, not an inline array
+    literal.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"^Bash cannot accept this value as a call argument: "
+            r"list values have no inline literal form"
+        ),
+    ):
+        literalize_call(
+            source="[[[1, 2, 3]]]",
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["items"],
+        )
+
+
+def test_literalize_call_bash_rejects_dict_arg() -> None:
+    """Bash raises ``CallArgNotSupportedError`` when a call argument
+    is a dict, because Bash associative-array literals cannot appear
+    as a single positional argument.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"^Bash cannot accept this value as a call argument: "
+            r"dict values have no inline literal form"
+        ),
+    ):
+        literalize_call(
+            source='[[{"k": 1}]]',
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["m"],
+        )
+
+
+def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
+    """Bash's call-argument guard also fires on the
+    ``per_element=False`` path where the whole parsed value is passed
+    as a single argument.
+    """
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=r"^Bash cannot accept this value as a call argument",
+    ):
+        literalize_call(
+            source="[1, 2, 3]",
+            input_format=InputFormat.JSON,
+            language=Bash(),
+            target_function="cmd",
+            parameter_names=["items"],
+            per_element=False,
+        )
+
+
 def test_literalize_call_arg_ref_all_refs() -> None:
     """A call whose every argument is a ref still renders correctly;
     the empty non-ref list must not break wrap-id computation.
@@ -823,4 +944,20 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
             language=Python(),
             target_function="f",
             parameter_names=["only"],
+        )
+
+
+def test_literalize_call_ref_case_unsupported_raises() -> None:
+    """``ref_case`` outside the language's ``IdentifierCases`` raises."""
+    with pytest.raises(
+        expected_exception=UnsupportedIdentifierCaseError,
+        match=r"^Python does not support identifier case 'CAMEL'$",
+    ):
+        literalize_call(
+            source='[[{"$ref": "user_obj"}, 42]]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["data", "count"],
+            ref_case=IdentifierCase.CAMEL,
         )

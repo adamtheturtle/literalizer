@@ -11,6 +11,62 @@ Next
   ``clang-analyzer-deadcode.DeadStores`` check, previously suppressed
   in ``.clang-tidy`` because the combined form and unused C++ scalars
   triggered dead-store warnings, is now enforced.
+
+2026.04.24.1
+------------
+
+
+- ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
+  fixture end-to-end via ``lua``, catching runtime errors (calls to
+  undefined functions, missing module imports, failed assertions)
+  that the existing ``luac -p`` parse-only step let through,
+  mirroring ``lint-bash`` / ``lint-javascript`` / ``lint-perl`` etc.
+- ``literalize_call(..., wrap_in_file=True)`` now injects a no-op
+  stub for the ``target_function`` into the wrapped file, so the
+  generated source compiles against strict checkers on its own.
+  Callers that supply a ``call_transform`` are still responsible for
+  providing a definition for the wrapper function the transform
+  introduces.
+- Added ``literalize_call`` support for ``Bash``.  A new
+  :class:`CommandCallStyle` tagged-union member renders calls as
+  ``target arg1 arg2`` with space-separated arguments and no
+  surrounding parentheses; with a ``call_transform`` like
+  ``lambda c: f"emit({c})"`` the inner call is wrapped in
+  ``$(...)`` command substitution (``emit "$(target arg1 arg2)"``).
+  Bash's ``format_call_stub`` emits ``name() { :; }`` function
+  stubs that accept any arguments so generated files parse with
+  ``bash -n`` and run under ``bash``.  A new
+  ``CallArgNotSupportedError`` is raised at literalize time when a
+  list, dict, or set is passed as a Bash call argument — Bash has
+  no inline compound-literal syntax in command invocations, so
+  silently emitting ``cmd (1 2 3)`` (which parses as a nested
+  ``(...)`` child-process group) would leave users with a broken
+  script; callers must declare the collection as a variable and
+  pass a ``$ref`` marker instead.
+- ``literalize_call`` gains a ``ref_case`` keyword argument that
+  converts ``{"$ref": "name"}`` identifiers to the target language's
+  idiomatic case at render time via ``pyhumps``.  Pass
+  ``IdentifierCase.SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or
+  ``KEBAB`` to drive one YAML source through multiple languages
+  without re-authoring the ref names (e.g. the same ``user_obj`` ref
+  renders as ``user_obj`` for Python, ``userObj`` for JavaScript,
+  ``UserObj`` for Go).  Each language exposes the subset it
+  understands via its ``identifier_cases`` tuple; passing an
+  unsupported case raises ``UnsupportedIdentifierCaseError``.  When
+  ``ref_case=None`` (the default) ref names are emitted verbatim,
+  preserving existing behavior.
+- ``Mojo`` now supports an opt-in
+  ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an
+  auto-generated ``comptime Value = Variant[...]`` over only the Mojo
+  types actually present in the data, with a
+  ``from std.utils.variant import Variant`` preamble line.  Each
+  wrapped scalar renders as ``Value(...)`` (with an explicit
+  ``String(...)`` or ``Float64(...)`` cast when needed to select the
+  intended Variant alternative, and ``NoneType()`` for nulls), so
+  heterogeneous dicts and lists become homogeneous in the Variant
+  type.  The alias name is configurable via
+  ``Mojo.heterogeneous_value_variant_name`` (default ``"Value"``).
+  The default ``ERROR`` strategy still raises on heterogeneous input.
 - ``C`` generated output now routes positive integers above
   ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long``
   union field instead of narrowing them into the signed ``long long``

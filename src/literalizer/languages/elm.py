@@ -46,6 +46,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -607,6 +608,11 @@ class Elm(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.CAMEL,
+        IdentifierCase.PASCAL,
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
