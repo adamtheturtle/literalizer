@@ -818,8 +818,14 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         wrap_in_file=False,
     ),
     _CallCaseConfig(
+        # Target ``dict`` (a Python builtin accepting arbitrary
+        # keyword arguments) so the Python golden satisfies strict
+        # type checkers without needing any tool-level overrides —
+        # there is no stub-injection site when ``literalize_call``
+        # does the wrapping itself.  ``dict`` is undefined in Go,
+        # but ``gofmt -e`` only parses and so accepts it.
         case_dir_name="call_wrap_in_file",
-        target_function="process",
+        target_function="dict",
         parameter_names=["a", "b"],
         call_transform=None,
         transform_stub_names=[],

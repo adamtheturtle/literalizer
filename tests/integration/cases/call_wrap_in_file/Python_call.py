@@ -1,2 +1,2 @@
-process(a=1, b=2)
-process(a=3, b=4)
+dict(a=1, b=2)
+dict(a=3, b=4)
