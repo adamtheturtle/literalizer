@@ -1083,20 +1083,24 @@ jobs:
         uses: jiro4989/setup-nim-action@v2
       - name: Check Nim syntax
         run: |-
+          cat > /tmp/check-nim.sh <<'SCRIPT'
           read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            nim check --hints:off "${warning_flags[@]}" \
-              --nimcache:"$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          nim check --hints:off "${warning_flags[@]}" \
+            --nimcache:"$tmpdir" "$1"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-nim.sh < /tmp/files-to-lint
       - name: Run Nim files
         run: |-
+          cat > /tmp/run-nim.sh <<'SCRIPT'
           read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            nim c -r --hints:off "${warning_flags[@]}" \
-              --nimcache:"$tmpdir" "$f" || exit 1
-          done < /tmp/files-to-lint
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          nim c -r --hints:off "${warning_flags[@]}" \
+            --nimcache:"$tmpdir" "$1"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-nim.sh < /tmp/files-to-lint
 
   lint-nix:
     runs-on: ubuntu-latest
