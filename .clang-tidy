@@ -4,7 +4,6 @@ Checks: >
   -altera-struct-pack-align,
   -bugprone-narrowing-conversions,
   -clang-analyzer-deadcode.DeadStores,
-  -clang-diagnostic-implicitly-unsigned-literal,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-narrowing-conversions,
   -fuchsia-default-arguments-calls,
