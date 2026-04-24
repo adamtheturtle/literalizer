@@ -912,17 +912,28 @@ jobs:
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
       # Crystal derives the compiled binary name from the source file's
-      # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp).
-      # Many fixtures share basenames, so parallel `crystal run` invocations
-      # clobber each other's binaries. Give each invocation a private cache.
+      # basename (e.g. Crystal.cr -> ~/.cache/crystal/crystal-run-Crystal.tmp),
+      # and many fixtures share a basename (111 copies of Crystal.cr).
+      # Stage each source under a path-hashed unique basename so a
+      # single shared CRYSTAL_CACHE_DIR is safe across workers:
+      # identical-content fixtures then reuse each other's codegen
+      # artifacts (Crystal's cache is content-addressed) and stdlib
+      # parsing is cached after the first file instead of redone 257
+      # times.
       - name: Run Crystal files
         run: |-
+          export CRYSTAL_STAGING=/tmp/crystal-staging
+          export CRYSTAL_CACHE_DIR=/tmp/crystal-cache
+          mkdir -p "$CRYSTAL_STAGING" "$CRYSTAL_CACHE_DIR"
           cat > /tmp/run-crystal.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          CRYSTAL_CACHE_DIR="$tmpdir" crystal run "$1"
-          rc=$?
-          rm -rf "$tmpdir"
-          exit "$rc"
+          orig="$1"
+          hash=$(printf '%s' "$orig" | sha1sum | cut -c1-12)
+          staged="$CRYSTAL_STAGING/$hash-$(basename "$orig")"
+          cp "$orig" "$staged"
+          if ! crystal run "$staged"; then
+            echo "crystal run failed: $orig (staged as $staged)" >&2
+            exit 1
+          fi
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-crystal.sh < /tmp/files-to-lint
 
