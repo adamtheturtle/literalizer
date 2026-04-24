@@ -59,6 +59,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -1194,6 +1195,17 @@ class Rust(metaclass=LanguageCls):
         """
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    class IdentifierCases(enum.Enum):
+        """Identifier case conventions supported for ``$ref``
+        conversion.
+        """
+
+        SNAKE = IdentifierCase.SNAKE
+        PASCAL = IdentifierCase.PASCAL
+        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
+
+    identifier_cases = IdentifierCases
 
     @staticmethod
     def wrap_in_file(

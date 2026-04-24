@@ -7,6 +7,7 @@ import math
 from collections.abc import Callable, Sequence
 from typing import Protocol, cast, runtime_checkable
 
+import humps
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
@@ -295,6 +296,57 @@ class StubReturn(enum.Enum):
     VALUE = "value"
 
 
+class IdentifierCase(enum.Enum):
+    """A naming convention for a single identifier.
+
+    Passed to :func:`~literalizer.literalize_call` via ``ref_case`` to
+    convert ``{"$ref": "name"}`` markers to the target language's
+    idiomatic case at render time.  Each :class:`Language` exposes the
+    subset it understands via its nested ``IdentifierCases`` enum.
+    """
+
+    SNAKE = "snake"
+    """``snake_case`` — e.g. ``user_obj``."""
+
+    CAMEL = "camel"
+    """``camelCase`` — e.g. ``userObj``."""
+
+    PASCAL = "pascal"
+    """``PascalCase`` — e.g. ``UserObj``."""
+
+    UPPER_SNAKE = "upper_snake"
+    """``UPPER_SNAKE_CASE`` — e.g. ``USER_OBJ``."""
+
+    KEBAB = "kebab"
+    """``kebab-case`` — e.g. ``user-obj``."""
+
+    def convert(self, *, name: str) -> str:
+        """Return *name* converted to this case.
+
+        Normalizes any input convention to ``snake_case`` first so the
+        conversion is deterministic even when the source identifier
+        does not follow the recommended ``snake_case`` authoring
+        convention.  Acronyms are lost in normalization
+        (``HTTPRequest`` becomes ``http_request`` and then
+        ``HttpRequest``), so passing ``snake_case`` input when
+        exact-round-trip matters is recommended.
+        """
+        snake = humps.decamelize(
+            str_or_iter=humps.dekebabize(str_or_iter=name),
+        ).lower()
+        match self:
+            case IdentifierCase.SNAKE:
+                return snake
+            case IdentifierCase.CAMEL:
+                return humps.camelize(str_or_iter=snake)
+            case IdentifierCase.PASCAL:
+                return humps.pascalize(str_or_iter=snake)
+            case IdentifierCase.UPPER_SNAKE:
+                return snake.upper()
+            case IdentifierCase.KEBAB:
+                return humps.kebabize(str_or_iter=snake)
+
+
 @dataclasses.dataclass(frozen=True)
 class HeterogeneousBehavior:
     """Per-language hook describing how heterogeneous scalar
@@ -389,6 +441,7 @@ class LanguageCls(type):
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
+    IdentifierCases: type[enum.Enum]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
     extension: str
     pygments_name: str | None
@@ -600,6 +653,21 @@ class Language(Protocol):
         collections expose a single-member enum whose only option is
         ``ERROR``.  Languages with richer strategies (e.g. Rust's
         ``TAGGED_ENUM``) expose additional members.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def identifier_cases(self) -> type[enum.Enum]:
+        """Enum class whose members list the identifier case conventions
+        this language supports for ``$ref`` conversion.
+
+        Each member's value is a :class:`IdentifierCase` naming a
+        convention (e.g. ``CAMEL``, ``SNAKE``).  Passing a
+        :class:`IdentifierCase` to
+        :func:`~literalizer.literalize_call` via ``ref_case`` is
+        rejected with
+        :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
+        unless the language's ``identifier_cases`` exposes that value.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

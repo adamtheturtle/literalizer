@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` gains a ``ref_case`` keyword argument that
+  converts ``{"$ref": "name"}`` identifiers to the target language's
+  idiomatic case at render time via ``pyhumps``.  Pass
+  ``IdentifierCase.SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or
+  ``KEBAB`` to drive one YAML source through multiple languages
+  without re-authoring the ref names (e.g. the same ``user_obj`` ref
+  renders as ``user_obj`` for Python, ``userObj`` for JavaScript,
+  ``UserObj`` for Go).  Each language exposes the subset it
+  understands via its nested ``IdentifierCases`` enum; passing an
+  unsupported case raises ``UnsupportedIdentifierCaseError``.  When
+  ``ref_case=None`` (the default) ref names are emitted verbatim,
+  preserving existing behaviour.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to

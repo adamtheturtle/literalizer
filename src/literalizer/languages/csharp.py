@@ -64,6 +64,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
@@ -582,6 +583,17 @@ class CSharp(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    class IdentifierCases(enum.Enum):
+        """Identifier case conventions supported for ``$ref``
+        conversion.
+        """
+
+        PASCAL = IdentifierCase.PASCAL
+        CAMEL = IdentifierCase.CAMEL
+        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
+
+    identifier_cases = IdentifierCases
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

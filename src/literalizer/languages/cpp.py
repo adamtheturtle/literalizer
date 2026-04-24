@@ -56,6 +56,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
@@ -1151,6 +1152,18 @@ class Cpp(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    class IdentifierCases(enum.Enum):
+        """Identifier case conventions supported for ``$ref``
+        conversion.
+        """
+
+        SNAKE = IdentifierCase.SNAKE
+        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
+        PASCAL = IdentifierCase.PASCAL
+        CAMEL = IdentifierCase.CAMEL
+
+    identifier_cases = IdentifierCases
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

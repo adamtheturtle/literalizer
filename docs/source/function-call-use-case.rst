@@ -107,6 +107,34 @@ This composes with
 by :func:`~literalizer.literalize_call`, without repeating the literal
 value at the call site.
 
-The identifier is emitted verbatim — no case conversion is performed, so
-the caller is responsible for spelling the name correctly for the target
-language.
+By default the identifier is emitted verbatim.  Pass ``ref_case`` to
+:func:`~literalizer.literalize_call` to convert the name to the target
+language's idiomatic case.
+
+Case conversion
+~~~~~~~~~~~~~~~
+
+The ``ref_case`` parameter accepts a :class:`~literalizer.IdentifierCase`
+value (``SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or ``KEBAB``).
+Each :class:`Language` exposes the subset it understands via its nested
+``IdentifierCases`` enum; passing a case that the language does not
+expose raises
+:class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
+
+The same YAML source can drive idiomatic identifiers across multiple
+languages.  For example, the JSON source ``[[{"$ref": "user_obj"}, 42]]``
+with ``parameter_names=["data", "count"]`` produces:
+
+* ``ref_case=IdentifierCase.SNAKE`` with ``language=Python()`` →
+  ``process(data=user_obj, count=42)``.
+* ``ref_case=IdentifierCase.CAMEL`` with ``language=JavaScript()`` →
+  ``process({ data: userObj, count: 42 });``.
+* ``ref_case=IdentifierCase.PASCAL`` with ``language=Go()`` →
+  ``process(UserObj, 42)``.
+
+Snake case is the recommended authoring convention for ``$ref`` names:
+``pyhumps`` converts ``snake_case`` losslessly to every other case.
+Inputs in other conventions are normalized to ``snake_case`` first, so
+``userObj`` or ``UserObj`` also convert correctly, but at the cost of
+losing any preserved acronyms (``HTTPRequest`` normalizes to
+``http_request`` and pascalizes back as ``HttpRequest``).

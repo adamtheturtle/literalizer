@@ -18,6 +18,7 @@ import functools
 import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import cast
 
 import pytest
 from beartype import beartype
@@ -676,6 +677,13 @@ class _CallCaseConfig:
     before the call so the resulting file is self-contained.  Only
     meaningful when at least one call argument in ``input.yaml`` uses
     the ``{"$ref": "name"}`` marker.
+
+    When *ref_case_per_language* is ``True``, the harness picks each
+    language's first-listed ``IdentifierCases`` member as the
+    ``ref_case`` for that language, converts each
+    *ref_declarations* key to that case, and passes the same case
+    through to :func:`literalize_call` so the declaration site and
+    the call site agree on identifier spelling.
     """
 
     case_dir_name: str
@@ -688,6 +696,7 @@ class _CallCaseConfig:
     ref_declarations: dict[str, str] = dataclasses.field(
         default_factory=dict[str, str],
     )
+    ref_case_per_language: bool = False
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -773,6 +782,44 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "my_var": "[1, 2, 3]",
             "my_other": "[4, 5, 6]",
         },
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        ref_declarations={
+            "my_var": "[1, 2, 3]",
+            "my_other": "[4, 5, 6]",
+        },
+        ref_case_per_language=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted_whole",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        ref_declarations={
+            "my_var": "[1, 2, 3]",
+        },
+        ref_case_per_language=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted_nonsnake",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        ref_declarations={
+            "myVar": "[1, 2, 3]",
+            "MyOther": "[4, 5, 6]",
+        },
+        ref_case_per_language=True,
     ),
     _CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -2345,6 +2392,21 @@ def _run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    if config.ref_case_per_language:
+        # First-listed ``identifier_cases`` member is the language's
+        # default — convert declaration names to that case so the
+        # ref-site and declaration-site spellings agree.
+        effective_ref_case = cast(
+            "literalizer.IdentifierCase",
+            next(iter(spec.identifier_cases)).value,
+        )
+        declarations = {
+            effective_ref_case.convert(name=ref_name): ref_source
+            for ref_name, ref_source in config.ref_declarations.items()
+        }
+    else:
+        effective_ref_case = None
+        declarations = config.ref_declarations
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
@@ -2356,7 +2418,7 @@ def _run_call_golden_case(
                 language=spec,
                 variable_form=literalizer.NewVariable(name=ref_name),
             )
-            for ref_name, ref_source in config.ref_declarations.items()
+            for ref_name, ref_source in declarations.items()
         ]
         result = literalizer.literalize_call(
             source=yaml_string,
@@ -2366,6 +2428,7 @@ def _run_call_golden_case(
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
             per_element=config.per_element,
+            ref_case=effective_ref_case,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)

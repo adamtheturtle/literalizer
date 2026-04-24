@@ -46,6 +46,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -607,6 +608,16 @@ class Elm(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    class IdentifierCases(enum.Enum):
+        """Identifier case conventions supported for ``$ref``
+        conversion.
+        """
+
+        CAMEL = IdentifierCase.CAMEL
+        PASCAL = IdentifierCase.PASCAL
+
+    identifier_cases = IdentifierCases
 
     validate_spec_for_data = no_validate_spec_for_data
 

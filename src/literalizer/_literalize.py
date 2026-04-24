@@ -23,6 +23,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     CallStyle,
     CallSupport,
+    IdentifierCase,
     KeywordCallStyle,
     Language,
     ObjectCallStyle,
@@ -38,6 +39,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedIdentifierCaseError,
 )
 
 
@@ -1498,15 +1500,20 @@ def _format_single_call_arg(
     wrap_ids: frozenset[int],
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format one argument value for a function call.
 
     A ``{"$ref": "name"}`` marker renders as the bare identifier; the
     ``format_call_arg`` hook is skipped for refs because the referenced
-    variable already has the call's parameter type.
+    variable already has the call's parameter type.  When *ref_case*
+    is not ``None``, the ref name is converted to that case before
+    being emitted.
     """
     ref_name = _extract_call_arg_ref_name(value=value)
     if ref_name is not None:
+        if ref_case is not None:
+            return ref_case.convert(name=ref_name)
         return ref_name
     return wrap_arg(
         value,
@@ -1529,6 +1536,7 @@ def _format_call_args(
     wrap_ids: frozenset[int],
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format argument values for a single function call.
 
@@ -1545,6 +1553,9 @@ def _format_call_args(
     *dict_open_overrides* supplies a per-positional dict opener so that
     dict arguments at the same slot across sibling calls share a
     widened type.  ``None`` at a given position means "no override".
+
+    *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
+    identifier to that :class:`IdentifierCase` before emitting it.
     """
     wrap_arg: Callable[[Value, str], str] = getattr(
         language,
@@ -1558,6 +1569,7 @@ def _format_call_args(
             wrap_ids=wrap_ids,
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
+            ref_case=ref_case,
         )
         for slot_index, arg_value in enumerate(iterable=values)
     ]
@@ -1681,6 +1693,7 @@ def _render_call_per_element(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -1721,6 +1734,7 @@ def _render_call_per_element(
             wrap_ids=call_wrap_ids,
             style=style,
             dict_open_overrides=slot_overrides,
+            ref_case=ref_case,
         )
         lines.append(
             _assemble_call(
@@ -1743,6 +1757,7 @@ def _render_call_whole(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Render a single call from the whole parsed value.
 
@@ -1761,6 +1776,7 @@ def _render_call_whole(
         wrap_ids=call_wrap_ids,
         style=style,
         dict_open_overrides=[None],
+        ref_case=ref_case,
     )
     return _assemble_call(
         target_function=target_function,
@@ -1782,6 +1798,7 @@ def literalize_call(
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
+    ref_case: IdentifierCase | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -1812,6 +1829,17 @@ def literalize_call(
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
+        ref_case: Optional :class:`IdentifierCase` controlling how
+            ``{"$ref": "name"}`` identifiers are cased in the
+            rendered output.  When ``None`` (default) ref names are
+            emitted verbatim.  When set, each ref identifier is
+            normalized to ``snake_case`` and then converted to the
+            requested case via ``pyhumps``, so the same source can
+            drive idiomatic identifiers across multiple languages.
+            When *language*'s ``identifier_cases`` does not expose
+            the requested case,
+            :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
+            is raised.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
@@ -1826,6 +1854,14 @@ def literalize_call(
             )
         case _ as style:
             pass
+
+    if ref_case is not None:
+        supported = {member.value for member in language.identifier_cases}
+        if ref_case not in supported:
+            raise UnsupportedIdentifierCaseError(
+                language_name=type(language).__name__,
+                case_name=ref_case.name,
+            )
 
     target_function = language.format_call_target(target_function)
 
@@ -1848,6 +1884,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            ref_case=ref_case,
         )
     else:
         result = _render_call_whole(
@@ -1857,6 +1894,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            ref_case=ref_case,
         )
     computed = compute_preamble(
         data=data_for_preamble,

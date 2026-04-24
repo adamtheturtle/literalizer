@@ -57,6 +57,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -522,6 +523,17 @@ class Dart(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    class IdentifierCases(enum.Enum):
+        """Identifier case conventions supported for ``$ref``
+        conversion.
+        """
+
+        CAMEL = IdentifierCase.CAMEL
+        PASCAL = IdentifierCase.PASCAL
+        UPPER_SNAKE = IdentifierCase.UPPER_SNAKE
+
+    identifier_cases = IdentifierCases
 
     @staticmethod
     def wrap_in_file(

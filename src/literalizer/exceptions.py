@@ -144,3 +144,17 @@ class UnrepresentableIntegerError(Exception):
     external arbitrary-precision integer library is assumed to be
     available.
     """
+
+
+class UnsupportedIdentifierCaseError(Exception):
+    """Raised when ``literalize_call`` is passed a ``ref_case`` that the
+    target language's ``IdentifierCases`` enum does not expose.
+    """
+
+    def __init__(self, *, language_name: str, case_name: str) -> None:
+        """Create an ``UnsupportedIdentifierCaseError``."""
+        super().__init__(
+            f"{language_name} does not support identifier case {case_name!r}"
+        )
+        self.language_name = language_name
+        self.case_name = case_name
