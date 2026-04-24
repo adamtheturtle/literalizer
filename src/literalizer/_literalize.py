@@ -152,6 +152,17 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 
 
 @beartype
+def _set_sort_key(value: Scalar) -> tuple[str, str]:
+    """Return a stable sort key for set elements.
+
+    Sets are unordered, so we sort by type name and then ``repr`` to get
+    a deterministic output that also copes with heterogeneous element
+    types that may not be mutually comparable.
+    """
+    return (type(value).__name__, repr(value))
+
+
+@beartype
 def _format_scalar(*, value: Scalar, spec: Language) -> str:
     """Format a scalar JSON value as a native language literal."""
     match value:
@@ -227,7 +238,7 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
-    sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+    sorted_items = sorted(value, key=_set_sort_key)
     items_as_values: list[Value] = list(sorted_items)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
@@ -779,20 +790,19 @@ def _wrap_body(
     ci = spec.indent if spec.indent_closing_delimiter else ""
     close_prefix = f"{line_prefix}{ci}"
     match data:
-        case dict() if is_ordered_map:
-            ordered_map_cfg = spec.ordered_map_format_config
-            open_str = ordered_map_cfg.ordered_map_open(data)
-            opening = f"{line_prefix}{open_str}"
-            closing = f"{close_prefix}{ordered_map_cfg.close}"
-        case dict():
-            dict_cfg = spec.dict_format_config
-            opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
-            closing = f"{close_prefix}{dict_cfg.close}"
-        case set():
-            sorted_set: list[Value] = sorted(
-                data,
-                key=lambda v: (type(v).__name__, repr(v)),
-            )
+        case dict() as dict_data:
+            if is_ordered_map:
+                ordered_map_cfg = spec.ordered_map_format_config
+                open_str = ordered_map_cfg.ordered_map_open(dict_data)
+                opening = f"{line_prefix}{open_str}"
+                closing = f"{close_prefix}{ordered_map_cfg.close}"
+            else:
+                dict_cfg = spec.dict_format_config
+                opening = f"{line_prefix}{dict_cfg.dict_open(dict_data)}"
+                closing = f"{close_prefix}{dict_cfg.close}"
+        case set() as set_data:
+            sorted_items = sorted(set_data, key=_set_sort_key)
+            sorted_set: list[Value] = list(sorted_items)
             set_cfg = spec.set_format_config
             opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
             closing = f"{close_prefix}{set_cfg.close}"
@@ -893,10 +903,7 @@ def _format_collection_lines(
                 spec=spec,
             )
         case set() as set_data:
-            sorted_items = sorted(
-                set_data,
-                key=lambda v: (type(v).__name__, repr(v)),
-            )
+            sorted_items = sorted(set_data, key=_set_sort_key)
             formatted_entries = [
                 spec.format_set_entry(
                     item,
