@@ -455,23 +455,15 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-gleam
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
-      # `elixir` compiles the module but never invokes it. Append a call
-      # to `Check.x()` so the function body — and any references inside
-      # it — actually executes.
+      # `elixir` compiles the module but never invokes it. The script
+      # compiles each fixture, calls `Check.x()` to force the body to
+      # execute, and purges the module between fixtures — all inside a
+      # single BEAM VM, paying the cold-start cost once instead of twice
+      # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
           find tests/integration/cases -name '*.ex' -print0 > /tmp/files-elixir
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            cp "$f" "$tmpdir/check.ex"
-            (cd "$tmpdir" && elixirc check.ex) || exit 1
-          done < /tmp/files-elixir
-          while IFS= read -r -d '' f; do
-            tmpdir=$(mktemp -d)
-            cp "$f" "$tmpdir/check.ex"
-            printf '\nCheck.x()\n' >> "$tmpdir/check.ex"
-            (cd "$tmpdir" && elixir check.ex) || exit 1
-          done < /tmp/files-elixir
+          elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
       # Compile every fixture in a single erlc invocation to pay the
       # BEAM VM startup cost once. Erlang requires the module name to
