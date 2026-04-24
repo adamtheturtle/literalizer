@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, cast, runtime_checkable
+from typing import Protocol, assert_never, cast, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -331,20 +331,34 @@ class IdentifierCase(enum.Enum):
         ``HttpRequest``), so passing ``snake_case`` input when
         exact-round-trip matters is recommended.
         """
-        snake = humps.decamelize(
-            str_or_iter=humps.dekebabize(str_or_iter=name),
-        ).lower()
-        match self:
-            case IdentifierCase.SNAKE:
-                return snake
-            case IdentifierCase.CAMEL:
-                return humps.camelize(str_or_iter=snake)
-            case IdentifierCase.PASCAL:
-                return humps.pascalize(str_or_iter=snake)
-            case IdentifierCase.UPPER_SNAKE:
-                return snake.upper()
-            case IdentifierCase.KEBAB:
-                return humps.kebabize(str_or_iter=snake)
+        return _convert_identifier_case(case=self, name=name)
+
+
+def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
+    """Convert *name* to *case* with snake_case normalization.
+
+    Extracted from :meth:`IdentifierCase.convert` as a free function
+    so the ``match`` exhaustiveness check narrows on the plain
+    :class:`IdentifierCase` parameter rather than on ``self``, which
+    some type checkers (notably pyrefly) treat as the broader
+    ``Self@IdentifierCase`` and reject as non-exhaustive.
+    """
+    snake = humps.decamelize(
+        str_or_iter=humps.dekebabize(str_or_iter=name),
+    ).lower()
+    match case:
+        case IdentifierCase.SNAKE:
+            return snake
+        case IdentifierCase.CAMEL:
+            return humps.camelize(str_or_iter=snake)
+        case IdentifierCase.PASCAL:
+            return humps.pascalize(str_or_iter=snake)
+        case IdentifierCase.UPPER_SNAKE:
+            return snake.upper()
+        case IdentifierCase.KEBAB:
+            return humps.kebabize(str_or_iter=snake)
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @dataclasses.dataclass(frozen=True)

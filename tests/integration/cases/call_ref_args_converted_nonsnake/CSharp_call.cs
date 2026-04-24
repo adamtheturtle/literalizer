@@ -1,5 +1,7 @@
 using System;
-dynamic process(dynamic _a0, dynamic _a1) => null;
+class Check {
+static object process(object data = null, object count = null) => null;
+    public static void Main() {
 var MyVar = (
     1,
     2,
@@ -12,3 +14,5 @@ var MyOther = (
 );
 process(MyVar, 42);
 process(MyOther, 7);
+    }
+}
