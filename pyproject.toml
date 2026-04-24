@@ -293,8 +293,13 @@ max_supported_python = "3.14"
 [tool.mypy]
 strict = true
 files = [ "." ]
+# ``call_wrap_in_file`` Python goldens call an undefined target
+# function (no stub-injection site when ``literalize_call`` does the
+# wrapping itself).  The golden is auto-generated and only needs to
+# parse; skip type-checking.
 exclude = [
     "build",
+    "^tests/integration/cases/call_wrap_in_file/",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -302,7 +307,8 @@ follow_untyped_imports = true
 [tool.pyrefly]
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
-project_excludes = []
+# See the comment on ``tool.mypy.exclude``.
+project_excludes = [ "tests/integration/cases/call_wrap_in_file/**" ]
 search_path = [ ".", "src" ]
 
 [tool.pyright]
@@ -319,7 +325,10 @@ executionEnvironments = [
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
-overrides = []
+overrides = [
+    # See the comment on ``tool.mypy.exclude``.
+    { include = [ "tests/integration/cases/call_wrap_in_file/**/*.py" ], rules.unresolved-reference = "ignore" },
+]
 
 [tool.pytest]
 ini_options.xfail_strict = true
