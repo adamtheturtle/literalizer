@@ -3,7 +3,7 @@
 x() ->
     My_data = [
         inf,
-        -inf,
+        '-inf',
         nan
     ],
     My_data.
