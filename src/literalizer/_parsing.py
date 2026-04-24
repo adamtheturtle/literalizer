@@ -144,7 +144,8 @@ def _coerce_yaml_keys(*, data: object) -> Value:
                 cast("Scalar", _unwrap_yaml_scalar(value=item))
                 for item in members
             }
-        case set():
+        # YAML sets always use ``!!set``, which forces the round-trip path.
+        case set():  # pragma: no cover
             return {
                 cast("Scalar", _unwrap_yaml_scalar(value=item))
                 for item in cast("set[object]", data)

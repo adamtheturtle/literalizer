@@ -4,17 +4,11 @@ import re
 import textwrap
 
 import pytest
-from ruamel.yaml import YAML
 
 from literalizer import (
     InputFormat,
     NewVariable,
     literalize,
-)
-from literalizer._comments import literalize_yaml_scalar
-from literalizer._parsing import (
-    _coerce_yaml_keys,  # pyright: ignore[reportPrivateUsage]
-    _parse_yaml,  # pyright: ignore[reportPrivateUsage]
 )
 from literalizer.exceptions import (
     HeterogeneousCollectionError,
@@ -139,32 +133,24 @@ def test_literalize_yaml_after_invalid_uses_cached_instance() -> None:
     assert result.declaration_code == '{\n    "foo": "bar",\n}'
 
 
-def test_literalize_yaml_scalar_without_comments_returns_base() -> None:
-    """Scalar comment formatting is a no-op when the source has none."""
-    yaml = YAML()
-    result = literalize_yaml_scalar(
-        tokens=yaml.scan(stream="plain\n"),  # pyright: ignore[reportUnknownMemberType]
-        base='"plain"',
-        comment_prefix="#",
-        comment_suffix="",
-        line_prefix="",
-        supports_scalar_before_comments=True,
-        supports_scalar_inline_comments=True,
+def test_literalize_yaml_quoted_hash_is_not_comment() -> None:
+    """A quoted ``#`` still round-trips as plain scalar content."""
+    result = literalize(
+        source='"plain#value"\n',
+        input_format=InputFormat.YAML,
+        language=PYTHON,
     )
-
-    assert result.result == '"plain"'
-    assert result.pending_before == ()
-
-
-def test_coerce_yaml_keys_plain_set_keeps_scalar_members() -> None:
-    """Plain Python sets are coerced through the set-specific branch."""
-    assert _coerce_yaml_keys(data={1, "two"}) == {1, "two"}
+    assert result.declaration_code == '"plain#value"'
 
 
 def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
     """Invalid YAML still raises on the round-trip parsing path."""
     with pytest.raises(expected_exception=YAMLParseError):
-        _parse_yaml(source="value: [1\n# force roundtrip path\n")
+        literalize(
+            source="value: [1\n# force roundtrip path\n",
+            input_format=InputFormat.YAML,
+            language=PYTHON,
+        )
 
 
 def test_cpp_array_binary_typed() -> None:
