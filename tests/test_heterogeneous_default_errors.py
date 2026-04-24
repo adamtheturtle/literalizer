@@ -2,11 +2,11 @@
 contract.
 
 Languages with an opt-in wrapping strategy (Rust's ``TAGGED_ENUM``,
-Dhall's ``UNION_TYPE``, and the Nim ``OBJECT_VARIANT``) must still
-raise on heterogeneous input under the default ``ERROR`` strategy.
-The integration framework catches ``HeterogeneousCollectionError``
-and silently skips, so the error contract has no golden-file surface
-and needs unit coverage.
+Dhall's ``UNION_TYPE``, the Nim ``OBJECT_VARIANT``, and the Mojo
+``VARIANT``) must still raise on heterogeneous input under the default
+``ERROR`` strategy.  The integration framework catches
+``HeterogeneousCollectionError`` and silently skips, so the error
+contract has no golden-file surface and needs unit coverage.
 """
 
 import pytest
@@ -16,12 +16,12 @@ from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSiblingListsError,
 )
-from literalizer.languages import Dhall, Nim, Rust
+from literalizer.languages import Dhall, Mojo, Nim, Rust
 
 
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=[Rust, Dhall, Nim],
+    argvalues=[Rust, Dhall, Nim, Mojo],
 )
 @pytest.mark.parametrize(
     argnames=("source", "expected_exception"),

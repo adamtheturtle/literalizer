@@ -16,6 +16,18 @@ Next
   unsupported case raises ``UnsupportedIdentifierCaseError``.  When
   ``ref_case=None`` (the default) ref names are emitted verbatim,
   preserving existing behavior.
+- ``Mojo`` now supports an opt-in
+  ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an
+  auto-generated ``comptime Value = Variant[...]`` over only the Mojo
+  types actually present in the data, with a
+  ``from std.utils.variant import Variant`` preamble line.  Each
+  wrapped scalar renders as ``Value(...)`` (with an explicit
+  ``String(...)`` or ``Float64(...)`` cast when needed to select the
+  intended Variant alternative, and ``NoneType()`` for nulls), so
+  heterogeneous dicts and lists become homogeneous in the Variant
+  type.  The alias name is configurable via
+  ``Mojo.heterogeneous_value_variant_name`` (default ``"Value"``).
+  The default ``ERROR`` strategy still raises on heterogeneous input.
 - ``C`` generated output now routes positive integers above
   ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long``
   union field instead of narrowing them into the signed ``long long``
