@@ -6,6 +6,7 @@ struct CVal {
     union {
         _Bool b;
         long long i;
+        unsigned long long u;
         double f;
         const char *s;
         const CVal *a;
@@ -14,6 +15,6 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 void check_(void) {
-CVal my_data = ((CVal){.i = 9223372036854775808ULL});
+CVal my_data = ((CVal){.u = 9223372036854775808ULL});
     (void)my_data;
 }
