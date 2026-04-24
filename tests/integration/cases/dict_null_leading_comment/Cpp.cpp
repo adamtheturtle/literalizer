@@ -9,4 +9,5 @@ auto my_data = std::map<std::string, std::variant<std::string, std::nullptr_t>>{
     {"name", "Alice"},
     {"score", nullptr},
 };
+    (void)my_data;
 }

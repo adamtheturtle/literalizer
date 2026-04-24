@@ -7,4 +7,5 @@ auto my_data = std::map<std::string, std::string>{
     {"key\twith\ttabs", "value2"},
     {"", "value3"},
 };
+    (void)my_data;
 }

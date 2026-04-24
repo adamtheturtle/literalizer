@@ -10,4 +10,5 @@ static const auto my_data = std::map<std::string, std::variant<std::string, int,
     {"active", true},
     {"score", nullptr},
 };
+    (void)my_data;
 }

@@ -5,4 +5,5 @@ auto my_data = std::initializer_list<int>{
     2,
     3,
 };
+    (void)my_data;
 }

@@ -2,11 +2,8 @@ pub type JsonVal {
   GNull
   GBool(Bool)
   GInt(Int)
-  GFloat(Float)
   GStr(String)
-  GList(List(JsonVal))
   GDict(List(#(String, JsonVal)))
-  GSet(List(JsonVal))
 }
 
 pub fn main() {

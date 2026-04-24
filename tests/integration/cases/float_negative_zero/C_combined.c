@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = -0.0}),
     ((CVal){.f = 1.5}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = -0.0}),
     ((CVal){.f = 1.5}),

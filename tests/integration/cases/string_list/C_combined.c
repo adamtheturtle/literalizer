@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "bar"}),
     ((CVal){.s = "baz"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "foo"}),
     ((CVal){.s = "bar"}),

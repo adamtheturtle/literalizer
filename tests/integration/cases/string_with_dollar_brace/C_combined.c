@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "prefix ${HOME} suffix"}),
     ((CVal){.s = "${interpolated}"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "prefix ${HOME} suffix"}),
     ((CVal){.s = "${interpolated}"}),

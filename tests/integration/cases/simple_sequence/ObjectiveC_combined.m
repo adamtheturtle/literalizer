@@ -6,6 +6,7 @@ id my_data = @[
     @YES,
     [NSNull null],
 ];
+(void)my_data;
 my_data = @[
     @(1),
     @"hello",

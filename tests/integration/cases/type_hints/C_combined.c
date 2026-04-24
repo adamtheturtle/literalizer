@@ -24,6 +24,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"last_login", ((CVal){.s = "2024-01-15T12:30:00+00:00"})},
     {"avatar", ((CVal){.s = "48656c6c6f"})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"name", ((CVal){.s = "Alice"})},
     {"age", ((CVal){.i = 30})},

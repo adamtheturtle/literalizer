@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"key\twith\ttabs", ((CVal){.s = "value2"})},
     {"", ((CVal){.s = "value3"})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"key\nwith\nnewlines", ((CVal){.s = "value1"})},
     {"key\twith\ttabs", ((CVal){.s = "value2"})},

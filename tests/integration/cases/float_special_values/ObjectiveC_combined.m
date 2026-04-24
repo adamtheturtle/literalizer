@@ -5,6 +5,7 @@ id my_data = @[
     @(-INFINITY),
     @(NAN),
 ];
+(void)my_data;
 my_data = @[
     @(INFINITY),
     @(-INFINITY),

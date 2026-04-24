@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "issue #{42}"}),
     ((CVal){.s = "color #red"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "issue #{42}"}),
     ((CVal){.s = "color #red"}),

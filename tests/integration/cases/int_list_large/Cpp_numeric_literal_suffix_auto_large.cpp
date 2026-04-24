@@ -7,4 +7,5 @@ auto my_data = std::vector<long>{
     255L,
     -10L,
 };
+    (void)my_data;
 }

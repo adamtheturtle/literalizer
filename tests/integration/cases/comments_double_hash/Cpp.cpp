@@ -6,4 +6,5 @@ auto my_data = std::vector<std::string>{
     // # section
     "a",
 };
+    (void)my_data;
 }

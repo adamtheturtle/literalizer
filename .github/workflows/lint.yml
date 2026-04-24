@@ -188,24 +188,13 @@ jobs:
           xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
 
       # Octave is a practical CI substitute, but it does not support
-      # every MATLAB builtin. Skip files that use features Octave lacks:
-      #  - datetime(): not yet implemented in Octave
-      #  - ""-escaped quotes: Octave accepts some backslash escapes
-      #    (e.g. \") that MATLAB rejects, so the check would be misleading
+      # every MATLAB builtin.  The per-fixture skip rules (for ``""``
+      # escaped quotes and the ``datetime`` builtin) are documented in
+      # .github/scripts/lint-matlab-fixture.sh.
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
-          while IFS= read -r -d '' f; do
-            if grep -q '""' "$f"; then
-              echo "Skipping Octave parse check for MATLAB-escaped quotes in $f"
-              continue
-            fi
-            if grep -qw 'datetime' "$f"; then
-              echo "Skipping $f — uses datetime(), which Octave does not implement"
-              continue
-            fi
-            octave --norc --no-gui "$f" || exit 1
-          done < /tmp/files-matlab
+          xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
       - name: Lint Perl
         run: |-
@@ -447,19 +436,19 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # Populate the shared Hex package cache once up front. Parallel
-      # `gleam deps download` invocations would otherwise race on the
-      # cache and fail with "Unable to locate Hex package contents.tar.gz"
-      # when one worker is mid-download and another reads the partial
-      # file.
-      - name: Prime Gleam Hex cache
+      # Populate a shared primed project once up front so each parallel
+      # `check_gleam_syntax.py` worker can copy from it instead of
+      # running its own `gleam deps download`. 168 parallel downloads
+      # otherwise hammer hex.pm and trip transient network failures.
+      - name: Prime Gleam project
         run: |-
-          tmpdir=$(mktemp -d)
-          cp .github/scripts/lint-gleam.toml "$tmpdir/gleam.toml"
-          mkdir "$tmpdir/src"
-          (cd "$tmpdir" && gleam deps download)
+          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
+          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
 
       - name: Lint Gleam
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
           find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-gleam
@@ -1012,19 +1001,19 @@ jobs:
           sudo chmod 600 /mnt/extra-swapfile
           sudo mkswap /mnt/extra-swapfile
           sudo swapon /mnt/extra-swapfile
-      # Lift the per-process virtual-address cap so the shell and
-      # each `mojo run` child inherit an unlimited `RLIMIT_AS`. Mojo
-      # reserves ~3.6 GB virtual per invocation; without this, a low
-      # default cap can make the reservation fail even when the
-      # overcommit + swap step above has given the kernel enough
-      # headroom. Recommended by the upstream bug author in
-      # HomericIntelligence/ProjectOdyssey#5274.
+      # Lift the per-process virtual-address cap so the shell and each
+      # `mojo run` child inherit an unlimited `RLIMIT_AS`. Keep the
+      # executions serial: each invocation reserves ~3.6 GB virtual,
+      # so running one per core on a 7 GB runner still crashes even
+      # with overcommit + swap enabled. Recommended by the upstream
+      # bug author in HomericIntelligence/ProjectOdyssey#5274.
       # Local tracking: https://github.com/adamtheturtle/literalizer/issues/1574
       - name: Check Mojo syntax
         run: |-
           ulimit -v unlimited
-          xargs -0 -P "$(nproc)" -I{} mojo run --Werror "$GITHUB_WORKSPACE/{}" \
-            < /tmp/files-to-lint
+          while IFS= read -r -d '' f; do
+            mojo run --Werror "$GITHUB_WORKSPACE/$f"
+          done < /tmp/files-to-lint
 
   lint-nim:
     runs-on: ubuntu-latest
@@ -1136,6 +1125,8 @@ jobs:
       - uses: Bogdanp/setup-racket@v1.15
       - name: Check Racket syntax
         run: xargs -0 raco make < /tmp/files-to-lint
+      - name: Run Racket files
+        run: xargs -0 -P "$(nproc)" -n1 racket < /tmp/files-to-lint
 
   lint-raku:
     runs-on: ubuntu-latest

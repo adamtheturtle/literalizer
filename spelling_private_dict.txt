@@ -84,6 +84,7 @@ PNull
 PSet
 PStr
 Php
+Postfix
 PureScript
 Pygments
 Raku
@@ -119,6 +120,7 @@ dataclass
 dataclasses
 datetime
 datetimes
+deduplicated
 dicts
 durations
 elixirc
@@ -153,6 +155,7 @@ kts
 kwargs
 linter
 literalize
+literalized
 literalizer
 literalizer's
 localhost
@@ -177,6 +180,8 @@ ordereddict
 os
 paren
 parsers
+positionally
+postfix
 pragma
 pre
 prepended
@@ -195,6 +200,7 @@ reportUnknownArgumentType
 reportUnknownMemberType
 reportUnknownVariableType
 repr
+representable
 roundtrip
 ruamel
 scala

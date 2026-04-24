@@ -10,4 +10,5 @@ auto my_data = std::vector<std::variant<bool, std::string, std::vector<int>, std
     std::vector<int>{1, 2},
     nullptr,
 };
+    (void)my_data;
 }
