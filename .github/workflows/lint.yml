@@ -447,19 +447,19 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # Populate the shared Hex package cache once up front. Parallel
-      # `gleam deps download` invocations would otherwise race on the
-      # cache and fail with "Unable to locate Hex package contents.tar.gz"
-      # when one worker is mid-download and another reads the partial
-      # file.
-      - name: Prime Gleam Hex cache
+      # Populate a shared primed project once up front so each parallel
+      # `check_gleam_syntax.py` worker can copy from it instead of
+      # running its own `gleam deps download`. 168 parallel downloads
+      # otherwise hammer hex.pm and trip transient network failures.
+      - name: Prime Gleam project
         run: |-
-          tmpdir=$(mktemp -d)
-          cp .github/scripts/lint-gleam.toml "$tmpdir/gleam.toml"
-          mkdir "$tmpdir/src"
-          (cd "$tmpdir" && gleam deps download)
+          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
+          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
 
       - name: Lint Gleam
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
           find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-gleam
