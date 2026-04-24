@@ -34,8 +34,6 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
-    CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -46,6 +44,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -165,6 +164,27 @@ def _format_containers_map_entry(
     if formatted_value.startswith("{") and formatted_value.endswith("}"):
         formatted_value = f"{{{formatted_value}}}"
     return formatted_value
+
+
+@beartype
+def _matlab_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return MATLAB stub declarations for a call name.
+
+    MATLAB scripts have no concept of forward declarations, so every
+    name referenced in a call expression must be bound first.  Simple
+    targets become anonymous function handles that accept any
+    arguments and return ``[]`` (MATLAB's null literal, usable as both
+    a value and a discarded result).  Dotted targets rely on MATLAB's
+    ``a.b.c = value`` syntax auto-vivifying intermediate ``struct``
+    fields, so the stub is a single assignment irrespective of depth.
+    """
+    anon = "@(varargin) []"
+    return (f"{name} = {anon};",)
 
 
 @beartype
@@ -380,6 +400,8 @@ class Matlab(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Matlab call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -470,9 +492,7 @@ class Matlab(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -511,7 +531,7 @@ class Matlab(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _matlab_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -519,6 +539,11 @@ class Matlab(metaclass=LanguageCls):
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def call_style_config(self) -> PositionalCallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
