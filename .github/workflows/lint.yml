@@ -1192,8 +1192,6 @@ jobs:
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
-      - name: Check SML syntax
-        run: xargs -0 -P "$(nproc)" -n1 mlton -stop tc < /tmp/files-to-lint
       # Fixtures only declare `structure Check` with a `my_data` val;
       # MLton never evaluates the body unless a top-level expression
       # references it, so compile alongside a small force file that
