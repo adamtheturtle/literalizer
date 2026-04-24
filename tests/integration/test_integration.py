@@ -2443,9 +2443,10 @@ def _run_call_golden_case(
         # without any ``wrap_in_file`` scaffolding or stubs.  Used to
         # verify the per-language *string* produced by the flag
         # (analogous to ``include_delimiters=False`` for
-        # ``literalize``) without requiring per-language compilable
-        # wrappings.  The ``.txt`` extension keeps these fragments
-        # outside every language's CI syntax-check ``find`` filter.
+        # ``literalize``) without requiring per-language wrappers
+        # that produce a valid compilation unit.  The ``.txt``
+        # extension keeps these fragments outside every language's CI
+        # syntax-check ``find`` filter.
         _check_golden(
             file_regression=file_regression,
             contents=result.bare_code + "\n",

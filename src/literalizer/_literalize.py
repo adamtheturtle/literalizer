@@ -1827,8 +1827,8 @@ def literalize_call(
             :attr:`~Language.statement_terminator` is suppressed and
             per-element rows are joined with ``",\n"`` instead of
             ``"\n"``, so the output drops straight into an outer
-            list / array / slice / vec literal without any
-            ``call_transform``.  Defaults to ``False``.
+            collection literal without any ``call_transform``.
+            Defaults to ``False``.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
