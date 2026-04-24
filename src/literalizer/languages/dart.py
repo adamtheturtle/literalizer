@@ -57,6 +57,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -522,6 +523,12 @@ class Dart(metaclass=LanguageCls):
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.CAMEL,
+        IdentifierCase.PASCAL,
+        IdentifierCase.UPPER_SNAKE,
+    )
 
     @staticmethod
     def wrap_in_file(

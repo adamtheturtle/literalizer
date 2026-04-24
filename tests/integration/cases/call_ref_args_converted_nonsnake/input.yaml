@@ -1,0 +1,5 @@
+---
+- - { $ref: myVar }
+  - 42
+- - { $ref: MyOther }
+  - 7

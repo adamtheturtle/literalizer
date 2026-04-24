@@ -162,11 +162,11 @@ _HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
 ] = {Dhall: "JsonValue"}
 
 # Languages whose heterogeneous-value variant name is configurable
-# (the Nim ``OBJECT_VARIANT`` strategy); the value is the test
-# override to apply.
+# (the Nim ``OBJECT_VARIANT`` strategy and the Mojo ``VARIANT``
+# strategy); the value is the test override to apply.
 _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES: dict[
     literalizer.LanguageCls, str
-] = {Nim: "JsonValue"}
+] = {Nim: "JsonValue", Mojo: "JsonValue"}
 
 # Languages that accept constructor-name kwargs (Fortran) or field-name
 # kwargs (C); the inner dict is the kwargs to pass to the constructor.
@@ -679,6 +679,13 @@ class _CallCaseConfig:
     before the call so the resulting file is self-contained.  Only
     meaningful when at least one call argument in ``input.yaml`` uses
     the ``{"$ref": "name"}`` marker.
+
+    When *ref_case_per_language* is ``True``, the harness picks each
+    language's first-listed ``IdentifierCases`` member as the
+    ``ref_case`` for that language, converts each
+    *ref_declarations* key to that case, and passes the same case
+    through to :func:`literalize_call` so the declaration site and
+    the call site agree on identifier spelling.
     """
 
     case_dir_name: str
@@ -689,6 +696,7 @@ class _CallCaseConfig:
     per_element: bool
     call_style_type: type[literalizer.CallStyle] | None
     ref_declarations: dict[str, str]
+    ref_case_per_language: bool
 
 
 _CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -708,6 +716,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -718,6 +727,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -728,6 +738,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -738,6 +749,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -748,6 +760,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -758,6 +771,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -768,6 +782,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -778,6 +793,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=False,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     _CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -791,6 +807,48 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             "my_var": "[1, 2, 3]",
             "my_other": "[4, 5, 6]",
         },
+        ref_case_per_language=False,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "[1, 2, 3]",
+            "my_other": "[4, 5, 6]",
+        },
+        ref_case_per_language=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted_whole",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "[1, 2, 3]",
+        },
+        ref_case_per_language=True,
+    ),
+    _CallCaseConfig(
+        case_dir_name="call_ref_args_converted_nonsnake",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "myVar": "[1, 2, 3]",
+            "MyOther": "[4, 5, 6]",
+        },
+        ref_case_per_language=True,
     ),
     _CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -801,6 +859,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={},
+        ref_case_per_language=False,
     ),
     *[
         _CallCaseConfig(
@@ -812,6 +871,7 @@ _CALL_CASE_CONFIGS: list[_CallCaseConfig] = [
             per_element=True,
             call_style_type=cls,
             ref_declarations={},
+            ref_case_per_language=False,
         )
         for name, cls in _CALL_STYLE_VARIANTS
     ],
@@ -1218,24 +1278,25 @@ def _build_heterogeneous_value_union_name_variants() -> Iterable[_Variant]:
 @beartype
 def _build_heterogeneous_value_variant_name_variants() -> Iterable[_Variant]:
     """Build heterogeneous-value-variant-name variants for languages
-    that generate a named object variant for their heterogeneous
-    strategy (e.g. the Nim ``OBJECT_VARIANT``).  The
+    that generate a named variant type for their heterogeneous strategy
+    (the Nim ``OBJECT_VARIANT`` and Mojo ``VARIANT``).  The
     ``heterogeneous_value_variant_name`` constructor parameter lets
     users customize that name.
     """
+    wrapping_strategy_names = {"OBJECT_VARIANT", "VARIANT"}
     variants: list[_Variant] = []
     for lang_cls in _sorted_languages():
         custom_name = _HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES.get(lang_cls)
         if custom_name is None:
             continue
         default_spec = _spec(lang_cls=lang_cls)
-        object_variant = next(
+        wrapping_strategy = next(
             strategy
             for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "OBJECT_VARIANT"
+            if strategy.name in wrapping_strategy_names
         )
         spec = lang_cls(
-            heterogeneous_strategy=object_variant,
+            heterogeneous_strategy=wrapping_strategy,
             heterogeneous_value_variant_name=custom_name,
         )
         variants.append(
@@ -2370,6 +2431,20 @@ def _run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    effective_ref_case: literalizer.IdentifierCase | None
+    if config.ref_case_per_language:
+        # First element of ``identifier_cases`` is the language's
+        # default — convert declaration names to that case so the
+        # ref-site and declaration-site spellings agree.
+        default_case = spec.identifier_cases[0]
+        effective_ref_case = default_case
+        declarations = {
+            default_case.convert(name=ref_name): ref_source
+            for ref_name, ref_source in config.ref_declarations.items()
+        }
+    else:
+        effective_ref_case = None
+        declarations = config.ref_declarations
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
@@ -2381,7 +2456,7 @@ def _run_call_golden_case(
                 language=spec,
                 variable_form=literalizer.NewVariable(name=ref_name),
             )
-            for ref_name, ref_source in config.ref_declarations.items()
+            for ref_name, ref_source in declarations.items()
         ]
         result = literalizer.literalize_call(
             source=yaml_string,
@@ -2391,6 +2466,7 @@ def _run_call_golden_case(
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
             per_element=config.per_element,
+            ref_case=effective_ref_case,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)

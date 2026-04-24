@@ -27,6 +27,7 @@ dynamic = [
 ]
 dependencies = [
     "beartype>=0.22.9,<1",
+    "pyhumps>=3.8",
     "pyjson5>=2",
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
     # which has a maximum ruamel.yaml version of 0.18.16.
@@ -412,6 +413,7 @@ ignore_names = [
     "OBJECT_VARIANT",
     "TAGGED_ENUM",
     "UNION_TYPE",
+    "VARIANT",
     "CONST",
     "CONTAINERS_MAP",
     "DICTIONARY",
