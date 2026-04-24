@@ -1113,6 +1113,8 @@ jobs:
       - uses: Bogdanp/setup-racket@v1.15
       - name: Check Racket syntax
         run: xargs -0 raco make < /tmp/files-to-lint
+      - name: Run Racket files
+        run: xargs -0 -P "$(nproc)" -n1 racket < /tmp/files-to-lint
 
   lint-raku:
     runs-on: ubuntu-latest
