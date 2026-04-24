@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- Added a ``benchmarks`` job to ``.github/workflows/ci.yml`` that runs
+  the ``tests/benchmarks/`` suite under `CodSpeed
+  <https://codspeed.io>`_ via ``pytest-codspeed``.  The job posts a
+  per-benchmark performance delta on every pull request, making it
+  easier to spot regressions in the YAML fast path, JSON formatting,
+  and heterogeneous-widening logic.
 - ``C``, ``Cpp``, and ``ObjectiveC``
   ``wrap_in_file`` / ``wrap_combined_in_file`` output now emits
   ``(void)<variable_name>;`` after the declaration (and between the

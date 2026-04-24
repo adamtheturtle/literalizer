@@ -1,4 +1,4 @@
-|Build Status| |PyPI|
+|Build Status| |PyPI| |CodSpeed|
 
 literalizer
 ===========
@@ -90,4 +90,6 @@ See the `full documentation <https://adamtheturtle.github.io/literalizer/>`__ fo
    :target: https://github.com/adamtheturtle/literalizer/actions
 .. |PyPI| image:: https://badge.fury.io/py/literalizer.svg
    :target: https://badge.fury.io/py/literalizer
+.. |CodSpeed| image:: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
+   :target: https://codspeed.io/adamtheturtle/literalizer?utm_source=badge
 .. |minimum-python-version| replace:: 3.12

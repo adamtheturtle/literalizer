@@ -32,18 +32,42 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run --extra=dev pytest -s -vvv -n auto --cov-fail-under 100 --cov=src/ --cov=tests .
+          uv run --extra=dev pytest -s -vvv -n auto --cov-fail-under 100 --cov=src/ --cov=tests --ignore=tests/benchmarks .
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
+  benchmarks:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v4
+        with:
+          mode: simulation
+          run: uv run --extra=dev pytest tests/benchmarks --codspeed
+
   completion-ci:
-    needs: build
+    needs: [build, benchmarks]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check matrix job status
         run: |-
-          if ! ${{ needs.build.result == 'success' }}; then
+          if ! ${{ needs.build.result == 'success' && needs.benchmarks.result == 'success' }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi
