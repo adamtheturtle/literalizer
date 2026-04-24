@@ -1,4 +1,4 @@
-def process(*a, **kw); 0; end
+def process(data = nil); 0; end
 my_var = [
     1,
     2,
