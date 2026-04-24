@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     // second
     ((CVal){.s = "b"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     // first
     ((CVal){.s = "a"}),

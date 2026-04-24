@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "price $10"}),
     ((CVal){.s = "$HOME"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "price $10"}),
     ((CVal){.s = "$HOME"}),

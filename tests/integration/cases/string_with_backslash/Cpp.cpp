@@ -11,4 +11,5 @@ auto my_data = std::vector<std::string>{
     "both \"quotes''' here",
     "line1\\nline2\nwith newline",
 };
+    (void)my_data;
 }

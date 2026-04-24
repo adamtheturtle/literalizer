@@ -7,4 +7,5 @@ auto my_data = std::map<std::string, std::string>{
     {"another-key", "value2"},
     {"normal_key", "value3"},
 };
+    (void)my_data;
 }

@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"active", ((CVal){.b = true})},
     {"score", ((CVal){.s = NULL})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"name", ((CVal){.s = "Alice"})},
     {"age", ((CVal){.i = 30})},

@@ -6,4 +6,5 @@ auto my_data = std::vector<std::string>{
     "issue #{42}",
     "color #red",
 };
+    (void)my_data;
 }

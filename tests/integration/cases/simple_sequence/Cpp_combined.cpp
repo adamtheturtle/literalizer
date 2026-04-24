@@ -10,10 +10,12 @@ auto my_data = std::vector<std::variant<int, std::string, bool, std::nullptr_t>>
     true,
     nullptr,
 };
+(void)my_data;
 my_data = std::vector<std::variant<int, std::string, bool, std::nullptr_t>>{
     1,
     "hello",
     true,
     nullptr,
 };
+    (void)my_data;
 }

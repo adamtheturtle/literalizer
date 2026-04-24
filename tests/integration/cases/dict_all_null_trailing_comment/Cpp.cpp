@@ -9,4 +9,5 @@ auto my_data = std::map<std::string, std::nullptr_t>{
     {"b", nullptr},
     // trailing
 };
+    (void)my_data;
 }

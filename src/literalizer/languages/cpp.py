@@ -1201,12 +1201,12 @@ class Cpp(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a C++ declaration in a function body."""
-        del variable_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void check_() {{\n{content}\n}}"
+        use_line = f"\n    (void){variable_name};" if variable_name else ""
+        return f"void check_() {{\n{content}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -1215,9 +1215,15 @@ class Cpp(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap C++ declaration + assignment in a function body."""
+        """Wrap C++ declaration + assignment in a function body.
+
+        Reads ``variable_name`` between the declaration and the
+        assignment so the initial value is not a dead store flagged by
+        clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
+        """
+        mid_use = f"(void){variable_name};\n"
         return Cpp.wrap_in_file(
-            content=declaration + "\n" + assignment,
+            content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
             body_preamble=body_preamble,
         )

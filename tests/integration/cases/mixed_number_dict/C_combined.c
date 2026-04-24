@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"b", ((CVal){.f = 2.5})},
     {"c", ((CVal){.i = 3})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"a", ((CVal){.i = 1})},
     {"b", ((CVal){.f = 2.5})},

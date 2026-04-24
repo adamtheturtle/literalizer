@@ -6,9 +6,11 @@ auto my_data = std::vector<double>{
     -2.2,
     3.3,
 };
+(void)my_data;
 my_data = std::vector<double>{
     1.1,
     -2.2,
     3.3,
 };
+    (void)my_data;
 }

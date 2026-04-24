@@ -6,9 +6,11 @@ auto my_data = std::initializer_list<std::string>{
     "banana",
     "cherry",
 };
+(void)my_data;
 my_data = std::initializer_list<std::string>{
     "apple",
     "banana",
     "cherry",
 };
+    (void)my_data;
 }

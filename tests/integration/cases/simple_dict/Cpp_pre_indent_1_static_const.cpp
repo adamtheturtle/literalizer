@@ -10,4 +10,5 @@ void check_() {
         {"active", true},
         {"score", nullptr},
     };
+    (void)my_data;
 }

@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"description", ((CVal){.s = "# not a comment\n"})},
     {"name", ((CVal){.s = "foo"})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"description", ((CVal){.s = "# not a comment\n"})},
     {"name", ((CVal){.s = "foo"})},

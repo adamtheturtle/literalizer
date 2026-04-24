@@ -6,4 +6,5 @@ auto my_data = std::vector<double>{
     2.5,
     3,
 };
+    (void)my_data;
 }

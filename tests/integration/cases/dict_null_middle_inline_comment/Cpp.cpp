@@ -9,4 +9,5 @@ auto my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, b
     {"port", nullptr},  // not configured yet
     {"debug", true},
 };
+    (void)my_data;
 }

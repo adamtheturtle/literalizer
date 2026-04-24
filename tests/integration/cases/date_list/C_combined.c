@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "2024-01-15"}),
     ((CVal){.s = "2024-02-20"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "2024-01-15"}),
     ((CVal){.s = "2024-02-20"}),

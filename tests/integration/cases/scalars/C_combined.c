@@ -22,6 +22,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.b = false}),
     ((CVal){.s = "hello \"world\""}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.i = 42}),
     ((CVal){.f = 3.14}),

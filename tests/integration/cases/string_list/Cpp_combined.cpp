@@ -7,9 +7,11 @@ auto my_data = std::vector<std::string>{
     "bar",
     "baz",
 };
+(void)my_data;
 my_data = std::vector<std::string>{
     "foo",
     "bar",
     "baz",
 };
+    (void)my_data;
 }
