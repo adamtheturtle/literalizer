@@ -6,4 +6,5 @@ static const auto my_data = std::initializer_list<std::string>{
     "banana",
     "cherry",
 };
+    (void)my_data;
 }

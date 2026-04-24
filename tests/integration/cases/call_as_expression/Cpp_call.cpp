@@ -8,4 +8,5 @@ auto items = std::vector<std::nullptr_t>{
 process(1, 42),
 process(2, 100),
 };
+    (void)items;
 }

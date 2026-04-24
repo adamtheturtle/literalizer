@@ -21,6 +21,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     // Port setting
     {"port", ((CVal){.i = 3000})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     // Configuration
     {"name", ((CVal){.s = "app"})},

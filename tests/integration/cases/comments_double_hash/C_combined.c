@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     // # section
     ((CVal){.s = "a"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     // # section
     ((CVal){.s = "a"}),

@@ -5,6 +5,7 @@ id my_data = [NSSet setWithArray:@[
     @"banana",
     @"cherry",
 ]];
+(void)my_data;
 my_data = [NSSet setWithArray:@[
     @"apple",
     @"banana",

@@ -10,4 +10,5 @@ auto my_data = std::map<std::string, std::variant<std::string, int, bool>>{
     // Enable debug mode
     {"debug", true},
 };
+    (void)my_data;
 }

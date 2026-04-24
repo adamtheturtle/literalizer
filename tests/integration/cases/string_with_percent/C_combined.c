@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "100% done"}),
     ((CVal){.s = "%(name) is here"}),
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "100% done"}),
     ((CVal){.s = "%(name) is here"}),

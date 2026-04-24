@@ -6,4 +6,5 @@ auto my_data = std::vector<int>{
     0b10,
     0b11,
 };
+    (void)my_data;
 }

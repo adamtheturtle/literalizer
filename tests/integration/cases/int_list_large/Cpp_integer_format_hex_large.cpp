@@ -7,4 +7,5 @@ auto my_data = std::vector<int>{
     0xff,
     -0xa,
 };
+    (void)my_data;
 }

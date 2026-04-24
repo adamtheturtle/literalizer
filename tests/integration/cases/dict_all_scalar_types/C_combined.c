@@ -25,6 +25,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"dt", ((CVal){.s = "2024-01-15T12:00:00"})},
     {"by", ((CVal){.s = "48656c6c6f"})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"s", ((CVal){.s = "string"})},
     {"i", ((CVal){.i = 1})},

@@ -19,6 +19,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "a"}),  // note a
     ((CVal){.s = "b"}),  // note b
 }});
+(void)my_data;
 my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "a"}),  // note a
     ((CVal){.s = "b"}),  // note b

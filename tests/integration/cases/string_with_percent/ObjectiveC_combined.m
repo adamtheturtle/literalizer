@@ -4,6 +4,7 @@ id my_data = @[
     @"100% done",
     @"%(name) is here",
 ];
+(void)my_data;
 my_data = @[
     @"100% done",
     @"%(name) is here",

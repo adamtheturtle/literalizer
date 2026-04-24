@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"name", ((CVal){.s = "Alice"})},
     {"score", ((CVal){.s = NULL})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     // comment
     {"name", ((CVal){.s = "Alice"})},

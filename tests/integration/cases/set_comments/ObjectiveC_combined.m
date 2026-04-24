@@ -6,6 +6,7 @@ id my_data = [NSSet setWithArray:@[
     @"banana",
     // trailing
 ]];
+(void)my_data;
 my_data = [NSSet setWithArray:@[
     @"apple",  // inline comment
     // before banana

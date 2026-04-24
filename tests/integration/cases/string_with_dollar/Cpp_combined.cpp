@@ -6,8 +6,10 @@ auto my_data = std::vector<std::string>{
     "price $10",
     "$HOME",
 };
+(void)my_data;
 my_data = std::vector<std::string>{
     "price $10",
     "$HOME",
 };
+    (void)my_data;
 }

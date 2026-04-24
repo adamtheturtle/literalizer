@@ -11,6 +11,7 @@ auto my_data = std::vector<std::string>{
     "both \"quotes''' here",
     "line1\\nline2\nwith newline",
 };
+(void)my_data;
 my_data = std::vector<std::string>{
     "C:\\path\\to\\file",
     "back\\\\slash",
@@ -20,4 +21,5 @@ my_data = std::vector<std::string>{
     "both \"quotes''' here",
     "line1\\nline2\nwith newline",
 };
+    (void)my_data;
 }

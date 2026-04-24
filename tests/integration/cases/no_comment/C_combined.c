@@ -18,6 +18,7 @@ void check_(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"message", ((CVal){.s = "no comment here"})},
 }});
+(void)my_data;
 my_data = ((CVal){.m = (CKV[]){
     {"message", ((CVal){.s = "no comment here"})},
 }});

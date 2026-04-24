@@ -7,6 +7,7 @@ id my_data = @{
     // Enable debug mode
     @"debug": @YES,
 };
+(void)my_data;
 my_data = @{
     // Server configuration
     @"host": @"localhost",  // default host

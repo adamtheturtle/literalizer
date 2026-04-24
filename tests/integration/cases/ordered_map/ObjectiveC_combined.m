@@ -5,6 +5,7 @@ id my_data = @{
     @"age": @(30),
     @"active": @YES,
 };
+(void)my_data;
 my_data = @{
     @"name": @"Alice",
     @"age": @(30),
