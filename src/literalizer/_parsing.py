@@ -12,9 +12,7 @@ import tomlkit
 from beartype import beartype
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import (
-    CommentedMap,
     CommentedOrderedMap,
-    CommentedSeq,
     CommentedSet,
 )
 from ruamel.yaml.compat import ordereddict
@@ -45,6 +43,14 @@ class _ParsedInput:
 
     data: Value
     raw_data: object
+    yaml_needs_comment_resolve: bool
+    """Whether the YAML comment-resolution phase must run.
+
+    False for non-YAML inputs and for the YAML fast path (no comment
+    or tag markers in the source).  When False, ``raw_data`` carries
+    no round-trip metadata and must not be passed to
+    ``resolve_yaml_comments``.
+    """
 
 
 @beartype
@@ -107,6 +113,11 @@ def _coerce_yaml_keys(*, data: object) -> Value:
     Python types so type-based dispatch sees ``int`` rather than
     ``ScalarInt`` and friends.
     """
+    # ``CommentedMap`` and ``CommentedSeq`` are subclasses of ``dict``
+    # and ``list`` respectively, so their cases collapse into the plain
+    # ``dict()`` / ``list()`` arms below.  ``CommentedOrderedMap`` must
+    # stay on its own arm because it is *also* a ``dict`` subclass but
+    # represents ``!!omap`` and must be demoted to ``ordereddict``.
     match data:
         case CommentedOrderedMap():
             omap_src = cast("dict[object, object]", data)
@@ -117,12 +128,12 @@ def _coerce_yaml_keys(*, data: object) -> Value:
                 ]
             )
             return cast("Value", omap)
-        case CommentedMap():
+        case dict():
             return {
                 f"{k}": _coerce_yaml_keys(data=v)
                 for k, v in cast("dict[object, object]", data).items()
             }
-        case CommentedSeq():
+        case list():
             return [
                 _coerce_yaml_keys(data=item)
                 for item in cast("list[object]", data)
@@ -132,6 +143,11 @@ def _coerce_yaml_keys(*, data: object) -> Value:
             return {
                 cast("Scalar", _unwrap_yaml_scalar(value=item))
                 for item in members
+            }
+        case set():
+            return {
+                cast("Scalar", _unwrap_yaml_scalar(value=item))
+                for item in cast("set[object]", data)
             }
         case _:
             return cast("Value", _unwrap_yaml_scalar(value=data))
@@ -147,7 +163,11 @@ def _parse_json(*, source: str) -> _ParsedInput:
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
         raise JSONParseError(message) from exc
-    return _ParsedInput(data=data, raw_data=data)
+    return _ParsedInput(
+        data=data,
+        raw_data=data,
+        yaml_needs_comment_resolve=False,
+    )
 
 
 @beartype
@@ -158,7 +178,11 @@ def _parse_json5(*, source: str) -> _ParsedInput:
     except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
         message = f"Invalid JSON5: {exc}"
         raise JSON5ParseError(message) from exc
-    return _ParsedInput(data=data, raw_data=data)
+    return _ParsedInput(
+        data=data,
+        raw_data=data,
+        yaml_needs_comment_resolve=False,
+    )
 
 
 @functools.cache
@@ -175,23 +199,79 @@ def get_yaml() -> YAML:
     return YAML()
 
 
+@functools.cache
+def _get_safe_yaml() -> YAML:
+    """Return the cached safe (C-backed when available) ``YAML`` instance.
+
+    Used for the comment-free fast path in :func:`_parse_yaml`: the
+    round-trip loader is pure Python and ~8x slower than the safe
+    loader backed by ``ruamel.yaml.clib``.  When the source contains
+    none of the constructs that require round-trip fidelity (comments,
+    explicit tags, merge keys), the data parsed by the safe loader is
+    structurally identical to the demoted round-trip data.
+    """
+    return YAML(typ="safe", pure=False)
+
+
+def _yaml_needs_roundtrip(source: str) -> bool:
+    """Return True when *source* needs the comment-preserving loader.
+
+    The fast path is only safe when the source has none of the
+    constructs that either carry metadata the safe loader drops
+    (``#`` comments) or resolve differently between the two loaders
+    (explicit ``!``/``!!`` tags such as ``!!omap``/``!!set``,
+    anchors/aliases, and merge keys).  The checks are intentionally
+    conservative substring checks — a ``#`` inside a quoted string
+    still forces the slow path, which is correct but slightly
+    pessimistic.
+    """
+    return (
+        "#" in source
+        or "!" in source
+        or "&" in source
+        or "*" in source
+        or "<<" in source
+    )
+
+
 @beartype
 def _parse_yaml(*, source: str) -> _ParsedInput:
     """Parse a YAML string into a ``_ParsedInput``.
 
-    Uses the comment-preserving (round-trip) loader so the same parse
-    can later feed comment extraction without a second pass through
-    the YAML source.
+    When the source contains no comments or other round-trip-only
+    constructs, uses a C-backed safe loader and marks the result with
+    ``yaml_needs_comment_resolve=False`` so the comment-resolution
+    phase can be skipped.  Otherwise uses the comment-preserving
+    (round-trip) loader so the same parse can later feed comment
+    extraction without a second pass through the YAML source.
     """
-    ruamel_yaml = get_yaml()
+    if _yaml_needs_roundtrip(source=source):
+        ruamel_yaml = get_yaml()
+        try:
+            # https://sourceforge.net/p/ruamel-yaml/tickets/564/
+            raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
+        except YAMLError as exc:
+            message = f"Invalid YAML: {exc}"
+            raise YAMLParseError(message) from exc
+        data = _coerce_yaml_keys(data=raw_data)
+        return _ParsedInput(
+            data=data,
+            raw_data=raw_data,
+            yaml_needs_comment_resolve=True,
+        )
+
+    safe_yaml = _get_safe_yaml()
     try:
-        # https://sourceforge.net/p/ruamel-yaml/tickets/564/
-        raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
+        plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
-    data = _coerce_yaml_keys(data=raw_data)
-    return _ParsedInput(data=data, raw_data=raw_data)
+    data = _coerce_yaml_keys(data=plain_data)
+    return _ParsedInput(
+        data=data,
+        raw_data=plain_data,
+        yaml_needs_comment_resolve=False,
+    )
 
 
 @beartype
@@ -203,7 +283,11 @@ def _parse_toml(*, source: str) -> _ParsedInput:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
     toml_data = _coerce_toml_values(data=toml_doc.unwrap())
-    return _ParsedInput(data=toml_data, raw_data=toml_doc)
+    return _ParsedInput(
+        data=toml_data,
+        raw_data=toml_doc,
+        yaml_needs_comment_resolve=False,
+    )
 
 
 @beartype
