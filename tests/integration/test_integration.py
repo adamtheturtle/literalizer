@@ -2183,6 +2183,15 @@ def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
             cases_dir / call_case.config.case_dir_name / (golden_name + ext)
         )
 
+    for call_variant_case in _build_call_variant_cases():
+        variant_spec = call_variant_case.variant.spec
+        golden_name = f"{call_variant_case.variant.name}_call"
+        expected.add(
+            cases_dir
+            / call_variant_case.config.case_dir_name
+            / (golden_name + variant_spec.extension)
+        )
+
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
         os.path.relpath(path=path, start=cases_dir)
@@ -2316,35 +2325,25 @@ def _discover_call_cases() -> list[_CallCase]:
     return cases
 
 
-@pytest.mark.parametrize(
-    argnames="call_case",
-    argvalues=_discover_call_cases(),
-    ids=[
-        f"{c.config.case_dir_name}/{c.lang_cls.__name__}"
-        for c in _discover_call_cases()
-    ],
-)
-def test_call_golden_file(
-    call_case: _CallCase,
+@beartype
+def _run_call_golden_case(
+    *,
+    config: _CallCaseConfig,
+    spec: literalizer.Language,
+    golden_name: str,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
-    """Test that literalize_call output matches expected golden file."""
-    config = call_case.config
-    lang_cls = call_case.lang_cls
-    kwargs: dict[str, object] = {}
-    if config.call_style_type is not None:
-        style = next(
-            s
-            for s in lang_cls.CallStyles
-            if isinstance(s.value, config.call_style_type)
-        )
-        kwargs["call_style"] = style
-    spec = _spec(lang_cls=lang_cls, **kwargs)
+    """Assemble a literalize_call golden-file case against *golden_name*.
+
+    Shared by :func:`test_call_golden_file` (default-spec per language)
+    and :func:`test_call_variant_golden_file` (non-default language
+    variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
+    ``ERROR`` strategy rejects).
+    """
+    lang_cls = type(spec)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    lang_name = lang_cls.__name__
-    golden_name = f"{lang_name}_call"
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
@@ -2371,7 +2370,7 @@ def test_call_golden_file(
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(
-            f"{lang_name} cannot represent this heterogeneous input",
+            f"{lang_cls.__name__} cannot represent this heterogeneous input",
         )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
@@ -2438,4 +2437,108 @@ def test_call_golden_file(
         extension=lang_cls.extension,
         newline="",
         golden_path=golden_path,
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="call_case",
+    argvalues=_discover_call_cases(),
+    ids=[
+        f"{c.config.case_dir_name}/{c.lang_cls.__name__}"
+        for c in _discover_call_cases()
+    ],
+)
+def test_call_golden_file(
+    call_case: _CallCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test that literalize_call output matches expected golden file."""
+    config = call_case.config
+    lang_cls = call_case.lang_cls
+    kwargs: dict[str, object] = {}
+    if config.call_style_type is not None:
+        style = next(
+            s
+            for s in lang_cls.CallStyles
+            if isinstance(s.value, config.call_style_type)
+        )
+        kwargs["call_style"] = style
+    spec = _spec(lang_cls=lang_cls, **kwargs)
+    _run_call_golden_case(
+        config=config,
+        spec=spec,
+        golden_name=f"{lang_cls.__name__}_call",
+        cases_dir=cases_dir,
+        file_regression=file_regression,
+    )
+
+
+@dataclasses.dataclass
+class _CallVariantCase:
+    """A ``literalize_call`` golden-file case run with a non-default
+    language spec (e.g. Rust's ``TAGGED_ENUM`` strategy).
+    """
+
+    config: _CallCaseConfig
+    variant: _Variant
+
+
+# Per-case language variants exercised by
+# :func:`test_call_variant_golden_file`.  Each entry names a call-case
+# directory and pairs it with the variant builders that produce a spec
+# capable of representing that case's heterogeneous input — which the
+# default spec rejects, causing :func:`test_call_golden_file` to skip.
+_CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[_Variant]]]] = [
+    ("call_mixed_type_dicts", _build_heterogeneous_value_name_variants),
+]
+
+
+@functools.cache
+@beartype
+def _build_call_variant_cases() -> list[_CallVariantCase]:
+    """Return call-test cases for language variants that accept
+    heterogeneous input the default spec rejects.
+    """
+    cases: list[_CallVariantCase] = []
+    for case_dir_name, builder in _CALL_VARIANT_SOURCES:
+        config = next(
+            cfg
+            for cfg in _CALL_CASE_CONFIGS
+            if cfg.case_dir_name == case_dir_name
+        )
+        cases.extend(
+            _CallVariantCase(config=config, variant=variant)
+            for variant in builder()
+        )
+    return cases
+
+
+@pytest.mark.parametrize(
+    argnames="call_variant_case",
+    argvalues=_build_call_variant_cases(),
+    ids=[
+        f"{c.config.case_dir_name}/{c.variant.name}"
+        for c in _build_call_variant_cases()
+    ],
+)
+def test_call_variant_golden_file(
+    call_variant_case: _CallVariantCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test ``literalize_call`` for a non-default language spec.
+
+    Covers call inputs that the language's default
+    :attr:`Language.heterogeneous_strategy` rejects, which
+    :func:`test_call_golden_file` skips — in particular the
+    sibling-widening behavior of Rust's ``TAGGED_ENUM`` across
+    per-element call arguments.
+    """
+    _run_call_golden_case(
+        config=call_variant_case.config,
+        spec=call_variant_case.variant.spec,
+        golden_name=f"{call_variant_case.variant.name}_call",
+        cases_dir=cases_dir,
+        file_regression=file_regression,
     )
