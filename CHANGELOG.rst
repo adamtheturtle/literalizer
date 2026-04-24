@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``Erlang`` now supports ``literalize_call``.  Calls use positional
+  argument syntax (``f(A, B)``); dotted targets like
+  ``app.client.fetch`` are emitted as quoted-atom function names
+  (``'app.client.fetch'(...)``) since Erlang atoms do not allow
+  unquoted dots.  Call stubs are emitted as module-level function
+  definitions placed between ``-export`` and ``x()``, and ``x()``
+  separates call statements with ``,`` terminated by ``.``.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
   targets, so a user-written ``throttler.check(...)`` literalizes to
