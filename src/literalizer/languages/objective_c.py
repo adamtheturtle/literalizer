@@ -133,8 +133,8 @@ def _format_objc_bytes_base64(value: bytes) -> str:
 
 @beartype
 def _objc_global_root(root: str, /) -> str:
-    """Return a ``k``-prefixed, title-cased root for an ObjC const
-    global, so the emitted name satisfies clang-tidy's
+    """Return a ``k``-prefixed, title-cased root for an Objective-C
+    const global, so the emitted name satisfies clang-tidy's
     ``google-objc-global-variable-declaration`` check.
     """
     return f"k{root.title()}"
