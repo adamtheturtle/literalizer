@@ -11,9 +11,8 @@ Next
 - ``Gleam`` now emits a ``pub type GVal`` declaration containing only
   the constructors actually needed for the data, rather than always
   emitting all eight variants.  Scalar-only inputs (e.g.  ``GInt(42)``)
-  now produce a one-constructor type, matching what the class
-  docstring already promised and bringing Gleam in line with Elm and
-  Haskell.
+  now produce a one-constructor type, bringing Gleam in line with Elm
+  and Haskell.
 - ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
   fixture end-to-end via ``lua``, catching runtime errors (calls to
   undefined functions, missing module imports, failed assertions)
