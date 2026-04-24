@@ -59,6 +59,7 @@ from literalizer._language import (
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
+    IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -1194,6 +1195,12 @@ class Rust(metaclass=LanguageCls):
         """
 
     heterogeneous_strategies = HeterogeneousStrategies
+
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.SNAKE,
+        IdentifierCase.PASCAL,
+        IdentifierCase.UPPER_SNAKE,
+    )
 
     @staticmethod
     def wrap_in_file(
