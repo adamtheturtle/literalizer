@@ -4,8 +4,8 @@ Changelog
 Next
 ----
 
-- ``Perl`` ``literalize_call`` output now prepends Perl's scalar ``$``
-  sigil to ``{"$ref": "name"}`` identifiers via a
+- ``Perl`` ``literalize_call`` output now emits Perl's scalar ``$``
+  sigil before each ``{"$ref": "name"}`` identifier via a
   ``format_call_ref_identifier`` override, so a ref to ``my_var``
   renders as ``$my_var`` at the call site and lines up with the
   ``my $my_var = ...`` declaration site.  Generated files now pass
