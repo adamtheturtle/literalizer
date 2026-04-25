@@ -22,12 +22,9 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
 )
 from literalizer.languages import (
-    CommonLisp,
-    Erlang,
     Haskell,
     Hcl,
     Jsonnet,
-    Perl,
 )
 
 from .golden_assertions import check_golden
@@ -337,14 +334,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # name-mangling gaps.
 REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
     {
-        # ``defparameter`` adds ``*name*`` earmuffs at the declaration
-        # site, but ``$ref`` emits the bare name at the call site —
-        # unbound variable at load.
-        CommonLisp,
-        # Variables are capitalized at the declaration site (``My_var =
-        # ...``) but ``$ref`` emits the bare name, which Erlang parses
-        # as a lowercase atom rather than the declared variable.
-        Erlang,
         # ``wrap_in_file`` places content inside ``main = do``; a
         # multi-line ``name = value`` binding needs ``let`` in a
         # do-block, which the harness does not inject.
@@ -355,13 +344,6 @@ REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
         # list; variable declarations don't fit the shape.
         Jsonnet,
-        # Variables declare with a ``my $name`` sigil that ``$ref``
-        # does not emit at the call site.  The default ``perl -c``
-        # tolerates the unquoted identifier (interpreting it as the
-        # string ``"my_var"``), but the call no longer references the
-        # declared variable, so the golden misrepresents the feature
-        # and the file fails ``use strict``.
-        Perl,
     }
 )
 

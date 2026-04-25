@@ -4,6 +4,25 @@ Changelog
 Next
 ----
 
+- ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
+  (``*name*``) at the call site so they resolve to the matching
+  ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by
+  the ``literalize_call`` reference-argument integration tests, which
+  now lint cleanly under SBCL.
+- ``Erlang`` now capitalizes ``{"$ref": "name"}`` call arguments so
+  they reference the declared variable instead of parsing as a
+  lowercase atom, matching the existing ``My_var = ...`` capitalization
+  on the declaration site.  ``Erlang.format_variable_declaration`` now
+  emits the trailing ``,`` separator itself so multiple declarations can
+  precede a call; :meth:`Erlang.wrap_in_file` is adjusted accordingly
+  and the rendered output is unchanged for the single-declaration case.
+- ``Perl`` ``literalize_call`` output now emits Perl's scalar ``$``
+  sigil before each ``{"$ref": "name"}`` identifier via a
+  ``format_call_ref_identifier`` override, so a ref to ``my_var``
+  renders as ``$my_var`` at the call site and lines up with the
+  ``my $my_var = ...`` declaration site.  Generated files now pass
+  ``perl -c`` under ``use strict`` and ``Perl`` is no longer excluded
+  from the integration suite's ref-declaration golden cases.
 - Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
   now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
   and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so

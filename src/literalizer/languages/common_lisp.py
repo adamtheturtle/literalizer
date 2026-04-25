@@ -49,7 +49,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -69,6 +68,16 @@ def _format_cons_entry(
 ) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
     return f"(cons {key} {formatted_value})"
+
+
+def _format_common_lisp_call_ref_identifier(name: str, /) -> str:
+    """Wrap a ``$ref`` identifier in Common Lisp earmuffs.
+
+    The ``DEFPARAMETER`` declaration style binds variables as
+    ``*name*``, so the call site must wrap the bare name in the
+    matching ``*...*`` markers to resolve to the bound value.
+    """
+    return f"*{name}*"
 
 
 def _common_lisp_call_stub(
@@ -461,7 +470,7 @@ class CommonLisp(metaclass=LanguageCls):
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
-        return identity_call_ref_identifier
+        return _format_common_lisp_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
