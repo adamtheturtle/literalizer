@@ -1515,8 +1515,8 @@ def _format_single_call_arg(
     ref_name = _extract_call_arg_ref_name(value=value)
     if ref_name is not None:
         if ref_case is not None:
-            return ref_case.convert(name=ref_name)
-        return ref_name
+            ref_name = ref_case.convert(name=ref_name)
+        return language.format_call_ref_identifier(ref_name)
     return wrap_arg(
         value,
         _format_value(

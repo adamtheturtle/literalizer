@@ -453,6 +453,7 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_call_stub)
     assert callable(spec.format_call_preamble_stub)
     assert callable(spec.format_call_target)
+    assert callable(spec.format_call_ref_identifier)
     assert callable(spec.format_variable_declaration)
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)

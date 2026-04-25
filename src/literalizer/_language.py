@@ -1204,6 +1204,20 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier into the form
+        required by this language's call expression syntax.
+
+        Called after :func:`~literalizer.literalize_call`'s ``ref_case``
+        normalization, so *name* is already in the requested identifier
+        case.  Most languages emit ref identifiers bare and use
+        :data:`identity_call_ref_identifier`.  Languages where variable
+        references carry a sigil (e.g. PHP ``$name``, Perl ``$name``)
+        override this to prepend the sigil.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -1259,6 +1273,21 @@ def _identity_call_target(name: str, /) -> str:
 
 identity_call_target: Callable[[str], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
+
+
+def _identity_call_ref_identifier(name: str, /) -> str:
+    """Return *name* unchanged."""
+    return name
+
+
+identity_call_ref_identifier: Callable[[str], str] = (
+    _identity_call_ref_identifier
+)
+"""Shared callable for languages that need no ``$ref`` identifier
+rewriting.  Languages that decorate ref identifiers (e.g. PHP's
+``$name`` or Perl's ``$name``) override
+:attr:`Language.format_call_ref_identifier` instead.
+"""
 
 
 def _no_type_hint_preamble(

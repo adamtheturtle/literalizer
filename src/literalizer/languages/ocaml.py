@@ -60,6 +60,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -582,6 +583,13 @@ class OCaml(metaclass=LanguageCls):
         syntax.
         """
         return identity_call_target
+
+    @cached_property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier into the
+        language's call expression syntax.
+        """
+        return identity_call_ref_identifier
 
     @cached_property
     def null_literal(self) -> str:

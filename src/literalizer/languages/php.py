@@ -64,6 +64,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    identity_call_ref_identifier,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -514,6 +515,13 @@ class Php(metaclass=LanguageCls):
         form.
         """
         return _php_format_call_target
+
+    @cached_property
+    def format_call_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier into the
+        language's call expression syntax.
+        """
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_preamble_stub(
