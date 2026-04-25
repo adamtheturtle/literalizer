@@ -4,6 +4,7 @@ import base64
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -59,18 +60,32 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+# A formatted numeric value can follow ``@`` directly when it is a
+# bare unsigned numeric literal (digits, hex/exponent letters, dot,
+# optional ``+``/``-`` after ``e``/``E`` for scientific notation, and
+# integer-suffix letters).  Anything else — a leading ``-``, an
+# identifier like ``INFINITY``/``NAN``, or an embedded comment —
+# requires the ``@(...)`` boxed-expression form.
+_OBJC_BARE_NUMERIC = re.compile(
+    pattern=r"\A[0-9](?:[0-9a-zA-Z._]|[eE][+-])*\Z",
+)
+
 
 @beartype
 def _format_objc_entry(original: Value, formatted: str, /) -> str:
     """Wrap a formatted entry for use inside an Objective-C collection.
 
     Only bare numeric values (``int`` / ``float``, but not ``bool``)
-    need ``@(...)`` wrapping; everything else is already a valid
-    Objective-C object expression.
+    need ``@`` boxing; everything else is already a valid Objective-C
+    object expression.  The redundant ``@(...)`` parens are dropped
+    when the formatted value is a bare numeric literal so that
+    clang-tidy's ``readability-redundant-parentheses`` check passes.
     """
-    if isinstance(original, (int, float)) and not isinstance(original, bool):
-        return f"@({formatted})"
-    return formatted
+    if isinstance(original, bool) or not isinstance(original, (int, float)):
+        return formatted
+    if _OBJC_BARE_NUMERIC.fullmatch(string=formatted):
+        return f"@{formatted}"
+    return f"@({formatted})"
 
 
 @beartype

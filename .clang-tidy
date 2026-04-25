@@ -1,8 +1,4 @@
 ---
-# readability-redundant-parentheses is disabled because the Objective-C
-# generator emits @(N) boxed-number literals where the parentheses are
-# required for some operands (e.g. @(-2.2)) but redundant for others
-# (e.g. @(30)). Emitting them uniformly keeps the generator simple.
 Checks: >
   *,
   -altera-struct-pack-align,
@@ -22,5 +18,4 @@ Checks: >
   -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-named-parameter,
-  -readability-redundant-parentheses,
 WarningsAsErrors: '*'

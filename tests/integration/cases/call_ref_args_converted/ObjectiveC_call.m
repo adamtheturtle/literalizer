@@ -2,15 +2,15 @@
 static void process(id _a0, id _a1) { (void)_a0; (void)_a1; }
 void check_(void) {
 id myVar = @[
-    @(1),
-    @(2),
-    @(3),
+    @1,
+    @2,
+    @3,
 ];
 id myOther = @[
-    @(4),
-    @(5),
-    @(6),
+    @4,
+    @5,
+    @6,
 ];
-process(myVar, @(42));
-process(myOther, @(7));
+process(myVar, @42);
+process(myOther, @7);
 }

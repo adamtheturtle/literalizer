@@ -5,6 +5,6 @@ struct kAppType_ { struct clientType_ client; };
 static const struct kAppType_ kApp = { .client = { .fetch = kApp_client_fetch_stub_ } };
 void check_(void) {
 kApp.client.fetch(@"hello");
-kApp.client.fetch(@(42));
+kApp.client.fetch(@42);
 kApp.client.fetch(@YES);
 }

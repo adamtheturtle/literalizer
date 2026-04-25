@@ -2,7 +2,7 @@
 void check_(void) {
 id my_data = @{
     @"name": @"Alice",
-    @"age": @(30),
+    @"age": @30,
     @"active": @YES,
     @"score": [NSNull null],
     @"joined": @"2024-01-15",
