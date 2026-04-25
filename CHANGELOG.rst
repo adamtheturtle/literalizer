@@ -7,8 +7,8 @@ Next
 - ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
   (``*name*``) at the call site so they resolve to the matching
   ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by
-  the ``literalize_call`` ref-args integration tests, which now lint
-  cleanly under SBCL.
+  the ``literalize_call`` reference-argument integration tests, which
+  now lint cleanly under SBCL.
 - Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
   now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
   and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so
