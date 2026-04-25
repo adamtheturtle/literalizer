@@ -475,7 +475,26 @@ class Ada(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        base = self.sequence_format.value
+        empty = base.empty_sequence
+
+        def _narrowed_empty_form(
+            _siblings: Sequence[Value],
+        ) -> str | None:
+            """Use Ada's structured empty literal next to typed siblings.
+
+            Ada arrays cannot be initialised by ``AList'()`` — the
+            language requires a typed range form like
+            ``AList'(1 .. 0 => ANull)`` even at empty positions.  A_Val
+            is heterogeneous, so this empty form is accepted as a
+            sibling of fully-typed entries.
+            """
+            return empty
+
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

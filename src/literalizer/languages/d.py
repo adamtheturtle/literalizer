@@ -518,7 +518,26 @@ class D(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        base = self.sequence_format.value
+        empty = base.empty_sequence
+
+        def _narrowed_empty_form(
+            _siblings: Sequence[Value],
+        ) -> str | None:
+            """Keep D's ``parseJSON("[]")`` empty literal next to typed
+            siblings.
+
+            ``JSONValue([])`` rejects an empty ``void[]`` payload at
+            template instantiation; the language's ``parseJSON("[]")``
+            empty form returns a fresh ``JSONValue`` array and is
+            accepted alongside typed siblings.
+            """
+            return empty
+
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

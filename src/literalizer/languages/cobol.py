@@ -625,7 +625,26 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        base = self.sequence_format.value
+        empty = base.empty_sequence
+
+        def _narrowed_empty_form(
+            _siblings: Sequence[Value],
+        ) -> str | None:
+            """Keep COBOL's structured empty literal next to typed
+            siblings.
+
+            Inheriting a sibling's COMP-5 group opener for the empty
+            slot would produce a malformed COBOL record; the
+            language's ``PIC X(1) VALUE SPACES`` placeholder is the
+            structurally valid empty form here.
+            """
+            return empty
+
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

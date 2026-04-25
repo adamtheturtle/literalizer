@@ -12,6 +12,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -33,6 +34,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import (
     escape_control_chars,
 )
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -97,6 +99,40 @@ def _unescape_dhall_string(value: str) -> str:
         return _simple_escapes[match.group(1)]
 
     return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
+
+
+_DHALL_ELEMENT_TO_TYPE = make_element_to_type(
+    str_type="Text",
+    bool_type="Bool",
+    int_type="Integer",
+    float_type="Double",
+    mixed_numeric_type=None,
+    bytes_type=None,
+    date_type=None,
+    datetime_type=None,
+    list_template="List {inner}",
+    dict_type_template=None,
+    fallback_value_type=None,
+)
+
+
+def _dhall_narrowed_empty_form(
+    siblings: Sequence[Value],
+) -> str | None:
+    """Compute Dhall's typed ``[] : List T`` empty literal for an
+    empty inner-list child whose non-empty siblings infer element type
+    ``T``.
+    """
+    sibling_lists = [s for s in siblings if isinstance(s, list)]
+    if not sibling_lists:
+        return None
+    inner = infer_element_type(items=sibling_lists[0])
+    if inner is None:
+        return None
+    type_name = _DHALL_ELEMENT_TO_TYPE(inner)
+    if type_name is None:
+        return None
+    return f"[] : List {type_name}"
 
 
 @beartype
@@ -716,7 +752,10 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_dhall_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

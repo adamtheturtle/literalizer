@@ -915,8 +915,27 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format(
+        base = self.sequence_format(
             default_type=self.default_sequence_element_type,
+        )
+        empty = base.empty_sequence
+
+        def _narrowed_empty_form(
+            _siblings: Sequence[Value],
+        ) -> str | None:
+            """Keep C#'s typed empty literal next to typed siblings.
+
+            ``()`` parses as an invalid expression in C#; the
+            language's ``ValueTuple.Create()`` (or ``Array.Empty<T>()``
+            for the array format) is the syntactically valid empty
+            form, so prefer it whenever an empty inner list sits
+            beside non-empty siblings.
+            """
+            return empty
+
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_narrowed_empty_form,
         )
 
     @cached_property

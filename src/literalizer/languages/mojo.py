@@ -39,6 +39,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -71,6 +72,43 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+
+_MOJO_ELEMENT_TO_TYPE = make_element_to_type(
+    str_type="String",
+    bool_type="Bool",
+    int_type="Int",
+    float_type="Float64",
+    mixed_numeric_type=None,
+    bytes_type=None,
+    date_type=None,
+    datetime_type=None,
+    list_template="List[{inner}]",
+    dict_type_template=None,
+    fallback_value_type=None,
+)
+
+
+def _mojo_narrowed_empty_form(
+    siblings: Sequence[Value],
+) -> str | None:
+    """Compute Mojo's typed ``List[T]()`` empty literal for an empty
+    inner-list child whose non-empty siblings infer element type ``T``.
+
+    Mojo cannot resolve the type of a bare ``[]`` from context, so an
+    untyped empty literal in a homogeneous nested-list breaks the
+    parent's inferred ``List[List[T]]`` type.  Pulling the sibling
+    type into a typed empty restores compile-time consistency.
+    """
+    sibling_lists = [s for s in siblings if isinstance(s, list)]
+    if not sibling_lists:
+        return None
+    inner = infer_element_type(items=sibling_lists[0])
+    if inner is None:
+        return None
+    type_name = _MOJO_ELEMENT_TO_TYPE(inner)
+    if type_name is None:
+        return None
+    return f"List[{type_name}]()"
 
 
 @beartype
@@ -693,8 +731,12 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format(
+        base = self.sequence_format(
             default_type=self.default_sequence_element_type,
+        )
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_mojo_narrowed_empty_form,
         )
 
     @cached_property

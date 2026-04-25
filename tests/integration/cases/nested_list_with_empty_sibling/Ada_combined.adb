@@ -2,7 +2,7 @@ procedure Check is
    procedure Check_Declaration is
       my_data : A_Val := AList'(
           AList'(AInt (1), AInt (2)),
-          AList'(),
+          AList'(1 .. 0 => ANull),
           AList'(AInt (3), AInt (4))
       );
    begin
@@ -12,7 +12,7 @@ procedure Check is
    begin
       my_data := AList'(
           AList'(AInt (1), AInt (2)),
-          AList'(),
+          AList'(1 .. 0 => ANull),
           AList'(AInt (3), AInt (4))
       );
    end Check_Assignment;

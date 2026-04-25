@@ -31,6 +31,7 @@ class SequenceFormatConfig:
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
     declared_type: str | None
+    narrowed_empty_form: Callable[[Sequence[Value]], str | None] | None = None
 
 
 @dataclasses.dataclass(frozen=True)

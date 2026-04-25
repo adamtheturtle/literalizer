@@ -12,6 +12,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -40,6 +41,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash_hash
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
@@ -70,6 +72,38 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_CRYSTAL_ELEMENT_TO_TYPE = make_element_to_type(
+    str_type="String",
+    bool_type="Bool",
+    int_type="Int32",
+    float_type="Float64",
+    mixed_numeric_type=None,
+    bytes_type=None,
+    date_type=None,
+    datetime_type=None,
+    list_template="Array({inner})",
+    dict_type_template=None,
+    fallback_value_type=None,
+)
+
+
+def _crystal_narrowed_empty_form(
+    siblings: Sequence[Value],
+) -> str | None:
+    """Compute Crystal's typed ``[] of T`` empty literal for an empty
+    inner-list child whose non-empty siblings infer element type ``T``.
+    """
+    sibling_lists = [s for s in siblings if isinstance(s, list)]
+    if not sibling_lists:
+        return None
+    inner = infer_element_type(items=sibling_lists[0])
+    if inner is None:
+        return None
+    type_name = _CRYSTAL_ELEMENT_TO_TYPE(inner)
+    if type_name is None:
+        return None
+    return f"[] of {type_name}"
 
 
 @beartype
@@ -541,7 +575,10 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_crystal_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
