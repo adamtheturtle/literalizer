@@ -631,6 +631,41 @@ def _compute_sibling_list_position_overrides(
 
 
 @beartype
+def _empty_child_sibling_opener(
+    *,
+    value: list[Value],
+    position: int,
+    spec: Language,
+) -> str | None:
+    """Opener to use for an empty inner-list child at *position*.
+
+    Empty inner lists have no contents to infer a type from, so the
+    default per-list opener falls back to the language's generic
+    "any"-typed sequence (e.g. ``new Object[]{``, ``[]any{``,
+    ``Vec::<String>::new()``).  When that empty list sits beside
+    non-empty homogeneous list siblings, the rendered literal then
+    mixes the narrow sibling type with the generic empty type and is
+    rejected by static type checkers (javac, rustc, go vet, ...).
+
+    Pull a typed opener from a non-empty list sibling when all such
+    siblings produce the same opener, so the empty list renders with
+    a matching type.  Returns ``None`` when no homogeneous sibling
+    opener exists and the default fallback should stand.
+    """
+    item = value[position]
+    if not (isinstance(item, list) and not item):
+        return None
+    sibling_openers = {
+        spec.sequence_open(other)
+        for other in value
+        if isinstance(other, list) and other
+    }
+    if len(sibling_openers) != 1:
+        return None
+    return next(iter(sibling_openers))
+
+
+@beartype
 def _format_list_value(
     *,
     value: list[Value],
@@ -680,8 +715,16 @@ def _format_list_value(
                     wrap_ids=wrap_ids,
                     sequence_open_override=(
                         child_sequence_open_overrides[position]
-                        if position < len(child_sequence_open_overrides)
-                        else None
+                        if (
+                            position < len(child_sequence_open_overrides)
+                            and child_sequence_open_overrides[position]
+                            is not None
+                        )
+                        else _empty_child_sibling_opener(
+                            value=value,
+                            position=position,
+                            spec=spec,
+                        )
                     ),
                 ),
                 spec=spec,
@@ -938,12 +981,18 @@ def _format_collection_lines(
                             spec=spec,
                             dict_open_override=dict_open_override,
                             wrap_ids=wrap_ids,
-                            sequence_open_override=None,
+                            sequence_open_override=(
+                                _empty_child_sibling_opener(
+                                    value=list_data,
+                                    position=position,
+                                    spec=spec,
+                                )
+                            ),
                         ),
                         spec=spec,
                     ),
                 )
-                for element in list_data
+                for position, element in enumerate(iterable=list_data)
             ]
             _append_entries(
                 formatted_entries=formatted_entries,
