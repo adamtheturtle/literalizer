@@ -1167,26 +1167,10 @@ class Java(metaclass=LanguageCls):
             set_opener_template=None,
             narrow_dict_values=False,
         )
-        typed_open = typed_collection_open(
+        return typed_collection_open(
             type_to_opener=openers.seq,
             fallback=fmt.typed_opener_fallback,
         )
-        fallback = fmt.typed_opener_fallback
-
-        def _open(items: list[Value]) -> str:
-            """Avoid narrow nested-array openers around empty inner lists.
-
-            Java arrays are reified, so e.g. ``int[][]`` cannot hold a
-            generic ``new Object[]{}`` for an empty inner list.  When an
-            empty inner list sits beside non-empty homogeneous siblings,
-            fall back to the generic ``new Object[]{`` opener so the
-            generated array literal type-checks.
-            """
-            if any(isinstance(item, list) and not item for item in items):
-                return fallback
-            return typed_open(items)
-
-        return _open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
