@@ -36,7 +36,6 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
-    CommonLisp,
     Crystal,
     CSharp,
     Dart,
@@ -2388,10 +2387,6 @@ def test_format_enumeration_properties(
 # name-mangling gaps.
 _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
     {
-        # ``defparameter`` adds ``*name*`` earmuffs at the declaration
-        # site, but ``$ref`` emits the bare name at the call site —
-        # unbound variable at load.
-        CommonLisp,
         # ``wrap_in_file`` places content inside ``main = do``; a
         # multi-line ``name = value`` binding needs ``let`` in a
         # do-block, which the harness does not inject.

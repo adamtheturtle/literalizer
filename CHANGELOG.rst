@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
+  (``*name*``) at the call site so they resolve to the matching
+  ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by
+  the ``literalize_call`` reference-argument integration tests, which
+  now lint cleanly under SBCL.
 - ``Erlang`` now capitalizes ``{"$ref": "name"}`` call arguments so
   they reference the declared variable instead of parsing as a
   lowercase atom, matching the existing ``My_var = ...`` capitalization
