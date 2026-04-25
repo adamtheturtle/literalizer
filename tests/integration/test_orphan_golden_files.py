@@ -1,0 +1,104 @@
+"""Detect orphaned golden files that no parameterized test covers."""
+
+import os
+from typing import TYPE_CHECKING
+
+import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+from .call_cases import discover_call_cases
+from .call_variant_cases import build_call_variant_cases
+from .case_discovery import (
+    build_heterogeneous_strategy_combined_cases,
+    build_line_ending_combined_cases,
+    build_pre_indent_cases,
+    discover_cases,
+    discover_combined_cases,
+)
+from .language_specs import make_spec
+from .variant_cases import build_variant_cases
+
+
+def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
+    """Every file under ``cases/`` must be referenced by a parameterized
+    test.  Orphaned golden files silently rot and waste repository space.
+    """
+    cases_dir: Path = (
+        request.config.rootpath / "tests" / "integration" / "cases"
+    )
+    expected: set[Path] = set()
+
+    for case_dir in sorted(cases_dir.iterdir()):
+        expected.add(case_dir / "input.yaml")
+
+    for case_name, lang_cls in discover_cases():
+        ext = lang_cls.extension
+        expected.add(cases_dir / case_name / (lang_cls.__name__ + ext))
+
+    for combined_case in discover_combined_cases():
+        ext = combined_case.lang_cls.extension
+        expected.add(
+            cases_dir
+            / combined_case.case_name
+            / (combined_case.golden_file_name + ext)
+        )
+
+    for variant_case in build_variant_cases():
+        ext = variant_case.variant.spec.extension
+        expected.add(
+            cases_dir
+            / variant_case.case_dir_name
+            / (variant_case.variant_name + ext)
+        )
+
+    for line_ending_case in build_line_ending_combined_cases():
+        line_ending_spec = make_spec(
+            lang_cls=line_ending_case.lang_cls,
+            line_ending=line_ending_case.line_ending,
+        )
+        expected.add(
+            cases_dir
+            / line_ending_case.case_dir_name
+            / (line_ending_case.name + line_ending_spec.extension)
+        )
+
+    for strategy_case in build_heterogeneous_strategy_combined_cases():
+        ext = strategy_case.lang_cls.extension
+        expected.add(
+            cases_dir
+            / strategy_case.case_dir_name
+            / (strategy_case.name + ext)
+        )
+
+    for pre_indent_case in build_pre_indent_cases():
+        ext = pre_indent_case.lang_cls.extension
+        expected.add(
+            cases_dir
+            / pre_indent_case.case_dir_name
+            / (pre_indent_case.name + ext)
+        )
+
+    for call_case in discover_call_cases():
+        ext = call_case.lang_cls.extension
+        golden_name = f"{call_case.lang_cls.__name__}_call"
+        expected.add(
+            cases_dir / call_case.config.case_dir_name / (golden_name + ext)
+        )
+
+    for call_variant_case in build_call_variant_cases():
+        variant_spec = call_variant_case.variant.spec
+        golden_name = f"{call_variant_case.variant.name}_call"
+        expected.add(
+            cases_dir
+            / call_variant_case.config.case_dir_name
+            / (golden_name + variant_spec.extension)
+        )
+
+    actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
+    dead_files = sorted(
+        os.path.relpath(path=path, start=cases_dir)
+        for path in actual - expected
+    )
+    assert not dead_files
