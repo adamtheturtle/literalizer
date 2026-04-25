@@ -1,0 +1,10 @@
+defmodule Check do
+  def x do
+    my_data = [
+        ["2026-01-01", "2026-01-02"],
+        [],
+        ["2026-02-03", "2026-02-04"],
+    ]
+    _ = my_data
+  end
+end

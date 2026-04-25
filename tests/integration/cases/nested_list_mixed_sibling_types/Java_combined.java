@@ -1,0 +1,14 @@
+class Check {
+    public static void check() {
+var my_data = new Object[]{
+    new int[]{1, 2},
+    new Object[]{},
+    new String[]{"a", "b"}
+};
+my_data = new Object[]{
+    new int[]{1, 2},
+    new Object[]{},
+    new String[]{"a", "b"}
+};
+    }
+}

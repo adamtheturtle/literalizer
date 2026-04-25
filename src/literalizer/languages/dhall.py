@@ -123,11 +123,8 @@ def _dhall_narrowed_empty_form(
     empty inner-list child whose non-empty siblings infer element type
     ``T``.
     """
-    sibling_lists = [s for s in siblings if isinstance(s, list)]
-    if not sibling_lists:
-        return None
-    inner = infer_element_type(items=sibling_lists[0])
-    if inner is None:
+    inner = infer_element_type(items=cast("list[Value]", siblings[0]))
+    if inner is None:  # pragma: no cover
         return None
     type_name = _DHALL_ELEMENT_TO_TYPE(inner)
     if type_name is None:

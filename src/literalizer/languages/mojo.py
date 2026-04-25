@@ -99,11 +99,8 @@ def _mojo_narrowed_empty_form(
     parent's inferred ``List[List[T]]`` type.  Pulling the sibling
     type into a typed empty restores compile-time consistency.
     """
-    sibling_lists = [s for s in siblings if isinstance(s, list)]
-    if not sibling_lists:
-        return None
-    inner = infer_element_type(items=sibling_lists[0])
-    if inner is None:
+    inner = infer_element_type(items=cast("list[Value]", siblings[0]))
+    if inner is None:  # pragma: no cover
         return None
     type_name = _MOJO_ELEMENT_TO_TYPE(inner)
     if type_name is None:
