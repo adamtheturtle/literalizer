@@ -79,7 +79,7 @@ def _format_variable_declaration(
 ) -> str:
     """Format an Erlang variable declaration.
 
-    The trailing ``,`` is Erlang's intra-body statement separator so
+    The trailing ``,`` is Erlang's in-body statement separator so
     multiple declarations can be concatenated (e.g. between ``$ref``
     variable bindings and the following call); :meth:`Erlang.wrap_in_file`
     rewrites the final ``,`` to ``.`` when closing the ``x/0`` clause.
