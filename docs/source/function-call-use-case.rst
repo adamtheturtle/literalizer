@@ -132,6 +132,79 @@ with ``parameter_names=["data", "count"]`` produces:
 * ``ref_case=IdentifierCase.PASCAL`` with ``language=Go()`` →
   ``process(UserObj, 42)``.
 
+Composing declarations and calls
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pairing a :func:`~literalizer.literalize` call (which declares a
+variable) with a :func:`~literalizer.literalize_call` call (which
+references that variable via ``{"$ref": "name"}``) is the natural way
+to render a complete, self-contained source file: declaration first,
+call second.
+
+Each call independently computes its own
+:attr:`~literalizer.LiteralizeResult.preamble` and
+:attr:`~literalizer.LiteralizeResult.body_preamble` from the data it
+sees.  When the two halves see overlapping data — for example, both
+contain integers in a language where integers require a wrapper type
+declaration — concatenating their outputs as-is produces duplicates.
+Strict compilers reject the result (Haskell rejects duplicate ``data``
+declarations; D rejects duplicate ``import`` lines) and a linter flags
+it (``ruff`` and ``pylint`` warn about repeated ``from typing import
+Any`` lines).
+
+Remove the duplicate preamble lines in first-seen order before
+emitting the file::
+
+   """Compose a declaration and a call into one Haskell source file."""
+
+   from literalizer import InputFormat, NewVariable, literalize, literalize_call
+   from literalizer.languages import Haskell
+
+   language = Haskell()
+
+   declaration = literalize(
+       source="[1, 2, 3]",
+       input_format=InputFormat.JSON,
+       language=language,
+       variable_form=NewVariable(name="myList"),
+   )
+   call = literalize_call(
+       source='[[{"$ref": "myList"}, 42]]',
+       input_format=InputFormat.JSON,
+       language=language,
+       target_function="process",
+       parameter_names=["data", "count"],
+   )
+
+   seen: set[str] = set()
+   merged_body_preamble: list[str] = []
+   for block in (*declaration.body_preamble, *call.body_preamble):
+       if block in seen:
+           continue
+       seen.add(block)
+       merged_body_preamble.append(block)
+
+   # ``declaration_code`` is the bare text without ``body_preamble``
+   # prepended; ``code`` includes the body_preamble, which would
+   # reintroduce duplicates.
+   composed = "\n".join(
+       [
+           *merged_body_preamble,
+           declaration.declaration_code,
+           call.declaration_code,
+       ],
+   )
+
+   assert composed.count("data Val = HInt Integer | HList [Val]") == 1
+
+The same pattern applies to :attr:`~literalizer.LiteralizeResult.preamble`
+when ``wrap_in_file=False`` and the caller is assembling the file
+manually: concatenate the preamble tuples from both results, drop
+duplicates while preserving order, and prepend the result.
+
+A first-class composition helper is tracked separately; until then,
+this duplicate-removal step is a required part of the workflow.
+
 Snake case is the recommended authoring convention for ``$ref`` names:
 ``pyhumps`` converts ``snake_case`` to every other case without loss.
 Inputs in other conventions are normalized to ``snake_case`` first, so
