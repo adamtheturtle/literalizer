@@ -1260,16 +1260,15 @@ def _literalize_pre_form(
         include_delimiters=include_delimiters,
     )
 
+    comment_line_prefix = (
+        line_prefix + language.indent if include_delimiters else line_prefix
+    )
+
     resolved: ResolvedComments | None = None
     if input_format is InputFormat.YAML and parsed.yaml_needs_comment_resolve:
         comment_cfg = language.comment_config
         cp = comment_cfg.prefix
         cs = comment_cfg.suffix
-        comment_line_prefix = (
-            line_prefix + language.indent
-            if include_delimiters
-            else line_prefix
-        )
         resolved = resolve_yaml_comments(
             yaml_string=source,
             raw_data=parsed.raw_data,
@@ -1284,11 +1283,6 @@ def _literalize_pre_form(
         result = resolved.result
     elif input_format is InputFormat.TOML:
         comment_cfg = language.comment_config
-        comment_line_prefix = (
-            line_prefix + language.indent
-            if include_delimiters
-            else line_prefix
-        )
         resolved = resolve_toml_comments(
             toml_doc=parsed.raw_data,
             base=result,

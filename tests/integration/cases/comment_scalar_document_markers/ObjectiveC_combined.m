@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 void check_(void) {
-id my_data = @(// note
-42);
+// note
+id my_data = @42;
 (void)my_data;
-my_data = @(// note
-42);
+// note
+my_data = @42;
     (void)my_data;
 }
