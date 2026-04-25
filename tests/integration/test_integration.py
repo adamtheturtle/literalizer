@@ -55,7 +55,6 @@ from literalizer.languages import (
     Nim,
     OCaml,
     Odin,
-    Php,
     PureScript,
     Python,
     Rust,
@@ -2408,9 +2407,6 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
         # list; variable declarations don't fit the shape.
         Jsonnet,
-        # Variables declare with a ``$`` sigil that ``$ref`` does not
-        # emit at the call site — undefined-constant error at runtime.
-        Php,
     }
 )
 
