@@ -56,7 +56,6 @@ from literalizer.languages import (
     OCaml,
     Odin,
     Perl,
-    Php,
     PureScript,
     Python,
     Rust,
@@ -2416,9 +2415,6 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # declared variable, so the golden misrepresents the feature
         # and the file fails ``use strict``.
         Perl,
-        # Variables declare with a ``$`` sigil that ``$ref`` does not
-        # emit at the call site — undefined-constant error at runtime.
-        Php,
     }
 )
 
