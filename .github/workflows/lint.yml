@@ -591,14 +591,16 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # Pass compile flags after `--` so clang-tidy treats them as the full
+      # compile command and skips searching for a compile_commands.json.
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c11 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c11 < /tmp/files-c-tidy
       - name: Run clang-tidy on C++ files
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 clang-tidy --extra-arg=-std=c++20 < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c++20 < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest
