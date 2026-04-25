@@ -77,9 +77,10 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
 
     Only bare numeric values (``int`` / ``float``, but not ``bool``)
     need ``@`` boxing; everything else is already a valid Objective-C
-    object expression.  The redundant ``@(...)`` parens are dropped
-    when the formatted value is a bare numeric literal so that
-    clang-tidy's ``readability-redundant-parentheses`` check passes.
+    object expression.  The redundant ``@(...)`` parentheses are
+    dropped when the formatted value is a bare numeric literal so
+    that clang-tidy's ``readability-redundant-parentheses`` check
+    passes.
     """
     if isinstance(original, bool) or not isinstance(original, (int, float)):
         return formatted
@@ -546,7 +547,7 @@ class ObjectiveC(metaclass=LanguageCls):
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = True
-    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = (
