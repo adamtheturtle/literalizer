@@ -284,6 +284,7 @@ ignore = [
     ".clj-kondo",
     ".clj-kondo/**",
     ".clang-tidy",
+    "issue.md",
 ]
 
 [tool.deptry]
