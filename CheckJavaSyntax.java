@@ -88,15 +88,14 @@ public class CheckJavaSyntax {
             checkMethod.setAccessible(true);
             checkMethod.invoke(instance);
             return true;
-        } catch (final ClassNotFoundException
-                | NoSuchMethodException
-                | IllegalAccessException
-                | InstantiationException
-                | IOException e) {
-            System.err.println(filename + ": " + e);
-            return false;
         } catch (final InvocationTargetException e) {
             System.err.println(filename + ": " + e.getCause());
+            return false;
+        } catch (final Throwable t) {
+            // Includes `ExceptionInInitializerError` (extends `Error`)
+            // raised when a static field initializer throws during
+            // `Class.forName`, e.g. a bad `Instant.parse` argument.
+            System.err.println(filename + ": " + t);
             return false;
         }
     }
