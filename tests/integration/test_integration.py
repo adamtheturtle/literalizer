@@ -36,7 +36,6 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     ALL_LANGUAGES,
     C,
-    CommonLisp,
     Crystal,
     CSharp,
     Dart,
@@ -2391,10 +2390,6 @@ def test_format_enumeration_properties(
 # name-mangling gaps.
 _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
     {
-        # ``defparameter`` adds ``*name*`` earmuffs at the declaration
-        # site, but ``$ref`` emits the bare name at the call site —
-        # unbound variable at load.
-        CommonLisp,
         # Variables are capitalized at the declaration site (``My_var =
         # ...``) but ``$ref`` emits the bare name, which Erlang parses
         # as a lowercase atom rather than the declared variable.
