@@ -1,6 +1,5 @@
 ---
 fail_fast: true
-exclude: ^issue\.md$
 
 ci:
   skip:

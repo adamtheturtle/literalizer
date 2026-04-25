@@ -63,10 +63,20 @@ formatted.  There are three styles:
 **Keyword** (e.g. Python, Swift, Ruby):
 arguments are passed as ``name=value`` pairs.
 
-.. skip doccmd[all]: next
-
 .. code-block:: python
 
+   """Illustrate the keyword-call style."""
+
+
+   class Throttler:
+       """Stub throttler for the example."""
+
+       def check(self, *, user_id: str, ts: float) -> str:
+           """Return a confirmation string."""
+           return f"checked {user_id} at {ts}"
+
+
+   throttler = Throttler()
    print(throttler.check(user_id="user_1", ts=1000.0))
 
 **Object** (e.g. JavaScript, TypeScript):
@@ -153,7 +163,9 @@ it (``ruff`` and ``pylint`` warn about repeated ``from typing import
 Any`` lines).
 
 Remove the duplicate preamble lines in first-seen order before
-emitting the file::
+emitting the file:
+
+.. code-block:: python
 
    """Compose a declaration and a call into one Haskell source file."""
 
