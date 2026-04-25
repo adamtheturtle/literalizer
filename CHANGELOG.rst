@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``Perl`` ``literalize_call`` output now prepends Perl's scalar ``$``
+  sigil to ``{"$ref": "name"}`` identifiers via a
+  ``format_call_ref_identifier`` override, so a ref to ``my_var``
+  renders as ``$my_var`` at the call site and lines up with the
+  ``my $my_var = ...`` declaration site.  Generated files now pass
+  ``perl -c`` under ``use strict`` and ``Perl`` is no longer excluded
+  from the integration suite's ref-declaration golden cases.
 - Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
   now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
   and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so
