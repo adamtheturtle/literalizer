@@ -918,11 +918,11 @@ class CSharp(metaclass=LanguageCls):
         base = self.sequence_format(
             default_type=self.default_sequence_element_type,
         )
-        empty = base.empty_sequence
+        empty = cast("str", base.empty_sequence)
 
         def _narrowed_empty_form(
             _siblings: Sequence[Value],
-        ) -> str | None:
+        ) -> str:
             """Keep C#'s typed empty literal next to typed siblings.
 
             ``()`` parses as an invalid expression in C#; the

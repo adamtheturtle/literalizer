@@ -78,29 +78,25 @@ _CRYSTAL_ELEMENT_TO_TYPE = make_element_to_type(
     bool_type="Bool",
     int_type="Int32",
     float_type="Float64",
-    mixed_numeric_type=None,
-    bytes_type=None,
-    date_type=None,
-    datetime_type=None,
+    mixed_numeric_type="String",
+    bytes_type="String",
+    date_type="String",
+    datetime_type="String",
     list_template="Array({inner})",
-    dict_type_template=None,
-    fallback_value_type=None,
+    dict_type_template="Hash(String, {inner})",
+    fallback_value_type="String",
 )
 
 
 def _crystal_narrowed_empty_form(
     siblings: Sequence[Value],
-) -> str | None:
+) -> str:
     """Compute Crystal's typed ``[] of T`` empty literal for an empty
     inner-list child whose non-empty siblings infer element type ``T``.
     """
     inner = infer_element_type(items=cast("list[Value]", siblings[0]))
-    if inner is None:  # pragma: no cover
-        return None
-    type_name = _CRYSTAL_ELEMENT_TO_TYPE(inner)
-    if type_name is None:
-        return None
-    return f"[] of {type_name}"
+    type_name = _CRYSTAL_ELEMENT_TO_TYPE(inner) if inner is not None else None
+    return f"[] of {type_name or 'String'}"
 
 
 @beartype

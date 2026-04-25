@@ -717,9 +717,7 @@ def _format_sequence_child(
             non_empty_siblings = [
                 other for other in value if isinstance(other, list) and other
             ]
-            custom = narrowed_empty_form(non_empty_siblings)
-            if custom is not None:
-                return custom
+            return narrowed_empty_form(non_empty_siblings)
     return _format_value(
         value=child,
         spec=spec,

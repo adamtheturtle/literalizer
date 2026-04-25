@@ -106,30 +106,26 @@ _DHALL_ELEMENT_TO_TYPE = make_element_to_type(
     bool_type="Bool",
     int_type="Integer",
     float_type="Double",
-    mixed_numeric_type=None,
-    bytes_type=None,
-    date_type=None,
-    datetime_type=None,
+    mixed_numeric_type="Text",
+    bytes_type="Text",
+    date_type="Text",
+    datetime_type="Text",
     list_template="List {inner}",
     dict_type_template=None,
-    fallback_value_type=None,
+    fallback_value_type="Text",
 )
 
 
 def _dhall_narrowed_empty_form(
     siblings: Sequence[Value],
-) -> str | None:
+) -> str:
     """Compute Dhall's typed ``[] : List T`` empty literal for an
     empty inner-list child whose non-empty siblings infer element type
     ``T``.
     """
     inner = infer_element_type(items=cast("list[Value]", siblings[0]))
-    if inner is None:  # pragma: no cover
-        return None
-    type_name = _DHALL_ELEMENT_TO_TYPE(inner)
-    if type_name is None:
-        return None
-    return f"[] : List {type_name}"
+    type_name = _DHALL_ELEMENT_TO_TYPE(inner) if inner is not None else None
+    return f"[] : List {type_name or 'Text'}"
 
 
 @beartype

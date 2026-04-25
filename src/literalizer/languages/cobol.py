@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import ClassVar, cast
 
 from beartype import beartype
 
@@ -626,11 +626,11 @@ class Cobol(metaclass=LanguageCls):
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         base = self.sequence_format.value
-        empty = base.empty_sequence
+        empty = cast("str", base.empty_sequence)
 
         def _narrowed_empty_form(
             _siblings: Sequence[Value],
-        ) -> str | None:
+        ) -> str:
             """Keep COBOL's structured empty literal next to typed
             siblings.
 
