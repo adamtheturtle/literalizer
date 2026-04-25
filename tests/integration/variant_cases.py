@@ -38,7 +38,26 @@ from literalizer.languages import (
 )
 
 from .language_specs import make_spec, sorted_languages
-from .variable_form_wrapping import wrap_variable_form
+
+
+@beartype
+def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
+    """Return the wrap variable name for a language class."""
+    return "my_data" if lang_cls.supports_variable_names else None
+
+
+@beartype
+def wrap_variable_form(
+    lang_cls: literalizer.LanguageCls,
+) -> literalizer.NewVariable | None:
+    """Return a :class:`NewVariable` form for a language class, or
+    None.
+    """
+    name = _wrap_variable_name(lang_cls=lang_cls)
+    if name is None:
+        return None
+    return literalizer.NewVariable(name=name)
+
 
 # ---------------------------------------------------------------------------
 # Test-only data keyed by language class.
@@ -180,7 +199,7 @@ DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES: dict[
 ] = {Rust: {"CONST": "ARRAY", "STATIC": "ARRAY"}}
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Variant:
     """A formatting variant for a language (date, sequence, set, etc.)."""
 
@@ -189,7 +208,7 @@ class Variant:
     lang_cls: literalizer.LanguageCls
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class VariantCase:
     """A format-variant golden-file test case."""
 
@@ -852,6 +871,7 @@ def build_modifier_variant_cases() -> list[VariantCase]:
 
 
 @functools.cache
+@beartype
 def build_variant_cases() -> list[VariantCase]:
     """Collect all format-variant golden-file test cases."""
     nv = build_non_default_variants
@@ -1177,6 +1197,7 @@ def build_variant_cases() -> list[VariantCase]:
 
 
 @functools.cache
+@beartype
 def group_variant_cases_by_language() -> dict[
     literalizer.LanguageCls,
     list[VariantCase],
@@ -1195,6 +1216,7 @@ def group_variant_cases_by_language() -> dict[
 
 
 @functools.cache
+@beartype
 def variant_languages() -> list[literalizer.LanguageCls]:
     """Return languages that have at least one format-variant case."""
     groups = group_variant_cases_by_language()

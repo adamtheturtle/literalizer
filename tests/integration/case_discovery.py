@@ -23,6 +23,7 @@ from .language_specs import (
 )
 
 
+@beartype
 def has_non_printable_ascii_dict_keys(data: object) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
@@ -89,6 +90,7 @@ def discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
 
 
 @functools.cache
+@beartype
 def group_cases_by_language() -> dict[
     literalizer.LanguageCls,
     list[str],
@@ -107,13 +109,14 @@ def group_cases_by_language() -> dict[
 
 
 @functools.cache
+@beartype
 def golden_file_languages() -> list[literalizer.LanguageCls]:
     """Return languages that have at least one golden-file case."""
     groups = group_cases_by_language()
     return [cls for cls in sorted_languages() if cls in groups]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class CombinedCase:
     """A combined-variable-forms test case for a specific redefinition
     style.
@@ -173,6 +176,7 @@ def discover_combined_cases() -> list[CombinedCase]:
 
 
 @functools.cache
+@beartype
 def group_combined_cases_by_language() -> dict[
     literalizer.LanguageCls,
     list[CombinedCase],
@@ -191,13 +195,14 @@ def group_combined_cases_by_language() -> dict[
 
 
 @functools.cache
+@beartype
 def combined_languages() -> list[literalizer.LanguageCls]:
     """Return languages that have at least one combined-form case."""
     groups = group_combined_cases_by_language()
     return [cls for cls in sorted_languages() if cls in groups]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class LineEndingCombinedCase:
     """A combined-variable-forms test case with a non-default line
     ending.
@@ -241,7 +246,7 @@ def build_line_ending_combined_cases() -> list[LineEndingCombinedCase]:
     return cases
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class HeterogeneousStrategyCombinedCase:
     """A combined-variable-forms test case with a non-default
     heterogeneous-scalar strategy.
@@ -287,7 +292,7 @@ def build_heterogeneous_strategy_combined_cases() -> list[
     return cases
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class PreIndentCase:
     """A ``pre_indent_level`` golden-file test case.
 

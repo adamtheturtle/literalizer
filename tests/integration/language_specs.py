@@ -27,18 +27,21 @@ def find_redefinition_styles(
     ]
 
 
+@beartype
 def lang_cls_name(cls: literalizer.LanguageCls) -> str:
     """Return the class name for sorting."""
     return cls.__name__
 
 
 @functools.cache
+@beartype
 def sorted_languages() -> list[literalizer.LanguageCls]:
     """Return all languages sorted by class name."""
     return sorted(ALL_LANGUAGES, key=lang_cls_name)
 
 
 @functools.cache
+@beartype
 def cached_spec(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -50,6 +53,7 @@ def cached_spec(
     return lang_cls(**dict(kwargs_items))
 
 
+@beartype
 def make_spec(
     *,
     lang_cls: literalizer.LanguageCls,

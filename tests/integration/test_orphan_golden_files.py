@@ -1,12 +1,7 @@
 """Detect orphaned golden files that no parameterized test covers."""
 
 import os
-from typing import TYPE_CHECKING
-
-import pytest
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from pathlib import Path
 
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
@@ -21,13 +16,10 @@ from .language_specs import make_spec
 from .variant_cases import build_variant_cases
 
 
-def test_no_dead_golden_files(request: pytest.FixtureRequest) -> None:
+def test_no_dead_golden_files(cases_dir: Path) -> None:
     """Every file under ``cases/`` must be referenced by a parameterized
     test.  Orphaned golden files silently rot and waste repository space.
     """
-    cases_dir: Path = (
-        request.config.rootpath / "tests" / "integration" / "cases"
-    )
     expected: set[Path] = set()
 
     for case_dir in sorted(cases_dir.iterdir()):

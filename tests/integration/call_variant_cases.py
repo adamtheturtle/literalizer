@@ -18,7 +18,7 @@ from .variant_cases import (
 )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class CallVariantCase:
     """A ``literalize_call`` golden-file case run with a non-default
     language spec (e.g. Rust's ``TAGGED_ENUM`` strategy).

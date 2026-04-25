@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from .golden_assertions import check_golden
+from .check_golden import check_golden
 
 
 def test_check_golden_mismatch_delegates(

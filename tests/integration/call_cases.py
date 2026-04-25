@@ -27,7 +27,7 @@ from literalizer.languages import (
     Jsonnet,
 )
 
-from .golden_assertions import check_golden
+from .check_golden import check_golden
 from .language_specs import sorted_languages
 
 
@@ -82,7 +82,7 @@ def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class CallCaseConfig:
     """Configuration for a ``literalize_call`` golden-file test case.
 
@@ -348,7 +348,7 @@ REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
 )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
 
