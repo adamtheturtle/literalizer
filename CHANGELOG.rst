@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``infer_element_type`` no longer gives up when a nested list is empty
+  alongside non-empty homogeneous siblings.  Empty inner lists are now
+  skipped, so input like ``[[1, 2], [], [3, 4]]`` infers
+  ``ListType(inner=int)`` and renders with the narrowed element type
+  (e.g. C++ emits ``std::vector<std::vector<int>>`` instead of falling
+  back to ``std::variant``).
 - ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
   (``*name*``) at the call site so they resolve to the matching
   ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by
