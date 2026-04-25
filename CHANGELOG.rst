@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``Erlang`` now capitalizes ``{"$ref": "name"}`` call arguments so
+  they reference the declared variable instead of parsing as a
+  lowercase atom, matching the existing ``My_var = ...`` capitalization
+  on the declaration site.  ``Erlang.format_variable_declaration`` now
+  emits the trailing ``,`` separator itself so multiple declarations can
+  precede a call; :meth:`Erlang.wrap_in_file` is adjusted accordingly
+  and the rendered output is unchanged for the single-declaration case.
 - Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
   now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
   and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so
