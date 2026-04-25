@@ -73,7 +73,7 @@ from literalizer._language import (
 )
 from literalizer._types import Scalar, Value
 
-_MOJO_ELEMENT_TO_TYPE = make_element_to_type(
+_mojo_element_to_type = make_element_to_type(
     str_type="String",
     bool_type="Bool",
     int_type="Int",
@@ -91,16 +91,17 @@ _MOJO_ELEMENT_TO_TYPE = make_element_to_type(
 def _mojo_narrowed_empty_form(
     siblings: Sequence[list[Value]],
 ) -> str:
-    """Compute Mojo's typed ``List[T]()`` empty literal for an empty
+    """Render the Mojo typed ``List[T]()`` empty literal for an empty
     inner-list child whose non-empty siblings infer element type ``T``.
 
-    Mojo cannot resolve the type of a bare ``[]`` from context, so an
-    untyped empty literal in a homogeneous nested-list breaks the
-    parent's inferred ``List[List[T]]`` type.  Pulling the sibling
-    type into a typed empty restores compile-time consistency.
+    The Mojo compiler cannot resolve the type of a bare ``[]`` from
+    context, so a type-less empty literal in a homogeneous nested
+    list breaks the parent's inferred ``List[List[T]]`` type.  Pulling
+    the sibling type into a typed empty restores compile-time
+    consistency.
     """
     inner = infer_element_type(items=siblings[0])
-    type_name = _MOJO_ELEMENT_TO_TYPE(inner) if inner is not None else None
+    type_name = _mojo_element_to_type(inner) if inner is not None else None
     return f"List[{type_name or 'String'}]()"
 
 

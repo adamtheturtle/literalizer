@@ -68,7 +68,7 @@ _ADA_EMPTY_LITERAL = "AList'(1 .. 0 => ANull)"
 def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Ada's structured empty literal beside typed siblings.
 
-    Ada arrays cannot be initialised by ``AList'()`` — the language
+    Ada arrays cannot be set up with ``AList'()`` — the language
     requires a typed range form like ``AList'(1 .. 0 => ANull)`` even
     at empty positions.  A_Val is heterogeneous, so this empty form is
     accepted as a sibling of fully-typed entries.

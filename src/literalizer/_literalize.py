@@ -645,7 +645,7 @@ def _empty_child_sibling_opener(
     ``Vec::<String>::new()``).  When that empty list sits beside
     non-empty homogeneous list siblings, the rendered literal then
     mixes the narrow sibling type with the generic empty type and is
-    rejected by static type checkers (javac, rustc, go vet, ...).
+    rejected by the static type checkers used for Java, Rust, Go, etc.
 
     Pull a typed opener from a non-empty list sibling when all such
     siblings produce the same opener, so the empty list renders with

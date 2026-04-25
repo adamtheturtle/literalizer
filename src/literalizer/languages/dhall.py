@@ -101,7 +101,7 @@ def _unescape_dhall_string(value: str) -> str:
     return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
 
 
-_DHALL_ELEMENT_TO_TYPE = make_element_to_type(
+_dhall_element_to_type = make_element_to_type(
     str_type="Text",
     bool_type="Bool",
     int_type="Integer",
@@ -124,7 +124,7 @@ def _dhall_narrowed_empty_form(
     ``T``.
     """
     inner = infer_element_type(items=siblings[0])
-    type_name = _DHALL_ELEMENT_TO_TYPE(inner) if inner is not None else None
+    type_name = _dhall_element_to_type(inner) if inner is not None else None
     return f"[] : List {type_name or 'Text'}"
 
 

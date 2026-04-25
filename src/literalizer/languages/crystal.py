@@ -73,7 +73,7 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_CRYSTAL_ELEMENT_TO_TYPE = make_element_to_type(
+_crystal_element_to_type = make_element_to_type(
     str_type="String",
     bool_type="Bool",
     int_type="Int32",
@@ -95,7 +95,7 @@ def _crystal_narrowed_empty_form(
     inner-list child whose non-empty siblings infer element type ``T``.
     """
     inner = infer_element_type(items=siblings[0])
-    type_name = _CRYSTAL_ELEMENT_TO_TYPE(inner) if inner is not None else None
+    type_name = _crystal_element_to_type(inner) if inner is not None else None
     return f"[] of {type_name or 'String'}"
 
 
