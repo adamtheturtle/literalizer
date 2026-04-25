@@ -54,7 +54,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_ref_identifier,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -78,9 +77,15 @@ def _format_variable_declaration(
     _data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format an Erlang variable declaration."""
+    """Format an Erlang variable declaration.
+
+    The trailing ``,`` is Erlang's in-body statement separator so
+    multiple declarations can be concatenated (e.g. between ``$ref``
+    variable bindings and the following call); :meth:`Erlang.wrap_in_file`
+    rewrites the final ``,`` to ``.`` when closing the ``x/0`` clause.
+    """
     erlang_name = name[0].upper() + name[1:]
-    return f"{erlang_name} = {value}"
+    return f"{erlang_name} = {value},"
 
 
 @beartype
@@ -111,6 +116,19 @@ def _erlang_format_call_target(name: str, /) -> str:
     if "." in name:
         return f"'{name}'"
     return name
+
+
+@beartype
+def _erlang_format_call_ref_identifier(name: str, /) -> str:
+    """Capitalize a ``$ref`` name so it matches the declaration site.
+
+    :func:`_format_variable_declaration` writes ``my_var = ...`` as
+    ``My_var = ...`` because Erlang variables must start with an
+    uppercase letter; ref arguments need the same transformation or
+    they parse as lowercase atoms instead of the bound variable.
+    Slicing rather than indexing keeps the empty-name path safe.
+    """
+    return name[:1].upper() + name[1:]
 
 
 @beartype
@@ -417,7 +435,7 @@ class Erlang(metaclass=LanguageCls):
                 f"-module(check).\n"
                 f"-export([x/0]).\n"
                 f"x() ->\n"
-                f"{indented},\n"
+                f"{indented}\n"
                 f"    {erlang_varname}."
             )
         trimmed = content.rstrip().removesuffix(",")
@@ -548,10 +566,10 @@ class Erlang(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Capitalize a ``{"$ref": "name"}`` identifier so the call
+        site references the declared Erlang variable.
         """
-        return identity_call_ref_identifier
+        return _erlang_format_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

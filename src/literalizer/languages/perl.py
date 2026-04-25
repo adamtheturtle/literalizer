@@ -62,7 +62,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -91,6 +90,12 @@ def _perl_call_stub(
     """
     parts = name.split(sep=".")
     return tuple(f"sub {part} {{}}" for part in parts)
+
+
+@beartype
+def _perl_format_call_ref_identifier(name: str, /) -> str:
+    """Prepend Perl's scalar ``$`` sigil to a ``$ref`` identifier."""
+    return f"${name}"
 
 
 @beartype
@@ -512,7 +517,7 @@ class Perl(metaclass=LanguageCls):
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
-        return identity_call_ref_identifier
+        return _perl_format_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

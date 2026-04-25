@@ -64,7 +64,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_ref_identifier,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -81,6 +80,11 @@ def _php_format_call_target(name: str, /) -> str:
     if len(parts) == 1:
         return name
     return "$" + parts[0] + "".join(f"->{p}" for p in parts[1:])
+
+
+def _php_format_call_ref_identifier(name: str, /) -> str:
+    """Prepend PHP's ``$`` variable sigil to a call-ref identifier."""
+    return f"${name}"
 
 
 def _php_call_stub(
@@ -518,10 +522,10 @@ class Php(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Prepend PHP's ``$`` sigil so a ``{"$ref": "name"}`` argument
+        renders as ``$name`` at the call site.
         """
-        return identity_call_ref_identifier
+        return _php_format_call_ref_identifier
 
     @cached_property
     def format_call_preamble_stub(
