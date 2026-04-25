@@ -69,7 +69,7 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
     Objective-C object expression.
     """
     if isinstance(original, (int, float)) and not isinstance(original, bool):
-        return f"@({formatted})"
+        return "@(" + formatted + ")"
     return formatted
 
 
