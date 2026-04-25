@@ -149,11 +149,19 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
+      # Run each `odin check -file` from its own tmpdir to test
+      # whether the intermittent step hangs (since parallelization)
+      # come from concurrent invocations racing on per-CWD compiler
+      # temp files.
       - name: Lint Odin
         run: |-
           find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
           cat > /tmp/check-odin.sh <<'SCRIPT'
-          odin check "$1" -file || exit 1
+          src=$(realpath "$1")
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cd "$tmpdir" || exit 1
+          odin check "$src" -file || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-odin.sh < /tmp/files-odin
 

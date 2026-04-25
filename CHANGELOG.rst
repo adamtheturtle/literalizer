@@ -11,6 +11,13 @@ Next
   emits the trailing ``,`` separator itself so multiple declarations can
   precede a call; :meth:`Erlang.wrap_in_file` is adjusted accordingly
   and the rendered output is unchanged for the single-declaration case.
+- ``Perl`` ``literalize_call`` output now emits Perl's scalar ``$``
+  sigil before each ``{"$ref": "name"}`` identifier via a
+  ``format_call_ref_identifier`` override, so a ref to ``my_var``
+  renders as ``$my_var`` at the call site and lines up with the
+  ``my $my_var = ...`` declaration site.  Generated files now pass
+  ``perl -c`` under ``use strict`` and ``Perl`` is no longer excluded
+  from the integration suite's ref-declaration golden cases.
 - Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
   now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
   and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so

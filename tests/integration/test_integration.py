@@ -54,8 +54,6 @@ from literalizer.languages import (
     Nim,
     OCaml,
     Odin,
-    Perl,
-    Php,
     PureScript,
     Python,
     Rust,
@@ -2404,16 +2402,6 @@ _REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
         # list; variable declarations don't fit the shape.
         Jsonnet,
-        # Variables declare with a ``my $name`` sigil that ``$ref``
-        # does not emit at the call site.  The default ``perl -c``
-        # tolerates the unquoted identifier (interpreting it as the
-        # string ``"my_var"``), but the call no longer references the
-        # declared variable, so the golden misrepresents the feature
-        # and the file fails ``use strict``.
-        Perl,
-        # Variables declare with a ``$`` sigil that ``$ref`` does not
-        # emit at the call site — undefined-constant error at runtime.
-        Php,
     }
 )
 
