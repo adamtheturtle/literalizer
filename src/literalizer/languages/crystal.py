@@ -89,12 +89,12 @@ _CRYSTAL_ELEMENT_TO_TYPE = make_element_to_type(
 
 
 def _crystal_narrowed_empty_form(
-    siblings: Sequence[Value],
+    siblings: Sequence[list[Value]],
 ) -> str:
     """Compute Crystal's typed ``[] of T`` empty literal for an empty
     inner-list child whose non-empty siblings infer element type ``T``.
     """
-    inner = infer_element_type(items=cast("list[Value]", siblings[0]))
+    inner = infer_element_type(items=siblings[0])
     type_name = _CRYSTAL_ELEMENT_TO_TYPE(inner) if inner is not None else None
     return f"[] of {type_name or 'String'}"
 

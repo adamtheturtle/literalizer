@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -63,6 +63,19 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+_D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
+
+
+def _d_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
+    """Keep D's ``parseJSON("[]")`` empty literal beside typed siblings.
+
+    ``JSONValue([])`` rejects an empty ``void[]`` payload at template
+    instantiation; the language's ``parseJSON("[]")`` empty form
+    returns a fresh ``JSONValue`` array and is accepted alongside
+    typed siblings.
+    """
+    return _D_EMPTY_JSON_ARRAY
 
 
 @beartype
@@ -185,7 +198,7 @@ class D(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence='parseJSON("[]")',
+            empty_sequence=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -200,7 +213,7 @@ class D(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_open(open_str="JSONValue(["),
             close="])",
-            empty_set='parseJSON("[]")',
+            empty_set=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
@@ -518,25 +531,9 @@ class D(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        base = self.sequence_format.value
-        empty = cast("str", base.empty_sequence)
-
-        def _narrowed_empty_form(
-            _siblings: Sequence[Value],
-        ) -> str:
-            """Keep D's ``parseJSON("[]")`` empty literal next to typed
-            siblings.
-
-            ``JSONValue([])`` rejects an empty ``void[]`` payload at
-            template instantiation; the language's ``parseJSON("[]")``
-            empty form returns a fresh ``JSONValue`` array and is
-            accepted alongside typed siblings.
-            """
-            return empty
-
         return dataclasses.replace(
-            base,
-            narrowed_empty_form=_narrowed_empty_form,
+            self.sequence_format.value,
+            narrowed_empty_form=_d_narrowed_empty_form,
         )
 
     @cached_property

@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -61,6 +61,19 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+_ADA_EMPTY_LITERAL = "AList'(1 .. 0 => ANull)"
+
+
+def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
+    """Ada's structured empty literal beside typed siblings.
+
+    Ada arrays cannot be initialised by ``AList'()`` — the language
+    requires a typed range form like ``AList'(1 .. 0 => ANull)`` even
+    at empty positions.  A_Val is heterogeneous, so this empty form is
+    accepted as a sibling of fully-typed entries.
+    """
+    return _ADA_EMPTY_LITERAL
 
 
 @beartype
@@ -162,7 +175,7 @@ class Ada(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="AList'(1 .. 0 => ANull)",
+            empty_sequence=_ADA_EMPTY_LITERAL,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -475,25 +488,9 @@ class Ada(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        base = self.sequence_format.value
-        empty = cast("str", base.empty_sequence)
-
-        def _narrowed_empty_form(
-            _siblings: Sequence[Value],
-        ) -> str:
-            """Use Ada's structured empty literal next to typed siblings.
-
-            Ada arrays cannot be initialised by ``AList'()`` — the
-            language requires a typed range form like
-            ``AList'(1 .. 0 => ANull)`` even at empty positions.  A_Val
-            is heterogeneous, so this empty form is accepted as a
-            sibling of fully-typed entries.
-            """
-            return empty
-
         return dataclasses.replace(
-            base,
-            narrowed_empty_form=_narrowed_empty_form,
+            self.sequence_format.value,
+            narrowed_empty_form=_ada_narrowed_empty_form,
         )
 
     @cached_property

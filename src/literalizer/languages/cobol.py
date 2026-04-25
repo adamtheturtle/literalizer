@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -60,6 +60,19 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+_COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
+
+
+def _cobol_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
+    """Keep COBOL's structured empty literal beside typed siblings.
+
+    Inheriting a sibling's COMP-5 group opener for the empty slot
+    would produce a malformed COBOL record; the language's
+    ``PIC X(1) VALUE SPACES`` placeholder is the structurally valid
+    empty form here.
+    """
+    return _COBOL_EMPTY_LITERAL
 
 
 @beartype
@@ -307,7 +320,7 @@ class Cobol(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence="05 FILLER PIC X(1) VALUE SPACES.",
+            empty_sequence=_COBOL_EMPTY_LITERAL,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -322,7 +335,7 @@ class Cobol(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_open(open_str=""),
             close="",
-            empty_set="05 FILLER PIC X(1) VALUE SPACES.",
+            empty_set=_COBOL_EMPTY_LITERAL,
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
@@ -625,25 +638,9 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        base = self.sequence_format.value
-        empty = cast("str", base.empty_sequence)
-
-        def _narrowed_empty_form(
-            _siblings: Sequence[Value],
-        ) -> str:
-            """Keep COBOL's structured empty literal next to typed
-            siblings.
-
-            Inheriting a sibling's COMP-5 group opener for the empty
-            slot would produce a malformed COBOL record; the
-            language's ``PIC X(1) VALUE SPACES`` placeholder is the
-            structurally valid empty form here.
-            """
-            return empty
-
         return dataclasses.replace(
-            base,
-            narrowed_empty_form=_narrowed_empty_form,
+            self.sequence_format.value,
+            narrowed_empty_form=_cobol_narrowed_empty_form,
         )
 
     @cached_property
@@ -663,7 +660,7 @@ class Cobol(metaclass=LanguageCls):
             dict_open=fixed_open(open_str=""),
             close="",
             format_entry=_format_cobol_dict_entry,
-            empty_dict="05 FILLER PIC X(1) VALUE SPACES.",
+            empty_dict=_COBOL_EMPTY_LITERAL,
             preamble_lines=(),
             narrowed_open=None,
         )
