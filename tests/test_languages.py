@@ -1,6 +1,7 @@
 """Language-specific tests for literalizer converter."""
 
 import dataclasses
+import enum
 import json
 import re
 import textwrap
@@ -458,6 +459,49 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)
     assert isinstance(spec.scalar_body_preamble, dict)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_format_enumeration_properties(
+    language_cls: LanguageCls,
+) -> None:
+    """Every language exposes iterable format-enumeration properties."""
+    spec = language_cls()
+    assert issubclass(spec.bytes_formats, enum.Enum)
+    assert len(spec.bytes_formats) >= 1
+    assert issubclass(spec.sequence_formats, enum.Enum)
+    assert len(spec.sequence_formats) >= 1
+    assert issubclass(spec.set_formats, enum.Enum)
+    assert len(spec.set_formats) >= 1
+    assert issubclass(spec.date_formats, enum.Enum)
+    assert len(spec.date_formats) >= 1
+    assert issubclass(spec.datetime_formats, enum.Enum)
+    assert len(spec.datetime_formats) >= 1
+    assert issubclass(spec.comment_formats, enum.Enum)
+    assert len(spec.comment_formats) >= 1
+    assert issubclass(spec.declaration_styles, enum.Enum)
+    assert len(spec.declaration_styles) >= 1
+    assert issubclass(spec.dict_formats, enum.Enum)
+    assert len(spec.dict_formats) >= 1
+    assert issubclass(spec.float_formats, enum.Enum)
+    assert len(spec.float_formats) >= 1
+    assert issubclass(spec.integer_formats, enum.Enum)
+    assert len(spec.integer_formats) >= 1
+    assert issubclass(spec.numeric_separators, enum.Enum)
+    assert len(spec.numeric_separators) >= 1
+    assert issubclass(spec.numeric_styles, enum.Enum)
+    assert len(spec.numeric_styles) >= 1
+    assert issubclass(spec.string_formats, enum.Enum)
+    assert len(spec.string_formats) >= 1
+    assert issubclass(spec.trailing_commas, enum.Enum)
+    assert len(spec.trailing_commas) >= 1
+    assert issubclass(spec.line_endings, enum.Enum)
+    assert len(spec.line_endings) >= 1
+    assert issubclass(spec.call_styles, enum.Enum)
 
 
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
