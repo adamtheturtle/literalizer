@@ -74,8 +74,8 @@ def _format_common_lisp_call_ref_identifier(name: str, /) -> str:
     """Wrap a ``$ref`` identifier in Common Lisp earmuffs.
 
     The ``DEFPARAMETER`` declaration style binds variables as
-    ``*name*``, so the call site must reference the same earmuffed
-    name to resolve to the bound value.
+    ``*name*``, so the call site must wrap the bare name in the
+    matching ``*...*`` markers to resolve to the bound value.
     """
     return f"*{name}*"
 
