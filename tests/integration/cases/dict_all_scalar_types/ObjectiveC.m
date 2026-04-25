@@ -2,8 +2,8 @@
 void check_(void) {
 id my_data = @{
     @"s": @"string",
-    @"i": @(1),
-    @"f": @(1.5),
+    @"i": @1,
+    @"f": @1.5,
     @"b": @YES,
     @"n": [NSNull null],
     @"d": @"2024-01-15",

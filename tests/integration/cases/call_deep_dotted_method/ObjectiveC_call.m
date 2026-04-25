@@ -6,6 +6,6 @@ struct kObjType_ { struct apiType_ api; };
 static const struct kObjType_ kObj = { .api = { .client = { .post = kObj_api_client_post_stub_ } } };
 void check_(void) {
 kObj.api.client.post(@"hello");
-kObj.api.client.post(@(42));
+kObj.api.client.post(@42);
 kObj.api.client.post(@YES);
 }
