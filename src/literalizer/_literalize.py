@@ -1044,6 +1044,11 @@ def _format_collection_lines(
                 )
                 for position, element in enumerate(iterable=list_data)
             ]
+            # Drop entries that render to the empty string so a nested
+            # empty sub-list (possible in languages like Forth whose
+            # empty-sequence opener and close are both empty) does not
+            # leave a dangling indented blank line in the output.
+            formatted_entries = [e for e in formatted_entries if e]
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,

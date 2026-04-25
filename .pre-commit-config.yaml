@@ -91,7 +91,6 @@ repos:
         priority: 110
         stages: [pre-commit]
       - id: trailing-whitespace
-        exclude: ^tests/integration/cases/
         priority: 120
         stages: [pre-commit]
   - repo: https://github.com/pre-commit/pygrep-hooks
