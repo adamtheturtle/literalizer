@@ -498,6 +498,7 @@ class FSharp(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an F# let declaration in a module."""
@@ -506,13 +507,15 @@ class FSharp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return "module Check\n\n" + content
+        capitalized = f"{module_name[:1].upper()}{module_name[1:]}"
+        return f"module {capitalized}\n\n" + content
 
     @staticmethod
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap F# declaration + assignment in separate private
@@ -522,12 +525,13 @@ class FSharp(metaclass=LanguageCls):
         decl_indented = textwrap.indent(text=declaration, prefix="    ")
         assign_indented = textwrap.indent(text=assignment, prefix="    ")
         preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
-        body = "module Check\n\n" + preamble
+        capitalized = f"{module_name[:1].upper()}{module_name[1:]}"
+        body = f"module {capitalized}\n\n" + preamble
         body += (
-            "let private _checkDeclaration () =\n"
+            f"let private _{module_name}Declaration () =\n"
             + decl_indented
             + "\n    ignore my_data\n\n"
-            + "let private _checkAssignment () =\n"
+            + f"let private _{module_name}Assignment () =\n"
             + assign_indented
             + "\n    ignore my_data"
         )

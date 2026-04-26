@@ -518,9 +518,11 @@ class Go(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Go declaration in ``func main()``."""
+        del module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -533,12 +535,14 @@ class Go(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Go declaration + assignment in ``func main()``."""
         return Go.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 

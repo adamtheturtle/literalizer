@@ -479,10 +479,11 @@ class OCaml(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an OCaml let declaration in a module."""
-        del variable_name
+        del variable_name, module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -494,12 +495,13 @@ class OCaml(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble
+        del declaration, assignment, variable_name, body_preamble, module_name
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.OCAML

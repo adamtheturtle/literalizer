@@ -1209,6 +1209,7 @@ class Cpp(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a C++ declaration in a function body."""
@@ -1217,13 +1218,14 @@ class Cpp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"void check_() {{\n{content}{use_line}\n}}"
+        return f"void {module_name}_() {{\n{content}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap C++ declaration + assignment in a function body.
@@ -1236,6 +1238,7 @@ class Cpp(metaclass=LanguageCls):
         return Cpp.wrap_in_file(
             content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 

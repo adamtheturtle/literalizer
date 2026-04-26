@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- ``literalize`` and ``literalize_call`` now require a ``module_name``
+  keyword argument.  The languages whose ``wrap_in_file`` introduces a
+  named scope — Java's wrapping class and method, Fortran's
+  ``program``/``subroutine`` names, Erlang's ``-module(...)``, Occam's
+  ``PROC``, SystemVerilog's ``module``, F#'s ``module``, and the
+  helper function names emitted by C, C++, D and Objective-C — now
+  derive that name from this argument instead of hardcoding
+  ``check``.  Languages whose wrappers do not introduce a named scope
+  ignore the argument.  ``Language.wrap_in_file`` and
+  ``Language.wrap_combined_in_file`` gain a corresponding
+  ``module_name`` parameter.
 - ``literalize_call`` now supports Visual Basic.  The default style is
   positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
   VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs
