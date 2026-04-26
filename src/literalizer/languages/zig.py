@@ -169,9 +169,9 @@ def _zig_call_preamble_stub(
     ``.{ .int = 1 }`` coerce to a concrete type at the call site;
     transform wrappers (``["_arg"]``) take ``anytype`` so they accept
     both ``ZVal`` and ``void`` arguments.  Dotted targets are
-    realized as a chain of structs rooted at a module-level constant
-    so an expression like ``app.client.fetch(...)`` resolves to a
-    real method call on a real value.
+    realized as a nested ``struct`` chain rooted at a module-level
+    constant, so an expression like ``app.client.fetch(...)`` resolves
+    to a real method call on a real value.
     """
     param_type = "anytype" if list(params) == ["_arg"] else "ZVal"
     param_discards = "".join(f" _ = {p};" for p in params)

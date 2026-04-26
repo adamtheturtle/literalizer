@@ -9,7 +9,7 @@ Next
   :class:`PositionalCallStyle`, and ``format_call_preamble_stub``
   emits file-scope Zig stub declarations because Zig disallows
   nested function definitions inside ``main``.  Dotted targets like
-  ``app.client.fetch`` are realized as a chain of structs rooted at
+  ``app.client.fetch`` are realized as a nested ``struct`` chain rooted at
   a module-level constant, and call arguments are wrapped in the
   ``ZVal`` union so anonymous union literals coerce to a concrete
   type at the call site.
