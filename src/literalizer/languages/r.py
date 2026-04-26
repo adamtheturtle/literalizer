@@ -68,6 +68,22 @@ from literalizer.exceptions import InvalidDictKeyError
 
 
 @beartype
+def _r_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return an R stub declaration for a call name.
+
+    R allows ``.`` in identifiers, so a dotted target such as
+    ``app.client.fetch`` is a single name and one ``function(...)``
+    declaration suffices to make the call evaluate at runtime.
+    """
+    return (f"{name} <- function(...) NULL",)
+
+
+@beartype
 def _format_r_dict_entry_positional(
     key: str,
     _raw_value: Value,
@@ -216,7 +232,7 @@ class R(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
-            supports_trailing_comma=True,
+            supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -312,9 +328,13 @@ class R(metaclass=LanguageCls):
         DOUBLE = "double"
 
     class TrailingCommas(enum.Enum):
-        """Trailing comma options."""
+        """Trailing comma options.
 
-        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        R's ``list()`` rejects empty arguments, so a literal trailing
+        comma like ``list(1, 2,)`` parses but raises at runtime; only
+        the comma-free form is supported.
+        """
+
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
@@ -490,7 +510,7 @@ class R(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _r_call_stub
 
     @cached_property
     def format_call_preamble_stub(

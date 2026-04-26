@@ -926,6 +926,8 @@ jobs:
       - name: Check R syntax
         run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
           < /tmp/files-to-lint
+      - name: Run R files
+        run: xargs -0 -P "$(nproc)" -n1 Rscript < /tmp/files-to-lint
 
   lint-d:
     runs-on: ubuntu-latest

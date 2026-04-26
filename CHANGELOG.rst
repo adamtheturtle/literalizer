@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` now emits R stub declarations
+  (``name <- function(...) NULL``) for the called function and any
+  call-transform wrappers, so generated R call output runs cleanly
+  under ``Rscript`` without ``could not find function`` errors.
+- Removed ``R.TrailingCommas.YES``: R's ``list()`` rejects empty
+  arguments, so ``list(1, 2,)`` parses but raises at runtime.  Only
+  ``R.TrailingCommas.NO`` remains.
 - Fixed Dhall typed-empty literals for doubly-nested lists.  Input like
   ``[[[1, 2]], [], [[3, 4]]]`` previously rendered the empty sibling as
   ``[] : List List Integer``, which is invalid Dhall (parses as
