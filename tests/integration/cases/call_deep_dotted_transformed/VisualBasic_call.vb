@@ -1,14 +1,14 @@
 Imports System.Collections.Generic
 Module Check
-    Class ClientType_
+    Class ClientType_1_
         Public Function fetch(payload As Object) As Object
             Return Nothing
         End Function
     End Class
-    Class AppType_
-        Public client As New ClientType_()
+    Class AppType_0_
+        Public client As New ClientType_1_()
     End Class
-    Dim app As New AppType_()
+    Dim app As New AppType_0_()
     Function emit(_arg As Object) As Object
         Return Nothing
     End Function

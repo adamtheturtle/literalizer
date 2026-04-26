@@ -185,25 +185,35 @@ def _vb_call_stub(
         text=method_block.format(method=method),
         prefix="    ",
     )
+
+    # Include each segment's path position in its generated type
+    # name so dotted targets that repeat a segment (case-insensitively)
+    # — e.g. ``app.app.method`` — do not collide.  VB.NET is
+    # case-insensitive, so ``AppType_`` for both segments would be
+    # rejected as a duplicate type declaration.
+    def _type_name(*, segment: str, position: int) -> str:
+        """Build a stub class name unique to a segment's path position."""
+        return f"{segment.title()}Type_{position}_"
+
     if not fields:
-        type_name = f"{root.title()}Type_"
+        type_name = _type_name(segment=root, position=0)
         return (
             f"Class {type_name}\n{method_body}\nEnd Class",
             f"Dim {root} As New {type_name}()",
         )
     blocks: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = _type_name(segment=fields[-1], position=len(fields))
     blocks.append(f"Class {inner_type}\n{method_body}\nEnd Class")
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = _type_name(segment=fields[i], position=i + 1)
         blocks.append(
             f"Class {curr_type}\n"
             f"    Public {fields[i + 1]} As New {prev_type}()\n"
             "End Class"
         )
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = _type_name(segment=root, position=0)
     blocks.append(
         f"Class {root_type}\n"
         f"    Public {fields[0]} As New {prev_type}()\n"
