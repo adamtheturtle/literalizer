@@ -1073,6 +1073,7 @@ def build_variant_cases() -> list[VariantCase]:
         (type_hints, "int_list", ""),
         (type_hints, "empty_list", ""),
         (type_hints, "int_set", ""),
+        (type_hints, "mixed_set", ""),
         (type_hints, "empty_set", ""),
         (type_hints, "mixed_number_list", ""),
         (type_hints, "nested_sequence", ""),

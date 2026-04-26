@@ -69,19 +69,19 @@ def _collect_element_types(
     dict_values: list[Value] = []
     saw_empty_list = False
     for item in items:
-        if isinstance(item, list):
-            if not item:
+        match item:
+            case []:
                 saw_empty_list = True
-                continue
-            inner = infer_element_type(items=item)
-            if inner is None:
-                return _INFER_FAILED
-            element_types.add(ListType(inner=inner))
-        elif isinstance(item, dict) and not isinstance(item, _ordereddict):
-            dict_values.extend(item.values())
-            element_types.add(dict)
-        else:
-            element_types.add(type(item))
+            case list():
+                inner = infer_element_type(items=item)
+                if inner is None:
+                    return _INFER_FAILED
+                element_types.add(ListType(inner=inner))
+            case dict() if not isinstance(item, _ordereddict):
+                dict_values.extend(item.values())
+                element_types.add(dict)
+            case _:
+                element_types.add(type(item))
     if saw_empty_list and not any(
         isinstance(t, ListType) for t in element_types
     ):
