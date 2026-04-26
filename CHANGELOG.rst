@@ -7,11 +7,11 @@ Next
 - R no longer advertises trailing-comma support: ``list(1, 2,)`` is a
   parse error in R, so ``trailing_commas.YES`` has been removed and
   the ``LIST`` sequence format reports ``supports_trailing_comma=False``.
-- :func:`literalize_call` now emits stub declarations for R, mirroring
-  the behaviour already in place for Ruby, JavaScript, Julia and
-  others.  Each unique call target gets a ``name <- function(...)
-  NULL`` binding so generated R fixtures execute end-to-end under
-  ``Rscript`` rather than failing with ``could not find function``.
+- :func:`literalize_call` now emits stub declarations for R, matching
+  the existing handling for Ruby, JavaScript, Julia and others.  Each
+  unique call target gets a ``name <- function(...) NULL`` binding so
+  generated R fixtures execute end-to-end under ``Rscript`` rather
+  than failing with ``could not find function``.
 - Fixed Dhall typed-empty literals for doubly-nested lists.  Input like
   ``[[[1, 2]], [], [[3, 4]]]`` previously rendered the empty sibling as
   ``[] : List List Integer``, which is invalid Dhall (parses as
