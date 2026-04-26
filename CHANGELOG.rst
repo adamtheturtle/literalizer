@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` now supports Visual Basic.  The default style is
+  positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
+  VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs
+  are emitted as module-level ``Class`` and ``Function`` blocks and
+  the call body is placed inside ``Sub _calls()`` because VB does not
+  allow bare expression statements at module scope.
 - Added ``literalize_call`` support for ``Zig``.  ``Zig.CallStyles``
   now exposes a ``POSITIONAL`` member backed by
   :class:`PositionalCallStyle`, and ``format_call_preamble_stub``
