@@ -1152,6 +1152,8 @@ jobs:
           version: 0.14.0
       - name: Check Zig
         run: xargs -0 -P "$(nproc)" -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
+      - name: Run Zig files
+        run: xargs -0 -P "$(nproc)" -n1 zig run < /tmp/files-to-lint
 
   lint-systemverilog:
     runs-on: ubuntu-latest
