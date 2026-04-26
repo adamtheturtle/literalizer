@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Protocol, assert_never, runtime_checkable
+from typing import Protocol, assert_never, cast, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -258,19 +258,15 @@ class CallStyleEnum(enum.Enum):
     """Base class for per-language ``CallStyles`` enums.
 
     Subclasses define members whose values are :data:`CallStyle`
-    instances; declaring ``value`` here narrows ``.value`` from
+    instances.  Reading :attr:`config` narrows ``.value`` from
     :class:`typing.Any` to :data:`CallStyle`, so subclasses do not
     need a per-language ``cast``.
     """
 
-    if TYPE_CHECKING:
-
-        @property
-        def value(  # pylint: disable=invalid-overridden-method
-            self,
-        ) -> CallStyle:
-            """The :data:`CallStyle` instance backing this member."""
-            ...  # pylint: disable=unnecessary-ellipsis
+    @property
+    def config(self) -> CallStyle:
+        """The :data:`CallStyle` instance backing this member."""
+        return cast("CallStyle", self.value)
 
 
 class CallSupport(enum.Enum):
@@ -303,12 +299,10 @@ class FloatSpecialsMixin:
     _negative_infinity: str
     _nan: str
 
-    if TYPE_CHECKING:
-
-        @property
-        def value(self) -> Callable[[float], str]:
-            """The finite-float formatter backing this member."""
-            ...  # pylint: disable=unnecessary-ellipsis
+    @property
+    def formatter(self) -> Callable[[float], str]:
+        """The finite-float formatter backing this enum member."""
+        return cast("Callable[[float], str]", cast("enum.Enum", self).value)
 
     def __init_subclass__(
         cls,
@@ -331,7 +325,7 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        return self.value(value)  # pylint: disable=not-callable
+        return self.formatter(value)
 
 
 class StubReturn(enum.Enum):

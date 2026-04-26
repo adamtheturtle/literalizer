@@ -5,11 +5,10 @@ Next
 ----
 
 - Added ``CallStyleEnum`` as the base class for per-language
-  ``CallStyles`` enums.  Declaring ``value`` as a typed property
-  narrows ``CallStyles.<MEMBER>.value`` from :class:`typing.Any` to
-  the :data:`CallStyle` union, removing the
-  ``cast("CallStyle", self.call_style.value)`` boilerplate previously
-  duplicated in every multi-style language module.
+  ``CallStyles`` enums.  Its :attr:`config` accessor returns the
+  enum member's value typed as the :data:`CallStyle` union, removing
+  the ``cast("CallStyle", self.call_style.value)`` boilerplate
+  previously duplicated in every multi-style language module.
 - OCaml integer values outside the signed 64-bit range now raise
   ``UnrepresentableIntegerError`` instead of emitting an
   ``int_of_string`` fallback that overflowed OCaml's 63-bit native
