@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -77,12 +78,20 @@ def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
 
 @beartype
 def _format_ada_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor."""
+    """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor.
+
+    Float infinities and NaNs are formatted as zero-argument helper
+    calls (``A_Pos_Inf`` etc.) that already return ``A_Val``, so the
+    ``AFloat`` wrapper is skipped — wrapping would otherwise emit
+    ``AFloat (1.0 / 0.0)`` which GNAT statically rejects.
+    """
     match original:
         case bool():
             return formatted
         case int():
             return f"AInt ({formatted})"
+        case float() if math.isinf(original) or math.isnan(original):
+            return formatted
         case float():
             return f"AFloat ({formatted})"
         case str() | bytes() | datetime.date():
@@ -230,9 +239,9 @@ class Ada(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="1.0 / 0.0",
-        negative_infinity="-1.0 / 0.0",
-        nan="0.0 / 0.0",
+        positive_infinity="A_Pos_Inf",
+        negative_infinity="A_Neg_Inf",
+        nan="A_NaN",
     ):
         """Float format options."""
 

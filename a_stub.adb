@@ -15,6 +15,11 @@ package body A_Stub is
       return (null record);
    end AStr;
 
+   function AStr (C : Character) return A_Val is
+   begin
+      return (null record);
+   end AStr;
+
    function AInt (I : Long_Long_Integer) return A_Val is
    begin
       return (null record);
@@ -34,5 +39,20 @@ package body A_Stub is
    begin
       return (null record);
    end AEntry;
+
+   function A_Pos_Inf return A_Val is
+   begin
+      return (null record);
+   end A_Pos_Inf;
+
+   function A_Neg_Inf return A_Val is
+   begin
+      return (null record);
+   end A_Neg_Inf;
+
+   function A_NaN return A_Val is
+   begin
+      return (null record);
+   end A_NaN;
 
 end A_Stub;

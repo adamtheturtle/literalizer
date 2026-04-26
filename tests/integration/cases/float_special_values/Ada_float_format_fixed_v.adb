@@ -1,9 +1,9 @@
 with A_Stub; use A_Stub;
 procedure Check is
    my_data : A_Val := AList'[
-       AFloat (1.0 / 0.0),
-       AFloat (-1.0 / 0.0),
-       AFloat (0.0 / 0.0)
+       A_Pos_Inf,
+       A_Neg_Inf,
+       A_NaN
    ];
 begin
    null;
