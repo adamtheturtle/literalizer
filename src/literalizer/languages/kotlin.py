@@ -496,6 +496,7 @@ class Kotlin(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="arrayOf<Any?>("),
@@ -510,6 +511,7 @@ class Kotlin(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=_kotlin_tuple_open,
@@ -524,6 +526,7 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):

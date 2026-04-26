@@ -551,6 +551,7 @@ class PureScript(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type="Val",
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
