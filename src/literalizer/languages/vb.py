@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import ClassVar, cast
 
 from beartype import beartype
 
@@ -45,7 +45,6 @@ from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -54,8 +53,10 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -143,6 +144,73 @@ def _format_string_vb(value: str) -> str:
     if len(parts) == 1:
         return parts[0]
     return " & ".join(parts)
+
+
+def _vb_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Visual Basic stub declarations for a call name.
+
+    For a single-name target the stub is a module-level ``Function``
+    whose parameter list matches the given names; for a dotted target
+    a chain of nested stub classes is emitted so ``a.b.c.d(...)``
+    dispatches to a real method whose body returns ``Nothing``.
+
+    Each declaration block is returned as one tuple entry containing
+    embedded newlines so that the call-test harness's whole-line
+    deduplication does not strip repeated structural keywords like
+    ``End Class`` or ``End Function`` that legitimately appear in
+    every block.
+    """
+    param_list = ", ".join(f"{p} As Object" for p in params)
+    parts = name.split(sep=".")
+    method_block = (
+        f"Public Function {{method}}({param_list}) As Object\n"
+        "    Return Nothing\n"
+        "End Function"
+    )
+    if len(parts) == 1:
+        return (
+            f"Function {parts[0]}({param_list}) As Object\n"
+            "    Return Nothing\n"
+            "End Function",
+        )
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    method_body = textwrap.indent(
+        text=method_block.format(method=method),
+        prefix="    ",
+    )
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"Class {type_name}\n{method_body}\nEnd Class",
+            f"Dim {root} As New {type_name}()",
+        )
+    blocks: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    blocks.append(f"Class {inner_type}\n{method_body}\nEnd Class")
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        blocks.append(
+            f"Class {curr_type}\n"
+            f"    Public {fields[i + 1]} As New {prev_type}()\n"
+            "End Class"
+        )
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    blocks.append(
+        f"Class {root_type}\n"
+        f"    Public {fields[0]} As New {prev_type}()\n"
+        "End Class"
+    )
+    blocks.append(f"Dim {root} As New {root_type}()")
+    return tuple(blocks)
 
 
 @beartype
@@ -368,6 +436,9 @@ class VisualBasic(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """VisualBasic call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+        NAMED = KeywordCallStyle(separator=":=")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -397,8 +468,34 @@ class VisualBasic(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a VB.NET Dim declaration inside a Module."""
+        """Wrap a VB.NET Dim declaration inside a Module.
+
+        When *body_preamble* carries call-stub declarations (``Class``
+        and ``Function`` blocks plus their ``Dim ... As New ...``
+        instances) the stubs sit at module scope and *content* is
+        placed inside ``Sub _calls()``: VB rejects bare expression
+        statements at module level, but parameterless shared subs are
+        invoked by the fixture linter so the calls still execute.
+        """
         del variable_name
+        has_stubs = any(
+            line.startswith(("Function ", "Class ")) for line in body_preamble
+        )
+        if has_stubs:
+            preamble_block = "\n".join(body_preamble)
+            preamble_indented = textwrap.indent(
+                text=preamble_block,
+                prefix="    ",
+            )
+            content_indented = textwrap.indent(text=content, prefix="        ")
+            return (
+                "Module Check\n"
+                f"{preamble_indented}\n"
+                "    Sub _calls()\n"
+                f"{content_indented}\n"
+                "    End Sub\n"
+                "End Module"
+            )
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -456,6 +553,7 @@ class VisualBasic(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -474,9 +572,6 @@ class VisualBasic(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -531,7 +626,12 @@ class VisualBasic(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _vb_call_stub
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return cast("CallStyle", self.call_style.value)
 
     @cached_property
     def format_call_preamble_stub(

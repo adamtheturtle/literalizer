@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``literalize_call`` now supports Visual Basic.  The default style is
+  positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
+  VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs
+  are emitted as module-level ``Class`` and ``Function`` blocks and
+  the call body is placed inside ``Sub _calls()`` because VB does not
+  allow bare expression statements at module scope.
 - ``literalize_call`` now emits R stub declarations
   (``name <- function(...) NULL``) for the called function and any
   call-transform wrappers, so generated R call output runs cleanly
