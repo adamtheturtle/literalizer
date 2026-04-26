@@ -27,8 +27,6 @@ from .case_discovery import (
     build_heterogeneous_strategy_combined_cases,
     build_line_ending_combined_cases,
     build_pre_indent_cases,
-    combined_languages,
-    golden_file_languages,
     group_cases_by_language,
     group_combined_cases_by_language,
 )
@@ -37,6 +35,7 @@ from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
     make_spec,
+    sorted_languages,
 )
 from .variant_cases import (
     group_variant_cases_by_language,
@@ -47,7 +46,7 @@ from .variant_cases import (
 
 @pytest.mark.parametrize(
     argnames="lang_cls",
-    argvalues=golden_file_languages(),
+    argvalues=sorted_languages(),
     ids=lang_cls_name,
 )
 def test_golden_file(
@@ -58,7 +57,8 @@ def test_golden_file(
 ) -> None:
     """Test that literalize_yaml output matches expected golden file."""
     lang_name = lang_cls.__name__
-    for case_name in group_cases_by_language()[lang_cls]:
+    grouped = group_cases_by_language(cases_dir=cases_dir)
+    for case_name in grouped.get(lang_cls, []):
         with subtests.test(case_name=case_name):
             input_path = cases_dir / case_name / "input.yaml"
             yaml_string = input_path.read_text()
@@ -97,7 +97,7 @@ def test_golden_file(
 
 @pytest.mark.parametrize(
     argnames="lang_cls",
-    argvalues=combined_languages(),
+    argvalues=sorted_languages(),
     ids=lang_cls_name,
 )
 def test_golden_file_combined_variable_forms(
@@ -109,7 +109,8 @@ def test_golden_file_combined_variable_forms(
     """Test that literalize with BothVariableForms produces expected
     golden output combining declaration and assignment in one file.
     """
-    for combined_case in group_combined_cases_by_language()[lang_cls]:
+    grouped = group_combined_cases_by_language(cases_dir=cases_dir)
+    for combined_case in grouped.get(lang_cls, []):
         with subtests.test(
             case_name=combined_case.case_name,
             golden_file_name=combined_case.golden_file_name,

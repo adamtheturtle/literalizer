@@ -25,11 +25,11 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
     for case_dir in sorted(cases_dir.iterdir()):
         expected.add(case_dir / "input.yaml")
 
-    for case_name, lang_cls in discover_cases():
+    for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
         ext = lang_cls.extension
         expected.add(cases_dir / case_name / (lang_cls.__name__ + ext))
 
-    for combined_case in discover_combined_cases():
+    for combined_case in discover_combined_cases(cases_dir=cases_dir):
         ext = combined_case.lang_cls.extension
         expected.add(
             cases_dir

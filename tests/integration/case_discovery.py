@@ -67,9 +67,10 @@ def cases_with_non_trivial_dict_keys(
 
 @functools.cache
 @beartype
-def discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
+def discover_cases(
+    cases_dir: Path,
+) -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
-    cases_dir = Path(__file__).parent / "cases"
     call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
@@ -91,7 +92,9 @@ def discover_cases() -> list[tuple[str, literalizer.LanguageCls]]:
 
 @functools.cache
 @beartype
-def group_cases_by_language() -> dict[
+def group_cases_by_language(
+    cases_dir: Path,
+) -> dict[
     literalizer.LanguageCls,
     list[str],
 ]:
@@ -103,17 +106,9 @@ def group_cases_by_language() -> dict[
     overhead on slower CI runners (notably Windows).
     """
     groups: dict[literalizer.LanguageCls, list[str]] = {}
-    for case_name, lang_cls in discover_cases():
+    for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
         groups.setdefault(lang_cls, []).append(case_name)
     return groups
-
-
-@functools.cache
-@beartype
-def golden_file_languages() -> list[literalizer.LanguageCls]:
-    """Return languages that have at least one golden-file case."""
-    groups = group_cases_by_language()
-    return [cls for cls in sorted_languages() if cls in groups]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -131,11 +126,10 @@ class CombinedCase:
 
 @functools.cache
 @beartype
-def discover_combined_cases() -> list[CombinedCase]:
+def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     """Return combined test cases for all redefinition-supporting
     styles.
     """
-    cases_dir = Path(__file__).parent / "cases"
     call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
@@ -177,7 +171,9 @@ def discover_combined_cases() -> list[CombinedCase]:
 
 @functools.cache
 @beartype
-def group_combined_cases_by_language() -> dict[
+def group_combined_cases_by_language(
+    cases_dir: Path,
+) -> dict[
     literalizer.LanguageCls,
     list[CombinedCase],
 ]:
@@ -189,17 +185,9 @@ def group_combined_cases_by_language() -> dict[
     and per-test overhead on slower CI runners (notably Windows).
     """
     groups: dict[literalizer.LanguageCls, list[CombinedCase]] = {}
-    for case in discover_combined_cases():
+    for case in discover_combined_cases(cases_dir=cases_dir):
         groups.setdefault(case.lang_cls, []).append(case)
     return groups
-
-
-@functools.cache
-@beartype
-def combined_languages() -> list[literalizer.LanguageCls]:
-    """Return languages that have at least one combined-form case."""
-    groups = group_combined_cases_by_language()
-    return [cls for cls in sorted_languages() if cls in groups]
 
 
 @dataclasses.dataclass(frozen=True)
