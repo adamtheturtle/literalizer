@@ -12,6 +12,8 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -97,6 +99,25 @@ def _unescape_dhall_string(value: str) -> str:
         return _simple_escapes[match.group(1)]
 
     return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
+
+
+_dhall_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="Text",
+        bool_type="Bool",
+        int_type="Integer",
+        float_type="Double",
+        mixed_numeric_type="Text",
+        bytes_type="Text",
+        date_type="Text",
+        datetime_type="Text",
+        list_template="List {inner}",
+        dict_type_template=None,
+        fallback_value_type="Text",
+    ),
+    template="[] : List {type}",
+    fallback_type="Text",
+)
 
 
 @beartype
@@ -716,7 +737,10 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_dhall_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

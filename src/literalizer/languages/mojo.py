@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    make_narrowed_empty_form,
     make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
@@ -71,6 +72,24 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+
+_mojo_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type="String",
+        list_template="List[{inner}]",
+        dict_type_template="Dict[String, {inner}]",
+        fallback_value_type="String",
+    ),
+    template="List[{type}]()",
+    fallback_type="String",
+)
 
 
 @beartype
@@ -693,8 +712,12 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format(
+        base = self.sequence_format(
             default_type=self.default_sequence_element_type,
+        )
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_mojo_narrowed_empty_form,
         )
 
     @cached_property

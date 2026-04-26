@@ -631,6 +631,105 @@ def _compute_sibling_list_position_overrides(
 
 
 @beartype
+def _empty_child_sibling_opener(
+    *,
+    value: list[Value],
+    position: int,
+    spec: Language,
+) -> str | None:
+    """Opener to use for an empty inner-list child at *position*.
+
+    Empty inner lists have no contents to infer a type from, so the
+    default per-list opener falls back to the language's generic
+    "any"-typed sequence (e.g. ``new Object[]{``, ``[]any{``,
+    ``Vec::<String>::new()``).  When that empty list sits beside
+    non-empty homogeneous list siblings, the rendered literal then
+    mixes the narrow sibling type with the generic empty type and is
+    rejected by the static type checkers used for Java, Rust, Go, etc.
+
+    Pull a typed opener from a non-empty list sibling when all such
+    siblings produce the same opener, so the empty list renders with
+    a matching type.  Returns ``None`` when no homogeneous sibling
+    opener exists and the default fallback should stand.
+    """
+    item = value[position]
+    if not (isinstance(item, list) and not item):
+        return None
+    non_empty_siblings = [
+        other for other in value if isinstance(other, list) and other
+    ]
+    if not non_empty_siblings:
+        return None
+    sibling_openers = {spec.sequence_open(o) for o in non_empty_siblings}
+    if len(sibling_openers) != 1:
+        return None
+    return next(iter(sibling_openers))
+
+
+@beartype
+def _format_sequence_child(
+    *,
+    value: list[Value],
+    position: int,
+    child: Value,
+    spec: Language,
+    wrap_ids: frozenset[int],
+    dict_open_override: str | None,
+    child_sequence_open_overrides: Sequence[str | None],
+) -> str:
+    """Format a single sequence child with sibling-aware typed empty.
+
+    Empty inner-list children sit beside non-empty homogeneous siblings
+    in cases like ``[[1, 2], [], [3, 4]]``.  When the language has a
+    bespoke narrowed-empty form (e.g. ``List[Int]()`` for Mojo,
+    ``[] of Int32`` for Crystal, ``[] : List Natural`` for Dhall),
+    short-circuit to it so the rendered literal type-checks.  Otherwise
+    fall through to the regular recursive formatter, which uses
+    sibling-derived ``sequence_open_override`` to make the empty list
+    render as ``opener + close`` for languages where that is valid
+    (Java, Go, Rust, ...).
+    """
+    parent_override = (
+        child_sequence_open_overrides[position]
+        if (
+            position < len(child_sequence_open_overrides)
+            and child_sequence_open_overrides[position] is not None
+        )
+        else None
+    )
+    sibling_open = (
+        None
+        if parent_override is not None
+        else _empty_child_sibling_opener(
+            value=value,
+            position=position,
+            spec=spec,
+        )
+    )
+    if (
+        parent_override is None
+        and isinstance(child, list)
+        and not child
+        and sibling_open is not None
+    ):
+        narrowed_empty_form = spec.sequence_format_config.narrowed_empty_form
+        if narrowed_empty_form is not None:
+            non_empty_siblings = [
+                other for other in value if isinstance(other, list) and other
+            ]
+            return narrowed_empty_form(non_empty_siblings)
+    return _format_value(
+        value=child,
+        spec=spec,
+        dict_open_override=dict_open_override,
+        wrap_ids=wrap_ids,
+        sequence_open_override=(
+            parent_override if parent_override is not None else sibling_open
+        ),
+    )
+
+
+@beartype
 def _format_list_value(
     *,
     value: list[Value],
@@ -673,15 +772,15 @@ def _format_list_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_value(
-                    value=v,
+                formatted_value=_format_sequence_child(
+                    value=value,
+                    position=position,
+                    child=v,
                     spec=spec,
-                    dict_open_override=dict_open_override,
                     wrap_ids=wrap_ids,
-                    sequence_open_override=(
-                        child_sequence_open_overrides[position]
-                        if position < len(child_sequence_open_overrides)
-                        else None
+                    dict_open_override=dict_open_override,
+                    child_sequence_open_overrides=(
+                        child_sequence_open_overrides
                     ),
                 ),
                 spec=spec,
@@ -933,18 +1032,25 @@ def _format_collection_lines(
                         parent_id=parent_id,
                         wrap_ids=wrap_ids,
                         raw_value=element,
-                        formatted_value=_format_value(
-                            value=element,
+                        formatted_value=_format_sequence_child(
+                            value=list_data,
+                            position=position,
+                            child=element,
                             spec=spec,
-                            dict_open_override=dict_open_override,
                             wrap_ids=wrap_ids,
-                            sequence_open_override=None,
+                            dict_open_override=dict_open_override,
+                            child_sequence_open_overrides=(),
                         ),
                         spec=spec,
                     ),
                 )
-                for element in list_data
+                for position, element in enumerate(iterable=list_data)
             ]
+            # Drop entries that render to the empty string so a nested
+            # empty sub-list (possible in languages like Forth whose
+            # empty-sequence opener and close are both empty) does not
+            # leave a dangling indented blank line in the output.
+            formatted_entries = [e for e in formatted_entries if e]
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,

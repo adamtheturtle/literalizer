@@ -64,6 +64,19 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
+
+
+def _d_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
+    """Keep D's ``parseJSON("[]")`` empty literal beside typed siblings.
+
+    ``JSONValue([])`` rejects an empty ``void[]`` payload at template
+    instantiation; the language's ``parseJSON("[]")`` empty form
+    returns a fresh ``JSONValue`` array and is accepted alongside
+    typed siblings.
+    """
+    return _D_EMPTY_JSON_ARRAY
+
 
 @beartype
 def _d_call_stub(
@@ -185,7 +198,7 @@ class D(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence='parseJSON("[]")',
+            empty_sequence=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -200,7 +213,7 @@ class D(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_open(open_str="JSONValue(["),
             close="])",
-            empty_set='parseJSON("[]")',
+            empty_set=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
@@ -518,7 +531,10 @@ class D(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_d_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
