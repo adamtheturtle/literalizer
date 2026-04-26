@@ -12,6 +12,8 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -70,6 +72,24 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_crystal_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int32",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type="String",
+        list_template="Array({inner})",
+        dict_type_template="Hash(String, {inner})",
+        fallback_value_type="String",
+    ),
+    template="[] of {type}",
+    fallback_type="String",
+)
 
 
 @beartype
@@ -541,7 +561,10 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_crystal_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

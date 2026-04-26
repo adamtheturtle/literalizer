@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- ``infer_element_type`` no longer gives up when a nested list is empty
+  alongside non-empty homogeneous siblings: empty inner lists are now
+  skipped during inference, so input like ``[[1, 2], [], [3, 4]]``
+  resolves to ``ListType(inner=int)`` instead of falling back to
+  ``None`` (mixed types).  When the rendered list literal contains an
+  empty inner list beside non-empty list siblings, the empty inner now
+  inherits the typed sequence opener of its siblings, so generated
+  literals type-check cleanly under strongly typed languages
+  (``new int[]{}`` instead of ``new Object[]{}`` for Java,
+  ``std::vector<int>{}`` for C++, ``[]int{}`` for Go, ``vec![]`` for
+  Rust, ``New Integer() {}`` for Visual Basic, etc.).
 - Documented the preamble-duplication sharp edge that arises when a
   caller composes :func:`literalize` (declaring a ``{"$ref": "name"}``
   variable) with :func:`literalize_call` (referencing it) into a
