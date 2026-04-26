@@ -71,20 +71,14 @@ class _HclScanState:
 
     depth: int = 0
     in_string: bool = False
-    escaped: bool = False
 
 
 @beartype
 def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
     """Update *state* by scanning brackets and strings in *line*."""
     for char in line:
-        if state.escaped:
-            state.escaped = False
-            continue
         if state.in_string:
-            if char == "\\":
-                state.escaped = True
-            elif char == '"':
+            if char == '"':
                 state.in_string = False
             continue
         if char == '"':
@@ -104,21 +98,15 @@ def _split_top_level_statements(*, content: str) -> list[str]:
     grouped with their opening line so a declaration like ``name = [\n
     ...\n]`` is preserved as a single statement.
     """
-    if not content:
-        return []
     statements: list[str] = []
     current: list[str] = []
     state = _HclScanState()
     for line in content.split(sep="\n"):
-        if not line and state.depth == 0 and not current:
-            continue
         current.append(line)
         _advance_scan_state(line=line, state=state)
         if state.depth == 0 and not state.in_string:
             statements.append("\n".join(current))
             current = []
-    if current:
-        statements.append("\n".join(current))
     return statements
 
 
