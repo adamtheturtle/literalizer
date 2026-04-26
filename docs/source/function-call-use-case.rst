@@ -73,7 +73,7 @@ arguments are passed as ``name=value`` pairs.
 
        def check(self, *, user_id: str, ts: float) -> str:
            """Return a confirmation string."""
-           return f"checked {user_id} at {ts}"
+           return f"{type(self).__name__} checked {user_id} at {ts}"
 
 
    throttler = Throttler()
