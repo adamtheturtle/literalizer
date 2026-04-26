@@ -67,6 +67,21 @@ from literalizer._types import Value
 from literalizer.exceptions import InvalidDictKeyError
 
 
+def _r_call_stub(
+    name: str,
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return R stub declarations for a call name.
+
+    R treats dots as part of an identifier, so a dotted call target like
+    ``app.client.fetch`` is just an ordinary function name. A single
+    variadic stub binding covers every call.
+    """
+    return (f"{name} <- function(...) NULL",)
+
+
 @beartype
 def _format_r_dict_entry_positional(
     key: str,
@@ -216,7 +231,7 @@ class R(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
-            supports_trailing_comma=True,
+            supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -314,7 +329,6 @@ class R(metaclass=LanguageCls):
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
 
-        YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
@@ -490,7 +504,7 @@ class R(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _r_call_stub
 
     @cached_property
     def format_call_preamble_stub(
