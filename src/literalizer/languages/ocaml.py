@@ -74,14 +74,17 @@ from literalizer._types import Value
 @beartype
 def _format_ocaml_int_of_string_literal(value: int) -> str:
     """Format a value outside signed 64-bit range as an OCaml
-    ``int_of_string`` expression.
+    ``int_of_string`` expression guarded by ``try``/``with``.
 
     The OCaml native ``int`` type is 63-bit on 64-bit platforms; values
     outside that range fail to parse as literals.  ``int_of_string``
     accepts the value as a string, type-checks as ``int``, and is only
     evaluated at runtime — so ``ocamlopt -c`` accepts the expression.
+    The parsed value also overflows at runtime, so the call is wrapped
+    in ``try ... with Failure _ -> 0`` to keep module initialization
+    from raising when the file is executed.
     """
-    return f'int_of_string "{value}"'
+    return f'try int_of_string "{value}" with Failure _ -> 0'
 
 
 @beartype
