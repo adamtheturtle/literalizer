@@ -15,6 +15,17 @@ Next
   (``new int[]{}`` instead of ``new Object[]{}`` for Java,
   ``std::vector<int>{}`` for C++, ``[]int{}`` for Go, ``vec![]`` for
   Rust, ``New Integer() {}`` for Visual Basic, etc.).
+- Documented the preamble-duplication sharp edge that arises when a
+  caller composes :func:`literalize` (declaring a ``{"$ref": "name"}``
+  variable) with :func:`literalize_call` (referencing it) into a
+  single source file: each call independently computes its own
+  ``preamble`` and ``body_preamble``, so the combined output contains
+  duplicates that strict compilers reject and a linter flags.  The
+  ``literalize_call`` reference now points at the new
+  "Composing declarations and calls" section in
+  ``docs/source/function-call-use-case.rst``, which shows a worked
+  Haskell example with the combined ``body_preamble`` blocks already
+  deduplicated.
 - ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
   (``*name*``) at the call site so they resolve to the matching
   ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by

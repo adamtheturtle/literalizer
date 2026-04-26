@@ -2036,6 +2036,22 @@ def literalize_call(
             the requested case,
             :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
             is raised.
+
+    .. note::
+
+        When composing the output of this function with
+        :func:`literalize` — for example, declaring a variable with
+        :func:`literalize` and then referencing it via a
+        ``{"$ref": "name"}`` marker in the call — the two halves each
+        compute :attr:`~LiteralizeResult.preamble` and
+        :attr:`~LiteralizeResult.body_preamble` independently from the
+        data they see.  Concatenating the results into a single file
+        can produce duplicate import lines or duplicate type
+        declarations, which strict compilers (Haskell, D, …) reject
+        and a linter (``ruff``, ``pylint``, …) flags.  Remove the
+        duplicate preamble lines (preserving first-seen order) before
+        emitting the file.  The "Composing declarations and calls"
+        section of :doc:`/function-call-use-case` shows a worked example.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
