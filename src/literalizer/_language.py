@@ -266,9 +266,11 @@ class CallStyleEnum(enum.Enum):
     if TYPE_CHECKING:
 
         @property
-        def value(self) -> CallStyle:
+        def value(  # pylint: disable=invalid-overridden-method
+            self,
+        ) -> CallStyle:
             """The :data:`CallStyle` instance backing this member."""
-            ...
+            ...  # pylint: disable=unnecessary-ellipsis
 
 
 class CallSupport(enum.Enum):
@@ -306,7 +308,7 @@ class FloatSpecialsMixin:
         @property
         def value(self) -> Callable[[float], str]:
             """The finite-float formatter backing this member."""
-            ...
+            ...  # pylint: disable=unnecessary-ellipsis
 
     def __init_subclass__(
         cls,
@@ -329,7 +331,7 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        return self.value(value)
+        return self.value(value)  # pylint: disable=not-callable
 
 
 class StubReturn(enum.Enum):
