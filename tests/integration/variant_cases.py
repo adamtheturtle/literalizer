@@ -884,7 +884,7 @@ class _SimpleAxis:
     :func:`build_non_default_variants`.
 
     ``kwarg`` is the language-class constructor parameter name; the
-    accessor callables read the default value and the formats enum from
+    accessor functions read the default value and the formats enum from
     a built spec (which sometimes diverge from ``kwarg``, e.g.
     ``bytes_format`` reads from ``format_bytes``).
     """
