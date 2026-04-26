@@ -486,17 +486,38 @@ jobs:
       # rewritten; the mapping is printed so failures still point back
       # to the original path.
       - name: Lint Erlang
+        env:
+          ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
           find tests/integration/cases -name '*.erl' -print0 > /tmp/files-erlang
-          tmpdir=$(mktemp -d)
+          mkdir -p "$ERLANG_FIXTURE_DIR"
           i=0
           while IFS= read -r -d '' f; do
             name="fixture_$i"
-            sed "1s/^-module(check)\./-module($name)./" "$f" > "$tmpdir/$name.erl"
+            sed "1s/^-module(check)\./-module($name)./" "$f" > "$ERLANG_FIXTURE_DIR/$name.erl"
             printf '%s.erl <- %s\n' "$name" "$f"
             i=$((i+1))
           done < /tmp/files-erlang
-          (cd "$tmpdir" && erlc -Werror fixture_*.erl)
+          (cd "$ERLANG_FIXTURE_DIR" && erlc -Werror fixture_*.erl)
+
+      # `erlc` only compiles; runtime errors (undefined functions, missing
+      # imports, failed assertions) slip past unless each fixture is
+      # actually executed. Fixtures all expose `check:x/0`, renamed to
+      # `fixture_N:x/0` during compilation; invoke each in a single BEAM
+      # VM and collect failures so one bad fixture does not mask others.
+      - name: Run Erlang files
+        env:
+          ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
+        run: |-
+          modules=$(find "$ERLANG_FIXTURE_DIR" -maxdepth 1 -name 'fixture_*.beam' -printf '%f\n' | sed 's|\.beam$||' | paste -sd, -)
+          erl -noshell -pa "$ERLANG_FIXTURE_DIR" -eval "
+            Run = fun(M) ->
+                try M:x(), ok
+                catch K:R:S -> io:format(\"FAIL ~p: ~p:~p~n~p~n\", [M,K,R,S]), error
+                end
+            end,
+            Results = [Run(M) || M <- [$modules]],
+            case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
