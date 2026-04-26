@@ -269,11 +269,13 @@ def _apply_concat_control(
                 escaped = escaped.replace("\\", "\\\\")
             escaped = escaped.replace(quote_char, quote_escape)
             parts.append(f"{quote_char}{escaped}{quote_char}")
-    if not parts:
-        return empty
-    if len(parts) == 1:
-        return parts[0]
-    return concat_operator.join(parts)
+    match parts:
+        case []:
+            return empty
+        case [single]:
+            return single
+        case _:
+            return concat_operator.join(parts)
 
 
 @beartype

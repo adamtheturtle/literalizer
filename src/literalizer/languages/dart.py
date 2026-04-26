@@ -134,13 +134,21 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
                 )
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            val_type = unique[0] if len(unique) == 1 else "dynamic"
+            match unique:
+                case [single]:
+                    val_type = single
+                case _:
+                    val_type = "dynamic"
             return f"Map<{default_dict_key_type}, {val_type}>"
         case set():
             if not data:
                 return f"Set<{default_set_element_type}>"
-            elem_types = sorted({recurse(data=e) for e in data})
-            elem_type = elem_types[0] if len(elem_types) == 1 else "dynamic"
+            elem_types_sorted = sorted({recurse(data=e) for e in data})
+            match elem_types_sorted:
+                case [single]:
+                    elem_type = single
+                case _:
+                    elem_type = "dynamic"
             return f"Set<{elem_type}>"
         case list():
             if not data:
@@ -152,7 +160,11 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
                 return f"({', '.join(elem_types)},)"
             elem_types = [recurse(data=e) for e in data]
             unique = list(dict.fromkeys(elem_types))
-            elem_type = unique[0] if len(unique) == 1 else "dynamic"
+            match unique:
+                case [single]:
+                    elem_type = single
+                case _:
+                    elem_type = "dynamic"
             return f"List<{elem_type}>"
         case _ as unreachable:
             assert_never(unreachable)

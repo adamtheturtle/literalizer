@@ -1161,34 +1161,37 @@ def _literalize_pre_form(
     )
 
     resolved: ResolvedComments | None = None
-    if input_format is InputFormat.YAML and parsed.yaml_needs_comment_resolve:
-        comment_cfg = language.comment_config
-        cp = comment_cfg.prefix
-        cs = comment_cfg.suffix
-        resolved = resolve_yaml_comments(
-            yaml_string=source,
-            raw_data=parsed.raw_data,
-            base=result,
-            language=language,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            line_prefix=line_prefix,
-            include_delimiters=include_delimiters,
-        )
-        result = resolved.result
-    elif input_format is InputFormat.TOML:
-        comment_cfg = language.comment_config
-        resolved = resolve_toml_comments(
-            toml_doc=parsed.raw_data,
-            base=result,
-            language=language,
-            comment_prefix=comment_cfg.prefix,
-            comment_suffix=comment_cfg.suffix,
-            comment_line_prefix=comment_line_prefix,
-            include_delimiters=include_delimiters,
-        )
-        result = resolved.result
+    match input_format:
+        case InputFormat.YAML if parsed.yaml_needs_comment_resolve:
+            comment_cfg = language.comment_config
+            cp = comment_cfg.prefix
+            cs = comment_cfg.suffix
+            resolved = resolve_yaml_comments(
+                yaml_string=source,
+                raw_data=parsed.raw_data,
+                base=result,
+                language=language,
+                comment_prefix=cp,
+                comment_suffix=cs,
+                comment_line_prefix=comment_line_prefix,
+                line_prefix=line_prefix,
+                include_delimiters=include_delimiters,
+            )
+            result = resolved.result
+        case InputFormat.TOML:
+            comment_cfg = language.comment_config
+            resolved = resolve_toml_comments(
+                toml_doc=parsed.raw_data,
+                base=result,
+                language=language,
+                comment_prefix=comment_cfg.prefix,
+                comment_suffix=comment_cfg.suffix,
+                comment_line_prefix=comment_line_prefix,
+                include_delimiters=include_delimiters,
+            )
+            result = resolved.result
+        case _:
+            pass
 
     return _PreFormState(
         data=data,

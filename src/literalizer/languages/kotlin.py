@@ -250,7 +250,11 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 )
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            val_type = unique[0] if len(unique) == 1 else "Any?"
+            match unique:
+                case [single]:
+                    val_type = single
+                case _:
+                    val_type = "Any?"
             outer = (
                 dict_outer
                 if not isinstance(data, (ordereddict, OrderedDict))
@@ -261,7 +265,11 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             if not data:
                 return f"{set_outer}<{default_set_element_type}>"
             elem_types = sorted({recurse(data=e) for e in data})
-            elem_type = elem_types[0] if len(elem_types) == 1 else "Any?"
+            match elem_types:
+                case [single]:
+                    elem_type = single
+                case _:
+                    elem_type = "Any?"
             return f"{set_outer}<{elem_type}>"
         case list():
             if not data:
@@ -270,11 +278,13 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 return "List<Any?>"
             if sequence_format_name == "TUPLE":
                 elem_types = [recurse(data=e) for e in data]
-                if len(data) == 2:  # noqa: PLR2004
-                    return f"Pair<{', '.join(elem_types)}>"
-                if len(data) == 3:  # noqa: PLR2004
-                    return f"Triple<{', '.join(elem_types)}>"
-                return "List<Any?>"
+                match data:
+                    case [_, _]:
+                        return f"Pair<{', '.join(elem_types)}>"
+                    case [_, _, _]:
+                        return f"Triple<{', '.join(elem_types)}>"
+                    case _:
+                        return "List<Any?>"
             if sequence_format_name == "ARRAY":
                 return "Array<Any?>"
             # LIST format — use typed arrays matching the opener

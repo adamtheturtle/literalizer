@@ -59,16 +59,17 @@ def infer_element_type(
     element_types: set[type | ListType] = set()
     all_dict_values: list[Value] = []
     for item in items:
-        if isinstance(item, list):
-            inner = infer_element_type(items=item)
-            if inner is None:
-                return None
-            element_types.add(ListType(inner=inner))
-        elif isinstance(item, dict) and not isinstance(item, _ordereddict):
-            all_dict_values.extend(item.values())
-            element_types.add(dict)
-        else:
-            element_types.add(type(item))
+        match item:
+            case list():
+                inner = infer_element_type(items=item)
+                if inner is None:
+                    return None
+                element_types.add(ListType(inner=inner))
+            case dict() if not isinstance(item, _ordereddict):
+                all_dict_values.extend(item.values())
+                element_types.add(dict)
+            case _:
+                element_types.add(type(item))
     if len(element_types) == 1:
         the_type = next(iter(element_types))
         if the_type is dict:

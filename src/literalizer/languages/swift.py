@@ -198,12 +198,13 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
                 return f"[String: {default_dict_value_type}]"
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            has_nil = "Any?" in unique
-            val_type = (
-                unique[0]
-                if len(unique) == 1
-                else ("Any?" if has_nil else "Any")
-            )
+            match unique:
+                case [single]:
+                    val_type = single
+                case _ if "Any?" in unique:
+                    val_type = "Any?"
+                case _:
+                    val_type = "Any"
             return f"[String: {val_type}]"
         case set():
             return f"Set<{default_set_element_type}>"
@@ -217,12 +218,13 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
                 return f"({', '.join(elem_types)})"
             elem_types = [recurse(data=e) for e in data]
             unique = list(dict.fromkeys(elem_types))
-            has_nil = "Any?" in unique
-            elem_type = (
-                unique[0]
-                if len(unique) == 1
-                else ("Any?" if has_nil else "Any")
-            )
+            match unique:
+                case [single]:
+                    elem_type = single
+                case _ if "Any?" in unique:
+                    elem_type = "Any?"
+                case _:
+                    elem_type = "Any"
             return f"[{elem_type}]"
         case _ as unreachable:
             assert_never(unreachable)
