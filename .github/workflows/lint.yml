@@ -760,6 +760,12 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+      # Fixtures only declare ``module Check = struct ... end`` with a
+      # ``my_data`` let-binding; OCaml evaluates struct bodies when the
+      # module is initialized, so running the file as a script forces
+      # the binding's right-hand side to execute.
+      - name: Run OCaml files
+        run: xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
