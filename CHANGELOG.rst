@@ -4,10 +4,10 @@ Changelog
 Next
 ----
 
-- The OCaml integer-overflow fallback now wraps ``int_of_string`` in
-  ``try ... with Failure _ -> 0`` so module initialization no longer
-  raises when the generated file is executed.  Compilation behavior is
-  unchanged.
+- OCaml integer values outside the signed 64-bit range now raise
+  ``UnrepresentableIntegerError`` instead of emitting an
+  ``int_of_string`` fallback that overflowed OCaml's 63-bit native
+  ``int`` at runtime and silently misrepresented the data.
 - ``literalize_call`` now supports Visual Basic.  The default style is
   positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
   VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs
