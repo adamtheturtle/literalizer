@@ -762,6 +762,12 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+      # Fixtures only declare ``module Check = struct ... end`` with a
+      # ``my_data`` let-binding; OCaml evaluates struct bodies when the
+      # module is initialized, so running the file as a script forces
+      # the binding's right-hand side to execute.
+      - name: Run OCaml files
+        run: xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -967,6 +973,22 @@ jobs:
           compiler: dmd-latest
       - name: Check D syntax
         run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
+      # Fixtures define `void _check()` with no main entry point, so
+      # compile each alongside `.github/scripts/d_main.d`, which imports
+      # the fixture as module `check` and invokes `_check()`. Each
+      # invocation gets a private tmpdir so parallel builds don't
+      # clobber each other's intermediate object files or output binary.
+      - name: Run D files
+        run: |-
+          cat > /tmp/run-d.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.d"
+          cp .github/scripts/d_main.d "$tmpdir/main.d"
+          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/main.d" "$tmpdir/check.d" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
 
   lint-crystal:
     runs-on: ubuntu-latest
