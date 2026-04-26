@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- Fixed Dhall typed-empty literals for doubly-nested lists.  Input like
+  ``[[[1, 2]], [], [[3, 4]]]`` previously rendered the empty sibling as
+  ``[] : List List Integer``, which is invalid Dhall (parses as
+  ``(List List) Integer``).  The inner ``List`` type is now
+  parenthesized, producing ``[] : List (List Integer)``.
 - ``infer_element_type`` no longer gives up when a nested list is empty
   alongside non-empty homogeneous siblings: empty inner lists are now
   skipped during inference, so input like ``[[1, 2], [], [3, 4]]``
