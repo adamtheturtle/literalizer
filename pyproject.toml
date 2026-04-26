@@ -133,6 +133,8 @@ lint.per-file-ignores."doccmd_*.py" = [
     "ERA001",
     # Allow asserts in docs.
     "S101",
+    # Allow print() in docs for output-illustrating examples.
+    "T201",
 ]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except

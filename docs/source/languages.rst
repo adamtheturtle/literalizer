@@ -94,9 +94,12 @@ the :class:`~literalizer.Language` protocol.
 Use ``metaclass=LanguageCls`` and define the required nested enum classes
 and attributes:
 
-.. skip doccmd[all]: next
+This sketch is intentionally incomplete; a complete language defines all
+of the protocol's nested enum classes and attributes.
 
 .. code-block:: python
+
+   """Sketch of a custom language."""
 
    import enum
 
@@ -106,11 +109,14 @@ and attributes:
 
 
    class MyLanguage(metaclass=LanguageCls):
+       """Sketch only; a complete language defines many more nested enums."""
 
        extension = ".my"
        pygments_name = None
 
        class SequenceFormats(enum.Enum):
+           """Available sequence wrappers."""
+
            LIST = SequenceFormatConfig(
                sequence_open=fixed_open(open_str="["),
                close="]",
@@ -126,7 +132,15 @@ and attributes:
                declared_type=None,
            )
 
+       sequence_formats = SequenceFormats
+
        # ... define the remaining required enums and attributes ...
+
+
+   list_member = MyLanguage.sequence_formats.LIST
+   assert list_member.name == "LIST"
+   assert MyLanguage.extension == ".my"
+   assert MyLanguage.pygments_name is None
 
 Look at any built-in language module under ``literalizer/languages/`` for a
 complete working example.
