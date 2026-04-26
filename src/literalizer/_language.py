@@ -266,7 +266,8 @@ class CallStyleEnum(enum.Enum):
     @property
     def config(self) -> CallStyle:
         """The :data:`CallStyle` instance backing this member."""
-        return cast("CallStyle", self.value)
+        value: CallStyle = self.value
+        return value
 
 
 class CallSupport(enum.Enum):
