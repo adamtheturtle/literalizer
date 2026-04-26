@@ -62,16 +62,15 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_ADA_EMPTY_LITERAL = "AList'(1 .. 0 => ANull)"
+_ADA_EMPTY_LITERAL = "AList'[]"
 
 
 def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Ada's structured empty literal beside typed siblings.
 
-    Ada arrays cannot be set up with ``AList'()`` — the language
-    requires a typed range form like ``AList'(1 .. 0 => ANull)`` even
-    at empty positions.  A_Val is heterogeneous, so this empty form is
-    accepted as a sibling of fully-typed entries.
+    ``A_Stub.A_Val`` carries the Ada 2022 ``Aggregate`` aspect, so an
+    empty container aggregate is written as ``AList'[]`` — the bracket
+    form distinguishes container aggregates from array aggregates.
     """
     return _ADA_EMPTY_LITERAL
 
@@ -101,8 +100,8 @@ def _format_variable_declaration(
 ) -> str:
     """Format an Ada object declaration.
 
-    Example: ``"x"`` and ``"AList'(AInt (1))"`` →
-    ``"x : A_Val := AList'(AInt (1));"``
+    Example: ``"x"`` and ``"AList'[AInt (1)]"`` →
+    ``"x : A_Val := AList'[AInt (1)];"``
     """
     wrapped = _format_ada_entry(original=data, formatted=value)
     return f"{name} : A_Val := {wrapped};"
@@ -112,8 +111,8 @@ def _format_variable_declaration(
 def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format an Ada assignment statement to an existing variable.
 
-    Example: ``"x"`` and ``"AList'(AInt (1))"`` →
-    ``"x := AList'(AInt (1));"``
+    Example: ``"x"`` and ``"AList'[AInt (1)]"`` →
+    ``"x := AList'[AInt (1)];"``
     """
     wrapped = _format_ada_entry(original=data, formatted=value)
     return f"{name} := {wrapped};"
@@ -170,8 +169,8 @@ class Ada(metaclass=LanguageCls):
         """Sequence type options for Ada."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_open(open_str="AList'("),
-            close=")",
+            sequence_open=fixed_open(open_str="AList'["),
+            close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
@@ -189,9 +188,9 @@ class Ada(metaclass=LanguageCls):
         """Set type options for Ada."""
 
         SET = SetFormatConfig(
-            set_open=fixed_open(open_str="ASet'("),
-            close=")",
-            empty_set="ASet'(1 .. 0 => ANull)",
+            set_open=fixed_open(open_str="ASet'["),
+            close="]",
+            empty_set="ASet'[]",
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
@@ -342,7 +341,10 @@ class Ada(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="   ")
-        return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+        return (
+            "with A_Stub; use A_Stub;\n"
+            f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+        )
 
     @staticmethod
     def wrap_combined_in_file(
@@ -351,7 +353,15 @@ class Ada(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Ada declaration + assignment in nested procedures."""
+        """Wrap Ada declaration + assignment in a single procedure.
+
+        Earlier revisions wrapped each form in its own nested
+        ``Check_Declaration`` / ``Check_Assignment`` procedure, but the
+        assignment then referenced ``my_data`` from a sibling scope and
+        only compiled because the lint job did syntax-only checking.
+        Putting both in one procedure keeps the variable in scope so
+        the fixture compiles and runs end-to-end.
+        """
         del variable_name
         declaration = prepend_body_preamble(
             content=declaration,
@@ -359,21 +369,13 @@ class Ada(metaclass=LanguageCls):
         )
         decl_indented = textwrap.indent(text=declaration, prefix="   ")
         assign_indented = textwrap.indent(text=assignment, prefix="   ")
-        inner = (
-            "procedure Check_Declaration is\n"
+        return (
+            "with A_Stub; use A_Stub;\n"
+            "procedure Check is\n"
             f"{decl_indented}\n"
             "begin\n"
-            "   null;\n"
-            "end Check_Declaration;\n"
-            "procedure Check_Assignment is\n"
-            "begin\n"
             f"{assign_indented}\n"
-            "end Check_Assignment;"
-        )
-        inner_indented = textwrap.indent(text=inner, prefix="   ")
-        return (
-            f"procedure Check is\n{inner_indented}\n"
-            "begin\n   null;\nend Check;"
+            "end Check;"
         )
 
     date_format: DateFormats = DateFormats.ISO
@@ -508,13 +510,13 @@ class Ada(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_open(open_str="AMap'("),
-            close=")",
+            dict_open=fixed_open(open_str="AMap'["),
+            close="]",
             format_entry=dict_entry_with_template(
                 template="AEntry ({key}, {value})",
                 format_value=_format_ada_entry,
             ),
-            empty_dict="AMap'(1 .. 0 => ANull)",
+            empty_dict="AMap'[]",
             preamble_lines=(),
             narrowed_open=None,
         )
@@ -564,8 +566,8 @@ class Ada(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(open_str="AMap'("),
-            close=")",
+            ordered_map_open=fixed_open(open_str="AMap'["),
+            close="]",
             preamble_lines=(),
         )
 

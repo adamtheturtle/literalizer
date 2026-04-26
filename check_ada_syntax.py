@@ -17,7 +17,7 @@ def main() -> None:
         content: str = src.read_text(encoding="utf-8")
         tmp_src.write_text(data=content, encoding="utf-8")
         result = subprocess.run(
-            args=[gnatmake_path, "-gnats", "check.adb"],
+            args=[gnatmake_path, "-gnat2022", "-gnats", "check.adb"],
             capture_output=True,
             text=True,
             check=False,
