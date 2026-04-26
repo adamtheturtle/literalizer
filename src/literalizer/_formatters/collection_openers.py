@@ -114,7 +114,7 @@ def make_narrowed_empty_form(
     substitutes the resolved type name into *template* (which must
     contain ``{type}``).  *fallback_type* is used when the type cannot
     be resolved (heterogeneous siblings, or an element type that
-    *element_to_type* does not recognise).
+    *element_to_type* does not handle).
 
     Example::
 
