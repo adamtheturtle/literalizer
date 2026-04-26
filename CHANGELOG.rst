@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for ``Zig``.  ``Zig.CallStyles``
+  now exposes a ``POSITIONAL`` member backed by
+  :class:`PositionalCallStyle`, and ``format_call_preamble_stub``
+  emits file-scope Zig stub declarations because Zig disallows
+  nested function definitions inside ``main``.  Dotted targets like
+  ``app.client.fetch`` are realized as a nested ``struct`` chain rooted at
+  a module-level constant, and call arguments are wrapped in the
+  ``ZVal`` union so anonymous union literals coerce to a concrete
+  type at the call site.
 - ``literalize_call`` now emits R stub declarations
   (``name <- function(...) NULL``) for the called function and any
   call-transform wrappers, so generated R call output runs cleanly

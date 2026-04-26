@@ -43,7 +43,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -54,6 +53,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -150,6 +150,70 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format a Zig assignment to an existing ``ZVal`` variable."""
     wrapped = _format_zig_entry(original=data, formatted=value)
     return f"{name} = {wrapped};"
+
+
+@beartype
+def _zig_call_preamble_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return file-scope Zig stub declarations for a call name.
+
+    Zig disallows nested function declarations inside ``main``, so
+    call stubs are emitted at module scope.  Stubs always return
+    ``void`` so a bare ``stub(...);`` statement compiles whether or
+    not a ``call_transform`` consumed the value.  Target stubs take
+    ``ZVal`` parameters so anonymous union literals like
+    ``.{ .int = 1 }`` coerce to a concrete type at the call site;
+    transform wrappers (``["_arg"]``) take ``anytype`` so they accept
+    both ``ZVal`` and ``void`` arguments.  Dotted targets are
+    realized as a nested ``struct`` chain rooted at a module-level
+    constant, so an expression like ``app.client.fetch(...)`` resolves
+    to a real method call on a real value.
+    """
+    param_type = "anytype" if list(params) == ["_arg"] else "ZVal"
+    param_discards = "".join(f" _ = {p};" for p in params)
+    parts = name.split(sep=".")
+    method = parts[-1]
+    if len(parts) == 1:
+        param_list = ", ".join(f"{p}: {param_type}" for p in params)
+        return (f"fn {method}({param_list}) void {{{param_discards} }}",)
+    chain = parts[:-1]
+    holder = chain[-1]
+    holder_type = f"{holder.title()}Type_"
+    method_param_list = ", ".join(
+        [
+            f"self: {holder_type}",
+            *(f"{p}: {param_type}" for p in params),
+        ],
+    )
+    lines: list[str] = [
+        f"const {holder_type} = struct {{ "
+        f"fn {method}({method_param_list}) void "
+        f"{{ _ = self;{param_discards} }} }};",
+    ]
+    prev_type = holder_type
+    for i in range(len(chain) - 2, 0, -1):
+        curr_type = f"{chain[i].title()}Type_"
+        lines.append(
+            f"const {curr_type} = struct {{ "
+            f"{chain[i + 1]}: {prev_type} = .{{}} }};",
+        )
+        prev_type = curr_type
+    root = chain[0]
+    intermediates = chain[1:]
+    if intermediates:
+        root_type = f"{root.title()}Type_"
+        lines.append(
+            f"const {root_type} = struct {{ "
+            f"{intermediates[0]}: {prev_type} = .{{}} }};",
+        )
+    else:
+        root_type = prev_type
+    lines.append(f"const {root}: {root_type} = .{{}};")
+    return tuple(lines)
 
 
 @beartype
@@ -380,6 +444,8 @@ class Zig(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Zig call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -416,6 +482,8 @@ class Zig(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="    ")
+        if not variable_name:
+            return f"pub fn main() void {{\n{indented}\n}}"
         if "var " in content:
             use = f"    {variable_name} = .nil;"
         else:
@@ -489,9 +557,12 @@ class Zig(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = (
         'const std = @import("std");',
     )
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -529,7 +600,12 @@ class Zig(metaclass=LanguageCls):
     def format_call_stub(
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
-        """Return stub declarations for a call expression."""
+        """Return stub declarations for a call expression.
+
+        Zig disallows nested function declarations inside ``main``, so
+        every stub is emitted at file scope via
+        :attr:`format_call_preamble_stub` instead.
+        """
         return no_call_stub
 
     @cached_property
@@ -537,7 +613,15 @@ class Zig(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _zig_call_preamble_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap each call argument in the ``ZVal`` union so call sites
+        match the parameter shape emitted by
+        :func:`_zig_call_preamble_stub`.
+        """
+        return _format_zig_entry
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
