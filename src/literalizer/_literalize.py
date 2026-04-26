@@ -1464,10 +1464,11 @@ def literalize(
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
         module_name: Name to use for the surrounding module / program /
             class / procedure / function emitted by the language's
-            ``wrap_in_file`` (e.g. Java's wrapping class, Fortran's
-            ``program``, Erlang's ``-module``).  Languages whose
-            ``wrap_in_file`` does not introduce a named scope ignore
-            this argument.  Has no effect when ``wrap_in_file=False``.
+            ``wrap_in_file`` (e.g. the wrapping class in Java, the
+            ``program`` in Fortran, the ``-module`` in Erlang).
+            Languages whose ``wrap_in_file`` does not introduce a named
+            scope ignore this argument.  Has no effect when
+            ``wrap_in_file=False``.
         pre_indent_level: Number of ``indent`` steps to prepend to
             every output line.  For example, ``2`` with a 4-space
             indent produces an 8-space margin.  Defaults to ``0``.
