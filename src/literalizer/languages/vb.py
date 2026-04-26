@@ -161,7 +161,7 @@ def _vb_call_stub(
 
     Each declaration block is returned as one tuple entry containing
     embedded newlines so that the call-test harness's whole-line
-    deduplication does not strip repeated structural keywords like
+    duplicate filter does not strip repeated structural keywords like
     ``End Class`` or ``End Function`` that legitimately appear in
     every block.
     """
@@ -474,8 +474,9 @@ class VisualBasic(metaclass=LanguageCls):
         and ``Function`` blocks plus their ``Dim ... As New ...``
         instances) the stubs sit at module scope and *content* is
         placed inside ``Sub _calls()``: VB rejects bare expression
-        statements at module level, but parameterless shared subs are
-        invoked by the fixture linter so the calls still execute.
+        statements at module level, but shared subs taking no
+        arguments are invoked by the fixture linter so the calls
+        still execute.
         """
         del variable_name
         has_stubs = any(
