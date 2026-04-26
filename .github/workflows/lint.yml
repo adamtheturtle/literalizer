@@ -505,10 +505,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install clj-kondo
+      - name: Install clj-kondo and Babashka
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
+          bb: latest
       - name: Install Groovy
         uses: wtfjoke/setup-groovy@v3
         with:
@@ -518,6 +519,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj
           xargs -0 clj-kondo --lint < /tmp/files-clj
+      - name: Run Clojure files
+        run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
 
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
