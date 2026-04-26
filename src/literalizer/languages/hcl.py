@@ -78,7 +78,7 @@ class _HclScanState:
 def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
     r"""Update *state* by scanning brackets and strings in *line*.
 
-    Honours ``\`` escapes inside strings so a backslash-escaped quote
+    Tracks ``\`` escapes inside strings so a backslash-escaped quote
     (``"a\"b"``) does not flip ``in_string`` at the wrong character.
     Without this, an odd number of escaped quotes would leave the
     scanner stuck inside a phantom string and merge later statements
