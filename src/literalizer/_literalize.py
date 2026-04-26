@@ -723,7 +723,9 @@ def _format_sequence_child(
         spec=spec,
         dict_open_override=dict_open_override,
         wrap_ids=wrap_ids,
-        sequence_open_override=parent_override or sibling_open,
+        sequence_open_override=(
+            parent_override if parent_override is not None else sibling_open
+        ),
     )
 
 

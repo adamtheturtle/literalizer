@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    make_narrowed_empty_form,
     make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
@@ -39,7 +40,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
-from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -73,36 +73,23 @@ from literalizer._language import (
 )
 from literalizer._types import Scalar, Value
 
-_mojo_element_to_type = make_element_to_type(
-    str_type="String",
-    bool_type="Bool",
-    int_type="Int",
-    float_type="Float64",
-    mixed_numeric_type="String",
-    bytes_type="String",
-    date_type="String",
-    datetime_type="String",
-    list_template="List[{inner}]",
-    dict_type_template="Dict[String, {inner}]",
-    fallback_value_type="String",
+_mojo_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type="String",
+        list_template="List[{inner}]",
+        dict_type_template="Dict[String, {inner}]",
+        fallback_value_type="String",
+    ),
+    template="List[{type}]()",
+    fallback_type="String",
 )
-
-
-def _mojo_narrowed_empty_form(
-    siblings: Sequence[list[Value]],
-) -> str:
-    """Render the Mojo typed ``List[T]()`` empty literal for an empty
-    inner-list child whose non-empty siblings infer element type ``T``.
-
-    The Mojo compiler cannot resolve the type of a bare ``[]`` from
-    context, so a type-less empty literal in a homogeneous nested
-    list breaks the parent's inferred ``List[List[T]]`` type.  Pulling
-    the sibling type into a typed empty restores compile-time
-    consistency.
-    """
-    inner = infer_element_type(items=siblings[0])
-    type_name = _mojo_element_to_type(inner) if inner is not None else None
-    return f"List[{type_name or 'String'}]()"
 
 
 @beartype

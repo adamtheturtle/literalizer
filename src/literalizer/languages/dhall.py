@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -34,7 +35,6 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import (
     escape_control_chars,
 )
-from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -101,31 +101,23 @@ def _unescape_dhall_string(value: str) -> str:
     return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
 
 
-_dhall_element_to_type = make_element_to_type(
-    str_type="Text",
-    bool_type="Bool",
-    int_type="Integer",
-    float_type="Double",
-    mixed_numeric_type="Text",
-    bytes_type="Text",
-    date_type="Text",
-    datetime_type="Text",
-    list_template="List {inner}",
-    dict_type_template=None,
-    fallback_value_type="Text",
+_dhall_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="Text",
+        bool_type="Bool",
+        int_type="Integer",
+        float_type="Double",
+        mixed_numeric_type="Text",
+        bytes_type="Text",
+        date_type="Text",
+        datetime_type="Text",
+        list_template="List {inner}",
+        dict_type_template=None,
+        fallback_value_type="Text",
+    ),
+    template="[] : List {type}",
+    fallback_type="Text",
 )
-
-
-def _dhall_narrowed_empty_form(
-    siblings: Sequence[list[Value]],
-) -> str:
-    """Compute Dhall's typed ``[] : List T`` empty literal for an
-    empty inner-list child whose non-empty siblings infer element type
-    ``T``.
-    """
-    inner = infer_element_type(items=siblings[0])
-    type_name = _dhall_element_to_type(inner) if inner is not None else None
-    return f"[] : List {type_name or 'Text'}"
 
 
 @beartype

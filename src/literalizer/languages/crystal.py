@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -41,7 +42,6 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash_hash
-from literalizer._formatters.type_inference import infer_element_type
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
@@ -73,30 +73,23 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_crystal_element_to_type = make_element_to_type(
-    str_type="String",
-    bool_type="Bool",
-    int_type="Int32",
-    float_type="Float64",
-    mixed_numeric_type="String",
-    bytes_type="String",
-    date_type="String",
-    datetime_type="String",
-    list_template="Array({inner})",
-    dict_type_template="Hash(String, {inner})",
-    fallback_value_type="String",
+_crystal_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int32",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type="String",
+        list_template="Array({inner})",
+        dict_type_template="Hash(String, {inner})",
+        fallback_value_type="String",
+    ),
+    template="[] of {type}",
+    fallback_type="String",
 )
-
-
-def _crystal_narrowed_empty_form(
-    siblings: Sequence[list[Value]],
-) -> str:
-    """Compute Crystal's typed ``[] of T`` empty literal for an empty
-    inner-list child whose non-empty siblings infer element type ``T``.
-    """
-    inner = infer_element_type(items=siblings[0])
-    type_name = _crystal_element_to_type(inner) if inner is not None else None
-    return f"[] of {type_name or 'String'}"
 
 
 @beartype
