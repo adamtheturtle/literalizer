@@ -23,7 +23,6 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Haskell,
-    Hcl,
     Jsonnet,
 )
 
@@ -338,9 +337,6 @@ REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # multi-line ``name = value`` binding needs ``let`` in a
         # do-block, which the harness does not inject.
         Haskell,
-        # ``wrap_in_file`` renames each content line as ``_N = …``,
-        # which breaks multi-line variable declarations.
-        Hcl,
         # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
         # list; variable declarations don't fit the shape.
         Jsonnet,
