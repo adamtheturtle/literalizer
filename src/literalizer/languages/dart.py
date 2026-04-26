@@ -144,11 +144,11 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
             if not data:
                 return f"Set<{default_set_element_type}>"
             elem_types_sorted = sorted({recurse(data=e) for e in data})
-            match elem_types_sorted:
-                case [single]:
-                    elem_type = single
-                case _:
-                    elem_type = "dynamic"
+            elem_type = (
+                elem_types_sorted[0]
+                if len(elem_types_sorted) == 1
+                else "dynamic"
+            )
             return f"Set<{elem_type}>"
         case list():
             if not data:

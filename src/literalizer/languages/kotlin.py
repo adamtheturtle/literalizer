@@ -265,11 +265,7 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             if not data:
                 return f"{set_outer}<{default_set_element_type}>"
             elem_types = sorted({recurse(data=e) for e in data})
-            match elem_types:
-                case [single]:
-                    elem_type = single
-                case _:
-                    elem_type = "Any?"
+            elem_type = elem_types[0] if len(elem_types) == 1 else "Any?"
             return f"{set_outer}<{elem_type}>"
         case list():
             if not data:
