@@ -626,6 +626,15 @@ jobs:
         run: find tests/integration/cases -name '*.cob' -print0 > /tmp/files-to-lint
       - name: Check COBOL syntax
         run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
+      - name: Run COBOL files
+        run: |-
+          cat > /tmp/run-cobol.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cobc -x -free "$1" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest

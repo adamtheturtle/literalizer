@@ -67,17 +67,18 @@ from literalizer._types import Value
 from literalizer.exceptions import InvalidDictKeyError
 
 
+@beartype
 def _r_call_stub(
     name: str,
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return R stub declarations for a call name.
+    """Return an R stub declaration for a call name.
 
-    R treats dots as part of an identifier, so a dotted call target like
-    ``app.client.fetch`` is just an ordinary function name. A single
-    variadic stub binding covers every call.
+    R allows ``.`` in identifiers, so a dotted target such as
+    ``app.client.fetch`` is a single name and one ``function(...)``
+    declaration suffices to make the call evaluate at runtime.
     """
     return (f"{name} <- function(...) NULL",)
 
@@ -327,7 +328,12 @@ class R(metaclass=LanguageCls):
         DOUBLE = "double"
 
     class TrailingCommas(enum.Enum):
-        """Trailing comma options."""
+        """Trailing comma options.
+
+        R's ``list()`` rejects empty arguments, so a literal trailing
+        comma like ``list(1, 2,)`` parses but raises at runtime; only
+        the comma-free form is supported.
+        """
 
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
