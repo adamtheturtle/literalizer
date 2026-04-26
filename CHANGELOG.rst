@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- Added ``CallStyleEnum`` as the base class for per-language
+  ``CallStyles`` enums.  Declaring ``value`` as a typed property
+  narrows ``CallStyles.<MEMBER>.value`` from :class:`typing.Any` to
+  the :data:`CallStyle` union, removing the
+  ``cast("CallStyle", self.call_style.value)`` boilerplate previously
+  duplicated in every multi-style language module.
 - ``literalize_call`` now supports Visual Basic.  The default style is
   positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
   VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs

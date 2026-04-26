@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, assert_never, cast, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -254,6 +254,23 @@ CallStyle = (
 """Tagged union describing how a language passes call arguments."""
 
 
+class CallStyleEnum(enum.Enum):
+    """Base class for per-language ``CallStyles`` enums.
+
+    Subclasses define members whose values are :data:`CallStyle`
+    instances; declaring ``value`` here narrows ``.value`` from
+    :class:`typing.Any` to :data:`CallStyle`, so subclasses do not
+    need a per-language ``cast``.
+    """
+
+    if TYPE_CHECKING:
+
+        @property
+        def value(self) -> CallStyle:
+            """The :data:`CallStyle` instance backing this member."""
+            ...
+
+
 class CallSupport(enum.Enum):
     """Sentinel describing why a language does not have a
     :class:`CallStyle` configured.
@@ -284,6 +301,13 @@ class FloatSpecialsMixin:
     _negative_infinity: str
     _nan: str
 
+    if TYPE_CHECKING:
+
+        @property
+        def value(self) -> Callable[[float], str]:
+            """The finite-float formatter backing this member."""
+            ...
+
     def __init_subclass__(
         cls,
         *,
@@ -305,8 +329,7 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        formatter: Callable[[float], str] = cast("enum.Enum", self).value
-        return formatter(value)
+        return self.value(value)
 
 
 class StubReturn(enum.Enum):

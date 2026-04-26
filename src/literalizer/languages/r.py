@@ -5,7 +5,7 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -37,6 +37,7 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -369,7 +370,7 @@ class R(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """R call style options."""
 
         KEYWORD = KeywordCallStyle(separator=" = ")
@@ -642,4 +643,4 @@ class R(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.value
