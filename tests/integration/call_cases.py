@@ -436,33 +436,35 @@ def run_call_golden_case(
         if config.call_transform is not None
         else StubReturn.VOID
     )
+    target_function_parts = tuple(config.target_function.split(sep="."))
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     preamble_stubs.extend(
         spec.format_call_preamble_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
+        wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(
             spec.format_call_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),
         )
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),

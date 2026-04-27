@@ -1142,16 +1142,16 @@ class Language(Protocol):
     @property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declaration lines for a name used in a call
         expression.
 
-        *name* is either a simple identifier (``"process"``) for a
-        function call, or a dotted path (``"throttler.check"``) for a
-        method call on an object.  The second argument is the list of
-        parameter names (e.g. ``["user_id", "ts"]``) so that
-        keyword-style languages can generate stubs with matching named
-        parameters.
+        *parts* is a sequence of name parts -- a single element for
+        simple function calls (e.g. ``("process",)``), multiple for
+        method calls (e.g. ``("throttler", "check")``).  The second
+        argument is the list of parameter names (e.g.
+        ``["user_id", "ts"]``) so that keyword-style languages can
+        generate stubs with matching named parameters.
         *stub_return* controls the return type of the generated stub:
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
@@ -1171,7 +1171,7 @@ class Language(Protocol):
     @property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Like :attr:`format_call_stub` but the lines are placed
         **before** the language wrapper — at file, package, or module
         scope.
@@ -1183,9 +1183,9 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_call_target(self) -> Callable[[str], str]:
-        """Rewrite a dotted call target (``"app.client.fetch"``) into
-        the form required by this language's call expression syntax.
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Rewrite a sequence of call target parts into the form
+        required by this language's call expression syntax.
 
         Most languages accept dotted member-access as-is and use
         :data:`identity_call_target`.  PHP overrides this to produce
@@ -1261,7 +1261,7 @@ class Language(Protocol):
 
 
 def _no_call_stub(
-    _name: str,
+    _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -1270,18 +1270,18 @@ def _no_call_stub(
     return ()
 
 
-no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
-    _no_call_stub
-)
+no_call_stub: Callable[
+    [Sequence[str], Sequence[str], StubReturn], tuple[str, ...]
+] = _no_call_stub
 """Shared callable for languages that need no call stubs."""
 
 
-def _identity_call_target(name: str, /) -> str:
-    """Return *name* unchanged."""
-    return name
+def _identity_call_target(parts: Sequence[str], /) -> str:
+    """Return the parts joined with ``"."``."""
+    return ".".join(parts)
 
 
-identity_call_target: Callable[[str], str] = _identity_call_target
+identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
 
 

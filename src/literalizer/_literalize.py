@@ -2110,13 +2110,13 @@ def literalize_call(
         case _ as style:
             pass
 
-    raw_target_function = target_function
+    target_function_parts = tuple(target_function.split(sep="."))
     if ref_case is not None and ref_case not in language.identifier_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
-    target_function = language.format_call_target(target_function)
+    target_function = language.format_call_target(target_function_parts)
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
         data=data,
@@ -2169,10 +2169,10 @@ def literalize_call(
             StubReturn.VALUE if call_transform is not None else StubReturn.VOID
         )
         body_stubs = language.format_call_stub(
-            raw_target_function, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return
         )
         preamble_stubs = language.format_call_preamble_stub(
-            raw_target_function, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return
         )
         wrapped = language.wrap_in_file(
             content=result,
