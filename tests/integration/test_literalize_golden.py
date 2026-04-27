@@ -65,14 +65,15 @@ def test_golden_file(
             input_path = cases_dir / case_name / "input.yaml"
             yaml_string = input_path.read_text()
             golden_path = input_path.parent / (lang_name + lang_cls.extension)
+            spec = make_spec_for_golden(
+                lang_cls=lang_cls,
+                golden_path=golden_path,
+            )
             try:
                 result = literalizer.literalize(
                     source=yaml_string,
                     input_format=literalizer.InputFormat.YAML,
-                    language=make_spec_for_golden(
-                        lang_cls=lang_cls,
-                        golden_path=golden_path,
-                    ),
+                    language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=wrap_variable_form(lang_cls=lang_cls),
@@ -188,14 +189,15 @@ def test_format_variant_golden_file(
             golden_path = case_dir / (
                 variant_case.variant_name + variant.spec.extension
             )
+            spec = with_per_fixture_module_name(
+                spec=variant.spec,
+                golden_path=golden_path,
+            )
             try:
                 result = literalizer.literalize(
                     source=yaml_string,
                     input_format=literalizer.InputFormat.YAML,
-                    language=with_per_fixture_module_name(
-                        spec=variant.spec,
-                        golden_path=golden_path,
-                    ),
+                    language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,

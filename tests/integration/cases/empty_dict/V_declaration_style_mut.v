@@ -1,5 +1,6 @@
+interface IVal {}
 
 fn main() {
-	mut my_data := {}
+	mut my_data := map[string]IVal{}
 	_ = my_data
 }

@@ -1,10 +1,11 @@
+interface IVal {}
 
 fn main() {
 	my_data := {
 		// Configuration
-		'name': 'app',
+		'name': IVal('app'),
 		// Port setting
-		'port': 3000,
+		'port': IVal(3000),
 	}
 	_ = my_data
 }

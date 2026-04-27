@@ -12,16 +12,16 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.pair; MOBILE []BYTE "s"; MOBILE LIT(lit.str; MOBILE []BYTE "string")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "i"; MOBILE LIT(lit.int; 1)),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "f"; MOBILE LIT(lit.float; 1.5(REAL32))),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "b"; MOBILE LIT(lit.bool; TRUE)),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "n"; MOBILE LIT(lit.null)),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "d"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "dt"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15T12:00:00")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "by"; MOBILE LIT(lit.str; MOBILE []BYTE "48656c6c6f"))
-  ]):
-  SEQ
-    SKIP
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "s"; MOBILE LIT(lit.str; MOBILE []BYTE "string")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "i"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "f"; MOBILE LIT(lit.float; 1.5(REAL32))),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "b"; MOBILE LIT(lit.bool; TRUE)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "n"; MOBILE LIT(lit.null)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "d"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "dt"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15T12:00:00")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "by"; MOBILE LIT(lit.str; MOBILE []BYTE "48656c6c6f"))
+    ]):
+    SEQ
+        SKIP
 :

@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -73,6 +73,12 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+
+def _to_pascal_case(name: str) -> str:
+    """Convert *name* to PascalCase."""
+    return IdentifierCase.PASCAL.convert(name=name)
+
+
 _crystal_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=make_element_to_type(
         str_type="String",
@@ -105,34 +111,37 @@ def _format_crystal_i128_literal(value: int) -> str:
 
 @beartype
 def _crystal_call_stub(
-    name: str, params: Sequence[str], _stub_return: StubReturn, /
+    format_class_name: Callable[[str], str],
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
 ) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
     param_list = ", ".join(f"{param} = nil" for param in params)
     method_stub = f"def {{name}}({param_list}); 0; end"
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (method_stub.format(name=parts[0]),)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if not fields:
-        cls = root.capitalize() + "Type_"
+        cls = format_class_name(root) + "Type_"
         return (
             f"class {cls}; {method_stub.format(name=method)}; end",
             f"{root} = {cls}.new",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type_"
+    inner_cls = format_class_name(fields[-1]) + "Type_"
     lines.append(f"class {inner_cls}; {method_stub.format(name=method)}; end")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type_"
+        cls = format_class_name(fields[i]) + "Type_"
         lines.append(
             f"class {cls}; def {fields[i + 1]}; {prev_cls}.new; end; end"
         )
         prev_cls = cls
-    root_cls = root.capitalize() + "Type_"
+    root_cls = format_class_name(root) + "Type_"
     lines.append(
         f"class {root_cls}; def {fields[0]}; {prev_cls}.new; end; end"
     )
@@ -540,19 +549,19 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _crystal_call_stub
+        return partial(_crystal_call_stub, _to_pascal_case)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

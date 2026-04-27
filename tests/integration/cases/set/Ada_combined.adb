@@ -1,21 +1,14 @@
+with A_Stub; use A_Stub;
 procedure Check is
-   procedure Check_Declaration is
-      my_data : A_Val := ASet'(
-          AStr ("apple"),
-          AStr ("banana"),
-          AStr ("cherry")
-      );
-   begin
-      null;
-   end Check_Declaration;
-   procedure Check_Assignment is
-   begin
-      my_data := ASet'(
-          AStr ("apple"),
-          AStr ("banana"),
-          AStr ("cherry")
-      );
-   end Check_Assignment;
+    my_data : A_Val := ASet'[
+        AStr ("apple"),
+        AStr ("banana"),
+        AStr ("cherry")
+    ];
 begin
-   null;
+    my_data := ASet'[
+        AStr ("apple"),
+        AStr ("banana"),
+        AStr ("cherry")
+    ];
 end Check;

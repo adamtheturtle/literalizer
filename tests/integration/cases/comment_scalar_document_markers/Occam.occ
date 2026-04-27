@@ -12,8 +12,8 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC check ()
-  VAL MOBILE LIT my_data IS -- note
-  42:
-  SEQ
-    SKIP
+    VAL MOBILE LIT my_data IS -- note
+    42:
+    SEQ
+        SKIP
 :

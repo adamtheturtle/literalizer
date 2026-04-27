@@ -1,9 +1,10 @@
+interface IVal {}
 
 fn main() {
 	my_data := {
 		// comment
-		'name': 'Alice',
-		'score': none,
+		'name': IVal('Alice'),
+		'score': IVal(unsafe { nil }),
 	}
 	_ = my_data
 }

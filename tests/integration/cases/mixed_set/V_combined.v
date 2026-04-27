@@ -1,14 +1,15 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := [
-		true,
-		42,
-		'apple',
+		IVal(true),
+		IVal(42),
+		IVal('apple'),
 	]
 	my_data = [
-		true,
-		42,
-		'apple',
+		IVal(true),
+		IVal(42),
+		IVal('apple'),
 	]
 	_ = my_data
 }

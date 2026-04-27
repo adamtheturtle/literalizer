@@ -1,8 +1,9 @@
+interface IVal {}
 
 fn main() {
 	my_data := {
-		'a': {'x': 1},
-		'b': 2,
+		'a': IVal({'x': 1}),
+		'b': IVal(2),
 	}
 	_ = my_data
 }
