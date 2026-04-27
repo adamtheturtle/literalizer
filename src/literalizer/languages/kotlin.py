@@ -559,7 +559,7 @@ class Kotlin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="sortedSetOf<{type_name}>(",
-                supports_heterogeneity=True,
+                supports_heterogeneity=False,
             )
         )
 

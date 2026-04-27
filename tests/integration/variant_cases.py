@@ -1135,7 +1135,12 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_sequence", suffix="_varname"),
         _ci(case_dir_name="float_list", suffix="_float"),
     ),
-    "set": (_ci(case_dir_name="set"),),
+    "set": (
+        _ci(case_dir_name="set"),
+        _ci(case_dir_name="int_set"),
+        _ci(case_dir_name="mixed_set"),
+        _ci(case_dir_name="empty_set"),
+    ),
     "default_set_element_type": (
         _ci(case_dir_name="empty_set"),
         _ci(case_dir_name="set"),

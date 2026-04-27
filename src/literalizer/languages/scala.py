@@ -332,10 +332,10 @@ class Scala(metaclass=LanguageCls):
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="TreeSet("),
             close=")",
-            empty_set=None,
+            empty_set="TreeSet.empty[Int]",
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
         )
 
     class CommentFormats(enum.Enum):
