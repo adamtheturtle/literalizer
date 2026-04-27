@@ -10,7 +10,7 @@ import dataclasses
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from beartype import beartype
@@ -390,9 +390,12 @@ def run_call_golden_case(
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     if isinstance(spec, Erlang):
-        spec = dataclasses.replace(
-            spec,
-            module_name=erlang_module_name(golden_path=golden_path),
+        spec = cast(
+            "literalizer.Language",
+            dataclasses.replace(
+                spec,
+                module_name=erlang_module_name(golden_path=golden_path),
+            ),
         )
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
