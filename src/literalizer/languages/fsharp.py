@@ -533,10 +533,10 @@ class FSharp(metaclass=LanguageCls):
         body += (
             f"let private _{camel_name}Declaration () =\n"
             + decl_indented
-            + "\n    ignore my_data\n\n"
+            + f"\n{self.indent}ignore my_data\n\n"
             + f"let private _{camel_name}Assignment () =\n"
             + assign_indented
-            + "\n    ignore my_data"
+            + f"\n{self.indent}ignore my_data"
         )
         return body
 
