@@ -1,4 +1,4 @@
-object Check {
+object check {
 val my_data = List[Int](
     0x1,
     0x2,

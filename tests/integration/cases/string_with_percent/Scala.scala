@@ -1,4 +1,4 @@
-object Check {
+object check {
 val my_data = List[String](
     "100% done",
     "%(name) is here",

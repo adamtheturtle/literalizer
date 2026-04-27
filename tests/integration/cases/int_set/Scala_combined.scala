@@ -1,4 +1,4 @@
-object Check {
+object check {
 var my_data = Set[Int](
     1,
     2,

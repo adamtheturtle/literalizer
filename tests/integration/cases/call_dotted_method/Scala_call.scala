@@ -1,4 +1,4 @@
-object Check {
+object check {
 class _ClientType { def fetch(payload: Any = null): Any = null }
 class _AppType { val client = new _ClientType }
 val app = new _AppType

@@ -1,4 +1,4 @@
-object Check {
+object check {
 val my_data = Map(
     // Configuration
     "name" -> "app",

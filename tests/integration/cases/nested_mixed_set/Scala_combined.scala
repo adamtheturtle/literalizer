@@ -1,4 +1,4 @@
-object Check {
+object check {
 var my_data = Map(
     "name" -> "Alice",
     "tags" -> Set(true, 42, "apple"),

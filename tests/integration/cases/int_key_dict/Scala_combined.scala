@@ -1,4 +1,4 @@
-object Check {
+object check {
 var my_data = Map[String, String](
     "1" -> "one",
     "2" -> "two",

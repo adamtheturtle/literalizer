@@ -1,4 +1,4 @@
-module Check where
+module check where
 import Data.Time (UTCTime(..), fromGregorian, picosecondsToDiffTime)
 data Val = HDatetime UTCTime
 my_data :: Val

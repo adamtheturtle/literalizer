@@ -1,7 +1,7 @@
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-object Check {
+object check {
 var my_data = Map(
     "s" -> "string",
     "i" -> 1,

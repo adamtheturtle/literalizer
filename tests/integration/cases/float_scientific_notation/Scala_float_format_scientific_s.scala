@@ -1,4 +1,4 @@
-object Check {
+object check {
 val my_data = List[Double](
     0.0,
     1.0,

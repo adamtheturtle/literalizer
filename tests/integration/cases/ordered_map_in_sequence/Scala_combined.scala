@@ -1,4 +1,4 @@
-object Check {
+object check {
 var my_data = List(
     scala.collection.immutable.ListMap("a" -> 1),
     "hello",

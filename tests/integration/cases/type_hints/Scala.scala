@@ -1,7 +1,7 @@
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-object Check {
+object check {
 val my_data = Map(
     "name" -> "Alice",
     "age" -> 30,

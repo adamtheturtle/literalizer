@@ -1,4 +1,4 @@
-module Check where
+module check where
 
 
 data Val

@@ -1,4 +1,4 @@
-module Check where
+module check where
 data Val = HList [Val] | HStr String
 my_data :: Val
 my_data = HList [

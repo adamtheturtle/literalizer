@@ -1,4 +1,4 @@
-object Check {
+object check {
 var my_data = List[String](
     "prefix ${HOME} suffix",
     "${interpolated}",

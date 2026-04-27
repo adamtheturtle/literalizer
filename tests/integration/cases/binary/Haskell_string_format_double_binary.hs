@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Check where
+module check where
 import Data.String (IsString(fromString))
 data Val = HStr String | HList [Val]
 instance IsString Val where

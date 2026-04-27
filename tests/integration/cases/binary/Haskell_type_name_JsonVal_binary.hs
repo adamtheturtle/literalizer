@@ -1,4 +1,4 @@
-module Check where
+module check where
 data JsonVal = HStr String | HList [JsonVal]
 my_data :: JsonVal
 my_data = HList [

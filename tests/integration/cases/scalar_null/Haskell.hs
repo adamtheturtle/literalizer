@@ -1,4 +1,4 @@
-module Check where
+module check where
 data Val = HNull
 my_data :: Val
 my_data = HNull

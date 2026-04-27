@@ -1,4 +1,4 @@
-module Check where
+module check where
 data JsonVal = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, JsonVal)]
 instance Num JsonVal where
     fromInteger = HInt
