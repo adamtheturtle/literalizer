@@ -952,6 +952,7 @@ class Cpp(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
         def get_config(
@@ -1003,6 +1004,7 @@ class Cpp(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=("#include <map>",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             ),
             opener_template="std::map<std::string, {type_name}>{{",
         )
@@ -1016,6 +1018,7 @@ class Cpp(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=("#include <unordered_map>",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             ),
             opener_template=("std::unordered_map<std::string, {type_name}>{{"),
         )

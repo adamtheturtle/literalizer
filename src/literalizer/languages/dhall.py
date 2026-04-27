@@ -416,6 +416,7 @@ class Dhall(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -763,6 +764,7 @@ class Dhall(metaclass=LanguageCls):
             empty_dict="{=}",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

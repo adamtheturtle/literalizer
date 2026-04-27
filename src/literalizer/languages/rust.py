@@ -808,6 +808,7 @@ class Rust(metaclass=LanguageCls):
                 preamble_lines=("use std::collections::HashSet;",),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
         BTREE_SET = enum.member(
@@ -818,6 +819,7 @@ class Rust(metaclass=LanguageCls):
                 preamble_lines=("use std::collections::BTreeSet;",),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -994,6 +996,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="HashMap::<{key_type}, {type}>::from([])",
                 preamble_lines=("use std::collections::HashMap;",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
         BTREE_MAP = enum.member(
@@ -1006,6 +1009,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="BTreeMap::<{key_type}, {type}>::from([])",
                 preamble_lines=("use std::collections::BTreeMap;",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 

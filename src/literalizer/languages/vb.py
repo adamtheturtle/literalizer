@@ -310,6 +310,7 @@ class VisualBasic(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template=("New HashSet(Of {type_name}) From {{"),
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -353,6 +354,7 @@ class VisualBasic(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=("Imports System.Collections.Generic",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 

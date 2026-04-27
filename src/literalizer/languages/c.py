@@ -268,6 +268,7 @@ class C(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -631,6 +632,7 @@ class C(metaclass=LanguageCls):
             preamble_lines=self.set_format.value.preamble_lines,
             set_opener_template=self.set_format.value.set_opener_template,
             supports_heterogeneity=self.set_format.value.supports_heterogeneity,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -650,6 +652,7 @@ class C(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
