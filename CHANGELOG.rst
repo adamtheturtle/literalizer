@@ -12,6 +12,13 @@ Next
   previous syntax-only check.  The combined declaration + assignment
   wrapper now keeps both forms in a single procedure scope so the
   assignment can reach ``my_data``.
+- ``Crystal.wrap_in_file`` now wraps content in a
+  ``module Check ... end`` block with ``extend self``, matching what
+  Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
+  ``module_name`` constructor argument (default ``"Check"``) to
+  control the wrapper name.  Callers that relied on
+  ``literalize(language=Crystal(), wrap_in_file=True)`` returning bare
+  content will now receive a ``module`` block.
 - Java sets and dicts no longer emit a trailing comma when
   ``trailing_comma=TrailingCommas.YES`` is requested.  ``Set.of(...)``
   and ``Map.ofEntries(...)`` are method calls and the previous output
