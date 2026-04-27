@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local``
+  bindings before the call expressions, so call-mode output with
+  ``ref_declarations`` is supported.  Previously the integration
+  harness skipped ``Jsonnet`` for ref-declaration cases because the
+  array-wrapped output had no place for variable bindings.  The
+  ``DeclarationStyles.ASSIGN`` template changed from ``{value}`` to
+  ``local {name} = {value};``, and ``Jsonnet`` now overrides
+  ``wrap_calls_with_declarations`` to emit those bindings before
+  ``wrap_in_file`` wraps the calls in ``[ … ]``.
 - ``Crystal.wrap_in_file`` now wraps content in a
   ``module Check ... end`` block with ``extend self``, matching what
   Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
