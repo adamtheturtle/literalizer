@@ -52,7 +52,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -85,14 +84,13 @@ def _format_jsonnet_dict_entry(
 
 
 def _jsonnet_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Jsonnet ``local`` stub declarations for a call name."""
     param_list = ", ".join(params)
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"local {parts[0]}({param_list}) = null;",)
     root = parts[0]
@@ -211,7 +209,9 @@ class Jsonnet(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="{value}"),
+            formatter=variable_declaration_formatter(
+                template="local {name} = {value};",
+            ),
             supports_redefinition=False,
         )
 
@@ -332,7 +332,30 @@ class Jsonnet(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Emit ref declarations as top-level ``local`` bindings before
+        the call expressions, which :meth:`wrap_in_file` wraps in a
+        Jsonnet array.
+
+        The default ``wrap_calls_with_declarations`` would splice
+        declarations *into* the array, where ``local`` bindings are
+        invalid; placing them before keeps the file a single chained
+        let-binding ending in an array expression.
+        """
+        wrapped_calls = self.wrap_in_file(
+            content=calls,
+            variable_name="",
+            body_preamble=body_preamble,
+        )
+        if not declarations:
+            return wrapped_calls
+        return "\n".join(declarations) + "\n" + wrapped_calls
 
     @staticmethod
     def wrap_in_file(
@@ -444,19 +467,19 @@ class Jsonnet(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _jsonnet_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

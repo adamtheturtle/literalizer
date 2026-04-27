@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void process(CVal);
+static void process(CVal _a0) { (void)_a0; }
 void check_(void) {
 CVal my_var = ((CVal){.a = (CVal[]){
     ((CVal){.i = 1}),

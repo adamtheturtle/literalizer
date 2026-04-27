@@ -1,9 +1,10 @@
+with A_Stub; use A_Stub;
 procedure Check is
-   my_data : A_Val := AMap'(
-       -- comment
-       AEntry ("name", AStr ("Alice")),
-       AEntry ("score", ANull)
-   );
+    my_data : A_Val := AMap'[
+        -- comment
+        AEntry ("name", AStr ("Alice")),
+        AEntry ("score", ANull)
+    ];
 begin
-   null;
+    null;
 end Check;

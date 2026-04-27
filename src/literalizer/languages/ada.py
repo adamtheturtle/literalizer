@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -51,7 +52,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
@@ -63,16 +63,49 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_ADA_EMPTY_LITERAL = "AList'(1 .. 0 => ANull)"
+_ADA_EMPTY_LITERAL = "AList'[]"
+
+_ADA_FLOAT_SPECIAL_DECLS = {
+    "pos_inf": "Pos_Inf : constant Long_Float := 1.0 / Zero;",
+    "neg_inf": "Neg_Inf : constant Long_Float := -1.0 / Zero;",
+    "nan": "NaN : constant Long_Float := Zero / Zero;",
+}
+
+
+def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
+    """Return which IEEE-special float kinds appear anywhere in *data*.
+
+    Walks lists, dicts, and sets so a nested ``float('inf')`` is still
+    detected.  The returned set uses the tags ``pos_inf``, ``neg_inf``,
+    and ``nan`` so :meth:`Ada.compute_body_preamble` only emits the
+    constants it actually needs.
+    """
+    kinds: set[str] = set()
+    stack: list[Value] = [data]
+    while stack:
+        item = stack.pop()
+        match item:
+            case bool():
+                continue
+            case float() if math.isnan(item):
+                kinds.add("nan")
+            case float() if math.isinf(item):
+                kinds.add("pos_inf" if item > 0 else "neg_inf")
+            case list() | set():
+                stack.extend(item)
+            case dict():
+                stack.extend(item.values())
+            case _:
+                continue
+    return frozenset(kinds)
 
 
 def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Ada's structured empty literal beside typed siblings.
 
-    Ada arrays cannot be set up with ``AList'()`` — the language
-    requires a typed range form like ``AList'(1 .. 0 => ANull)`` even
-    at empty positions.  A_Val is heterogeneous, so this empty form is
-    accepted as a sibling of fully-typed entries.
+    ``A_Stub.A_Val`` carries the Ada 2022 ``Aggregate`` aspect, so an
+    empty container aggregate is written as ``AList'[]`` — the bracket
+    form distinguishes container aggregates from array aggregates.
     """
     return _ADA_EMPTY_LITERAL
 
@@ -102,8 +135,8 @@ def _format_variable_declaration(
 ) -> str:
     """Format an Ada object declaration.
 
-    Example: ``"x"`` and ``"AList'(AInt (1))"`` →
-    ``"x : A_Val := AList'(AInt (1));"``
+    Example: ``"x"`` and ``"AList'[AInt (1)]"`` →
+    ``"x : A_Val := AList'[AInt (1)];"``
     """
     wrapped = _format_ada_entry(original=data, formatted=value)
     return f"{name} : A_Val := {wrapped};"
@@ -113,8 +146,8 @@ def _format_variable_declaration(
 def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """Format an Ada assignment statement to an existing variable.
 
-    Example: ``"x"`` and ``"AList'(AInt (1))"`` →
-    ``"x := AList'(AInt (1));"``
+    Example: ``"x"`` and ``"AList'[AInt (1)]"`` →
+    ``"x := AList'[AInt (1)];"``
     """
     wrapped = _format_ada_entry(original=data, formatted=value)
     return f"{name} := {wrapped};"
@@ -171,8 +204,8 @@ class Ada(metaclass=LanguageCls):
         """Sequence type options for Ada."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_open(open_str="AList'("),
-            close=")",
+            sequence_open=fixed_open(open_str="AList'["),
+            close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
@@ -190,9 +223,9 @@ class Ada(metaclass=LanguageCls):
         """Set type options for Ada."""
 
         SET = SetFormatConfig(
-            set_open=fixed_open(open_str="ASet'("),
-            close=")",
-            empty_set="ASet'(1 .. 0 => ANull)",
+            set_open=fixed_open(open_str="ASet'["),
+            close="]",
+            empty_set="ASet'[]",
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
@@ -233,9 +266,9 @@ class Ada(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="1.0 / 0.0",
-        negative_infinity="-1.0 / 0.0",
-        nan="0.0 / 0.0",
+        positive_infinity="Pos_Inf",
+        negative_infinity="Neg_Inf",
+        nan="NaN",
     ):
         """Float format options."""
 
@@ -332,8 +365,8 @@ class Ada(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -344,39 +377,43 @@ class Ada(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="   ")
-        return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        return (
+            "with A_Stub; use A_Stub;\n"
+            f"procedure Check is\n{indented}\n"
+            f"begin\n{self.indent}null;\nend Check;"
+        )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Ada declaration + assignment in nested procedures."""
+        """Wrap Ada declaration + assignment in a single procedure.
+
+        Earlier revisions wrapped each form in its own nested
+        ``Check_Declaration`` / ``Check_Assignment`` procedure, but the
+        assignment then referenced ``my_data`` from a sibling scope and
+        only compiled because the lint job did syntax-only checking.
+        Putting both in one procedure keeps the variable in scope so
+        the fixture compiles and runs end-to-end.
+        """
         del variable_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="   ")
-        assign_indented = textwrap.indent(text=assignment, prefix="   ")
-        inner = (
-            "procedure Check_Declaration is\n"
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
+        return (
+            "with A_Stub; use A_Stub;\n"
+            "procedure Check is\n"
             f"{decl_indented}\n"
             "begin\n"
-            "   null;\n"
-            "end Check_Declaration;\n"
-            "procedure Check_Assignment is\n"
-            "begin\n"
             f"{assign_indented}\n"
-            "end Check_Assignment;"
-        )
-        inner_indented = textwrap.indent(text=inner, prefix="   ")
-        return (
-            f"procedure Check is\n{inner_indented}\n"
-            "begin\n   null;\nend Check;"
+            "end Check;"
         )
 
     date_format: DateFormats = DateFormats.ISO
@@ -464,19 +501,19 @@ class Ada(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -511,13 +548,13 @@ class Ada(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_open(open_str="AMap'("),
-            close=")",
+            dict_open=fixed_open(open_str="AMap'["),
+            close="]",
             format_entry=dict_entry_with_template(
                 template="AEntry ({key}, {value})",
                 format_value=_format_ada_entry,
             ),
-            empty_dict="AMap'(1 .. 0 => ANull)",
+            empty_dict="AMap'[]",
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
@@ -545,14 +582,29 @@ class Ada(metaclass=LanguageCls):
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
-        """Callable that formats a string value as a quoted literal."""
-        return format_string_concat_control(
+        """Callable that formats a string value as a quoted literal.
+
+        Ada distinguishes ``String`` from ``Character``, so a literal
+        consisting solely of ``Character'Val(N)`` would not satisfy the
+        ``AStr (S : String)`` constructor.  Prepend an empty string in
+        that case so the ``&`` operator widens the result to ``String``.
+        """
+        inner = format_string_concat_control(
             quote_char='"',
             quote_escape='""',
             control_char_template="Character'Val({})",
             concat_operator=" & ",
             escape_backslash=False,
         )
+
+        def _format(value: str) -> str:
+            """Widen a bare ``Character'Val(N)`` result to ``String``."""
+            formatted = inner(value)
+            if formatted.startswith("Character'Val"):
+                return f'"" & {formatted}'
+            return formatted
+
+        return _format
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
@@ -568,8 +620,8 @@ class Ada(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(open_str="AMap'("),
-            close=")",
+            ordered_map_open=fixed_open(open_str="AMap'["),
+            close="]",
             preamble_lines=(),
         )
 
@@ -602,8 +654,33 @@ class Ada(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
-        return body_preamble_from_scalars(
-            scalar_body_preamble=self.scalar_body_preamble,
-            format_lines=tuple,
-        )
+        """Emit local IEEE-special constants when needed.
+
+        Ada has no portable inline literal for ``+Inf``, ``-Inf`` or
+        ``NaN``: GNAT statically rejects ``1.0 / 0.0`` with
+        ``static expression fails Constraint_Check``.  When the data
+        contains one of these IEEE specials, declare matching local
+        constants in the enclosing procedure's declarative part using
+        a volatile zero denominator so GNAT cannot constant-fold the
+        division, and suppress ``Division_Check`` so the IEEE result
+        propagates instead of raising ``Constraint_Error`` at runtime.
+        """
+
+        def _compute(
+            types: frozenset[type],
+            data: Value,
+            /,
+        ) -> tuple[str, ...]:
+            """Build the IEEE-special constant declarations for *data*."""
+            del types
+            kinds = _ada_special_float_kinds(data=data)
+            if not kinds:
+                return ()
+            return (
+                "pragma Suppress (Division_Check);",
+                "Zero : Long_Float := 0.0;",
+                "pragma Volatile (Zero);",
+                *(_ADA_FLOAT_SPECIAL_DECLS[kind] for kind in sorted(kinds)),
+            )
+
+        return _compute

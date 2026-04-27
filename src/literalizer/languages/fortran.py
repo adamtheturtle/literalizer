@@ -460,11 +460,11 @@ class Fortran(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="  ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             f"program {self.module_name}\n"
-            "  use fval_m\n"
-            "  implicit none\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
             f"{indented}\n"
             f"end program {self.module_name}"
         )
@@ -483,25 +483,25 @@ class Fortran(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="  ")
-        assign_indented = textwrap.indent(text=assignment, prefix="  ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         return (
             f"subroutine {self.module_name}_declaration()\n"
-            "  use fval_m\n"
-            "  implicit none\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
             f"{decl_indented}\n"
             f"end subroutine {self.module_name}_declaration\n"
             "\n"
             f"subroutine {self.module_name}_assignment()\n"
-            "  use fval_m\n"
-            "  implicit none\n"
-            f"  type(fval_t) :: {variable_name}\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
+            f"{self.indent}type(fval_t) :: {variable_name}\n"
             f"{assign_indented}\n"
             f"end subroutine {self.module_name}_assignment\n"
             "\n"
             "program main\n"
-            f"  call {self.module_name}_declaration()\n"
-            f"  call {self.module_name}_assignment()\n"
+            f"{self.indent}call {self.module_name}_declaration()\n"
+            f"{self.indent}call {self.module_name}_assignment()\n"
             "end program main"
         )
 
@@ -581,19 +581,19 @@ class Fortran(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

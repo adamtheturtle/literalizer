@@ -1,8 +1,9 @@
+interface IVal {}
 
 fn main() {
 	my_data := [
-		{'name': 'Alice', 'age': 30},
-		{'name': 'Bob', 'age': 25},
+		{'name': IVal('Alice'), 'age': IVal(30)},
+		{'name': IVal('Bob'), 'age': IVal(25)},
 	]
 	_ = my_data
 }

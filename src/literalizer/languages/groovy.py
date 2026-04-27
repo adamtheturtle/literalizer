@@ -70,7 +70,7 @@ from literalizer._types import Value
 def _groovy_call_stub_factory(
     *,
     keyword_style: bool,
-) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
     """Return a Groovy stub generator for the given call style.
 
     Named-argument calls pack every argument into a single
@@ -81,14 +81,13 @@ def _groovy_call_stub_factory(
     """
 
     def _stub(
-        name: str,
+        parts: Sequence[str],
         params: Sequence[str],
         _stub_return: StubReturn,
         /,
     ) -> tuple[str, ...]:
         """Return Groovy stub declarations for a call name."""
         param_list = "Map _args" if keyword_style else ", ".join(params)
-        parts = name.split(sep=".")
         if len(parts) == 1:
             return (f"def {parts[0]}({param_list}) {{ null }}",)
         root = parts[0]
@@ -460,7 +459,7 @@ class Groovy(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _groovy_call_stub_factory(
             keyword_style=isinstance(self.call_style.value, KeywordCallStyle),
@@ -469,12 +468,12 @@ class Groovy(metaclass=LanguageCls):
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

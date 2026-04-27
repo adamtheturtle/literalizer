@@ -22,9 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import (
-    Jsonnet,
-)
+from literalizer.languages import Sml
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages
@@ -306,22 +304,15 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
-# Languages where the current integration harness cannot produce a
-# golden that passes its language-specific lint step for a
-# ``ref_declarations``-using case.  The feature itself renders the ref
-# marker as an identifier correctly; the limitations below are about
-# how the resulting declarations+calls compose into a complete file
-# or how names line up with the declaration site — see
-# https://github.com/adamtheturtle/literalizer/issues/1473 for the
-# per-language identifier rename hook that will close the
-# name-mangling gaps.
-REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
-    {
-        # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
-        # list; variable declarations don't fit the shape.
-        Jsonnet,
-    }
-)
+# Per-case language exclusions: cases whose target function or parameter
+# names use a reserved keyword in a given language, making a valid lint-
+# passing stub impossible to generate.
+CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
+    # target_function "app.mgr.op" has "op" as the innermost name; "op"
+    # is a reserved word in SML and cannot be used as a fun or val
+    # identifier, so no valid stub can be produced.
+    "call_mixed_type_dicts": frozenset({Sml}),
+}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -344,7 +335,9 @@ def discover_call_cases() -> list[CallCase]:
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
-            if config.ref_declarations and lang_cls in REF_CASE_INCOMPATIBLE:
+            if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
+                config.case_dir_name, frozenset()
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -459,33 +452,35 @@ def run_call_golden_case(
         if config.call_transform is not None
         else StubReturn.VOID
     )
+    target_function_parts = tuple(config.target_function.split(sep="."))
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     preamble_stubs.extend(
         spec.format_call_preamble_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
+        wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(
             spec.format_call_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),
         )
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),

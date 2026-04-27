@@ -145,11 +145,15 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
-  # Split out from lint-fast because `odin check` intermittently hangs
-  # in CI; isolating it means a hang only stalls this job instead of
-  # blocking every other lint-fast language behind the same timeout.
+  # Split out from lint-fast because two odin invocations on the same
+  # runner deadlock regardless of filesystem isolation.  The matrix
+  # spreads shards across separate runners so no two odin processes
+  # ever share a kernel; each shard runs its files serially.
   lint-odin:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -158,24 +162,17 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Run serially: parallel `odin check` invocations are the
-      # suspected cause of the intermittent hangs, so feed fixtures
-      # one at a time until the upstream issue is understood.
-      - name: Lint Odin
-        run: |-
-          find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          xargs -0 -I{} odin check {} -file < /tmp/files-odin
       - name: Run Odin files
         run: |-
-          cat > /tmp/run-odin-file.sh << 'SCRIPT'
-          #!/bin/sh
-          set -e
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          odin run "$1" -file -out:"$tmpdir/prog"
-          SCRIPT
-          chmod +x /tmp/run-odin-file.sh
-          xargs -0 -P "$(nproc)" -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
+          mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
+          n=${#files[@]}
+          for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
+            src=$(realpath "${files[i]}")
+            ( wd=$(mktemp -d)
+              trap 'rm -rf "$wd"' EXIT
+              cd "$wd"
+              odin run "$src" -file -out:"$wd/prog" ) || exit 1
+          done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
@@ -313,6 +310,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-ada
+      - name: Run Ada files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_ada.py < /tmp/files-ada
 
       - name: Lint Occam
         run: |-
@@ -407,13 +406,15 @@ jobs:
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
-      # Fixtures only declare `structure Check` with a `my_data` val;
+      # Non-call fixtures declare `structure Check` with a `my_data` val;
       # MLton never evaluates the body unless a top-level expression
       # references it, so compile alongside a small force file that
       # forces `Check.my_data` to be constructed.
+      # Call fixtures use val _ = … bindings that already force evaluation,
+      # so they are compiled without the force file.
       - name: Lint Sml
         run: |-
-          find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml
+          find tests/integration/cases -name '*.sml' ! -name '*_call.sml' -print0 > /tmp/files-sml
           cat > /tmp/run-sml.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -424,6 +425,16 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
+          find tests/integration/cases -name '*_call.sml' -print0 > /tmp/files-sml-call
+          cat > /tmp/run-sml-call.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.sml"
+          cp .github/scripts/sml_call_main.mlb "$tmpdir/main.mlb"
+          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          "$tmpdir/out" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml-call.sh < /tmp/files-sml-call
 
       - name: Lint Dhall
         run: |-
@@ -689,12 +700,9 @@ jobs:
       # Fixtures define `void check_(void)` with no main, so compile each
       # alongside `.github/scripts/c_main.c` which invokes it. Compile
       # `c_main.c` once up front so each fixture link reuses the object
-      # instead of re-parsing the same TU. Fixtures forward-declare a
-      # handful of host helpers (`emit`, `process`) without defining
-      # them; rewrite each forward declaration to a static empty stub
-      # so the link succeeds and the fixture body still executes. The
-      # build-and-run step also surfaces any syntax errors, so a separate
-      # `-fsyntax-only` pass would be redundant.
+      # instead of re-parsing the same TU. The build-and-run step also
+      # surfaces any syntax errors, so a separate `-fsyntax-only` pass
+      # would be redundant.
       - name: Build c_main object
         run: clang -std=c11 -c .github/scripts/c_main.c -o /tmp/c_main.o
       - name: Run C files
@@ -702,12 +710,7 @@ jobs:
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          sed -e 's/^void emit(CVal);$/static void emit(CVal _x) { (void)_x; }/' \
-              -e 's/^void process(CVal);$/static void process(CVal _x) { (void)_x; }/' \
-              -e 's/^void process(CVal, CVal);$/static void process(CVal _x, CVal _y) { (void)_x; (void)_y; }/' \
-              -e 's/^CVal process(CVal);$/static CVal process(CVal _x) { (void)_x; return (CVal){0}; }/' \
-              "$1" > "$tmpdir/check.c"
-          clang -std=c11 "$tmpdir/check.c" /tmp/c_main.o -o "$tmpdir/run" || exit 1
+          clang -std=c11 "$1" /tmp/c_main.o -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
@@ -1328,6 +1331,10 @@ jobs:
       - name: Check V syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
           < /tmp/files-to-lint
+      - name: Run V files
+        run: |
+          grep -z -v 'heterogeneous_strategy_error' /tmp/files-to-lint > /tmp/files-to-run || true
+          xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
 
   lint-objectivec:
     runs-on: macos-latest

@@ -16,8 +16,8 @@ contains
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 program check
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fstr('hello "world" -- not a comment')
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fstr('hello "world" -- not a comment')
 end program check

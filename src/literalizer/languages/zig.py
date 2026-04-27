@@ -155,7 +155,7 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 @beartype
 def _zig_call_preamble_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -176,7 +176,6 @@ def _zig_call_preamble_stub(
     """
     param_type = "anytype" if list(params) == ["_arg"] else "ZVal"
     param_discards = "".join(f" _ = {p};" for p in params)
-    parts = name.split(sep=".")
     method = parts[-1]
     if len(parts) == 1:
         param_list = ", ".join(f"{p}: {param_type}" for p in params)
@@ -473,8 +472,8 @@ class Zig(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -484,24 +483,24 @@ class Zig(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         if not variable_name:
             return f"pub fn main() void {{\n{indented}\n}}"
         if "var " in content:
-            use = f"    {variable_name} = .nil;"
+            use = f"{self.indent}{variable_name} = .nil;"
         else:
-            use = f"    _ = {variable_name};"
+            use = f"{self.indent}_ = {variable_name};"
         return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Zig declaration + assignment in a main function."""
-        return Zig.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -602,7 +601,7 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression.
 
         Zig disallows nested function declarations inside ``main``, so
@@ -614,7 +613,7 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _zig_call_preamble_stub
 
@@ -627,7 +626,7 @@ class Zig(metaclass=LanguageCls):
         return _format_zig_entry
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

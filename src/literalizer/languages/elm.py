@@ -334,42 +334,46 @@ def _build_elm_body_preamble(
     return _compute
 
 
-def _elm_flatten_dotted(name: str) -> str:
-    """Flatten a dotted call target to an Elm identifier.
+def _elm_flatten_dotted(parts: Sequence[str]) -> str:
+    """Flatten call target parts to an Elm identifier.
 
-    Elm identifiers cannot contain ``.``, so ``app.client.fetch``
-    becomes ``appClientFetch`` (each part after the first is
-    capitalized and the dots are dropped).
+    Elm identifiers cannot contain ``.``, so ``["app", "client", "fetch"]``
+    becomes ``appClientFetch`` (the first character of each part after
+    the first is uppercased; the remaining characters are kept as-is).
     """
-    parts = name.split(sep=".")
     if len(parts) == 1:
-        return name
-    return parts[0] + "".join(p.capitalize() for p in parts[1:])
+        return parts[0]
+    first = parts[0]
+    rest = "".join(p[0].upper() + p[1:] if p else "" for p in parts[1:])
+    return first + rest
 
 
 def _elm_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Elm top-level stub declarations for a call target.
 
-    Dotted names are flattened (each part after the first is
-    capitalized).  For a single parameter the stub is polymorphic
-    (``a -> ()``); for multiple parameters the stub takes a tuple
-    (``( a, b ) -> ()``), matching the tuple that
-    ``PositionalCallStyle`` emits at the call site.
+    Dotted names are flattened (the first character of each part after
+    the first is uppercased).  For a single parameter the stub is
+    polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
+    tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
+    tuple that ``PositionalCallStyle`` emits at the call site.  For
+    4 or more parameters Elm does not support tuples, so curried type
+    signatures are used instead (``a -> b -> c -> d -> ()``).
     """
-    flat_name = _elm_flatten_dotted(name=name)
+    flat_name = _elm_flatten_dotted(parts=parts)
     n = len(params)
+    _max_elm_tuple_size = len(("a", "b", "c"))
     if n == 0:  # pragma: no cover
         type_sig = f"{flat_name} : ()"
         impl = f"{flat_name} = ()"
     elif n == 1:
         type_sig = f"{flat_name} : a -> ()"
         impl = f"{flat_name} _ = ()"
-    else:
+    elif n <= _max_elm_tuple_size:
         _alphabet_size = len(string.ascii_lowercase)
         type_vars = ", ".join(
             chr(ord("a") + (i % _alphabet_size))
@@ -378,6 +382,16 @@ def _elm_call_stub(
         )
         type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
         impl = f"{flat_name} _ = ()"
+    else:  # pragma: no cover
+        _alphabet_size = len(string.ascii_lowercase)
+        type_vars = " -> ".join(
+            chr(ord("a") + (i % _alphabet_size))
+            + (str(object=i // _alphabet_size) if i >= _alphabet_size else "")
+            for i in range(n)
+        )
+        wildcards = " ".join("_" for _ in range(n))
+        type_sig = f"{flat_name} : {type_vars} -> ()"
+        impl = f"{flat_name} {wildcards} = ()"
     return (type_sig, impl)
 
 
@@ -408,6 +422,19 @@ _ELM_PLATFORM_WORKER_SUFFIX: str = (
     "        , subscriptions = \\_ -> Sub.none\n"
     "        }"
 )
+
+
+def _elm_call_module(preamble: str, let_lines: list[str]) -> str:
+    """Build a complete Elm call-mode module from preamble and let-
+    bindings.
+    """
+    return (
+        f"module Check exposing (..)\n\n\n"
+        f"{preamble}\n\n\n"
+        "main : Program () () Never\nmain =\n    let\n"
+        + "\n".join(let_lines)
+        + _ELM_PLATFORM_WORKER_SUFFIX
+    )
 
 
 @beartype
@@ -699,13 +726,7 @@ class Elm(metaclass=LanguageCls):
                     let_lines.append(f"        _ = {line}")
                 else:  # pragma: no cover
                     let_lines.append(f"        {line}")
-            return (
-                f"module Check exposing (..)\n\n\n"
-                f"{preamble}\n\n\n"
-                "main : Program () () Never\nmain =\n    let\n"
-                + "\n".join(let_lines)
-                + _ELM_PLATFORM_WORKER_SUFFIX
-            )
+            return _elm_call_module(preamble=preamble, let_lines=let_lines)
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
     @staticmethod
@@ -737,13 +758,7 @@ class Elm(metaclass=LanguageCls):
                 let_lines.append(f"        _ = {line}")
             else:  # pragma: no cover
                 let_lines.append(f"        {line}")
-        return (
-            f"module Check exposing (..)\n\n\n"
-            f"{preamble}\n\n\n"
-            "main : Program () () Never\nmain =\n    let\n"
-            + "\n".join(let_lines)
-            + _ELM_PLATFORM_WORKER_SUFFIX
-        )
+        return _elm_call_module(preamble=preamble, let_lines=let_lines)
 
     @staticmethod
     def wrap_combined_in_file(
@@ -832,24 +847,24 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _elm_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
-        """Rewrite a dotted call target into an Elm identifier.
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Rewrite call target parts into an Elm identifier.
 
-        Parts after the first are capitalized and the dots are
-        dropped (e.g. ``app.client.fetch`` becomes
-        ``appClientFetch``).
+        The first character of each part after the first is uppercased
+        and the parts are concatenated (e.g. ``["app", "client",
+        "fetch"]`` becomes ``appClientFetch``).
         """
         return _elm_flatten_dotted
 

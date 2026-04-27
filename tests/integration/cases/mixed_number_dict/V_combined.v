@@ -1,14 +1,15 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := {
-		'a': 1,
-		'b': 2.5,
-		'c': 3,
+		'a': IVal(1),
+		'b': IVal(2.5),
+		'c': IVal(3),
 	}
 	my_data = {
-		'a': 1,
-		'b': 2.5,
-		'c': 3,
+		'a': IVal(1),
+		'b': IVal(2.5),
+		'c': IVal(3),
 	}
 	_ = my_data
 }
