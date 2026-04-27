@@ -13,6 +13,12 @@ Next
   ``local {name} = {value};``, and ``Jsonnet`` now overrides
   ``wrap_calls_with_declarations`` to emit those bindings before
   ``wrap_in_file`` wraps the calls in ``[ … ]``.
+- C single-name call stubs (e.g. ``emit``, ``process``) are now emitted
+  as ``static`` definitions with a stub body instead of bare forward
+  declarations, so generated fixtures can be linked and run.  The lint
+  workflow now compiles each C fixture against a small ``c_main.c``
+  driver and executes the resulting binary, surfacing runtime errors
+  that the previous ``-fsyntax-only`` check missed.
 - ``Crystal.wrap_in_file`` now wraps content in a
   ``module Check ... end`` block with ``extend self``, matching what
   Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
