@@ -461,7 +461,7 @@ jobs:
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
-          gleam-version: latest
+          gleam-version: v1.16.0
           otp-version: '27'
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -1054,6 +1054,8 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: 1.20.0
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
       # of per fixture. Each fixture is wrapped in a unique

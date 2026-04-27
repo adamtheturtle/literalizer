@@ -132,11 +132,6 @@ def test_golden_file_combined_variable_forms(
                 lang_cls=lang_cls,
                 declaration_style=combined_case.declaration_style,
             )
-            if isinstance(spec, Erlang):
-                spec = dataclasses.replace(
-                    spec,
-                    module_name=erlang_module_name(golden_path=golden_path),
-                )
             yaml_string = input_path.read_text()
             try:
                 result = literalizer.literalize(
