@@ -514,15 +514,13 @@ class Go(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Go declaration in ``func main()``."""
-        del module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -530,19 +528,17 @@ class Go(metaclass=LanguageCls):
         use_line = f"\n_ = {variable_name}" if variable_name else ""
         return f"\nfunc main() {{\n{content}{use_line}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Go declaration + assignment in ``func main()``."""
-        return Go.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

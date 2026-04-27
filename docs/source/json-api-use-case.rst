@@ -51,7 +51,6 @@ returns this response:
        pre_indent_level=0,
        variable_form=NewVariable(name="request_body"),
        include_delimiters=True,
-       module_name="check",
    )
    assert request_literal.code == textwrap.dedent(
        text="""\
@@ -75,7 +74,6 @@ returns this response:
        pre_indent_level=0,
        variable_form=NewVariable(name="response"),
        include_delimiters=True,
-       module_name="check",
    )
    assert response_literal.code == textwrap.dedent(
        text="""\

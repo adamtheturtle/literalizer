@@ -179,6 +179,8 @@ class Erlang(metaclass=LanguageCls):
               e.g. ``{1, 2, 3}``.
     """
 
+    module_name: str = "Module"
+
     extension = ".erl"
     pygments_name = "erlang"
     supports_default_set_element_type = False
@@ -409,11 +411,10 @@ class Erlang(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an Erlang snippet in a module function.
@@ -435,7 +436,7 @@ class Erlang(metaclass=LanguageCls):
             erlang_varname = variable_name[0].upper() + variable_name[1:]
             indented = textwrap.indent(text=body, prefix="    ")
             return (
-                f"-module({module_name}).\n"
+                f"-module({self.module_name}).\n"
                 f"-export([x/0]).\n"
                 f"x() ->\n"
                 f"{indented}\n"
@@ -443,24 +444,23 @@ class Erlang(metaclass=LanguageCls):
             )
         trimmed = content.rstrip().removesuffix(",")
         indented = textwrap.indent(text=trimmed, prefix="    ")
-        parts = [f"-module({module_name}).", "-export([x/0])."]
+        parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)
         parts.append("x() ->")
         parts.append(f"{indented}.")
         return "\n".join(parts)
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, module_name, body_preamble
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO

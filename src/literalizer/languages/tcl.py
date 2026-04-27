@@ -330,27 +330,24 @@ class Tcl(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file (no-op)."""
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap declaration and assignment in a valid file (no-op)."""
@@ -358,7 +355,6 @@ class Tcl(metaclass=LanguageCls):
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

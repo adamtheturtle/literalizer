@@ -19,12 +19,10 @@ def test_call_string_with_escaped_quote_preserved() -> None:
         language=spec,
         target_function="process",
         parameter_names=["v"],
-        module_name="check",
     )
     wrapped = spec.wrap_in_file(
         content=result.bare_code,
         variable_name="",
-        module_name="check",
         body_preamble=(),
     )
     assert wrapped == '_0 = process("a\\"b")'
@@ -44,7 +42,6 @@ def test_call_after_decl_with_escaped_quote_preserved() -> None:
         input_format=literalizer.InputFormat.JSON,
         language=spec,
         variable_form=literalizer.NewVariable(name="my_str"),
-        module_name="check",
     )
     call = literalizer.literalize_call(
         source="---\n- - {$ref: my_str}\n",
@@ -52,13 +49,11 @@ def test_call_after_decl_with_escaped_quote_preserved() -> None:
         language=spec,
         target_function="process",
         parameter_names=["v"],
-        module_name="check",
     )
     content = decl.bare_code + "\n" + call.bare_code
     wrapped = spec.wrap_in_file(
         content=content,
         variable_name="",
-        module_name="check",
         body_preamble=(),
     )
     assert wrapped == 'my_str = "a\\"b"\n_0 = process(my_str)'

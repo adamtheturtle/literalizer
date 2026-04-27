@@ -41,5 +41,4 @@ def test_default_strategy_raises_on_heterogeneous(
             source=source,
             input_format=InputFormat.JSON,
             language=language_cls(),
-            module_name="check",
         )

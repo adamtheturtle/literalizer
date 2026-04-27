@@ -83,7 +83,6 @@ def _run(*, source: str, input_format: InputFormat) -> str:
         source=source,
         input_format=input_format,
         language=PYTHON,
-        module_name="check",
     ).code
 
 

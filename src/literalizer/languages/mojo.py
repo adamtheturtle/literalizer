@@ -542,15 +542,13 @@ class Mojo(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Mojo variable declaration in a main function."""
-        del module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -559,12 +557,11 @@ class Mojo(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="    ")
         return f"def main():\n{indented}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Mojo declaration and assignment in a main function."""
@@ -573,10 +570,9 @@ class Mojo(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use = f"_ = {variable_name}"
-        return Mojo.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + f"\n{use}\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=(),
         )
 

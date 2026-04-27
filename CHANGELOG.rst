@@ -4,17 +4,21 @@ Changelog
 Next
 ----
 
-- ``literalize`` and ``literalize_call`` now require a ``module_name``
-  keyword argument.  The languages whose ``wrap_in_file`` introduces a
-  named scope — Java's wrapping class and method, Fortran's
-  ``program``/``subroutine`` names, Erlang's ``-module(...)``, Occam's
-  ``PROC``, SystemVerilog's ``module``, F#'s ``module``, and the
-  helper function names emitted by C, C++, D and Objective-C — now
-  derive that name from this argument instead of always emitting
-  ``check``.  Languages whose wrappers do not introduce a named scope
-  ignore the argument.  ``Language.wrap_in_file`` and
-  ``Language.wrap_combined_in_file`` gain a corresponding
-  ``module_name`` parameter.
+- ``module_name`` has moved from a parameter on ``literalize`` and
+  ``literalize_call`` to a constructor argument on the ten languages
+  whose ``wrap_in_file`` introduces a named scope: ``C``, ``Cpp``,
+  ``D``, ``Erlang``, ``Fortran``, ``FSharp``, ``Java``, ``ObjectiveC``,
+  ``Occam`` and ``SystemVerilog``.  Pass it when constructing the
+  language (e.g. ``Java(module_name="Foo")``); it defaults to
+  ``"Module"``.  Languages whose wrappers do not introduce a named
+  scope no longer accept ``module_name`` at all, so passing it where
+  it has no effect is now a ``TypeError`` instead of being silently
+  ignored.  ``Language.wrap_in_file`` and
+  ``Language.wrap_combined_in_file`` lose the ``module_name``
+  parameter; the named-scope languages read ``self.module_name``
+  instead.  Languages must now be instantiated before being passed to
+  ``literalize`` (``language=Python()`` rather than
+  ``language=Python``).
 - OCaml integer values outside the signed 64-bit range now raise
   ``UnrepresentableIntegerError`` instead of emitting an
   ``int_of_string`` fallback that overflowed OCaml's 63-bit native

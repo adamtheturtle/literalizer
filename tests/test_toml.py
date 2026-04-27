@@ -55,7 +55,6 @@ def test_dict_python() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
-        module_name="check",
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
     assert result.code == expected
@@ -69,7 +68,6 @@ def test_empty_table() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     assert result.code == "{}"
 
@@ -83,7 +81,6 @@ def test_integers() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -103,7 +100,6 @@ def test_floats() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -123,7 +119,6 @@ def test_booleans() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -144,7 +139,6 @@ def test_nested_table() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -164,7 +158,6 @@ def test_array_of_tables() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -184,7 +177,6 @@ def test_date_python() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -204,7 +196,6 @@ def test_datetime_python() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = (
         "{\n"
@@ -225,7 +216,6 @@ def test_time_coerced_to_string() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -245,7 +235,6 @@ def test_invalid_toml() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            module_name="check",
         )
 
 
@@ -258,7 +247,6 @@ def test_invalid_toml_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
-            module_name="check",
         )
 
 
@@ -272,7 +260,6 @@ def test_variable_declaration() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -293,7 +280,6 @@ def test_variable_assignment() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=ExistingVariable(name="config"),
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -313,7 +299,6 @@ def test_go_output() -> None:
         language=GO,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = 'map[string]any{\n\t"name": "test",\n\t"count": 42,\n}'
     assert result.code == expected
@@ -339,7 +324,6 @@ def test_scalar_types(
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     assert result.code == expected
 
@@ -359,7 +343,6 @@ def test_body_preamble() -> None:
         language=haskell,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected_preamble = "data Val = HStr String | HMap [(String, Val)]"
     assert result.body_preamble[0] == expected_preamble
@@ -389,7 +372,6 @@ def test_body_preamble_double_iso() -> None:
         language=haskell,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -413,7 +395,6 @@ def test_inline_comment_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -434,7 +415,6 @@ def test_before_comment_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -456,7 +436,6 @@ def test_trailing_comment_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -481,7 +460,6 @@ def test_mixed_comments_preserved() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -503,7 +481,6 @@ def test_comments_go_output() -> None:
         language=GO,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = (
         "map[string]any{\n"
@@ -524,7 +501,6 @@ def test_no_comments_unchanged() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -545,7 +521,6 @@ def test_comments_without_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
-        module_name="check",
     )
     expected = '# header\n"host": "localhost",  # inline\n"port": 8080,'
     assert result.code == expected
@@ -561,7 +536,6 @@ def test_comments_with_variable_declaration() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -591,7 +565,6 @@ def test_comments_language_without_collection_comments() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="config"),
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -620,7 +593,6 @@ def test_comments_with_blank_lines() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\

@@ -477,11 +477,10 @@ class VisualBasic(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a VB.NET Dim declaration inside a Module.
@@ -494,7 +493,7 @@ class VisualBasic(metaclass=LanguageCls):
         arguments are invoked by the fixture linter so the calls
         still execute.
         """
-        del variable_name, module_name
+        del variable_name
         has_stubs = any(
             line.startswith(("Function ", "Class ")) for line in body_preamble
         )
@@ -520,16 +519,14 @@ class VisualBasic(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="    ")
         return f"Module Check\n{indented}\nEnd Module"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap VB.NET declaration + assignment in separate Subs."""
-        del module_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,

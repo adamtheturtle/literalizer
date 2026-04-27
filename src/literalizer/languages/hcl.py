@@ -340,11 +340,10 @@ class Hcl(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid HCL file.
@@ -360,7 +359,6 @@ class Hcl(metaclass=LanguageCls):
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,
-                module_name=module_name,
                 body_preamble=body_preamble,
             )
         statements = _split_top_level_statements(content=content)
@@ -379,18 +377,17 @@ class Hcl(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble, module_name
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO

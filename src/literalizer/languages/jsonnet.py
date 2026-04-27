@@ -331,11 +331,10 @@ class Jsonnet(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid Jsonnet file.
@@ -347,7 +346,6 @@ class Jsonnet(metaclass=LanguageCls):
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,
-                module_name=module_name,
                 body_preamble=body_preamble,
             )
         preamble_str = "\n".join(body_preamble) + "\n"
@@ -355,18 +353,17 @@ class Jsonnet(metaclass=LanguageCls):
         elements = [f"    {line}," for line in lines if line]
         return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble, module_name
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO

@@ -470,15 +470,13 @@ class Zig(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Zig declaration in a main function."""
-        del module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -492,19 +490,17 @@ class Zig(metaclass=LanguageCls):
             use = f"    _ = {variable_name};"
         return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Zig declaration + assignment in a main function."""
-        return Zig.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

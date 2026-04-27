@@ -72,7 +72,6 @@ def test_golden_file(
                     include_delimiters=True,
                     variable_form=wrap_variable_form(lang_cls=lang_cls),
                     wrap_in_file=True,
-                    module_name="check",
                 )
             except UnrepresentableIntegerError:
                 golden_path.unlink(missing_ok=True)
@@ -136,7 +135,6 @@ def test_golden_file_combined_variable_forms(
                         name="my_data",
                     ),
                     wrap_in_file=True,
-                    module_name="check",
                 )
             except UnrepresentableIntegerError:
                 golden_path.unlink(missing_ok=True)
@@ -193,7 +191,6 @@ def test_format_variant_golden_file(
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,
                     wrap_in_file=True,
-                    module_name="check",
                 )
             except NullInCollectionError:
                 pytest.skip("Format rejects null elements in this input")
@@ -243,7 +240,6 @@ def test_line_ending_combined_variable_forms(
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
         wrap_in_file=True,
-        module_name="check",
     )
     check_golden(
         file_regression=file_regression,
@@ -285,7 +281,6 @@ def test_heterogeneous_strategy_combined_variable_forms(
         include_delimiters=True,
         variable_form=literalizer.BothVariableForms(name="my_data"),
         wrap_in_file=True,
-        module_name="check",
     )
     check_golden(
         file_regression=file_regression,
@@ -328,7 +323,6 @@ def test_pre_indent_level_with_new_variable_golden_file(
             modifiers=case.modifiers,
         ),
         wrap_in_file=True,
-        module_name="check",
     )
     check_golden(
         file_regression=file_regression,

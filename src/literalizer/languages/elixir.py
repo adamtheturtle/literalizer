@@ -381,15 +381,13 @@ class Elixir(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an Elixir variable assignment in a module function."""
-        del module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -400,18 +398,17 @@ class Elixir(metaclass=LanguageCls):
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble, module_name
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO
