@@ -7,7 +7,6 @@ kwargs, line-ending option, heterogeneous-scalar strategy,
 language and compare against a checked-in golden file.
 """
 
-import dataclasses
 from pathlib import Path
 
 import pytest
@@ -20,7 +19,6 @@ from literalizer.exceptions import (
     NullInCollectionError,
     UnrepresentableIntegerError,
 )
-from literalizer.languages import Erlang
 
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
@@ -34,11 +32,11 @@ from .case_discovery import (
 )
 from .check_golden import check_golden
 from .language_specs import (
-    erlang_module_name,
     find_redefinition_styles,
     lang_cls_name,
     make_spec,
     sorted_languages,
+    with_per_fixture_module_name,
 )
 from .variant_cases import (
     group_variant_cases_by_language,
@@ -66,12 +64,10 @@ def test_golden_file(
             input_path = cases_dir / case_name / "input.yaml"
             yaml_string = input_path.read_text()
             golden_path = input_path.parent / (lang_name + lang_cls.extension)
-            spec = make_spec(lang_cls=lang_cls)
-            if isinstance(spec, Erlang):
-                spec = dataclasses.replace(
-                    spec,
-                    module_name=erlang_module_name(golden_path=golden_path),
-                )
+            spec = with_per_fixture_module_name(
+                spec=make_spec(lang_cls=lang_cls),
+                golden_path=golden_path,
+            )
             try:
                 result = literalizer.literalize(
                     source=yaml_string,
@@ -128,9 +124,12 @@ def test_golden_file_combined_variable_forms(
             golden_path = input_path.parent / (
                 combined_case.golden_file_name + lang_cls.extension
             )
-            spec = make_spec(
-                lang_cls=lang_cls,
-                declaration_style=combined_case.declaration_style,
+            spec = with_per_fixture_module_name(
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    declaration_style=combined_case.declaration_style,
+                ),
+                golden_path=golden_path,
             )
             yaml_string = input_path.read_text()
             try:
@@ -191,13 +190,9 @@ def test_format_variant_golden_file(
             golden_path = case_dir / (
                 variant_case.variant_name + variant.spec.extension
             )
-            spec = (
-                dataclasses.replace(
-                    variant.spec,
-                    module_name=erlang_module_name(golden_path=golden_path),
-                )
-                if isinstance(variant.spec, Erlang)
-                else variant.spec
+            spec = with_per_fixture_module_name(
+                spec=variant.spec,
+                golden_path=golden_path,
             )
             try:
                 result = literalizer.literalize(

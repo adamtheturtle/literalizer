@@ -1,4 +1,4 @@
-object Check {
+object Fixture_float_scientific_notation_Scala_float_format_fixed_s {
 val my_data = List[Double](
     0.000000,
     1.000000,

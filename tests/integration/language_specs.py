@@ -6,6 +6,7 @@ combination cuts thousands of redundant builds across collection and
 test execution.
 """
 
+import dataclasses
 import enum
 import functools
 from pathlib import Path
@@ -13,7 +14,7 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Erlang, Scala
 
 
 @beartype
@@ -27,6 +28,44 @@ def erlang_module_name(*, golden_path: Path) -> str:
     dir_name = golden_path.parent.name
     stem = golden_path.stem
     return f"fixture_{dir_name}_{stem}".lower()
+
+
+@beartype
+def scala_module_name(*, golden_path: Path) -> str:
+    """Return the Scala object name for *golden_path*.
+
+    Produces a deterministic, per-fixture name so every compiled
+    ``.scala`` file in CI has a unique object declaration without needing
+    ``sed`` rewriting.
+    """
+    dir_name = golden_path.parent.name
+    stem = golden_path.stem
+    return f"Fixture_{dir_name}_{stem}"
+
+
+@beartype
+def with_per_fixture_module_name(
+    *,
+    spec: literalizer.Language,
+    golden_path: Path,
+) -> literalizer.Language:
+    """Return *spec* with a per-fixture ``module_name`` if applicable.
+
+    Languages whose CI lint requires unique module names (Erlang, Scala)
+    get a deterministic name derived from *golden_path*; all other
+    languages are returned unchanged.
+    """
+    if isinstance(spec, Erlang):
+        return dataclasses.replace(
+            spec,
+            module_name=erlang_module_name(golden_path=golden_path),
+        )
+    if isinstance(spec, Scala):
+        return dataclasses.replace(
+            spec,
+            module_name=scala_module_name(golden_path=golden_path),
+        )
+    return spec
 
 
 @beartype

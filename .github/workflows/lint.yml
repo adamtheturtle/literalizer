@@ -857,23 +857,21 @@ jobs:
         uses: VirtusLab/scala-cli-setup@v1
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
-      # per fixture. Fixtures all declare `object Check { ... }`, so
-      # they are renamed to a unique `object FixtureN` to avoid
-      # collisions; a generated `@main` references each one to force
-      # its val initializers to load. The mapping is printed so
-      # failures still point back to the original path.
+      # per fixture. Each fixture already carries a unique object name
+      # derived from its case directory and stem, so a plain copy
+      # suffices; no sed rewriting needed.
       - name: Run Scala files
         run: |-
           workspace=$(mktemp -d)
           main="$workspace/Main.scala"
           printf '@main def __run(): Unit = {\n' > "$main"
-          i=0
           while IFS= read -r -d '' f; do
-            sed "s/^object Check {/object Fixture$i {/" "$f" \
-              > "$workspace/Fixture$i.scala"
-            printf 'Fixture%s.scala <- %s\n' "$i" "$f"
-            printf '  val _%s = Fixture%s\n' "$i" "$i" >> "$main"
-            i=$((i+1))
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .scala)
+            name="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/${name}.scala"
+            printf '%s.scala <- %s\n' "$name" "$f"
+            printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
           scala-cli run "$workspace" --main-class __run
