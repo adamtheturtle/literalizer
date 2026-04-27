@@ -76,7 +76,7 @@ from literalizer._types import Value
 
 @beartype
 def _raku_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -88,7 +88,6 @@ def _raku_call_stub(
     definitions.  A bare (non-dotted) target only needs a ``sub``
     declaration.
     """
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"sub {parts[0]}(*@a, *%kw) {{}}",)
     root = parts[0]
@@ -124,11 +123,10 @@ def _raku_format_call_ref_identifier(name: str, /) -> str:
 
 
 @beartype
-def _raku_format_call_target(name: str, /) -> str:
+def _raku_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a dotted call target into the Raku ``$obj.method`` form."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
-        return name
+        return parts[0]
     return "$" + parts[0] + "".join(f".{p}" for p in parts[1:])
 
 
