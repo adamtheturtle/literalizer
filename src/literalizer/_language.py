@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, assert_never, cast, runtime_checkable
+from typing import Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -96,6 +96,7 @@ class SetFormatConfig:
     preamble_lines: tuple[str, ...]
     set_opener_template: str
     supports_heterogeneity: bool
+    supports_trailing_comma: bool
 
     def with_typed_opener(
         self,
@@ -135,6 +136,7 @@ class DictFormatConfig:
     empty_dict: str | None
     preamble_lines: tuple[str, ...]
     narrowed_open: str | None
+    supports_trailing_comma: bool
 
 
 @dataclasses.dataclass(frozen=True)
@@ -283,6 +285,7 @@ class FloatSpecialsMixin:
     _positive_infinity: str
     _negative_infinity: str
     _nan: str
+    _formatter: Callable[[float], str]
 
     def __init_subclass__(
         cls,
@@ -297,6 +300,10 @@ class FloatSpecialsMixin:
         cls._negative_infinity = negative_infinity
         cls._nan = nan
 
+    def __init__(self, formatter: Callable[[float], str], /) -> None:
+        """Capture the per-member formatter from the enum value."""
+        self._formatter = formatter
+
     def __call__(self, value: float, /) -> str:
         """Format a float, handling inf and nan."""
         if math.isinf(value):
@@ -305,8 +312,7 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        formatter: Callable[[float], str] = cast("enum.Enum", self).value
-        return formatter(value)
+        return self._formatter(value)
 
 
 class StubReturn(enum.Enum):
@@ -477,6 +483,7 @@ class LanguageCls(type):
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
+    module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -487,27 +494,6 @@ class LanguageCls(type):
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
-
-    @staticmethod
-    def wrap_in_file(
-        content: str,
-        variable_name: str,
-        module_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap a code snippet in a complete, valid file."""
-        raise NotImplementedError
-
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        module_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap a declaration and assignment in a complete, valid file."""
-        raise NotImplementedError
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1221,22 +1207,20 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
@@ -1370,11 +1354,10 @@ def prepend_body_preamble(
 def wrap_in_file_noop(
     content: str,
     variable_name: str,
-    module_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Default ``wrap_in_file`` that only adds body preamble."""
-    del variable_name, module_name  # unused
+    del variable_name  # unused
     return prepend_body_preamble(content=content, body_preamble=body_preamble)
 
 
@@ -1383,7 +1366,6 @@ def wrap_combined_in_file_noop(
     declaration: str,
     assignment: str,
     variable_name: str,
-    module_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Default ``wrap_combined_in_file``: join with newline, prepend
@@ -1392,7 +1374,6 @@ def wrap_combined_in_file_noop(
     return wrap_in_file_noop(
         content=declaration + "\n" + assignment,
         variable_name=variable_name,
-        module_name=module_name,
         body_preamble=body_preamble,
     )
 

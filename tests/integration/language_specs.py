@@ -59,7 +59,17 @@ def make_spec(
     lang_cls: literalizer.LanguageCls,
     **kwargs: object,
 ) -> literalizer.Language:
-    """Return a cached instance of *lang_cls* for the given kwargs."""
+    """Return a cached instance of *lang_cls* for the given kwargs.
+
+    Languages whose ``wrap_in_file`` introduces a named scope take a
+    ``module_name`` constructor argument; default it to ``"check"`` so
+    fixture output matches the historic golden files.
+    """
+    has_module_name = "module_name" in getattr(
+        lang_cls, "__dataclass_fields__", {}
+    )
+    if has_module_name and "module_name" not in kwargs:
+        kwargs["module_name"] = lang_cls.module_name_case.convert(name="check")
     return cached_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),

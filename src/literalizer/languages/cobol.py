@@ -340,6 +340,7 @@ class Cobol(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -485,11 +486,10 @@ class Cobol(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a COBOL variable declaration in a complete program."""
-        del variable_name, module_name
+        del variable_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -501,11 +501,10 @@ class Cobol(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap COBOL declaration and assignment in a complete program."""
-        del variable_name, module_name
+        del variable_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
@@ -666,6 +665,7 @@ class Cobol(metaclass=LanguageCls):
             empty_dict=_COBOL_EMPTY_LITERAL,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

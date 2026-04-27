@@ -472,6 +472,7 @@ class Elm(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -622,11 +623,10 @@ class Elm(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an Elm value declaration in a module."""
-        del variable_name, module_name
+        del variable_name
         preamble = "\n".join(body_preamble)
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
@@ -635,13 +635,12 @@ class Elm(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble, module_name
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO
@@ -802,6 +801,7 @@ class Elm(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

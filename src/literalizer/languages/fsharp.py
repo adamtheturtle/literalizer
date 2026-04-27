@@ -241,6 +241,8 @@ class FSharp(metaclass=LanguageCls):
             ``FBool``, ``FInt``, etc.
     """
 
+    module_name: str = "Module"
+
     extension = ".fs"
     pygments_name = "fsharp"
     supports_default_set_element_type = False
@@ -338,6 +340,7 @@ class FSharp(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -487,6 +490,7 @@ class FSharp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -494,11 +498,10 @@ class FSharp(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an F# let declaration in a module."""
@@ -507,15 +510,13 @@ class FSharp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        capitalized = f"{module_name[:1].upper()}{module_name[1:]}"
-        return f"module {capitalized}\n\n" + content
+        return f"module {self.module_name}\n\n" + content
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap F# declaration + assignment in separate private
@@ -525,13 +526,13 @@ class FSharp(metaclass=LanguageCls):
         decl_indented = textwrap.indent(text=declaration, prefix="    ")
         assign_indented = textwrap.indent(text=assignment, prefix="    ")
         preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
-        capitalized = f"{module_name[:1].upper()}{module_name[1:]}"
-        body = f"module {capitalized}\n\n" + preamble
+        camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
+        body = f"module {self.module_name}\n\n" + preamble
         body += (
-            f"let private _{module_name}Declaration () =\n"
+            f"let private _{camel_name}Declaration () =\n"
             + decl_indented
             + "\n    ignore my_data\n\n"
-            + f"let private _{module_name}Assignment () =\n"
+            + f"let private _{camel_name}Assignment () =\n"
             + assign_indented
             + "\n    ignore my_data"
         )
@@ -690,6 +691,7 @@ class FSharp(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

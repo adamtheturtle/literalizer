@@ -560,6 +560,8 @@ class Java(metaclass=LanguageCls):
               e.g. ``List.of(1, 2, 3)``.
     """
 
+    module_name: str = "Module"
+
     extension = ".java"
     pygments_name = "java"
     supports_default_set_element_type = False
@@ -697,6 +699,7 @@ class Java(metaclass=LanguageCls):
             preamble_lines=("import java.util.Set;",),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=False,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="new TreeSet<>(Set.of("),
@@ -707,7 +710,8 @@ class Java(metaclass=LanguageCls):
                 "import java.util.TreeSet;",
             ),
             set_opener_template="",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
+            supports_trailing_comma=False,
         )
 
     class CommentFormats(enum.Enum):
@@ -748,6 +752,7 @@ class Java(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("import java.util.Map;",),
             narrowed_open=None,
+            supports_trailing_comma=False,
         )
         HASH_MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new HashMap<>(Map.ofEntries("),
@@ -762,6 +767,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.Map;",
             ),
             narrowed_open=None,
+            supports_trailing_comma=False,
         )
 
     class EmptyDictKey(enum.Enum):
@@ -867,6 +873,7 @@ class Java(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -964,22 +971,21 @@ class Java(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Java declaration in a ``class`` scope named after
-        *module_name*.
+        the configured module name.
 
         When *content* starts with a class-field modifier keyword
         (``public``, ``private``, ``protected``, ``static``) the
         declaration is placed at class-field scope, which is the only
         context where those modifiers are valid.  Otherwise the
         declaration goes inside a ``public static void`` method named
-        after *module_name* so that local-only forms like
+        after the configured module name so that local-only forms like
         ``var x = 42;`` compile.
         """
         del variable_name
@@ -1003,13 +1009,13 @@ class Java(metaclass=LanguageCls):
             line for line in body_preamble if not line.startswith("static ")
         )
         class_block = "\n".join(class_lines) + "\n" if class_lines else ""
-        class_name = module_name[:1].upper() + module_name[1:]
+        method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         if is_class_field:
             field_preamble = (
                 "\n".join(method_lines) + "\n" if method_lines else ""
             )
             return (
-                f"class {class_name} {{\n"
+                f"class {self.module_name} {{\n"
                 f"{class_block}{field_preamble}{content}\n}}"
             )
         content = prepend_body_preamble(
@@ -1017,27 +1023,25 @@ class Java(metaclass=LanguageCls):
             body_preamble=method_lines,
         )
         return (
-            f"class {class_name} {{\n"
+            f"class {self.module_name} {{\n"
             f"{class_block}"
-            f"    public static void {module_name}() {{\n"
+            f"    public static void {method_name}() {{\n"
             f"{content}\n"
             "    }\n"
             "}"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Java declaration + assignment in a static method."""
-        return Java.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

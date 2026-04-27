@@ -26,7 +26,6 @@ Create an instance with its defaults, or override individual format options:
        source='{"x": 1}',
        input_format=InputFormat.JSON,
        language=Python(),
-       module_name="check",
    )
 
    # Override specific formats
@@ -38,7 +37,6 @@ Create an instance with its defaults, or override individual format options:
            string_format=Python.string_formats.SINGLE,
            trailing_comma=Python.trailing_commas.NO,
        ),
-       module_name="check",
    )
 
 Format options

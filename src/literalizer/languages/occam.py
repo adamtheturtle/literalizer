@@ -84,6 +84,8 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
 class Occam(metaclass=LanguageCls):
     """Occam-pi language specification."""
 
+    module_name: str = "Module"
+
     extension = ".occ"
     pygments_name = None
     supports_default_set_element_type = False
@@ -159,6 +161,7 @@ class Occam(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -288,6 +291,7 @@ class Occam(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.SNAKE,
@@ -295,11 +299,10 @@ class Occam(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an occam-pi VAL declaration in a PROC."""
@@ -310,7 +313,7 @@ class Occam(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix="  ")
         return (
-            f"\nPROC {module_name} ()\n"
+            f"\nPROC {self.module_name} ()\n"
             + indented
             + "\n"
             + "  SEQ\n"
@@ -323,13 +326,12 @@ class Occam(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, module_name, body_preamble
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO
@@ -492,6 +494,7 @@ class Occam(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

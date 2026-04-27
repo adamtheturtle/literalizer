@@ -210,6 +210,7 @@ class Bash(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -377,14 +378,12 @@ class Bash(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file (no-op)."""
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -393,7 +392,6 @@ class Bash(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap declaration and assignment in a valid file (no-op)."""
@@ -401,7 +399,6 @@ class Bash(metaclass=LanguageCls):
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -535,6 +532,7 @@ class Bash(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

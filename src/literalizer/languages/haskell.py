@@ -1015,6 +1015,7 @@ class Haskell(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -1171,6 +1172,7 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -1178,15 +1180,13 @@ class Haskell(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
-        del module_name
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module
@@ -1200,26 +1200,25 @@ class Haskell(metaclass=LanguageCls):
                 for line in content.split(sep="\n")
             )
             return (
-                "module Check where\n"
+                f"module {self.module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        return "module Check where\n" + preamble + "\n" + content
+        return f"module {self.module_name} where\n" + preamble + "\n" + content
 
     @staticmethod
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble, module_name
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.HASKELL
@@ -1247,6 +1246,7 @@ class Haskell(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     indent: str = "    "
+    module_name: str = "Check"
     type_name: str = "Val"
     constructor_prefix: str = "H"
 
@@ -1361,6 +1361,7 @@ class Haskell(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

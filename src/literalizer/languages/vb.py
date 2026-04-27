@@ -310,6 +310,7 @@ class VisualBasic(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template=("New HashSet(Of {type_name}) From {{"),
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -353,6 +354,7 @@ class VisualBasic(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=("Imports System.Collections.Generic",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -481,7 +483,6 @@ class VisualBasic(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a VB.NET Dim declaration inside a Module.
@@ -494,7 +495,7 @@ class VisualBasic(metaclass=LanguageCls):
         arguments are invoked by the fixture linter so the calls
         still execute.
         """
-        del variable_name, module_name
+        del variable_name
         has_stubs = any(
             line.startswith(("Function ", "Class ")) for line in body_preamble
         )
@@ -525,11 +526,9 @@ class VisualBasic(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap VB.NET declaration + assignment in separate Subs."""
-        del module_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
