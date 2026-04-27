@@ -873,6 +873,7 @@ class Java(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -1008,13 +1009,13 @@ class Java(metaclass=LanguageCls):
             line for line in body_preamble if not line.startswith("static ")
         )
         class_block = "\n".join(class_lines) + "\n" if class_lines else ""
-        class_name = self.module_name[:1].upper() + self.module_name[1:]
+        method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         if is_class_field:
             field_preamble = (
                 "\n".join(method_lines) + "\n" if method_lines else ""
             )
             return (
-                f"class {class_name} {{\n"
+                f"class {self.module_name} {{\n"
                 f"{class_block}{field_preamble}{content}\n}}"
             )
         content = prepend_body_preamble(
@@ -1022,9 +1023,9 @@ class Java(metaclass=LanguageCls):
             body_preamble=method_lines,
         )
         return (
-            f"class {class_name} {{\n"
+            f"class {self.module_name} {{\n"
             f"{class_block}"
-            f"    public static void {self.module_name}() {{\n"
+            f"    public static void {method_name}() {{\n"
             f"{content}\n"
             "    }\n"
             "}"
