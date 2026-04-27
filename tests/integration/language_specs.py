@@ -8,11 +8,25 @@ test execution.
 
 import enum
 import functools
+from pathlib import Path
 
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Erlang
+
+
+@beartype
+def erlang_module_name(golden_path: Path) -> str:
+    """Return the Erlang module name for *golden_path*.
+
+    Produces a deterministic, per-fixture name so every compiled
+    ``.erl`` file in CI has a unique module declaration without needing
+    ``sed`` rewriting.
+    """
+    dir_name = golden_path.parent.name
+    stem = golden_path.stem
+    return f"fixture_{dir_name}_{stem}".lower()
 
 
 @beartype
@@ -25,6 +39,9 @@ def find_redefinition_styles(
         for style in spec.declaration_styles
         if style.value.supports_redefinition
     ]
+
+
+_ERLANG_CLS: type = Erlang
 
 
 @beartype
@@ -57,19 +74,27 @@ def cached_spec(
 def make_spec(
     *,
     lang_cls: literalizer.LanguageCls,
+    golden_path: Path | None = None,
     **kwargs: object,
 ) -> literalizer.Language:
     """Return a cached instance of *lang_cls* for the given kwargs.
 
     Languages whose ``wrap_in_file`` introduces a named scope take a
     ``module_name`` constructor argument; default it to ``"check"`` so
-    fixture output matches the historic golden files.
+    fixture output matches the historic golden files.  When
+    *golden_path* is supplied and the language is Erlang, a
+    per-fixture module name is derived from the path instead.
     """
     has_module_name = "module_name" in getattr(
         lang_cls, "__dataclass_fields__", {}
     )
     if has_module_name and "module_name" not in kwargs:
-        kwargs["module_name"] = lang_cls.module_name_case.convert(name="check")
+        if golden_path is not None and lang_cls is _ERLANG_CLS:
+            kwargs["module_name"] = erlang_module_name(golden_path)
+        else:
+            kwargs["module_name"] = lang_cls.module_name_case.convert(
+                name="check"
+            )
     return cached_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),

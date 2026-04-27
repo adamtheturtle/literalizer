@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_call_snake_dotted_method_erlang_call).
 -export([x/0]).
 'my_app.http_client.fetch'(_) -> ok.
 x() ->

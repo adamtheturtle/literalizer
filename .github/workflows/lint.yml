@@ -497,36 +497,33 @@ jobs:
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
       # Compile every fixture in a single erlc invocation to pay the
-      # BEAM VM startup cost once. Erlang requires the module name to
-      # match the filename, so fixtures (all declared `-module(check).`)
-      # are renamed to `fixture_N.erl` with the module declaration
-      # rewritten; the mapping is printed so failures still point back
-      # to the original path.
+      # BEAM VM startup cost once. Each fixture already carries a unique
+      # module name derived from its case directory and stem, so a plain
+      # copy suffices; no sed rewriting needed.
       - name: Lint Erlang
         env:
           ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
           find tests/integration/cases -name '*.erl' -print0 > /tmp/files-erlang
           mkdir -p "$ERLANG_FIXTURE_DIR"
-          i=0
           while IFS= read -r -d '' f; do
-            name="fixture_$i"
-            sed "1s/^-module(check)\./-module($name)./" "$f" > "$ERLANG_FIXTURE_DIR/$name.erl"
-            printf '%s.erl <- %s\n' "$name" "$f"
-            i=$((i+1))
+            dir=${f%/*}; dir=${dir##*/}
+            stem=$(basename "$f" .erl)
+            name="fixture_${dir}_${stem,,}"
+            cp "$f" "$ERLANG_FIXTURE_DIR/$name.erl"
           done < /tmp/files-erlang
           (cd "$ERLANG_FIXTURE_DIR" && erlc -Werror fixture_*.erl)
 
       # `erlc` only compiles; runtime errors (undefined functions, missing
       # imports, failed assertions) slip past unless each fixture is
-      # actually executed. Fixtures all expose `check:x/0`, renamed to
-      # `fixture_N:x/0` during compilation; invoke each in a single BEAM
-      # VM and collect failures so one bad fixture does not mask others.
+      # actually executed. Every module name starts with ``fixture_``;
+      # invoke each in a single BEAM VM and collect failures so one bad
+      # fixture does not mask others.
       - name: Run Erlang files
         env:
           ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
-          modules=$(find "$ERLANG_FIXTURE_DIR" -maxdepth 1 -name 'fixture_*.beam' -printf '%f\n' | sed 's|\.beam$||' | paste -sd, -)
+          modules=$(find "$ERLANG_FIXTURE_DIR" -maxdepth 1 -name '*.beam' -printf '%f\n' | sed 's|\.beam$||' | paste -sd, -)
           erl -noshell -pa "$ERLANG_FIXTURE_DIR" -eval "
             Run = fun(M) ->
                 try M:x(), ok

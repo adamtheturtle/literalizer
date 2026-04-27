@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_float_scientific_notation_erlang_float_format_scientific_s).
 -export([x/0]).
 x() ->
     My_data = [

@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_ordered_map_nested_values_erlang).
 -export([x/0]).
 x() ->
     My_data = [

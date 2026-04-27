@@ -22,10 +22,10 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Sml
+from literalizer.languages import Erlang, Sml
 
 from .check_golden import check_golden
-from .language_specs import sorted_languages
+from .language_specs import erlang_module_name, sorted_languages
 
 if TYPE_CHECKING:
     from literalizer._types import Value
@@ -389,6 +389,10 @@ def run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    if isinstance(spec, Erlang):
+        spec = dataclasses.replace(
+            spec, module_name=erlang_module_name(golden_path)
+        )
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
         # First element of ``identifier_cases`` is the language's

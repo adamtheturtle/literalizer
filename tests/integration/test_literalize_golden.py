@@ -7,6 +7,7 @@ kwargs, line-ending option, heterogeneous-scalar strategy,
 language and compare against a checked-in golden file.
 """
 
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from literalizer.exceptions import (
     NullInCollectionError,
     UnrepresentableIntegerError,
 )
+from literalizer.languages import Erlang
 
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
@@ -32,6 +34,7 @@ from .case_discovery import (
 )
 from .check_golden import check_golden
 from .language_specs import (
+    erlang_module_name,
     find_redefinition_styles,
     lang_cls_name,
     make_spec,
@@ -67,7 +70,9 @@ def test_golden_file(
                 result = literalizer.literalize(
                     source=yaml_string,
                     input_format=literalizer.InputFormat.YAML,
-                    language=make_spec(lang_cls=lang_cls),
+                    language=make_spec(
+                        lang_cls=lang_cls, golden_path=golden_path
+                    ),
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=wrap_variable_form(lang_cls=lang_cls),
@@ -116,14 +121,15 @@ def test_golden_file_combined_variable_forms(
             golden_file_name=combined_case.golden_file_name,
         ):
             input_path = cases_dir / combined_case.case_name / "input.yaml"
-            spec = make_spec(
-                lang_cls=lang_cls,
-                declaration_style=combined_case.declaration_style,
-            )
-            yaml_string = input_path.read_text()
             golden_path = input_path.parent / (
                 combined_case.golden_file_name + lang_cls.extension
             )
+            spec = make_spec(
+                lang_cls=lang_cls,
+                declaration_style=combined_case.declaration_style,
+                golden_path=golden_path,
+            )
+            yaml_string = input_path.read_text()
             try:
                 result = literalizer.literalize(
                     source=yaml_string,
@@ -182,11 +188,19 @@ def test_format_variant_golden_file(
             golden_path = case_dir / (
                 variant_case.variant_name + variant.spec.extension
             )
+            spec = (
+                dataclasses.replace(
+                    variant.spec,
+                    module_name=erlang_module_name(golden_path),
+                )
+                if isinstance(variant.spec, Erlang)
+                else variant.spec
+            )
             try:
                 result = literalizer.literalize(
                     source=yaml_string,
                     input_format=literalizer.InputFormat.YAML,
-                    language=variant.spec,
+                    language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,
@@ -224,13 +238,15 @@ def test_line_ending_combined_variable_forms(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    base_spec = make_spec(lang_cls=case.lang_cls)
+    golden_path = input_path.parent / (case.name + case.lang_cls.extension)
+    base_spec = make_spec(lang_cls=case.lang_cls, golden_path=golden_path)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
     spec = make_spec(
         lang_cls=case.lang_cls,
         line_ending=case.line_ending,
         declaration_style=redef_styles[0],
+        golden_path=golden_path,
     )
     result = literalizer.literalize(
         source=yaml_string,
@@ -246,7 +262,7 @@ def test_line_ending_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=golden_path,
     )
 
 
@@ -265,13 +281,15 @@ def test_heterogeneous_strategy_combined_variable_forms(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    base_spec = make_spec(lang_cls=case.lang_cls)
+    golden_path = input_path.parent / (case.name + case.lang_cls.extension)
+    base_spec = make_spec(lang_cls=case.lang_cls, golden_path=golden_path)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
     spec = make_spec(
         lang_cls=case.lang_cls,
         heterogeneous_strategy=case.heterogeneous_strategy,
         declaration_style=redef_styles[0],
+        golden_path=golden_path,
     )
     result = literalizer.literalize(
         source=yaml_string,
@@ -287,7 +305,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=golden_path,
     )
 
 
@@ -311,7 +329,8 @@ def test_pre_indent_level_with_new_variable_golden_file(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    spec = make_spec(lang_cls=case.lang_cls)
+    golden_path = input_path.parent / (case.name + case.lang_cls.extension)
+    spec = make_spec(lang_cls=case.lang_cls, golden_path=golden_path)
     result = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
@@ -329,5 +348,5 @@ def test_pre_indent_level_with_new_variable_golden_file(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=golden_path,
     )

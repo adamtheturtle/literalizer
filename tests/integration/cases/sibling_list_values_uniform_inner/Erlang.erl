@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_sibling_list_values_uniform_inner_erlang).
 -export([x/0]).
 x() ->
     My_data = #{
