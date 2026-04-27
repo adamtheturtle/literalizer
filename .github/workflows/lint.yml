@@ -171,8 +171,8 @@ jobs:
           #!/bin/sh
           set -e
           tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
           odin run "$1" -file -out:"$tmpdir/prog"
-          rm -rf "$tmpdir"
           SCRIPT
           chmod +x /tmp/run-odin-file.sh
           xargs -0 -P "$(nproc)" -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
