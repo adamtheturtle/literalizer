@@ -422,6 +422,7 @@ class Crystal(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -436,15 +437,7 @@ class Crystal(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a ``module ... extend self ... end`` block.
-
-        ``extend self`` lets unqualified calls inside the body
-        (e.g. ``emit(...)``) resolve to the module's own ``def emit``,
-        matching how the fixtures behave when run as standalone files.
-        ``require`` lines (e.g. ``require "set"``) come from
-        :func:`literalize`'s preamble, prepended outside this wrapper,
-        so the wrapper body never contains them.
-        """
+        """Wrap a Crystal declaration in a module."""
         del variable_name
         body = prepend_body_preamble(
             content=content,
@@ -459,7 +452,7 @@ class Crystal(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a single module block."""
+        """Wrap Crystal declaration + assignment in a module."""
         return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,

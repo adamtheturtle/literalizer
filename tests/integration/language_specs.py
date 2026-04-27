@@ -110,7 +110,7 @@ def make_spec(
     fixture output matches the historic golden files.
     """
     if lang_cls in _MODULE_NAME_LANGUAGES and "module_name" not in kwargs:
-        kwargs["module_name"] = "check"
+        kwargs["module_name"] = lang_cls.module_name_case.convert(name="check")
     return cached_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),

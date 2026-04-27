@@ -490,6 +490,7 @@ class FSharp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -509,8 +510,7 @@ class FSharp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        capitalized = f"{self.module_name[:1].upper()}{self.module_name[1:]}"
-        return f"module {capitalized}\n\n" + content
+        return f"module {self.module_name}\n\n" + content
 
     def wrap_combined_in_file(
         self,
@@ -526,13 +526,13 @@ class FSharp(metaclass=LanguageCls):
         decl_indented = textwrap.indent(text=declaration, prefix="    ")
         assign_indented = textwrap.indent(text=assignment, prefix="    ")
         preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
-        capitalized = f"{self.module_name[:1].upper()}{self.module_name[1:]}"
-        body = f"module {capitalized}\n\n" + preamble
+        camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
+        body = f"module {self.module_name}\n\n" + preamble
         body += (
-            f"let private _{self.module_name}Declaration () =\n"
+            f"let private _{camel_name}Declaration () =\n"
             + decl_indented
             + "\n    ignore my_data\n\n"
-            + f"let private _{self.module_name}Assignment () =\n"
+            + f"let private _{camel_name}Assignment () =\n"
             + assign_indented
             + "\n    ignore my_data"
         )
