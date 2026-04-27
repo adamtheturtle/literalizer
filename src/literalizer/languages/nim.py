@@ -526,6 +526,7 @@ class Nim(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -1022,6 +1023,7 @@ class Nim(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=("import tables",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         return DictFormatConfig(
             dict_open=fixed_open(open_str="{"),
@@ -1033,6 +1035,7 @@ class Nim(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

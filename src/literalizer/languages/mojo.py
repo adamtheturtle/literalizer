@@ -348,6 +348,7 @@ class Mojo(metaclass=LanguageCls):
                 preamble_lines=("from std.collections import Set",),
                 set_opener_template="Set[{type_name}](",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -392,6 +393,7 @@ class Mojo(metaclass=LanguageCls):
                 empty_template="Dict[{key_type}, {type}]()",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 

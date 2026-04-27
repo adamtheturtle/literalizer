@@ -550,6 +550,7 @@ class Kotlin(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
         SORTED_SET = enum.member(
@@ -560,6 +561,7 @@ class Kotlin(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="sortedSetOf<{type_name}>(",
                 supports_heterogeneity=False,
+                supports_trailing_comma=True,
             )
         )
 
@@ -1005,6 +1007,7 @@ class Kotlin(metaclass=LanguageCls):
                 ),
             ),
             narrowed_open=None,
+            supports_trailing_comma=True,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" to ",

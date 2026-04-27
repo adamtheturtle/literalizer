@@ -326,6 +326,7 @@ class Go(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -726,6 +727,7 @@ class Go(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open="{",
+            supports_trailing_comma=True,
         )
 
     @cached_property

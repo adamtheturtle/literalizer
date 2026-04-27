@@ -240,6 +240,7 @@ class Julia(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -282,6 +283,7 @@ class Julia(metaclass=LanguageCls):
             empty_dict="Dict()",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
         ORDERED = DictFormatConfig(
             dict_open=fixed_open(open_str="OrderedDict("),
@@ -293,6 +295,7 @@ class Julia(metaclass=LanguageCls):
             empty_dict="OrderedDict()",
             preamble_lines=("using DataStructures",),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     class EmptyDictKey(enum.Enum):
