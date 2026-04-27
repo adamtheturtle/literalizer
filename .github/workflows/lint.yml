@@ -145,11 +145,15 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
-  # Split out from lint-fast because `odin` intermittently hangs in
-  # CI; isolating it means a hang only stalls this job instead of
-  # blocking every other lint-fast language behind the same timeout.
+  # Split out from lint-fast because two odin invocations on the same
+  # runner deadlock regardless of filesystem isolation.  The matrix
+  # spreads shards across separate runners so no two odin processes
+  # ever share a kernel; each shard runs its files serially.
   lint-odin:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -158,38 +162,17 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Odin writes core-library build artefacts inside its own
-      # installation directory; parallel workers sharing that directory
-      # deadlock on those files.  Give each worker its own copy so there
-      # is no shared mutable state.  `odin run` also compiles, so no
-      # separate `odin check` pass is needed.
       - name: Run Odin files
         run: |-
-          find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          ncores=$(nproc)
-          odin_install=$(dirname "$(which odin)")
-          for i in $(seq 1 "$ncores"); do
-            cp -r "$odin_install" "/tmp/odin-$i"
-          done
-          mapfile -d '' -t files < /tmp/files-odin
+          mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
-          chunk=$(( (n + ncores - 1) / ncores ))
-          run_worker() {
-            local w=$1 odin="/tmp/odin-$1/odin"
-            local lo=$(( (w - 1) * chunk )) hi=$(( w * chunk ))
-            local i src wd
-            for (( i = lo; i < hi && i < n; i++ )); do
-              src=$(realpath "${files[i]}")
-              wd=$(mktemp -d)
-              (trap 'rm -rf "$wd"' EXIT; cd "$wd" || exit 1
-               "$odin" run "$src" -file -out:"$wd/prog") || return 1
-            done
-          }
-          pids=()
-          for i in $(seq 1 "$ncores"); do run_worker "$i" & pids+=($!); done
-          rc=0
-          for pid in "${pids[@]}"; do wait "$pid" || rc=1; done
-          exit "$rc"
+          for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
+            src=$(realpath "${files[i]}")
+            ( wd=$(mktemp -d)
+              trap 'rm -rf "$wd"' EXIT
+              cd "$wd"
+              odin run "$src" -file -out:"$wd/prog" ) || exit 1
+          done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
