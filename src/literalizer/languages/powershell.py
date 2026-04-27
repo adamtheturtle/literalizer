@@ -33,7 +33,6 @@ from literalizer._formatters.format_floats import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -44,14 +43,13 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -87,6 +85,67 @@ def _format_string(value: str) -> str:
         .replace("\t", "`t")
     )
     return f'"{escaped}"'
+
+
+@beartype
+def _powershell_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return PowerShell stub declarations for a call name."""
+    parts = name.split(sep=".")
+    if len(parts) == 1:
+        return (f"function {name} {{}}",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    param_list = ", ".join(f"[object] ${p}" for p in params)
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"class {type_name}"
+            f" {{ [object] {method}({param_list}) {{ return $null }} }}",
+            f"${root} = [{type_name}]::new()",
+        )
+    lines: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    lines.append(
+        f"class {inner_type}"
+        f" {{ [object] {method}({param_list}) {{ return $null }} }}"
+    )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        lines.append(
+            f"class {curr_type}"
+            f" {{ [{prev_type}] ${fields[i + 1]} = [{prev_type}]::new() }}"
+        )
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    lines.append(
+        f"class {root_type}"
+        f" {{ [{prev_type}] ${fields[0]} = [{prev_type}]::new() }}"
+    )
+    lines.append(f"${root} = [{root_type}]::new()")
+    return tuple(lines)
+
+
+@beartype
+def _powershell_call_target(name: str, /) -> str:
+    """Prepend ``$`` for dotted targets so they resolve as variable access."""
+    if "." in name:
+        return f"${name}"
+    return name
+
+
+@beartype
+def _powershell_call_ref_identifier(name: str, /) -> str:
+    """Prepend ``$`` so ``$ref`` identifiers resolve as PowerShell
+    variables.
+    """
+    return f"${name}"
 
 
 @beartype
@@ -283,6 +342,8 @@ class PowerShell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """PowerShell call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -355,6 +416,7 @@ class PowerShell(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -373,9 +435,6 @@ class PowerShell(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -424,7 +483,7 @@ class PowerShell(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _powershell_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -434,18 +493,23 @@ class PowerShell(metaclass=LanguageCls):
         return no_call_stub
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_target(self) -> Callable[[str], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _powershell_call_target
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
-        return identity_call_ref_identifier
+        return _powershell_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
