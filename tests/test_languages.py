@@ -607,7 +607,7 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
     """
     params = [f"p{i}" for i in range(27)]
     (line,) = Gleam().format_call_preamble_stub(
-        "target",
+        ("target",),
         params,
         StubReturn.VOID,
     )

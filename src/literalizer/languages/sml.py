@@ -234,7 +234,7 @@ def _format_sml_preamble_lines(lines: list[str]) -> tuple[str, ...]:
 
 
 def _sml_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -246,7 +246,6 @@ def _sml_call_stub(
     site.  The innermost name becomes a ``fun`` declaration that accepts
     any argument and returns unit.
     """
-    parts = name.split(sep=".")
     method = parts[-1]
     lines: list[str] = [f"fun {method} _ = ()"]
     for part in reversed(parts[:-1]):
@@ -632,14 +631,14 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _sml_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -651,7 +650,7 @@ class Sml(metaclass=LanguageCls):
         return lambda statement: f"val _ = {statement}"
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
