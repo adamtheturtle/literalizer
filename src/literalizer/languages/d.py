@@ -70,8 +70,8 @@ _D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
 def _d_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Keep D's ``parseJSON("[]")`` empty literal beside typed siblings.
 
-    ``JSONValue([])`` rejects an empty ``void[]`` payload at template
-    instantiation; the language's ``parseJSON("[]")`` empty form
+    ``JSONValue([])`` rejects an empty ``void[]`` payload when the
+    template expands; the language's ``parseJSON("[]")`` empty form
     returns a fresh ``JSONValue`` array and is accepted alongside
     typed siblings.
     """
@@ -146,6 +146,8 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class D(metaclass=LanguageCls):
     """D language specification."""
+
+    module_name: str = "Module"
 
     extension = ".d"
     pygments_name = "d"
@@ -388,11 +390,10 @@ class D(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a D declaration in a function."""
@@ -401,21 +402,19 @@ class D(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void _{module_name}() {{\n{content}\n}}"
+        return f"void _{self.module_name}() {{\n{content}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap D declaration + assignment in a function."""
-        return D.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

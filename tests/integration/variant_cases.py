@@ -268,7 +268,9 @@ def build_default_set_element_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_set_element_type_string",
-                spec=lang_cls(default_set_element_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_set_element_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -293,7 +295,9 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
                 name=(
                     f"{lang_cls.__name__}_default_sequence_element_type_string"
                 ),
-                spec=lang_cls(default_sequence_element_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_sequence_element_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -316,7 +320,9 @@ def build_default_dict_value_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_dict_value_type_string",
-                spec=lang_cls(default_dict_value_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_dict_value_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -339,7 +345,9 @@ def build_default_dict_key_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_dict_key_type",
-                spec=lang_cls(default_dict_key_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_dict_key_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -362,7 +370,9 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_ordered_map_value_type",
-                spec=lang_cls(default_ordered_map_value_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_ordered_map_value_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -399,7 +409,8 @@ def build_line_ending_decl_variants() -> Iterable[Variant]:
                     f"{lang_name}_line_ending_{line_ending.name.lower()}"
                     f"_decl_{declaration_style.name.lower()}"
                 ),
-                spec=lang_cls(
+                spec=make_spec(
+                    lang_cls=lang_cls,
                     line_ending=line_ending,
                     declaration_style=declaration_style,
                 ),
@@ -441,7 +452,8 @@ def build_sequence_decl_variants() -> Iterable[Variant]:
                     f"{lang_name}_sequence_{sequence_format.name.lower()}"
                     f"_decl_{declaration_style.name.lower()}"
                 ),
-                spec=lang_cls(
+                spec=make_spec(
+                    lang_cls=lang_cls,
                     sequence_format=sequence_format,
                     declaration_style=declaration_style,
                 ),
@@ -466,7 +478,7 @@ def build_constructor_name_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_constructor_names_j",
-                spec=lang_cls(**kwargs),
+                spec=make_spec(lang_cls=lang_cls, **kwargs),
                 lang_cls=lang_cls,
             )
         )
@@ -489,7 +501,7 @@ def build_type_name_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_type_name_{custom_name}",
-                spec=lang_cls(type_name=custom_name),
+                spec=make_spec(lang_cls=lang_cls, type_name=custom_name),
                 lang_cls=lang_cls,
             )
         )
@@ -509,7 +521,9 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_prefix_{custom_prefix}",
-                spec=lang_cls(constructor_prefix=custom_prefix),
+                spec=make_spec(
+                    lang_cls=lang_cls, constructor_prefix=custom_prefix
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -534,7 +548,8 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name == "TAGGED_ENUM"
         )
-        spec = lang_cls(
+        spec = make_spec(
+            lang_cls=lang_cls,
             heterogeneous_strategy=tagged_enum,
             heterogeneous_value_enum_name=custom_name,
         )
@@ -564,7 +579,7 @@ def build_c_field_name_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_field_names_custom",
-                spec=lang_cls(**kwargs),
+                spec=make_spec(lang_cls=lang_cls, **kwargs),
                 lang_cls=lang_cls,
             )
         )
@@ -589,7 +604,8 @@ def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name == "UNION_TYPE"
         )
-        spec = lang_cls(
+        spec = make_spec(
+            lang_cls=lang_cls,
             heterogeneous_strategy=union_type,
             heterogeneous_value_union_name=custom_name,
         )
@@ -626,7 +642,8 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name in wrapping_strategy_names
         )
-        spec = lang_cls(
+        spec = make_spec(
+            lang_cls=lang_cls,
             heterogeneous_strategy=wrapping_strategy,
             heterogeneous_value_variant_name=custom_name,
         )
@@ -678,7 +695,8 @@ def build_string_format_cross_variants(
                             f"_string_{sf.name.lower()}"
                             f"_{other_tag}_{of.name.lower()}"
                         ),
-                        spec=lang_cls(
+                        spec=make_spec(
+                            lang_cls=lang_cls,
                             string_format=sf,
                             **{other_kwarg: of},
                         ),
@@ -763,7 +781,8 @@ def build_type_hints_cross_variants() -> list[Variant]:
                                 f"_{axis_name}"
                                 f"_{fmt.name.lower()}"
                             ),
-                            spec=lang_cls(
+                            spec=make_spec(
+                                lang_cls=lang_cls,
                                 variable_type_hints=th_fmt,
                                 **{kwarg: fmt},
                             ),
@@ -1014,7 +1033,9 @@ def _build_simple_axis(*, axis: _SimpleAxis) -> list[Variant]:
         category=axis.category,
         get_default=axis.get_default,
         get_formats=axis.get_formats,
-        make_variant_spec=lambda cls, fmt: cls(**{axis.kwarg: fmt}),
+        make_variant_spec=lambda cls, fmt: make_spec(
+            lang_cls=cls, **{axis.kwarg: fmt}
+        ),
     )
 
 
@@ -1035,12 +1056,14 @@ def _build_declaration_style_variants() -> list[Variant]:
         overrides = DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(cls, {})
         seq_format_name = overrides.get(fmt.name)
         if seq_format_name is None:
-            return cls(declaration_style=fmt)
-        spec = cls()
+            return make_spec(lang_cls=cls, declaration_style=fmt)
+        spec = make_spec(lang_cls=cls)
         seq_fmt = next(
             f for f in spec.sequence_formats if f.name == seq_format_name
         )
-        return cls(declaration_style=fmt, sequence_format=seq_fmt)
+        return make_spec(
+            lang_cls=cls, declaration_style=fmt, sequence_format=seq_fmt
+        )
 
     return build_non_default_variants(
         category="declaration_style",

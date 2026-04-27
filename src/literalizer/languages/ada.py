@@ -333,11 +333,10 @@ class Ada(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an Ada object declaration inside a procedure."""
-        del variable_name, module_name
+        del variable_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -350,11 +349,10 @@ class Ada(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Ada declaration + assignment in nested procedures."""
-        del variable_name, module_name
+        del variable_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,

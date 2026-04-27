@@ -241,6 +241,8 @@ class FSharp(metaclass=LanguageCls):
             ``FBool``, ``FInt``, etc.
     """
 
+    module_name: str = "Module"
+
     extension = ".fs"
     pygments_name = "fsharp"
     supports_default_set_element_type = False
@@ -494,11 +496,10 @@ class FSharp(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an F# let declaration in a module."""
@@ -507,15 +508,14 @@ class FSharp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        capitalized = f"{module_name[:1].upper()}{module_name[1:]}"
+        capitalized = f"{self.module_name[:1].upper()}{self.module_name[1:]}"
         return f"module {capitalized}\n\n" + content
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap F# declaration + assignment in separate private
@@ -525,13 +525,13 @@ class FSharp(metaclass=LanguageCls):
         decl_indented = textwrap.indent(text=declaration, prefix="    ")
         assign_indented = textwrap.indent(text=assignment, prefix="    ")
         preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
-        capitalized = f"{module_name[:1].upper()}{module_name[1:]}"
+        capitalized = f"{self.module_name[:1].upper()}{self.module_name[1:]}"
         body = f"module {capitalized}\n\n" + preamble
         body += (
-            f"let private _{module_name}Declaration () =\n"
+            f"let private _{self.module_name}Declaration () =\n"
             + decl_indented
             + "\n    ignore my_data\n\n"
-            + f"let private _{module_name}Assignment () =\n"
+            + f"let private _{self.module_name}Assignment () =\n"
             + assign_indented
             + "\n    ignore my_data"
         )
