@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- Added ``CallStyleEnum`` as the base class for per-language
+  ``CallStyles`` enums.  Its :attr:`config` accessor returns the
+  enum member's value typed as the :data:`CallStyle` union, removing
+  the ``cast("CallStyle", self.call_style.value)`` boilerplate
+  previously duplicated in every multi-style language module.
 - ``literalize`` and ``literalize_call`` now require a ``module_name``
   keyword argument.  The languages whose ``wrap_in_file`` introduces a
   named scope — Java's wrapping class and method, Fortran's

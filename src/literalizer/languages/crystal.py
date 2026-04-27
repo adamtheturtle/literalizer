@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -45,6 +45,7 @@ from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -394,7 +395,7 @@ class Crystal(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """Crystal call style options."""
 
         KEYWORD = KeywordCallStyle(separator=": ")
@@ -680,4 +681,4 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.config
