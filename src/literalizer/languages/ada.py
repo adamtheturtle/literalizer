@@ -365,8 +365,8 @@ class Ada(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -377,14 +377,15 @@ class Ada(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="   ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             "with A_Stub; use A_Stub;\n"
-            f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+            f"procedure Check is\n{indented}\n"
+            f"begin\n{self.indent}null;\nend Check;"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -404,8 +405,8 @@ class Ada(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="   ")
-        assign_indented = textwrap.indent(text=assignment, prefix="   ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         return (
             "with A_Stub; use A_Stub;\n"
             "procedure Check is\n"

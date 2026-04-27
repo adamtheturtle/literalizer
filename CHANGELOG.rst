@@ -12,6 +12,15 @@ Next
   previous syntax-only check.  The combined declaration + assignment
   wrapper now keeps both forms in a single procedure scope so the
   assignment can reach ``my_data``.
+- ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local``
+  bindings before the call expressions, so call-mode output with
+  ``ref_declarations`` is supported.  Previously the integration
+  harness skipped ``Jsonnet`` for ref-declaration cases because the
+  array-wrapped output had no place for variable bindings.  The
+  ``DeclarationStyles.ASSIGN`` template changed from ``{value}`` to
+  ``local {name} = {value};``, and ``Jsonnet`` now overrides
+  ``wrap_calls_with_declarations`` to emit those bindings before
+  ``wrap_in_file`` wraps the calls in ``[ … ]``.
 - C single-name call stubs (e.g. ``emit``, ``process``) are now emitted
   as ``static`` definitions with a stub body instead of bare forward
   declarations, so generated fixtures can be linked and run.  The lint

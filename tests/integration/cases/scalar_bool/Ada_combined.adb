@@ -1,6 +1,6 @@
 with A_Stub; use A_Stub;
 procedure Check is
-   my_data : A_Val := ABool (True);
+    my_data : A_Val := ABool (True);
 begin
-   my_data := ABool (True);
+    my_data := ABool (True);
 end Check;

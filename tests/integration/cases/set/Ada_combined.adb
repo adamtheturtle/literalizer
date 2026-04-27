@@ -1,14 +1,14 @@
 with A_Stub; use A_Stub;
 procedure Check is
-   my_data : A_Val := ASet'[
-       AStr ("apple"),
-       AStr ("banana"),
-       AStr ("cherry")
-   ];
+    my_data : A_Val := ASet'[
+        AStr ("apple"),
+        AStr ("banana"),
+        AStr ("cherry")
+    ];
 begin
-   my_data := ASet'[
-       AStr ("apple"),
-       AStr ("banana"),
-       AStr ("cherry")
-   ];
+    my_data := ASet'[
+        AStr ("apple"),
+        AStr ("banana"),
+        AStr ("cherry")
+    ];
 end Check;

@@ -460,11 +460,11 @@ class Fortran(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="  ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             f"program {self.module_name}\n"
-            "  use fval_m\n"
-            "  implicit none\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
             f"{indented}\n"
             f"end program {self.module_name}"
         )
@@ -483,25 +483,25 @@ class Fortran(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="  ")
-        assign_indented = textwrap.indent(text=assignment, prefix="  ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         return (
             f"subroutine {self.module_name}_declaration()\n"
-            "  use fval_m\n"
-            "  implicit none\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
             f"{decl_indented}\n"
             f"end subroutine {self.module_name}_declaration\n"
             "\n"
             f"subroutine {self.module_name}_assignment()\n"
-            "  use fval_m\n"
-            "  implicit none\n"
-            f"  type(fval_t) :: {variable_name}\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
+            f"{self.indent}type(fval_t) :: {variable_name}\n"
             f"{assign_indented}\n"
             f"end subroutine {self.module_name}_assignment\n"
             "\n"
             "program main\n"
-            f"  call {self.module_name}_declaration()\n"
-            f"  call {self.module_name}_assignment()\n"
+            f"{self.indent}call {self.module_name}_declaration()\n"
+            f"{self.indent}call {self.module_name}_assignment()\n"
             "end program main"
         )
 
