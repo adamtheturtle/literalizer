@@ -647,14 +647,14 @@ class Ada(metaclass=LanguageCls):
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
         """Emit local IEEE-special constants when needed.
 
-        Ada has no portable inline literal for ``+Inf`` / ``-Inf`` /
+        Ada has no portable inline literal for ``+Inf``, ``-Inf`` or
         ``NaN``: GNAT statically rejects ``1.0 / 0.0`` with
         ``static expression fails Constraint_Check``.  When the data
-        contains an inf or NaN, declare them as local constants in the
-        enclosing procedure's declarative part using a volatile zero
-        denominator so GNAT cannot constant-fold the division, and
-        suppress ``Division_Check`` so IEEE infinity / NaN propagate
-        instead of raising ``Constraint_Error`` at runtime.
+        contains one of these IEEE specials, declare matching local
+        constants in the enclosing procedure's declarative part using
+        a volatile zero denominator so GNAT cannot constant-fold the
+        division, and suppress ``Division_Check`` so the IEEE result
+        propagates instead of raising ``Constraint_Error`` at runtime.
         """
 
         def _compute(
@@ -662,7 +662,7 @@ class Ada(metaclass=LanguageCls):
             data: Value,
             /,
         ) -> tuple[str, ...]:
-            """Build the inf / NaN constant declarations for *data*."""
+            """Build the IEEE-special constant declarations for *data*."""
             del types
             kinds = _ada_special_float_kinds(data=data)
             if not kinds:
