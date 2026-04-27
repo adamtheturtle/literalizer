@@ -1,4 +1,4 @@
-object check {
+object Check {
 val my_data = Map(
     "name" -> "Alice",
     "age" -> 30,

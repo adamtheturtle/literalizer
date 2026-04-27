@@ -1,4 +1,4 @@
-object check {
+object Check {
 class _MgrType { def op(operation: Any = null): Any = null }
 class _AppType { val mgr = new _MgrType }
 val app = new _AppType

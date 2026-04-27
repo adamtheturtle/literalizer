@@ -1,4 +1,4 @@
 import scala.collection.immutable.TreeSet
-object check {
+object Check {
 val my_data = TreeSet.empty[Int]
 }

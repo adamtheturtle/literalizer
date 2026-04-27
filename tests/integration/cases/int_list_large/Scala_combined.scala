@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = List[Int](
     1000000,
     -1234,

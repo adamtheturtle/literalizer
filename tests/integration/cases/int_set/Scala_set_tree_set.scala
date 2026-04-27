@@ -1,5 +1,5 @@
 import scala.collection.immutable.TreeSet
-object check {
+object Check {
 val my_data = TreeSet[Int](
     1,
     2,

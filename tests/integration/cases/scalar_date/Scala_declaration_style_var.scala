@@ -1,4 +1,4 @@
 import java.time.LocalDate
-object check {
+object Check {
 var my_data = LocalDate.of(2024, 1, 15)
 }

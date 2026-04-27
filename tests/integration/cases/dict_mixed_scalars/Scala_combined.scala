@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = Map(
     "a" -> 1,
     "b" -> "x",

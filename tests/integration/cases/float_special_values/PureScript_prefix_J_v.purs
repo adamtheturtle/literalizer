@@ -1,4 +1,4 @@
-module check where
+module Check where
 
 
 import Prelude

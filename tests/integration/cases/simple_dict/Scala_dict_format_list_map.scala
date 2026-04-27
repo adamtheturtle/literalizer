@@ -1,5 +1,5 @@
 import scala.collection.immutable.ListMap
-object check {
+object Check {
 val my_data = ListMap(
     "name" -> "Alice",
     "age" -> 30,

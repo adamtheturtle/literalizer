@@ -1198,14 +1198,16 @@ class Haskell(metaclass=LanguageCls):
                 f"    _ <- {line}" if line.strip() else line
                 for line in content.split(sep="\n")
             )
+            module_name = self.module_name[:1].upper() + self.module_name[1:]
             return (
-                f"module {self.module_name} where\n"
+                f"module {module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        return f"module {self.module_name} where\n" + preamble + "\n" + content
+        module_name = self.module_name[:1].upper() + self.module_name[1:]
+        return f"module {module_name} where\n" + preamble + "\n" + content
 
     @staticmethod
     def wrap_combined_in_file(

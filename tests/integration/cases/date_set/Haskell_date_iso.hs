@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = HSet [Val] | HStr String
 my_data :: Val
 my_data = HSet [

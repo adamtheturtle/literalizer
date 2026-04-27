@@ -1,4 +1,4 @@
-module check where
+module Check where
 import Data.Time (Day, fromGregorian)
 data JsonVal = HDate Day
 my_data :: JsonVal

@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = List[String](
     "a",  // note a
     "b",  // note b

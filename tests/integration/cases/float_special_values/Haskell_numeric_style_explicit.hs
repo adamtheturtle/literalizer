@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = HFloat Double | HList [Val]
 my_data :: Val
 my_data = HList [

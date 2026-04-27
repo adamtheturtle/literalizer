@@ -1,4 +1,4 @@
-module check where
+module Check where
 process :: (Val, Val) -> IO ()
 process _ = return ()
 data Val = HInt Integer | HList [Val]

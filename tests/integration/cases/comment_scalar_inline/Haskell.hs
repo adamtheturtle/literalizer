@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

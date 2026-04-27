@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = JStr String | JList [Val]
 my_data :: Val
 my_data = JList [

@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = List(
     42,
     3.14,

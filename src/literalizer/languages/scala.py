@@ -533,7 +533,8 @@ class Scala(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"object {self.module_name} {{\n{content}\n}}"
+        object_name = self.module_name[:1].upper() + self.module_name[1:]
+        return f"object {object_name} {{\n{content}\n}}"
 
     def wrap_combined_in_file(
         self,

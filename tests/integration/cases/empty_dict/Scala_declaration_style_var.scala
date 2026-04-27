@@ -1,3 +1,3 @@
-object check {
+object Check {
 var my_data = Map()
 }

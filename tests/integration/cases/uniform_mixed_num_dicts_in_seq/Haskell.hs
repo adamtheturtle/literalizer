@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

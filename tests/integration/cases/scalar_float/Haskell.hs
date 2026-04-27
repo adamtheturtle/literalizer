@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = HFloat Double
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

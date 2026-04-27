@@ -1,4 +1,4 @@
-module check where
+module Check where
 data Val = JFloat Double | JList [Val]
 instance Num Val where
     fromInteger n = JFloat (fromIntegral n)

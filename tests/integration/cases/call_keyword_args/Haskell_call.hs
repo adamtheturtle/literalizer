@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module check where
+module Check where
 data Val = HFloat Double | HStr String | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

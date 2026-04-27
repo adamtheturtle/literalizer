@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = Map[String, String](
     "description" -> "# not a comment\n",
     "name" -> "foo",

@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = List[Double](
     0.0,
     1.0,

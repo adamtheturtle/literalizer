@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = List[List[Int]](
     List[Int](1, 2),
     List[Int](),

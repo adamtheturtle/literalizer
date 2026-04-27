@@ -1,4 +1,4 @@
-object check {
+object Check {
 val my_data = Map(
     // comment
     "name" -> "Alice",

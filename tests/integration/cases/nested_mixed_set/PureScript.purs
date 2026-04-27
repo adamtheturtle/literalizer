@@ -1,4 +1,4 @@
-module check where
+module Check where
 
 
 data Tuple a b = Tuple a b

@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = Map[String, String](
     "key\nwith\nnewlines" -> "value1",
     "key\twith\ttabs" -> "value2",

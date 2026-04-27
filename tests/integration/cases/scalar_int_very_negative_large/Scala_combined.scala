@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = BigInt("-9223372036854775809")
 my_data = BigInt("-9223372036854775809")
 }

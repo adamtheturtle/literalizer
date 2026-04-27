@@ -1,4 +1,4 @@
-object check {
+object Check {
 def process(data: Any = null, count: Any = null): Any = null
 val myVar = List[Int](
     1,

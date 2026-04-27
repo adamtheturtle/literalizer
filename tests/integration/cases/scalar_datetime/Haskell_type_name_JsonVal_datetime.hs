@@ -1,4 +1,4 @@
-module check where
+module Check where
 import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime)
 data JsonVal = HDatetime UTCTime
 my_data :: JsonVal

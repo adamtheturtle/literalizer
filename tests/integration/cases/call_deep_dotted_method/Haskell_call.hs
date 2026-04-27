@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module check where
+module Check where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

@@ -1,4 +1,4 @@
-module check where
+module Check where
 data JsonVal = HFloat Double | HList [JsonVal]
 instance Num JsonVal where
     fromInteger n = HFloat (fromIntegral n)

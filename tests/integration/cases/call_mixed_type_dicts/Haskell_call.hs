@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module check where
+module Check where
 data Val = HBool Bool | HStr String | HList [Val] | HMap [(String, Val)]
 data MgrType_ = MgrType_ { op :: Val -> IO () }
 data AppType_ = AppType_ { mgr :: MgrType_ }

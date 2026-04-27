@@ -1,4 +1,4 @@
-object check {
+object Check {
 var my_data = Map(
     // Server configuration
     "host" -> "localhost",  // default host
