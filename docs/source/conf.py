@@ -60,6 +60,11 @@ htmlhelp_basename = "literalizerdoc"
 
 spelling_word_list_filename = "../../spelling_private_dict.txt"
 
+# json5.org has intermittent SSL failures on some CI runners.
+linkcheck_ignore = [
+    r"https://json5\.org/",
+]
+
 rst_prolog = f"""
 .. |project| replace:: {project}
 .. |minimum-python-version| replace:: {minimum_python_version}
