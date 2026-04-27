@@ -683,4 +683,5 @@ class Raku(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config
