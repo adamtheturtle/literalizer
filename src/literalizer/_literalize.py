@@ -91,6 +91,16 @@ class LiteralizeResult:
     across the combined output.
     """
 
+    source_data: Value = None
+    """The parsed source value the literal was rendered from.  Most
+    callers do not need it.  Callers that combine multiple
+    ``literalize`` results and re-invoke
+    :attr:`Language.compute_body_preamble` to derive a single body
+    preamble surface this so the recomputation can inspect actual
+    values (e.g. datetime microsecond precision) rather than passing
+    a placeholder.
+    """
+
     @property
     def code(self) -> str:
         """The formatted literal text.
@@ -1389,6 +1399,7 @@ def _literalize_apply_form(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
+            source_data=pre_form.data,
         )
 
     return LiteralizeResult(
@@ -1397,6 +1408,7 @@ def _literalize_apply_form(
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
         types_present=computed.types_present,
+        source_data=pre_form.data,
     )
 
 
@@ -1450,6 +1462,7 @@ def _literalize_both_forms(
         preamble=(),
         body_preamble=(),
         types_present=declaration.types_present,
+        source_data=declaration.source_data,
     )
 
 
@@ -2176,6 +2189,7 @@ def literalize_call(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
+            source_data=data_for_preamble,
         )
 
     return LiteralizeResult(
@@ -2183,4 +2197,5 @@ def literalize_call(
         preamble=preamble,
         body_preamble=computed.body,
         types_present=computed.types_present,
+        source_data=data_for_preamble,
     )

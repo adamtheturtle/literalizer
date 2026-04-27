@@ -10,6 +10,7 @@ import dataclasses
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from beartype import beartype
@@ -27,6 +28,9 @@ from literalizer.languages import (
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -492,15 +496,21 @@ def run_call_golden_case(
     # already-rendered body preamble would emit overlapping
     # type-definition strings (e.g. Haskell's ``data Val = ...`` with
     # different constructor sets) that no string-level duplicate
-    # filter can reconcile.  ``data`` only matters for
-    # datetime-precision inspection, which the present ref-declaration
-    # cases do not exercise; pass an empty list as a placeholder.
+    # filter can reconcile.  Combine ``source_data`` from every piece
+    # so ``compute_body_preamble`` can inspect actual values when it
+    # needs to (e.g. Haskell's datetime microsecond-precision check).
     empty_types: frozenset[type] = frozenset()
     union_types = empty_types.union(
         *(d.types_present for d in decl_results),
         result.types_present,
     )
-    unified_body_preamble = spec.compute_body_preamble(union_types, [])
+    combined_source_data: list[Value] = [
+        *(d.source_data for d in decl_results),
+        result.source_data,
+    ]
+    unified_body_preamble = spec.compute_body_preamble(
+        union_types, combined_source_data
+    )
     call_body_preamble = unified_body_preamble + tuple(body_stubs)
     declarations_bare_codes = tuple(d.bare_code for d in decl_results)
     wrapped = spec.wrap_calls_with_declarations(
