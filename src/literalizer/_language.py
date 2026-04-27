@@ -254,6 +254,22 @@ CallStyle = (
 """Tagged union describing how a language passes call arguments."""
 
 
+class CallStyleEnum(enum.Enum):
+    """Base class for per-language ``CallStyles`` enums.
+
+    Subclasses define members whose values are :data:`CallStyle`
+    instances.  Reading :attr:`config` narrows ``.value`` from
+    :class:`typing.Any` to :data:`CallStyle`, so subclasses do not
+    need a per-language ``cast``.
+    """
+
+    @property
+    def config(self) -> CallStyle:
+        """The :data:`CallStyle` instance backing this member."""
+        value: CallStyle = self.value
+        return value
+
+
 class CallSupport(enum.Enum):
     """Sentinel describing why a language does not have a
     :class:`CallStyle` configured.

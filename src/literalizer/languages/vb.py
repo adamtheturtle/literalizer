@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -45,6 +45,7 @@ from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -448,7 +449,7 @@ class VisualBasic(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """VisualBasic call style options."""
 
         POSITIONAL = PositionalCallStyle()
@@ -647,7 +648,7 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.config
 
     @cached_property
     def format_call_preamble_stub(
