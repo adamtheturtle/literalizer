@@ -129,21 +129,24 @@ def _swift_call_stub(
     param_list = ", ".join(_swift_param(p) for p in params)
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
+        return (
+            f"@discardableResult func {parts[0]}({param_list}) -> Any {{ 0 }}",
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    method_decl = (
+        f"@discardableResult func {method}({param_list}) -> Any {{ 0 }}"
+    )
     if not fields:
         cls = f"_{root}Type"
         return (
-            f"class {cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}",
+            f"class {cls} {{ {method_decl} }}",
             f"let {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1]}Type"
-    lines.append(
-        f"class {inner_cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}"
-    )
+    lines.append(f"class {inner_cls} {{ {method_decl} }}")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = f"_{fields[i]}Type"
