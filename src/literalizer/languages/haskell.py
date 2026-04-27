@@ -916,15 +916,7 @@ class Haskell(metaclass=LanguageCls):
             * ``numeric_styles.EXPLICIT`` — wrap every numeric literal
               with its constructor (``HInt 42``, ``HFloat (3.14)``)
               and omit the typeclass instances.
-
-        module_name: Name of the wrapping ``module`` emitted by
-            :meth:`wrap_in_file`. Defaults to ``"Check"``. GHC requires
-            the source filename to match the module, so callers
-            batching many fixtures into one ``ghc`` invocation give
-            each its own unique name.
     """
-
-    module_name: str = "Check"
 
     extension = ".hs"
     pygments_name = "haskell"
@@ -1194,7 +1186,7 @@ class Haskell(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Haskell variable binding in a named module."""
+        """Wrap a Haskell variable binding in a module."""
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module
@@ -1254,6 +1246,7 @@ class Haskell(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     indent: str = "    "
+    module_name: str = "Check"
     type_name: str = "Val"
     constructor_prefix: str = "H"
 

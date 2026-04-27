@@ -195,14 +195,7 @@ def _scala_call_stub(
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Scala(metaclass=LanguageCls):
-    """Scala language specification.
-
-    Args:
-        module_name: Name of the wrapping ``object`` emitted by
-            :meth:`wrap_in_file`. Defaults to ``"Check"``.
-    """
-
-    module_name: str = "Check"
+    """Scala language specification."""
 
     extension = ".scala"
     pygments_name = "scala"
@@ -214,6 +207,7 @@ class Scala(metaclass=LanguageCls):
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
     supports_dotted_calls = True
+    module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -534,7 +528,7 @@ class Scala(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Scala declaration in a named object."""
+        """Wrap a Scala declaration in an object."""
         del variable_name
         content = prepend_body_preamble(
             content=content,
@@ -549,7 +543,7 @@ class Scala(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap Scala declaration + assignment in a named object."""
+        """Wrap Scala declaration + assignment in an object."""
         return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,

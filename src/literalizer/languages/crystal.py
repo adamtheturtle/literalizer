@@ -151,12 +151,7 @@ class Crystal(metaclass=LanguageCls):
               e.g. ``[1, 2, 3]``.
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``{1, 2, 3}``.
-
-        module_name: Name of the wrapping ``module`` emitted by
-            :meth:`wrap_in_file`. Defaults to ``"Check"``.
     """
-
-    module_name: str = "Check"
 
     extension = ".cr"
     pygments_name = "crystal"
@@ -459,6 +454,7 @@ class Crystal(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
+    module_name: str = "Check"
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
