@@ -158,9 +158,9 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Run serially: parallel `odin check` invocations are the
-      # suspected cause of the intermittent hangs, so feed fixtures
-      # one at a time until the upstream issue is understood.
+      # Run serially: parallel `odin check` and `odin run` invocations
+      # are the suspected cause of intermittent crashes/hangs, so feed
+      # fixtures one at a time until the upstream issue is understood.
       - name: Lint Odin
         run: |-
           find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
@@ -175,7 +175,7 @@ jobs:
           odin run "$1" -file -out:"$tmpdir/prog"
           SCRIPT
           chmod +x /tmp/run-odin-file.sh
-          xargs -0 -P "$(nproc)" -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
+          xargs -0 -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
