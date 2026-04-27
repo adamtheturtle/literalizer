@@ -1,8 +1,8 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       AStr ("2024-01-15"),
-       AStr ("2024-02-20")
-   );
+    my_data : A_Val := AList'(
+        AStr ("2024-01-15"),
+        AStr ("2024-02-20")
+    );
 begin
-   null;
+    null;
 end Check;

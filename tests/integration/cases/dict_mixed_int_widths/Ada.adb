@@ -1,9 +1,9 @@
 procedure Check is
-   my_data : A_Val := AMap'(
-       AEntry ("a", AInt (1)),
-       AEntry ("b", AInt (3000000000)),
-       AEntry ("c", AStr ("x"))
-   );
+    my_data : A_Val := AMap'(
+        AEntry ("a", AInt (1)),
+        AEntry ("b", AInt (3000000000)),
+        AEntry ("c", AStr ("x"))
+    );
 begin
-   null;
+    null;
 end Check;

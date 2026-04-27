@@ -1,6 +1,6 @@
 procedure Check is
-   -- note
-   my_data : A_Val := ANull;
+    -- note
+    my_data : A_Val := ANull;
 begin
-   null;
+    null;
 end Check;

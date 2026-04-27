@@ -1,10 +1,10 @@
 procedure Check is
-   my_data : A_Val := ASet'(
-       -- before apple
-       AStr ("apple"),
-       AStr ("banana")  -- banana inline
-       -- trailing
-   );
+    my_data : A_Val := ASet'(
+        -- before apple
+        AStr ("apple"),
+        AStr ("banana")  -- banana inline
+        -- trailing
+    );
 begin
-   null;
+    null;
 end Check;

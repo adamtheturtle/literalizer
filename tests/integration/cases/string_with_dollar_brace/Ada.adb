@@ -1,8 +1,8 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       AStr ("prefix ${HOME} suffix"),
-       AStr ("${interpolated}")
-   );
+    my_data : A_Val := AList'(
+        AStr ("prefix ${HOME} suffix"),
+        AStr ("${interpolated}")
+    );
 begin
-   null;
+    null;
 end Check;

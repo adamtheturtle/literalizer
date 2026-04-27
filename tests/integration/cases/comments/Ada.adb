@@ -1,11 +1,11 @@
 procedure Check is
-   my_data : A_Val := AMap'(
-       -- Server configuration
-       AEntry ("host", AStr ("localhost")),  -- default host
-       AEntry ("port", AInt (8080)),
-       -- Enable debug mode
-       AEntry ("debug", ABool (True))
-   );
+    my_data : A_Val := AMap'(
+        -- Server configuration
+        AEntry ("host", AStr ("localhost")),  -- default host
+        AEntry ("port", AInt (8080)),
+        -- Enable debug mode
+        AEntry ("debug", ABool (True))
+    );
 begin
-   null;
+    null;
 end Check;

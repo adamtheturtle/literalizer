@@ -1,5 +1,5 @@
 procedure Check is
-   my_data : A_Val := AFloat (3.140000);
+    my_data : A_Val := AFloat (3.140000);
 begin
-   null;
+    null;
 end Check;

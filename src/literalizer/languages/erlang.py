@@ -438,16 +438,16 @@ class Erlang(metaclass=LanguageCls):
                 body_preamble=body_preamble,
             )
             erlang_varname = variable_name[0].upper() + variable_name[1:]
-            indented = textwrap.indent(text=body, prefix="    ")
+            indented = textwrap.indent(text=body, prefix=self.indent)
             return (
                 f"-module({self.module_name}).\n"
                 f"-export([x/0]).\n"
                 f"x() ->\n"
                 f"{indented}\n"
-                f"    {erlang_varname}."
+                f"{self.indent}{erlang_varname}."
             )
         trimmed = content.rstrip().removesuffix(",")
-        indented = textwrap.indent(text=trimmed, prefix="    ")
+        indented = textwrap.indent(text=trimmed, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)
         parts.append("x() ->")

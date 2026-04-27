@@ -525,8 +525,8 @@ class FSharp(metaclass=LanguageCls):
         functions.
         """
         del variable_name
-        decl_indented = textwrap.indent(text=declaration, prefix="    ")
-        assign_indented = textwrap.indent(text=assignment, prefix="    ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
         camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         body = f"module {self.module_name}\n\n" + preamble

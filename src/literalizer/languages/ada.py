@@ -332,8 +332,8 @@ class Ada(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -344,11 +344,14 @@ class Ada(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="   ")
-        return f"procedure Check is\n{indented}\nbegin\n   null;\nend Check;"
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        return (
+            f"procedure Check is\n{indented}\n"
+            f"begin\n{self.indent}null;\nend Check;"
+        )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -360,23 +363,23 @@ class Ada(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="   ")
-        assign_indented = textwrap.indent(text=assignment, prefix="   ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         inner = (
             "procedure Check_Declaration is\n"
             f"{decl_indented}\n"
             "begin\n"
-            "   null;\n"
+            f"{self.indent}null;\n"
             "end Check_Declaration;\n"
             "procedure Check_Assignment is\n"
             "begin\n"
             f"{assign_indented}\n"
             "end Check_Assignment;"
         )
-        inner_indented = textwrap.indent(text=inner, prefix="   ")
+        inner_indented = textwrap.indent(text=inner, prefix=self.indent)
         return (
             f"procedure Check is\n{inner_indented}\n"
-            "begin\n   null;\nend Check;"
+            f"begin\n{self.indent}null;\nend Check;"
         )
 
     date_format: DateFormats = DateFormats.ISO

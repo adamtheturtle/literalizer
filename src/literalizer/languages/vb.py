@@ -481,8 +481,8 @@ class VisualBasic(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -505,26 +505,28 @@ class VisualBasic(metaclass=LanguageCls):
             preamble_block = "\n".join(body_preamble)
             preamble_indented = textwrap.indent(
                 text=preamble_block,
-                prefix="    ",
+                prefix=self.indent,
             )
-            content_indented = textwrap.indent(text=content, prefix="        ")
+            content_indented = textwrap.indent(
+                text=content, prefix=self.indent * 2
+            )
             return (
                 "Module Check\n"
                 f"{preamble_indented}\n"
-                "    Sub _calls()\n"
+                f"{self.indent}Sub _calls()\n"
                 f"{content_indented}\n"
-                "    End Sub\n"
+                f"{self.indent}End Sub\n"
                 "End Module"
             )
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return f"Module Check\n{indented}\nEnd Module"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -535,17 +537,21 @@ class VisualBasic(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="        ")
-        assign_indented = textwrap.indent(text=assignment, prefix="        ")
+        decl_indented = textwrap.indent(
+            text=declaration, prefix=self.indent * 2
+        )
+        assign_indented = textwrap.indent(
+            text=assignment, prefix=self.indent * 2
+        )
         return (
             "Module Check\n"
-            "    Sub _declaration()\n"
+            f"{self.indent}Sub _declaration()\n"
             f"{decl_indented}\n"
-            "    End Sub\n"
-            "    Sub _assignment()\n"
-            f"        Dim {variable_name} As Object\n"
+            f"{self.indent}End Sub\n"
+            f"{self.indent}Sub _assignment()\n"
+            f"{self.indent * 2}Dim {variable_name} As Object\n"
             f"{assign_indented}\n"
-            "    End Sub\n"
+            f"{self.indent}End Sub\n"
             "End Module"
         )
 

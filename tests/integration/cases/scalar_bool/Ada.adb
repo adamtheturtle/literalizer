@@ -1,5 +1,5 @@
 procedure Check is
-   my_data : A_Val := ABool (True);
+    my_data : A_Val := ABool (True);
 begin
-   null;
+    null;
 end Check;

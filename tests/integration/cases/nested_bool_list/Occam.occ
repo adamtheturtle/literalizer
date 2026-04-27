@@ -12,10 +12,10 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.bool; FALSE)]),
-      MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.bool; TRUE)])
-  ]):
-  SEQ
-    SKIP
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.bool; FALSE)]),
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.bool; TRUE)])
+    ]):
+    SEQ
+        SKIP
 :

@@ -473,8 +473,8 @@ class Zig(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -484,24 +484,24 @@ class Zig(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         if not variable_name:
             return f"pub fn main() void {{\n{indented}\n}}"
         if "var " in content:
-            use = f"    {variable_name} = .nil;"
+            use = f"{self.indent}{variable_name} = .nil;"
         else:
-            use = f"    _ = {variable_name};"
+            use = f"{self.indent}_ = {variable_name};"
         return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Zig declaration + assignment in a main function."""
-        return Zig.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

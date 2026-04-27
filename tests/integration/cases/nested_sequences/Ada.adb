@@ -1,8 +1,8 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       AList'(AList'(AInt (1), AInt (2)), AList'(AInt (3), AInt (4))),
-       AList'(AList'(AInt (5)))
-   );
+    my_data : A_Val := AList'(
+        AList'(AList'(AInt (1), AInt (2)), AList'(AInt (3), AInt (4))),
+        AList'(AList'(AInt (5)))
+    );
 begin
-   null;
+    null;
 end Check;
