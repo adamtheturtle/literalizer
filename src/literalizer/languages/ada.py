@@ -65,6 +65,12 @@ from literalizer._types import Value
 
 _ADA_EMPTY_LITERAL = "AList'[]"
 
+_ADA_FLOAT_SPECIAL_DECLS = {
+    "pos_inf": "Pos_Inf : constant Long_Float := 1.0 / Zero;",
+    "neg_inf": "Neg_Inf : constant Long_Float := -1.0 / Zero;",
+    "nan": "NaN : constant Long_Float := Zero / Zero;",
+}
+
 
 def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
     """Return which IEEE-special float kinds appear anywhere in *data*.
@@ -669,17 +675,11 @@ class Ada(metaclass=LanguageCls):
             kinds = _ada_special_float_kinds(data=data)
             if not kinds:
                 return ()
-            lines = [
+            return (
                 "pragma Suppress (Division_Check);",
                 "Zero : Long_Float := 0.0;",
                 "pragma Volatile (Zero);",
-            ]
-            if "pos_inf" in kinds:
-                lines.append("Pos_Inf : constant Long_Float := 1.0 / Zero;")
-            if "neg_inf" in kinds:
-                lines.append("Neg_Inf : constant Long_Float := -1.0 / Zero;")
-            if "nan" in kinds:
-                lines.append("NaN : constant Long_Float := Zero / Zero;")
-            return tuple(lines)
+                *(_ADA_FLOAT_SPECIAL_DECLS[kind] for kind in sorted(kinds)),
+            )
 
         return _compute
