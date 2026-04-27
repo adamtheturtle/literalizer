@@ -1,4 +1,4 @@
-sub process {}
+sub process(*@a, *%kw) {}
 my $my_var = [
     1,
     2,

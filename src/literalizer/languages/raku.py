@@ -90,7 +90,7 @@ def _raku_call_stub(
     """
     parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"sub {parts[0]} {{}}",)
+        return (f"sub {parts[0]}(*@a, *%kw) {{}}",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -119,13 +119,13 @@ def _raku_call_stub(
 
 @beartype
 def _raku_format_call_ref_identifier(name: str, /) -> str:
-    """Prepend Raku's scalar ``$`` sigil to a ``$ref`` identifier."""
+    """Prepend the Raku scalar ``$`` sigil to a ``$ref`` identifier."""
     return f"${name}"
 
 
 @beartype
 def _raku_format_call_target(name: str, /) -> str:
-    """Rewrite a dotted call target into Raku's ``$obj.method`` form."""
+    """Rewrite a dotted call target into the Raku ``$obj.method`` form."""
     parts = name.split(sep=".")
     if len(parts) == 1:
         return name
