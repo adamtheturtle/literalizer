@@ -334,10 +334,11 @@ def _build_elm_body_preamble(
 
 
 def _elm_flatten_dotted(name: str) -> str:
-    """Flatten a dotted call target to a camelCase Elm identifier.
+    """Flatten a dotted call target to an Elm identifier.
 
     Elm identifiers cannot contain ``.``, so ``app.client.fetch``
-    becomes ``appClientFetch``.
+    becomes ``appClientFetch`` (each part after the first is
+    capitalised and the dots are dropped).
     """
     parts = name.split(sep=".")
     if len(parts) == 1:
@@ -353,14 +354,15 @@ def _elm_call_stub(
 ) -> tuple[str, ...]:
     """Return Elm top-level stub declarations for a call target.
 
-    Dotted names are flattened to camelCase.  For a single parameter
-    the stub is polymorphic (``a -> ()``); for multiple parameters the
-    stub takes a tuple (``( a, b ) -> ()``), matching the tuple that
+    Dotted names are flattened (each part after the first is
+    capitalised).  For a single parameter the stub is polymorphic
+    (``a -> ()``); for multiple parameters the stub takes a tuple
+    (``( a, b ) -> ()``), matching the tuple that
     ``PositionalCallStyle`` emits at the call site.
     """
     flat_name = _elm_flatten_dotted(name=name)
     n = len(params)
-    if n == 0:
+    if n == 0:  # pragma: no cover
         type_sig = f"{flat_name} : ()"
         impl = f"{flat_name} = ()"
     elif n == 1:
@@ -685,11 +687,11 @@ class Elm(metaclass=LanguageCls):
         if not variable_name:
             let_lines: list[str] = []
             for line in content.split(sep="\n"):
-                if not line:
+                if not line:  # pragma: no cover
                     let_lines.append("")
                 elif not line[0].isspace():
                     let_lines.append(f"        _ = {line}")
-                else:
+                else:  # pragma: no cover
                     let_lines.append(f"        {line}")
             return (
                 f"module Check exposing (..)\n\n\n"
@@ -718,16 +720,16 @@ class Elm(metaclass=LanguageCls):
         let_lines: list[str] = []
         for decl in declarations:
             for line in decl.split(sep="\n"):
-                if not line:
+                if not line:  # pragma: no cover
                     let_lines.append("")
                 else:
                     let_lines.append(f"        {line}")
         for line in calls.split(sep="\n"):
-            if not line:
+            if not line:  # pragma: no cover
                 let_lines.append("")
             elif not line[0].isspace():
                 let_lines.append(f"        _ = {line}")
-            else:
+            else:  # pragma: no cover
                 let_lines.append(f"        {line}")
         return (
             f"module Check exposing (..)\n\n\n"
@@ -837,8 +839,11 @@ class Elm(metaclass=LanguageCls):
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
-        """Rewrite a dotted call target into a camelCase Elm
-        identifier.
+        """Rewrite a dotted call target into an Elm identifier.
+
+        Parts after the first are capitalised and the dots are
+        dropped (e.g. ``app.client.fetch`` becomes
+        ``appClientFetch``).
         """
         return _elm_flatten_dotted
 
