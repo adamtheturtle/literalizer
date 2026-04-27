@@ -138,7 +138,9 @@ def _odin_call_preamble_stub(
     chain = parts[:-1]
     holder = chain[-1]
     holder_type = f"{holder.title()}Type_"
+    helper_name = f"_{holder}_{method}_"
     lines: list[str] = [
+        f"{helper_name} :: proc(args: ..any) -> any {{ return nil }}",
         f"{holder_type} :: struct {{ {method}: proc(..any) -> any }}",
     ]
     prev_type = holder_type
@@ -151,7 +153,12 @@ def _odin_call_preamble_stub(
     root_type = f"{root.title()}Type_"
     if len(chain) > 1:
         lines.append(f"{root_type} :: struct {{ {chain[1]}: {prev_type} }}")
-    lines.append(f"{root}: {root_type}")
+    init_expr = f"{holder_type}{{ {method} = {helper_name} }}"
+    for i in range(len(chain) - 2, -1, -1):
+        outer_type = f"{chain[i].title()}Type_"
+        inner_field = chain[i + 1]
+        init_expr = f"{outer_type}{{ {inner_field} = {init_expr} }}"
+    lines.append(f"{root}: {root_type} = {init_expr}")
     return tuple(lines)
 
 
