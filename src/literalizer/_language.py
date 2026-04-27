@@ -300,11 +300,6 @@ class FloatSpecialsMixin:
     _negative_infinity: str
     _nan: str
 
-    @property
-    def formatter(self) -> Callable[[float], str]:
-        """The finite-float formatter backing this enum member."""
-        return cast("Callable[[float], str]", cast("enum.Enum", self).value)
-
     def __init_subclass__(
         cls,
         *,
@@ -326,7 +321,8 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        return self.formatter(value)
+        formatter: Callable[[float], str] = cast("enum.Enum", self).value
+        return formatter(value)
 
 
 class StubReturn(enum.Enum):
