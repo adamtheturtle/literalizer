@@ -1579,6 +1579,17 @@ def _identity_call_arg(_value: Value, formatted: str) -> str:
     return formatted
 
 
+@beartype
+def _identity_call_statement(statement: str) -> str:
+    """Return *statement* unchanged.
+
+    Default when a language does not define ``format_call_statement``.
+    Languages that require call expressions to be wrapped in a
+    statement form (e.g. SML's ``val _ = expr``) override this.
+    """
+    return statement
+
+
 _CALL_ARG_REF_KEY = "$ref"
 
 
@@ -1939,6 +1950,11 @@ def _render_call_per_element(
         "validate_call_arg",
         None,
     )
+    format_call_statement: Callable[[str], str] = getattr(
+        language,
+        "format_call_statement",
+        _identity_call_statement,
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1964,12 +1980,14 @@ def _render_call_per_element(
             ref_case=ref_case,
         )
         lines.append(
-            _assemble_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
-                statement_terminator=language.statement_terminator,
-                style=style,
+            format_call_statement(
+                _assemble_call(
+                    target_function=target_function,
+                    args_str=args_str,
+                    call_transform=call_transform,
+                    statement_terminator=language.statement_terminator,
+                    style=style,
+                )
             )
         )
     return "\n".join(lines)
@@ -2003,6 +2021,11 @@ def _render_call_whole(
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
+    format_call_statement: Callable[[str], str] = getattr(
+        language,
+        "format_call_statement",
+        _identity_call_statement,
+    )
     args_str = _format_call_args(
         values=[data],
         params=parameter_names,
@@ -2012,12 +2035,14 @@ def _render_call_whole(
         dict_open_overrides=[None],
         ref_case=ref_case,
     )
-    return _assemble_call(
-        target_function=target_function,
-        args_str=args_str,
-        call_transform=call_transform,
-        statement_terminator=language.statement_terminator,
-        style=style,
+    return format_call_statement(
+        _assemble_call(
+            target_function=target_function,
+            args_str=args_str,
+            call_transform=call_transform,
+            statement_terminator=language.statement_terminator,
+            style=style,
+        )
     )
 
 

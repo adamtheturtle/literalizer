@@ -6,8 +6,8 @@ datatype val_t =
   | SStr of string
   | SList of val_t list
 fun process _ = ()
-process("hello")
-process(42)
-process(SBool true)
+val _ = process("hello")
+val _ = process(42)
+val _ = process(SBool true)
 
 end

@@ -11,8 +11,8 @@ fun fetch _ = ()
 end
 end
 fun emit _ = ()
-emit(app.client.fetch("hello"))
-emit(app.client.fetch(42))
-emit(app.client.fetch(SBool true))
+val _ = emit(app.client.fetch("hello"))
+val _ = emit(app.client.fetch(42))
+val _ = emit(app.client.fetch(SBool true))
 
 end

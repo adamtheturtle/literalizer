@@ -3,6 +3,6 @@ structure Check = struct
 datatype val_t =
     SInt of LargeInt.int
 fun process _ = ()
-process(1)
+val _ = process(1)
 
 end

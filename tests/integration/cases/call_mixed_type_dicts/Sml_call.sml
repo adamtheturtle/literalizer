@@ -10,7 +10,7 @@ structure mgr = struct
 fun op _ = ()
 end
 end
-app.mgr.op(SMap [("type", SStr "create"), ("pr_id", SStr "pr_1"), ("draft", SBool true)])
-app.mgr.op(SMap [("type", SStr "create"), ("pr_id", SStr "pr_2")])
+val _ = app.mgr.op(SMap [("type", SStr "create"), ("pr_id", SStr "pr_1"), ("draft", SBool true)])
+val _ = app.mgr.op(SMap [("type", SStr "create"), ("pr_id", SStr "pr_2")])
 
 end

@@ -12,8 +12,8 @@ fun post _ = ()
 end
 end
 end
-obj.api.client.post("hello")
-obj.api.client.post(42)
-obj.api.client.post(SBool true)
+val _ = obj.api.client.post("hello")
+val _ = obj.api.client.post(42)
+val _ = obj.api.client.post(SBool true)
 
 end

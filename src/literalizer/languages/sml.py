@@ -644,6 +644,13 @@ class Sml(metaclass=LanguageCls):
         return no_call_stub
 
     @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Wrap a call expression as a val binding so it is a valid SML
+        declaration inside a structure block.
+        """
+        return lambda statement: f"val _ = {statement}"
+
+    @cached_property
     def format_call_target(self) -> Callable[[str], str]:
         """Rewrite a dotted call target into the language's call
         syntax.

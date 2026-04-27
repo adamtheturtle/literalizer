@@ -9,6 +9,6 @@ val my_var : val_t = SList [
     SInt 2,
     SInt 3
 ]
-process(my_var)
+val _ = process(my_var)
 
 end
