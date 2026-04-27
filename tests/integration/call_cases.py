@@ -22,6 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
+from literalizer.languages import Sml
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages
@@ -303,6 +304,17 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
+# Per-case language exclusions: cases whose target function or parameter
+# names use a reserved keyword in a given language, making a valid lint-
+# passing stub impossible to generate.
+CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
+    # target_function "app.mgr.op" has "op" as the innermost name; "op"
+    # is a reserved word in SML and cannot be used as a fun or val
+    # identifier, so no valid stub can be produced.
+    "call_mixed_type_dicts": frozenset({Sml}),
+}
+
+
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
@@ -322,6 +334,10 @@ def discover_call_cases() -> list[CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
+                continue
+            if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
+                config.case_dir_name, frozenset()
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
