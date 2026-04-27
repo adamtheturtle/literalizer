@@ -1,4 +1,4 @@
-func process(data: Any = 0, count: Any = 0) -> Any { 0 }
+@discardableResult func process(data: Any = 0, count: Any = 0) -> Any { 0 }
 let my_var: Any = [
     1,
     2,

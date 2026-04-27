@@ -231,6 +231,8 @@ def _build_format_variable_assignment(
 class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
+    module_name: str = "Module"
+
     extension = ".f90"
     pygments_name = "fortran"
     supports_default_set_element_type = False
@@ -442,11 +444,10 @@ class Fortran(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Fortran variable declaration in a program."""
@@ -457,19 +458,18 @@ class Fortran(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix="  ")
         return (
-            f"program {module_name}\n"
+            f"program {self.module_name}\n"
             "  use fval_m\n"
             "  implicit none\n"
             f"{indented}\n"
-            f"end program {module_name}"
+            f"end program {self.module_name}"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Fortran declaration + assignment in separate
@@ -482,22 +482,22 @@ class Fortran(metaclass=LanguageCls):
         decl_indented = textwrap.indent(text=declaration, prefix="  ")
         assign_indented = textwrap.indent(text=assignment, prefix="  ")
         return (
-            f"subroutine {module_name}_declaration()\n"
+            f"subroutine {self.module_name}_declaration()\n"
             "  use fval_m\n"
             "  implicit none\n"
             f"{decl_indented}\n"
-            f"end subroutine {module_name}_declaration\n"
+            f"end subroutine {self.module_name}_declaration\n"
             "\n"
-            f"subroutine {module_name}_assignment()\n"
+            f"subroutine {self.module_name}_assignment()\n"
             "  use fval_m\n"
             "  implicit none\n"
             f"  type(fval_t) :: {variable_name}\n"
             f"{assign_indented}\n"
-            f"end subroutine {module_name}_assignment\n"
+            f"end subroutine {self.module_name}_assignment\n"
             "\n"
             "program main\n"
-            f"  call {module_name}_declaration()\n"
-            f"  call {module_name}_assignment()\n"
+            f"  call {self.module_name}_declaration()\n"
+            f"  call {self.module_name}_assignment()\n"
             "end program main"
         )
 

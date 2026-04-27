@@ -351,11 +351,9 @@ class V(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a V declaration in ``fn main()``."""
-        del module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -368,14 +366,12 @@ class V(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap V declaration + assignment in ``fn main()``."""
         return V.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

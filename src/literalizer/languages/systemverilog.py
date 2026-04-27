@@ -144,6 +144,8 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
 
+    module_name: str = "Module"
+
     extension = ".sv"
     pygments_name = "systemverilog"
     supports_default_set_element_type = False
@@ -359,11 +361,10 @@ class SystemVerilog(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a SystemVerilog declaration in a module."""
@@ -373,22 +374,21 @@ class SystemVerilog(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         return (
-            f"module {module_name};\ninitial begin\n{content}\nend\nendmodule"
+            f"module {self.module_name};\n"
+            f"initial begin\n{content}\nend\nendmodule"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap SystemVerilog declaration + assignment in a module."""
-        return SystemVerilog.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

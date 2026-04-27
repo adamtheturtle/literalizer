@@ -63,8 +63,9 @@ FORTRAN = Fortran(
     datetime_format=Fortran.datetime_formats.ISO,
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
+    module_name="check",
 )
-FSHARP = FSharp()
+FSHARP = FSharp(module_name="check")
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -108,7 +109,6 @@ def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -137,7 +137,6 @@ def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -166,7 +165,6 @@ def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -193,7 +191,6 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -246,13 +243,11 @@ def test_identity_wrap_scalar_leaves_formatted_output_unchanged() -> None:
         source=source,
         input_format=InputFormat.JSON,
         language=Python(),
-        module_name="check",
     )
     wrapped = literalize(
         source=source,
         input_format=InputFormat.JSON,
         language=_IdentityWrapPython(),
-        module_name="check",
     )
     assert wrapped.code == base.code
 
@@ -276,7 +271,6 @@ def test_matlab_dict_key_with_quote() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        module_name="check",
     )
     assert result.code == "'hello \"world\"', 1"
 
@@ -306,7 +300,6 @@ def test_cobol_level_number_cap() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     expected = (
         "\n"
@@ -336,7 +329,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         pre_indent_level=1,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     for line in result.code.splitlines():
         stripped = line.strip()
@@ -355,7 +347,6 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         pre_indent_level=0,
         variable_form=NewVariable(name="cfg"),
         include_delimiters=True,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -379,7 +370,6 @@ def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -411,7 +401,6 @@ def test_java_list_rejects_null_elements() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
-            module_name="check",
         )
 
 
@@ -533,7 +522,6 @@ def test_python_no_any_import_when_all_defaults_overridden() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
-        module_name="check",
     )
     assert result.code == "my_data: dict[str, str] = {}"
     assert not result.preamble
@@ -553,7 +541,6 @@ def test_literalize_call_wrap_in_file_emits_stubs() -> None:
         target_function="process",
         parameter_names=["a", "b"],
         wrap_in_file=True,
-        module_name="check",
     )
     expected_go = textwrap.dedent(
         text="""\
@@ -577,7 +564,6 @@ def test_literalize_call_wrap_in_file_emits_stubs() -> None:
         target_function="process",
         parameter_names=["a", "b"],
         wrap_in_file=True,
-        module_name="check",
     )
     expected_py = textwrap.dedent(
         text="""\
@@ -600,7 +586,6 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
         parameter_names=["a", "b"],
         call_transform=lambda c: f"emit({c})",
         wrap_in_file=True,
-        module_name="check",
     )
     # ``process`` still gets a value-returning stub; ``emit`` is out of
     # scope here — callers that use ``call_transform`` are responsible
@@ -642,7 +627,6 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
             input_format=InputFormat.JSON,
             language=Python(),
             variable_form=BothVariableForms(name="x"),
-            module_name="check",
         )
 
 
@@ -664,7 +648,6 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
             language=Yaml(),
             variable_form=BothVariableForms(name="x"),
             wrap_in_file=True,
-            module_name="check",
         )
 
 
@@ -684,11 +667,10 @@ def test_wrap_combined_in_file_unsupported_raises(
     method itself must still satisfy the :class:`Language` protocol.
     """
     with pytest.raises(expected_exception=NotImplementedError):
-        language_cls.wrap_combined_in_file(
+        language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",
             variable_name="x",
-            module_name="check",
             body_preamble=(),
         )
 
@@ -706,7 +688,6 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             per_element=True,
-            module_name="check",
         )
 
 
@@ -722,7 +703,6 @@ def test_literalize_call_parameter_count_too_few_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["a"],
-            module_name="check",
         )
 
 
@@ -738,7 +718,6 @@ def test_literalize_call_parameter_count_too_many_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["a", "b", "c"],
-            module_name="check",
         )
 
 
@@ -756,7 +735,6 @@ def test_literalize_call_parameter_count_mismatch_object_style() -> None:
             language=JavaScript(),
             target_function="process",
             parameter_names=["a", "b"],
-            module_name="check",
         )
 
 
@@ -774,7 +752,6 @@ def test_literalize_call_parameter_count_mismatch_prefix_style() -> None:
             language=Racket(),
             target_function="process",
             parameter_names=["a", "b"],
-            module_name="check",
         )
 
 
@@ -792,7 +769,6 @@ def test_literalize_call_parameter_count_mismatch_later_row() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["a", "b"],
-            module_name="check",
         )
 
 
@@ -810,7 +786,6 @@ def test_literalize_call_language_without_calls_raises() -> None:
             language=Yaml(),
             target_function="f",
             parameter_names=["a", "b"],
-            module_name="check",
         )
 
 
@@ -829,7 +804,6 @@ def test_literalize_call_language_without_calls_per_element_false() -> None:
             target_function="f",
             parameter_names=["data"],
             per_element=False,
-            module_name="check",
         )
 
 
@@ -851,7 +825,6 @@ def test_literalize_call_tool_unsupported_language_raises() -> None:
             language=COBOL,
             target_function="f",
             parameter_names=["a", "b"],
-            module_name="check",
         )
 
 
@@ -873,7 +846,6 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
             target_function="f",
             parameter_names=["data"],
             per_element=False,
-            module_name="check",
         )
 
 
@@ -896,7 +868,6 @@ def test_literalize_call_bash_rejects_list_arg() -> None:
             language=Bash(),
             target_function="cmd",
             parameter_names=["items"],
-            module_name="check",
         )
 
 
@@ -918,7 +889,6 @@ def test_literalize_call_bash_rejects_dict_arg() -> None:
             language=Bash(),
             target_function="cmd",
             parameter_names=["m"],
-            module_name="check",
         )
 
 
@@ -938,7 +908,6 @@ def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
             target_function="cmd",
             parameter_names=["items"],
             per_element=False,
-            module_name="check",
         )
 
 
@@ -952,7 +921,6 @@ def test_literalize_call_arg_ref_all_refs() -> None:
         language=Go(),
         target_function="combine",
         parameter_names=["x", "y"],
-        module_name="check",
     )
     assert result.code == "combine(a, b);"
 
@@ -968,7 +936,6 @@ def test_literalize_call_arg_ref_top_level_element() -> None:
         language=Go(),
         target_function="run",
         parameter_names=["x"],
-        module_name="check",
     )
     assert result.code == "run(a);\nrun(b);"
 
@@ -984,7 +951,6 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
         target_function="publish",
         parameter_names=["body"],
         per_element=False,
-        module_name="check",
     )
     assert result.code == "publish(body=payload)"
 
@@ -1000,7 +966,6 @@ def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
         language=Python(),
         target_function="process",
         parameter_names=["data"],
-        module_name="check",
     )
     assert two_key.code == 'process(data={"$ref": "x", "extra": 1})'
     non_string_ref = literalize_call(
@@ -1009,7 +974,6 @@ def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
         language=Python(),
         target_function="process",
         parameter_names=["data"],
-        module_name="check",
     )
     assert non_string_ref.code == 'process(data={"$ref": 42})'
 
@@ -1026,7 +990,6 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
             language=Python(),
             target_function="f",
             parameter_names=["only"],
-            module_name="check",
         )
 
 
@@ -1043,5 +1006,4 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
             target_function="process",
             parameter_names=["data", "count"],
             ref_case=IdentifierCase.CAMEL,
-            module_name="check",
         )

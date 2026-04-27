@@ -90,7 +90,6 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
@@ -106,7 +105,6 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        module_name="check",
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
@@ -127,7 +125,6 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
-        module_name="check",
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
@@ -163,7 +160,6 @@ def test_roundtrip_yaml_binary_python(data: bytes) -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        module_name="check",
     )
     code = result.code.rstrip(",")
     assert ast.literal_eval(node_or_string=code) == data.hex()
@@ -235,7 +231,6 @@ def test_roundtrip_yaml_binary_hex_languages(
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        module_name="check",
     )
     code = result.code.rstrip(",")
     assert bytes.fromhex(code.strip('"')) == data
@@ -253,7 +248,6 @@ def test_roundtrip_yaml_binary_erlang(data: bytes) -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
-        module_name="check",
     )
     code = result.code.rstrip(",")
     if not data:

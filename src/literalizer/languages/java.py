@@ -560,6 +560,8 @@ class Java(metaclass=LanguageCls):
               e.g. ``List.of(1, 2, 3)``.
     """
 
+    module_name: str = "Module"
+
     extension = ".java"
     pygments_name = "java"
     supports_default_set_element_type = False
@@ -968,22 +970,21 @@ class Java(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Java declaration in a ``class`` scope named after
-        *module_name*.
+        the configured module name.
 
         When *content* starts with a class-field modifier keyword
         (``public``, ``private``, ``protected``, ``static``) the
         declaration is placed at class-field scope, which is the only
         context where those modifiers are valid.  Otherwise the
         declaration goes inside a ``public static void`` method named
-        after *module_name* so that local-only forms like
+        after the configured module name so that local-only forms like
         ``var x = 42;`` compile.
         """
         del variable_name
@@ -1007,7 +1008,7 @@ class Java(metaclass=LanguageCls):
             line for line in body_preamble if not line.startswith("static ")
         )
         class_block = "\n".join(class_lines) + "\n" if class_lines else ""
-        class_name = module_name[:1].upper() + module_name[1:]
+        class_name = self.module_name[:1].upper() + self.module_name[1:]
         if is_class_field:
             field_preamble = (
                 "\n".join(method_lines) + "\n" if method_lines else ""
@@ -1023,25 +1024,23 @@ class Java(metaclass=LanguageCls):
         return (
             f"class {class_name} {{\n"
             f"{class_block}"
-            f"    public static void {module_name}() {{\n"
+            f"    public static void {self.module_name}() {{\n"
             f"{content}\n"
             "    }\n"
             "}"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Java declaration + assignment in a static method."""
-        return Java.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

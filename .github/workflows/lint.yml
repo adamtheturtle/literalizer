@@ -767,11 +767,11 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          swiftc -typecheck "$tmpdir/check.swift" || exit 1
+          swiftc -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 swift -warnings-as-errors < /tmp/files-to-lint
 
   lint-ocaml:
     runs-on: ubuntu-latest

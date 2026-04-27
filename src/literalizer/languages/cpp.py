@@ -854,6 +854,8 @@ class Cpp(metaclass=LanguageCls):
               e.g. ``"2024-01-15T12:30:00"``.
     """
 
+    module_name: str = "Module"
+
     extension = ".cpp"
     pygments_name = "cpp"
     supports_default_set_element_type = False
@@ -1205,11 +1207,10 @@ class Cpp(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a C++ declaration in a function body."""
@@ -1218,14 +1219,13 @@ class Cpp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"void {module_name}_() {{\n{content}{use_line}\n}}"
+        return f"void {self.module_name}_() {{\n{content}{use_line}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap C++ declaration + assignment in a function body.
@@ -1235,10 +1235,9 @@ class Cpp(metaclass=LanguageCls):
         clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
         """
         mid_use = f"(void){variable_name};\n"
-        return Cpp.wrap_in_file(
+        return self.wrap_in_file(
             content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
-            module_name=module_name,
             body_preamble=body_preamble,
         )
 

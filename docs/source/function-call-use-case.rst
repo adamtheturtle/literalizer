@@ -46,7 +46,6 @@ parameters (``user_id`` and ``ts``) and wrap each call in ``print()``:
        target_function="throttler.check",
        parameter_names=["user_id", "ts"],
        call_transform=lambda c: f"print({c})",
-       module_name="check",
    )
 
    assert result.code == textwrap.dedent(
@@ -180,7 +179,6 @@ emitting the file:
        input_format=InputFormat.JSON,
        language=language,
        variable_form=NewVariable(name="myList"),
-       module_name="check",
    )
    call = literalize_call(
        source='[[{"$ref": "myList"}, 42]]',
@@ -188,7 +186,6 @@ emitting the file:
        language=language,
        target_function="process",
        parameter_names=["data", "count"],
-       module_name="check",
    )
 
    seen: set[str] = set()

@@ -714,11 +714,10 @@ class PureScript(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a PureScript value declaration in a module."""
-        del variable_name, module_name
+        del variable_name
         preamble = "\n".join(body_preamble)
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
@@ -727,13 +726,12 @@ class PureScript(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
-        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble, module_name
+        del declaration, assignment, variable_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO
