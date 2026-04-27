@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, assert_never, cast, runtime_checkable
+from typing import Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -285,6 +285,7 @@ class FloatSpecialsMixin:
     _positive_infinity: str
     _negative_infinity: str
     _nan: str
+    _formatter: Callable[[float], str]
 
     def __init_subclass__(
         cls,
@@ -299,6 +300,10 @@ class FloatSpecialsMixin:
         cls._negative_infinity = negative_infinity
         cls._nan = nan
 
+    def __init__(self, formatter: Callable[[float], str], /) -> None:
+        """Capture the per-member formatter from the enum value."""
+        self._formatter = formatter
+
     def __call__(self, value: float, /) -> str:
         """Format a float, handling inf and nan."""
         if math.isinf(value):
@@ -307,8 +312,7 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        formatter: Callable[[float], str] = cast("enum.Enum", self).value
-        return formatter(value)
+        return self._formatter(value)
 
 
 class StubReturn(enum.Enum):
