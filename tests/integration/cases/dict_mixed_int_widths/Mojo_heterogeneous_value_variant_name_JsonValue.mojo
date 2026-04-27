@@ -1,0 +1,9 @@
+from std.utils.variant import Variant
+comptime JsonValue = Variant[Int, String]
+def main():
+    var my_data = {
+        "a": JsonValue(1),
+        "b": JsonValue(3000000000),
+        "c": JsonValue(String("x")),
+    }
+    _ = my_data
