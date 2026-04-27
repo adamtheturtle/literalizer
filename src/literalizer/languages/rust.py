@@ -69,6 +69,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -1404,6 +1405,8 @@ class Rust(metaclass=LanguageCls):
                 f"Use ARRAY or TUPLE instead."
             )
             raise IncompatibleFormatsError(msg)
+
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
