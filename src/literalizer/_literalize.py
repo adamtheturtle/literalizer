@@ -241,7 +241,12 @@ def _build_dict_entry(
 
 
 @beartype
-def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
+def _format_set_value(
+    *,
+    value: set[Scalar],
+    spec: Language,
+    wrap_ids: frozenset[int],
+) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
@@ -249,9 +254,19 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
+    parent_id = id(value)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
-        spec.format_set_entry(v, item)
+        spec.format_set_entry(
+            v,
+            _maybe_wrap_child(
+                parent_id=parent_id,
+                wrap_ids=wrap_ids,
+                raw_value=v,
+                formatted_value=item,
+                spec=spec,
+            ),
+        )
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
     joined = spec.element_separator.join(entries)
@@ -773,11 +788,13 @@ def _format_list_value(
     # When a parent has widened this position's opener, skip the
     # default ``empty_sequence`` literal so the empty list still
     # renders with the widened opener and stays type-consistent with
-    # its non-empty siblings.
+    # its non-empty siblings.  However, if this list is in wrap_ids,
+    # it must use the typed empty literal (e.g. ``[]TYPE{}``) regardless
+    # of any sibling opener, so that the element type is preserved.
     if (
         not value
         and sequence_cfg.empty_sequence is not None
-        and sequence_open_override is None
+        and (sequence_open_override is None or id(value) in wrap_ids)
     ):
         return sequence_cfg.empty_sequence
     dict_open_override = _compute_sequence_dict_override(
@@ -872,7 +889,7 @@ def _format_value(
                 wrap_ids=wrap_ids,
             )
         case set():
-            return _format_set_value(value=value, spec=spec)
+            return _format_set_value(value=value, spec=spec, wrap_ids=wrap_ids)
         case list():
             return _format_list_value(
                 value=value,
@@ -1020,15 +1037,22 @@ def _format_collection_lines(
                 set_data,
                 key=lambda v: (type(v).__name__, repr(v)),
             )
+            set_parent_id = id(set_data)
             formatted_entries = [
                 spec.format_set_entry(
                     item,
-                    _format_value(
-                        value=item,
-                        spec=spec,
-                        dict_open_override=None,
+                    _maybe_wrap_child(
+                        parent_id=set_parent_id,
                         wrap_ids=wrap_ids,
-                        sequence_open_override=None,
+                        raw_value=item,
+                        formatted_value=_format_value(
+                            value=item,
+                            spec=spec,
+                            dict_open_override=None,
+                            wrap_ids=wrap_ids,
+                            sequence_open_override=None,
+                        ),
+                        spec=spec,
                     ),
                 )
                 for item in sorted_items

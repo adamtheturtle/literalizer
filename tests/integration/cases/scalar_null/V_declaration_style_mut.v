@@ -1,5 +1,5 @@
 
 fn main() {
-	mut my_data := none
+	mut my_data := unsafe { nil }
 	_ = my_data
 }
