@@ -1,4 +1,6 @@
 require "set"
+module Check
+extend self
 my_data = Set{
     true,
     42,
@@ -9,3 +11,4 @@ my_data = Set{
     42,
     "apple",
 }
+end

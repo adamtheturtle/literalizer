@@ -1,4 +1,6 @@
 require "set"
+module Check
+extend self
 my_data = Set{
     # before apple
     "apple",
@@ -11,3 +13,4 @@ my_data = Set{
     "banana",  # banana inline
     # trailing
 }
+end
