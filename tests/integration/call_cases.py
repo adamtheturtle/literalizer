@@ -505,12 +505,23 @@ def run_call_golden_case(
                 StubReturn.VOID,
             ),
         )
-    decl_body_preambles = tuple(
-        line for d in decl_results for line in d.body_preamble
-    )
     decl_preambles = tuple(line for d in decl_results for line in d.preamble)
+    # Recompute the body preamble across the union of types observed in
+    # every declaration *and* the call.  Concatenating each piece's
+    # already-rendered body preamble would emit overlapping
+    # type-definition strings (e.g. Haskell's ``data Val = ...`` with
+    # different constructor sets) that no string-level dedupe can
+    # reconcile.  ``data`` only matters for datetime-precision
+    # inspection, which the present ref-declaration cases do not
+    # exercise; pass an empty list as a placeholder.
+    empty_types: frozenset[type] = frozenset()
+    union_types = empty_types.union(
+        *(d.types_present for d in decl_results),
+        result.types_present,
+    )
+    unified_body_preamble = spec.compute_body_preamble(union_types, [])
     call_body_preamble = _dedupe_ordered(
-        lines=decl_body_preambles + result.body_preamble + tuple(body_stubs)
+        lines=unified_body_preamble + tuple(body_stubs)
     )
     content = "\n".join(
         [d.bare_code for d in decl_results] + [result.bare_code]

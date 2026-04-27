@@ -85,61 +85,6 @@ def _haskell_call_preamble_stub(
 _HASKELL_TOP_LEVEL_BINDING = re.compile(pattern=r"^[A-Za-z_][\w']*\s*(::|=)")
 
 
-@beartype
-def _haskell_type_intro_key(*, header_line: str) -> str | None:
-    """Return the declared-name prefix for a Haskell type-introducing
-    line, or ``None`` when *header_line* does not introduce a type.
-
-    Matches ``data Foo = ...``, ``newtype Foo = ...``,
-    ``type Foo = ...``, and ``instance Cls Foo where ...``; returns
-    the part of the line before the ``=`` or ``where`` separator.
-    """
-    match header_line.split(maxsplit=1):
-        case ["data" | "newtype" | "type" | "instance", _]:
-            for separator in (" = ", " where"):
-                separator_index = header_line.find(separator)
-                if separator_index != -1:
-                    return header_line[:separator_index].strip()
-            return header_line.strip()
-        case _:
-            return None
-
-
-@beartype
-def _haskell_body_preamble_key(*, block: str) -> str:
-    """Return a dedupe key for a Haskell body-preamble *block*.
-
-    Two ``data Val = ...`` blocks (or any pair sharing one of the
-    type-introducer keywords and the same declared name) collapse to
-    a single block — callers that combine body preambles from
-    independent ``literalize`` invocations may otherwise emit the
-    same type twice with different constructor sets.  Type
-    signatures (``name :: Type``) and bindings (``name = value``)
-    keep distinct keys so both halves of a Haskell declaration
-    survive.
-    """
-    header_line = block.splitlines()[0] if block else ""
-    type_key = _haskell_type_intro_key(header_line=header_line)
-    return type_key if type_key is not None else block
-
-
-@beartype
-def _dedupe_haskell_body_preamble(
-    *,
-    body_preamble: tuple[str, ...],
-) -> tuple[str, ...]:
-    """Drop later body-preamble blocks that re-declare an earlier type."""
-    seen_keys: set[str] = set()
-    deduped: list[str] = []
-    for block in body_preamble:
-        key = _haskell_body_preamble_key(block=block)
-        if key in seen_keys:
-            continue
-        seen_keys.add(key)
-        deduped.append(block)
-    return tuple(deduped)
-
-
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _HaskellContentSplit:
     """Result of splitting wrapped content into declaration and call
@@ -1289,9 +1234,6 @@ class Haskell(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
-        body_preamble = _dedupe_haskell_body_preamble(
-            body_preamble=body_preamble,
-        )
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module

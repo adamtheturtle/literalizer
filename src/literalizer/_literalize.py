@@ -81,6 +81,16 @@ class LiteralizeResult:
     :attr:`declaration_code`.
     """
 
+    types_present: frozenset[type] = frozenset()
+    """The set of Python types observed in the source data (e.g.
+    ``int``, ``str``, ``list``, ``dict``).  Callers that combine
+    multiple ``literalize`` results (for example, a test harness that
+    pairs ``$ref`` declarations with a downstream call) can union
+    these and re-invoke :attr:`Language.compute_body_preamble` to
+    derive a single body preamble that covers every type referenced
+    across the combined output.
+    """
+
     @property
     def code(self) -> str:
         """The formatted literal text.
@@ -1378,6 +1388,7 @@ def _literalize_apply_form(
             declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
+            types_present=computed.types_present,
         )
 
     return LiteralizeResult(
@@ -1385,6 +1396,7 @@ def _literalize_apply_form(
         preamble=preamble,
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
+        types_present=computed.types_present,
     )
 
 
@@ -1437,6 +1449,7 @@ def _literalize_both_forms(
         declaration_code=wrapped,
         preamble=(),
         body_preamble=(),
+        types_present=declaration.types_present,
     )
 
 
@@ -2162,10 +2175,12 @@ def literalize_call(
             declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
+            types_present=computed.types_present,
         )
 
     return LiteralizeResult(
         declaration_code=result,
         preamble=preamble,
         body_preamble=computed.body,
+        types_present=computed.types_present,
     )

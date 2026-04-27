@@ -144,6 +144,7 @@ class _PreambleResult:
 
     header: tuple[str, ...]
     body: tuple[str, ...]
+    types_present: frozenset[type]
 
 
 @beartype
@@ -187,4 +188,5 @@ def compute_preamble(
         )
         + tuple(language.static_body_preamble),
         body=body,
+        types_present=types,
     )
