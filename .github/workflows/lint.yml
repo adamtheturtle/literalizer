@@ -92,33 +92,6 @@ jobs:
           find tests/integration/cases -name '*.java' -print0 > /tmp/files-java
           xargs -0 java CheckJavaSyntax.java < /tmp/files-java
 
-      # Fixtures define `void check_(void)` with no main, so compile each
-      # alongside `.github/scripts/c_main.c` which invokes it. Compile
-      # `c_main.c` once up front so each fixture link reuses the object
-      # instead of re-parsing the same TU. Fixtures forward-declare a
-      # handful of host helpers (`emit`, `process`) without defining
-      # them; rewrite each forward declaration to a static empty stub
-      # so the link succeeds and the fixture body still executes. The
-      # build-and-run step also surfaces any syntax errors, so a separate
-      # `-fsyntax-only` pass would be redundant.
-      - name: Build c_main object
-        run: clang -std=c11 -c .github/scripts/c_main.c -o /tmp/c_main.o
-      - name: Run C files
-        run: |-
-          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c
-          cat > /tmp/run-c.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          sed -e 's/^void emit(CVal);$/static void emit(CVal _x) { (void)_x; }/' \
-              -e 's/^void process(CVal);$/static void process(CVal _x) { (void)_x; }/' \
-              -e 's/^void process(CVal, CVal);$/static void process(CVal _x, CVal _y) { (void)_x; (void)_y; }/' \
-              -e 's/^CVal process(CVal);$/static CVal process(CVal _x) { (void)_x; return (CVal){0}; }/' \
-              "$1" > "$tmpdir/check.c"
-          clang -std=c11 "$tmpdir/check.c" /tmp/c_main.o -o "$tmpdir/run" || exit 1
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
-
       - name: Lint Php
         run: |-
           find tests/integration/cases -name '*.php' -print0 > /tmp/files-php
@@ -678,6 +651,41 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
+
+  lint-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
+      # Fixtures define `void check_(void)` with no main, so compile each
+      # alongside `.github/scripts/c_main.c` which invokes it. Compile
+      # `c_main.c` once up front so each fixture link reuses the object
+      # instead of re-parsing the same TU. Fixtures forward-declare a
+      # handful of host helpers (`emit`, `process`) without defining
+      # them; rewrite each forward declaration to a static empty stub
+      # so the link succeeds and the fixture body still executes. The
+      # build-and-run step also surfaces any syntax errors, so a separate
+      # `-fsyntax-only` pass would be redundant.
+      - name: Build c_main object
+        run: clang -std=c11 -c .github/scripts/c_main.c -o /tmp/c_main.o
+      - name: Run C files
+        run: |-
+          cat > /tmp/run-c.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          sed -e 's/^void emit(CVal);$/static void emit(CVal _x) { (void)_x; }/' \
+              -e 's/^void process(CVal);$/static void process(CVal _x) { (void)_x; }/' \
+              -e 's/^void process(CVal, CVal);$/static void process(CVal _x, CVal _y) { (void)_x; (void)_y; }/' \
+              -e 's/^CVal process(CVal);$/static CVal process(CVal _x) { (void)_x; return (CVal){0}; }/' \
+              "$1" > "$tmpdir/check.c"
+          clang -std=c11 "$tmpdir/check.c" /tmp/c_main.o -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -1376,6 +1384,7 @@ jobs:
       - lint-jvm-mini
       - lint-haskell-family
       - lint-clang-tidy
+      - lint-c
       - lint-cobol
       - lint-cpp
       - lint-kotlin
