@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- Java sets and dicts no longer emit a trailing comma when
+  ``trailing_comma=TrailingCommas.YES`` is requested.  ``Set.of(...)``
+  and ``Map.ofEntries(...)`` are method calls and the previous output
+  was rejected by ``javac``.  ``SetFormatConfig`` and
+  ``DictFormatConfig`` gain a ``supports_trailing_comma`` field
+  (defaults to ``True``) mirroring ``SequenceFormatConfig``; formats
+  built around method-call syntax can opt out.
 - Added ``CallStyleEnum`` as the base class for per-language
   ``CallStyles`` enums.  Its :attr:`config` accessor returns the
   enum member's value typed as the :data:`CallStyle` union, removing

@@ -463,6 +463,7 @@ class CSharp(metaclass=LanguageCls):
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
         SORTED_SET = enum.member(
@@ -473,6 +474,7 @@ class CSharp(metaclass=LanguageCls):
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="new SortedSet<{type_name}> {{",
                 supports_heterogeneity=False,
+                supports_trailing_comma=True,
             )
         )
 
@@ -989,6 +991,7 @@ class CSharp(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

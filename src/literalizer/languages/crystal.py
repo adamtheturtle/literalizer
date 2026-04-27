@@ -245,6 +245,7 @@ class Crystal(metaclass=LanguageCls):
                 preamble_lines=('require "set"',),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -289,6 +290,7 @@ class Crystal(metaclass=LanguageCls):
                 empty_template="{{}} of {key_type} => {type}",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 

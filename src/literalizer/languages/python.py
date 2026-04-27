@@ -630,6 +630,7 @@ class Python(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
         FROZENSET = SetFormatConfig(
             set_open=fixed_open(open_str="frozenset({"),
@@ -638,6 +639,7 @@ class Python(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
         @property
@@ -1055,6 +1057,7 @@ class Python(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

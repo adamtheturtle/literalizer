@@ -335,6 +335,7 @@ class Scala(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="TreeSet("),
@@ -343,6 +344,7 @@ class Scala(metaclass=LanguageCls):
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
             supports_heterogeneity=False,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -730,6 +732,7 @@ class Scala(metaclass=LanguageCls):
                 fallback=dict_spec.fallback,
             ),
             narrowed_open=None,
+            supports_trailing_comma=True,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" -> ",

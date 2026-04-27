@@ -193,6 +193,7 @@ class JavaScript(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -268,6 +269,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
         MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new Map(["),
@@ -279,6 +281,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_dict="new Map()",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     class EmptyDictKey(enum.Enum):

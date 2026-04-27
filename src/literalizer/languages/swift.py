@@ -409,6 +409,7 @@ class Swift(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -463,6 +464,7 @@ class Swift(metaclass=LanguageCls):
                 empty_template="[{key_type}: {type}]()",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
