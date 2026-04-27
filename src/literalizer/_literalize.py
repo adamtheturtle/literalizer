@@ -241,7 +241,12 @@ def _build_dict_entry(
 
 
 @beartype
-def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
+def _format_set_value(
+    *,
+    value: set[Scalar],
+    spec: Language,
+    wrap_ids: frozenset[int],
+) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
@@ -249,9 +254,19 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
+    parent_id = id(value)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
-        spec.format_set_entry(v, item)
+        spec.format_set_entry(
+            v,
+            _maybe_wrap_child(
+                parent_id=parent_id,
+                wrap_ids=wrap_ids,
+                raw_value=v,
+                formatted_value=item,
+                spec=spec,
+            ),
+        )
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
     joined = spec.element_separator.join(entries)
@@ -773,11 +788,13 @@ def _format_list_value(
     # When a parent has widened this position's opener, skip the
     # default ``empty_sequence`` literal so the empty list still
     # renders with the widened opener and stays type-consistent with
-    # its non-empty siblings.
+    # its non-empty siblings.  However, if this list is in wrap_ids,
+    # it must use the typed empty literal (e.g. ``[]TYPE{}``) regardless
+    # of any sibling opener, so that the element type is preserved.
     if (
         not value
         and sequence_cfg.empty_sequence is not None
-        and sequence_open_override is None
+        and (sequence_open_override is None or id(value) in wrap_ids)
     ):
         return sequence_cfg.empty_sequence
     dict_open_override = _compute_sequence_dict_override(
@@ -872,7 +889,7 @@ def _format_value(
                 wrap_ids=wrap_ids,
             )
         case set():
-            return _format_set_value(value=value, spec=spec)
+            return _format_set_value(value=value, spec=spec, wrap_ids=wrap_ids)
         case list():
             return _format_list_value(
                 value=value,
@@ -1020,15 +1037,22 @@ def _format_collection_lines(
                 set_data,
                 key=lambda v: (type(v).__name__, repr(v)),
             )
+            set_parent_id = id(set_data)
             formatted_entries = [
                 spec.format_set_entry(
                     item,
-                    _format_value(
-                        value=item,
-                        spec=spec,
-                        dict_open_override=None,
+                    _maybe_wrap_child(
+                        parent_id=set_parent_id,
                         wrap_ids=wrap_ids,
-                        sequence_open_override=None,
+                        raw_value=item,
+                        formatted_value=_format_value(
+                            value=item,
+                            spec=spec,
+                            dict_open_override=None,
+                            wrap_ids=wrap_ids,
+                            sequence_open_override=None,
+                        ),
+                        spec=spec,
                     ),
                 )
                 for item in sorted_items
@@ -1579,6 +1603,17 @@ def _identity_call_arg(_value: Value, formatted: str) -> str:
     return formatted
 
 
+@beartype
+def _identity_call_statement(statement: str) -> str:
+    """Return *statement* unchanged.
+
+    Default when a language does not define ``format_call_statement``.
+    Languages that require call expressions to be wrapped in a
+    statement form (e.g. SML's ``val _ = expr``) override this.
+    """
+    return statement
+
+
 _CALL_ARG_REF_KEY = "$ref"
 
 
@@ -1939,6 +1974,11 @@ def _render_call_per_element(
         "validate_call_arg",
         None,
     )
+    format_call_statement: Callable[[str], str] = getattr(
+        language,
+        "format_call_statement",
+        _identity_call_statement,
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1964,12 +2004,14 @@ def _render_call_per_element(
             ref_case=ref_case,
         )
         lines.append(
-            _assemble_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
-                statement_terminator=language.statement_terminator,
-                style=style,
+            format_call_statement(
+                _assemble_call(
+                    target_function=target_function,
+                    args_str=args_str,
+                    call_transform=call_transform,
+                    statement_terminator=language.statement_terminator,
+                    style=style,
+                )
             )
         )
     return "\n".join(lines)
@@ -2003,6 +2045,11 @@ def _render_call_whole(
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
+    format_call_statement: Callable[[str], str] = getattr(
+        language,
+        "format_call_statement",
+        _identity_call_statement,
+    )
     args_str = _format_call_args(
         values=[data],
         params=parameter_names,
@@ -2012,12 +2059,14 @@ def _render_call_whole(
         dict_open_overrides=[None],
         ref_case=ref_case,
     )
-    return _assemble_call(
-        target_function=target_function,
-        args_str=args_str,
-        call_transform=call_transform,
-        statement_terminator=language.statement_terminator,
-        style=style,
+    return format_call_statement(
+        _assemble_call(
+            target_function=target_function,
+            args_str=args_str,
+            call_transform=call_transform,
+            statement_terminator=language.statement_terminator,
+            style=style,
+        )
     )
 
 

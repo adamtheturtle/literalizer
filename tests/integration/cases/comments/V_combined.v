@@ -1,18 +1,19 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := {
 		// Server configuration
-		'host': 'localhost',  // default host
-		'port': 8080,
+		'host': IVal('localhost'),  // default host
+		'port': IVal(8080),
 		// Enable debug mode
-		'debug': true,
+		'debug': IVal(true),
 	}
 	my_data = {
 		// Server configuration
-		'host': 'localhost',  // default host
-		'port': 8080,
+		'host': IVal('localhost'),  // default host
+		'port': IVal(8080),
 		// Enable debug mode
-		'debug': true,
+		'debug': IVal(true),
 	}
 	_ = my_data
 }
