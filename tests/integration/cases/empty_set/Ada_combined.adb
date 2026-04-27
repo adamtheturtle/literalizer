@@ -1,13 +1,6 @@
+with A_Stub; use A_Stub;
 procedure Check is
-    procedure Check_Declaration is
-        my_data : A_Val := ASet'(1 .. 0 => ANull);
-    begin
-        null;
-    end Check_Declaration;
-    procedure Check_Assignment is
-    begin
-        my_data := ASet'(1 .. 0 => ANull);
-    end Check_Assignment;
+    my_data : A_Val := ASet'[];
 begin
-    null;
+    my_data := ASet'[];
 end Check;

@@ -313,6 +313,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-ada
+      - name: Run Ada files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_ada.py < /tmp/files-ada
 
       - name: Lint Occam
         run: |-
