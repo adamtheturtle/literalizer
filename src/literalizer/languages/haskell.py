@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -79,6 +80,107 @@ def _haskell_call_preamble_stub(
     if "." in name:
         return ("{-# LANGUAGE OverloadedRecordDot #-}",)
     return ()
+
+
+_HASKELL_TOP_LEVEL_BINDING = re.compile(pattern=r"^[A-Za-z_][\w']*\s*(::|=)")
+
+
+@beartype
+def _haskell_type_intro_key(*, header_line: str) -> str | None:
+    """Return the declared-name prefix for a Haskell type-introducing
+    line, or ``None`` when *header_line* does not introduce a type.
+
+    Matches ``data Foo = ...``, ``newtype Foo = ...``,
+    ``type Foo = ...``, and ``instance Cls Foo where ...``; returns
+    the part of the line before the ``=`` or ``where`` separator.
+    """
+    match header_line.split(maxsplit=1):
+        case ["data" | "newtype" | "type" | "instance", _]:
+            for separator in (" = ", " where"):
+                separator_index = header_line.find(separator)
+                if separator_index != -1:
+                    return header_line[:separator_index].strip()
+            return header_line.strip()
+        case _:
+            return None
+
+
+@beartype
+def _haskell_body_preamble_key(*, block: str) -> str:
+    """Return a dedupe key for a Haskell body-preamble *block*.
+
+    Two ``data Val = ...`` blocks (or any pair sharing one of the
+    type-introducer keywords and the same declared name) collapse to
+    a single block — callers that combine body preambles from
+    independent ``literalize`` invocations may otherwise emit the
+    same type twice with different constructor sets.  Type
+    signatures (``name :: Type``) and bindings (``name = value``)
+    keep distinct keys so both halves of a Haskell declaration
+    survive.
+    """
+    header_line = block.splitlines()[0] if block else ""
+    type_key = _haskell_type_intro_key(header_line=header_line)
+    return type_key if type_key is not None else block
+
+
+@beartype
+def _dedupe_haskell_body_preamble(
+    *,
+    body_preamble: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Drop later body-preamble blocks that re-declare an earlier type."""
+    seen_keys: set[str] = set()
+    deduped: list[str] = []
+    for block in body_preamble:
+        key = _haskell_body_preamble_key(block=block)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        deduped.append(block)
+    return tuple(deduped)
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _HaskellContentSplit:
+    """Result of splitting wrapped content into declaration and call
+    halves.
+    """
+
+    declarations: str
+    call_expressions: str
+
+
+@beartype
+def _split_haskell_decls_and_calls(*, content: str) -> _HaskellContentSplit:
+    """Split *content* into a leading block of top-level Haskell
+    bindings and a trailing block of bare call expressions.
+
+    The integration harness for ``$ref`` declaration cases
+    concatenates each declaration's ``bare_code`` (a top-level
+    ``name :: Type`` / ``name = value`` pair, possibly followed by
+    indented continuation lines) with the call expressions.  Bindings
+    must stay at module scope; bare expressions belong inside
+    ``main = do``.  The boundary is the first top-level line (no
+    leading whitespace) that is neither a type signature nor a
+    ``name = ...`` binding.
+    """
+    content_lines = content.split(sep="\n")
+    first_call_index = len(content_lines)
+    for line_index, line in enumerate(iterable=content_lines):
+        match line:
+            case "":
+                continue
+            case starts_with_space if starts_with_space[0].isspace():
+                continue
+            case binding if _HASKELL_TOP_LEVEL_BINDING.match(string=binding):
+                continue
+            case _:
+                first_call_index = line_index
+                break
+    return _HaskellContentSplit(
+        declarations="\n".join(content_lines[:first_call_index]).rstrip(),
+        call_expressions="\n".join(content_lines[first_call_index:]),
+    )
 
 
 @beartype
@@ -1187,6 +1289,9 @@ class Haskell(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
+        body_preamble = _dedupe_haskell_body_preamble(
+            body_preamble=body_preamble,
+        )
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module
@@ -1195,14 +1300,26 @@ class Haskell(metaclass=LanguageCls):
             # ``IO Val`` (``StubReturn.VALUE``) do not trigger
             # ``-Wunused-do-bind``. ``_ <-`` is also valid when the
             # action returns ``IO ()``.
+            #
+            # If *content* begins with top-level ``name :: Type`` /
+            # ``name = value`` bindings (produced by the integration
+            # harness when literalizing ``$ref`` declaration values),
+            # those bindings stay at module scope and only the trailing
+            # call expressions go inside ``main = do``.
+            split = _split_haskell_decls_and_calls(content=content)
             indented = "\n".join(
                 f"    _ <- {line}" if line.strip() else line
-                for line in content.split(sep="\n")
+                for line in split.call_expressions.split(sep="\n")
+            )
+            declaration_block = (
+                split.declarations + "\n" if split.declarations else ""
             )
             return (
                 f"module {self.module_name} where\n"
                 + preamble
-                + "\nmain :: IO ()\nmain = do\n"
+                + "\n"
+                + declaration_block
+                + "main :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )

@@ -22,7 +22,6 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
 )
 from literalizer.languages import (
-    Haskell,
     Jsonnet,
 )
 
@@ -333,10 +332,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # name-mangling gaps.
 REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
     {
-        # ``wrap_in_file`` places content inside ``main = do``; a
-        # multi-line ``name = value`` binding needs ``let`` in a
-        # do-block, which the harness does not inject.
-        Haskell,
         # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
         # list; variable declarations don't fit the shape.
         Jsonnet,
