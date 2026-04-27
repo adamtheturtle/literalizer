@@ -1290,6 +1290,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "line_ending": (
         _ci(case_dir_name="simple_sequence"),
         _ci(case_dir_name="simple_dict", suffix="_dict"),
+        _ci(case_dir_name="set", suffix="_set"),
     ),
     "line_ending_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
