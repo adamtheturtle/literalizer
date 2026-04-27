@@ -513,6 +513,7 @@ class Scala(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -533,8 +534,7 @@ class Scala(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        object_name = self.module_name[:1].upper() + self.module_name[1:]
-        return f"object {object_name} {{\n{content}\n}}"
+        return f"object {self.module_name} {{\n{content}\n}}"
 
     def wrap_combined_in_file(
         self,

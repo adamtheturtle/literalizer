@@ -483,6 +483,7 @@ class LanguageCls(type):
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
+    module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool

@@ -1172,6 +1172,7 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -1198,16 +1199,14 @@ class Haskell(metaclass=LanguageCls):
                 f"    _ <- {line}" if line.strip() else line
                 for line in content.split(sep="\n")
             )
-            module_name = self.module_name[:1].upper() + self.module_name[1:]
             return (
-                f"module {module_name} where\n"
+                f"module {self.module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        module_name = self.module_name[:1].upper() + self.module_name[1:]
-        return f"module {module_name} where\n" + preamble + "\n" + content
+        return f"module {self.module_name} where\n" + preamble + "\n" + content
 
     @staticmethod
     def wrap_combined_in_file(
