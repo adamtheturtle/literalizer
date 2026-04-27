@@ -154,12 +154,22 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # apt installs odin under /usr, which is owned by root and not
-      # writable by the CI user. laytan/setup-odin drops the binary into
-      # a runner-owned directory, so a compromised dependency could
-      # silently replace the odin binary mid-job.
+      # Downloading the release zip directly and extracting to /opt/odin
+      # (owned by root, not writable by the CI user) is safer than
+      # laytan/setup-odin, which places the binary in a runner-owned
+      # directory where a compromised dependency could replace it
+      # mid-job. /opt/odin must stay on PATH alongside the binary so
+      # odin can resolve its core library relative to its own location.
       - name: Install Odin
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq odin
+        run: |
+          mkdir -p /tmp/odin-dl
+          gh release download --repo odin-lang/Odin \
+            --pattern 'odin-linux-amd64-*.zip' \
+            -D /tmp/odin-dl
+          sudo unzip /tmp/odin-dl/*.zip -d /opt/odin
+          echo "/opt/odin" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
       # Run serially: parallel `odin check` invocations are the
       # suspected cause of the intermittent hangs, so feed fixtures
       # one at a time until the upstream issue is understood.
