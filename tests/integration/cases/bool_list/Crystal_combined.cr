@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = [
     true,
     false,
@@ -8,3 +10,4 @@ my_data = [
     false,
     true,
 ]
+end

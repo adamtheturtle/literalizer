@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = {
     "name" => "Alice",
     "age" => 30,
@@ -10,3 +12,4 @@ my_data = {
     "active" => true,
     "score" => nil,
 }
+end
