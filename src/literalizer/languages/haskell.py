@@ -1210,7 +1210,6 @@ class Haskell(metaclass=LanguageCls):
 
     def wrap_calls_with_declarations(
         self,
-        *,
         declarations: tuple[str, ...],
         calls: str,
         body_preamble: tuple[str, ...],

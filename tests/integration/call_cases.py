@@ -22,7 +22,6 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
 )
 from literalizer.languages import (
-    Haskell,
     Jsonnet,
 )
 
@@ -525,25 +524,11 @@ def run_call_golden_case(
         lines=unified_body_preamble + tuple(body_stubs)
     )
     declarations_bare_codes = tuple(d.bare_code for d in decl_results)
-    if declarations_bare_codes and isinstance(spec, Haskell):
-        # Haskell needs the bindings at module scope and only the call
-        # expressions inside ``main = do``; route through the dedicated
-        # hook so we keep the two halves structurally separate instead
-        # of post-hoc parsing the joined content.
-        wrapped = spec.wrap_calls_with_declarations(
-            declarations=declarations_bare_codes,
-            calls=result.bare_code,
-            body_preamble=call_body_preamble,
-        )
-    else:
-        content = "\n".join(
-            [*declarations_bare_codes, result.bare_code],
-        )
-        wrapped = spec.wrap_in_file(
-            content=content,
-            variable_name="",
-            body_preamble=call_body_preamble,
-        )
+    wrapped = spec.wrap_calls_with_declarations(
+        declarations=declarations_bare_codes,
+        calls=result.bare_code,
+        body_preamble=call_body_preamble,
+    )
     all_preamble = _dedupe_preamble_blocks(
         blocks=decl_preambles + result.preamble + tuple(preamble_stubs)
     )
