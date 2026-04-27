@@ -138,32 +138,44 @@ def _c_call_stub(
     avoids the K&R unspecified-parameter syntax (and the
     ``-Wdeprecated-non-prototype`` clang warning it triggers) while
     still letting the same stub accept any mix of argument types.
+
+    Single-name calls emit a ``static`` definition so the fixture links
+    under the lint workflow's run step — a bare prototype without a body
+    would otherwise fail at link time.
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = "CVal" if is_value else "void"
     proto = ", ".join(["CVal"] * len(params)) if params else "void"
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"{return_keyword} {parts[0]}({proto});",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    stub_fn = "_".join((*parts, "stub_"))
     stub_params = ", ".join(f"CVal _a{i}" for i in range(len(params)))
     stub_signature = stub_params or "void"
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
     return_stmt = " return (CVal){0};" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
-    if not fields:
-        type_name = f"{root}Type_"
-        return (
-            f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
-            f"struct {type_name} "
-            f"{{ {return_keyword} (*{method})({proto}); }};",
-            f"static const struct {type_name} {root} = "
-            f"{{ .{method} = {stub_fn} }};",
-        )
+    parts = name.split(sep=".")
+    match parts:
+        case [single]:
+            return (
+                f"static {return_keyword} {single}({stub_signature}) "
+                f"{stub_body}",
+            )
+        case [root, method]:
+            stub_fn = f"{root}_{method}_stub_"
+            type_name = f"{root}Type_"
+            return (
+                f"static {return_keyword} {stub_fn}({stub_signature}) "
+                f"{stub_body}",
+                f"struct {type_name} "
+                f"{{ {return_keyword} (*{method})({proto}); }};",
+                f"static const struct {type_name} {root} = "
+                f"{{ .{method} = {stub_fn} }};",
+            )
+        case _:
+            pass
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    stub_fn = "_".join((*parts, "stub_"))
     lines: list[str] = [
         f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]

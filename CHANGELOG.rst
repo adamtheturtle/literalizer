@@ -12,6 +12,12 @@ Next
   previous syntax-only check.  The combined declaration + assignment
   wrapper now keeps both forms in a single procedure scope so the
   assignment can reach ``my_data``.
+- C single-name call stubs (e.g. ``emit``, ``process``) are now emitted
+  as ``static`` definitions with a stub body instead of bare forward
+  declarations, so generated fixtures can be linked and run.  The lint
+  workflow now compiles each C fixture against a small ``c_main.c``
+  driver and executes the resulting binary, surfacing runtime errors
+  that the previous ``-fsyntax-only`` check missed.
 - ``Crystal.wrap_in_file`` now wraps content in a
   ``module Check ... end`` block with ``extend self``, matching what
   Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
