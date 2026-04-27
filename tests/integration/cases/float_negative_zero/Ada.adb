@@ -1,8 +1,8 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       AFloat (-0.0),
-       AFloat (1.5)
-   );
+    my_data : A_Val := AList'(
+        AFloat (-0.0),
+        AFloat (1.5)
+    );
 begin
-   null;
+    null;
 end Check;

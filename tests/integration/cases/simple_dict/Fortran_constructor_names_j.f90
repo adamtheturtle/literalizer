@@ -16,13 +16,13 @@ contains
   function jentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 program check
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = jmap([fval_t :: &
-      jentry('name', jstr('Alice')), &
-      jentry('age', jint(30_int64)), &
-      jentry('active', jbool(.true.)), &
-      jentry('score', jnull()) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = jmap([fval_t :: &
+        jentry('name', jstr('Alice')), &
+        jentry('age', jint(30_int64)), &
+        jentry('active', jbool(.true.)), &
+        jentry('score', jnull()) &
+    ])
 end program check

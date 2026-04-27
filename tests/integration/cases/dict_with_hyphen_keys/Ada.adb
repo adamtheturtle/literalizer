@@ -1,9 +1,9 @@
 procedure Check is
-   my_data : A_Val := AMap'(
-       AEntry ("my-key", AStr ("value1")),
-       AEntry ("another-key", AStr ("value2")),
-       AEntry ("normal_key", AStr ("value3"))
-   );
+    my_data : A_Val := AMap'(
+        AEntry ("my-key", AStr ("value1")),
+        AEntry ("another-key", AStr ("value2")),
+        AEntry ("normal_key", AStr ("value3"))
+    );
 begin
-   null;
+    null;
 end Check;

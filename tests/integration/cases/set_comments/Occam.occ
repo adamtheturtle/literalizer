@@ -12,12 +12,12 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.set; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.str; MOBILE []BYTE "apple"),  -- inline comment
-      -- before banana
-      MOBILE LIT(lit.str; MOBILE []BYTE "banana")
-      -- trailing
-  ]):
-  SEQ
-    SKIP
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.set; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.str; MOBILE []BYTE "apple"),  -- inline comment
+        -- before banana
+        MOBILE LIT(lit.str; MOBILE []BYTE "banana")
+        -- trailing
+    ]):
+    SEQ
+        SKIP
 :

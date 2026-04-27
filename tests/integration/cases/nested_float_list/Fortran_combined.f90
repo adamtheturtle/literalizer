@@ -16,26 +16,26 @@ contains
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 subroutine check_declaration()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = flist([fval_t :: &
-      flist([fval_t :: freal(1.5), freal(2.5)]), &
-      flist([fval_t :: freal(3.5), freal(4.5)]) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = flist([fval_t :: &
+        flist([fval_t :: freal(1.5), freal(2.5)]), &
+        flist([fval_t :: freal(3.5), freal(4.5)]) &
+    ])
 end subroutine check_declaration
 
 subroutine check_assignment()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = flist([fval_t :: &
-      flist([fval_t :: freal(1.5), freal(2.5)]), &
-      flist([fval_t :: freal(3.5), freal(4.5)]) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = flist([fval_t :: &
+        flist([fval_t :: freal(1.5), freal(2.5)]), &
+        flist([fval_t :: freal(3.5), freal(4.5)]) &
+    ])
 end subroutine check_assignment
 
 program main
-  call check_declaration()
-  call check_assignment()
+    call check_declaration()
+    call check_assignment()
 end program main

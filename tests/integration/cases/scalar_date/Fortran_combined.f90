@@ -16,20 +16,20 @@ contains
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 subroutine check_declaration()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fstr("2024-01-15")
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fstr("2024-01-15")
 end subroutine check_declaration
 
 subroutine check_assignment()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fstr("2024-01-15")
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fstr("2024-01-15")
 end subroutine check_assignment
 
 program main
-  call check_declaration()
-  call check_assignment()
+    call check_declaration()
+    call check_assignment()
 end program main

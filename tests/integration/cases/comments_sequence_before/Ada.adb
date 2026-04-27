@@ -1,10 +1,10 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       -- first
-       AStr ("a"),
-       -- second
-       AStr ("b")
-   );
+    my_data : A_Val := AList'(
+        -- first
+        AStr ("a"),
+        -- second
+        AStr ("b")
+    );
 begin
-   null;
+    null;
 end Check;

@@ -1208,8 +1208,8 @@ class Rust(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
     )
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -1219,19 +1219,21 @@ class Rust(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
-        use_line = f"\n    let _ = {variable_name};" if variable_name else ""
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        use_line = (
+            f"\n{self.indent}let _ = {variable_name};" if variable_name else ""
+        )
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Rust declaration + assignment in a main function."""
-        return Rust.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
