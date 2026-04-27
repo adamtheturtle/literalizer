@@ -41,25 +41,6 @@ def _prepend_preamble(
 
 
 @beartype
-def _dedupe_ordered(*, lines: Iterable[str]) -> tuple[str, ...]:
-    """Return *lines* with duplicates removed, preserving first-seen order.
-
-    Used when a ``literalize_call`` test combines declarations for
-    ``{"$ref": "name"}`` variables with the call itself — both halves
-    may request the same imports or type-definition body preamble, and
-    emitting them twice would break strict compilers.
-    """
-    seen: set[str] = set()
-    result: list[str] = []
-    for line in lines:
-        if line in seen:
-            continue
-        seen.add(line)
-        result.append(line)
-    return tuple(result)
-
-
-@beartype
 def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
     """Return preamble *blocks* with duplicate headers removed.
 
@@ -510,19 +491,17 @@ def run_call_golden_case(
     # every declaration *and* the call.  Concatenating each piece's
     # already-rendered body preamble would emit overlapping
     # type-definition strings (e.g. Haskell's ``data Val = ...`` with
-    # different constructor sets) that no string-level dedupe can
-    # reconcile.  ``data`` only matters for datetime-precision
-    # inspection, which the present ref-declaration cases do not
-    # exercise; pass an empty list as a placeholder.
+    # different constructor sets) that no string-level duplicate
+    # filter can reconcile.  ``data`` only matters for
+    # datetime-precision inspection, which the present ref-declaration
+    # cases do not exercise; pass an empty list as a placeholder.
     empty_types: frozenset[type] = frozenset()
     union_types = empty_types.union(
         *(d.types_present for d in decl_results),
         result.types_present,
     )
     unified_body_preamble = spec.compute_body_preamble(union_types, [])
-    call_body_preamble = _dedupe_ordered(
-        lines=unified_body_preamble + tuple(body_stubs)
-    )
+    call_body_preamble = unified_body_preamble + tuple(body_stubs)
     declarations_bare_codes = tuple(d.bare_code for d in decl_results)
     wrapped = spec.wrap_calls_with_declarations(
         declarations=declarations_bare_codes,
