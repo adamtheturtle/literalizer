@@ -125,7 +125,7 @@ def make_spec_for_golden(
     **kwargs: object,
 ) -> literalizer.Language:
     """Like :func:`make_spec` but auto-derives the ``module_name``
-    constructor arg from *golden_path* for the four batched-CI
+    constructor argument from *golden_path* for the four batched-CI
     languages.
 
     The four batched-CI languages (Erlang, Scala, Crystal, Haskell)
