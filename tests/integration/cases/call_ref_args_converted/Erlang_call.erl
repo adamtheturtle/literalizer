@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_call_ref_args_converted_erlang_call).
 -export([x/0]).
 process(_, _) -> ok.
 x() ->

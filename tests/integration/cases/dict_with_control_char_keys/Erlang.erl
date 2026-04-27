@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_dict_with_control_char_keys_erlang).
 -export([x/0]).
 x() ->
     My_data = #{

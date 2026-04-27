@@ -8,11 +8,25 @@ test execution.
 
 import enum
 import functools
+from pathlib import Path
 
 from beartype import beartype
 
 import literalizer
 from literalizer.languages import ALL_LANGUAGES
+
+
+@beartype
+def erlang_module_name(*, golden_path: Path) -> str:
+    """Return the Erlang module name for *golden_path*.
+
+    Produces a deterministic, per-fixture name so every compiled
+    ``.erl`` file in CI has a unique module declaration without needing
+    ``sed`` rewriting.
+    """
+    dir_name = golden_path.parent.name
+    stem = golden_path.stem
+    return f"fixture_{dir_name}_{stem}".lower()
 
 
 @beartype
