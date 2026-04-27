@@ -1314,6 +1314,8 @@ jobs:
       - name: Check V syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
           < /tmp/files-to-lint
+      - name: Run V files
+        run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
