@@ -1,4 +1,4 @@
-object Check {
+object Fixture_nested_mixed_types_Scala_combined {
 var my_data = List(
     List[Int](1, 2),
     List[String]("a", "b"),
