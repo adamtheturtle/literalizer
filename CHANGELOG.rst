@@ -9,6 +9,17 @@ Next
   enum member's value typed as the :data:`CallStyle` union, removing
   the ``cast("CallStyle", self.call_style.value)`` boilerplate
   previously duplicated in every multi-style language module.
+- ``literalize`` and ``literalize_call`` now require a ``module_name``
+  keyword argument.  The languages whose ``wrap_in_file`` introduces a
+  named scope — Java's wrapping class and method, Fortran's
+  ``program``/``subroutine`` names, Erlang's ``-module(...)``, Occam's
+  ``PROC``, SystemVerilog's ``module``, F#'s ``module``, and the
+  helper function names emitted by C, C++, D and Objective-C — now
+  derive that name from this argument instead of always emitting
+  ``check``.  Languages whose wrappers do not introduce a named scope
+  ignore the argument.  ``Language.wrap_in_file`` and
+  ``Language.wrap_combined_in_file`` gain a corresponding
+  ``module_name`` parameter.
 - OCaml integer values outside the signed 64-bit range now raise
   ``UnrepresentableIntegerError`` instead of emitting an
   ``int_of_string`` fallback that overflowed OCaml's 63-bit native

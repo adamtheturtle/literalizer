@@ -37,6 +37,7 @@ def test_python_always_type_hints_set_with_colon_in_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -59,6 +60,7 @@ def test_python_always_type_hints_dict_with_uniform_list_values() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -91,6 +93,7 @@ def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -127,6 +130,7 @@ def test_rust_const_single_element_tuple() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -147,6 +151,7 @@ def test_rust_const_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -168,6 +173,7 @@ def test_rust_const_empty_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     assert result.code == (
         "const my_var: HashSet<String> = HashSet::<String>::new();"
@@ -186,6 +192,7 @@ def test_rust_const_dict_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=NewVariable(name="my_var"),
+            module_name="check",
         )
 
 
@@ -199,6 +206,7 @@ def test_rust_const_empty_dict_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=NewVariable(name="my_var"),
+            module_name="check",
         )
 
 
@@ -219,6 +227,7 @@ def test_rust_const_btree_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -251,6 +260,7 @@ def test_rust_const_btree_map_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=NewVariable(name="my_var"),
+            module_name="check",
         )
 
 
@@ -263,6 +273,7 @@ def test_rust_const_widened_int_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -283,6 +294,7 @@ def test_rust_const_i128_array() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -302,6 +314,7 @@ def test_rust_const_nested_list() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_var"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -389,6 +402,7 @@ def test_rust_lazy_static_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="names"),
+        module_name="check",
     )
     expected = (
         "static names: LazyLock<HashSet<&str>> = "
@@ -421,6 +435,7 @@ def test_rust_lazy_static_dict_btree_map() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="counts"),
+        module_name="check",
     )
     expected = (
         "static counts: LazyLock<BTreeMap<&str, i32>> = "
@@ -497,6 +512,7 @@ def test_csharp_const_with_non_constant_raises(source: str) -> None:
                 modifiers=frozenset({CSharp.modifiers.CONST}),
             ),
             wrap_in_file=True,
+            module_name="check",
         )
 
 
