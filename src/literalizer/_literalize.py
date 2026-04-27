@@ -789,8 +789,8 @@ def _format_list_value(
     # default ``empty_sequence`` literal so the empty list still
     # renders with the widened opener and stays type-consistent with
     # its non-empty siblings.  However, if this list is in wrap_ids,
-    # it must use the typed empty literal (e.g. ``[]IVal{}``) regardless
-    # of any sibling opener, so that its IVal type is preserved.
+    # it must use the typed empty literal (e.g. ``[]TYPE{}``) regardless
+    # of any sibling opener, so that the element type is preserved.
     if (
         not value
         and sequence_cfg.empty_sequence is not None

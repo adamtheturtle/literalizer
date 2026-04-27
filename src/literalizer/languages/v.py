@@ -108,7 +108,7 @@ def _make_v_i64_formatter(
 
 
 def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
-    """Return container ids that need IVal wrapping in V.
+    """Return container ids that need interface-type wrapping in V.
 
     Extends :func:`collect_heterogeneous_container_ids` with a
     bottom-up traversal that also catches:
