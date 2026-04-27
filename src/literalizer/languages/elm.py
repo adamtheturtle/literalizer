@@ -339,7 +339,7 @@ def _elm_flatten_dotted(parts: Sequence[str]) -> str:
 
     Elm identifiers cannot contain ``.``, so ``["app", "client", "fetch"]``
     becomes ``appClientFetch`` (the first character of each part after
-    the first is uppercased; the remaining characters are kept as-is).
+    the first is upper-cased; the remaining characters are kept as-is).
     """
     if len(parts) == 1:
         return parts[0]
@@ -357,7 +357,7 @@ def _elm_call_stub(
     """Return Elm top-level stub declarations for a call target.
 
     Dotted names are flattened (the first character of each part after
-    the first is uppercased).  For a single parameter the stub is
+    the first is upper-cased).  For a single parameter the stub is
     polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
     tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
     tuple that ``PositionalCallStyle`` emits at the call site.  For
@@ -862,7 +862,7 @@ class Elm(metaclass=LanguageCls):
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite call target parts into an Elm identifier.
 
-        The first character of each part after the first is uppercased
+        The first character of each part after the first is upper-cased
         and the parts are concatenated (e.g. ``["app", "client",
         "fetch"]`` becomes ``appClientFetch``).
         """
