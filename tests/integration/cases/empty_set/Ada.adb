@@ -1,5 +1,6 @@
+with A_Stub; use A_Stub;
 procedure Check is
-   my_data : A_Val := ASet'(1 .. 0 => ANull);
+    my_data : A_Val := ASet'[];
 begin
-   null;
+    null;
 end Check;

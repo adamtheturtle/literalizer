@@ -12,12 +12,12 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "Alice")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "age"; MOBILE LIT(lit.int; 30)),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "active"; MOBILE LIT(lit.bool; TRUE)),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "score"; MOBILE LIT(lit.null))
-  ]):
-  SEQ
-    SKIP
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "Alice")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "age"; MOBILE LIT(lit.int; 30)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "active"; MOBILE LIT(lit.bool; TRUE)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "score"; MOBILE LIT(lit.null))
+    ]):
+    SEQ
+        SKIP
 :

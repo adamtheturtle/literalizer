@@ -16,26 +16,26 @@ contains
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 subroutine check_declaration()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('lint', flist([fval_t :: fint(2_int64), flist([fval_t :: ])])), &
-      fentry('test', flist([fval_t :: fint(5_int64), flist([fval_t :: fstr('compile')])])) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('lint', flist([fval_t :: fint(2_int64), flist([fval_t :: ])])), &
+        fentry('test', flist([fval_t :: fint(5_int64), flist([fval_t :: fstr('compile')])])) &
+    ])
 end subroutine check_declaration
 
 subroutine check_assignment()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('lint', flist([fval_t :: fint(2_int64), flist([fval_t :: ])])), &
-      fentry('test', flist([fval_t :: fint(5_int64), flist([fval_t :: fstr('compile')])])) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('lint', flist([fval_t :: fint(2_int64), flist([fval_t :: ])])), &
+        fentry('test', flist([fval_t :: fint(5_int64), flist([fval_t :: fstr('compile')])])) &
+    ])
 end subroutine check_assignment
 
 program main
-  call check_declaration()
-  call check_assignment()
+    call check_declaration()
+    call check_assignment()
 end program main

@@ -313,13 +313,13 @@ class Occam(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="  ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             f"\nPROC {self.module_name} ()\n"
             + indented
             + "\n"
-            + "  SEQ\n"
-            + "    SKIP\n"
+            + f"{self.indent}SEQ\n"
+            + f"{self.indent * 2}SKIP\n"
             + ":"
         )
 

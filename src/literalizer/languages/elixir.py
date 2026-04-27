@@ -384,8 +384,8 @@ class Elixir(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -395,8 +395,10 @@ class Elixir(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
-        use_line = f"\n    _ = {variable_name}" if variable_name else ""
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        use_line = (
+            f"\n{self.indent}_ = {variable_name}" if variable_name else ""
+        )
         return (
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )

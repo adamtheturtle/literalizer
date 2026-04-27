@@ -313,6 +313,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-ada
+      - name: Run Ada files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_ada.py < /tmp/files-ada
 
       - name: Lint Occam
         run: |-
@@ -701,12 +703,9 @@ jobs:
       # Fixtures define `void check_(void)` with no main, so compile each
       # alongside `.github/scripts/c_main.c` which invokes it. Compile
       # `c_main.c` once up front so each fixture link reuses the object
-      # instead of re-parsing the same TU. Fixtures forward-declare a
-      # handful of host helpers (`emit`, `process`) without defining
-      # them; rewrite each forward declaration to a static empty stub
-      # so the link succeeds and the fixture body still executes. The
-      # build-and-run step also surfaces any syntax errors, so a separate
-      # `-fsyntax-only` pass would be redundant.
+      # instead of re-parsing the same TU. The build-and-run step also
+      # surfaces any syntax errors, so a separate `-fsyntax-only` pass
+      # would be redundant.
       - name: Build c_main object
         run: clang -std=c11 -c .github/scripts/c_main.c -o /tmp/c_main.o
       - name: Run C files
@@ -714,12 +713,7 @@ jobs:
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          sed -e 's/^void emit(CVal);$/static void emit(CVal _x) { (void)_x; }/' \
-              -e 's/^void process(CVal);$/static void process(CVal _x) { (void)_x; }/' \
-              -e 's/^void process(CVal, CVal);$/static void process(CVal _x, CVal _y) { (void)_x; (void)_y; }/' \
-              -e 's/^CVal process(CVal);$/static CVal process(CVal _x) { (void)_x; return (CVal){0}; }/' \
-              "$1" > "$tmpdir/check.c"
-          clang -std=c11 "$tmpdir/check.c" /tmp/c_main.o -o "$tmpdir/run" || exit 1
+          clang -std=c11 "$1" /tmp/c_main.o -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
@@ -1340,6 +1334,10 @@ jobs:
       - name: Check V syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
           < /tmp/files-to-lint
+      - name: Run V files
+        run: |
+          grep -z -v 'heterogeneous_strategy_error' /tmp/files-to-lint > /tmp/files-to-run || true
+          xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
 
   lint-objectivec:
     runs-on: macos-latest

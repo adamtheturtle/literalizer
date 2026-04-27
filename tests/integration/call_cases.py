@@ -22,10 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import (
-    Jsonnet,
-    Sml,
-)
+from literalizer.languages import Sml
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages
@@ -307,23 +304,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
-# Languages where the current integration harness cannot produce a
-# golden that passes its language-specific lint step for a
-# ``ref_declarations``-using case.  The feature itself renders the ref
-# marker as an identifier correctly; the limitations below are about
-# how the resulting declarations+calls compose into a complete file
-# or how names line up with the declaration site — see
-# https://github.com/adamtheturtle/literalizer/issues/1473 for the
-# per-language identifier rename hook that will close the
-# name-mangling gaps.
-REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
-    {
-        # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
-        # list; variable declarations don't fit the shape.
-        Jsonnet,
-    }
-)
-
 # Per-case language exclusions: cases whose target function or parameter
 # names use a reserved keyword in a given language, making a valid lint-
 # passing stub impossible to generate.
@@ -354,8 +334,6 @@ def discover_call_cases() -> list[CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
-                continue
-            if config.ref_declarations and lang_cls in REF_CASE_INCOMPATIBLE:
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
