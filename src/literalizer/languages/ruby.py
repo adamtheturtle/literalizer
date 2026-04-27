@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -78,7 +78,13 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+def _to_pascal_case(name: str) -> str:
+    """Convert *name* to PascalCase."""
+    return IdentifierCase.PASCAL.convert(name=name)
+
+
 def _ruby_call_stub(
+    format_class_name: Callable[[str], str],
     name: str,
     _params: Sequence[str],
     _stub_return: StubReturn,
@@ -92,21 +98,21 @@ def _ruby_call_stub(
     method = parts[-1]
     fields = parts[1:-1]
     if not fields:
-        cls = root.capitalize() + "Type"
+        cls = format_class_name(root) + "Type"
         return (
             f"class {cls}; def {method}(*a, **kw); end; end",
             f"{root} = {cls}.new",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type"
+    inner_cls = format_class_name(fields[-1]) + "Type"
     lines.append(f"class {inner_cls}; def {method}(*a, **kw); end; end")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type"
+        cls = format_class_name(fields[i]) + "Type"
         field = fields[i + 1]
         lines.append(f"class {cls}; def {field}; {prev_cls}.new; end; end")
         prev_cls = cls
-    root_cls = root.capitalize() + "Type"
+    root_cls = format_class_name(root) + "Type"
     lines.append(
         f"class {root_cls}; def {fields[0]}; {prev_cls}.new; end; end"
     )
@@ -521,7 +527,7 @@ class Ruby(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _ruby_call_stub
+        return partial(_ruby_call_stub, _to_pascal_case)
 
     @cached_property
     def format_call_preamble_stub(

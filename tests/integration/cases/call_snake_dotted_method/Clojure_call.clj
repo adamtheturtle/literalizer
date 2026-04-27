@@ -1,0 +1,6 @@
+(defn my_app [& _args] nil)
+(defn my_app.http_client [& _args] nil)
+(defn my_app.http_client.fetch [& _args] nil)
+(my_app.http_client.fetch :payload "hello")
+(my_app.http_client.fetch :payload 42)
+(my_app.http_client.fetch :payload true)

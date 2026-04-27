@@ -165,6 +165,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_snake_dotted_method",
+        target_function="my_app.http_client.fetch",
+        parameter_names=["payload"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
         target_function="app.client.fetch",
         parameter_names=["payload"],
