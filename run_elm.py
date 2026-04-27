@@ -36,6 +36,20 @@ forceData _ =
     ( (), Cmd.none )
 """
 
+# Call-mode golden files expose ``main : Program () () Never`` directly
+# instead of ``my_data``, so just re-export it.
+_CALL_MAIN_ELM = """\
+module Main exposing (main)
+
+import Check
+import Platform
+
+
+main : Program () () Never
+main =
+    Check.main
+"""
+
 # The Elm 0.19.1 code generator emits ``--<digits>`` (two unary minuses
 # glued together) when it negates an integer literal whose magnitude
 # reaches the int64 boundary.  JavaScript parses ``--<digits>`` as a
@@ -52,6 +66,7 @@ def _run_fixture(
     *,
     filename: str,
     tmpdir: Path,
+    main_path: Path,
     check_path: Path,
     output_js: Path,
     elm_path: str,
@@ -60,6 +75,11 @@ def _run_fixture(
 ) -> bool:
     """Compile and run one fixture.  Return True on failure."""
     src = Path(filename)
+    is_call = src.stem.endswith("_call")
+    main_path.write_text(
+        data=_CALL_MAIN_ELM if is_call else _MAIN_ELM,
+        encoding="utf-8",
+    )
     check_path.write_text(
         data=src.read_text(encoding="utf-8"),
         encoding="utf-8",
@@ -107,7 +127,7 @@ def main() -> None:
         src_dir = tmpdir / "src"
         src_dir.mkdir()
         (tmpdir / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
-        (src_dir / "Main.elm").write_text(data=_MAIN_ELM, encoding="utf-8")
+        main_path = src_dir / "Main.elm"
         elm_home = tmpdir / ".elm"
         elm_home.mkdir()
         env = {**os.environ, "ELM_HOME": str(object=elm_home)}
@@ -119,6 +139,7 @@ def main() -> None:
             if _run_fixture(
                 filename=filename,
                 tmpdir=tmpdir,
+                main_path=main_path,
                 check_path=check_path,
                 output_js=output_js,
                 elm_path=elm_path,
