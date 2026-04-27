@@ -158,23 +158,38 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Each invocation runs from its own tmpdir so Odin's intermediate
-      # files don't collide across parallel workers.  `odin run` also
-      # compiles, so no separate `odin check` pass is needed.
+      # Odin writes core-library build artefacts inside its own
+      # installation directory; parallel workers sharing that directory
+      # deadlock on those files.  Give each worker its own copy so there
+      # is no shared mutable state.  `odin run` also compiles, so no
+      # separate `odin check` pass is needed.
       - name: Run Odin files
         run: |-
           find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          cat > /tmp/run-odin-file.sh << 'SCRIPT'
-          #!/bin/sh
-          set -e
-          src=$(realpath "$1")
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cd "$tmpdir"
-          odin run "$src" -file -out:"$tmpdir/prog"
-          SCRIPT
-          chmod +x /tmp/run-odin-file.sh
-          xargs -0 -P "$(nproc)" -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
+          ncores=$(nproc)
+          odin_install=$(dirname "$(which odin)")
+          for i in $(seq 1 "$ncores"); do
+            cp -r "$odin_install" "/tmp/odin-$i"
+          done
+          mapfile -d '' -t files < /tmp/files-odin
+          n=${#files[@]}
+          chunk=$(( (n + ncores - 1) / ncores ))
+          run_worker() {
+            local w=$1 odin="/tmp/odin-$1/odin"
+            local lo=$(( (w - 1) * chunk )) hi=$(( w * chunk ))
+            local i src wd
+            for (( i = lo; i < hi && i < n; i++ )); do
+              src=$(realpath "${files[i]}")
+              wd=$(mktemp -d)
+              (trap 'rm -rf "$wd"' EXIT; cd "$wd" || exit 1
+               "$odin" run "$src" -file -out:"$wd/prog") || return 1
+            done
+          }
+          pids=()
+          for i in $(seq 1 "$ncores"); do run_worker "$i" & pids+=($!); done
+          rc=0
+          for pid in "${pids[@]}"; do wait "$pid" || rc=1; done
+          exit "$rc"
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
