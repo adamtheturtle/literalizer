@@ -24,6 +24,7 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Jsonnet,
+    Sml,
 )
 
 from .check_golden import check_golden
@@ -323,6 +324,16 @@ REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
     }
 )
 
+# Per-case language exclusions: cases whose target function or parameter
+# names use a reserved keyword in a given language, making a valid lint-
+# passing stub impossible to generate.
+CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
+    # target_function "app.mgr.op" has "op" as the innermost name; "op"
+    # is a reserved word in SML and cannot be used as a fun or val
+    # identifier, so no valid stub can be produced.
+    "call_mixed_type_dicts": frozenset({Sml}),
+}
+
 
 @dataclasses.dataclass(frozen=True)
 class CallCase:
@@ -345,6 +356,10 @@ def discover_call_cases() -> list[CallCase]:
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
             if config.ref_declarations and lang_cls in REF_CASE_INCOMPATIBLE:
+                continue
+            if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
+                config.case_dir_name, frozenset()
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a

@@ -407,13 +407,15 @@ jobs:
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
-      # Fixtures only declare `structure Check` with a `my_data` val;
+      # Non-call fixtures declare `structure Check` with a `my_data` val;
       # MLton never evaluates the body unless a top-level expression
       # references it, so compile alongside a small force file that
       # forces `Check.my_data` to be constructed.
+      # Call fixtures use val _ = … bindings that already force evaluation,
+      # so they are compiled without the force file.
       - name: Lint Sml
         run: |-
-          find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml
+          find tests/integration/cases -name '*.sml' ! -name '*_call.sml' -print0 > /tmp/files-sml
           cat > /tmp/run-sml.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -424,6 +426,16 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
+          find tests/integration/cases -name '*_call.sml' -print0 > /tmp/files-sml-call
+          cat > /tmp/run-sml-call.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.sml"
+          cp .github/scripts/sml_call_main.mlb "$tmpdir/main.mlb"
+          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          "$tmpdir/out" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml-call.sh < /tmp/files-sml-call
 
       - name: Lint Dhall
         run: |-
