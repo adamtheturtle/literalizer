@@ -281,12 +281,14 @@ class Scheme(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file (no-op)."""
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -295,6 +297,7 @@ class Scheme(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap declaration and assignment in a valid file (no-op)."""
@@ -302,6 +305,7 @@ class Scheme(metaclass=LanguageCls):
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 

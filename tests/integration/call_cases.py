@@ -23,7 +23,6 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Haskell,
-    Hcl,
     Jsonnet,
 )
 
@@ -338,9 +337,6 @@ REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
         # multi-line ``name = value`` binding needs ``let`` in a
         # do-block, which the harness does not inject.
         Haskell,
-        # ``wrap_in_file`` renames each content line as ``_N = …``,
-        # which breaks multi-line variable declarations.
-        Hcl,
         # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
         # list; variable declarations don't fit the shape.
         Jsonnet,
@@ -433,6 +429,7 @@ def run_call_golden_case(
             per_element=config.per_element,
             wrap_in_file=True,
             ref_case=effective_ref_case,
+            module_name="check",
         )
         check_golden(
             file_regression=file_regression,
@@ -452,6 +449,7 @@ def run_call_golden_case(
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
                 variable_form=literalizer.NewVariable(name=ref_name),
+                module_name="check",
             )
             for ref_name, ref_source in declarations.items()
         ]
@@ -464,6 +462,7 @@ def run_call_golden_case(
             call_transform=config.call_transform,
             per_element=config.per_element,
             ref_case=effective_ref_case,
+            module_name="check",
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -528,6 +527,7 @@ def run_call_golden_case(
     wrapped = spec.wrap_in_file(
         content=content,
         variable_name="",
+        module_name="check",
         body_preamble=call_body_preamble,
     )
     all_preamble = _dedupe_preamble_blocks(

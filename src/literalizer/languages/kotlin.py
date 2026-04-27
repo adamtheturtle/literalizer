@@ -8,7 +8,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -58,6 +58,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -767,7 +768,7 @@ class Kotlin(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """Kotlin call style options."""
 
         KEYWORD = KeywordCallStyle(separator=" = ")
@@ -801,12 +802,14 @@ class Kotlin(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file (no-op)."""
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -815,6 +818,7 @@ class Kotlin(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap declaration and assignment in a valid file (no-op)."""
@@ -822,6 +826,7 @@ class Kotlin(metaclass=LanguageCls):
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -1132,4 +1137,4 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.config

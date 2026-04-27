@@ -8,7 +8,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -50,6 +50,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -574,7 +575,7 @@ class TypeScript(metaclass=LanguageCls):
     trailing_commas = TrailingCommas
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """TypeScript call style options."""
 
         OBJECT = ObjectCallStyle(separator=": ")
@@ -608,10 +609,11 @@ class TypeScript(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a TypeScript declaration as a module."""
-        del variable_name
+        del variable_name, module_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -623,12 +625,14 @@ class TypeScript(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap TypeScript declaration + assignment as a module."""
         return TypeScript.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -869,4 +873,4 @@ class TypeScript(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.config

@@ -1314,6 +1314,7 @@ def _literalize_apply_form(
     language: Language,
     variable_form: NewVariable | ExistingVariable | None,
     wrap_in_file: bool,
+    module_name: str,
 ) -> LiteralizeResult:
     """Apply variable-form-specific wrapping on top of a pre-form pass.
 
@@ -1362,6 +1363,7 @@ def _literalize_apply_form(
         wrapped = language.wrap_in_file(
             content=content,
             variable_name=variable_name or "",
+            module_name=module_name,
             body_preamble=computed.body,
         )
         if preamble:
@@ -1389,6 +1391,7 @@ def _literalize_both_forms(
     pre_indent_level: int,
     include_delimiters: bool,
     variable_form: BothVariableForms,
+    module_name: str,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
     pre_form = _literalize_pre_form(
@@ -1406,12 +1409,14 @@ def _literalize_both_forms(
             modifiers=variable_form.modifiers,
         ),
         wrap_in_file=False,
+        module_name=module_name,
     )
     assignment = _literalize_apply_form(
         pre_form=pre_form,
         language=language,
         variable_form=ExistingVariable(name=variable_form.name),
         wrap_in_file=False,
+        module_name=module_name,
     )
     decl_preamble = (
         *declaration.body_preamble,
@@ -1421,6 +1426,7 @@ def _literalize_both_forms(
         declaration=declaration.declaration_code,
         assignment=assignment.bare_code,
         variable_name=variable_form.name,
+        module_name=module_name,
         body_preamble=decl_preamble,
     )
     if declaration.preamble:
@@ -1438,6 +1444,7 @@ def literalize(
     source: str,
     input_format: InputFormat,
     language: Language,
+    module_name: str,
     pre_indent_level: int = 0,
     include_delimiters: bool = True,
     variable_form: VariableForm | None = None,
@@ -1455,6 +1462,13 @@ def literalize(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
+        module_name: Name to use for the surrounding module / program /
+            class / procedure / function emitted by the language's
+            ``wrap_in_file`` (e.g. the wrapping class in Java, the
+            ``program`` in Fortran, the ``-module`` in Erlang).
+            Languages whose ``wrap_in_file`` does not introduce a named
+            scope ignore this argument.  Has no effect when
+            ``wrap_in_file=False``.
         pre_indent_level: Number of ``indent`` steps to prepend to
             every output line.  For example, ``2`` with a 4-space
             indent produces an 8-space margin.  Defaults to ``0``.
@@ -1511,6 +1525,7 @@ def literalize(
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
             variable_form=variable_form,
+            module_name=module_name,
         )
 
     pre_form = _literalize_pre_form(
@@ -1525,6 +1540,7 @@ def literalize(
         language=language,
         variable_form=variable_form,
         wrap_in_file=wrap_in_file,
+        module_name=module_name,
     )
 
 
@@ -1989,6 +2005,7 @@ def literalize_call(
     language: Language,
     target_function: str,
     parameter_names: Sequence[str],
+    module_name: str,
     call_transform: Callable[[str], str] | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
@@ -2007,6 +2024,10 @@ def literalize_call(
             literals.
         target_function: The function expression to call
             (e.g. ``"throttler.should_send_notification"``).
+        module_name: Name to use for the surrounding module / program /
+            class / procedure / function emitted by the language's
+            ``wrap_in_file``.  Has no effect when
+            ``wrap_in_file=False``.
         parameter_names: Parameter names, positionally mapped to each
             element in each row.  For :class:`PositionalCallStyle`
             languages these are unused in the output but still
@@ -2137,6 +2158,7 @@ def literalize_call(
         wrapped = language.wrap_in_file(
             content=result,
             variable_name="",
+            module_name=module_name,
             body_preamble=body_stubs + computed.body,
         )
         # Stubs follow the language's static preamble (e.g. Go's

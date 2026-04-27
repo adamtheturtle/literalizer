@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -45,6 +45,7 @@ from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -448,7 +449,7 @@ class VisualBasic(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """VisualBasic call style options."""
 
         POSITIONAL = PositionalCallStyle()
@@ -481,6 +482,7 @@ class VisualBasic(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a VB.NET Dim declaration inside a Module.
@@ -493,7 +495,7 @@ class VisualBasic(metaclass=LanguageCls):
         arguments are invoked by the fixture linter so the calls
         still execute.
         """
-        del variable_name
+        del variable_name, module_name
         has_stubs = any(
             line.startswith(("Function ", "Class ")) for line in body_preamble
         )
@@ -524,9 +526,11 @@ class VisualBasic(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap VB.NET declaration + assignment in separate Subs."""
+        del module_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
@@ -647,7 +651,7 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.config
 
     @cached_property
     def format_call_preamble_stub(

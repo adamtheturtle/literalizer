@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -45,6 +45,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
+    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -410,7 +411,7 @@ class Julia(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(enum.Enum):
+    class CallStyles(CallStyleEnum):
         """Julia call style options."""
 
         KEYWORD = KeywordCallStyle(separator="=")
@@ -443,12 +444,14 @@ class Julia(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file (no-op)."""
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -457,6 +460,7 @@ class Julia(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap declaration and assignment in a valid file (no-op)."""
@@ -464,6 +468,7 @@ class Julia(metaclass=LanguageCls):
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 
@@ -681,4 +686,4 @@ class Julia(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        return self.call_style.config

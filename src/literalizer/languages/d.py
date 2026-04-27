@@ -392,6 +392,7 @@ class D(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a D declaration in a function."""
@@ -400,19 +401,21 @@ class D(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void _check() {{\n{content}\n}}"
+        return f"void _{module_name}() {{\n{content}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap D declaration + assignment in a function."""
         return D.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
+            module_name=module_name,
             body_preamble=body_preamble,
         )
 

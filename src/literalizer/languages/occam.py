@@ -299,6 +299,7 @@ class Occam(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an occam-pi VAL declaration in a PROC."""
@@ -309,7 +310,7 @@ class Occam(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix="  ")
         return (
-            "\nPROC check ()\n"
+            f"\nPROC {module_name} ()\n"
             + indented
             + "\n"
             + "  SEQ\n"
@@ -322,12 +323,13 @@ class Occam(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble
+        del declaration, assignment, variable_name, module_name, body_preamble
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.ISO

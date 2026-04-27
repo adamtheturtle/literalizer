@@ -58,6 +58,7 @@ def test_literalize_yaml_sequence() -> None:
         pre_indent_level=1,
         include_delimiters=False,
         variable_form=None,
+        module_name="check",
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result.code == expected
@@ -81,6 +82,7 @@ def test_literalize_yaml_indent_override() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = '{\n\t"a": 1,\n\t"b": True,\n}'
     assert result.code == expected
@@ -96,6 +98,7 @@ def test_literalize_yaml_invalid() -> None:
             pre_indent_level=0,
             include_delimiters=False,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -109,6 +112,7 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             pre_indent_level=0,
             include_delimiters=False,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -124,11 +128,13 @@ def test_literalize_yaml_after_invalid_uses_cached_instance() -> None:
             source=":\n  :\n    - ][",
             input_format=InputFormat.YAML,
             language=PYTHON,
+            module_name="check",
         )
     result = literalize(
         source="foo: bar",
         input_format=InputFormat.YAML,
         language=PYTHON,
+        module_name="check",
     )
     assert result.declaration_code == '{\n    "foo": "bar",\n}'
 
@@ -139,6 +145,7 @@ def test_literalize_yaml_quoted_hash_is_not_comment() -> None:
         source='"plain#value"\n',
         input_format=InputFormat.YAML,
         language=PYTHON,
+        module_name="check",
     )
     assert result.declaration_code == '"plain#value"'
 
@@ -150,6 +157,7 @@ def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
             source="value: [1\n# force roundtrip path\n",
             input_format=InputFormat.YAML,
             language=PYTHON,
+            module_name="check",
         )
 
 
@@ -166,6 +174,7 @@ def test_cpp_array_binary_typed() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -189,6 +198,7 @@ def test_cpp_array_null_list_fallback() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -211,6 +221,7 @@ def test_yaml_set_inline_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
+        module_name="check",
     )
     assert result.code == '{"a", "b"},'
 
@@ -224,6 +235,7 @@ def test_yaml_set_inline_with_format_set_entry() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
+        module_name="check",
     )
     assert result.code == 'map[string]struct{}{"a": struct{}{}},'
 
@@ -237,6 +249,7 @@ def test_yaml_empty_set_inline() -> None:
         pre_indent_level=0,
         include_delimiters=False,
         variable_form=None,
+        module_name="check",
     )
     assert result.code == "set(),"
 
@@ -261,6 +274,7 @@ def test_ordered_map_nested_in_sequence() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -288,6 +302,7 @@ def test_heterogeneous_bytes_in_collection_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -307,6 +322,7 @@ def test_heterogeneous_date_in_collection_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -326,6 +342,7 @@ def test_heterogeneous_datetime_in_collection_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -345,6 +362,7 @@ def test_homogeneous_ordered_map_no_raise() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -373,6 +391,7 @@ def test_mixed_dict_values_none_with_list_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -393,6 +412,7 @@ def test_mixed_dict_values_set_with_string_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -414,6 +434,7 @@ def test_mixed_dict_values_with_list_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -436,6 +457,7 @@ def test_mixed_ordered_map_values_raises() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -456,6 +478,7 @@ def test_r_empty_dict_key_positional() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -492,6 +515,7 @@ def test_r_empty_dict_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -512,6 +536,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -539,6 +564,7 @@ def test_raises_for_heterogeneous_ordered_map() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -559,6 +585,7 @@ def test_raises_for_heterogeneous_set() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -578,6 +605,7 @@ def test_no_raise_for_homogeneous_ordered_map() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -605,6 +633,7 @@ def test_no_raise_for_homogeneous_set() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -635,6 +664,7 @@ def test_dhall_empty_dict_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -648,6 +678,7 @@ def test_dhall_control_char_in_string() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
+        module_name="check",
     )
     expected = 'let my_data = "\\u{0001}" in my_data'
     assert result.code == expected
@@ -672,6 +703,7 @@ def test_dhall_control_char_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -694,6 +726,7 @@ def test_nix_control_char_key_error() -> None:
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,
+            module_name="check",
         )
 
 
@@ -707,6 +740,7 @@ def test_dhall_backtick_label_unescaping() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\

@@ -1182,9 +1182,11 @@ class Haskell(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
+        del module_name
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module
@@ -1211,12 +1213,13 @@ class Haskell(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Unsupported: literalize() rejects BothVariableForms
         upstream.
         """
-        del declaration, assignment, variable_name, body_preamble
+        del declaration, assignment, variable_name, body_preamble, module_name
         raise NotImplementedError
 
     date_format: DateFormats = DateFormats.HASKELL

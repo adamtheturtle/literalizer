@@ -12,6 +12,22 @@ Next
   previous syntax-only check.  The combined declaration + assignment
   wrapper now keeps both forms in a single procedure scope so the
   assignment can reach ``my_data``.
+- Added ``CallStyleEnum`` as the base class for per-language
+  ``CallStyles`` enums.  Its :attr:`config` accessor returns the
+  enum member's value typed as the :data:`CallStyle` union, removing
+  the ``cast("CallStyle", self.call_style.value)`` boilerplate
+  previously duplicated in every multi-style language module.
+- ``literalize`` and ``literalize_call`` now require a ``module_name``
+  keyword argument.  The languages whose ``wrap_in_file`` introduces a
+  named scope — Java's wrapping class and method, Fortran's
+  ``program``/``subroutine`` names, Erlang's ``-module(...)``, Occam's
+  ``PROC``, SystemVerilog's ``module``, F#'s ``module``, and the
+  helper function names emitted by C, C++, D and Objective-C — now
+  derive that name from this argument instead of always emitting
+  ``check``.  Languages whose wrappers do not introduce a named scope
+  ignore the argument.  ``Language.wrap_in_file`` and
+  ``Language.wrap_combined_in_file`` gain a corresponding
+  ``module_name`` parameter.
 - OCaml integer values outside the signed 64-bit range now raise
   ``UnrepresentableIntegerError`` instead of emitting an
   ``int_of_string`` fallback that overflowed OCaml's 63-bit native

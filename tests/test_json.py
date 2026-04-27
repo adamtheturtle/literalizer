@@ -52,6 +52,7 @@ def test_dict_python() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
+        module_name="check",
     )
     expected = '    "user_1": "team_alpha",\n    "user_2": "team_alpha",'
     assert result.code == expected
@@ -67,6 +68,7 @@ def test_dict_empty_no_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
+        module_name="check",
     )
     assert result.code == ""
 
@@ -79,6 +81,7 @@ def test_indent_spaces() -> None:
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
+        module_name="check",
     )
     assert result.code == "        True,\n        False,"
 
@@ -91,6 +94,7 @@ def test_indent_tabs() -> None:
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
+        module_name="check",
     )
     assert result.code == "\t\ttrue,\n\t\tfalse,"
 
@@ -111,6 +115,7 @@ def test_indent_override() -> None:
         language=language,
         pre_indent_level=0,
         include_delimiters=True,
+        module_name="check",
     )
     expected = "(\n\tTrue,\n\tFalse,\n)"
     assert result.code == expected
@@ -126,6 +131,7 @@ def test_empty_list_no_delimiters() -> None:
         language=PYTHON,
         pre_indent_level=0,
         include_delimiters=False,
+        module_name="check",
     )
     assert result.code == ""
 
@@ -138,6 +144,7 @@ def test_scalar_with_indent() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
+        module_name="check",
     )
     assert result.code == "    42"
 
@@ -151,6 +158,7 @@ def test_literalize_json_array() -> None:
         language=PYTHON,
         pre_indent_level=1,
         include_delimiters=False,
+        module_name="check",
     )
     expected = '    ("user_1", 1000.0),\n    ("user_2", 2000.0),'
     assert result.code == expected
@@ -165,6 +173,7 @@ def test_literalize_json_invalid() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
+            module_name="check",
         )
 
 
@@ -182,6 +191,7 @@ def test_part1_sample_python() -> None:
         language=PYTHON,
         pre_indent_level=2,
         include_delimiters=False,
+        module_name="check",
     )
     expected_lines = [
         '        ("user_1", 1000.0),',
@@ -201,6 +211,7 @@ def test_part2_sample_go() -> None:
         language=GO,
         pre_indent_level=2,
         include_delimiters=False,
+        module_name="check",
     )
     lines = result.code.split(sep="\n")
     assert lines[0] == '\t\t[]any{"user_1", 49, 1000.0},'
@@ -216,6 +227,7 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             language=PYTHON,
             pre_indent_level=0,
             include_delimiters=False,
+            module_name="check",
         )
 
 
@@ -238,6 +250,7 @@ def test_cpp_array_null_list_fallback_json() -> None:
         language=cpp_array,
         pre_indent_level=0,
         include_delimiters=True,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -258,6 +271,7 @@ def test_mixed_dict_values_none_with_list_json_raises() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
+            module_name="check",
         )
 
 
@@ -272,6 +286,7 @@ def test_mixed_dict_values_with_list_json_raises() -> None:
             language=MOJO,
             pre_indent_level=0,
             include_delimiters=True,
+            module_name="check",
         )
 
 
@@ -290,6 +305,7 @@ def test_r_empty_dict_key_positional_json() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -324,6 +340,7 @@ def test_r_empty_dict_key_error_json() -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
+            module_name="check",
         )
 
 
@@ -342,6 +359,7 @@ def test_r_empty_dict_key_error_non_empty_key_ok_json() -> None:
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
@@ -369,6 +387,7 @@ def test_dhall_empty_dict_key_error_json() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
+            module_name="check",
         )
 
 
@@ -381,6 +400,7 @@ def test_dhall_control_char_in_string_json() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
+        module_name="check",
     )
     expected = 'let my_data = "\\u{0001}" in my_data'
     assert result.code == expected
@@ -403,6 +423,7 @@ def test_dhall_control_char_key_error_json() -> None:
             language=Dhall(),
             pre_indent_level=0,
             include_delimiters=True,
+            module_name="check",
         )
 
 
@@ -423,6 +444,7 @@ def test_nix_control_char_key_error_json() -> None:
             language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
+            module_name="check",
         )
 
 
@@ -435,6 +457,7 @@ def test_dhall_backtick_label_unescaping_json() -> None:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=NewVariable(name="my_data"),
+        module_name="check",
     )
     expected = textwrap.dedent(
         text="""\
