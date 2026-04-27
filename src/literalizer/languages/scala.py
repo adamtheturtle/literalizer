@@ -47,7 +47,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -333,10 +332,10 @@ class Scala(metaclass=LanguageCls):
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="TreeSet("),
             close=")",
-            empty_set=None,
+            empty_set="TreeSet.empty[Int]",
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
         )
 
     class CommentFormats(enum.Enum):
@@ -489,7 +488,7 @@ class Scala(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(CallStyleEnum):
+    class CallStyles(enum.Enum):
         """Scala call style options."""
 
         KEYWORD = KeywordCallStyle(separator=" = ")
@@ -825,4 +824,5 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.config
+        config: CallStyle = self.call_style.value
+        return config

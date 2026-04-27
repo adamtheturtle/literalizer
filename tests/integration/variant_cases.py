@@ -1119,6 +1119,22 @@ def _ci(*, case_dir_name: str, suffix: str = "") -> CaseInput:
     return CaseInput(case_dir_name=case_dir_name, suffix=suffix)
 
 
+_HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
+    _ci(case_dir_name=d, suffix=s)
+    for d, s in (
+        ("dict_mixed_scalars", ""),
+        ("mixed_type_dicts_in_sequence", ""),
+        ("nested_mixed_types", "_sibling"),
+        ("nested_mixed_inner", "_inner"),
+        ("nested_mixed_dict", ""),
+        ("dict_all_scalar_types", ""),
+        ("nested_sequences", ""),
+        ("dict_mixed_int_widths", ""),
+        ("ordered_map", ""),
+    )
+)
+
+
 # Per-axis input table.  Each axis names the input case directories it
 # should run against; coverage is added or removed by editing this table
 # alone.  The cross product of every axis's variants with its inputs
@@ -1142,7 +1158,12 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_sequence", suffix="_varname"),
         _ci(case_dir_name="float_list", suffix="_float"),
     ),
-    "set": (_ci(case_dir_name="set"),),
+    "set": (
+        _ci(case_dir_name="set"),
+        _ci(case_dir_name="int_set"),
+        _ci(case_dir_name="mixed_set"),
+        _ci(case_dir_name="empty_set"),
+    ),
     "default_set_element_type": (
         _ci(case_dir_name="empty_set"),
         _ci(case_dir_name="set"),
@@ -1240,11 +1261,19 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="int_list"),
         _ci(case_dir_name="int_list_large", suffix="_large"),
         _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+        _ci(case_dir_name="float_list", suffix="_float"),
+        _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
+        _ci(case_dir_name="float_special_values", suffix="_float_v"),
+        _ci(case_dir_name="nested_float_list", suffix="_float_n"),
     ),
     "numeric_separator": (
         _ci(case_dir_name="int_list"),
         _ci(case_dir_name="int_list_large", suffix="_large"),
         _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+        _ci(case_dir_name="float_list", suffix="_float"),
+        _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
+        _ci(case_dir_name="float_special_values", suffix="_float_v"),
+        _ci(case_dir_name="nested_float_list", suffix="_float_n"),
     ),
     "string_format": (
         _ci(case_dir_name="string_list"),
@@ -1286,29 +1315,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_sequence"),
     ),
     "constructor_name": (_ci(case_dir_name="simple_dict"),),
-    "heterogeneous_strategy": tuple(
-        _ci(case_dir_name=d, suffix=s)
-        for d, s in (
-            ("dict_mixed_scalars", ""),
-            ("mixed_type_dicts_in_sequence", ""),
-            ("nested_mixed_types", "_sibling"),
-            ("nested_mixed_inner", "_inner"),
-            ("nested_mixed_dict", ""),
-            ("dict_all_scalar_types", ""),
-            ("nested_sequences", ""),
-            ("dict_mixed_int_widths", ""),
-            ("ordered_map", ""),
-        )
-    ),
-    "heterogeneous_value_enum_name": (
-        _ci(case_dir_name="dict_mixed_scalars"),
-    ),
-    "heterogeneous_value_union_name": (
-        _ci(case_dir_name="dict_mixed_scalars"),
-    ),
-    "heterogeneous_value_variant_name": (
-        _ci(case_dir_name="dict_mixed_scalars"),
-    ),
+    "heterogeneous_strategy": _HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_enum_name": _HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_union_name": _HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_variant_name": _HETEROGENEOUS_INPUTS,
 }
 
 

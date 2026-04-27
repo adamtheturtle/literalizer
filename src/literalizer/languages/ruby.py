@@ -47,7 +47,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -389,7 +388,7 @@ class Ruby(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(CallStyleEnum):
+    class CallStyles(enum.Enum):
         """Ruby call style options."""
 
         KEYWORD = KeywordCallStyle(separator=": ")
@@ -669,4 +668,5 @@ class Ruby(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.config
+        config: CallStyle = self.call_style.value
+        return config

@@ -57,7 +57,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallStyleEnum,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -473,7 +472,7 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new SortedSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="new SortedSet<{type_name}> {{",
-                supports_heterogeneity=True,
+                supports_heterogeneity=False,
             )
         )
 
@@ -664,7 +663,7 @@ class CSharp(metaclass=LanguageCls):
 
     line_endings = LineEndings
 
-    class CallStyles(CallStyleEnum):
+    class CallStyles(enum.Enum):
         """CSharp call style options."""
 
         POSITIONAL = PositionalCallStyle()
@@ -1124,4 +1123,5 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.config
+        config: CallStyle = self.call_style.value
+        return config

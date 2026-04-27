@@ -141,7 +141,9 @@ def test_roundtrip_bytes_python(data: bytes) -> None:
 def test_roundtrip_bytes_hex(data: bytes) -> None:
     """Format_bytes_hex -> bytes.fromhex round-trips."""
     result = PYTHON.format_bytes(data)
-    assert bytes.fromhex(result.strip('"')) == data
+    assert result.startswith('"')
+    assert result.endswith('"')
+    assert bytes.fromhex(result[1:-1]) == data
 
 
 @given(data=st.binary())
