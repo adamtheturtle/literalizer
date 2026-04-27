@@ -1119,7 +1119,38 @@ def _ci(*, case_dir_name: str, suffix: str = "") -> CaseInput:
     return CaseInput(case_dir_name=case_dir_name, suffix=suffix)
 
 
-_HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
+INT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="int_list"),
+    _ci(case_dir_name="int_list_large", suffix="_large"),
+    _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+    _ci(case_dir_name="scalar_int"),
+    _ci(case_dir_name="scalar_int_large"),
+)
+
+FLOAT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="float_list"),
+    _ci(case_dir_name="float_scientific_notation", suffix="_s"),
+    _ci(case_dir_name="float_special_values", suffix="_v"),
+    _ci(case_dir_name="nested_float_list", suffix="_n"),
+    _ci(case_dir_name="scalar_float"),
+)
+
+BASIC_COLLECTIONS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="simple_sequence"),
+    _ci(case_dir_name="simple_dict", suffix="_dict"),
+    _ci(case_dir_name="set", suffix="_set"),
+)
+
+ADT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="simple_dict"),
+    _ci(case_dir_name="float_special_values", suffix="_v"),
+    _ci(case_dir_name="float_list", suffix="_float"),
+    _ci(case_dir_name="binary", suffix="_binary"),
+    _ci(case_dir_name="scalar_date", suffix="_date"),
+    _ci(case_dir_name="scalar_datetime", suffix="_datetime"),
+)
+
+HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
     _ci(case_dir_name=d, suffix=s)
     for d, s in (
         ("dict_mixed_scalars", ""),
@@ -1132,6 +1163,16 @@ _HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("dict_mixed_int_widths", ""),
         ("ordered_map", ""),
     )
+)
+
+_NUMERIC_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="int_list"),
+    _ci(case_dir_name="int_list_large", suffix="_large"),
+    _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+    _ci(case_dir_name="float_list", suffix="_float"),
+    _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
+    _ci(case_dir_name="float_special_values", suffix="_float_v"),
+    _ci(case_dir_name="nested_float_list", suffix="_float_n"),
 )
 
 
@@ -1246,38 +1287,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_dict"),
         _ci(case_dir_name="dict_with_list_value", suffix="_list_val"),
     ),
-    "float_format": (
-        _ci(case_dir_name="float_list"),
-        _ci(case_dir_name="float_scientific_notation", suffix="_s"),
-        _ci(case_dir_name="float_special_values", suffix="_v"),
-        _ci(case_dir_name="nested_float_list", suffix="_n"),
-        _ci(case_dir_name="scalar_float"),
-    ),
-    "integer_format": (
-        _ci(case_dir_name="int_list"),
-        _ci(case_dir_name="int_list_large", suffix="_large"),
-        _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
-        _ci(case_dir_name="scalar_int"),
-        _ci(case_dir_name="scalar_int_large"),
-    ),
-    "numeric_literal_suffix": (
-        _ci(case_dir_name="int_list"),
-        _ci(case_dir_name="int_list_large", suffix="_large"),
-        _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
-        _ci(case_dir_name="float_list", suffix="_float"),
-        _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
-        _ci(case_dir_name="float_special_values", suffix="_float_v"),
-        _ci(case_dir_name="nested_float_list", suffix="_float_n"),
-    ),
-    "numeric_separator": (
-        _ci(case_dir_name="int_list"),
-        _ci(case_dir_name="int_list_large", suffix="_large"),
-        _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
-        _ci(case_dir_name="float_list", suffix="_float"),
-        _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
-        _ci(case_dir_name="float_special_values", suffix="_float_v"),
-        _ci(case_dir_name="nested_float_list", suffix="_float_n"),
-    ),
+    "float_format": FLOAT_INPUTS,
+    "integer_format": INT_INPUTS,
+    "numeric_literal_suffix": _NUMERIC_INPUTS,
+    "numeric_separator": _NUMERIC_INPUTS,
     "string_format": (
         _ci(case_dir_name="string_list"),
         _ci(case_dir_name="string_with_backslash"),
@@ -1290,34 +1303,12 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="scalar_datetime", suffix="_dt"),
     ),
     "bytes_format": (_ci(case_dir_name="binary"),),
-    "trailing_comma": (
-        _ci(case_dir_name="simple_sequence"),
-        _ci(case_dir_name="simple_dict", suffix="_dict"),
-        _ci(case_dir_name="set", suffix="_set"),
-    ),
-    "line_ending": (
-        _ci(case_dir_name="simple_sequence"),
-        _ci(case_dir_name="simple_dict", suffix="_dict"),
-        _ci(case_dir_name="set", suffix="_set"),
-    ),
+    "trailing_comma": BASIC_COLLECTIONS,
+    "line_ending": BASIC_COLLECTIONS,
     "line_ending_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
-    "type_name": (
-        _ci(case_dir_name="simple_dict"),
-        _ci(case_dir_name="float_special_values", suffix="_v"),
-        _ci(case_dir_name="float_list", suffix="_float"),
-        _ci(case_dir_name="binary", suffix="_binary"),
-        _ci(case_dir_name="scalar_date", suffix="_date"),
-        _ci(case_dir_name="scalar_datetime", suffix="_datetime"),
-    ),
-    "constructor_prefix": (
-        _ci(case_dir_name="simple_dict"),
-        _ci(case_dir_name="float_special_values", suffix="_v"),
-        _ci(case_dir_name="float_list", suffix="_float"),
-        _ci(case_dir_name="binary", suffix="_binary"),
-        _ci(case_dir_name="scalar_date", suffix="_date"),
-        _ci(case_dir_name="scalar_datetime", suffix="_datetime"),
-    ),
+    "type_name": ADT_INPUTS,
+    "constructor_prefix": ADT_INPUTS,
     "numeric_style": (
         _ci(case_dir_name="int_list"),
         _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
@@ -1331,10 +1322,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_sequence"),
     ),
     "constructor_name": (_ci(case_dir_name="simple_dict"),),
-    "heterogeneous_strategy": _HETEROGENEOUS_INPUTS,
-    "heterogeneous_value_enum_name": _HETEROGENEOUS_INPUTS,
-    "heterogeneous_value_union_name": _HETEROGENEOUS_INPUTS,
-    "heterogeneous_value_variant_name": _HETEROGENEOUS_INPUTS,
+    "heterogeneous_strategy": HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
 }
 
 
