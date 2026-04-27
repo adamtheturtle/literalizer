@@ -473,7 +473,7 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new SortedSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="new SortedSet<{type_name}> {{",
-                supports_heterogeneity=True,
+                supports_heterogeneity=False,
             )
         )
 

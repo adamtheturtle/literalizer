@@ -707,7 +707,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.TreeSet;",
             ),
             set_opener_template="",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
         )
 
     class CommentFormats(enum.Enum):

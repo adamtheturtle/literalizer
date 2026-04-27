@@ -336,7 +336,7 @@ class Scala(metaclass=LanguageCls):
             empty_set=None,
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
         )
 
     class CommentFormats(enum.Enum):
