@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import math
+import string
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -369,7 +370,12 @@ def _elm_call_stub(
         type_sig = f"{flat_name} : a -> ()"
         impl = f"{flat_name} _ = ()"
     else:
-        type_vars = ", ".join(chr(ord("a") + i) for i in range(n))
+        _alphabet_size = len(string.ascii_lowercase)
+        type_vars = ", ".join(
+            chr(ord("a") + (i % _alphabet_size))
+            + (str(object=i // _alphabet_size) if i >= _alphabet_size else "")
+            for i in range(n)
+        )
         type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
         impl = f"{flat_name} _ = ()"
     return (type_sig, impl)
