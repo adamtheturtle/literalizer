@@ -984,11 +984,15 @@ def _format_collection_lines(
                     )
                 )
                 formatted_entries.append(entry)
+            dict_trailing = (
+                trailing_comma
+                and spec.dict_format_config.supports_trailing_comma
+            )
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,
                 body_prefix=body_prefix,
-                trailing_comma=trailing_comma,
+                trailing_comma=dict_trailing,
                 spec=spec,
             )
         case set() as set_data:
@@ -1009,11 +1013,15 @@ def _format_collection_lines(
                 )
                 for item in sorted_items
             ]
+            set_trailing = (
+                trailing_comma
+                and spec.set_format_config.supports_trailing_comma
+            )
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,
                 body_prefix=body_prefix,
-                trailing_comma=trailing_comma,
+                trailing_comma=set_trailing,
                 spec=spec,
             )
         case list() as list_data:

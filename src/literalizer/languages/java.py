@@ -699,6 +699,7 @@ class Java(metaclass=LanguageCls):
             preamble_lines=("import java.util.Set;",),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=False,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="new TreeSet<>(Set.of("),
@@ -710,6 +711,7 @@ class Java(metaclass=LanguageCls):
             ),
             set_opener_template="",
             supports_heterogeneity=False,
+            supports_trailing_comma=False,
         )
 
     class CommentFormats(enum.Enum):
@@ -750,6 +752,7 @@ class Java(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("import java.util.Map;",),
             narrowed_open=None,
+            supports_trailing_comma=False,
         )
         HASH_MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new HashMap<>(Map.ofEntries("),
@@ -764,6 +767,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.Map;",
             ),
             narrowed_open=None,
+            supports_trailing_comma=False,
         )
 
     class EmptyDictKey(enum.Enum):
