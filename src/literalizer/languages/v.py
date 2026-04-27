@@ -120,10 +120,12 @@ def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
         else:
             return frozenset()
         own: frozenset[int] = frozenset({id(item)}) if needs else frozenset()
-        child_ids = frozenset[int]().union(*(_extra_ids(c) for c in children))
+        child_ids = frozenset[int]().union(
+            *(_extra_ids(item=c) for c in children)
+        )
         return own | child_ids
 
-    return base_ids | _extra_ids(data)
+    return base_ids | _extra_ids(item=data)
 
 
 @dataclasses.dataclass(frozen=True)
