@@ -22,19 +22,10 @@ package A_Stub is
    procedure Append (Container : in out A_Val; Item : A_Val);
 
    function AStr   (S : String)            return A_Val;
-   function AStr   (C : Character)          return A_Val;
    function AInt   (I : Long_Long_Integer) return A_Val;
    function AFloat (F : Long_Float)        return A_Val;
    function ABool  (B : Boolean)           return A_Val;
    function AEntry (Key : String; Value : A_Val) return A_Val;
-
-   --  Float specials (infinity, NaN) are routed through these
-   --  zero-argument helpers so the goldens never embed a static
-   --  ``1.0 / 0.0`` expression — GNAT rejects that at compile time
-   --  with ``static expression fails Constraint_Check``.
-   function A_Pos_Inf return A_Val;
-   function A_Neg_Inf return A_Val;
-   function A_NaN     return A_Val;
 
    ANull : constant A_Val;
 

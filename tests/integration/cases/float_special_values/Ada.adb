@@ -1,9 +1,15 @@
 with A_Stub; use A_Stub;
 procedure Check is
+   pragma Suppress (Division_Check);
+   Zero : Long_Float := 0.0;
+   pragma Volatile (Zero);
+   Pos_Inf : constant Long_Float := 1.0 / Zero;
+   Neg_Inf : constant Long_Float := -1.0 / Zero;
+   NaN : constant Long_Float := Zero / Zero;
    my_data : A_Val := AList'[
-       A_Pos_Inf,
-       A_Neg_Inf,
-       A_NaN
+       AFloat (Pos_Inf),
+       AFloat (Neg_Inf),
+       AFloat (NaN)
    ];
 begin
    null;

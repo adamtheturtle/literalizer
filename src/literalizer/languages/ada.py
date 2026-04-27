@@ -52,7 +52,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    body_preamble_from_scalars,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -64,6 +63,34 @@ from literalizer._language import (
 from literalizer._types import Value
 
 _ADA_EMPTY_LITERAL = "AList'[]"
+
+
+def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
+    """Return which IEEE-special float kinds appear anywhere in *data*.
+
+    Walks lists, dicts, and sets so a nested ``float('inf')`` is still
+    detected.  The returned set uses the tags ``pos_inf``, ``neg_inf``,
+    and ``nan`` so :meth:`Ada.compute_body_preamble` only emits the
+    constants it actually needs.
+    """
+    kinds: set[str] = set()
+    stack: list[Value] = [data]
+    while stack:
+        item = stack.pop()
+        match item:
+            case bool():
+                continue
+            case float() if math.isnan(item):
+                kinds.add("nan")
+            case float() if math.isinf(item):
+                kinds.add("pos_inf" if item > 0 else "neg_inf")
+            case list() | set():
+                stack.extend(item)
+            case dict():
+                stack.extend(item.values())
+            case _:
+                continue
+    return frozenset(kinds)
 
 
 def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
@@ -78,20 +105,12 @@ def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
 
 @beartype
 def _format_ada_entry(original: Value, formatted: str) -> str:
-    """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor.
-
-    Float infinities and NaNs are formatted as zero-argument helper
-    calls (``A_Pos_Inf`` etc.) that already return ``A_Val``, so the
-    ``AFloat`` wrapper is skipped — wrapping would otherwise emit
-    ``AFloat (1.0 / 0.0)`` which GNAT statically rejects.
-    """
+    """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor."""
     match original:
         case bool():
             return formatted
         case int():
             return f"AInt ({formatted})"
-        case float() if math.isinf(original) or math.isnan(original):
-            return formatted
         case float():
             return f"AFloat ({formatted})"
         case str() | bytes() | datetime.date():
@@ -239,9 +258,9 @@ class Ada(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="A_Pos_Inf",
-        negative_infinity="A_Neg_Inf",
-        nan="A_NaN",
+        positive_infinity="Pos_Inf",
+        negative_infinity="Neg_Inf",
+        nan="NaN",
     ):
         """Float format options."""
 
@@ -552,14 +571,29 @@ class Ada(metaclass=LanguageCls):
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
-        """Callable that formats a string value as a quoted literal."""
-        return format_string_concat_control(
+        """Callable that formats a string value as a quoted literal.
+
+        Ada distinguishes ``String`` from ``Character``, so a literal
+        consisting solely of ``Character'Val(N)`` would not satisfy the
+        ``AStr (S : String)`` constructor.  Prepend an empty string in
+        that case so the ``&`` operator widens the result to ``String``.
+        """
+        inner = format_string_concat_control(
             quote_char='"',
             quote_escape='""',
             control_char_template="Character'Val({})",
             concat_operator=" & ",
             escape_backslash=False,
         )
+
+        def _format(value: str) -> str:
+            """Widen a bare ``Character'Val(N)`` result to ``String``."""
+            formatted = inner(value)
+            if formatted.startswith("Character'Val"):
+                return f'"" & {formatted}'
+            return formatted
+
+        return _format
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
@@ -609,8 +643,39 @@ class Ada(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
-        return body_preamble_from_scalars(
-            scalar_body_preamble=self.scalar_body_preamble,
-            format_lines=tuple,
-        )
+        """Emit local IEEE-special constants when needed.
+
+        Ada has no portable inline literal for ``+Inf`` / ``-Inf`` /
+        ``NaN``: GNAT statically rejects ``1.0 / 0.0`` with
+        ``static expression fails Constraint_Check``.  When the data
+        contains an inf or NaN, declare them as local constants in the
+        enclosing procedure's declarative part using a volatile zero
+        denominator so GNAT cannot constant-fold the division, and
+        suppress ``Division_Check`` so IEEE infinity / NaN propagate
+        instead of raising ``Constraint_Error`` at runtime.
+        """
+
+        def _compute(
+            types: frozenset[type],
+            data: Value,
+            /,
+        ) -> tuple[str, ...]:
+            """Build the inf / NaN constant declarations for *data*."""
+            del types
+            kinds = _ada_special_float_kinds(data=data)
+            if not kinds:
+                return ()
+            lines = [
+                "pragma Suppress (Division_Check);",
+                "Zero : Long_Float := 0.0;",
+                "pragma Volatile (Zero);",
+            ]
+            if "pos_inf" in kinds:
+                lines.append("Pos_Inf : constant Long_Float := 1.0 / Zero;")
+            if "neg_inf" in kinds:
+                lines.append("Neg_Inf : constant Long_Float := -1.0 / Zero;")
+            if "nan" in kinds:
+                lines.append("NaN : constant Long_Float := Zero / Zero;")
+            return tuple(lines)
+
+        return _compute
