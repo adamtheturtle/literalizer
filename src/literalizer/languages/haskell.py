@@ -1208,6 +1208,39 @@ class Haskell(metaclass=LanguageCls):
             )
         return f"module {self.module_name} where\n" + preamble + "\n" + content
 
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a sequence of top-level *declarations* alongside a
+        block of bare call expressions.
+
+        Top-level ``name :: Type`` / ``name = value`` bindings stay at
+        module scope and only the *calls* go inside ``main = do``.  The
+        integration harness pairs each ``$ref`` declaration's
+        ``bare_code`` with a downstream call and uses this hook to
+        avoid concatenating both halves into one ``content`` string,
+        which would otherwise force the bindings into a ``do``-block
+        where they would need ``let`` injection.
+        """
+        preamble = "\n".join(body_preamble)
+        indented_calls = "\n".join(
+            f"    _ <- {line}" if line.strip() else line
+            for line in calls.split(sep="\n")
+        )
+        declaration_block = "\n".join(declarations)
+        return (
+            f"module {self.module_name} where\n"
+            + preamble
+            + "\n"
+            + (declaration_block + "\n" if declaration_block else "")
+            + "main :: IO ()\nmain = do\n"
+            + indented_calls
+            + "\n    pure ()"
+        )
+
     @staticmethod
     def wrap_combined_in_file(
         declaration: str,
