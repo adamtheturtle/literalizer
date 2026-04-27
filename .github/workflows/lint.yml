@@ -145,8 +145,8 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
-  # Split out from lint-fast because `odin check` intermittently hangs
-  # in CI; isolating it means a hang only stalls this job instead of
+  # Split out from lint-fast because `odin` intermittently hangs in
+  # CI; isolating it means a hang only stalls this job instead of
   # blocking every other lint-fast language behind the same timeout.
   lint-odin:
     runs-on: ubuntu-latest
@@ -158,20 +158,18 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Run serially: parallel `odin check` invocations are the
-      # suspected cause of the intermittent hangs, so feed fixtures
-      # one at a time until the upstream issue is understood.
-      - name: Lint Odin
-        run: |-
-          find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          xargs -0 -I{} odin check {} -file < /tmp/files-odin
+      # Each invocation runs from its own tmpdir so Odin's intermediate
+      # files don't collide across parallel workers.  `odin run` also
+      # compiles, so no separate `odin check` pass is needed.
       - name: Run Odin files
         run: |-
+          find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
           cat > /tmp/run-odin-file.sh << 'SCRIPT'
           #!/bin/sh
           set -e
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
+          cd "$tmpdir"
           odin run "$1" -file -out:"$tmpdir/prog"
           SCRIPT
           chmod +x /tmp/run-odin-file.sh
