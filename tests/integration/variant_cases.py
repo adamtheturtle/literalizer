@@ -1110,6 +1110,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="scalar_datetime"),
         _ci(case_dir_name="scalar_datetime_naive", suffix="_naive"),
         _ci(case_dir_name="scalar_datetime_non_utc", suffix="_non_utc"),
+        _ci(case_dir_name="datetime_list"),
     ),
     "sequence": (
         _ci(case_dir_name="simple_sequence"),
