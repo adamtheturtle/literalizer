@@ -1,3 +1,4 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := [

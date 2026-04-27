@@ -1,24 +1,25 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := {
-		's': 'string',
-		'i': 1,
-		'f': 1.5,
-		'b': true,
-		'n': none,
-		'd': "2024-01-15",
-		'dt': "2024-01-15T12:00:00",
-		'by': "48656c6c6f",
+		's': IVal('string'),
+		'i': IVal(1),
+		'f': IVal(1.5),
+		'b': IVal(true),
+		'n': IVal(unsafe { nil }),
+		'd': IVal("2024-01-15"),
+		'dt': IVal("2024-01-15T12:00:00"),
+		'by': IVal("48656c6c6f"),
 	}
 	my_data = {
-		's': 'string',
-		'i': 1,
-		'f': 1.5,
-		'b': true,
-		'n': none,
-		'd': "2024-01-15",
-		'dt': "2024-01-15T12:00:00",
-		'by': "48656c6c6f",
+		's': IVal('string'),
+		'i': IVal(1),
+		'f': IVal(1.5),
+		'b': IVal(true),
+		'n': IVal(unsafe { nil }),
+		'd': IVal("2024-01-15"),
+		'dt': IVal("2024-01-15T12:00:00"),
+		'by': IVal("48656c6c6f"),
 	}
 	_ = my_data
 }

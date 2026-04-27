@@ -42,6 +42,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar_single,
 )
+from literalizer._heterogeneous import collect_heterogeneous_container_ids
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
@@ -71,6 +72,13 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_V_I32_MIN = -(2**31)  # -2147483648
+_V_I32_MAX = 2**31 - 1  # 2147483647
+
+_V_IFACE_NAME = "IVal"
+_V_IFACE_DECL = f"interface {_V_IFACE_NAME} {{}}"
+_V_NULL_WRAPPED = f"{_V_IFACE_NAME}(unsafe {{ nil }})"
+
 
 @beartype
 def _format_v_u64_positive(value: int) -> str:
@@ -78,6 +86,89 @@ def _format_v_u64_positive(value: int) -> str:
     ``u64`` typed conversion.
     """
     return f"u64({value})"
+
+
+@beartype
+def _format_v_i64(value: int) -> str:
+    """Format a value outside 32-bit signed range as a V ``i64``
+    typed conversion.
+    """
+    return f"i64({value})"
+
+
+def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
+    """Return container ids that need IVal wrapping in V.
+
+    Extends :func:`collect_heterogeneous_container_ids` to also
+    include containers with any ``None`` values (V cannot store
+    ``none`` in typed collections) and empty containers (V requires
+    explicit type annotations for empty collections).
+    """
+    base_ids = collect_heterogeneous_container_ids(data=data)
+
+    def _extra_ids(item: Value) -> frozenset[int]:
+        """Return ids for *item* and its descendants that need IVal
+        wrapping.
+        """
+        if isinstance(item, dict):
+            values: list[Value] = list(item.values())
+            needs = not values or any(v is None for v in values)
+            children: list[Value] = values
+        elif isinstance(item, list):
+            needs = not item or any(v is None for v in item)
+            children = item
+        else:
+            return frozenset()
+        own: frozenset[int] = frozenset({id(item)}) if needs else frozenset()
+        child_ids = frozenset[int]().union(*(_extra_ids(c) for c in children))
+        return own | child_ids
+
+    return base_ids | _extra_ids(data)
+
+
+@dataclasses.dataclass(frozen=True)
+class _VHeterogeneousStrategyConfig:
+    """Configuration for one V heterogeneous-values strategy."""
+
+    build_behavior: Callable[[], HeterogeneousBehavior]
+    build_preamble: Callable[[], Callable[[Value], tuple[str, ...]]]
+
+
+def _build_v_interface_behavior() -> HeterogeneousBehavior:
+    """INTERFACE strategy: wrap scalars in ``IVal(...)``."""
+
+    def _compute(data: Value) -> frozenset[int]:
+        """Return container ids whose scalar children should be
+        wrapped.
+        """
+        return _v_collect_ids_needing_wrap(data=data)
+
+    def _wrap(raw_value: Value, formatted: str) -> str:
+        """Wrap a scalar as ``IVal(formatted)`` or the null sentinel."""
+        if raw_value is None:
+            return _V_NULL_WRAPPED
+        return f"{_V_IFACE_NAME}({formatted})"
+
+    return HeterogeneousBehavior(
+        skip_scalar_checks=True,
+        compute_wrap_ids=_compute,
+        wrap_scalar=_wrap,
+    )
+
+
+def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
+    """INTERFACE strategy: emit ``interface IVal {}`` when needed."""
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Emit ``interface IVal {}`` when any container needs
+        wrapping.
+        """
+        wrap_ids = _v_collect_ids_needing_wrap(data=data)
+        if not wrap_ids:
+            return ()
+        return (_V_IFACE_DECL,)
+
+    return _preamble
 
 
 @beartype
@@ -145,7 +236,7 @@ class V(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=None,
+            empty_sequence=f"[]{_V_IFACE_NAME}{{}}",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -213,9 +304,9 @@ class V(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="math.inf",
-        negative_infinity="-math.inf",
-        nan="math.nan",
+        positive_infinity="math.inf(1)",
+        negative_infinity="math.inf(-1)",
+        nan="math.nan()",
     ):
         """Float format options."""
 
@@ -331,11 +422,21 @@ class V(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
-        """
+        """Heterogeneous-scalar strategy options for V."""
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = _VHeterogeneousStrategyConfig(
+            build_behavior=lambda: NO_HETEROGENEOUS_BEHAVIOR,
+            build_preamble=lambda: no_data_preamble,
+        )
+        """Raise on heterogeneous scalar collections (default)."""
+
+        INTERFACE = _VHeterogeneousStrategyConfig(
+            build_behavior=_build_v_interface_behavior,
+            build_preamble=_build_v_interface_preamble,
+        )
+        """Wrap heterogeneous scalars and null values with ``IVal(...)``
+        and emit ``interface IVal {}`` in the file preamble.
+        """
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -396,11 +497,11 @@ class V(metaclass=LanguageCls):
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.NEWLINE
     heterogeneous_strategy: HeterogeneousStrategies = (
-        HeterogeneousStrategies.ERROR
+        HeterogeneousStrategies.INTERFACE
     )
     indent: str = "\t"
 
-    null_literal: ClassVar[str] = "none"
+    null_literal: ClassVar[str] = "unsafe { nil }"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -440,12 +541,12 @@ class V(metaclass=LanguageCls):
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
-        return no_data_preamble
+        return self.heterogeneous_strategy.value.build_preamble()
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        return self.heterogeneous_strategy.value.build_behavior()
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -507,7 +608,7 @@ class V(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
-            empty_dict=None,
+            empty_dict=f"map[string]{_V_IFACE_NAME}{{}}",
             preamble_lines=(),
             narrowed_open=None,
         )
@@ -539,15 +640,27 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return make_overflow_fallback_formatter(
-            base=self.integer_format.get_formatter(
-                numeric_separator=self.numeric_separator,
-            ),
+        """Callable that formats an int value as a literal.
+
+        Values in 32-bit signed range are formatted with the chosen
+        integer format.  Values outside that range but within 64-bit
+        signed range use ``i64(...)``.  Values outside 64-bit signed
+        range use ``u64(...)`` (or raise for negative overflow).
+        """
+        i64_or_u64_fallback = make_overflow_fallback_formatter(
+            base=_format_v_i64,
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_format_v_u64_positive,
                 language_name="V",
             ),
+        )
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=i64_or_u64_fallback,
+            min_value=_V_I32_MIN,
+            max_value=_V_I32_MAX,
         )
 
     @cached_property

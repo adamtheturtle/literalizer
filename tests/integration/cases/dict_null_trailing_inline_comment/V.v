@@ -1,8 +1,9 @@
+interface IVal {}
 
 fn main() {
 	my_data := {
-		'host': 'localhost',
-		'port': none,  // not configured yet
+		'host': IVal('localhost'),
+		'port': IVal(unsafe { nil }),  // not configured yet
 	}
 	_ = my_data
 }

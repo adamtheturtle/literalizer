@@ -1,14 +1,15 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := {
 		// comment
-		'name': 'Alice',
-		'score': none,
+		'name': IVal('Alice'),
+		'score': IVal(unsafe { nil }),
 	}
 	my_data = {
 		// comment
-		'name': 'Alice',
-		'score': none,
+		'name': IVal('Alice'),
+		'score': IVal(unsafe { nil }),
 	}
 	_ = my_data
 }

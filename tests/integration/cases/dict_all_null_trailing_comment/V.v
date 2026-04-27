@@ -1,8 +1,9 @@
+interface IVal {}
 
 fn main() {
 	my_data := {
-		'a': none,
-		'b': none,
+		'a': IVal(unsafe { nil }),
+		'b': IVal(unsafe { nil }),
 		// trailing
 	}
 	_ = my_data

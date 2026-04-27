@@ -1,14 +1,15 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := [
-		[1, 2],
+		[IVal(1), IVal(2)],
 		[],
-		['a', 'b'],
+		[IVal('a'), IVal('b')],
 	]
 	my_data = [
-		[1, 2],
+		[IVal(1), IVal(2)],
 		[],
-		['a', 'b'],
+		[IVal('a'), IVal('b')],
 	]
 	_ = my_data
 }

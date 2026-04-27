@@ -1,9 +1,10 @@
+interface IVal {}
 
 fn main() {
 	my_data := [
-		[1, 2],
+		[IVal(1), IVal(2)],
 		[],
-		['a', 'b'],
+		[IVal('a'), IVal('b')],
 	]
 	_ = my_data
 }
