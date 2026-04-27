@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- Java sets and dicts no longer emit a trailing comma when
+  ``trailing_comma=TrailingCommas.YES`` is requested.  ``Set.of(...)``
+  and ``Map.ofEntries(...)`` are method calls and the previous output
+  was rejected by ``javac``.  ``SetFormatConfig`` and
+  ``DictFormatConfig`` gain a ``supports_trailing_comma`` field
+  (defaults to ``True``) mirroring ``SequenceFormatConfig``; formats
+  built around method-call syntax can opt out.
 - ``literalize`` and ``literalize_call`` now require a ``module_name``
   keyword argument.  The languages whose ``wrap_in_file`` introduces a
   named scope — Java's wrapping class and method, Fortran's

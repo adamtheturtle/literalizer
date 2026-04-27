@@ -96,6 +96,7 @@ class SetFormatConfig:
     preamble_lines: tuple[str, ...]
     set_opener_template: str
     supports_heterogeneity: bool
+    supports_trailing_comma: bool = True
 
     def with_typed_opener(
         self,
@@ -135,6 +136,7 @@ class DictFormatConfig:
     empty_dict: str | None
     preamble_lines: tuple[str, ...]
     narrowed_open: str | None
+    supports_trailing_comma: bool = True
 
 
 @dataclasses.dataclass(frozen=True)

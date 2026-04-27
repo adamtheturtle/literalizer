@@ -4,7 +4,7 @@ class Check {
 var my_data = Set.of(
     "apple",
     "banana",
-    "cherry",
+    "cherry"
 );
     }
 }
