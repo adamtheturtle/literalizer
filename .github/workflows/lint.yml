@@ -170,8 +170,9 @@ jobs:
             src=$(realpath "${files[i]}")
             ( wd=$(mktemp -d)
               trap 'rm -rf "$wd"' EXIT
+              cp "$src" "$wd/main.odin"
               cd "$wd"
-              odin run "$src" -file -out:"$wd/prog" ) || exit 1
+              odin run . -out:"$wd/prog" ) || exit 1
           done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
