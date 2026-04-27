@@ -101,6 +101,7 @@ def test_raises_heterogeneous_array(input_format: InputFormat) -> None:
             source=_to_source(data=[1, 2.5, 3], input_format=input_format),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -117,6 +118,7 @@ def test_raises_heterogeneous_dict(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -133,6 +135,7 @@ def test_raises_nested_heterogeneous(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -157,6 +160,7 @@ def test_raises_sibling_lists(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -181,6 +185,7 @@ def test_raises_nested_sibling_lists(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -205,6 +210,7 @@ def test_raises_mixed_dict_values(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -236,6 +242,7 @@ def test_raises_nested_mixed_dict_values(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -264,6 +271,7 @@ def test_raises_nested_mixed_list_values(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -288,6 +296,7 @@ def test_raises_mixed_list_values(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -316,6 +325,7 @@ def test_raises_mixed_dict_inside_mixed_list(
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -342,6 +352,7 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
             source=_to_source(data=data, input_format=input_format),
             input_format=input_format,
             language=Dhall(),
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -366,6 +377,7 @@ def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
             ),
             input_format=input_format,
             language=MOJO,
+            module_name="check",
             pre_indent_level=0,
             include_delimiters=True,
         )
@@ -381,6 +393,7 @@ def test_no_raise_homogeneous_array(input_format: InputFormat) -> None:
         source=_to_source(data=[1, 2, 3], input_format=input_format),
         input_format=input_format,
         language=MOJO,
+        module_name="check",
         pre_indent_level=0,
         include_delimiters=True,
     )
@@ -396,6 +409,7 @@ def test_no_raise_homogeneous_dict(input_format: InputFormat) -> None:
         ),
         input_format=input_format,
         language=MOJO,
+        module_name="check",
         pre_indent_level=0,
         include_delimiters=True,
     )
@@ -410,6 +424,7 @@ def test_no_raise_heterogeneous_for_language_supporting_it(
         source=_to_source(data=[1, 2.5, 3], input_format=input_format),
         input_format=input_format,
         language=PYTHON,
+        module_name="check",
         pre_indent_level=0,
         include_delimiters=True,
     )
@@ -426,6 +441,7 @@ def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
         source=_to_source(data=data, input_format=input_format),
         input_format=input_format,
         language=Dhall(),
+        module_name="check",
         pre_indent_level=0,
         include_delimiters=True,
     )

@@ -446,6 +446,7 @@ class Fortran(metaclass=LanguageCls):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Fortran variable declaration in a program."""
@@ -456,11 +457,11 @@ class Fortran(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix="  ")
         return (
-            "program check\n"
+            f"program {module_name}\n"
             "  use fval_m\n"
             "  implicit none\n"
             f"{indented}\n"
-            "end program check"
+            f"end program {module_name}"
         )
 
     @staticmethod
@@ -468,6 +469,7 @@ class Fortran(metaclass=LanguageCls):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Fortran declaration + assignment in separate
@@ -480,22 +482,22 @@ class Fortran(metaclass=LanguageCls):
         decl_indented = textwrap.indent(text=declaration, prefix="  ")
         assign_indented = textwrap.indent(text=assignment, prefix="  ")
         return (
-            "subroutine check_declaration()\n"
+            f"subroutine {module_name}_declaration()\n"
             "  use fval_m\n"
             "  implicit none\n"
             f"{decl_indented}\n"
-            "end subroutine check_declaration\n"
+            f"end subroutine {module_name}_declaration\n"
             "\n"
-            "subroutine check_assignment()\n"
+            f"subroutine {module_name}_assignment()\n"
             "  use fval_m\n"
             "  implicit none\n"
             f"  type(fval_t) :: {variable_name}\n"
             f"{assign_indented}\n"
-            "end subroutine check_assignment\n"
+            f"end subroutine {module_name}_assignment\n"
             "\n"
             "program main\n"
-            "  call check_declaration()\n"
-            "  call check_assignment()\n"
+            f"  call {module_name}_declaration()\n"
+            f"  call {module_name}_assignment()\n"
             "end program main"
         )
 

@@ -47,6 +47,7 @@ Use :func:`literalizer.literalize` to convert data to native language literals:
            bytes_format=Go.bytes_formats.HEX,
            sequence_format=Go.sequence_formats.SLICE,
        ),
+       module_name="check",
        pre_indent_level=0,
        include_delimiters=True,
        variable_form=None,

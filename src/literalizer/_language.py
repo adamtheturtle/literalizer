@@ -492,6 +492,7 @@ class LanguageCls(type):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
@@ -502,6 +503,7 @@ class LanguageCls(type):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
@@ -1223,6 +1225,7 @@ class Language(Protocol):
     def wrap_in_file(
         content: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
@@ -1233,6 +1236,7 @@ class Language(Protocol):
         declaration: str,
         assignment: str,
         variable_name: str,
+        module_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
@@ -1366,10 +1370,11 @@ def prepend_body_preamble(
 def wrap_in_file_noop(
     content: str,
     variable_name: str,
+    module_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Default ``wrap_in_file`` that only adds body preamble."""
-    del variable_name  # unused
+    del variable_name, module_name  # unused
     return prepend_body_preamble(content=content, body_preamble=body_preamble)
 
 
@@ -1378,6 +1383,7 @@ def wrap_combined_in_file_noop(
     declaration: str,
     assignment: str,
     variable_name: str,
+    module_name: str,
     body_preamble: tuple[str, ...],
 ) -> str:
     """Default ``wrap_combined_in_file``: join with newline, prepend
@@ -1386,6 +1392,7 @@ def wrap_combined_in_file_noop(
     return wrap_in_file_noop(
         content=declaration + "\n" + assignment,
         variable_name=variable_name,
+        module_name=module_name,
         body_preamble=body_preamble,
     )
 

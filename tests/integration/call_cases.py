@@ -429,6 +429,7 @@ def run_call_golden_case(
             per_element=config.per_element,
             wrap_in_file=True,
             ref_case=effective_ref_case,
+            module_name="check",
         )
         check_golden(
             file_regression=file_regression,
@@ -448,6 +449,7 @@ def run_call_golden_case(
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
                 variable_form=literalizer.NewVariable(name=ref_name),
+                module_name="check",
             )
             for ref_name, ref_source in declarations.items()
         ]
@@ -460,6 +462,7 @@ def run_call_golden_case(
             call_transform=config.call_transform,
             per_element=config.per_element,
             ref_case=effective_ref_case,
+            module_name="check",
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -524,6 +527,7 @@ def run_call_golden_case(
     wrapped = spec.wrap_in_file(
         content=content,
         variable_name="",
+        module_name="check",
         body_preamble=call_body_preamble,
     )
     all_preamble = _dedupe_preamble_blocks(
