@@ -392,6 +392,15 @@ _BYTES_FORMATTERS: dict[
     "BASE64": _build_elm_bytes_base64,
 }
 
+_ELM_PLATFORM_WORKER_SUFFIX: str = (
+    "\n    in\n"
+    "    Platform.worker\n"
+    "        { init = \\_ -> ( (), Cmd.none )\n"
+    "        , update = \\_ m -> ( m, Cmd.none )\n"
+    "        , subscriptions = \\_ -> Sub.none\n"
+    "        }"
+)
+
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -685,14 +694,14 @@ class Elm(metaclass=LanguageCls):
             return (
                 f"module Check exposing (..)\n\n\n"
                 f"{preamble}\n\n\n"
-                "main : ()\nmain =\n    let\n"
+                "main : Program () () Never\nmain =\n    let\n"
                 + "\n".join(let_lines)
-                + "\n    in\n    ()"
+                + _ELM_PLATFORM_WORKER_SUFFIX
             )
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
+    @staticmethod
     def wrap_calls_with_declarations(
-        self,
         declarations: tuple[str, ...],
         calls: str,
         body_preamble: tuple[str, ...],
@@ -723,9 +732,9 @@ class Elm(metaclass=LanguageCls):
         return (
             f"module Check exposing (..)\n\n\n"
             f"{preamble}\n\n\n"
-            "main : ()\nmain =\n    let\n"
+            "main : Program () () Never\nmain =\n    let\n"
             + "\n".join(let_lines)
-            + "\n    in\n    ()"
+            + _ELM_PLATFORM_WORKER_SUFFIX
         )
 
     @staticmethod

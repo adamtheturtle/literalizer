@@ -8,7 +8,7 @@ process : ( a, b ) -> ()
 process _ = ()
 
 
-main : ()
+main : Program () () Never
 main =
     let
         my_var : Val
@@ -26,4 +26,8 @@ main =
         _ = process(my_var, EInt 42)
         _ = process(my_other, EInt 7)
     in
-    ()
+    Platform.worker
+        { init = \_ -> ( (), Cmd.none )
+        , update = \_ m -> ( m, Cmd.none )
+        , subscriptions = \_ -> Sub.none
+        }
