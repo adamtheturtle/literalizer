@@ -60,7 +60,6 @@ htmlhelp_basename = "literalizerdoc"
 
 spelling_word_list_filename = "../../spelling_private_dict.txt"
 
-# json5.org has intermittent SSL failures on some CI runners.
 linkcheck_ignore = [
     r"https://json5\.org/",
 ]
