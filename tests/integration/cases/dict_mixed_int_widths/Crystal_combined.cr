@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = {
     "a" => 1,
     "b" => 3000000000,
@@ -8,3 +10,4 @@ my_data = {
     "b" => 3000000000,
     "c" => "x",
 }
+end

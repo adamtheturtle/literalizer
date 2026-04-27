@@ -16,36 +16,36 @@ contains
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 subroutine check_declaration()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('name', fstr('Alice')), &
-      fentry('age', fint(30_int64)), &
-      fentry('active', fbool(.true.)), &
-      fentry('score', fnull()), &
-      fentry('joined', fstr("2024-01-15")), &
-      fentry('last_login', fstr("2024-01-15T12:30:00+00:00")), &
-      fentry('avatar', fstr("48656c6c6f")) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('name', fstr('Alice')), &
+        fentry('age', fint(30_int64)), &
+        fentry('active', fbool(.true.)), &
+        fentry('score', fnull()), &
+        fentry('joined', fstr("2024-01-15")), &
+        fentry('last_login', fstr("2024-01-15T12:30:00+00:00")), &
+        fentry('avatar', fstr("48656c6c6f")) &
+    ])
 end subroutine check_declaration
 
 subroutine check_assignment()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('name', fstr('Alice')), &
-      fentry('age', fint(30_int64)), &
-      fentry('active', fbool(.true.)), &
-      fentry('score', fnull()), &
-      fentry('joined', fstr("2024-01-15")), &
-      fentry('last_login', fstr("2024-01-15T12:30:00+00:00")), &
-      fentry('avatar', fstr("48656c6c6f")) &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('name', fstr('Alice')), &
+        fentry('age', fint(30_int64)), &
+        fentry('active', fbool(.true.)), &
+        fentry('score', fnull()), &
+        fentry('joined', fstr("2024-01-15")), &
+        fentry('last_login', fstr("2024-01-15T12:30:00+00:00")), &
+        fentry('avatar', fstr("48656c6c6f")) &
+    ])
 end subroutine check_assignment
 
 program main
-  call check_declaration()
-  call check_assignment()
+    call check_declaration()
+    call check_assignment()
 end program main

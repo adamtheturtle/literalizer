@@ -1,8 +1,8 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       AStr ("100% done"),
-       AStr ("%(name) is here")
-   );
+    my_data : A_Val := AList'(
+        AStr ("100% done"),
+        AStr ("%(name) is here")
+    );
 begin
-   null;
+    null;
 end Check;

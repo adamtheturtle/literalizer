@@ -54,6 +54,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -269,6 +270,7 @@ class Erlang(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -405,11 +407,13 @@ class Erlang(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def wrap_in_file(
         self,
@@ -434,16 +438,16 @@ class Erlang(metaclass=LanguageCls):
                 body_preamble=body_preamble,
             )
             erlang_varname = variable_name[0].upper() + variable_name[1:]
-            indented = textwrap.indent(text=body, prefix="    ")
+            indented = textwrap.indent(text=body, prefix=self.indent)
             return (
                 f"-module({self.module_name}).\n"
                 f"-export([x/0]).\n"
                 f"x() ->\n"
                 f"{indented}\n"
-                f"    {erlang_varname}."
+                f"{self.indent}{erlang_varname}."
             )
         trimmed = content.rstrip().removesuffix(",")
-        indented = textwrap.indent(text=trimmed, prefix="    ")
+        indented = textwrap.indent(text=trimmed, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)
         parts.append("x() ->")
@@ -603,6 +607,7 @@ class Erlang(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

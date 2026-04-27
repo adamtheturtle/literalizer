@@ -54,6 +54,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -220,6 +221,7 @@ class D(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -382,6 +384,7 @@ class D(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -389,6 +392,7 @@ class D(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def wrap_in_file(
         self,
@@ -562,6 +566,7 @@ class D(metaclass=LanguageCls):
             empty_dict='parseJSON("{}")',
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = [
     1000000,
     -1234,
@@ -10,3 +12,4 @@ my_data = [
     255,
     -10,
 ]
+end

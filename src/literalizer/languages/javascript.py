@@ -64,6 +64,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -193,6 +194,7 @@ class JavaScript(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -268,6 +270,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
         MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new Map(["),
@@ -279,6 +282,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_dict="new Map()",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     class EmptyDictKey(enum.Enum):
@@ -424,6 +428,7 @@ class JavaScript(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(

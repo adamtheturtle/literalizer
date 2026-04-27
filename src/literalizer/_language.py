@@ -96,7 +96,7 @@ class SetFormatConfig:
     preamble_lines: tuple[str, ...]
     set_opener_template: str
     supports_heterogeneity: bool
-    supports_trailing_comma: bool = True
+    supports_trailing_comma: bool
 
     def with_typed_opener(
         self,
@@ -136,7 +136,7 @@ class DictFormatConfig:
     empty_dict: str | None
     preamble_lines: tuple[str, ...]
     narrowed_open: str | None
-    supports_trailing_comma: bool = True
+    supports_trailing_comma: bool
 
 
 @dataclasses.dataclass(frozen=True)
@@ -483,6 +483,7 @@ class LanguageCls(type):
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
+    module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -1225,6 +1226,27 @@ class Language(Protocol):
         """Wrap a declaration and assignment in a complete, valid file."""
         ...  # pylint: disable=unnecessary-ellipsis
 
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a sequence of top-level *declarations* (each one a
+        full ``literalize`` ``bare_code`` for a ``$ref`` target)
+        alongside a block of bare call expressions in a complete,
+        valid file.
+
+        Most languages can splice the declarations directly in front
+        of the calls and route through :meth:`wrap_in_file` in call
+        mode; they assign :data:`default_wrap_calls_with_declarations`
+        as a no-op wrapper.  Languages whose call-mode wrapping moves
+        bare expressions into a different scope than top-level
+        bindings (e.g. Haskell's ``main = do`` block, where bindings
+        belong at module scope) override this method.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
 
@@ -1315,6 +1337,33 @@ no_validate_spec_for_data: Callable[["Language", Value], None] = (
 )
 """Shared callable for languages with no spec/data constraints to
 check.
+"""
+
+
+def _default_wrap_calls_with_declarations(
+    self: "Language",
+    declarations: tuple[str, ...],
+    calls: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Default ``wrap_calls_with_declarations`` — concatenate the
+    *declarations* and *calls* and route through :meth:`wrap_in_file`
+    in call mode.
+    """
+    content = "\n".join((*declarations, calls)) if declarations else calls
+    return self.wrap_in_file(
+        content=content,
+        variable_name="",
+        body_preamble=body_preamble,
+    )
+
+
+default_wrap_calls_with_declarations: Callable[
+    ["Language", tuple[str, ...], str, tuple[str, ...]], str
+] = _default_wrap_calls_with_declarations
+"""Shared callable for languages whose call-mode :meth:`wrap_in_file`
+already accepts the declarations spliced in front of the call
+expressions.
 """
 
 

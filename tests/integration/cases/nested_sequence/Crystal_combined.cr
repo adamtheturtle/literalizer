@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = [
     true,
     "hi",
@@ -10,3 +12,4 @@ my_data = [
     [1, 2],
     nil,
 ]
+end

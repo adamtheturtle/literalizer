@@ -4,6 +4,28 @@ Changelog
 Next
 ----
 
+- ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local``
+  bindings before the call expressions, so call-mode output with
+  ``ref_declarations`` is supported.  Previously the integration
+  harness skipped ``Jsonnet`` for ref-declaration cases because the
+  array-wrapped output had no place for variable bindings.  The
+  ``DeclarationStyles.ASSIGN`` template changed from ``{value}`` to
+  ``local {name} = {value};``, and ``Jsonnet`` now overrides
+  ``wrap_calls_with_declarations`` to emit those bindings before
+  ``wrap_in_file`` wraps the calls in ``[ … ]``.
+- C single-name call stubs (e.g. ``emit``, ``process``) are now emitted
+  as ``static`` definitions with a stub body instead of bare forward
+  declarations, so generated fixtures can be linked and run.  The lint
+  workflow now compiles each C fixture against a small ``c_main.c``
+  driver and executes the resulting binary, surfacing runtime errors
+  that the previous ``-fsyntax-only`` check missed.
+- ``Crystal.wrap_in_file`` now wraps content in a
+  ``module Check ... end`` block with ``extend self``, matching what
+  Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
+  ``module_name`` constructor argument (default ``"Check"``) to
+  control the wrapper name.  Callers that relied on
+  ``literalize(language=Crystal(), wrap_in_file=True)`` returning bare
+  content will now receive a ``module`` block.
 - Java sets and dicts no longer emit a trailing comma when
   ``trailing_comma=TrailingCommas.YES`` is requested.  ``Set.of(...)``
   and ``Map.ofEntries(...)`` are method calls and the previous output

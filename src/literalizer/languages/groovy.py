@@ -54,6 +54,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -198,6 +199,7 @@ class Groovy(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -347,6 +349,7 @@ class Groovy(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -512,6 +515,7 @@ class Groovy(metaclass=LanguageCls):
             empty_dict="[:]",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

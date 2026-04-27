@@ -16,14 +16,14 @@ contains
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
 program check
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = flist([fval_t :: &
-      fint(42_int64), &
-      freal(3.14), &
-      fbool(.true.), &
-      fbool(.false.), &
-      fstr('hello "world"') &
-  ])
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = flist([fval_t :: &
+        fint(42_int64), &
+        freal(3.14), &
+        fbool(.true.), &
+        fbool(.false.), &
+        fstr('hello "world"') &
+    ])
 end program check

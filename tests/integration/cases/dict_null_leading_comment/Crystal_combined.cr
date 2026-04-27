@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = {
     # comment
     "name" => "Alice",
@@ -8,3 +10,4 @@ my_data = {
     "name" => "Alice",
     "score" => nil,
 }
+end

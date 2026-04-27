@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = [
     "foo",
     "bar",
@@ -8,3 +10,4 @@ my_data = [
     "bar",
     "baz",
 ]
+end

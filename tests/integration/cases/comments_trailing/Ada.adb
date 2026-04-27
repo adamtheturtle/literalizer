@@ -1,8 +1,8 @@
 procedure Check is
-   my_data : A_Val := AList'(
-       AStr ("a")
-       -- trailing
-   );
+    my_data : A_Val := AList'(
+        AStr ("a")
+        -- trailing
+    );
 begin
-   null;
+    null;
 end Check;

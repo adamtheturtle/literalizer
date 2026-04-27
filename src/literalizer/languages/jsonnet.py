@@ -191,6 +191,7 @@ class Jsonnet(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -209,7 +210,9 @@ class Jsonnet(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(template="{value}"),
+            formatter=variable_declaration_formatter(
+                template="local {name} = {value};",
+            ),
             supports_redefinition=False,
         )
 
@@ -330,6 +333,30 @@ class Jsonnet(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Emit ref declarations as top-level ``local`` bindings before
+        the call expressions, which :meth:`wrap_in_file` wraps in a
+        Jsonnet array.
+
+        The default ``wrap_calls_with_declarations`` would splice
+        declarations *into* the array, where ``local`` bindings are
+        invalid; placing them before keeps the file a single chained
+        let-binding ending in an array expression.
+        """
+        wrapped_calls = self.wrap_in_file(
+            content=calls,
+            variable_name="",
+            body_preamble=body_preamble,
+        )
+        if not declarations:
+            return wrapped_calls
+        return "\n".join(declarations) + "\n" + wrapped_calls
 
     @staticmethod
     def wrap_in_file(
@@ -491,6 +518,7 @@ class Jsonnet(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

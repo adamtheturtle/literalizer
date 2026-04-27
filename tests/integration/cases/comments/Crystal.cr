@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = {
     # Server configuration
     "host" => "localhost",  # default host
@@ -5,3 +7,4 @@ my_data = {
     # Enable debug mode
     "debug" => true,
 }
+end

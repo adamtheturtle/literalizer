@@ -60,6 +60,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -209,6 +210,7 @@ class Elixir(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -380,9 +382,10 @@ class Elixir(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -392,8 +395,10 @@ class Elixir(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
-        use_line = f"\n    _ = {variable_name}" if variable_name else ""
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        use_line = (
+            f"\n{self.indent}_ = {variable_name}" if variable_name else ""
+        )
         return (
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
@@ -541,6 +546,7 @@ class Elixir(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

@@ -52,6 +52,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -304,6 +305,7 @@ class Fortran(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -437,12 +439,14 @@ class Fortran(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def wrap_in_file(
         self,
@@ -456,11 +460,11 @@ class Fortran(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="  ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             f"program {self.module_name}\n"
-            "  use fval_m\n"
-            "  implicit none\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
             f"{indented}\n"
             f"end program {self.module_name}"
         )
@@ -479,25 +483,25 @@ class Fortran(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="  ")
-        assign_indented = textwrap.indent(text=assignment, prefix="  ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         return (
             f"subroutine {self.module_name}_declaration()\n"
-            "  use fval_m\n"
-            "  implicit none\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
             f"{decl_indented}\n"
             f"end subroutine {self.module_name}_declaration\n"
             "\n"
             f"subroutine {self.module_name}_assignment()\n"
-            "  use fval_m\n"
-            "  implicit none\n"
-            f"  type(fval_t) :: {variable_name}\n"
+            f"{self.indent}use fval_m\n"
+            f"{self.indent}implicit none\n"
+            f"{self.indent}type(fval_t) :: {variable_name}\n"
             f"{assign_indented}\n"
             f"end subroutine {self.module_name}_assignment\n"
             "\n"
             "program main\n"
-            f"  call {self.module_name}_declaration()\n"
-            f"  call {self.module_name}_assignment()\n"
+            f"{self.indent}call {self.module_name}_declaration()\n"
+            f"{self.indent}call {self.module_name}_assignment()\n"
             "end program main"
         )
 
@@ -664,6 +668,7 @@ class Fortran(metaclass=LanguageCls):
             preamble_lines=self.set_format.value.preamble_lines,
             set_opener_template=self.set_format.value.set_opener_template,
             supports_heterogeneity=self.set_format.value.supports_heterogeneity,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -686,6 +691,7 @@ class Fortran(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

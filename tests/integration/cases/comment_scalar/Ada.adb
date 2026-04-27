@@ -1,6 +1,6 @@
 procedure Check is
-   my_data : A_Val := AInt (-- note
-   42);
+    my_data : A_Val := AInt (-- note
+    42);
 begin
-   null;
+    null;
 end Check;

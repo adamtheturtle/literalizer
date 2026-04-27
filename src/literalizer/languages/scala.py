@@ -65,6 +65,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -207,6 +208,7 @@ class Scala(metaclass=LanguageCls):
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
     supports_dotted_calls = True
+    module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -328,6 +330,7 @@ class Scala(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="TreeSet("),
@@ -336,6 +339,7 @@ class Scala(metaclass=LanguageCls):
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
             supports_heterogeneity=False,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -510,6 +514,7 @@ class Scala(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -517,9 +522,10 @@ class Scala(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -530,17 +536,17 @@ class Scala(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"object Check {{\n{content}\n}}"
+        return f"object {self.module_name} {{\n{content}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Scala declaration + assignment in an object."""
-        return Scala.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -723,6 +729,7 @@ class Scala(metaclass=LanguageCls):
                 fallback=dict_spec.fallback,
             ),
             narrowed_open=None,
+            supports_trailing_comma=True,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" -> ",

@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = {
     # Configuration
     "name" => "app",
@@ -10,3 +12,4 @@ my_data = {
     # Port setting
     "port" => 3000,
 }
+end

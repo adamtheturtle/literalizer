@@ -65,6 +65,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -333,6 +334,7 @@ class Dart(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -616,6 +618,8 @@ class Dart(metaclass=LanguageCls):
         CallSupport.NOT_IMPLEMENTED_BY_TOOL
     )
 
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
+
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
 
@@ -795,6 +799,7 @@ class Dart(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

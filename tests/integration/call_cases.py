@@ -10,6 +10,7 @@ import dataclasses
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from beartype import beartype
@@ -21,13 +22,12 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import (
-    Haskell,
-    Jsonnet,
-)
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -39,25 +39,6 @@ def _prepend_preamble(
     if not preamble:
         return wrapped
     return "\n".join(preamble) + "\n" + wrapped
-
-
-@beartype
-def _dedupe_ordered(*, lines: Iterable[str]) -> tuple[str, ...]:
-    """Return *lines* with duplicates removed, preserving first-seen order.
-
-    Used when a ``literalize_call`` test combines declarations for
-    ``{"$ref": "name"}`` variables with the call itself — both halves
-    may request the same imports or type-definition body preamble, and
-    emitting them twice would break strict compilers.
-    """
-    seen: set[str] = set()
-    result: list[str] = []
-    for line in lines:
-        if line in seen:
-            continue
-        seen.add(line)
-        result.append(line)
-    return tuple(result)
 
 
 @beartype
@@ -322,28 +303,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
-# Languages where the current integration harness cannot produce a
-# golden that passes its language-specific lint step for a
-# ``ref_declarations``-using case.  The feature itself renders the ref
-# marker as an identifier correctly; the limitations below are about
-# how the resulting declarations+calls compose into a complete file
-# or how names line up with the declaration site — see
-# https://github.com/adamtheturtle/literalizer/issues/1473 for the
-# per-language identifier rename hook that will close the
-# name-mangling gaps.
-REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
-    {
-        # ``wrap_in_file`` places content inside ``main = do``; a
-        # multi-line ``name = value`` binding needs ``let`` in a
-        # do-block, which the harness does not inject.
-        Haskell,
-        # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
-        # list; variable declarations don't fit the shape.
-        Jsonnet,
-    }
-)
-
-
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
@@ -363,8 +322,6 @@ def discover_call_cases() -> list[CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
-                continue
-            if config.ref_declarations and lang_cls in REF_CASE_INCOMPATIBLE:
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -510,20 +467,32 @@ def run_call_golden_case(
                 StubReturn.VOID,
             ),
         )
-    decl_body_preambles = tuple(
-        line for d in decl_results for line in d.body_preamble
-    )
     decl_preambles = tuple(line for d in decl_results for line in d.preamble)
-    call_body_preamble = _dedupe_ordered(
-        lines=decl_body_preambles + result.body_preamble + tuple(body_stubs)
+    # Recompute the body preamble across the union of types observed in
+    # every declaration *and* the call.  Concatenating each piece's
+    # already-rendered body preamble would emit overlapping
+    # type-definition strings (e.g. Haskell's ``data Val = ...`` with
+    # different constructor sets) that no string-level duplicate
+    # filter can reconcile.  Combine ``source_data`` from every piece
+    # so ``compute_body_preamble`` can inspect actual values when it
+    # needs to (e.g. Haskell's datetime microsecond-precision check).
+    empty_types: frozenset[type] = frozenset()
+    union_types = empty_types.union(
+        *(d.types_present for d in decl_results),
+        result.types_present,
     )
-    content = "\n".join(
-        [d.bare_code for d in decl_results] + [result.bare_code]
+    combined_source_data: list[Value] = [
+        *(d.source_data for d in decl_results),
+        result.source_data,
+    ]
+    unified_body_preamble = spec.compute_body_preamble(
+        union_types, combined_source_data
     )
-
-    wrapped = spec.wrap_in_file(
-        content=content,
-        variable_name="",
+    call_body_preamble = unified_body_preamble + tuple(body_stubs)
+    declarations_bare_codes = tuple(d.bare_code for d in decl_results)
+    wrapped = spec.wrap_calls_with_declarations(
+        declarations=declarations_bare_codes,
+        calls=result.bare_code,
         body_preamble=call_body_preamble,
     )
     all_preamble = _dedupe_preamble_blocks(

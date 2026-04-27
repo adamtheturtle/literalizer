@@ -1,6 +1,9 @@
+module Check
+extend self
 my_data = [
     1,
     "hello",
     true,
     nil,
 ]
+end

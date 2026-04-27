@@ -1015,6 +1015,7 @@ class Haskell(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -1171,6 +1172,7 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -1178,8 +1180,8 @@ class Haskell(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -1198,13 +1200,46 @@ class Haskell(metaclass=LanguageCls):
                 for line in content.split(sep="\n")
             )
             return (
-                "module Check where\n"
+                f"module {self.module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        return "module Check where\n" + preamble + "\n" + content
+        return f"module {self.module_name} where\n" + preamble + "\n" + content
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a sequence of top-level *declarations* alongside a
+        block of bare call expressions.
+
+        Top-level ``name :: Type`` / ``name = value`` bindings stay at
+        module scope and only the *calls* go inside ``main = do``.  The
+        integration harness pairs each ``$ref`` declaration's
+        ``bare_code`` with a downstream call and uses this hook to
+        avoid concatenating both halves into one ``content`` string,
+        which would otherwise force the bindings into a ``do``-block
+        where they would need ``let`` injection.
+        """
+        preamble = "\n".join(body_preamble)
+        indented_calls = "\n".join(
+            f"    _ <- {line}" if line.strip() else line
+            for line in calls.split(sep="\n")
+        )
+        declaration_block = "\n".join(declarations)
+        return (
+            f"module {self.module_name} where\n"
+            + preamble
+            + "\n"
+            + (declaration_block + "\n" if declaration_block else "")
+            + "main :: IO ()\nmain = do\n"
+            + indented_calls
+            + "\n    pure ()"
+        )
 
     @staticmethod
     def wrap_combined_in_file(
@@ -1244,6 +1279,7 @@ class Haskell(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     indent: str = "    "
+    module_name: str = "Check"
     type_name: str = "Val"
     constructor_prefix: str = "H"
 
@@ -1358,6 +1394,7 @@ class Haskell(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

@@ -1,3 +1,5 @@
+module Check
+extend self
 my_data = {
     "name" => "Alice",
     "score" => nil,
@@ -8,3 +10,4 @@ my_data = {
     "score" => nil,
     "age" => 30,
 }
+end

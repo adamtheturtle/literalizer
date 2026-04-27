@@ -62,14 +62,14 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
-    wrap_combined_in_file_noop,
-    wrap_in_file_noop,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -241,6 +241,7 @@ class Crystal(metaclass=LanguageCls):
                 preamble_lines=('require "set"',),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -285,6 +286,7 @@ class Crystal(metaclass=LanguageCls):
                 empty_template="{{}} of {key_type} => {type}",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -416,6 +418,7 @@ class Crystal(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -423,35 +426,37 @@ class Crystal(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
+        """Wrap a Crystal declaration in a module."""
+        del variable_name
+        body = prepend_body_preamble(
             content=content,
-            variable_name=variable_name,
             body_preamble=body_preamble,
         )
+        return f"module {self.module_name}\nextend self\n{body}\nend"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
+        """Wrap Crystal declaration + assignment in a module."""
+        return self.wrap_in_file(
+            content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
 
+    module_name: str = "Check"
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
