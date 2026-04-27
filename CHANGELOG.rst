@@ -10,7 +10,7 @@ Next
   ``program``/``subroutine`` names, Erlang's ``-module(...)``, Occam's
   ``PROC``, SystemVerilog's ``module``, F#'s ``module``, and the
   helper function names emitted by C, C++, D and Objective-C — now
-  derive that name from this argument instead of hardcoding
+  derive that name from this argument instead of always emitting
   ``check``.  Languages whose wrappers do not introduce a named scope
   ignore the argument.  ``Language.wrap_in_file`` and
   ``Language.wrap_combined_in_file`` gain a corresponding
