@@ -1270,7 +1270,14 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "line_ending_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
-    "type_name": (_ci(case_dir_name="simple_dict"),),
+    "type_name": (
+        _ci(case_dir_name="simple_dict"),
+        _ci(case_dir_name="float_special_values", suffix="_v"),
+        _ci(case_dir_name="float_list", suffix="_float"),
+        _ci(case_dir_name="binary", suffix="_binary"),
+        _ci(case_dir_name="scalar_date", suffix="_date"),
+        _ci(case_dir_name="scalar_datetime", suffix="_datetime"),
+    ),
     "constructor_prefix": (
         _ci(case_dir_name="simple_dict"),
         _ci(case_dir_name="float_special_values", suffix="_v"),
