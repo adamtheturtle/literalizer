@@ -1165,6 +1165,16 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
     )
 )
 
+DICT_FORMAT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="simple_dict"),
+    _ci(case_dir_name="dict_with_list_value", suffix="_list_val"),
+)
+
+DEFAULT_DICT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="empty_dict"),
+    _ci(case_dir_name="simple_dict"),
+)
+
 _NUMERIC_INPUTS: tuple[CaseInput, ...] = (
     _ci(case_dir_name="int_list"),
     _ci(case_dir_name="int_list_large", suffix="_large"),
@@ -1213,14 +1223,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_sequence"),
         _ci(case_dir_name="simple_sequence"),
     ),
-    "default_dict_value_type": (
-        _ci(case_dir_name="empty_dict"),
-        _ci(case_dir_name="simple_dict"),
-    ),
-    "default_dict_key_type": (
-        _ci(case_dir_name="empty_dict"),
-        _ci(case_dir_name="simple_dict"),
-    ),
+    "default_dict_value_type": DEFAULT_DICT_INPUTS,
+    "default_dict_key_type": DEFAULT_DICT_INPUTS,
     "default_ordered_map_value_type": (_ci(case_dir_name="ordered_map"),),
     "comment": (_ci(case_dir_name="comments"),),
     "type_hints": tuple(
@@ -1279,14 +1283,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "binary",
         )
     ),
-    "dict_format": (
-        _ci(case_dir_name="simple_dict"),
-        _ci(case_dir_name="dict_with_list_value", suffix="_list_val"),
-    ),
-    "dict_entry_style": (
-        _ci(case_dir_name="simple_dict"),
-        _ci(case_dir_name="dict_with_list_value", suffix="_list_val"),
-    ),
+    "dict_format": DICT_FORMAT_INPUTS,
+    "dict_entry_style": DICT_FORMAT_INPUTS,
     "float_format": FLOAT_INPUTS,
     "integer_format": INT_INPUTS,
     "numeric_literal_suffix": _NUMERIC_INPUTS,
