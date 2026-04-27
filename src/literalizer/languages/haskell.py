@@ -1179,8 +1179,8 @@ class Haskell(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -1199,13 +1199,13 @@ class Haskell(metaclass=LanguageCls):
                 for line in content.split(sep="\n")
             )
             return (
-                "module Check where\n"
+                f"module {self.module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        return "module Check where\n" + preamble + "\n" + content
+        return f"module {self.module_name} where\n" + preamble + "\n" + content
 
     @staticmethod
     def wrap_combined_in_file(
@@ -1245,6 +1245,7 @@ class Haskell(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     indent: str = "    "
+    module_name: str = "Check"
     type_name: str = "Val"
     constructor_prefix: str = "H"
 
