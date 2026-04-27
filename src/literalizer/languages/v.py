@@ -88,12 +88,22 @@ def _format_v_u64_positive(value: int) -> str:
     return f"u64({value})"
 
 
-@beartype
-def _format_v_i64(value: int) -> str:
-    """Format a value outside 32-bit signed range as a V ``i64``
-    typed conversion.
+def _make_v_i64_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Return a formatter that wraps *base*-formatted values in
+    ``i64(...)``.
+
+    Used for values that overflow V's 32-bit ``int`` but fit in ``i64``.
+    The inner representation preserves the requested integer format (hex,
+    octal, binary, etc.) rather than forcing decimal.
     """
-    return f"i64({value})"
+
+    def _format(value: int) -> str:
+        """Format *value* as ``i64(<base(value)>)``."""
+        return f"i64({base(value)})"
+
+    return _format
 
 
 def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
@@ -649,17 +659,18 @@ class V(metaclass=LanguageCls):
         signed range use ``i64(...)``.  Values outside 64-bit signed
         range use ``u64(...)`` (or raise for negative overflow).
         """
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
         i64_or_u64_fallback = make_overflow_fallback_formatter(
-            base=_format_v_i64,
+            base=_make_v_i64_formatter(base=base),
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_format_v_u64_positive,
                 language_name="V",
             ),
         )
         return make_overflow_fallback_formatter(
-            base=self.integer_format.get_formatter(
-                numeric_separator=self.numeric_separator,
-            ),
+            base=base,
             fallback=i64_or_u64_fallback,
             min_value=_V_I32_MIN,
             max_value=_V_I32_MAX,
