@@ -1179,10 +1179,13 @@ _NUMERIC_INPUTS: tuple[CaseInput, ...] = (
     _ci(case_dir_name="int_list"),
     _ci(case_dir_name="int_list_large", suffix="_large"),
     _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+    _ci(case_dir_name="scalar_int"),
+    _ci(case_dir_name="scalar_int_large"),
     _ci(case_dir_name="float_list", suffix="_float"),
     _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
     _ci(case_dir_name="float_special_values", suffix="_float_v"),
     _ci(case_dir_name="nested_float_list", suffix="_float_n"),
+    _ci(case_dir_name="scalar_float", suffix="_float_scalar"),
 )
 
 
@@ -1309,6 +1312,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "constructor_prefix": ADT_INPUTS,
     "numeric_style": (
         _ci(case_dir_name="int_list"),
+        _ci(case_dir_name="int_list_large", suffix="_large"),
         _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
         _ci(case_dir_name="float_list"),
         _ci(case_dir_name="float_special_values"),
