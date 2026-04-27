@@ -1,4 +1,4 @@
-module Check
+module Fixture_comments_sequence_before_Crystal_combined
 extend self
 my_data = [
     # first

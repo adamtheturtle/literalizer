@@ -1,4 +1,4 @@
-module Check
+module Fixture_comments_trailing_Crystal_combined
 extend self
 my_data = [
     "a",

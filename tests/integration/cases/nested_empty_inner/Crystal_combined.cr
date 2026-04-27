@@ -1,4 +1,4 @@
-module Check
+module Fixture_nested_empty_inner_Crystal_combined
 extend self
 my_data = [
     [] of Nil,

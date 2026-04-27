@@ -1,4 +1,4 @@
-module Check
+module Fixture_simple_dict_Crystal_combined
 extend self
 my_data = {
     "name" => "Alice",

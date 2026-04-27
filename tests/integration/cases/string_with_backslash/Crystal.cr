@@ -1,4 +1,4 @@
-module Check
+module Fixture_string_with_backslash_Crystal
 extend self
 my_data = [
     "C:\\path\\to\\file",

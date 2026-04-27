@@ -1,4 +1,4 @@
-module Check
+module Fixture_comments_Crystal
 extend self
 my_data = {
     # Server configuration

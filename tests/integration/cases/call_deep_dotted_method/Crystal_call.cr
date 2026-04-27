@@ -1,4 +1,4 @@
-module Check
+module Fixture_call_deep_dotted_method_Crystal_call
 extend self
 class ClientType_; def post(data = nil); 0; end; end
 class ApiType_; def client; ClientType_.new; end; end

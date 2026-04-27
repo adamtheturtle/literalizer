@@ -1,4 +1,4 @@
-module Check
+module Fixture_dates_Crystal
 extend self
 my_data = {
     "date" => "2024-01-15",

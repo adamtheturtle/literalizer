@@ -1,4 +1,4 @@
-module Check
+module Fixture_int_list_with_zero_Crystal_numeric_separator_underscore_zero
 extend self
 my_data = [
     0,

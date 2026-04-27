@@ -1,5 +1,5 @@
 require "set"
-module Check
+module Fixture_nested_mixed_set_Crystal_combined
 extend self
 my_data = {
     "name" => "Alice",

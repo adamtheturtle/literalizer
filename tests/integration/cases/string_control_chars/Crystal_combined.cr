@@ -1,4 +1,4 @@
-module Check
+module Fixture_string_control_chars_Crystal_combined
 extend self
 my_data = [
     "line1\r\nline2",

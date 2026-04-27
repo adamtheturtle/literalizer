@@ -1,4 +1,4 @@
-module Check
+module Fixture_mixed_number_list_Crystal_combined
 extend self
 my_data = [
     1,

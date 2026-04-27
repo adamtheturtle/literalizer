@@ -1,4 +1,4 @@
-module Check
+module Fixture_dict_all_scalar_types_Crystal_combined
 extend self
 my_data = {
     "s" => "string",
