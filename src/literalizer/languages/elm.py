@@ -339,7 +339,7 @@ def _elm_flatten_dotted(name: str) -> str:
     Elm identifiers cannot contain ``.``, so ``app.client.fetch``
     becomes ``appClientFetch``.
     """
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return name
     return parts[0] + "".join(p.capitalize() for p in parts[1:])
@@ -358,7 +358,7 @@ def _elm_call_stub(
     stub takes a tuple (``( a, b ) -> ()``), matching the tuple that
     ``PositionalCallStyle`` emits at the call site.
     """
-    flat_name = _elm_flatten_dotted(name)
+    flat_name = _elm_flatten_dotted(name=name)
     n = len(params)
     if n == 0:
         type_sig = f"{flat_name} : ()"
@@ -675,7 +675,7 @@ class Elm(metaclass=LanguageCls):
         preamble = "\n".join(body_preamble)
         if not variable_name:
             let_lines: list[str] = []
-            for line in content.split("\n"):
+            for line in content.split(sep="\n"):
                 if not line:
                     let_lines.append("")
                 elif not line[0].isspace():
@@ -708,12 +708,12 @@ class Elm(metaclass=LanguageCls):
         preamble = "\n".join(body_preamble)
         let_lines: list[str] = []
         for decl in declarations:
-            for line in decl.split("\n"):
+            for line in decl.split(sep="\n"):
                 if not line:
                     let_lines.append("")
                 else:
                     let_lines.append(f"        {line}")
-        for line in calls.split("\n"):
+        for line in calls.split(sep="\n"):
             if not line:
                 let_lines.append("")
             elif not line[0].isspace():
