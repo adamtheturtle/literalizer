@@ -509,7 +509,7 @@ jobs:
           while IFS= read -r -d '' f; do
             dir=${f%/*}; dir=${dir##*/}
             stem=$(basename "$f" .erl)
-            name="fixture_${dir}_${stem,,}"
+            name="fixture_${dir,,}_${stem,,}"
             cp "$f" "$ERLANG_FIXTURE_DIR/$name.erl"
           done < /tmp/files-erlang
           (cd "$ERLANG_FIXTURE_DIR" && erlc -Werror fixture_*.erl)
