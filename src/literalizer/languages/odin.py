@@ -380,8 +380,8 @@ class Odin(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -393,8 +393,8 @@ class Odin(metaclass=LanguageCls):
         )
         return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

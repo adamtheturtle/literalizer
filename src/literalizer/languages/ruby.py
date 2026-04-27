@@ -419,8 +419,8 @@ class Ruby(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -432,8 +432,8 @@ class Ruby(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

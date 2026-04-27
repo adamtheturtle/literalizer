@@ -478,8 +478,8 @@ class VisualBasic(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -520,8 +520,8 @@ class VisualBasic(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix="    ")
         return f"Module Check\n{indented}\nEnd Module"
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

@@ -605,8 +605,8 @@ class TypeScript(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -619,15 +619,15 @@ class TypeScript(metaclass=LanguageCls):
         )
         return f"{content}\nexport {{}};"
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap TypeScript declaration + assignment as a module."""
-        return self.wrap_in_file(
+        return TypeScript.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

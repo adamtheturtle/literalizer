@@ -381,8 +381,8 @@ class Elixir(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -398,8 +398,8 @@ class Elixir(metaclass=LanguageCls):
             f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
         )
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

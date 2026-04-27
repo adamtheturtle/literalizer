@@ -481,8 +481,8 @@ class Cobol(metaclass=LanguageCls):
     )
     _PROGRAM_SUFFIX: ClassVar[str] = "PROCEDURE DIVISION.\n    STOP RUN."
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -495,8 +495,8 @@ class Cobol(metaclass=LanguageCls):
         )
         return Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

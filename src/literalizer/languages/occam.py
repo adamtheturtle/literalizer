@@ -319,8 +319,8 @@ class Occam(metaclass=LanguageCls):
             + ":"
         )
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

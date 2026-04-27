@@ -791,8 +791,8 @@ class Gleam(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -806,15 +806,15 @@ class Gleam(metaclass=LanguageCls):
         use_line = f"\n  let _ = {variable_name}" if variable_name else ""
         return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Gleam declaration + assignment in a main function."""
-        return self.wrap_in_file(
+        return Gleam.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,

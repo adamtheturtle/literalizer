@@ -450,8 +450,8 @@ class Erlang(metaclass=LanguageCls):
         parts.append(f"{indented}.")
         return "\n".join(parts)
 
+    @staticmethod
     def wrap_combined_in_file(
-        self,
         declaration: str,
         assignment: str,
         variable_name: str,

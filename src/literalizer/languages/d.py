@@ -70,8 +70,8 @@ _D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
 def _d_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Keep D's ``parseJSON("[]")`` empty literal beside typed siblings.
 
-    ``JSONValue([])`` rejects an empty ``void[]`` payload at template
-    instantiation; the language's ``parseJSON("[]")`` empty form
+    ``JSONValue([])`` rejects an empty ``void[]`` payload when the
+    template expands; the language's ``parseJSON("[]")`` empty form
     returns a fresh ``JSONValue`` array and is accepted alongside
     typed siblings.
     """

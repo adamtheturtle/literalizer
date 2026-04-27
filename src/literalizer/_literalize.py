@@ -1456,10 +1456,11 @@ def literalize(
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
             Languages whose ``wrap_in_file`` introduces a named scope
-            (e.g. Java's wrapping class, Fortran's ``program``, Erlang's
-            ``-module``) carry that name as a constructor argument
-            (``Java(module_name="Foo")``); languages whose wrappers do
-            not introduce a named scope take no such argument.
+            (the wrapping class in Java, the ``program`` in Fortran,
+            the ``-module`` in Erlang) carry that name as a constructor
+            argument (``Java(module_name="Foo")``); languages whose
+            wrappers do not introduce a named scope take no such
+            argument.
         pre_indent_level: Number of ``indent`` steps to prepend to
             every output line.  For example, ``2`` with a 4-space
             indent produces an 8-space margin.  Defaults to ``0``.
