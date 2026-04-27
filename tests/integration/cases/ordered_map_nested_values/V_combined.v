@@ -1,12 +1,13 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := {
-		'name': 'Alice',
-		'scores': {'1': 'first', '2': 'second'},
+		'name': IVal('Alice'),
+		'scores': IVal({'1': 'first', '2': 'second'}),
 	}
 	my_data = {
-		'name': 'Alice',
-		'scores': {'1': 'first', '2': 'second'},
+		'name': IVal('Alice'),
+		'scores': IVal({'1': 'first', '2': 'second'}),
 	}
 	_ = my_data
 }

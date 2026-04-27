@@ -109,33 +109,50 @@ def _make_v_i64_formatter(
 def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
     """Return container ids that need IVal wrapping in V.
 
-    Extends :func:`collect_heterogeneous_container_ids` to also
-    include containers with any ``None`` values (V cannot store
-    ``none`` in typed collections) and empty containers (V requires
-    explicit type annotations for empty collections).
+    Extends :func:`collect_heterogeneous_container_ids` with a
+    bottom-up traversal that also catches:
+
+    * Empty containers (V requires explicit typed empty literals).
+    * Containers with any ``None`` values (V cannot store ``none`` in
+      typed collections).
+    * Sets with mixed Python types.
+    * Containers whose children have mixed V types because some
+      children are in wrap_ids and others are not.
     """
     base_ids = collect_heterogeneous_container_ids(data=data)
+    wrap_ids: set[int] = set(base_ids)
 
-    def _extra_ids(item: Value) -> frozenset[int]:
-        """Return ids for *item* and its descendants that need IVal
-        wrapping.
+    def _visit(item: Value) -> None:
+        """Recursively mark *item* and its containers if wrapping
+        needed.
         """
         if isinstance(item, dict):
-            values: list[Value] = list(item.values())
-            needs = not values or any(v is None for v in values)
-            children: list[Value] = values
-        elif isinstance(item, list):
-            needs = not item or any(v is None for v in item)
-            children = item
+            children: list[Value] = list(item.values())
+        elif isinstance(item, (list, set)):
+            children = list(item)
         else:
-            return frozenset()
-        own: frozenset[int] = frozenset({id(item)}) if needs else frozenset()
-        child_ids = frozenset[int]().union(
-            *(_extra_ids(item=c) for c in children)
-        )
-        return own | child_ids
+            return
+        for child in children:
+            _visit(item=child)
+        if id(item) in wrap_ids:
+            return
+        if not children or any(v is None for v in children):
+            wrap_ids.add(id(item))
+            return
+        python_types = {type(v) for v in children if v is not None}
+        if len(python_types) > 1:
+            wrap_ids.add(id(item))
+            return
+        container_children = [
+            v for v in children if isinstance(v, (list, dict, set))
+        ]
+        if container_children:
+            wrapped = [v for v in container_children if id(v) in wrap_ids]
+            if wrapped and len(wrapped) < len(container_children):
+                wrap_ids.add(id(item))
 
-    return base_ids | _extra_ids(item=data)
+    _visit(item=data)
+    return frozenset(wrap_ids)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -264,7 +281,7 @@ class V(metaclass=LanguageCls):
         ARRAY = SetFormatConfig(
             set_open=fixed_open(open_str="["),
             close="]",
-            empty_set=None,
+            empty_set=f"[]{_V_IFACE_NAME}{{}}",
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
