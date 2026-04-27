@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module Check where
+module Fixture_call_deep_dotted_transformed_Haskell_call where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

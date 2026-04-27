@@ -1,4 +1,4 @@
-module Check where
+module Fixture_dict_with_list_value_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

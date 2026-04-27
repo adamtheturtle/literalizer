@@ -1,6 +1,6 @@
 module Main where
 
-import Check
+import MODULE_PLACEHOLDER
 
 main :: IO ()
-main = seq Check.my_data (return ())
+main = seq MODULE_PLACEHOLDER.my_data (return ())

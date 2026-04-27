@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_mixed_inner_Haskell where
 data Val = HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

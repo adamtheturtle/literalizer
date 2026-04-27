@@ -1,4 +1,4 @@
-module Check where
+module Fixture_triple_sequence_Haskell_sequence_tuple_triple where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

@@ -587,31 +587,27 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
-      # Most fixtures declare only `module Check` with a `my_data` val;
-      # GHC never evaluates its body unless a top-level expression
-      # references it, so compile alongside a small Main wrapper that
-      # forces `Check.my_data`. Fixtures that already define their own
-      # `main` compile with `-main-is Check` instead.
+      # Most fixtures declare only `module Fixture_<dir>_<stem>` with a
+      # `my_data` val; GHC never evaluates its body unless a top-level
+      # expression references it, so compile alongside a small Main wrapper
+      # that forces `<module>.my_data`. Fixtures that already define their
+      # own `main` compile with `-main-is <module>` instead. Each fixture
+      # uses its own build dir so parallel ghc invocations do not clobber
+      # each other's intermediates.
       - name: Lint Haskell
         run: |-
           find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell
+          workspace=$(mktemp -d)
           tmpdir=$(mktemp -d)
           xargs -0 -n1 ghc -fno-code -Wall -Werror -outputdir "$tmpdir" < /tmp/files-haskell
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf \"$tmpdir\"" EXIT
-            cp "$0" "$tmpdir/Check.hs"
-            if grep -qE "^main " "$0"; then
-              ghc -Wall -Werror -main-is Check -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
-            else
-              cp .github/scripts/haskell_main.hs "$tmpdir/Main.hs"
-              ghc -Wall -Werror -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
-            fi
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-haskell
+          while IFS= read -r -d '' f; do
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .hs)
+            mod="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/$mod.hs"
+          done < /tmp/files-haskell
+          find "$workspace" -name '*.hs' -print0 | \
+          xargs -0 -P "$(nproc)" -n1 bash .github/scripts/haskell_run_fixture.sh
 
       - name: Lint PureScript
         run: |-
