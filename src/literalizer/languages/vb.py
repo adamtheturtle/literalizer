@@ -160,7 +160,7 @@ def _vb_unique_class_name(*, segment: str, position: int) -> str:
 
 
 def _vb_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -179,7 +179,6 @@ def _vb_call_stub(
     every block.
     """
     param_list = ", ".join(f"{p} As Object" for p in params)
-    parts = name.split(sep=".")
     method_block = (
         f"Public Function {{method}}({param_list}) As Object\n"
         "    Return Nothing\n"
@@ -650,7 +649,7 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _vb_call_stub
 
@@ -663,12 +662,12 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

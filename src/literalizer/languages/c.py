@@ -123,7 +123,7 @@ def _make_format_c_entry(
 
 
 def _c_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     /,
@@ -152,7 +152,6 @@ def _c_call_stub(
     return_stmt = " return (CVal){0};" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
-    parts = name.split(sep=".")
     match parts:
         case [single]:
             return (
@@ -539,19 +538,19 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _c_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

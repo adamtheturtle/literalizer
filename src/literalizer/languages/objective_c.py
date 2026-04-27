@@ -160,20 +160,19 @@ def _objc_global_root(root: str, /) -> str:
 
 
 @beartype
-def _objc_format_call_target(name: str, /) -> str:
+def _objc_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite the root of a dotted call target to its k-prefixed form
     so the call site matches the renamed const global emitted by
     :func:`_objc_call_stub`.  Single-name calls resolve to a ``static``
     function (not a const global) and are returned unchanged.
     """
-    parts = name.split(sep=".")
     if len(parts) == 1:
-        return name
+        return parts[0]
     return ".".join((_objc_global_root(parts[0]), *parts[1:]))
 
 
 def _objc_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     /,
@@ -206,7 +205,6 @@ def _objc_call_stub(
     return_stmt = " return nil;" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (
             f"static {return_keyword} {parts[0]}({stub_signature}) "
@@ -609,19 +607,19 @@ class ObjectiveC(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _objc_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target so the root matches the
         ``k``-prefixed const global emitted by :func:`_objc_call_stub`.
         """

@@ -1,16 +1,17 @@
+interface IVal {}
 
 fn main() {
 	mut my_data := [
-		true,
-		'hi',
-		[1, 2],
-		none,
+		IVal(true),
+		IVal('hi'),
+		IVal([1, 2]),
+		IVal(unsafe { nil }),
 	]
 	my_data = [
-		true,
-		'hi',
-		[1, 2],
-		none,
+		IVal(true),
+		IVal('hi'),
+		IVal([1, 2]),
+		IVal(unsafe { nil }),
 	]
 	_ = my_data
 }

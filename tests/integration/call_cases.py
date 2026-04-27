@@ -22,6 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
+from literalizer.languages import Sml
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages
@@ -315,6 +316,17 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
+# Per-case language exclusions: cases whose target function or parameter
+# names use a reserved keyword in a given language, making a valid lint-
+# passing stub impossible to generate.
+CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
+    # target_function "app.mgr.op" has "op" as the innermost name; "op"
+    # is a reserved word in SML and cannot be used as a fun or val
+    # identifier, so no valid stub can be produced.
+    "call_mixed_type_dicts": frozenset({Sml}),
+}
+
+
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
@@ -334,6 +346,10 @@ def discover_call_cases() -> list[CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
+                continue
+            if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
+                config.case_dir_name, frozenset()
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -448,33 +464,35 @@ def run_call_golden_case(
         if config.call_transform is not None
         else StubReturn.VOID
     )
+    target_function_parts = tuple(config.target_function.split(sep="."))
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     preamble_stubs.extend(
         spec.format_call_preamble_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
+        wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(
             spec.format_call_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),
         )
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),

@@ -112,7 +112,7 @@ def _format_crystal_i128_literal(value: int) -> str:
 @beartype
 def _crystal_call_stub(
     format_class_name: Callable[[str], str],
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -120,7 +120,6 @@ def _crystal_call_stub(
     """Return Crystal stub declarations for a call name."""
     param_list = ", ".join(f"{param} = nil" for param in params)
     method_stub = f"def {{name}}({param_list}); 0; end"
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (method_stub.format(name=parts[0]),)
     root = parts[0]
@@ -550,19 +549,19 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return partial(_crystal_call_stub, _to_pascal_case)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

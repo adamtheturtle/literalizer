@@ -1,6 +1,7 @@
+interface IVal {}
 
 fn main() {
-	mut my_data := []
-	my_data = []
+	mut my_data := []IVal{}
+	my_data = []IVal{}
 	_ = my_data
 }

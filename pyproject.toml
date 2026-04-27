@@ -283,6 +283,8 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "CheckJavaSyntax.java",
+    "a_stub.adb",
+    "a_stub.ads",
     ".clj-kondo",
     ".clj-kondo/**",
     ".clang-tidy",

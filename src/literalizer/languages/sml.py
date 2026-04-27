@@ -44,7 +44,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -55,6 +54,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -231,6 +231,26 @@ def _format_sml_preamble_lines(lines: list[str]) -> tuple[str, ...]:
         "    " + lines[1],
         *(f"  | {line}" for line in lines[2:]),
     )
+
+
+def _sml_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return SML stub declarations for a call name.
+
+    For dotted names like ``app.client.fetch``, nested SML structures
+    are emitted so that ``app.client.fetch arg`` is valid at the call
+    site.  The innermost name becomes a ``fun`` declaration that accepts
+    any argument and returns unit.
+    """
+    method = parts[-1]
+    lines: list[str] = [f"fun {method} _ = ()"]
+    for part in reversed(parts[:-1]):
+        lines = [f"structure {part} = struct", *lines, "end"]
+    return tuple(lines)
 
 
 @beartype
@@ -480,6 +500,8 @@ class Sml(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Sml call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -558,6 +580,7 @@ class Sml(metaclass=LanguageCls):
     indent: str = "    "
     type_name: str = "val_t"
     constructor_prefix: str = "S"
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
@@ -569,9 +592,6 @@ class Sml(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -604,21 +624,33 @@ class Sml(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _sml_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Wrap a call expression as a val binding so it is a valid SML
+        declaration inside a structure block.
+        """
+        return lambda statement: f"val _ = {statement}"
+
+    @cached_property
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

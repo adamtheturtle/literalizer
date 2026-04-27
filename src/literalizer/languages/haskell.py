@@ -70,20 +70,20 @@ from literalizer._types import Value
 
 @beartype
 def _haskell_call_preamble_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Emit ``OverloadedRecordDot`` when the call target contains dots."""
-    if "." in name:
+    if len(parts) > 1:
         return ("{-# LANGUAGE OverloadedRecordDot #-}",)
     return ()
 
 
 @beartype
 def _build_haskell_call_stub_lines(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     type_name: str,
@@ -95,7 +95,6 @@ def _build_haskell_call_stub_lines(
     else:
         ret = "IO ()"
         body = "return ()"
-    parts = name.split(sep=".")
     # Transform-wrapper stubs are passed a single placeholder param
     # starting with ``_`` and receive the (already typed) result of
     # another call. Declare them with a polymorphic argument so GHC
@@ -154,20 +153,20 @@ def _build_haskell_call_stub_lines(
 
 def _build_haskell_call_stub(
     type_name: str,
-) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
     """Build a call stub function that uses *type_name* for field
     types.
     """
 
     def _haskell_call_stub(
-        name: str,
+        parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
         return _build_haskell_call_stub_lines(
-            name=name,
+            parts=parts,
             params=params,
             stub_return=stub_return,
             type_name=type_name,
@@ -1540,19 +1539,19 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Callable that returns Haskell stub declarations for a call."""
         return _build_haskell_call_stub(type_name=self.type_name)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Callable that returns preamble stub declarations."""
         return _haskell_call_preamble_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

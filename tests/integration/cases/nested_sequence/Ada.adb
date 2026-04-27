@@ -1,10 +1,11 @@
+with A_Stub; use A_Stub;
 procedure Check is
-    my_data : A_Val := AList'(
+    my_data : A_Val := AList'[
         ABool (True),
         AStr ("hi"),
-        AList'(AInt (1), AInt (2)),
+        AList'[AInt (1), AInt (2)],
         ANull
-    );
+    ];
 begin
     null;
 end Check;

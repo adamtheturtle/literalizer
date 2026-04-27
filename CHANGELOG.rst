@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- Ada output now uses Ada 2022 container aggregates (``AList'[...]``,
+  ``AMap'[...]``, ``ASet'[...]``) and emits a ``with A_Stub; use
+  A_Stub;`` context clause so each fixture compiles and runs against
+  a checked-in stub package.  The lint workflow gained a "Run Ada
+  files" step that builds and executes every fixture, replacing the
+  previous syntax-only check.  The combined declaration + assignment
+  wrapper now keeps both forms in a single procedure scope so the
+  assignment can reach ``my_data``.
 - ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local``
   bindings before the call expressions, so call-mode output with
   ``ref_declarations`` is supported.  Previously the integration
