@@ -338,7 +338,7 @@ def _elm_flatten_dotted(name: str) -> str:
 
     Elm identifiers cannot contain ``.``, so ``app.client.fetch``
     becomes ``appClientFetch`` (each part after the first is
-    capitalised and the dots are dropped).
+    capitalized and the dots are dropped).
     """
     parts = name.split(sep=".")
     if len(parts) == 1:
@@ -355,7 +355,7 @@ def _elm_call_stub(
     """Return Elm top-level stub declarations for a call target.
 
     Dotted names are flattened (each part after the first is
-    capitalised).  For a single parameter the stub is polymorphic
+    capitalized).  For a single parameter the stub is polymorphic
     (``a -> ()``); for multiple parameters the stub takes a tuple
     (``( a, b ) -> ()``), matching the tuple that
     ``PositionalCallStyle`` emits at the call site.
@@ -841,7 +841,7 @@ class Elm(metaclass=LanguageCls):
     def format_call_target(self) -> Callable[[str], str]:
         """Rewrite a dotted call target into an Elm identifier.
 
-        Parts after the first are capitalised and the dots are
+        Parts after the first are capitalized and the dots are
         dropped (e.g. ``app.client.fetch`` becomes
         ``appClientFetch``).
         """
