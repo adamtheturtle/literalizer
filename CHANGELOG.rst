@@ -5,10 +5,10 @@ Next
 ----
 
 - ``Crystal.wrap_in_file`` now wraps content in a
-  ``module Check ... end`` block with ``extend self``, matching the
-  behaviour of Erlang, Scala, and Haskell.  ``Crystal`` gains a
+  ``module Check ... end`` block with ``extend self``, matching what
+  Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
   ``module_name`` constructor argument (default ``"Check"``) to
-  customise the wrapper name.  Callers that relied on
+  control the wrapper name.  Callers that relied on
   ``literalize(language=Crystal(), wrap_in_file=True)`` returning bare
   content will now receive a ``module`` block.
 - Java sets and dicts no longer emit a trailing comma when
