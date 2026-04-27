@@ -53,6 +53,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -408,6 +409,7 @@ class Raku(metaclass=LanguageCls):
         """Raku call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        KEYWORD = KeywordCallStyle(separator=" => ")
 
     call_styles = CallStyles
 
