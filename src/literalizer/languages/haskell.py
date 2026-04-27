@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -80,52 +79,6 @@ def _haskell_call_preamble_stub(
     if "." in name:
         return ("{-# LANGUAGE OverloadedRecordDot #-}",)
     return ()
-
-
-_HASKELL_TOP_LEVEL_BINDING = re.compile(pattern=r"^[A-Za-z_][\w']*\s*(::|=)")
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _HaskellContentSplit:
-    """Result of splitting wrapped content into declaration and call
-    halves.
-    """
-
-    declarations: str
-    call_expressions: str
-
-
-@beartype
-def _split_haskell_decls_and_calls(*, content: str) -> _HaskellContentSplit:
-    """Split *content* into a leading block of top-level Haskell
-    bindings and a trailing block of bare call expressions.
-
-    The integration harness for ``$ref`` declaration cases
-    concatenates each declaration's ``bare_code`` (a top-level
-    ``name :: Type`` / ``name = value`` pair, possibly followed by
-    indented continuation lines) with the call expressions.  Bindings
-    must stay at module scope; bare expressions belong inside
-    ``main = do``.  The boundary is the first top-level line (no
-    leading whitespace) that is neither a type signature nor a
-    ``name = ...`` binding.
-    """
-    content_lines = content.split(sep="\n")
-    first_call_index = len(content_lines)
-    for line_index, line in enumerate(iterable=content_lines):
-        match line:
-            case "":
-                continue
-            case starts_with_space if starts_with_space[0].isspace():
-                continue
-            case binding if _HASKELL_TOP_LEVEL_BINDING.match(string=binding):
-                continue
-            case _:
-                first_call_index = line_index
-                break
-    return _HaskellContentSplit(
-        declarations="\n".join(content_lines[:first_call_index]).rstrip(),
-        call_expressions="\n".join(content_lines[first_call_index:]),
-    )
 
 
 @beartype
@@ -1242,30 +1195,52 @@ class Haskell(metaclass=LanguageCls):
             # ``IO Val`` (``StubReturn.VALUE``) do not trigger
             # ``-Wunused-do-bind``. ``_ <-`` is also valid when the
             # action returns ``IO ()``.
-            #
-            # If *content* begins with top-level ``name :: Type`` /
-            # ``name = value`` bindings (produced by the integration
-            # harness when literalizing ``$ref`` declaration values),
-            # those bindings stay at module scope and only the trailing
-            # call expressions go inside ``main = do``.
-            split = _split_haskell_decls_and_calls(content=content)
             indented = "\n".join(
                 f"    _ <- {line}" if line.strip() else line
-                for line in split.call_expressions.split(sep="\n")
-            )
-            declaration_block = (
-                split.declarations + "\n" if split.declarations else ""
+                for line in content.split(sep="\n")
             )
             return (
                 f"module {self.module_name} where\n"
                 + preamble
-                + "\n"
-                + declaration_block
-                + "main :: IO ()\nmain = do\n"
+                + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
         return f"module {self.module_name} where\n" + preamble + "\n" + content
+
+    def wrap_calls_with_declarations(
+        self,
+        *,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a sequence of top-level *declarations* alongside a
+        block of bare call expressions.
+
+        Top-level ``name :: Type`` / ``name = value`` bindings stay at
+        module scope and only the *calls* go inside ``main = do``.  The
+        integration harness pairs each ``$ref`` declaration's
+        ``bare_code`` with a downstream call and uses this hook to
+        avoid concatenating both halves into one ``content`` string,
+        which would otherwise force the bindings into a ``do``-block
+        where they would need ``let`` injection.
+        """
+        preamble = "\n".join(body_preamble)
+        indented_calls = "\n".join(
+            f"    _ <- {line}" if line.strip() else line
+            for line in calls.split(sep="\n")
+        )
+        declaration_block = "\n".join(declarations)
+        return (
+            f"module {self.module_name} where\n"
+            + preamble
+            + "\n"
+            + (declaration_block + "\n" if declaration_block else "")
+            + "main :: IO ()\nmain = do\n"
+            + indented_calls
+            + "\n    pure ()"
+        )
 
     @staticmethod
     def wrap_combined_in_file(
