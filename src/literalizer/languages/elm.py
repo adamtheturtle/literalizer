@@ -38,7 +38,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -49,13 +48,12 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -335,6 +333,46 @@ def _build_elm_body_preamble(
     return _compute
 
 
+def _elm_flatten_dotted(name: str) -> str:
+    """Flatten a dotted call target to a camelCase Elm identifier.
+
+    Elm identifiers cannot contain ``.``, so ``app.client.fetch``
+    becomes ``appClientFetch``.
+    """
+    parts = name.split(".")
+    if len(parts) == 1:
+        return name
+    return parts[0] + "".join(p.capitalize() for p in parts[1:])
+
+
+def _elm_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Elm top-level stub declarations for a call target.
+
+    Dotted names are flattened to camelCase.  For a single parameter
+    the stub is polymorphic (``a -> ()``); for multiple parameters the
+    stub takes a tuple (``( a, b ) -> ()``), matching the tuple that
+    ``PositionalCallStyle`` emits at the call site.
+    """
+    flat_name = _elm_flatten_dotted(name)
+    n = len(params)
+    if n == 0:
+        type_sig = f"{flat_name} : ()"
+        impl = f"{flat_name} = ()"
+    elif n == 1:
+        type_sig = f"{flat_name} : a -> ()"
+        impl = f"{flat_name} _ = ()"
+    else:
+        type_vars = ", ".join(chr(ord("a") + i) for i in range(n))
+        type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
+        impl = f"{flat_name} _ = ()"
+    return (type_sig, impl)
+
+
 _INT_BASE: dict[str, Callable[[int], str]] = {
     "DECIMAL": str,
     "HEX": format_integer_hex,
@@ -597,6 +635,8 @@ class Elm(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Elm call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -619,7 +659,6 @@ class Elm(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -627,10 +666,67 @@ class Elm(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Elm value declaration in a module."""
-        del variable_name
+        """Wrap an Elm value declaration in a module.
+
+        When *variable_name* is empty (call mode), each call expression
+        in *content* is bound via ``_ = …`` inside a ``let`` block so
+        the generated file is syntactically valid Elm.
+        """
         preamble = "\n".join(body_preamble)
+        if not variable_name:
+            let_lines: list[str] = []
+            for line in content.split("\n"):
+                if not line:
+                    let_lines.append("")
+                elif not line[0].isspace():
+                    let_lines.append(f"        _ = {line}")
+                else:
+                    let_lines.append(f"        {line}")
+            return (
+                f"module Check exposing (..)\n\n\n"
+                f"{preamble}\n\n\n"
+                "main : ()\nmain =\n    let\n"
+                + "\n".join(let_lines)
+                + "\n    in\n    ()"
+            )
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Elm declarations and call expressions in a module.
+
+        Both variable declarations and call statements are placed inside
+        a ``let`` block so the generated file is a valid Elm module.
+        Declarations are indented without a ``_ =`` prefix; call
+        statements are bound via ``_ = …`` to satisfy Elm's requirement
+        that every ``let`` binding produces a value.
+        """
+        preamble = "\n".join(body_preamble)
+        let_lines: list[str] = []
+        for decl in declarations:
+            for line in decl.split("\n"):
+                if not line:
+                    let_lines.append("")
+                else:
+                    let_lines.append(f"        {line}")
+        for line in calls.split("\n"):
+            if not line:
+                let_lines.append("")
+            elif not line[0].isspace():
+                let_lines.append(f"        _ = {line}")
+            else:
+                let_lines.append(f"        {line}")
+        return (
+            f"module Check exposing (..)\n\n\n"
+            f"{preamble}\n\n\n"
+            "main : ()\nmain =\n    let\n"
+            + "\n".join(let_lines)
+            + "\n    in\n    ()"
+        )
 
     @staticmethod
     def wrap_combined_in_file(
@@ -665,6 +761,7 @@ class Elm(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -682,9 +779,6 @@ class Elm(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -714,11 +808,16 @@ class Elm(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for Elm's call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _elm_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -729,10 +828,10 @@ class Elm(metaclass=LanguageCls):
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
+        """Rewrite a dotted call target into a camelCase Elm
+        identifier.
         """
-        return identity_call_target
+        return _elm_flatten_dotted
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
