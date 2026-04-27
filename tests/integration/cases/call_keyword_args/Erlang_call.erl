@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_call_keyword_args_erlang_call).
 -export([x/0]).
 'throttler.check'(_, _) -> undefined.
 emit(_) -> ok.

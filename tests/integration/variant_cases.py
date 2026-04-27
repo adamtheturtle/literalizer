@@ -1251,11 +1251,14 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="float_scientific_notation", suffix="_s"),
         _ci(case_dir_name="float_special_values", suffix="_v"),
         _ci(case_dir_name="nested_float_list", suffix="_n"),
+        _ci(case_dir_name="scalar_float"),
     ),
     "integer_format": (
         _ci(case_dir_name="int_list"),
         _ci(case_dir_name="int_list_large", suffix="_large"),
         _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+        _ci(case_dir_name="scalar_int"),
+        _ci(case_dir_name="scalar_int_large"),
     ),
     "numeric_literal_suffix": (
         _ci(case_dir_name="int_list"),
@@ -1280,13 +1283,18 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="string_with_backslash"),
         _ci(case_dir_name="simple_dict", suffix="_dict"),
         _ci(case_dir_name="binary", suffix="_binary"),
+        _ci(case_dir_name="scalar_string"),
     ),
     "string_format_date_cross": (_ci(case_dir_name="scalar_date"),),
     "string_format_datetime_cross": (
         _ci(case_dir_name="scalar_datetime", suffix="_dt"),
     ),
     "bytes_format": (_ci(case_dir_name="binary"),),
-    "trailing_comma": (_ci(case_dir_name="simple_sequence"),),
+    "trailing_comma": (
+        _ci(case_dir_name="simple_sequence"),
+        _ci(case_dir_name="simple_dict", suffix="_dict"),
+        _ci(case_dir_name="set", suffix="_set"),
+    ),
     "line_ending": (
         _ci(case_dir_name="simple_sequence"),
         _ci(case_dir_name="simple_dict", suffix="_dict"),

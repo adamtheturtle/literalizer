@@ -27,7 +27,7 @@ from literalizer.languages import (
 )
 
 from .check_golden import check_golden
-from .language_specs import sorted_languages
+from .language_specs import sorted_languages, with_per_fixture_module_name
 
 
 @beartype
@@ -404,6 +404,7 @@ def run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
         # First element of ``identifier_cases`` is the language's

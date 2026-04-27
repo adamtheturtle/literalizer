@@ -1,4 +1,4 @@
-object Check {
+object Fixture_float_special_values_scala_combined {
 var my_data = List[Double](
     Double.PositiveInfinity,
     Double.NegativeInfinity,

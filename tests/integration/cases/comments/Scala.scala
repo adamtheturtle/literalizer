@@ -1,4 +1,4 @@
-object Check {
+object Fixture_comments_scala {
 val my_data = Map(
     // Server configuration
     "host" -> "localhost",  // default host

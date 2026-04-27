@@ -68,8 +68,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
-    wrap_combined_in_file_noop,
-    wrap_in_file_noop,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
 
@@ -152,7 +151,12 @@ class Crystal(metaclass=LanguageCls):
               e.g. ``[1, 2, 3]``.
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``{1, 2, 3}``.
+
+        module_name: Name of the wrapping ``module`` emitted by
+            :meth:`wrap_in_file`. Defaults to ``"Check"``.
     """
+
+    module_name: str = "Check"
 
     extension = ".cr"
     pygments_name = "crystal"
@@ -424,30 +428,38 @@ class Crystal(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
+        """Wrap code in a ``module ... extend self ... end`` block.
+
+        ``extend self`` lets unqualified calls inside the body
+        (e.g. ``emit(...)``) resolve to the module's own ``def emit``,
+        matching how the fixtures behave when run as standalone files.
+        ``require`` lines (e.g. ``require "set"``) come from
+        :func:`literalize`'s preamble, prepended outside this wrapper,
+        so the wrapper body never contains them.
+        """
+        del variable_name
+        body = prepend_body_preamble(
             content=content,
-            variable_name=variable_name,
             body_preamble=body_preamble,
         )
+        return f"module {self.module_name}\nextend self\n{body}\nend"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
+        """Wrap declaration and assignment in a single module block."""
+        return self.wrap_in_file(
+            content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )

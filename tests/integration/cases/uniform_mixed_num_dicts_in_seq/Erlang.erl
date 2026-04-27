@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_uniform_mixed_num_dicts_in_seq_erlang).
 -export([x/0]).
 x() ->
     My_data = [

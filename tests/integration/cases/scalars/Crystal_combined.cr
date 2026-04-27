@@ -1,3 +1,5 @@
+module Fixture_scalars_crystal_combined
+extend self
 my_data = [
     42,
     3.14,
@@ -12,3 +14,4 @@ my_data = [
     false,
     "hello \"world\"",
 ]
+end

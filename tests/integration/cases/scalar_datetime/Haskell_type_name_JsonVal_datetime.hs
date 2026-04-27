@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_datetime_haskell_type_name_jsonval_datetime where
 import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime)
 data JsonVal = HDatetime UTCTime
 my_data :: JsonVal

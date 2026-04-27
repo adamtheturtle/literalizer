@@ -1,4 +1,4 @@
-module Check where
+module Fixture_int_set_haskell where
 data Val = HInt Integer | HSet [Val]
 instance Num Val where
     fromInteger = HInt

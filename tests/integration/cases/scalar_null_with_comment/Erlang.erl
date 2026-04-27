@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_scalar_null_with_comment_erlang).
 -export([x/0]).
 x() ->
     % note

@@ -1,4 +1,4 @@
-object Check {
+object Fixture_string_with_backslash_scala {
 val my_data = List[String](
     "C:\\path\\to\\file",
     "back\\\\slash",

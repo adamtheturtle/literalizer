@@ -1,3 +1,5 @@
+module Fixture_nested_list_mixed_sibling_types_crystal_combined
+extend self
 my_data = [
     [1, 2],
     [] of Int32,
@@ -8,3 +10,4 @@ my_data = [
     [] of Int32,
     ["a", "b"],
 ]
+end

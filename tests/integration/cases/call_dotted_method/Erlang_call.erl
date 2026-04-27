@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_call_dotted_method_erlang_call).
 -export([x/0]).
 'app.client.fetch'(_) -> ok.
 x() ->

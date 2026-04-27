@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_int_list_large_erlang_integer_format_hex_large).
 -export([x/0]).
 x() ->
     My_data = [

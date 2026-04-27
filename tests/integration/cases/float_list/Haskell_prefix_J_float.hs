@@ -1,4 +1,4 @@
-module Check where
+module Fixture_float_list_haskell_prefix_j_float where
 data Val = JFloat Double | JList [Val]
 instance Num Val where
     fromInteger n = JFloat (fromIntegral n)

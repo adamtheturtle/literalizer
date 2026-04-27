@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_nested_erlang).
 -export([x/0]).
 x() ->
     My_data = #{

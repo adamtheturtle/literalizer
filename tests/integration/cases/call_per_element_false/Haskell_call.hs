@@ -1,4 +1,4 @@
-module Check where
+module Fixture_call_per_element_false_haskell_call where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

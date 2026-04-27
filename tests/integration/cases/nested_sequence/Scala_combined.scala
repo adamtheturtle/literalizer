@@ -1,4 +1,4 @@
-object Check {
+object Fixture_nested_sequence_scala_combined {
 var my_data = List(
     true,
     "hi",

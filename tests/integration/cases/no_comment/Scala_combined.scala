@@ -1,4 +1,4 @@
-object Check {
+object Fixture_no_comment_scala_combined {
 var my_data = Map[String, String](
     "message" -> "no comment here",
 )

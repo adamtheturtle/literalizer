@@ -1,4 +1,4 @@
-module Check where
+module Fixture_comment_scalar_inline_haskell where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

@@ -916,7 +916,15 @@ class Haskell(metaclass=LanguageCls):
             * ``numeric_styles.EXPLICIT`` — wrap every numeric literal
               with its constructor (``HInt 42``, ``HFloat (3.14)``)
               and omit the typeclass instances.
+
+        module_name: Name of the wrapping ``module`` emitted by
+            :meth:`wrap_in_file`. Defaults to ``"Check"``. GHC requires
+            the source filename to match the module, so callers
+            batching many fixtures into one ``ghc`` invocation give
+            each its own unique name.
     """
+
+    module_name: str = "Check"
 
     extension = ".hs"
     pygments_name = "haskell"
@@ -1178,13 +1186,13 @@ class Haskell(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Haskell variable binding in a module."""
+        """Wrap a Haskell variable binding in a named module."""
         preamble = "\n".join(body_preamble)
         if not variable_name:
             # Call mode: bare expressions are not valid at module
@@ -1198,13 +1206,13 @@ class Haskell(metaclass=LanguageCls):
                 for line in content.split(sep="\n")
             )
             return (
-                "module Check where\n"
+                f"module {self.module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        return "module Check where\n" + preamble + "\n" + content
+        return f"module {self.module_name} where\n" + preamble + "\n" + content
 
     @staticmethod
     def wrap_combined_in_file(

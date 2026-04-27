@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_call_deep_dotted_method_erlang_call).
 -export([x/0]).
 'obj.api.client.post'(_) -> ok.
 x() ->

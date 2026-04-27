@@ -1,4 +1,4 @@
-module Check where
+module Fixture_simple_dict_haskell_prefix_j where
 data Val = JNull | JBool Bool | JInt Integer | JStr String | JMap [(String, Val)]
 instance Num Val where
     fromInteger = JInt

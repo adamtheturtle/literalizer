@@ -1,4 +1,4 @@
-module Check where
+module Fixture_uniform_mixed_num_dicts_in_seq_haskell where
 data Val = HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

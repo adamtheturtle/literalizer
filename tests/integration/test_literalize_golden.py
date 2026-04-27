@@ -35,7 +35,9 @@ from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
     make_spec,
+    make_spec_for_golden,
     sorted_languages,
+    with_per_fixture_module_name,
 )
 from .variant_cases import (
     group_variant_cases_by_language,
@@ -67,7 +69,10 @@ def test_golden_file(
                 result = literalizer.literalize(
                     source=yaml_string,
                     input_format=literalizer.InputFormat.YAML,
-                    language=make_spec(lang_cls=lang_cls),
+                    language=make_spec_for_golden(
+                        lang_cls=lang_cls,
+                        golden_path=golden_path,
+                    ),
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=wrap_variable_form(lang_cls=lang_cls),
@@ -116,13 +121,14 @@ def test_golden_file_combined_variable_forms(
             golden_file_name=combined_case.golden_file_name,
         ):
             input_path = cases_dir / combined_case.case_name / "input.yaml"
-            spec = make_spec(
-                lang_cls=lang_cls,
-                declaration_style=combined_case.declaration_style,
-            )
             yaml_string = input_path.read_text()
             golden_path = input_path.parent / (
                 combined_case.golden_file_name + lang_cls.extension
+            )
+            spec = make_spec_for_golden(
+                lang_cls=lang_cls,
+                golden_path=golden_path,
+                declaration_style=combined_case.declaration_style,
             )
             try:
                 result = literalizer.literalize(
@@ -186,7 +192,10 @@ def test_format_variant_golden_file(
                 result = literalizer.literalize(
                     source=yaml_string,
                     input_format=literalizer.InputFormat.YAML,
-                    language=variant.spec,
+                    language=with_per_fixture_module_name(
+                        spec=variant.spec,
+                        golden_path=golden_path,
+                    ),
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,
@@ -227,8 +236,10 @@ def test_line_ending_combined_variable_forms(
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
-    spec = make_spec(
+    golden_path = input_path.parent / (case.name + base_spec.extension)
+    spec = make_spec_for_golden(
         lang_cls=case.lang_cls,
+        golden_path=golden_path,
         line_ending=case.line_ending,
         declaration_style=redef_styles[0],
     )
@@ -246,7 +257,7 @@ def test_line_ending_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=golden_path,
     )
 
 
@@ -268,8 +279,10 @@ def test_heterogeneous_strategy_combined_variable_forms(
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
-    spec = make_spec(
+    golden_path = input_path.parent / (case.name + base_spec.extension)
+    spec = make_spec_for_golden(
         lang_cls=case.lang_cls,
+        golden_path=golden_path,
         heterogeneous_strategy=case.heterogeneous_strategy,
         declaration_style=redef_styles[0],
     )
@@ -287,7 +300,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=golden_path,
     )
 
 
@@ -311,7 +324,12 @@ def test_pre_indent_level_with_new_variable_golden_file(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    spec = make_spec(lang_cls=case.lang_cls)
+    base_spec = make_spec(lang_cls=case.lang_cls)
+    golden_path = input_path.parent / (case.name + base_spec.extension)
+    spec = make_spec_for_golden(
+        lang_cls=case.lang_cls,
+        golden_path=golden_path,
+    )
     result = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
@@ -329,5 +347,5 @@ def test_pre_indent_level_with_new_variable_golden_file(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=golden_path,
     )

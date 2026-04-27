@@ -1,1 +1,4 @@
+module Fixture_scalar_int_very_large_crystal
+extend self
 my_data = 9223372036854775808_i128
+end
