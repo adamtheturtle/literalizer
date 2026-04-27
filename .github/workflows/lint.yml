@@ -167,10 +167,11 @@ jobs:
           cat > /tmp/run-odin-file.sh << 'SCRIPT'
           #!/bin/sh
           set -e
+          src=$(realpath "$1")
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cd "$tmpdir"
-          odin run "$1" -file -out:"$tmpdir/prog"
+          odin run "$src" -file -out:"$tmpdir/prog"
           SCRIPT
           chmod +x /tmp/run-odin-file.sh
           xargs -0 -P "$(nproc)" -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
