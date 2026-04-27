@@ -167,10 +167,15 @@ jobs:
           xargs -0 -I{} odin check {} -file < /tmp/files-odin
       - name: Run Odin files
         run: |-
-          # shellcheck disable=SC2016
-          xargs -0 -P "$(nproc)" -I{} \
-            sh -c 'tmpdir=$(mktemp -d) && odin run "$1" -file -out:"$tmpdir/prog" && rm -rf "$tmpdir"' \
-            _ {} < /tmp/files-odin
+          cat > /tmp/run-odin-file.sh << 'SCRIPT'
+          #!/bin/sh
+          set -e
+          tmpdir=$(mktemp -d)
+          odin run "$1" -file -out:"$tmpdir/prog"
+          rm -rf "$tmpdir"
+          SCRIPT
+          chmod +x /tmp/run-odin-file.sh
+          xargs -0 -P "$(nproc)" -I{} /tmp/run-odin-file.sh {} < /tmp/files-odin
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
