@@ -61,7 +61,7 @@ optional-dependencies.dev = [
     "pyroma==5.0.1",
     "pytest==9.0.3",
     "pytest-beartype-tests==2026.4.26",
-    "pytest-codspeed==4.4.0",
+    "pytest-codspeed==4.5.0",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
