@@ -754,12 +754,25 @@ class Dhall(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
+        """Wrap code in a valid Dhall file.
+
+        When *variable_name* is empty the call is from a call context
+        (either :meth:`wrap_calls_with_declarations` or
+        :func:`~literalizer.literalize_call` with ``wrap_in_file=True``);
+        both need a closing ``in {=}`` to complete the ``let``-chain
+        into a valid Dhall expression.  When *variable_name* is set the
+        call is from a regular :func:`~literalizer.literalize` path
+        whose content already ends with the ``in <varname>`` clause
+        produced by the variable form.
+        """
+        wrapped = wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
+        if not variable_name:
+            wrapped += "\nin {=}"
+        return wrapped
 
     @staticmethod
     def wrap_combined_in_file(
@@ -922,16 +935,18 @@ class Dhall(metaclass=LanguageCls):
         calls: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Append ``in {=}`` after calls to complete the Dhall
-        expression.
+        """Join declarations and calls into a Dhall let-chain.
+
+        Delegates to :meth:`wrap_in_file` with an empty variable name,
+        which appends the ``in {=}`` terminator needed by both
+        this path and the ``wrap_in_file=True`` call path.
         """
         content = "\n".join((*declarations, calls)) if declarations else calls
-        wrapped = self.wrap_in_file(
+        return self.wrap_in_file(
             content=content,
             variable_name="",
             body_preamble=body_preamble,
         )
-        return wrapped + "\nin {=}"
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
