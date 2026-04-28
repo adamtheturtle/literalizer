@@ -207,8 +207,8 @@ def _dart_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Dart stub declarations for a call name."""
-    # Named parameters can't start with '_' in Dart. When all params
-    # start with '_' (e.g. transform stubs like ["_arg"]), use required
+    # Named parameters can't start with '_' in Dart. When all names
+    # start with '_' (e.g. transform stubs like ["_value"]), use required
     # positional syntax so callers can pass the value positionally.
     if params and all(p.startswith("_") for p in params):
         param_list = ", ".join(f"dynamic {p}" for p in params)
@@ -608,8 +608,8 @@ class Dart(metaclass=LanguageCls):
             )
         # Call mode: top-level expression statements are invalid in Dart.
         # Class/function stubs go at file scope; call expressions and
-        # ref-arg declarations go inside void main(). Add a top-level
-        # my_data sentinel so the CI lint harness can import it.
+        # declarations from reference values go inside void main(). Add a
+        # top-level my_data sentinel so the CI lint harness can import it.
         indented = "\n".join(
             f"{self.indent}{line}" if line.strip() else line
             for line in content.split(sep="\n")
