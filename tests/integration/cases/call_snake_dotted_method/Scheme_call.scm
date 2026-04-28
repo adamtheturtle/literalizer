@@ -1,0 +1,6 @@
+(define my_app (lambda args (if #f #f)))
+(define my_app.http_client (lambda args (if #f #f)))
+(define my_app.http_client.fetch (lambda args (if #f #f)))
+(my_app.http_client.fetch "hello")
+(my_app.http_client.fetch 42)
+(my_app.http_client.fetch #t)

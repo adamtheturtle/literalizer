@@ -4,8 +4,8 @@ pub type GVal {
   GStr(String)
   GList(List(GVal))
 }
-pub fn process(_value: a) -> Nil { panic }
-pub fn log_emit(__arg: a) -> Nil { panic }
+pub fn process(_value: a) -> Nil { Nil }
+pub fn log_emit(__arg: a) -> Nil { Nil }
 
 pub fn main() {
   log.emit(process(GStr("hello")))

@@ -1,0 +1,7 @@
+(define app (lambda args 0))
+(define app.client (lambda args 0))
+(define app.client.fetch (lambda args 0))
+(define emit (lambda args (if #f #f)))
+(emit (app.client.fetch "hello"))
+(emit (app.client.fetch 42))
+(emit (app.client.fetch #t))

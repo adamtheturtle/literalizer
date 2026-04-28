@@ -1,0 +1,6 @@
+(define process (lambda args 0))
+(define log (lambda args (if #f #f)))
+(define log.emit (lambda args (if #f #f)))
+(log.emit (process "hello"))
+(log.emit (process 42))
+(log.emit (process #t))
