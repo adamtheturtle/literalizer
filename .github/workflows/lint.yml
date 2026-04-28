@@ -293,8 +293,8 @@ jobs:
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
-          PYTHONPATH=. xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
-          xargs -0 uv run --no-project python run_elm.py < /tmp/files-elm
+          xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
+          xargs -0 uv run --no-project python .github/scripts/run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
@@ -316,7 +316,8 @@ jobs:
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_ada_syntax.py < /tmp/files-ada
       - name: Run Ada files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_ada.py < /tmp/files-ada
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_ada.py
+          < /tmp/files-ada
 
       - name: Lint Occam
         run: |-
@@ -595,14 +596,15 @@ jobs:
             cp "$f" "$workspace/$mod.hs"
           done < /tmp/files-haskell
           find "$workspace" -name '*.hs' -print0 | \
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_haskell.py
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_haskell.py
 
       - name: Lint PureScript
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript
-          PYTHONPATH=. xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
+          xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
       - name: Run PureScript files
-        run: xargs -0 uv run --no-project python run_purescript.py < /tmp/files-purescript
+        run: xargs -0 uv run --no-project python .github/scripts/run_purescript.py
+          < /tmp/files-purescript
 
   # Ubuntu's packaged clang-tidy is several releases behind and is the
   # dominant cost of this job on runners. Pull a recent build from PyPI
