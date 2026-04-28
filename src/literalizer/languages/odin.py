@@ -134,7 +134,7 @@ def _odin_call_preamble_stub(
     Emits only type and helper-procedure definitions; the root variable
     initialisation is deferred to :func:`_odin_call_body_stub` so it
     lives inside ``main`` rather than at package scope, avoiding an Odin
-    compiler crash on nested struct literals in global initialisers.
+    compiler crash on nested struct literals in global scope.
     """
     if len(parts) == 1:
         return (f"{parts[0]} :: proc(args: ..any) -> any {{ return nil }}",)
@@ -173,7 +173,7 @@ def _odin_call_body_stub(
     For single-part calls the proc is declared at file scope and no local
     variable is needed.  For dotted calls the root variable is declared
     inside ``main`` to avoid the Odin compiler crash triggered by nested
-    struct literals in global initialisers.
+    struct literals declared at global scope.
     """
     if len(parts) == 1:
         return ()
