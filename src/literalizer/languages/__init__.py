@@ -49,6 +49,7 @@ from .python import Python
 from .r import R
 from .racket import Racket
 from .raku import Raku
+from .roc import Roc
 from .ruby import Ruby
 from .rust import Rust
 from .scala import Scala
@@ -114,6 +115,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         R,
         Racket,
         Raku,
+        Roc,
         Ruby,
         Rust,
         Scala,
@@ -181,6 +183,7 @@ __all__ = [
     "R",
     "Racket",
     "Raku",
+    "Roc",
     "Ruby",
     "Rust",
     "Scala",
