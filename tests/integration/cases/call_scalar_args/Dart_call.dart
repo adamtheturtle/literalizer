@@ -1,0 +1,7 @@
+dynamic process({dynamic value}) => null;
+final my_data = null;
+void main() {
+    process(value: "hello");
+    process(value: 42);
+    process(value: true);
+}

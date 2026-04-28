@@ -49,7 +49,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -58,6 +57,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -197,6 +197,50 @@ def _format_dart_typed_declaration(
         sequence_is_tuple=sequence_is_tuple,
     )
     return f"{keyword}{hint} {name} = {value};"
+
+
+@beartype
+def _dart_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Dart stub declarations for a call name."""
+    # Named parameters can't start with '_' in Dart. When all names
+    # start with '_' (e.g. transform stubs like ["_value"]), use required
+    # positional syntax so callers can pass the value positionally.
+    if params and all(p.startswith("_") for p in params):
+        param_list = ", ".join(f"dynamic {p}" for p in params)
+    else:
+        param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
+    if len(parts) == 1:
+        return (f"dynamic {parts[0]}({param_list}) => null;",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = f"_{root.title()}Type"
+        return (
+            f"class {cls} {{ dynamic {method}({param_list}) => null; }}",
+            f"final {root} = {cls}();",
+        )
+    lines: list[str] = []
+    inner_cls = f"_{fields[-1].title()}Type"
+    lines.append(
+        f"class {inner_cls} {{ dynamic {method}({param_list}) => null; }}"
+    )
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = f"_{fields[i].title()}Type"
+        lines.append(
+            f"class {cls} {{ final {fields[i + 1]} = {prev_cls}(); }}"
+        )
+        prev_cls = cls
+    root_cls = f"_{root.title()}Type"
+    lines.append(f"class {root_cls} {{ final {fields[0]} = {prev_cls}(); }}")
+    lines.append(f"final {root} = {root_cls}();")
+    return tuple(lines)
 
 
 @beartype
@@ -525,6 +569,8 @@ class Dart(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Dart call style options."""
 
+        NAMED = KeywordCallStyle(separator=": ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -547,17 +593,35 @@ class Dart(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
     )
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+        """Wrap code in a valid file."""
+        if variable_name:
+            return wrap_in_file_noop(
+                content=content,
+                variable_name=variable_name,
+                body_preamble=body_preamble,
+            )
+        # Call mode: top-level expression statements are invalid in Dart.
+        # Class/function stubs go at file scope; call expressions and
+        # declarations from reference values go inside void main(). Add a
+        # top-level my_data sentinel so the CI lint harness can import it.
+        indented = "\n".join(
+            f"{self.indent}{line}" if line.strip() else line
+            for line in content.split(sep="\n")
+        )
+        return "\n".join(
+            [
+                *body_preamble,
+                "final my_data = null;",
+                "void main() {",
+                indented,
+                "}",
+            ]
         )
 
     @staticmethod
@@ -596,6 +660,7 @@ class Dart(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.NAMED
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -614,9 +679,6 @@ class Dart(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -702,11 +764,17 @@ class Dart(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        config: CallStyle = self.call_style.value
+        return config
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _dart_call_stub
 
     @cached_property
     def format_call_preamble_stub(
