@@ -474,6 +474,11 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
+      - name: Run Gleam files
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_gleam.py
+          < /tmp/files-gleam
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
       # `elixir` compiles the module but never invokes it. The script
