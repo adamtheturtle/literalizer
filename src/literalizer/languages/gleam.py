@@ -350,16 +350,14 @@ def _gleam_call_preamble_stub(
     identifiers cannot contain ``.``, so ``app.client.fetch`` becomes
     ``app_client_fetch``.  Each parameter gets a fresh type variable
     so the stub is polymorphic across call sites that pass different
-    argument types.  Return type is ``Nil``; ``panic`` fills the body
-    so the stub unifies with any return-position type at the call
-    site.
+    argument types.  Return type is ``Nil``.
     """
     flat_name = "_".join(parts)
     param_list = ", ".join(
         f"_{p}: {_gleam_type_var(index=i)}"
         for i, p in enumerate(iterable=params)
     )
-    return (f"pub fn {flat_name}({param_list}) -> Nil {{ panic }}",)
+    return (f"pub fn {flat_name}({param_list}) -> Nil {{ Nil }}",)
 
 
 def _gleam_format_call_target(parts: Sequence[str]) -> str:

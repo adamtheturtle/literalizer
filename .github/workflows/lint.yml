@@ -478,7 +478,7 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          grep -zEv 'float_special_values|_call\.gleam' /tmp/files-gleam > /tmp/files-gleam-run || true
+          grep -zEv 'float_special_values' /tmp/files-gleam > /tmp/files-gleam-run || true
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam-run
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
