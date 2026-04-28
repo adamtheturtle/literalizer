@@ -224,14 +224,14 @@ def _v_call_preamble_stub(
             f"fn {parts[0]}(args ...ICallArg_) ICallArg_ {{ return 0 }}",
         )
 
-    def _type_name(base: str) -> str:
-        """Return a V struct name for *base* starting with a capital."""
-        return base[0].upper() + base[1:] + "Type_"
+    def _cap_type(name: str, /) -> str:
+        """Return *name* capitalised and suffixed with ``Type_``."""
+        return name[0].upper() + name[1:] + "Type_"
 
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    receiver_type = _type_name(fields[-1]) if fields else _type_name(root)
+    receiver_type = _cap_type(fields[-1]) if fields else _cap_type(root)
 
     if stub_return is StubReturn.VOID:
         method_line = (
@@ -248,11 +248,11 @@ def _v_call_preamble_stub(
     if fields:
         prev_type = receiver_type
         for i in range(len(fields) - 2, -1, -1):
-            curr_type = _type_name(fields[i])
+            curr_type = _cap_type(fields[i])
             field = fields[i + 1]
             lines.append(f"struct {curr_type} {{\n\t{field} {prev_type}\n}}")
             prev_type = curr_type
-        root_type = _type_name(root)
+        root_type = _cap_type(root)
         lines.append(f"struct {root_type} {{\n\t{fields[0]} {prev_type}\n}}")
 
     return tuple(lines)
