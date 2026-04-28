@@ -33,7 +33,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -94,6 +94,19 @@ def _format_tcl_declaration(
     """Format a Tcl ``set`` variable declaration with continuation."""
     continued = _add_tcl_continuation(value=value)
     return f"set {name} {continued}"
+
+
+@beartype
+def _tcl_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return a Tcl proc stub that accepts any arguments."""
+    name = ".".join(parts)
+    body = "return {}" if stub_return is StubReturn.VALUE else ""
+    return (f"proc {name} {{args}} {{{body}}}",)
 
 
 @beartype
@@ -309,6 +322,8 @@ class Tcl(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Tcl call style options."""
 
+        COMMAND = CommandCallStyle(arg_separator=" ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -381,6 +396,7 @@ class Tcl(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.COMMAND
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -399,9 +415,6 @@ class Tcl(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -445,7 +458,12 @@ class Tcl(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _tcl_call_stub
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_call_preamble_stub(
