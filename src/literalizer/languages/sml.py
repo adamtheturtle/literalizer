@@ -533,13 +533,13 @@ class Sml(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an SML val declaration in a structure."""
-        del variable_name
+        """Wrap an SML val declaration at top level."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        return "structure Check = struct\n\n" + content + "\n\nend"
+        force_line = f"\nval _ = {variable_name}" if variable_name else ""
+        return content + force_line
 
     @staticmethod
     def wrap_combined_in_file(

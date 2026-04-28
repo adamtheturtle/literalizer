@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::vector<std::pair<std::string, std::variant<std::string, std::map<std::string, std::string>>>>{
     {"name", "Alice"},
     {"scores", std::map<std::string, std::string>{{"1", "first"}, {"2", "second"}}},
@@ -15,4 +15,5 @@ my_data = std::vector<std::pair<std::string, std::variant<std::string, std::map<
     {"scores", std::map<std::string, std::string>{{"1", "first"}, {"2", "second"}}},
 };
     (void)my_data;
+    return 0;
 }

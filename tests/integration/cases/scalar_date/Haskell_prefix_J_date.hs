@@ -3,3 +3,5 @@ import Data.Time (Day, fromGregorian)
 data Val = JDate Day
 my_data :: Val
 my_data = JDate (fromGregorian 2024 1 15)
+main :: IO ()
+main = seq my_data (return ())

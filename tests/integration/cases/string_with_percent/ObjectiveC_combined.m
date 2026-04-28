@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @"100% done",
     @"%(name) is here",
@@ -10,4 +10,5 @@ my_data = @[
     @"%(name) is here",
 ];
     (void)my_data;
+    return 0;
 }

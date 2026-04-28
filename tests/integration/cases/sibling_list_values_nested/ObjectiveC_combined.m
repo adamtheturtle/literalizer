@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     @"lint": @[@2, @[]],
     @"test": @[@5, @[@"compile"]],
@@ -10,4 +10,5 @@ my_data = @{
     @"test": @[@5, @[@"compile"]],
 };
     (void)my_data;
+    return 0;
 }

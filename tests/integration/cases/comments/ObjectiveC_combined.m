@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     // Server configuration
     @"host": @"localhost",  // default host
@@ -16,4 +16,5 @@ my_data = @{
     @"debug": @YES,
 };
     (void)my_data;
+    return 0;
 }

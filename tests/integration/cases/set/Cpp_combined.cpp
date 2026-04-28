@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <string>
-void check_() {
+int main() {
 auto my_data = std::initializer_list<std::string>{
     "apple",
     "banana",
@@ -13,4 +13,5 @@ my_data = std::initializer_list<std::string>{
     "cherry",
 };
     (void)my_data;
+    return 0;
 }

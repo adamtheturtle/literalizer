@@ -16,3 +16,5 @@ my_data = HMap [
     {- Enable debug mode -}
     ("debug", HBool True)
     ]
+main :: IO ()
+main = seq my_data (return ())

@@ -4,7 +4,7 @@
 #include <chrono>
 #include <map>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::variant<std::string, int, double, bool, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point>>{
     {"s", "string"},
     {"i", 1},
@@ -16,4 +16,5 @@ auto my_data = std::map<std::string, std::variant<std::string, int, double, bool
     {"by", "48656c6c6f"},
 };
     (void)my_data;
+    return 0;
 }

@@ -16,3 +16,5 @@ my_data = HList [
     HList [1.500000, 2.500000],
     HList [3.500000, 4.500000]
     ]
+main :: IO ()
+main = seq my_data (return ())

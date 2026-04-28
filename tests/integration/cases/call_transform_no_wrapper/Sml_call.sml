@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SBool of bool
   | SInt of LargeInt.int
@@ -9,5 +7,3 @@ fun process _ = ()
 val _ = process("hello")
 val _ = process(42)
 val _ = process(SBool true)
-
-end

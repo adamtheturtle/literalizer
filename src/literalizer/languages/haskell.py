@@ -1205,7 +1205,13 @@ class Haskell(metaclass=LanguageCls):
                 + indented
                 + "\n    pure ()"
             )
-        return f"module {self.module_name} where\n" + preamble + "\n" + content
+        return (
+            f"module {self.module_name} where\n"
+            + preamble
+            + "\n"
+            + content
+            + f"\nmain :: IO ()\nmain = seq {variable_name} (return ())"
+        )
 
     def wrap_calls_with_declarations(
         self,

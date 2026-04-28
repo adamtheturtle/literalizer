@@ -15,3 +15,5 @@ my_data = JMap [
     ("active", JBool True),
     ("score", JNull)
     ]
+main :: IO ()
+main = seq my_data (return ())

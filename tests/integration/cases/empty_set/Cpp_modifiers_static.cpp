@@ -1,6 +1,7 @@
 #include <initializer_list>
 #include <cstddef>
-void check_() {
+int main() {
 static auto my_data = std::initializer_list<std::nullptr_t>{};
     (void)my_data;
+    return 0;
 }

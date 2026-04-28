@@ -6,3 +6,5 @@ my_data = HMap [
     ("port", HNull),  -- not configured yet
     ("debug", HBool True)
     ]
+main :: IO ()
+main = seq my_data (return ())

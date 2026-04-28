@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SReal of real
   | SStr of string
@@ -10,5 +8,3 @@ end
 fun emit _ = ()
 val _ = emit(throttler.check("user_1", 1000.0))
 val _ = emit(throttler.check("user_2", 2000.5))
-
-end

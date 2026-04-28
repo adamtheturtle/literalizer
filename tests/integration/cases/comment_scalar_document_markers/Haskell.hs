@@ -10,3 +10,5 @@ instance Num Val where
 -- note
 my_data :: Val
 my_data = 42
+main :: IO ()
+main = seq my_data (return ())

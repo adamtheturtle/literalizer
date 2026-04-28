@@ -4,6 +4,19 @@ Changelog
 Next
 ----
 
+- C, C++, Objective-C, and D fixtures now emit a ``main`` entry point
+  directly (``int main(void)``/``int main()``/``void main()``) instead
+  of a ``check_()``/``_check()`` function that required a separate
+  per-language driver script.  Haskell non-call fixtures now append
+  ``main = seq my_data (return ())`` to the module, and SML fixtures
+  are emitted as top-level declarations ending with ``val _ = my_data``
+  instead of inside a ``structure Check = struct … end`` wrapper.  All
+  six driver scripts (``c_main.c``, ``cpp_main.cpp``, ``objc_main.m``,
+  ``d_main.d``, ``sml_force.sml``, ``sml_main.mlb``,
+  ``sml_call_main.mlb``) have been removed.  CI now compiles and runs
+  each fixture directly without a linking step against a driver object.
+  ``run_haskell.py`` no longer generates a ``Main.hs`` wrapper; it
+  compiles every fixture with ``-main-is <module>``.
 - Ada output now uses Ada 2022 container aggregates (``AList'[...]``,
   ``AMap'[...]``, ``ASet'[...]``) and emits a ``with A_Stub; use
   A_Stub;`` context clause so each fixture compiles and runs against

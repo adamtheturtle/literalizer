@@ -15,3 +15,5 @@ my_data = HMap [
     -- Port setting
     ("port", 3000)
     ]
+main :: IO ()
+main = seq my_data (return ())

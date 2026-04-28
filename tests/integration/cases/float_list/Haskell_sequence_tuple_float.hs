@@ -17,3 +17,5 @@ my_data = (
     -2.2,
     3.3
     )
+main :: IO ()
+main = seq my_data (return ())

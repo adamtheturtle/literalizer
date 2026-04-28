@@ -13,3 +13,5 @@ my_data = HMap [
     ("lint", HList [2, HList [1]]),
     ("test", HList [5, HList [7]])
     ]
+main :: IO ()
+main = seq my_data (return ())

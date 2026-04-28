@@ -5,3 +5,5 @@ my_data = HMap [
     ("name", HStr "Alice"),
     ("scores", HMap [("1", HStr "first"), ("2", HStr "second")])
     ]
+main :: IO ()
+main = seq my_data (return ())

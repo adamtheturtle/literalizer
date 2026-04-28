@@ -18,8 +18,9 @@ static void my_app_http_client_fetch_stub_(CVal _a0) { (void)_a0; }
 struct http_clientType_ { void (*fetch)(CVal); };
 struct my_appType_ { struct http_clientType_ http_client; };
 static const struct my_appType_ my_app = { .http_client = { .fetch = my_app_http_client_fetch_stub_ } };
-void check_(void) {
+int main(void) {
 my_app.http_client.fetch(((CVal){.s = "hello"}));
 my_app.http_client.fetch(((CVal){.i = 42}));
 my_app.http_client.fetch(((CVal){.b = true}));
+    return 0;
 }

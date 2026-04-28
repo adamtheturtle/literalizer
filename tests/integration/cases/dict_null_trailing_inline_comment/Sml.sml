@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SNull
   | SStr of string
@@ -8,5 +6,4 @@ val my_data : val_t = SMap [
     ("host", SStr "localhost"),
     ("port", SNull)  (* not configured yet *)
 ]
-
-end
+val _ = my_data

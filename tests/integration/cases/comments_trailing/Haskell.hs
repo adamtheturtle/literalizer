@@ -5,3 +5,5 @@ my_data = HList [
     HStr "a"
     -- trailing
     ]
+main :: IO ()
+main = seq my_data (return ())

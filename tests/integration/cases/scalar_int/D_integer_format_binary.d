@@ -1,4 +1,4 @@
 import std.json;
-void _check() {
+void main() {
 auto my_data = JSONValue(0b101010);
 }

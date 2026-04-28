@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 auto my_data = JSONValue([
     JSONValue("line1\r\nline2"),
     JSONValue("line1\rline2"),

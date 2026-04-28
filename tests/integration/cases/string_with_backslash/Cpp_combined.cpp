@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-void check_() {
+int main() {
 auto my_data = std::vector<std::string>{
     "C:\\path\\to\\file",
     "back\\\\slash",
@@ -22,4 +22,5 @@ my_data = std::vector<std::string>{
     "line1\\nline2\nwith newline",
 };
     (void)my_data;
+    return 0;
 }

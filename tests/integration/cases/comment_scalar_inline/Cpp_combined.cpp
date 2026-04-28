@@ -1,9 +1,10 @@
 #include <initializer_list>
-void check_() {
+int main() {
 // note
 auto my_data = 42;
 (void)my_data;
 // note
 my_data = 42;
     (void)my_data;
+    return 0;
 }

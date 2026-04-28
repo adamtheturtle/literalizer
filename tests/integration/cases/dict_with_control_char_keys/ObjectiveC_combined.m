@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     @"key\nwith\nnewlines": @"value1",
     @"key\twith\ttabs": @"value2",
@@ -12,4 +12,5 @@ my_data = @{
     @"": @"value3",
 };
     (void)my_data;
+    return 0;
 }

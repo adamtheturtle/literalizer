@@ -14,7 +14,8 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.u = 9223372036854775808ULL});
     (void)my_data;
+    return 0;
 }

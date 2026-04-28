@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"level1", ((CVal){.m = (CKV[]){{"level2", ((CVal){.m = (CKV[]){{"level3", ((CVal){.m = (CKV[]){{"level4", ((CVal){.m = (CKV[]){{"value", ((CVal){.s = "deep"})}, {"items", ((CVal){.a = (CVal[]){((CVal){.s = "a"}), ((CVal){.s = "b"})}})}}})}}})}, {"sibling", ((CVal){.i = 42})}}})}, {"tags", ((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"name", ((CVal){.s = "tag1"})}, {"meta", ((CVal){.m = (CKV[]){{"priority", ((CVal){.i = 1})}, {"labels", ((CVal){.a = (CVal[]){((CVal){.s = "x"}), ((CVal){.s = "y"})}})}}})}}})}})}}})},
 }});
@@ -23,4 +23,5 @@ my_data = ((CVal){.m = (CKV[]){
     {"level1", ((CVal){.m = (CKV[]){{"level2", ((CVal){.m = (CKV[]){{"level3", ((CVal){.m = (CKV[]){{"level4", ((CVal){.m = (CKV[]){{"value", ((CVal){.s = "deep"})}, {"items", ((CVal){.a = (CVal[]){((CVal){.s = "a"}), ((CVal){.s = "b"})}})}}})}}})}, {"sibling", ((CVal){.i = 42})}}})}, {"tags", ((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"name", ((CVal){.s = "tag1"})}, {"meta", ((CVal){.m = (CKV[]){{"priority", ((CVal){.i = 1})}, {"labels", ((CVal){.a = (CVal[]){((CVal){.s = "x"}), ((CVal){.s = "y"})}})}}})}}})}})}}})},
 }});
     (void)my_data;
+    return 0;
 }

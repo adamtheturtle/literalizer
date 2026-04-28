@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SStr of string
   | SList of val_t list
@@ -8,5 +6,4 @@ val my_data : val_t = SList [
     SList [SMap [("name", SStr "Alice")], SMap [("name", SStr "Bob")]],
     SList [SMap [("name", SStr "Charlie")], SMap [("name", SStr "Dave")]]
 ]
-
-end
+val _ = my_data

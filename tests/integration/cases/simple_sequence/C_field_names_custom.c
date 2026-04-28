@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *key; CVal val; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.arr = (CVal[]){
     ((CVal){.integer = 1}),
     ((CVal){.str = "hello"}),
@@ -22,4 +22,5 @@ CVal my_data = ((CVal){.arr = (CVal[]){
     ((CVal){.str = NULL}),
 }});
     (void)my_data;
+    return 0;
 }

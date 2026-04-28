@@ -18,3 +18,5 @@ my_data = HList [
     2.5,
     3
     ]
+main :: IO ()
+main = seq my_data (return ())

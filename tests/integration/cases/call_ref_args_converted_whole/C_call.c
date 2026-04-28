@@ -15,11 +15,12 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 static void process(CVal _a0) { (void)_a0; }
-void check_(void) {
+int main(void) {
 CVal my_var = ((CVal){.a = (CVal[]){
     ((CVal){.i = 1}),
     ((CVal){.i = 2}),
     ((CVal){.i = 3}),
 }});
 process(my_var);
+    return 0;
 }

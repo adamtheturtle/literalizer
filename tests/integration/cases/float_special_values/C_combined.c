@@ -15,7 +15,7 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 #include <math.h>
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = INFINITY}),
     ((CVal){.f = -INFINITY}),
@@ -28,4 +28,5 @@ my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = NAN}),
 }});
     (void)my_data;
+    return 0;
 }

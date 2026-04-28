@@ -14,9 +14,10 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"message", ((CVal){.s = "no comment here"})},
 }});
     (void)my_data;
+    return 0;
 }

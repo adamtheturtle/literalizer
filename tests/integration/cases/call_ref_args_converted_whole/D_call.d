@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 int process(T...)(T args) { return 0; }
 auto my_var = JSONValue([
     JSONValue(1),

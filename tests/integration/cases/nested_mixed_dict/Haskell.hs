@@ -12,3 +12,5 @@ my_data :: Val
 my_data = HMap [
     ("outer", HMap [("a", 1), ("b", HStr "x"), ("c", HNull)])
     ]
+main :: IO ()
+main = seq my_data (return ())

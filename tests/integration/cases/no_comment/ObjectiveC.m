@@ -1,7 +1,8 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     @"message": @"no comment here",
 };
     (void)my_data;
+    return 0;
 }

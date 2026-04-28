@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @"C:\\path\\to\\file",
     @"back\\\\slash",
@@ -10,4 +10,5 @@ id my_data = @[
     @"line1\\nline2\nwith newline",
 ];
     (void)my_data;
+    return 0;
 }

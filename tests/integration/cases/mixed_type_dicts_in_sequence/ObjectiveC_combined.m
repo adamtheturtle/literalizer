@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @{@"type": @"create", @"pr_id": @"pr_1", @"draft": @YES},
     @{@"type": @"create", @"pr_id": @"pr_2"},
@@ -10,4 +10,5 @@ my_data = @[
     @{@"type": @"create", @"pr_id": @"pr_2"},
 ];
     (void)my_data;
+    return 0;
 }

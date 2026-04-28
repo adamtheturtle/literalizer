@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     @"key": @"value \" # not a comment",  // real
 };
@@ -8,4 +8,5 @@ my_data = @{
     @"key": @"value \" # not a comment",  // real
 };
     (void)my_data;
+    return 0;
 }

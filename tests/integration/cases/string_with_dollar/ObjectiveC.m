@@ -1,8 +1,9 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @"price $10",
     @"$HOME",
 ];
     (void)my_data;
+    return 0;
 }

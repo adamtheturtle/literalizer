@@ -18,8 +18,9 @@ static void app_client_fetch_stub_(CVal _a0) { (void)_a0; }
 struct clientType_ { void (*fetch)(CVal); };
 struct appType_ { struct clientType_ client; };
 static const struct appType_ app = { .client = { .fetch = app_client_fetch_stub_ } };
-void check_(void) {
+int main(void) {
 app.client.fetch(((CVal){.s = "hello"}));
 app.client.fetch(((CVal){.i = 42}));
 app.client.fetch(((CVal){.b = true}));
+    return 0;
 }

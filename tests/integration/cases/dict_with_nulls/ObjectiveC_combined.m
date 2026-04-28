@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     @"name": @"Alice",
     @"score": [NSNull null],
@@ -12,4 +12,5 @@ my_data = @{
     @"age": @30,
 };
     (void)my_data;
+    return 0;
 }

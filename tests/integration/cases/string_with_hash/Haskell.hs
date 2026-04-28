@@ -5,3 +5,5 @@ my_data = HList [
     HStr "issue #{42}",
     HStr "color #red"
     ]
+main :: IO ()
+main = seq my_data (return ())

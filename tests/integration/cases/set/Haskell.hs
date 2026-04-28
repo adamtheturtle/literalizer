@@ -6,3 +6,5 @@ my_data = HSet [
     HStr "banana",
     HStr "cherry"
     ]
+main :: IO ()
+main = seq my_data (return ())

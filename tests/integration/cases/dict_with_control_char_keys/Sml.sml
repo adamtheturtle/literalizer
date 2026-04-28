@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SStr of string
   | SMap of (string * val_t) list
@@ -8,5 +6,4 @@ val my_data : val_t = SMap [
     ("key\twith\ttabs", SStr "value2"),
     ("", SStr "value3")
 ]
-
-end
+val _ = my_data

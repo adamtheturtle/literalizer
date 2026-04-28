@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @0xf4240,
     @(-0x4d2),
@@ -7,4 +7,5 @@ id my_data = @[
     @(-0xa),
 ];
     (void)my_data;
+    return 0;
 }

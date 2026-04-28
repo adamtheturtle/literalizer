@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = [NSSet setWithArray:@[
     @"apple",  // inline comment
     // before banana
@@ -7,4 +7,5 @@ id my_data = [NSSet setWithArray:@[
     // trailing
 ]];
     (void)my_data;
+    return 0;
 }

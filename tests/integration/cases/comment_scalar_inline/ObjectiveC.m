@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 // note
 id my_data = @42;
     (void)my_data;
+    return 0;
 }

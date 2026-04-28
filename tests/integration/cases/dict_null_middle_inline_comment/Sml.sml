@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SNull
   | SBool of bool
@@ -10,5 +8,4 @@ val my_data : val_t = SMap [
     ("port", SNull),  (* not configured yet *)
     ("debug", SBool true)
 ]
-
-end
+val _ = my_data

@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @{
     @"host": @"localhost",
     @"port": [NSNull null],  // not configured yet
@@ -10,4 +10,5 @@ my_data = @{
     @"port": [NSNull null],  // not configured yet
 };
     (void)my_data;
+    return 0;
 }

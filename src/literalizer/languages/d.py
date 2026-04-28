@@ -399,13 +399,13 @@ class D(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a D declaration in a function."""
+        """Wrap a D declaration in a main function."""
         del variable_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void _{self.module_name}() {{\n{content}\n}}"
+        return f"void main() {{\n{content}\n}}"
 
     def wrap_combined_in_file(
         self,

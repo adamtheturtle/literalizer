@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 // note
 id my_data = @"hello # world";
     (void)my_data;
+    return 0;
 }

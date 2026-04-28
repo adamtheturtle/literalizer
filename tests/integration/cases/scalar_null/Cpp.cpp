@@ -1,6 +1,7 @@
 #include <initializer_list>
 #include <cstddef>
-void check_() {
+int main() {
 auto my_data = nullptr;
     (void)my_data;
+    return 0;
 }

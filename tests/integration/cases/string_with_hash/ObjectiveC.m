@@ -1,8 +1,9 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @"issue #{42}",
     @"color #red",
 ];
     (void)my_data;
+    return 0;
 }

@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <string>
-void check_() {
+int main() {
 auto my_data = std::initializer_list<std::string>{
     "apple",  // inline comment
     // before banana
@@ -15,4 +15,5 @@ my_data = std::initializer_list<std::string>{
     // trailing
 };
     (void)my_data;
+    return 0;
 }

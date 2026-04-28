@@ -1,9 +1,10 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
 id my_data = @[
     @"foo",
     @"bar",
     @"baz",
 ];
     (void)my_data;
+    return 0;
 }

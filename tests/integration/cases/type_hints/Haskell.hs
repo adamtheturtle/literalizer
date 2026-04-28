@@ -19,3 +19,5 @@ my_data = HMap [
     ("last_login", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000))),
     ("avatar", HStr "48656c6c6f")
     ]
+main :: IO ()
+main = seq my_data (return ())

@@ -5,3 +5,5 @@ my_data = HMap [
     ("host", HStr "localhost"),
     ("port", HNull)  -- not configured yet
     ]
+main :: IO ()
+main = seq my_data (return ())

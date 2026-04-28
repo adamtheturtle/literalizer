@@ -14,11 +14,12 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 // note
 CVal my_data = ((CVal){.i = 42});
 (void)my_data;
 // note
 my_data = ((CVal){.i = 42});
     (void)my_data;
+    return 0;
 }

@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SBool of bool
   | SInt of LargeInt.int
@@ -15,5 +13,3 @@ end
 val _ = obj.api.client.post("hello")
 val _ = obj.api.client.post(42)
 val _ = obj.api.client.post(SBool true)
-
-end

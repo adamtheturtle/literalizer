@@ -14,3 +14,5 @@ my_data = HList [
     HList [],
     HList [HList [3, 4]]
     ]
+main :: IO ()
+main = seq my_data (return ())
