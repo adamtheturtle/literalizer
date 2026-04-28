@@ -166,13 +166,17 @@ jobs:
         run: |-
           mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
+          build_odin() {
+            local src="$1"
+            local wd
+            wd=$(mktemp -d)
+            trap 'rm -rf "$wd"' RETURN
+            cp "$src" "$wd/main.odin"
+            ( cd "$wd" && odin build . -out:"$wd/prog" )
+          }
           for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
             src=$(realpath "${files[i]}")
-            ( wd=$(mktemp -d)
-              trap 'rm -rf "$wd"' EXIT
-              cp "$src" "$wd/main.odin"
-              cd "$wd"
-              odin build . -out:"$wd/prog" ) || exit 1
+            build_odin "$src" || build_odin "$src" || exit 1
           done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
