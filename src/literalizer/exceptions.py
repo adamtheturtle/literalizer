@@ -166,6 +166,16 @@ class UnrepresentableIntegerError(Exception):
     """
 
 
+class UnrepresentableSpecialFloatError(Exception):
+    """Raised when a non-finite float (``inf``, ``-inf``, or ``nan``)
+    is passed to a target language whose runtime cannot produce IEEE
+    754 special float values.
+
+    Used by Gleam on the Erlang target, which has no expression that
+    evaluates to a non-finite float.
+    """
+
+
 class UnsupportedIdentifierCaseError(Exception):
     """Raised when ``literalize_call`` is passed a ``ref_case`` that the
     target language's ``IdentifierCases`` enum does not expose.
