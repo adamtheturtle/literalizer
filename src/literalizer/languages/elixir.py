@@ -44,7 +44,6 @@ from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -55,6 +54,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -62,7 +62,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     identity_call_ref_identifier,
     identity_call_target,
-    no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
@@ -87,6 +86,78 @@ def _format_datetime_elixir(value: datetime.datetime) -> str:
     iso = value.isoformat()
     iso = iso.replace("T", " ")
     return f"~N[{iso}]"
+
+
+@beartype
+def _elixir_param(name: str) -> str:
+    """Return *name* prefixed with ``_`` unless it already starts with one."""
+    if name.startswith("_"):
+        return name
+    return f"_{name}"
+
+
+@beartype
+def _elixir_call_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return an Elixir body-level stub for a call name.
+
+    For simple names the stub is a one-liner ``def`` placed at module
+    level by :meth:`Elixir.wrap_in_file`.  For dotted names only the
+    variable binding is returned (the module stubs are preamble).
+    """
+    parts = name.split(".")
+    if len(parts) == 1:
+        param_list = ", ".join(_elixir_param(p) for p in params)
+        return (f"def {parts[0]}({param_list}), do: nil",)
+    root = parts[0]
+    root_module = root.capitalize() + "Type_"
+    return (f"{root} = {root_module}",)
+
+
+@beartype
+def _elixir_call_preamble_stub(
+    name: str,
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return file-scope Elixir module stubs for a dotted call name.
+
+    For simple (non-dotted) names nothing is needed at preamble scope.
+    For dotted names a chain of ``defmodule`` stubs is emitted so each
+    intermediate module exposes the next step as a function.
+    """
+    parts = name.split(".")
+    if len(parts) == 1:
+        return ()
+    root = parts[0]
+    method = parts[-1]
+    fields = list(parts[1:-1])
+    param_list = ", ".join(_elixir_param(p) for p in params)
+    if not fields:
+        root_module = root.capitalize() + "Type_"
+        sig = f"{method}({param_list}), do: nil"
+        stub = f"defmodule {root_module} do\n  def {sig}\nend"
+        return (stub,)
+    lines: list[str] = []
+    inner_module = fields[-1].capitalize() + "Type_"
+    inner_sig = f"{method}({param_list}), do: nil"
+    lines.append(f"defmodule {inner_module} do\n  def {inner_sig}\nend")
+    prev_module = inner_module
+    for i in range(len(fields) - 2, -1, -1):
+        curr_module = fields[i].capitalize() + "Type_"
+        next_field = fields[i + 1]
+        loop_sig = f"{next_field}, do: {prev_module}"
+        lines.append(f"defmodule {curr_module} do\n  def {loop_sig}\nend")
+        prev_module = curr_module
+    root_module = root.capitalize() + "Type_"
+    root_sig = f"{fields[0]}, do: {prev_module}"
+    lines.append(f"defmodule {root_module} do\n  def {root_sig}\nend")
+    return tuple(lines)
 
 
 @beartype
@@ -355,6 +426,8 @@ class Elixir(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Elixir call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -385,16 +458,42 @@ class Elixir(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Elixir variable assignment in a module function."""
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
+        """Wrap an Elixir variable assignment in a module function.
+
+        For variable cases, *body_preamble* lines are prepended inside
+        ``def x do``.  For call cases (empty *variable_name*), lines
+        starting with ``def `` are lifted to module level inside
+        ``defmodule Check do`` but before ``def x do``, while other
+        preamble lines stay inside ``def x do``.
+        """
+        if variable_name:
+            content = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            indented = textwrap.indent(text=content, prefix="    ")
+            use_line = f"\n    _ = {variable_name}"
+            return (
+                "defmodule Check do\n"
+                f"  def x do\n{indented}{use_line}\n  end\nend"
+            )
+        module_defs = [
+            line for line in body_preamble if line.startswith("def ")
+        ]
+        body_assigns = tuple(
+            line for line in body_preamble if not line.startswith("def ")
         )
-        indented = textwrap.indent(text=content, prefix="    ")
-        use_line = f"\n    _ = {variable_name}" if variable_name else ""
-        return (
-            f"defmodule Check do\n  def x do\n{indented}{use_line}\n  end\nend"
+        body = prepend_body_preamble(
+            content=content, body_preamble=body_assigns
         )
+        indented_body = textwrap.indent(text=body, prefix="    ")
+        parts: list[str] = ["defmodule Check do"]
+        parts.extend(f"  {stub}" for stub in module_defs)
+        parts.append("  def x do")
+        parts.append(indented_body)
+        parts.append("  end")
+        parts.append("end")
+        return "\n".join(parts)
 
     @staticmethod
     def wrap_combined_in_file(
@@ -429,6 +528,7 @@ class Elixir(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -447,9 +547,6 @@ class Elixir(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -488,14 +585,14 @@ class Elixir(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _elixir_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
     ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _elixir_call_preamble_stub
 
     @cached_property
     def format_call_target(self) -> Callable[[str], str]:
@@ -510,6 +607,11 @@ class Elixir(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Return the call style configuration."""
+        return self.call_style.value
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
