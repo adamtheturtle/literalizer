@@ -289,7 +289,7 @@ jobs:
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
-          xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
+          PYTHONPATH=. xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
           xargs -0 uv run --no-project python run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
@@ -590,7 +590,7 @@ jobs:
       - name: Lint PureScript
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript
-          xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
+          PYTHONPATH=. xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
       - name: Run PureScript files
         run: xargs -0 uv run --no-project python run_purescript.py < /tmp/files-purescript
 
