@@ -425,17 +425,17 @@ def _nim_call_stub(
         body = "0"
     if len(parts) == 1:
         return (
-            f"proc {method}(_args: varargs[untyped]){return_clause} = {body}",
+            f"proc {method}(args: varargs[untyped]){return_clause} = {body}",
         )
     chain = list(parts[:-1])
     holder = chain[-1]
-    holder_type = f"{holder.title()}Type_"
+    holder_type = f"{holder.title()}Type"
     lines: list[str] = [f"type {holder_type} = object"]
     for i in range(len(chain) - 2, -1, -1):
         outer = chain[i]
         inner = chain[i + 1]
-        inner_type = f"{inner.title()}Type_"
-        outer_type = f"{outer.title()}Type_"
+        inner_type = f"{inner.title()}Type"
+        outer_type = f"{outer.title()}Type"
         lines.extend(
             [
                 f"type {outer_type} = object",
@@ -444,11 +444,11 @@ def _nim_call_stub(
         )
     proc_sig = (
         f"proc {method}(self: {holder_type};"
-        f" _args: varargs[untyped]){return_clause} = {body}"
+        f" args: varargs[untyped]){return_clause} = {body}"
     )
     lines.append(proc_sig)
     root = chain[0]
-    root_type = f"{root.title()}Type_"
+    root_type = f"{root.title()}Type"
     lines.append(f"var {root}: {root_type}")
     return tuple(lines)
 
