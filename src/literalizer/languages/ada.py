@@ -486,22 +486,11 @@ class Ada(metaclass=LanguageCls):
         Stubs and variable declarations go in the declarative section;
         call expressions go in the executable section.
         """
-        decl_parts: list[str] = [*body_preamble, *declarations]
-        decl_section = "\n".join(decl_parts)
-        decl_indented = (
-            textwrap.indent(text=decl_section, prefix=self.indent)
-            if decl_section
-            else ""
+        return self.wrap_in_file(
+            content=calls,
+            variable_name="",
+            body_preamble=(*body_preamble, *declarations),
         )
-        calls_indented = textwrap.indent(text=calls, prefix=self.indent)
-        parts = [
-            "with A_Stub; use A_Stub;",
-            f"procedure {self.module_name} is",
-        ]
-        if decl_indented:
-            parts.append(decl_indented)
-        parts.extend(["begin", calls_indented, f"end {self.module_name};"])
-        return "\n".join(parts)
 
     def wrap_in_file(
         self,
