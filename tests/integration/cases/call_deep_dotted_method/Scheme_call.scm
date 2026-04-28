@@ -1,0 +1,7 @@
+(define obj (lambda args (if #f #f)))
+(define obj.api (lambda args (if #f #f)))
+(define obj.api.client (lambda args (if #f #f)))
+(define obj.api.client.post (lambda args (if #f #f)))
+(obj.api.client.post data "hello")
+(obj.api.client.post data 42)
+(obj.api.client.post data #t)

@@ -89,9 +89,6 @@ optional-dependencies.release = [
 urls.Documentation = "https://adamtheturtle.github.io/literalizer/"
 urls.Source = "https://github.com/adamtheturtle/literalizer"
 
-[dependency-groups]
-dev = []
-
 [tool.setuptools]
 zip-safe = false
 package-data.literalizer = [
