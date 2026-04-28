@@ -1,4 +1,6 @@
 require "set"
+module Fixture_set_Crystal_combined
+extend self
 my_data = Set{
     "apple",
     "banana",
@@ -9,3 +11,4 @@ my_data = Set{
     "banana",
     "cherry",
 }
+end

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_int_negative_large_Haskell where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt
@@ -9,3 +9,5 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
 my_data :: Val
 my_data = -2147483649
+main :: IO ()
+main = seq my_data (return ())

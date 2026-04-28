@@ -1,4 +1,4 @@
-module Check where
+module Fixture_dict_all_null_trailing_comment_Haskell where
 data Val = HNull | HStr String | HMap [(String, Val)]
 my_data :: Val
 my_data = HMap [
@@ -6,3 +6,5 @@ my_data = HMap [
     ("b", HNull)
     -- trailing
     ]
+main :: IO ()
+main = seq my_data (return ())

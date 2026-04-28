@@ -1,19 +1,12 @@
-procedure Check is
-   procedure Check_Declaration is
-      my_data : A_Val := AMap'(
-          AEntry ("name", AStr ("Alice")),
-          AEntry ("tags", ASet'(ABool (True), AInt (42), AStr ("apple")))
-      );
-   begin
-      null;
-   end Check_Declaration;
-   procedure Check_Assignment is
-   begin
-      my_data := AMap'(
-          AEntry ("name", AStr ("Alice")),
-          AEntry ("tags", ASet'(ABool (True), AInt (42), AStr ("apple")))
-      );
-   end Check_Assignment;
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AMap'[
+        AEntry ("name", AStr ("Alice")),
+        AEntry ("tags", ASet'[ABool (True), AInt (42), AStr ("apple")])
+    ];
 begin
-   null;
-end Check;
+    my_data := AMap'[
+        AEntry ("name", AStr ("Alice")),
+        AEntry ("tags", ASet'[ABool (True), AInt (42), AStr ("apple")])
+    ];
+end Main;

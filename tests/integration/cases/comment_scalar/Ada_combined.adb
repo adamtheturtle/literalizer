@@ -1,15 +1,8 @@
-procedure Check is
-   procedure Check_Declaration is
-      my_data : A_Val := AInt (-- note
-      42);
-   begin
-      null;
-   end Check_Declaration;
-   procedure Check_Assignment is
-   begin
-      my_data := AInt (-- note
-      42);
-   end Check_Assignment;
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AInt (-- note
+    42);
 begin
-   null;
-end Check;
+    my_data := AInt (-- note
+    42);
+end Main;

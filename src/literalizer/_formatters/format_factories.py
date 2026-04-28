@@ -87,6 +87,7 @@ def _build_sequence_format_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
+        narrowed_empty_form=None,
     )
 
 
@@ -138,6 +139,7 @@ def _build_set_format_config(
     preamble_lines: tuple[str, ...],
     set_opener_template: str,
     supports_heterogeneity: bool,
+    supports_trailing_comma: bool,
 ) -> SetFormatConfig:
     """Build a ``SetFormatConfig`` with the given default type."""
     open_str = open_template.format(type=default_type)
@@ -152,6 +154,7 @@ def _build_set_format_config(
         preamble_lines=preamble_lines,
         set_opener_template=set_opener_template,
         supports_heterogeneity=supports_heterogeneity,
+        supports_trailing_comma=supports_trailing_comma,
     )
 
 
@@ -164,6 +167,7 @@ def set_format_factory(
     preamble_lines: tuple[str, ...],
     set_opener_template: str,
     supports_heterogeneity: bool,
+    supports_trailing_comma: bool,
 ) -> Callable[[str], SetFormatConfig]:
     """Return a callable that builds a ``SetFormatConfig`` for a given
     type.
@@ -178,6 +182,7 @@ def set_format_factory(
             empty_template="Set<{type}>()",
             preamble_lines=(),
             set_opener_template="",
+            supports_trailing_comma=True,
         )
         config = factory("Any")
     """
@@ -192,6 +197,7 @@ def set_format_factory(
             preamble_lines=preamble_lines,
             set_opener_template=set_opener_template,
             supports_heterogeneity=supports_heterogeneity,
+            supports_trailing_comma=supports_trailing_comma,
         )
 
     return _build
@@ -208,6 +214,7 @@ def _build_dict_format_config(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     narrowed_open: str | None,
+    supports_trailing_comma: bool,
 ) -> DictFormatConfig:
     """Build a ``DictFormatConfig`` with the given default type."""
     fmt_kwargs = {"type": default_type, "key_type": default_key_type}
@@ -224,6 +231,7 @@ def _build_dict_format_config(
         ),
         preamble_lines=preamble_lines,
         narrowed_open=narrowed_open,
+        supports_trailing_comma=supports_trailing_comma,
     )
 
 
@@ -236,6 +244,7 @@ def dict_format_factory(
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
     narrowed_open: str | None,
+    supports_trailing_comma: bool,
 ) -> _DictFormatBuilder:
     """Return a callable that builds a ``DictFormatConfig`` for a given
     type.
@@ -260,6 +269,7 @@ def dict_format_factory(
             empty_template=empty_template,
             preamble_lines=preamble_lines,
             narrowed_open=narrowed_open,
+            supports_trailing_comma=supports_trailing_comma,
         )
 
     return _build

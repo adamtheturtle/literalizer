@@ -1,4 +1,4 @@
-module Check where
+module Fixture_ordered_map_Haskell where
 data Val = HBool Bool | HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -14,3 +14,5 @@ my_data = HMap [
     ("age", 30),
     ("active", HBool True)
     ]
+main :: IO ()
+main = seq my_data (return ())

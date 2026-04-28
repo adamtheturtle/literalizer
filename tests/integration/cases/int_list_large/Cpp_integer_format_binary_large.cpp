@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-void check_() {
+int main() {
 auto my_data = std::vector<int>{
     0b11110100001001000000,
     -0b10011010010,
@@ -8,4 +8,5 @@ auto my_data = std::vector<int>{
     -0b1010,
 };
     (void)my_data;
+    return 0;
 }

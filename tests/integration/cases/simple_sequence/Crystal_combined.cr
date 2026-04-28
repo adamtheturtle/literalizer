@@ -1,3 +1,5 @@
+module Fixture_simple_sequence_Crystal_combined
+extend self
 my_data = [
     1,
     "hello",
@@ -10,3 +12,4 @@ my_data = [
     true,
     nil,
 ]
+end

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_dict_all_scalar_types_Haskell where
 import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
 instance Num Val where
@@ -24,3 +24,5 @@ my_data = HMap [
     ("dt", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 43200))),
     ("by", HStr "48656c6c6f")
     ]
+main :: IO ()
+main = seq my_data (return ())

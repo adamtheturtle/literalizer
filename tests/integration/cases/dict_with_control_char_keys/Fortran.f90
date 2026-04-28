@@ -15,13 +15,13 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-program check
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('key' // achar(10) // 'with' // achar(10) // 'newlines', fstr('value1')), &
-      fentry('key' // achar(9) // 'with' // achar(9) // 'tabs', fstr('value2')), &
-      fentry('', fstr('value3')) &
-  ])
-end program check
+program main
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('key' // achar(10) // 'with' // achar(10) // 'newlines', fstr('value1')), &
+        fentry('key' // achar(9) // 'with' // achar(9) // 'tabs', fstr('value2')), &
+        fentry('', fstr('value3')) &
+    ])
+end program main

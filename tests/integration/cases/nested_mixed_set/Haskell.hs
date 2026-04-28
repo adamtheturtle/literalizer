@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_mixed_set_Haskell where
 data Val = HBool Bool | HInt Integer | HStr String | HMap [(String, Val)] | HSet [Val]
 instance Num Val where
     fromInteger = HInt
@@ -13,3 +13,5 @@ my_data = HMap [
     ("name", HStr "Alice"),
     ("tags", HSet [HBool True, 42, HStr "apple"])
     ]
+main :: IO ()
+main = seq my_data (return ())

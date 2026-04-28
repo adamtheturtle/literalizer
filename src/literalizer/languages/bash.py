@@ -51,6 +51,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -109,13 +110,13 @@ def _format_bash_dict_entry(
 
 @beartype
 def _bash_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return a Bash function stub that accepts any arguments."""
-    return (f"{name}() {{ :; }}",)
+    return (f"{'.'.join(parts)}() {{ :; }}",)
 
 
 @beartype
@@ -197,6 +198,7 @@ class Bash(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -209,6 +211,7 @@ class Bash(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -349,6 +352,7 @@ class Bash(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def validate_call_arg(value: Value) -> None:
@@ -475,14 +479,14 @@ class Bash(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _bash_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -492,7 +496,7 @@ class Bash(metaclass=LanguageCls):
         return self.call_style.value
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -530,6 +534,7 @@ class Bash(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 struct MgrType_ { int op(T...)(T args) { return 0; } }
 struct AppType_ { MgrType_ mgr; }
 AppType_ app;

@@ -1,0 +1,2 @@
+const my_data = 0x80000000;
+export {};

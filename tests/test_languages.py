@@ -63,8 +63,9 @@ FORTRAN = Fortran(
     datetime_format=Fortran.datetime_formats.ISO,
     bytes_format=Fortran.bytes_formats.HEX,
     sequence_format=Fortran.sequence_formats.LIST,
+    module_name="check",
 )
-FSHARP = FSharp()
+FSHARP = FSharp(module_name="check")
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -606,7 +607,7 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
     """
     params = [f"p{i}" for i in range(27)]
     (line,) = Gleam().format_call_preamble_stub(
-        "target",
+        ("target",),
         params,
         StubReturn.VOID,
     )
@@ -666,7 +667,7 @@ def test_wrap_combined_in_file_unsupported_raises(
     method itself must still satisfy the :class:`Language` protocol.
     """
     with pytest.raises(expected_exception=NotImplementedError):
-        language_cls.wrap_combined_in_file(
+        language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",
             variable_name="x",

@@ -1,7 +1,8 @@
 #include <initializer_list>
 #include <string>
-void check_() {
+int main() {
 // note
 const auto* my_data = "hello # world";
     (void)my_data;
+    return 0;
 }

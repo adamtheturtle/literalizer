@@ -11,13 +11,13 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.set; MOBILE []MOBILE LIT [
-      -- before apple
-      MOBILE LIT(lit.str; MOBILE []BYTE "apple"),
-      MOBILE LIT(lit.str; MOBILE []BYTE "banana")  -- banana inline
-      -- trailing
-  ]):
-  SEQ
-    SKIP
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.set; MOBILE []MOBILE LIT [
+        -- before apple
+        MOBILE LIT(lit.str; MOBILE []BYTE "apple"),
+        MOBILE LIT(lit.str; MOBILE []BYTE "banana")  -- banana inline
+        -- trailing
+    ]):
+    SEQ
+        SKIP
 :

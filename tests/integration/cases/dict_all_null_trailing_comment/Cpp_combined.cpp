@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <map>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::nullptr_t>{
     {"a", nullptr},
     {"b", nullptr},
@@ -16,4 +16,5 @@ my_data = std::map<std::string, std::nullptr_t>{
     // trailing
 };
     (void)my_data;
+    return 0;
 }

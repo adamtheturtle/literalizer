@@ -1,4 +1,4 @@
-module Check where
+module Fixture_sibling_list_values_uniform_inner_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -13,3 +13,5 @@ my_data = HMap [
     ("lint", HList [2, HList [1]]),
     ("test", HList [5, HList [7]])
     ]
+main :: IO ()
+main = seq my_data (return ())

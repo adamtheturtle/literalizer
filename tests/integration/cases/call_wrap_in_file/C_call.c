@@ -14,8 +14,9 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void process(CVal, CVal);
-void check_(void) {
+static void process(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; }
+int main(void) {
 process(((CVal){.i = 1}), ((CVal){.i = 2}));
 process(((CVal){.i = 3}), ((CVal){.i = 4}));
+    return 0;
 }

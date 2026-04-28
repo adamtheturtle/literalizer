@@ -60,6 +60,10 @@ htmlhelp_basename = "literalizerdoc"
 
 spelling_word_list_filename = "../../spelling_private_dict.txt"
 
+linkcheck_ignore = [
+    r"https://json5\.org/",
+]
+
 rst_prolog = f"""
 .. |project| replace:: {project}
 .. |minimum-python-version| replace:: {minimum_python_version}

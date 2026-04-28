@@ -1,5 +1,5 @@
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 final int my_data = 42;
     }
 }

@@ -1,7 +1,9 @@
-module Check where
+module Fixture_string_with_dollar_Haskell where
 data Val = HStr String | HList [Val]
 my_data :: Val
 my_data = HList [
     HStr "price $10",
     HStr "$HOME"
     ]
+main :: IO ()
+main = seq my_data (return ())

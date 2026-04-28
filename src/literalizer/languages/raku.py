@@ -45,7 +45,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -54,16 +53,17 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
-    identity_call_ref_identifier,
-    identity_call_target,
+    default_wrap_calls_with_declarations,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -72,6 +72,62 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _raku_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Raku stub declarations for a call name.
+
+    Raku uses ``.`` for method dispatch, so a dotted target such as
+    ``app.client.fetch("hello")`` requires class stubs with ``method``
+    definitions.  A bare (non-dotted) target only needs a ``sub``
+    declaration.
+    """
+    if len(parts) == 1:
+        return (f"sub {parts[0]}(*@a, *%kw) {{}}",)
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    if not fields:
+        cls = root.capitalize() + "Type"
+        return (
+            f"class {cls} {{ method {method}(*@a, *%kw) {{}} }}",
+            f"my ${root} = {cls}.new;",
+        )
+    lines: list[str] = []
+    inner_cls = fields[-1].capitalize() + "Type"
+    lines.append(f"class {inner_cls} {{ method {method}(*@a, *%kw) {{}} }}")
+    prev_cls = inner_cls
+    for i in range(len(fields) - 2, -1, -1):
+        cls = fields[i].capitalize() + "Type"
+        field = fields[i + 1]
+        lines.append(f"class {cls} {{ method {field} {{ {prev_cls}.new }} }}")
+        prev_cls = cls
+    root_cls = root.capitalize() + "Type"
+    lines.append(
+        f"class {root_cls} {{ method {fields[0]} {{ {prev_cls}.new }} }}"
+    )
+    lines.append(f"my ${root} = {root_cls}.new;")
+    return tuple(lines)
+
+
+@beartype
+def _raku_format_call_ref_identifier(name: str, /) -> str:
+    """Prepend the Raku scalar ``$`` sigil to a ``$ref`` identifier."""
+    return f"${name}"
+
+
+@beartype
+def _raku_format_call_target(parts: Sequence[str], /) -> str:
+    """Rewrite a dotted call target into the Raku ``$obj.method`` form."""
+    if len(parts) == 1:
+        return parts[0]
+    return "$" + parts[0] + "".join(f".{p}" for p in parts[1:])
 
 
 @beartype
@@ -183,6 +239,7 @@ class Raku(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -195,6 +252,7 @@ class Raku(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -348,6 +406,9 @@ class Raku(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Raku call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+        KEYWORD = KeywordCallStyle(separator=" => ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -370,6 +431,7 @@ class Raku(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -419,6 +481,7 @@ class Raku(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.SINGLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -433,13 +496,10 @@ class Raku(metaclass=LanguageCls):
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
-    statement_terminator: ClassVar[str] = ""
+    statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -476,30 +536,30 @@ class Raku(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _raku_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _raku_format_call_target
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
-        return identity_call_ref_identifier
+        return _raku_format_call_ref_identifier
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
@@ -531,6 +591,7 @@ class Raku(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -616,3 +677,9 @@ class Raku(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        config: CallStyle = self.call_style.value
+        return config

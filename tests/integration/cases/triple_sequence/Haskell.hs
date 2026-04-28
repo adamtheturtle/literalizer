@@ -1,4 +1,4 @@
-module Check where
+module Fixture_triple_sequence_Haskell where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -14,3 +14,5 @@ my_data = HList [
     HStr "hello",
     HBool True
     ]
+main :: IO ()
+main = seq my_data (return ())

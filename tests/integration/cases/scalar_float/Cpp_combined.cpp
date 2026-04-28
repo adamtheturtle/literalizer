@@ -1,7 +1,8 @@
 #include <initializer_list>
-void check_() {
+int main() {
 auto my_data = 3.14;
 (void)my_data;
 my_data = 3.14;
     (void)my_data;
+    return 0;
 }

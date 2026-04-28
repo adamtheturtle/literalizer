@@ -1,4 +1,4 @@
-module Check where
+module Fixture_dict_null_middle_inline_comment_Haskell where
 data Val = HNull | HBool Bool | HStr String | HMap [(String, Val)]
 my_data :: Val
 my_data = HMap [
@@ -6,3 +6,5 @@ my_data = HMap [
     ("port", HNull),  -- not configured yet
     ("debug", HBool True)
     ]
+main :: IO ()
+main = seq my_data (return ())

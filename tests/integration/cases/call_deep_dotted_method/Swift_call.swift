@@ -1,4 +1,4 @@
-class _clientType { func post(data: Any = 0) -> Any { 0 } }
+class _clientType { @discardableResult func post(data: Any = 0) -> Any { 0 } }
 class _apiType { var client = _clientType() }
 class _objType { var api = _apiType() }
 let obj = _objType()

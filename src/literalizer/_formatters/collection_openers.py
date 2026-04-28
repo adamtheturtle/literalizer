@@ -1,7 +1,7 @@
 """Collection opener functions and typed opener configuration."""
 
 import datetime
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from beartype import beartype
@@ -101,6 +101,40 @@ def make_element_to_type(
 
 
 @beartype
+def make_narrowed_empty_form(
+    *,
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+    template: str,
+    fallback_type: str,
+) -> Callable[[Sequence[list[Value]]], str]:
+    """Return a ``narrowed_empty_form`` callback.
+
+    The returned function reads the inferred element type of the first
+    non-empty sibling list, maps it through *element_to_type*, and
+    substitutes the resolved type name into *template* (which must
+    contain ``{type}``).  *fallback_type* is used when the type cannot
+    be resolved (heterogeneous siblings, or an element type that
+    *element_to_type* does not handle).
+
+    Example::
+
+        narrowed_empty_form = make_narrowed_empty_form(
+            element_to_type=mojo_element_to_type,
+            template="List[{type}]()",
+            fallback_type="String",
+        )
+    """
+
+    def _narrowed_empty_form(siblings: Sequence[list[Value]]) -> str:
+        """Compute the typed empty literal for the parent's siblings."""
+        inner = infer_element_type(items=siblings[0])
+        type_name = element_to_type(inner) if inner is not None else None
+        return template.format(type=type_name or fallback_type)
+
+    return _narrowed_empty_form
+
+
+@beartype
 def _resolve_element_to_type(
     *,
     element_type: type | ListType | DictType,
@@ -110,34 +144,36 @@ def _resolve_element_to_type(
     fallback_value_type: str | None,
 ) -> str | None:
     """Resolve a Python element type to a language type name."""
-    if isinstance(element_type, DictType):
-        if dict_type_template is None:
-            return None
-        resolved: str | None = None
-        if element_type.value_type is not None:
-            resolved = _resolve_element_to_type(
-                element_type=element_type.value_type,
+    match element_type:
+        case DictType():
+            if dict_type_template is None:
+                return None
+            resolved: str | None = None
+            if element_type.value_type is not None:
+                resolved = _resolve_element_to_type(
+                    element_type=element_type.value_type,
+                    scalar_types=scalar_types,
+                    list_template=list_template,
+                    dict_type_template=dict_type_template,
+                    fallback_value_type=fallback_value_type,
+                )
+            inner = resolved if resolved is not None else fallback_value_type
+            if inner is None:
+                return None
+            return dict_type_template.format(inner=inner)
+        case ListType():
+            inner = _resolve_element_to_type(
+                element_type=element_type.inner,
                 scalar_types=scalar_types,
                 list_template=list_template,
                 dict_type_template=dict_type_template,
                 fallback_value_type=fallback_value_type,
             )
-        inner = resolved if resolved is not None else fallback_value_type
-        if inner is None:
-            return None
-        return dict_type_template.format(inner=inner)
-    if isinstance(element_type, ListType):
-        inner = _resolve_element_to_type(
-            element_type=element_type.inner,
-            scalar_types=scalar_types,
-            list_template=list_template,
-            dict_type_template=dict_type_template,
-            fallback_value_type=fallback_value_type,
-        )
-        if inner is None:
-            return None
-        return list_template.format(inner=inner)
-    return scalar_types.get(element_type)
+            if inner is None:
+                return None
+            return list_template.format(inner=inner)
+        case _:
+            return scalar_types.get(element_type)
 
 
 @beartype

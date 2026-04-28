@@ -1,4 +1,4 @@
-module Check where
+module Fixture_mixed_set_Haskell where
 data Val = HBool Bool | HInt Integer | HStr String | HSet [Val]
 instance Num Val where
     fromInteger = HInt
@@ -14,3 +14,5 @@ my_data = HSet [
     42,
     HStr "apple"
     ]
+main :: IO ()
+main = seq my_data (return ())

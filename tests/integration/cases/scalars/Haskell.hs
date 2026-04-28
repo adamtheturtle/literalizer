@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalars_Haskell where
 data Val = HBool Bool | HInt Integer | HFloat Double | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -20,3 +20,5 @@ my_data = HList [
     HBool False,
     HStr "hello \"world\""
     ]
+main :: IO ()
+main = seq my_data (return ())

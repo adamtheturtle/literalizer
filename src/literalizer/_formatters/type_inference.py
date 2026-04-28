@@ -43,6 +43,52 @@ class MixedNumeric:
     """
 
 
+@dataclass(frozen=True)
+class _Collected:
+    """Per-item type buckets gathered for ``infer_element_type``."""
+
+    element_types: set[type | ListType]
+    dict_values: list[Value]
+
+
+_INFER_FAILED = object()
+
+
+def _collect_element_types(
+    items: list[Value],
+) -> _Collected | object:
+    """Collect element types for ``items`` or signal hard inference
+    failure.
+
+    Empty inner lists are skipped so they do not poison inference of
+    homogeneous siblings.  When every list item is empty (and there
+    are no other items contributing a ``ListType``), ``_INFER_FAILED``
+    is returned because no concrete inner type could be derived.
+    """
+    element_types: set[type | ListType] = set()
+    dict_values: list[Value] = []
+    saw_empty_list = False
+    for item in items:
+        match item:
+            case []:
+                saw_empty_list = True
+            case list():
+                inner = infer_element_type(items=item)
+                if inner is None:
+                    return _INFER_FAILED
+                element_types.add(ListType(inner=inner))
+            case dict() if not isinstance(item, _ordereddict):
+                dict_values.extend(item.values())
+                element_types.add(dict)
+            case _:
+                element_types.add(type(item))
+    if saw_empty_list and not any(
+        isinstance(t, ListType) for t in element_types
+    ):
+        return _INFER_FAILED
+    return _Collected(element_types=element_types, dict_values=dict_values)
+
+
 @beartype
 def infer_element_type(
     items: list[Value],
@@ -56,19 +102,11 @@ def infer_element_type(
     """
     if not items:
         return None
-    element_types: set[type | ListType] = set()
-    all_dict_values: list[Value] = []
-    for item in items:
-        if isinstance(item, list):
-            inner = infer_element_type(items=item)
-            if inner is None:
-                return None
-            element_types.add(ListType(inner=inner))
-        elif isinstance(item, dict) and not isinstance(item, _ordereddict):
-            all_dict_values.extend(item.values())
-            element_types.add(dict)
-        else:
-            element_types.add(type(item))
+    collected = _collect_element_types(items=items)
+    if not isinstance(collected, _Collected):
+        return None
+    element_types = collected.element_types
+    all_dict_values = collected.dict_values
     if len(element_types) == 1:
         the_type = next(iter(element_types))
         if the_type is dict:

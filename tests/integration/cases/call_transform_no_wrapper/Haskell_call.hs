@@ -1,4 +1,4 @@
-module Check where
+module Fixture_call_transform_no_wrapper_Haskell_call where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

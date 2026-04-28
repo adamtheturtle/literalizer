@@ -15,39 +15,39 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-subroutine check_declaration()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('s', fstr('string')), &
-      fentry('i', fint(1_int64)), &
-      fentry('f', freal(1.5)), &
-      fentry('b', fbool(.true.)), &
-      fentry('n', fnull()), &
-      fentry('d', fstr("2024-01-15")), &
-      fentry('dt', fstr("2024-01-15T12:00:00")), &
-      fentry('by', fstr("48656c6c6f")) &
-  ])
-end subroutine check_declaration
+subroutine main_declaration()
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('s', fstr('string')), &
+        fentry('i', fint(1_int64)), &
+        fentry('f', freal(1.5)), &
+        fentry('b', fbool(.true.)), &
+        fentry('n', fnull()), &
+        fentry('d', fstr("2024-01-15")), &
+        fentry('dt', fstr("2024-01-15T12:00:00")), &
+        fentry('by', fstr("48656c6c6f")) &
+    ])
+end subroutine main_declaration
 
-subroutine check_assignment()
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = fmap([fval_t :: &
-      fentry('s', fstr('string')), &
-      fentry('i', fint(1_int64)), &
-      fentry('f', freal(1.5)), &
-      fentry('b', fbool(.true.)), &
-      fentry('n', fnull()), &
-      fentry('d', fstr("2024-01-15")), &
-      fentry('dt', fstr("2024-01-15T12:00:00")), &
-      fentry('by', fstr("48656c6c6f")) &
-  ])
-end subroutine check_assignment
+subroutine main_assignment()
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = fmap([fval_t :: &
+        fentry('s', fstr('string')), &
+        fentry('i', fint(1_int64)), &
+        fentry('f', freal(1.5)), &
+        fentry('b', fbool(.true.)), &
+        fentry('n', fnull()), &
+        fentry('d', fstr("2024-01-15")), &
+        fentry('dt', fstr("2024-01-15T12:00:00")), &
+        fentry('by', fstr("48656c6c6f")) &
+    ])
+end subroutine main_assignment
 
 program main
-  call check_declaration()
-  call check_assignment()
+    call main_declaration()
+    call main_assignment()
 end program main

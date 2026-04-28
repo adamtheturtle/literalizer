@@ -1,4 +1,4 @@
-module Check where
+module Fixture_uniform_mixed_num_dicts_in_seq_Haskell where
 data Val = HInt Integer | HFloat Double | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -17,3 +17,5 @@ my_data = HList [
     HMap [("x", 1), ("y", 2.5)],
     HMap [("x", 3), ("y", 4.0)]
     ]
+main :: IO ()
+main = seq my_data (return ())

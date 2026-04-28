@@ -81,6 +81,26 @@ class LiteralizeResult:
     :attr:`declaration_code`.
     """
 
+    types_present: frozenset[type] = frozenset()
+    """The set of Python types observed in the source data (e.g.
+    ``int``, ``str``, ``list``, ``dict``).  Callers that combine
+    multiple ``literalize`` results (for example, a test harness that
+    pairs ``$ref`` declarations with a downstream call) can union
+    these and re-invoke :attr:`Language.compute_body_preamble` to
+    derive a single body preamble that covers every type referenced
+    across the combined output.
+    """
+
+    source_data: Value = None
+    """The parsed source value the literal was rendered from.  Most
+    callers do not need it.  Callers that combine multiple
+    ``literalize`` results and re-invoke
+    :attr:`Language.compute_body_preamble` to derive a single body
+    preamble surface this so the recomputation can inspect actual
+    values (e.g. datetime microsecond precision) rather than passing
+    a placeholder.
+    """
+
     @property
     def code(self) -> str:
         """The formatted literal text.
@@ -221,7 +241,12 @@ def _build_dict_entry(
 
 
 @beartype
-def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
+def _format_set_value(
+    *,
+    value: set[Scalar],
+    spec: Language,
+    wrap_ids: frozenset[int],
+) -> str:
     """Format a set value as a native language literal."""
     set_cfg = spec.set_format_config
 
@@ -229,9 +254,19 @@ def _format_set_value(*, value: set[Scalar], spec: Language) -> str:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
+    parent_id = id(value)
     formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
     entries = [
-        spec.format_set_entry(v, item)
+        spec.format_set_entry(
+            v,
+            _maybe_wrap_child(
+                parent_id=parent_id,
+                wrap_ids=wrap_ids,
+                raw_value=v,
+                formatted_value=item,
+                spec=spec,
+            ),
+        )
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
     joined = spec.element_separator.join(entries)
@@ -631,6 +666,105 @@ def _compute_sibling_list_position_overrides(
 
 
 @beartype
+def _empty_child_sibling_opener(
+    *,
+    value: list[Value],
+    position: int,
+    spec: Language,
+) -> str | None:
+    """Opener to use for an empty inner-list child at *position*.
+
+    Empty inner lists have no contents to infer a type from, so the
+    default per-list opener falls back to the language's generic
+    "any"-typed sequence (e.g. ``new Object[]{``, ``[]any{``,
+    ``Vec::<String>::new()``).  When that empty list sits beside
+    non-empty homogeneous list siblings, the rendered literal then
+    mixes the narrow sibling type with the generic empty type and is
+    rejected by the static type checkers used for Java, Rust, Go, etc.
+
+    Pull a typed opener from a non-empty list sibling when all such
+    siblings produce the same opener, so the empty list renders with
+    a matching type.  Returns ``None`` when no homogeneous sibling
+    opener exists and the default fallback should stand.
+    """
+    item = value[position]
+    if not (isinstance(item, list) and not item):
+        return None
+    non_empty_siblings = [
+        other for other in value if isinstance(other, list) and other
+    ]
+    if not non_empty_siblings:
+        return None
+    sibling_openers = {spec.sequence_open(o) for o in non_empty_siblings}
+    if len(sibling_openers) != 1:
+        return None
+    return next(iter(sibling_openers))
+
+
+@beartype
+def _format_sequence_child(
+    *,
+    value: list[Value],
+    position: int,
+    child: Value,
+    spec: Language,
+    wrap_ids: frozenset[int],
+    dict_open_override: str | None,
+    child_sequence_open_overrides: Sequence[str | None],
+) -> str:
+    """Format a single sequence child with sibling-aware typed empty.
+
+    Empty inner-list children sit beside non-empty homogeneous siblings
+    in cases like ``[[1, 2], [], [3, 4]]``.  When the language has a
+    bespoke narrowed-empty form (e.g. ``List[Int]()`` for Mojo,
+    ``[] of Int32`` for Crystal, ``[] : List Natural`` for Dhall),
+    short-circuit to it so the rendered literal type-checks.  Otherwise
+    fall through to the regular recursive formatter, which uses
+    sibling-derived ``sequence_open_override`` to make the empty list
+    render as ``opener + close`` for languages where that is valid
+    (Java, Go, Rust, ...).
+    """
+    parent_override = (
+        child_sequence_open_overrides[position]
+        if (
+            position < len(child_sequence_open_overrides)
+            and child_sequence_open_overrides[position] is not None
+        )
+        else None
+    )
+    sibling_open = (
+        None
+        if parent_override is not None
+        else _empty_child_sibling_opener(
+            value=value,
+            position=position,
+            spec=spec,
+        )
+    )
+    if (
+        parent_override is None
+        and isinstance(child, list)
+        and not child
+        and sibling_open is not None
+    ):
+        narrowed_empty_form = spec.sequence_format_config.narrowed_empty_form
+        if narrowed_empty_form is not None:
+            non_empty_siblings = [
+                other for other in value if isinstance(other, list) and other
+            ]
+            return narrowed_empty_form(non_empty_siblings)
+    return _format_value(
+        value=child,
+        spec=spec,
+        dict_open_override=dict_open_override,
+        wrap_ids=wrap_ids,
+        sequence_open_override=(
+            parent_override if parent_override is not None else sibling_open
+        ),
+    )
+
+
+@beartype
 def _format_list_value(
     *,
     value: list[Value],
@@ -654,11 +788,13 @@ def _format_list_value(
     # When a parent has widened this position's opener, skip the
     # default ``empty_sequence`` literal so the empty list still
     # renders with the widened opener and stays type-consistent with
-    # its non-empty siblings.
+    # its non-empty siblings.  However, if this list is in wrap_ids,
+    # it must use the typed empty literal (e.g. ``[]TYPE{}``) regardless
+    # of any sibling opener, so that the element type is preserved.
     if (
         not value
         and sequence_cfg.empty_sequence is not None
-        and sequence_open_override is None
+        and (sequence_open_override is None or id(value) in wrap_ids)
     ):
         return sequence_cfg.empty_sequence
     dict_open_override = _compute_sequence_dict_override(
@@ -673,15 +809,15 @@ def _format_list_value(
                 parent_id=parent_id,
                 wrap_ids=wrap_ids,
                 raw_value=v,
-                formatted_value=_format_value(
-                    value=v,
+                formatted_value=_format_sequence_child(
+                    value=value,
+                    position=position,
+                    child=v,
                     spec=spec,
-                    dict_open_override=dict_open_override,
                     wrap_ids=wrap_ids,
-                    sequence_open_override=(
-                        child_sequence_open_overrides[position]
-                        if position < len(child_sequence_open_overrides)
-                        else None
+                    dict_open_override=dict_open_override,
+                    child_sequence_open_overrides=(
+                        child_sequence_open_overrides
                     ),
                 ),
                 spec=spec,
@@ -753,7 +889,7 @@ def _format_value(
                 wrap_ids=wrap_ids,
             )
         case set():
-            return _format_set_value(value=value, spec=spec)
+            return _format_set_value(value=value, spec=spec, wrap_ids=wrap_ids)
         case list():
             return _format_list_value(
                 value=value,
@@ -885,11 +1021,15 @@ def _format_collection_lines(
                     )
                 )
                 formatted_entries.append(entry)
+            dict_trailing = (
+                trailing_comma
+                and spec.dict_format_config.supports_trailing_comma
+            )
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,
                 body_prefix=body_prefix,
-                trailing_comma=trailing_comma,
+                trailing_comma=dict_trailing,
                 spec=spec,
             )
         case set() as set_data:
@@ -897,24 +1037,35 @@ def _format_collection_lines(
                 set_data,
                 key=lambda v: (type(v).__name__, repr(v)),
             )
+            set_parent_id = id(set_data)
             formatted_entries = [
                 spec.format_set_entry(
                     item,
-                    _format_value(
-                        value=item,
-                        spec=spec,
-                        dict_open_override=None,
+                    _maybe_wrap_child(
+                        parent_id=set_parent_id,
                         wrap_ids=wrap_ids,
-                        sequence_open_override=None,
+                        raw_value=item,
+                        formatted_value=_format_value(
+                            value=item,
+                            spec=spec,
+                            dict_open_override=None,
+                            wrap_ids=wrap_ids,
+                            sequence_open_override=None,
+                        ),
+                        spec=spec,
                     ),
                 )
                 for item in sorted_items
             ]
+            set_trailing = (
+                trailing_comma
+                and spec.set_format_config.supports_trailing_comma
+            )
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,
                 body_prefix=body_prefix,
-                trailing_comma=trailing_comma,
+                trailing_comma=set_trailing,
                 spec=spec,
             )
         case list() as list_data:
@@ -933,18 +1084,25 @@ def _format_collection_lines(
                         parent_id=parent_id,
                         wrap_ids=wrap_ids,
                         raw_value=element,
-                        formatted_value=_format_value(
-                            value=element,
+                        formatted_value=_format_sequence_child(
+                            value=list_data,
+                            position=position,
+                            child=element,
                             spec=spec,
-                            dict_open_override=dict_open_override,
                             wrap_ids=wrap_ids,
-                            sequence_open_override=None,
+                            dict_open_override=dict_open_override,
+                            child_sequence_open_overrides=(),
                         ),
                         spec=spec,
                     ),
                 )
-                for element in list_data
+                for position, element in enumerate(iterable=list_data)
             ]
+            # Drop entries that render to the empty string so a nested
+            # empty sub-list (possible in languages like Forth whose
+            # empty-sequence opener and close are both empty) does not
+            # leave a dangling indented blank line in the output.
+            formatted_entries = [e for e in formatted_entries if e]
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,
@@ -1156,45 +1314,42 @@ def _literalize_pre_form(
         include_delimiters=include_delimiters,
     )
 
+    comment_line_prefix = (
+        line_prefix + language.indent if include_delimiters else line_prefix
+    )
+
     resolved: ResolvedComments | None = None
-    if input_format is InputFormat.YAML and parsed.yaml_needs_comment_resolve:
-        comment_cfg = language.comment_config
-        cp = comment_cfg.prefix
-        cs = comment_cfg.suffix
-        comment_line_prefix = (
-            line_prefix + language.indent
-            if include_delimiters
-            else line_prefix
-        )
-        resolved = resolve_yaml_comments(
-            yaml_string=source,
-            raw_data=parsed.raw_data,
-            base=result,
-            language=language,
-            comment_prefix=cp,
-            comment_suffix=cs,
-            comment_line_prefix=comment_line_prefix,
-            line_prefix=line_prefix,
-            include_delimiters=include_delimiters,
-        )
-        result = resolved.result
-    elif input_format is InputFormat.TOML:
-        comment_cfg = language.comment_config
-        comment_line_prefix = (
-            line_prefix + language.indent
-            if include_delimiters
-            else line_prefix
-        )
-        resolved = resolve_toml_comments(
-            toml_doc=parsed.raw_data,
-            base=result,
-            language=language,
-            comment_prefix=comment_cfg.prefix,
-            comment_suffix=comment_cfg.suffix,
-            comment_line_prefix=comment_line_prefix,
-            include_delimiters=include_delimiters,
-        )
-        result = resolved.result
+    match input_format:
+        case InputFormat.YAML if parsed.yaml_needs_comment_resolve:
+            comment_cfg = language.comment_config
+            cp = comment_cfg.prefix
+            cs = comment_cfg.suffix
+            resolved = resolve_yaml_comments(
+                yaml_string=source,
+                raw_data=parsed.raw_data,
+                base=result,
+                language=language,
+                comment_prefix=cp,
+                comment_suffix=cs,
+                comment_line_prefix=comment_line_prefix,
+                line_prefix=line_prefix,
+                include_delimiters=include_delimiters,
+            )
+            result = resolved.result
+        case InputFormat.TOML:
+            comment_cfg = language.comment_config
+            resolved = resolve_toml_comments(
+                toml_doc=parsed.raw_data,
+                base=result,
+                language=language,
+                comment_prefix=comment_cfg.prefix,
+                comment_suffix=comment_cfg.suffix,
+                comment_line_prefix=comment_line_prefix,
+                include_delimiters=include_delimiters,
+            )
+            result = resolved.result
+        case _:
+            pass
 
     return _PreFormState(
         data=data,
@@ -1267,6 +1422,8 @@ def _literalize_apply_form(
             declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
+            types_present=computed.types_present,
+            source_data=pre_form.data,
         )
 
     return LiteralizeResult(
@@ -1274,6 +1431,8 @@ def _literalize_apply_form(
         preamble=preamble,
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
+        types_present=computed.types_present,
+        source_data=pre_form.data,
     )
 
 
@@ -1326,6 +1485,8 @@ def _literalize_both_forms(
         declaration_code=wrapped,
         preamble=(),
         body_preamble=(),
+        types_present=declaration.types_present,
+        source_data=declaration.source_data,
     )
 
 
@@ -1352,6 +1513,12 @@ def literalize(
         language: A :class:`Language` instance describing how to format
             literals.  Use one of the built-in constants
             (e.g. :data:`PYTHON`, :data:`GO`) or provide your own.
+            Languages whose ``wrap_in_file`` introduces a named scope
+            (the wrapping class in Java, the ``program`` in Fortran,
+            the ``-module`` in Erlang) carry that name as a constructor
+            argument (``Java(module_name="Foo")``); languages whose
+            wrappers do not introduce a named scope take no such
+            argument.
         pre_indent_level: Number of ``indent`` steps to prepend to
             every output line.  For example, ``2`` with a 4-space
             indent produces an 8-space margin.  Defaults to ``0``.
@@ -1434,6 +1601,17 @@ def _identity_call_arg(_value: Value, formatted: str) -> str:
     wrap each argument in their canonical parameter type.
     """
     return formatted
+
+
+@beartype
+def _identity_call_statement(statement: str) -> str:
+    """Return *statement* unchanged.
+
+    Default when a language does not define ``format_call_statement``.
+    Languages that require call expressions to be wrapped in a
+    statement form (e.g. SML's ``val _ = expr``) override this.
+    """
+    return statement
 
 
 _CALL_ARG_REF_KEY = "$ref"
@@ -1796,6 +1974,11 @@ def _render_call_per_element(
         "validate_call_arg",
         None,
     )
+    format_call_statement: Callable[[str], str] = getattr(
+        language,
+        "format_call_statement",
+        _identity_call_statement,
+    )
     lines: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -1821,12 +2004,14 @@ def _render_call_per_element(
             ref_case=ref_case,
         )
         lines.append(
-            _assemble_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
-                statement_terminator=language.statement_terminator,
-                style=style,
+            format_call_statement(
+                _assemble_call(
+                    target_function=target_function,
+                    args_str=args_str,
+                    call_transform=call_transform,
+                    statement_terminator=language.statement_terminator,
+                    style=style,
+                )
             )
         )
     return "\n".join(lines)
@@ -1860,6 +2045,11 @@ def _render_call_whole(
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
+    format_call_statement: Callable[[str], str] = getattr(
+        language,
+        "format_call_statement",
+        _identity_call_statement,
+    )
     args_str = _format_call_args(
         values=[data],
         params=parameter_names,
@@ -1869,12 +2059,14 @@ def _render_call_whole(
         dict_open_overrides=[None],
         ref_case=ref_case,
     )
-    return _assemble_call(
-        target_function=target_function,
-        args_str=args_str,
-        call_transform=call_transform,
-        statement_terminator=language.statement_terminator,
-        style=style,
+    return format_call_statement(
+        _assemble_call(
+            target_function=target_function,
+            args_str=args_str,
+            call_transform=call_transform,
+            statement_terminator=language.statement_terminator,
+            style=style,
+        )
     )
 
 
@@ -1936,6 +2128,22 @@ def literalize_call(
             the requested case,
             :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
             is raised.
+
+    .. note::
+
+        When composing the output of this function with
+        :func:`literalize` — for example, declaring a variable with
+        :func:`literalize` and then referencing it via a
+        ``{"$ref": "name"}`` marker in the call — the two halves each
+        compute :attr:`~LiteralizeResult.preamble` and
+        :attr:`~LiteralizeResult.body_preamble` independently from the
+        data they see.  Concatenating the results into a single file
+        can produce duplicate import lines or duplicate type
+        declarations, which strict compilers (Haskell, D, …) reject
+        and a linter (``ruff``, ``pylint``, …) flags.  Remove the
+        duplicate preamble lines (preserving first-seen order) before
+        emitting the file.  The "Composing declarations and calls"
+        section of :doc:`/function-call-use-case` shows a worked example.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
@@ -1951,13 +2159,13 @@ def literalize_call(
         case _ as style:
             pass
 
-    raw_target_function = target_function
+    target_function_parts = tuple(target_function.split(sep="."))
     if ref_case is not None and ref_case not in language.identifier_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
-    target_function = language.format_call_target(target_function)
+    target_function = language.format_call_target(target_function_parts)
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
         data=data,
@@ -2010,10 +2218,10 @@ def literalize_call(
             StubReturn.VALUE if call_transform is not None else StubReturn.VOID
         )
         body_stubs = language.format_call_stub(
-            raw_target_function, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return
         )
         preamble_stubs = language.format_call_preamble_stub(
-            raw_target_function, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return
         )
         wrapped = language.wrap_in_file(
             content=result,
@@ -2029,10 +2237,14 @@ def literalize_call(
             declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
+            types_present=computed.types_present,
+            source_data=data_for_preamble,
         )
 
     return LiteralizeResult(
         declaration_code=result,
         preamble=preamble,
         body_preamble=computed.body,
+        types_present=computed.types_present,
+        source_data=data_for_preamble,
     )

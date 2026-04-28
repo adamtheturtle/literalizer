@@ -1,4 +1,4 @@
-module Check where
+module Fixture_float_scientific_notation_Haskell_float_format_scientific_s where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
@@ -18,3 +18,5 @@ my_data = HList [
     1.5e3,
     1.0e-3
     ]
+main :: IO ()
+main = seq my_data (return ())

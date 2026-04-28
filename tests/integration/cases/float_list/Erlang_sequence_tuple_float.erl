@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_float_list_erlang_sequence_tuple_float).
 -export([x/0]).
 x() ->
     My_data = {

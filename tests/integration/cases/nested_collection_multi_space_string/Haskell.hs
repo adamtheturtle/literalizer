@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_collection_multi_space_string_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -12,3 +12,5 @@ my_data :: Val
 my_data = HList [
     HMap [("key", HStr "hello   world"), ("value", 1)]
     ]
+main :: IO ()
+main = seq my_data (return ())

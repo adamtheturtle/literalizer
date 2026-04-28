@@ -1,8 +1,11 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @[
     @[@{@"name": @"Alice"}, @{@"name": @"Bob"}],
     @[@{@"name": @"Charlie"}, @{@"name": @"Dave"}],
 ];
     (void)my_data;
+}
+    return 0;
 }

@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 auto my_data = JSONValue([
     "host": JSONValue("localhost"),
     "port": JSONValue(null),  // not configured yet

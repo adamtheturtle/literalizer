@@ -57,6 +57,7 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -164,21 +165,23 @@ def _purescript_has_large_int(val: Value) -> bool:
     """Return True if *val* contains an integer that overflows
     PureScript's 32-bit ``Int``.
     """
-    if isinstance(val, bool):
-        return False
-    if isinstance(val, int):
-        return not _purescript_int_fits_in_int32(value=val)
-    if isinstance(val, list):
-        return any(_purescript_has_large_int(val=v) for v in val)
-    if isinstance(val, dict):
-        return any(_purescript_has_large_int(val=v) for v in val.values())
-    if isinstance(val, set):
-        return any(
-            _purescript_has_large_int(val=v)
-            for v in val
-            if isinstance(v, int) and not isinstance(v, bool)
-        )
-    return False
+    match val:
+        case bool():
+            return False
+        case int():
+            return not _purescript_int_fits_in_int32(value=val)
+        case list():
+            return any(_purescript_has_large_int(val=v) for v in val)
+        case dict():
+            return any(_purescript_has_large_int(val=v) for v in val.values())
+        case set():
+            return any(
+                _purescript_has_large_int(val=v)
+                for v in val
+                if isinstance(v, int) and not isinstance(v, bool)
+            )
+        case _:
+            return False
 
 
 @beartype
@@ -551,6 +554,7 @@ class PureScript(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type="Val",
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -563,6 +567,7 @@ class PureScript(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -708,6 +713,7 @@ class PureScript(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -809,19 +815,19 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -901,6 +907,7 @@ class PureScript(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

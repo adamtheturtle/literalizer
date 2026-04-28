@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SStr of string
   | SList of val_t list
@@ -7,5 +5,4 @@ val my_data : val_t = SList [
     SStr "a",  (* note a *)
     SStr "b"  (* note b *)
 ]
-
-end
+val _ = my_data

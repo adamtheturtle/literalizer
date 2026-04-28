@@ -1,4 +1,4 @@
-module Check where
+module Fixture_pair_sequence_Haskell where
 data Val = HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -13,3 +13,5 @@ my_data = HList [
     1,
     HStr "hello"
     ]
+main :: IO ()
+main = seq my_data (return ())

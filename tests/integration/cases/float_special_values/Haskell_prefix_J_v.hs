@@ -1,4 +1,4 @@
-module Check where
+module Fixture_float_special_values_Haskell_prefix_J_v where
 data Val = JFloat Double | JList [Val]
 instance Num Val where
     fromInteger n = JFloat (fromIntegral n)
@@ -17,3 +17,5 @@ my_data = JList [
     (-1/0),
     (0/0)
     ]
+main :: IO ()
+main = seq my_data (return ())

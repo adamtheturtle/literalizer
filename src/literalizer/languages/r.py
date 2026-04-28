@@ -5,7 +5,7 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -54,6 +54,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -65,6 +66,22 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import InvalidDictKeyError
+
+
+@beartype
+def _r_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return an R stub declaration for a call name.
+
+    R allows ``.`` in identifiers, so a dotted target such as
+    ``app.client.fetch`` is a single name and one ``function(...)``
+    declaration suffices to make the call evaluate at runtime.
+    """
+    return (f"{'.'.join(parts)} <- function(...) NULL",)
 
 
 @beartype
@@ -216,7 +233,7 @@ class R(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
-            supports_trailing_comma=True,
+            supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -224,6 +241,7 @@ class R(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -236,6 +254,7 @@ class R(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -311,9 +330,13 @@ class R(metaclass=LanguageCls):
         DOUBLE = "double"
 
     class TrailingCommas(enum.Enum):
-        """Trailing comma options."""
+        """Trailing comma options.
 
-        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        R's ``list()`` rejects empty arguments, so a literal trailing
+        comma like ``list(1, 2,)`` parses but raises at runtime; only
+        the comma-free form is supported.
+        """
+
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
     date_formats = DateFormats
@@ -377,6 +400,7 @@ class R(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -487,19 +511,19 @@ class R(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _r_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -537,6 +561,7 @@ class R(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -621,4 +646,5 @@ class R(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

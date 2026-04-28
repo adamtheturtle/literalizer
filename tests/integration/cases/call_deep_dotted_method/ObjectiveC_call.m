@@ -4,8 +4,11 @@ struct clientType_ { void (*post)(id); };
 struct apiType_ { struct clientType_ client; };
 struct kObjType_ { struct apiType_ api; };
 static const struct kObjType_ kObj = { .api = { .client = { .post = kObj_api_client_post_stub_ } } };
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 kObj.api.client.post(@"hello");
-kObj.api.client.post(@(42));
+kObj.api.client.post(@42);
 kObj.api.client.post(@YES);
+}
+    return 0;
 }

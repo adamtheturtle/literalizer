@@ -1,10 +1,13 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @[
-    @(03641100),
+    @03641100,
     @(-02322),
-    @(0377),
+    @0377,
     @(-012),
 ];
     (void)my_data;
+}
+    return 0;
 }

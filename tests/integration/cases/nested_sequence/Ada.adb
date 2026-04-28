@@ -1,10 +1,11 @@
-procedure Check is
-   my_data : A_Val := AList'(
-       ABool (True),
-       AStr ("hi"),
-       AList'(AInt (1), AInt (2)),
-       ANull
-   );
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AList'[
+        ABool (True),
+        AStr ("hi"),
+        AList'[AInt (1), AInt (2)],
+        ANull
+    ];
 begin
-   null;
-end Check;
+    null;
+end Main;

@@ -69,6 +69,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -580,7 +581,7 @@ def _build_tagged_enum_preamble(
 
 
 def _rust_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -589,7 +590,6 @@ def _rust_call_stub(
     # Use generic type parameters so any argument type is accepted.
     type_vars = [chr(ord("A") + i) for i in range(len(params))]
     generic_decl = ", ".join(type_vars)
-    parts = name.split(sep=".")
     if len(parts) == 1:
         param_list = ", ".join(
             f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
@@ -808,6 +808,7 @@ class Rust(metaclass=LanguageCls):
                 preamble_lines=("use std::collections::HashSet;",),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
         BTREE_SET = enum.member(
@@ -818,6 +819,7 @@ class Rust(metaclass=LanguageCls):
                 preamble_lines=("use std::collections::BTreeSet;",),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -994,6 +996,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="HashMap::<{key_type}, {type}>::from([])",
                 preamble_lines=("use std::collections::HashMap;",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
         BTREE_MAP = enum.member(
@@ -1006,6 +1009,7 @@ class Rust(metaclass=LanguageCls):
                 empty_template="BTreeMap::<{key_type}, {type}>::from([])",
                 preamble_lines=("use std::collections::BTreeMap;",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -1203,8 +1207,8 @@ class Rust(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
     )
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -1214,19 +1218,21 @@ class Rust(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
-        use_line = f"\n    let _ = {variable_name};" if variable_name else ""
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        use_line = (
+            f"\n{self.indent}let _ = {variable_name};" if variable_name else ""
+        )
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Rust declaration + assignment in a main function."""
-        return Rust.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -1357,19 +1363,19 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _rust_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -1400,6 +1406,8 @@ class Rust(metaclass=LanguageCls):
                 f"Use ARRAY or TUPLE instead."
             )
             raise IncompatibleFormatsError(msg)
+
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.

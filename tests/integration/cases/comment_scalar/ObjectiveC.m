@@ -1,6 +1,9 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
-id my_data = @(// note
-42);
+int main(void) {
+@autoreleasepool {
+// note
+id my_data = @42;
     (void)my_data;
+}
+    return 0;
 }

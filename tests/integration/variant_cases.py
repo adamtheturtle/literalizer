@@ -268,7 +268,9 @@ def build_default_set_element_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_set_element_type_string",
-                spec=lang_cls(default_set_element_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_set_element_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -293,7 +295,9 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
                 name=(
                     f"{lang_cls.__name__}_default_sequence_element_type_string"
                 ),
-                spec=lang_cls(default_sequence_element_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_sequence_element_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -316,7 +320,9 @@ def build_default_dict_value_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_dict_value_type_string",
-                spec=lang_cls(default_dict_value_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_dict_value_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -339,7 +345,9 @@ def build_default_dict_key_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_dict_key_type",
-                spec=lang_cls(default_dict_key_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_dict_key_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -362,7 +370,9 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_ordered_map_value_type",
-                spec=lang_cls(default_ordered_map_value_type=type_name),
+                spec=make_spec(
+                    lang_cls=lang_cls, default_ordered_map_value_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -399,7 +409,8 @@ def build_line_ending_decl_variants() -> Iterable[Variant]:
                     f"{lang_name}_line_ending_{line_ending.name.lower()}"
                     f"_decl_{declaration_style.name.lower()}"
                 ),
-                spec=lang_cls(
+                spec=make_spec(
+                    lang_cls=lang_cls,
                     line_ending=line_ending,
                     declaration_style=declaration_style,
                 ),
@@ -441,7 +452,8 @@ def build_sequence_decl_variants() -> Iterable[Variant]:
                     f"{lang_name}_sequence_{sequence_format.name.lower()}"
                     f"_decl_{declaration_style.name.lower()}"
                 ),
-                spec=lang_cls(
+                spec=make_spec(
+                    lang_cls=lang_cls,
                     sequence_format=sequence_format,
                     declaration_style=declaration_style,
                 ),
@@ -466,7 +478,7 @@ def build_constructor_name_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_constructor_names_j",
-                spec=lang_cls(**kwargs),
+                spec=make_spec(lang_cls=lang_cls, **kwargs),
                 lang_cls=lang_cls,
             )
         )
@@ -489,7 +501,7 @@ def build_type_name_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_type_name_{custom_name}",
-                spec=lang_cls(type_name=custom_name),
+                spec=make_spec(lang_cls=lang_cls, type_name=custom_name),
                 lang_cls=lang_cls,
             )
         )
@@ -509,7 +521,9 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_prefix_{custom_prefix}",
-                spec=lang_cls(constructor_prefix=custom_prefix),
+                spec=make_spec(
+                    lang_cls=lang_cls, constructor_prefix=custom_prefix
+                ),
                 lang_cls=lang_cls,
             )
         )
@@ -534,7 +548,8 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name == "TAGGED_ENUM"
         )
-        spec = lang_cls(
+        spec = make_spec(
+            lang_cls=lang_cls,
             heterogeneous_strategy=tagged_enum,
             heterogeneous_value_enum_name=custom_name,
         )
@@ -564,7 +579,7 @@ def build_c_field_name_variants() -> Iterable[Variant]:
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_field_names_custom",
-                spec=lang_cls(**kwargs),
+                spec=make_spec(lang_cls=lang_cls, **kwargs),
                 lang_cls=lang_cls,
             )
         )
@@ -589,7 +604,8 @@ def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name == "UNION_TYPE"
         )
-        spec = lang_cls(
+        spec = make_spec(
+            lang_cls=lang_cls,
             heterogeneous_strategy=union_type,
             heterogeneous_value_union_name=custom_name,
         )
@@ -626,7 +642,8 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name in wrapping_strategy_names
         )
-        spec = lang_cls(
+        spec = make_spec(
+            lang_cls=lang_cls,
             heterogeneous_strategy=wrapping_strategy,
             heterogeneous_value_variant_name=custom_name,
         )
@@ -678,7 +695,8 @@ def build_string_format_cross_variants(
                             f"_string_{sf.name.lower()}"
                             f"_{other_tag}_{of.name.lower()}"
                         ),
-                        spec=lang_cls(
+                        spec=make_spec(
+                            lang_cls=lang_cls,
                             string_format=sf,
                             **{other_kwarg: of},
                         ),
@@ -763,7 +781,8 @@ def build_type_hints_cross_variants() -> list[Variant]:
                                 f"_{axis_name}"
                                 f"_{fmt.name.lower()}"
                             ),
-                            spec=lang_cls(
+                            spec=make_spec(
+                                lang_cls=lang_cls,
                                 variable_type_hints=th_fmt,
                                 **{kwarg: fmt},
                             ),
@@ -870,328 +889,482 @@ def build_modifier_variant_cases() -> list[VariantCase]:
     return cases
 
 
-@functools.cache
-@beartype
-def build_variant_cases() -> list[VariantCase]:
-    """Collect all format-variant golden-file test cases."""
-    nv = build_non_default_variants
-    date = nv(
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class CaseInput:
+    """An input case directory plus a variant-name suffix."""
+
+    case_dir_name: str
+    suffix: str = ""
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _SimpleAxis:
+    """A format axis whose variants come from
+    :func:`build_non_default_variants`.
+
+    ``kwarg`` is the language-class constructor parameter name; the
+    accessor functions read the default value and the formats enum from
+    a built spec (which sometimes diverge from ``kwarg``, e.g.
+    ``bytes_format`` reads from ``format_bytes``).
+    """
+
+    category: str
+    kwarg: str
+    get_default: Callable[[literalizer.Language], object]
+    get_formats: Callable[[literalizer.Language], type[enum.Enum]]
+
+
+_SIMPLE_AXES: dict[str, _SimpleAxis] = {
+    "date": _SimpleAxis(
         category="date",
+        kwarg="date_format",
         get_default=lambda s: s.format_date,
         get_formats=lambda s: s.date_formats,
-        make_variant_spec=lambda cls, fmt: cls(date_format=fmt),
-    )
-    datetime_ = nv(
+    ),
+    "datetime": _SimpleAxis(
         category="datetime",
+        kwarg="datetime_format",
         get_default=lambda s: s.format_datetime,
         get_formats=lambda s: s.datetime_formats,
-        make_variant_spec=lambda cls, fmt: cls(datetime_format=fmt),
-    )
-    sequence = nv(
+    ),
+    "sequence": _SimpleAxis(
         category="sequence",
+        kwarg="sequence_format",
         get_default=lambda s: s.sequence_format,
         get_formats=lambda s: s.sequence_formats,
-        make_variant_spec=lambda cls, fmt: cls(sequence_format=fmt),
-    )
-    set_ = nv(
+    ),
+    "set": _SimpleAxis(
         category="set",
+        kwarg="set_format",
         get_default=lambda s: s.set_format,
         get_formats=lambda s: s.set_formats,
-        make_variant_spec=lambda cls, fmt: cls(set_format=fmt),
-    )
-    comment = nv(
+    ),
+    "comment": _SimpleAxis(
         category="comment",
+        kwarg="comment_format",
         get_default=lambda s: s.comment_format,
         get_formats=lambda s: s.comment_formats,
-        make_variant_spec=lambda cls, fmt: cls(comment_format=fmt),
-    )
-    type_hints = nv(
+    ),
+    "type_hints": _SimpleAxis(
         category="type_hints",
+        kwarg="variable_type_hints",
         get_default=lambda s: s.variable_type_hints,
         get_formats=lambda s: s.variable_type_hints_formats,
-        make_variant_spec=lambda cls, fmt: cls(variable_type_hints=fmt),
+    ),
+    "dict_format": _SimpleAxis(
+        category="dict_format",
+        kwarg="dict_format",
+        get_default=lambda s: s.dict_format,
+        get_formats=lambda s: s.dict_formats,
+    ),
+    "dict_entry_style": _SimpleAxis(
+        category="dict_entry_style",
+        kwarg="dict_entry_style",
+        get_default=lambda s: s.dict_entry_style,
+        get_formats=lambda s: s.dict_entry_styles,
+    ),
+    "integer_format": _SimpleAxis(
+        category="integer_format",
+        kwarg="integer_format",
+        get_default=lambda s: s.integer_format,
+        get_formats=lambda s: s.integer_formats,
+    ),
+    "numeric_literal_suffix": _SimpleAxis(
+        category="numeric_literal_suffix",
+        kwarg="numeric_literal_suffix",
+        get_default=lambda s: s.numeric_literal_suffix,
+        get_formats=lambda s: s.numeric_literal_suffixes,
+    ),
+    "numeric_separator": _SimpleAxis(
+        category="numeric_separator",
+        kwarg="numeric_separator",
+        get_default=lambda s: s.numeric_separator,
+        get_formats=lambda s: s.numeric_separators,
+    ),
+    "float_format": _SimpleAxis(
+        category="float_format",
+        kwarg="float_format",
+        get_default=lambda s: s.float_format,
+        get_formats=lambda s: s.float_formats,
+    ),
+    "numeric_style": _SimpleAxis(
+        category="numeric_style",
+        kwarg="numeric_style",
+        get_default=lambda s: s.numeric_style,
+        get_formats=lambda s: s.numeric_styles,
+    ),
+    "string_format": _SimpleAxis(
+        category="string_format",
+        kwarg="string_format",
+        get_default=lambda s: s.string_format,
+        get_formats=lambda s: s.string_formats,
+    ),
+    "bytes_format": _SimpleAxis(
+        category="bytes_format",
+        kwarg="bytes_format",
+        get_default=lambda s: s.format_bytes,
+        get_formats=lambda s: s.bytes_formats,
+    ),
+    "trailing_comma": _SimpleAxis(
+        category="trailing_comma",
+        kwarg="trailing_comma",
+        get_default=lambda s: s.trailing_comma,
+        get_formats=lambda s: s.trailing_commas,
+    ),
+    "line_ending": _SimpleAxis(
+        category="line_ending",
+        kwarg="line_ending",
+        get_default=lambda s: s.line_ending,
+        get_formats=lambda s: s.line_endings,
+    ),
+    "heterogeneous_strategy": _SimpleAxis(
+        category="heterogeneous_strategy",
+        kwarg="heterogeneous_strategy",
+        get_default=lambda s: s.heterogeneous_strategy,
+        get_formats=lambda s: s.heterogeneous_strategies,
+    ),
+}
+
+
+@beartype
+def _build_simple_axis(*, axis: _SimpleAxis) -> list[Variant]:
+    """Build variants for a simple format axis."""
+    return build_non_default_variants(
+        category=axis.category,
+        get_default=axis.get_default,
+        get_formats=axis.get_formats,
+        make_variant_spec=lambda cls, fmt: make_spec(
+            lang_cls=cls, **{axis.kwarg: fmt}
+        ),
     )
 
-    def declaration_style_make_spec(
+
+@beartype
+def _build_declaration_style_variants() -> list[Variant]:
+    """Build declaration-style variants, applying per-language sequence-
+    format overrides where the default sequence format is incompatible
+    (e.g. Rust ``CONST`` / ``STATIC`` with ``VEC``).
+    """
+
+    def make_spec_for(
         cls: literalizer.LanguageCls,
         fmt: enum.Enum,
     ) -> literalizer.Language:
-        """Build a spec for *fmt*, applying any per-language sequence-
-        format
-        override listed in
-        :data:`DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES`.
-
-        Some declaration styles are incompatible with the default sequence
-        format (e.g. Rust CONST/STATIC raise ``IncompatibleFormatsError``
-        when combined with ``VEC``).
+        """Build a spec for *fmt*, applying any sequence-format
+        override.
         """
         overrides = DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(cls, {})
         seq_format_name = overrides.get(fmt.name)
         if seq_format_name is None:
-            return cls(declaration_style=fmt)
-        spec = cls()
+            return make_spec(lang_cls=cls, declaration_style=fmt)
+        spec = make_spec(lang_cls=cls)
         seq_fmt = next(
             f for f in spec.sequence_formats if f.name == seq_format_name
         )
-        return cls(declaration_style=fmt, sequence_format=seq_fmt)
+        return make_spec(
+            lang_cls=cls, declaration_style=fmt, sequence_format=seq_fmt
+        )
 
-    declaration_style = nv(
+    return build_non_default_variants(
         category="declaration_style",
         get_default=lambda s: s.declaration_style,
         get_formats=lambda s: s.declaration_styles,
-        make_variant_spec=declaration_style_make_spec,
-    )
-    dict_format = nv(
-        category="dict_format",
-        get_default=lambda s: s.dict_format,
-        get_formats=lambda s: s.dict_formats,
-        make_variant_spec=lambda cls, fmt: cls(dict_format=fmt),
-    )
-    dict_entry_style = nv(
-        category="dict_entry_style",
-        get_default=lambda s: s.dict_entry_style,
-        get_formats=lambda s: s.dict_entry_styles,
-        make_variant_spec=lambda cls, fmt: cls(dict_entry_style=fmt),
-    )
-    integer_format = nv(
-        category="integer_format",
-        get_default=lambda s: s.integer_format,
-        get_formats=lambda s: s.integer_formats,
-        make_variant_spec=lambda cls, fmt: cls(integer_format=fmt),
-    )
-    numeric_literal_suffix = nv(
-        category="numeric_literal_suffix",
-        get_default=lambda s: s.numeric_literal_suffix,
-        get_formats=lambda s: s.numeric_literal_suffixes,
-        make_variant_spec=lambda cls, fmt: cls(numeric_literal_suffix=fmt),
-    )
-    numeric_separator = nv(
-        category="numeric_separator",
-        get_default=lambda s: s.numeric_separator,
-        get_formats=lambda s: s.numeric_separators,
-        make_variant_spec=lambda cls, fmt: cls(numeric_separator=fmt),
-    )
-    float_format = nv(
-        category="float_format",
-        get_default=lambda s: s.float_format,
-        get_formats=lambda s: s.float_formats,
-        make_variant_spec=lambda cls, fmt: cls(float_format=fmt),
-    )
-    numeric_style = nv(
-        category="numeric_style",
-        get_default=lambda s: s.numeric_style,
-        get_formats=lambda s: s.numeric_styles,
-        make_variant_spec=lambda cls, fmt: cls(numeric_style=fmt),
-    )
-    string_format = nv(
-        category="string_format",
-        get_default=lambda s: s.string_format,
-        get_formats=lambda s: s.string_formats,
-        make_variant_spec=lambda cls, fmt: cls(string_format=fmt),
-    )
-    bytes_format = nv(
-        category="bytes_format",
-        get_default=lambda s: s.format_bytes,
-        get_formats=lambda s: s.bytes_formats,
-        make_variant_spec=lambda cls, fmt: cls(bytes_format=fmt),
-    )
-    trailing_comma = nv(
-        category="trailing_comma",
-        get_default=lambda s: s.trailing_comma,
-        get_formats=lambda s: s.trailing_commas,
-        make_variant_spec=lambda cls, fmt: cls(trailing_comma=fmt),
-    )
-    line_ending = nv(
-        category="line_ending",
-        get_default=lambda s: s.line_ending,
-        get_formats=lambda s: s.line_endings,
-        make_variant_spec=lambda cls, fmt: cls(line_ending=fmt),
-    )
-    heterogeneous_strategy = nv(
-        category="heterogeneous_strategy",
-        get_default=lambda s: s.heterogeneous_strategy,
-        get_formats=lambda s: s.heterogeneous_strategies,
-        make_variant_spec=lambda cls, fmt: cls(heterogeneous_strategy=fmt),
+        make_variant_spec=make_spec_for,
     )
 
-    type_hints_cross = build_type_hints_cross_variants()
-    string_format_date_cross = build_string_format_cross_variants(
+
+_COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
+    "declaration_style": _build_declaration_style_variants,
+    "default_set_element_type": build_default_set_element_type_variants,
+    "default_sequence_element_type": (
+        build_default_sequence_element_type_variants
+    ),
+    "default_dict_value_type": build_default_dict_value_type_variants,
+    "default_dict_key_type": build_default_dict_key_type_variants,
+    "default_ordered_map_value_type": (
+        build_default_ordered_map_value_type_variants
+    ),
+    "line_ending_decl": build_line_ending_decl_variants,
+    "sequence_decl": build_sequence_decl_variants,
+    "type_hints_cross": build_type_hints_cross_variants,
+    "string_format_date_cross": lambda: build_string_format_cross_variants(
         other_kwarg="date_format",
         other_tag="date",
         get_other_default=lambda s: s.date_format,
         get_other_formats=lambda s: s.date_formats,
-    )
-    string_format_datetime_cross = build_string_format_cross_variants(
+    ),
+    "string_format_datetime_cross": lambda: build_string_format_cross_variants(
         other_kwarg="datetime_format",
         other_tag="dt",
         get_other_default=lambda s: s.datetime_format,
         get_other_formats=lambda s: s.datetime_formats,
-    )
+    ),
+    "type_name": build_type_name_variants,
+    "constructor_prefix": build_constructor_prefix_variants,
+    "constructor_name": build_constructor_name_variants,
+    "c_field_name": build_c_field_name_variants,
+    "heterogeneous_value_enum_name": build_heterogeneous_value_name_variants,
+    "heterogeneous_value_union_name": (
+        build_heterogeneous_value_union_name_variants
+    ),
+    "heterogeneous_value_variant_name": (
+        build_heterogeneous_value_variant_name_variants
+    ),
+}
 
-    cases: list[VariantCase] = []
-    variant_sources: list[tuple[Iterable[Variant], str, str]] = [
-        (date, "scalar_date", ""),
-        (date, "date_list", ""),
-        (date, "date_set", ""),
-        (datetime_, "scalar_datetime", ""),
-        (datetime_, "scalar_datetime_naive", "_naive"),
-        (datetime_, "scalar_datetime_non_utc", "_non_utc"),
-        (sequence, "simple_sequence", ""),
-        (sequence, "pair_sequence", "_pair"),
-        (sequence, "triple_sequence", "_triple"),
-        (sequence, "simple_sequence", "_varname"),
-        (set_, "set", ""),
-        (build_default_set_element_type_variants(), "empty_set", ""),
-        (build_default_set_element_type_variants(), "set", ""),
-        (
-            build_default_sequence_element_type_variants(),
-            "empty_sequence",
-            "",
-        ),
-        (
-            build_default_sequence_element_type_variants(),
-            "simple_sequence",
-            "",
-        ),
-        (build_default_dict_value_type_variants(), "empty_dict", ""),
-        (build_default_dict_value_type_variants(), "simple_dict", ""),
-        (build_default_dict_key_type_variants(), "empty_dict", ""),
-        (build_default_dict_key_type_variants(), "simple_dict", ""),
-        (
-            build_default_ordered_map_value_type_variants(),
-            "ordered_map",
-            "",
-        ),
-        (comment, "comments", ""),
-        (type_hints, "type_hints", ""),
-        (type_hints, "scalar_date", ""),
-        (type_hints, "scalar_datetime", ""),
-        (type_hints, "binary", ""),
-        (type_hints, "mixed_type_dicts_in_sequence", ""),
-        (type_hints, "empty_dicts_in_sequence", ""),
-        (type_hints, "float_list", ""),
-        (type_hints, "int_list", ""),
-        (type_hints, "empty_list", ""),
-        (type_hints, "int_set", ""),
-        (type_hints, "empty_set", ""),
-        (type_hints, "mixed_number_list", ""),
-        (type_hints, "nested_sequence", ""),
-        (type_hints, "dict_with_list_value", ""),
-        (type_hints, "ordered_map_in_sequence", ""),
-        (type_hints_cross, "int_list", ""),
-        (type_hints_cross, "int_list_large", ""),
-        (type_hints_cross, "pair_sequence", ""),
-        (type_hints_cross, "empty_list", ""),
-        (type_hints_cross, "scalar_date", ""),
-        (type_hints_cross, "scalar_datetime", ""),
-        (type_hints_cross, "simple_dict", ""),
-        (type_hints_cross, "int_set", ""),
-        (declaration_style, "simple_sequence", ""),
-        (declaration_style, "simple_dict", ""),
-        (declaration_style, "empty_list", ""),
-        (declaration_style, "empty_dict", ""),
-        (declaration_style, "int_list", ""),
-        (declaration_style, "int_key_dict", ""),
-        (declaration_style, "scalar_int", ""),
-        (declaration_style, "scalar_int_large", ""),
-        (declaration_style, "scalar_float", ""),
-        (declaration_style, "scalar_bool", ""),
-        (declaration_style, "scalar_string", ""),
-        (declaration_style, "scalar_null", ""),
-        (declaration_style, "scalar_date", ""),
-        (declaration_style, "scalar_datetime", ""),
-        (declaration_style, "binary", ""),
-        (dict_format, "simple_dict", ""),
-        (dict_format, "dict_with_list_value", "_list_val"),
-        (dict_entry_style, "simple_dict", ""),
-        (
-            dict_entry_style,
+
+@beartype
+def _ci(*, case_dir_name: str, suffix: str = "") -> CaseInput:
+    """Shorthand for :class:`CaseInput` to keep the table compact."""
+    return CaseInput(case_dir_name=case_dir_name, suffix=suffix)
+
+
+INT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="int_list"),
+    _ci(case_dir_name="int_list_large", suffix="_large"),
+    _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+    _ci(case_dir_name="scalar_int"),
+    _ci(case_dir_name="scalar_int_large"),
+)
+
+FLOAT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="float_list"),
+    _ci(case_dir_name="float_scientific_notation", suffix="_s"),
+    _ci(case_dir_name="float_special_values", suffix="_v"),
+    _ci(case_dir_name="nested_float_list", suffix="_n"),
+    _ci(case_dir_name="scalar_float"),
+)
+
+BASIC_COLLECTIONS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="simple_sequence"),
+    _ci(case_dir_name="simple_dict", suffix="_dict"),
+    _ci(case_dir_name="set", suffix="_set"),
+)
+
+ADT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="simple_dict"),
+    _ci(case_dir_name="float_special_values", suffix="_v"),
+    _ci(case_dir_name="float_list", suffix="_float"),
+    _ci(case_dir_name="binary", suffix="_binary"),
+    _ci(case_dir_name="scalar_date", suffix="_date"),
+    _ci(case_dir_name="scalar_datetime", suffix="_datetime"),
+)
+
+HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
+    _ci(case_dir_name=d, suffix=s)
+    for d, s in (
+        ("dict_mixed_scalars", ""),
+        ("mixed_type_dicts_in_sequence", ""),
+        ("nested_mixed_types", "_sibling"),
+        ("nested_mixed_inner", "_inner"),
+        ("nested_mixed_dict", ""),
+        ("dict_all_scalar_types", ""),
+        ("nested_sequences", ""),
+        ("dict_mixed_int_widths", ""),
+        ("ordered_map", ""),
+    )
+)
+
+DICT_FORMAT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="simple_dict"),
+    _ci(case_dir_name="dict_with_list_value", suffix="_list_val"),
+)
+
+DEFAULT_DICT_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="empty_dict"),
+    _ci(case_dir_name="simple_dict"),
+)
+
+_NUMERIC_INPUTS: tuple[CaseInput, ...] = (
+    _ci(case_dir_name="int_list"),
+    _ci(case_dir_name="int_list_large", suffix="_large"),
+    _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+    _ci(case_dir_name="scalar_int"),
+    _ci(case_dir_name="scalar_int_large"),
+    _ci(case_dir_name="float_list", suffix="_float"),
+    _ci(case_dir_name="float_scientific_notation", suffix="_float_s"),
+    _ci(case_dir_name="float_special_values", suffix="_float_v"),
+    _ci(case_dir_name="nested_float_list", suffix="_float_n"),
+    _ci(case_dir_name="scalar_float", suffix="_float_scalar"),
+)
+
+
+# Per-axis input table.  Each axis names the input case directories it
+# should run against; coverage is added or removed by editing this table
+# alone.  The cross product of every axis's variants with its inputs
+# yields the full set of golden-file test cases.
+AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
+    "date": (
+        _ci(case_dir_name="scalar_date"),
+        _ci(case_dir_name="date_list"),
+        _ci(case_dir_name="date_set"),
+    ),
+    "datetime": (
+        _ci(case_dir_name="scalar_datetime"),
+        _ci(case_dir_name="scalar_datetime_naive", suffix="_naive"),
+        _ci(case_dir_name="scalar_datetime_non_utc", suffix="_non_utc"),
+        _ci(case_dir_name="datetime_list"),
+    ),
+    "sequence": (
+        _ci(case_dir_name="simple_sequence"),
+        _ci(case_dir_name="pair_sequence", suffix="_pair"),
+        _ci(case_dir_name="triple_sequence", suffix="_triple"),
+        _ci(case_dir_name="simple_sequence", suffix="_varname"),
+        _ci(case_dir_name="float_list", suffix="_float"),
+    ),
+    "set": (
+        _ci(case_dir_name="set"),
+        _ci(case_dir_name="int_set"),
+        _ci(case_dir_name="mixed_set"),
+        _ci(case_dir_name="empty_set"),
+    ),
+    "default_set_element_type": (
+        _ci(case_dir_name="empty_set"),
+        _ci(case_dir_name="set"),
+    ),
+    "default_sequence_element_type": (
+        _ci(case_dir_name="empty_sequence"),
+        _ci(case_dir_name="simple_sequence"),
+    ),
+    "default_dict_value_type": DEFAULT_DICT_INPUTS,
+    "default_dict_key_type": DEFAULT_DICT_INPUTS,
+    "default_ordered_map_value_type": (_ci(case_dir_name="ordered_map"),),
+    "comment": (_ci(case_dir_name="comments"),),
+    "type_hints": tuple(
+        _ci(case_dir_name=d)
+        for d in (
+            "type_hints",
+            "scalar_date",
+            "scalar_datetime",
+            "binary",
+            "mixed_type_dicts_in_sequence",
+            "empty_dicts_in_sequence",
+            "float_list",
+            "int_list",
+            "empty_list",
+            "int_set",
+            "mixed_set",
+            "empty_set",
+            "mixed_number_list",
+            "nested_sequence",
             "dict_with_list_value",
-            "_list_val",
-        ),
-        (sequence, "float_list", "_float"),
-        (float_format, "float_list", ""),
-        (float_format, "float_scientific_notation", "_s"),
-        (float_format, "float_special_values", "_v"),
-        (float_format, "nested_float_list", "_n"),
-        (integer_format, "int_list", ""),
-        (integer_format, "int_list_large", "_large"),
-        (integer_format, "int_list_with_zero", "_zero"),
-        (numeric_literal_suffix, "int_list", ""),
-        (numeric_literal_suffix, "int_list_large", "_large"),
-        (
-            numeric_literal_suffix,
-            "int_list_with_zero",
-            "_zero",
-        ),
-        (numeric_separator, "int_list", ""),
-        (numeric_separator, "int_list_large", "_large"),
-        (numeric_separator, "int_list_with_zero", "_zero"),
-        (string_format, "string_list", ""),
-        (string_format, "string_with_backslash", ""),
-        (string_format, "simple_dict", "_dict"),
-        (string_format, "binary", "_binary"),
-        (string_format_date_cross, "scalar_date", ""),
-        (string_format_datetime_cross, "scalar_datetime", "_dt"),
-        (bytes_format, "binary", ""),
-        (trailing_comma, "simple_sequence", ""),
-        (line_ending, "simple_sequence", ""),
-        (line_ending, "simple_dict", "_dict"),
-        (build_line_ending_decl_variants(), "simple_sequence", ""),
-        (build_sequence_decl_variants(), "int_list", ""),
-        (build_type_name_variants(), "simple_dict", ""),
-        (build_constructor_prefix_variants(), "simple_dict", ""),
-        (build_constructor_prefix_variants(), "float_special_values", "_v"),
-        (build_constructor_prefix_variants(), "float_list", "_float"),
-        (build_constructor_prefix_variants(), "binary", "_binary"),
-        (build_constructor_prefix_variants(), "scalar_date", "_date"),
-        (build_constructor_prefix_variants(), "scalar_datetime", "_datetime"),
-        (numeric_style, "int_list", ""),
-        (numeric_style, "int_list_with_zero", "_zero"),
-        (numeric_style, "float_list", ""),
-        (numeric_style, "float_special_values", ""),
-        (numeric_style, "mixed_number_list", ""),
-        (numeric_style, "scalars", ""),
-        (build_c_field_name_variants(), "simple_dict", ""),
-        (build_c_field_name_variants(), "simple_sequence", ""),
-        (build_constructor_name_variants(), "simple_dict", ""),
-        (type_hints_cross, "bool_list", ""),
-        (type_hints_cross, "float_list", ""),
-        (heterogeneous_strategy, "dict_mixed_scalars", ""),
-        (heterogeneous_strategy, "mixed_type_dicts_in_sequence", ""),
-        (
-            build_heterogeneous_value_name_variants(),
-            "dict_mixed_scalars",
-            "",
-        ),
-        (
-            build_heterogeneous_value_union_name_variants(),
-            "dict_mixed_scalars",
-            "",
-        ),
-        (
-            build_heterogeneous_value_variant_name_variants(),
-            "dict_mixed_scalars",
-            "",
-        ),
-        (heterogeneous_strategy, "nested_mixed_types", "_sibling"),
-        (heterogeneous_strategy, "nested_mixed_inner", "_inner"),
-        (heterogeneous_strategy, "nested_mixed_dict", ""),
-        (heterogeneous_strategy, "dict_all_scalar_types", ""),
-        (heterogeneous_strategy, "nested_sequences", ""),
-        (heterogeneous_strategy, "dict_mixed_int_widths", ""),
-        (heterogeneous_strategy, "ordered_map", ""),
-    ]
-    for variants, case_dir_name, suffix in variant_sources:
-        cases.extend(
-            VariantCase(
-                variant_name=f"{variant.name}{suffix}",
-                variant=variant,
-                case_dir_name=case_dir_name,
-                variable_form=wrap_variable_form(lang_cls=variant.lang_cls),
-            )
-            for variant in variants
+            "ordered_map_in_sequence",
         )
+    ),
+    "type_hints_cross": tuple(
+        _ci(case_dir_name=d)
+        for d in (
+            "int_list",
+            "int_list_large",
+            "pair_sequence",
+            "empty_list",
+            "scalar_date",
+            "scalar_datetime",
+            "simple_dict",
+            "int_set",
+            "bool_list",
+            "float_list",
+        )
+    ),
+    "declaration_style": tuple(
+        _ci(case_dir_name=d)
+        for d in (
+            "simple_sequence",
+            "simple_dict",
+            "empty_list",
+            "empty_dict",
+            "int_list",
+            "int_key_dict",
+            "scalar_int",
+            "scalar_int_large",
+            "scalar_float",
+            "scalar_bool",
+            "scalar_string",
+            "scalar_null",
+            "scalar_date",
+            "scalar_datetime",
+            "binary",
+        )
+    ),
+    "dict_format": DICT_FORMAT_INPUTS,
+    "dict_entry_style": DICT_FORMAT_INPUTS,
+    "float_format": FLOAT_INPUTS,
+    "integer_format": INT_INPUTS,
+    "numeric_literal_suffix": _NUMERIC_INPUTS,
+    "numeric_separator": _NUMERIC_INPUTS,
+    "string_format": (
+        _ci(case_dir_name="string_list"),
+        _ci(case_dir_name="string_with_backslash"),
+        _ci(case_dir_name="simple_dict", suffix="_dict"),
+        _ci(case_dir_name="binary", suffix="_binary"),
+        _ci(case_dir_name="scalar_string"),
+    ),
+    "string_format_date_cross": (_ci(case_dir_name="scalar_date"),),
+    "string_format_datetime_cross": (
+        _ci(case_dir_name="scalar_datetime", suffix="_dt"),
+    ),
+    "bytes_format": (_ci(case_dir_name="binary"),),
+    "trailing_comma": BASIC_COLLECTIONS,
+    "line_ending": BASIC_COLLECTIONS,
+    "line_ending_decl": (_ci(case_dir_name="simple_sequence"),),
+    "sequence_decl": (_ci(case_dir_name="int_list"),),
+    "type_name": ADT_INPUTS,
+    "constructor_prefix": ADT_INPUTS,
+    "numeric_style": (
+        _ci(case_dir_name="int_list"),
+        _ci(case_dir_name="int_list_large", suffix="_large"),
+        _ci(case_dir_name="int_list_with_zero", suffix="_zero"),
+        _ci(case_dir_name="float_list"),
+        _ci(case_dir_name="float_special_values"),
+        _ci(case_dir_name="mixed_number_list"),
+        _ci(case_dir_name="scalars"),
+    ),
+    "c_field_name": (
+        _ci(case_dir_name="simple_dict"),
+        _ci(case_dir_name="simple_sequence"),
+    ),
+    "constructor_name": (_ci(case_dir_name="simple_dict"),),
+    "heterogeneous_strategy": HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
+    "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
+}
+
+
+@beartype
+def _variants_for_axis(axis_key: str) -> list[Variant]:
+    """Return the variants for an axis key, dispatching to the simple
+    or complex builder.
+    """
+    if axis_key in _SIMPLE_AXES:
+        return _build_simple_axis(axis=_SIMPLE_AXES[axis_key])
+    return list(_COMPLEX_BUILDERS[axis_key]())
+
+
+@functools.cache
+@beartype
+def build_variant_cases() -> list[VariantCase]:
+    """Collect all format-variant golden-file test cases.
+
+    The full set is the cross product of every axis's variants with its
+    declared inputs in :data:`AXIS_INPUTS`, plus the bespoke modifier
+    cases from :func:`build_modifier_variant_cases`.
+    """
+    cases: list[VariantCase] = []
+    for axis_key, inputs in AXIS_INPUTS.items():
+        variants = _variants_for_axis(axis_key=axis_key)
+        for variant in variants:
+            cases.extend(
+                VariantCase(
+                    variant_name=f"{variant.name}{ci.suffix}",
+                    variant=variant,
+                    case_dir_name=ci.case_dir_name,
+                    variable_form=wrap_variable_form(
+                        lang_cls=variant.lang_cls
+                    ),
+                )
+                for ci in inputs
+            )
     cases.extend(build_modifier_variant_cases())
     return cases
 

@@ -1,0 +1,6 @@
+(defun my_app (&rest args) (declare (ignore args)) nil)
+(defun my_app.http_client (&rest args) (declare (ignore args)) nil)
+(defun my_app.http_client.fetch (&rest args) (declare (ignore args)) nil)
+(my_app.http_client.fetch :payload "hello")
+(my_app.http_client.fetch :payload 42)
+(my_app.http_client.fetch :payload t)

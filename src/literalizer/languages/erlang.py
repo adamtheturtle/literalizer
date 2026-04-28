@@ -54,6 +54,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -106,16 +107,17 @@ def _format_datetime_erlang(value: datetime.datetime) -> str:
 
 
 @beartype
-def _erlang_format_call_target(name: str, /) -> str:
+def _erlang_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a call target for Erlang.
 
     Dotted names like ``app.client.fetch`` are wrapped in single
     quotes so they form a valid Erlang atom; bare names pass
     through unchanged.
     """
-    if "." in name:
+    if len(parts) > 1:
+        name = ".".join(parts)
         return f"'{name}'"
-    return name
+    return parts[0]
 
 
 @beartype
@@ -133,7 +135,7 @@ def _erlang_format_call_ref_identifier(name: str, /) -> str:
 
 @beartype
 def _erlang_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     /,
@@ -146,7 +148,7 @@ def _erlang_call_stub(
     ``_`` pattern so no per-argument naming is needed.
     """
     body = "ok" if stub_return is StubReturn.VOID else "undefined"
-    target = _erlang_format_call_target(name)
+    target = _erlang_format_call_target(parts)
     arg_list = ", ".join("_" for _ in params)
     return (f"{target}({arg_list}) -> {body}.",)
 
@@ -178,6 +180,8 @@ class Erlang(metaclass=LanguageCls):
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``{1, 2, 3}``.
     """
+
+    module_name: str = "Module"
 
     extension = ".erl"
     pygments_name = "erlang"
@@ -239,6 +243,7 @@ class Erlang(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="{"),
@@ -253,6 +258,7 @@ class Erlang(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -265,6 +271,7 @@ class Erlang(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -401,14 +408,16 @@ class Erlang(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -430,17 +439,17 @@ class Erlang(metaclass=LanguageCls):
                 body_preamble=body_preamble,
             )
             erlang_varname = variable_name[0].upper() + variable_name[1:]
-            indented = textwrap.indent(text=body, prefix="    ")
+            indented = textwrap.indent(text=body, prefix=self.indent)
             return (
-                f"-module(check).\n"
+                f"-module({self.module_name}).\n"
                 f"-export([x/0]).\n"
                 f"x() ->\n"
                 f"{indented}\n"
-                f"    {erlang_varname}."
+                f"{self.indent}{erlang_varname}."
             )
         trimmed = content.rstrip().removesuffix(",")
-        indented = textwrap.indent(text=trimmed, prefix="    ")
-        parts = ["-module(check).", "-export([x/0])."]
+        indented = textwrap.indent(text=trimmed, prefix=self.indent)
+        parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)
         parts.append("x() ->")
         parts.append(f"{indented}.")
@@ -546,19 +555,19 @@ class Erlang(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _erlang_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -599,6 +608,7 @@ class Erlang(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_float_list_Haskell_sequence_tuple_float where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
@@ -17,3 +17,5 @@ my_data = (
     -2.2,
     3.3
     )
+main :: IO ()
+main = seq my_data (return ())

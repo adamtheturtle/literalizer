@@ -1,10 +1,11 @@
-procedure Check is
-   my_data : A_Val := ASet'(
-       AStr ("apple"),  -- inline comment
-       -- before banana
-       AStr ("banana")
-       -- trailing
-   );
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := ASet'[
+        AStr ("apple"),  -- inline comment
+        -- before banana
+        AStr ("banana")
+        -- trailing
+    ];
 begin
-   null;
-end Check;
+    null;
+end Main;

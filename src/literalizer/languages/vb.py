@@ -45,7 +45,6 @@ from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -54,13 +53,16 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -145,6 +147,87 @@ def _format_string_vb(value: str) -> str:
     return " & ".join(parts)
 
 
+def _vb_unique_class_name(*, segment: str, position: int) -> str:
+    """Build a stub class name unique to a segment's path position.
+
+    VB.NET is case-insensitive, so two segments that differ only in
+    case (or repeat exactly) — e.g. ``app.app.method`` — would
+    otherwise produce duplicate ``Class`` declarations.  Suffixing
+    with the segment's position in the dotted target keeps every
+    generated name distinct.
+    """
+    return f"{segment.title()}Type_{position}_"
+
+
+def _vb_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Visual Basic stub declarations for a call name.
+
+    For a single-name target the stub is a module-level ``Function``
+    whose parameter list matches the given names; for a dotted target
+    a chain of nested stub classes is emitted so ``a.b.c.d(...)``
+    dispatches to a real method whose body returns ``Nothing``.
+
+    Each declaration block is returned as one tuple entry containing
+    embedded newlines so that the call-test harness's whole-line
+    duplicate filter does not strip repeated structural keywords like
+    ``End Class`` or ``End Function`` that legitimately appear in
+    every block.
+    """
+    param_list = ", ".join(f"{p} As Object" for p in params)
+    method_block = (
+        f"Public Function {{method}}({param_list}) As Object\n"
+        "    Return Nothing\n"
+        "End Function"
+    )
+    if len(parts) == 1:
+        return (
+            f"Function {parts[0]}({param_list}) As Object\n"
+            "    Return Nothing\n"
+            "End Function",
+        )
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    method_body = textwrap.indent(
+        text=method_block.format(method=method),
+        prefix="    ",
+    )
+    if not fields:
+        type_name = _vb_unique_class_name(segment=root, position=0)
+        return (
+            f"Class {type_name}\n{method_body}\nEnd Class",
+            f"Dim {root} As New {type_name}()",
+        )
+    blocks: list[str] = []
+    inner_type = _vb_unique_class_name(
+        segment=fields[-1],
+        position=len(fields),
+    )
+    blocks.append(f"Class {inner_type}\n{method_body}\nEnd Class")
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = _vb_unique_class_name(segment=fields[i], position=i + 1)
+        blocks.append(
+            f"Class {curr_type}\n"
+            f"    Public {fields[i + 1]} As New {prev_type}()\n"
+            "End Class"
+        )
+        prev_type = curr_type
+    root_type = _vb_unique_class_name(segment=root, position=0)
+    blocks.append(
+        f"Class {root_type}\n"
+        f"    Public {fields[0]} As New {prev_type}()\n"
+        "End Class"
+    )
+    blocks.append(f"Dim {root} As New {root_type}()")
+    return tuple(blocks)
+
+
 @beartype
 def _format_variable_declaration(
     name: str,
@@ -227,6 +310,7 @@ class VisualBasic(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template=("New HashSet(Of {type_name}) From {{"),
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -270,6 +354,7 @@ class VisualBasic(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=("Imports System.Collections.Generic",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -368,6 +453,9 @@ class VisualBasic(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """VisualBasic call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+        NAMED = KeywordCallStyle(separator=":=")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -390,24 +478,54 @@ class VisualBasic(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a VB.NET Dim declaration inside a Module."""
+        """Wrap a VB.NET Dim declaration inside a Module.
+
+        When *body_preamble* carries call-stub declarations (``Class``
+        and ``Function`` blocks plus their ``Dim ... As New ...``
+        instances) the stubs sit at module scope and *content* is
+        placed inside ``Sub _calls()``: VB rejects bare expression
+        statements at module level, but shared subs taking no
+        arguments are invoked by the fixture linter so the calls
+        still execute.
+        """
         del variable_name
+        has_stubs = any(
+            line.startswith(("Function ", "Class ")) for line in body_preamble
+        )
+        if has_stubs:
+            preamble_block = "\n".join(body_preamble)
+            preamble_indented = textwrap.indent(
+                text=preamble_block,
+                prefix=self.indent,
+            )
+            content_indented = textwrap.indent(
+                text=content, prefix=self.indent * 2
+            )
+            return (
+                "Module Check\n"
+                f"{preamble_indented}\n"
+                f"{self.indent}Sub _calls()\n"
+                f"{content_indented}\n"
+                f"{self.indent}End Sub\n"
+                "End Module"
+            )
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="    ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return f"Module Check\n{indented}\nEnd Module"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -418,17 +536,21 @@ class VisualBasic(metaclass=LanguageCls):
             content=declaration,
             body_preamble=body_preamble,
         )
-        decl_indented = textwrap.indent(text=declaration, prefix="        ")
-        assign_indented = textwrap.indent(text=assignment, prefix="        ")
+        decl_indented = textwrap.indent(
+            text=declaration, prefix=self.indent * 2
+        )
+        assign_indented = textwrap.indent(
+            text=assignment, prefix=self.indent * 2
+        )
         return (
             "Module Check\n"
-            "    Sub _declaration()\n"
+            f"{self.indent}Sub _declaration()\n"
             f"{decl_indented}\n"
-            "    End Sub\n"
-            "    Sub _assignment()\n"
-            f"        Dim {variable_name} As Object\n"
+            f"{self.indent}End Sub\n"
+            f"{self.indent}Sub _assignment()\n"
+            f"{self.indent * 2}Dim {variable_name} As Object\n"
             f"{assign_indented}\n"
-            "    End Sub\n"
+            f"{self.indent}End Sub\n"
             "End Module"
         )
 
@@ -456,6 +578,7 @@ class VisualBasic(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -474,9 +597,6 @@ class VisualBasic(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -529,19 +649,25 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _vb_call_stub
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        config: CallStyle = self.call_style.value
+        return config
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -596,6 +722,7 @@ class VisualBasic(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     @cached_property

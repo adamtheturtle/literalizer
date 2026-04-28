@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::vector<std::variant<int, std::string>>{
     1,
     "hello",
@@ -13,4 +13,5 @@ my_data = std::vector<std::variant<int, std::string>>{
     "hello",
 };
     (void)my_data;
+    return 0;
 }

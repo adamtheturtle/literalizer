@@ -1,3 +1,5 @@
+module Fixture_string_with_backslash_Crystal
+extend self
 my_data = [
     "C:\\path\\to\\file",
     "back\\\\slash",
@@ -7,3 +9,4 @@ my_data = [
     "both \"quotes''' here",
     "line1\\nline2\nwith newline",
 ]
+end

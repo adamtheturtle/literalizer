@@ -1,13 +1,16 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @[
-    @{@"a": @(1)},
+    @{@"a": @1},
     @"hello",
 ];
 (void)my_data;
 my_data = @[
-    @{@"a": @(1)},
+    @{@"a": @1},
     @"hello",
 ];
     (void)my_data;
+}
+    return 0;
 }

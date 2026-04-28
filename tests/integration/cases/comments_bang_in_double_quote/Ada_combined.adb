@@ -1,17 +1,10 @@
-procedure Check is
-   procedure Check_Declaration is
-      my_data : A_Val := AMap'(
-          AEntry ("key", AStr ("""bang!"""))  -- real
-      );
-   begin
-      null;
-   end Check_Declaration;
-   procedure Check_Assignment is
-   begin
-      my_data := AMap'(
-          AEntry ("key", AStr ("""bang!"""))  -- real
-      );
-   end Check_Assignment;
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AMap'[
+        AEntry ("key", AStr ("""bang!"""))  -- real
+    ];
 begin
-   null;
-end Check;
+    my_data := AMap'[
+        AEntry ("key", AStr ("""bang!"""))  -- real
+    ];
+end Main;

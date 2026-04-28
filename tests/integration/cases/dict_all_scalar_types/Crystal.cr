@@ -1,3 +1,5 @@
+module Fixture_dict_all_scalar_types_Crystal
+extend self
 my_data = {
     "s" => "string",
     "i" => 1,
@@ -8,3 +10,4 @@ my_data = {
     "dt" => "2024-01-15T12:00:00",
     "by" => "48656c6c6f",
 }
+end

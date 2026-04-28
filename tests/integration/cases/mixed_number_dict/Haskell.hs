@@ -1,4 +1,4 @@
-module Check where
+module Fixture_mixed_number_dict_Haskell where
 data Val = HInt Integer | HFloat Double | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -18,3 +18,5 @@ my_data = HMap [
     ("b", 2.5),
     ("c", 3)
     ]
+main :: IO ()
+main = seq my_data (return ())

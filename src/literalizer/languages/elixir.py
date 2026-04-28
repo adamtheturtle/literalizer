@@ -60,6 +60,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
@@ -98,18 +99,17 @@ def _elixir_param(name: str) -> str:
 
 @beartype
 def _elixir_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return an Elixir body-level stub for a call name.
+    """Return an Elixir body-level stub for call name *parts*.
 
     For simple names the stub is a one-liner ``def`` placed at module
     level by :meth:`Elixir.wrap_in_file`.  For dotted names only the
     variable binding is returned (the module stubs are preamble).
     """
-    parts = name.split(sep=".")
     if len(parts) == 1:
         param_list = ", ".join(_elixir_param(name=p) for p in params)
         return (f"def {parts[0]}({param_list}), do: nil",)
@@ -120,18 +120,17 @@ def _elixir_call_stub(
 
 @beartype
 def _elixir_call_preamble_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return file-scope Elixir module stubs for a dotted call name.
+    """Return file-scope Elixir module stubs for dotted call *parts*.
 
     For simple (non-dotted) names nothing is needed at preamble scope.
     For dotted names a chain of ``defmodule`` stubs is emitted so each
     intermediate module exposes the next step as a function.
     """
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return ()
     root = parts[0]
@@ -252,6 +251,7 @@ class Elixir(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="{"),
@@ -266,6 +266,7 @@ class Elixir(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -278,6 +279,7 @@ class Elixir(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -451,9 +453,10 @@ class Elixir(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -471,8 +474,8 @@ class Elixir(metaclass=LanguageCls):
                 content=content,
                 body_preamble=body_preamble,
             )
-            indented = textwrap.indent(text=content, prefix="    ")
-            use_line = f"\n    _ = {variable_name}"
+            indented = textwrap.indent(text=content, prefix=self.indent)
+            use_line = f"\n{self.indent}_ = {variable_name}"
             return (
                 "defmodule Check do\n"
                 f"  def x do\n{indented}{use_line}\n  end\nend"
@@ -486,7 +489,7 @@ class Elixir(metaclass=LanguageCls):
         body = prepend_body_preamble(
             content=content, body_preamble=body_assigns
         )
-        indented_body = textwrap.indent(text=body, prefix="    ")
+        indented_body = textwrap.indent(text=body, prefix=self.indent)
         parts: list[str] = ["defmodule Check do"]
         parts.extend(f"  {stub}" for stub in module_defs)
         parts.append("  def x do")
@@ -583,19 +586,19 @@ class Elixir(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _elixir_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _elixir_call_preamble_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -641,6 +644,7 @@ class Elixir(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

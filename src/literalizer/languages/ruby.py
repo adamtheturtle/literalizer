@@ -4,9 +4,9 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -65,6 +65,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -77,35 +78,40 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+def _to_pascal_case(name: str) -> str:
+    """Convert *name* to PascalCase."""
+    return IdentifierCase.PASCAL.convert(name=name)
+
+
 def _ruby_call_stub(
-    name: str,
+    format_class_name: Callable[[str], str],
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Ruby stub declarations for a call name."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}(*a); end",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if not fields:
-        cls = root.capitalize() + "Type"
+        cls = format_class_name(root) + "Type"
         return (
             f"class {cls}; def {method}(*a, **kw); end; end",
             f"{root} = {cls}.new",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type"
+    inner_cls = format_class_name(fields[-1]) + "Type"
     lines.append(f"class {inner_cls}; def {method}(*a, **kw); end; end")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type"
+        cls = format_class_name(fields[i]) + "Type"
         field = fields[i + 1]
         lines.append(f"class {cls}; def {field}; {prev_cls}.new; end; end")
         prev_cls = cls
-    root_cls = root.capitalize() + "Type"
+    root_cls = format_class_name(root) + "Type"
     lines.append(
         f"class {root_cls}; def {fields[0]}; {prev_cls}.new; end; end"
     )
@@ -211,6 +217,7 @@ class Ruby(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -223,6 +230,7 @@ class Ruby(metaclass=LanguageCls):
             preamble_lines=("require 'set'",),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -416,6 +424,7 @@ class Ruby(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -515,19 +524,19 @@ class Ruby(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _ruby_call_stub
+        return partial(_ruby_call_stub, _to_pascal_case)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -566,6 +575,7 @@ class Ruby(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -667,4 +677,5 @@ class Ruby(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

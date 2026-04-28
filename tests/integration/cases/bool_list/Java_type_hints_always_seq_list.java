@@ -1,6 +1,6 @@
 import java.util.List;
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 List<Boolean> my_data = List.of(
     true,
     false,

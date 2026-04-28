@@ -55,6 +55,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -122,7 +123,7 @@ def _make_format_c_entry(
 
 
 def _c_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     /,
@@ -137,32 +138,43 @@ def _c_call_stub(
     avoids the K&R unspecified-parameter syntax (and the
     ``-Wdeprecated-non-prototype`` clang warning it triggers) while
     still letting the same stub accept any mix of argument types.
+
+    Single-name calls emit a ``static`` definition so the fixture links
+    under the lint workflow's run step — a bare prototype without a body
+    would otherwise fail at link time.
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = "CVal" if is_value else "void"
     proto = ", ".join(["CVal"] * len(params)) if params else "void"
-    parts = name.split(sep=".")
-    if len(parts) == 1:
-        return (f"{return_keyword} {parts[0]}({proto});",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    stub_fn = "_".join((*parts, "stub_"))
     stub_params = ", ".join(f"CVal _a{i}" for i in range(len(params)))
     stub_signature = stub_params or "void"
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
     return_stmt = " return (CVal){0};" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
-    if not fields:
-        type_name = f"{root}Type_"
-        return (
-            f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
-            f"struct {type_name} "
-            f"{{ {return_keyword} (*{method})({proto}); }};",
-            f"static const struct {type_name} {root} = "
-            f"{{ .{method} = {stub_fn} }};",
-        )
+    match parts:
+        case [single]:
+            return (
+                f"static {return_keyword} {single}({stub_signature}) "
+                f"{stub_body}",
+            )
+        case [root, method]:
+            stub_fn = f"{root}_{method}_stub_"
+            type_name = f"{root}Type_"
+            return (
+                f"static {return_keyword} {stub_fn}({stub_signature}) "
+                f"{stub_body}",
+                f"struct {type_name} "
+                f"{{ {return_keyword} (*{method})({proto}); }};",
+                f"static const struct {type_name} {root} = "
+                f"{{ .{method} = {stub_fn} }};",
+            )
+        case _:
+            pass
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    stub_fn = "_".join((*parts, "stub_"))
     lines: list[str] = [
         f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
@@ -192,6 +204,8 @@ def _c_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class C(metaclass=LanguageCls):
     """C language specification."""
+
+    module_name: str = "Module"
 
     extension = ".c"
     pygments_name = "c"
@@ -253,6 +267,7 @@ class C(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -265,6 +280,7 @@ class C(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -408,6 +424,7 @@ class C(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -415,23 +432,27 @@ class C(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a C declaration in a function."""
+        """Wrap a C declaration in a main function."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"void check_(void) {{\n{content}{use_line}\n}}"
+        return (
+            f"int {self.module_name}(void) {{\n{content}{use_line}\n"
+            "    return 0;\n}"
+        )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -444,7 +465,7 @@ class C(metaclass=LanguageCls):
         clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
         """
         mid_use = f"(void){variable_name};\n"
-        return C.wrap_in_file(
+        return self.wrap_in_file(
             content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -520,19 +541,19 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _c_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -615,6 +636,7 @@ class C(metaclass=LanguageCls):
                 fmt.requires_uniform_record_shapes
             ),
             declared_type=fmt.declared_type,
+            narrowed_empty_form=None,
         )
 
     @cached_property
@@ -627,6 +649,7 @@ class C(metaclass=LanguageCls):
             preamble_lines=self.set_format.value.preamble_lines,
             set_opener_template=self.set_format.value.set_opener_template,
             supports_heterogeneity=self.set_format.value.supports_heterogeneity,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -646,6 +669,7 @@ class C(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

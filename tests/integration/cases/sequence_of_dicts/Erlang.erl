@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_sequence_of_dicts_erlang).
 -export([x/0]).
 x() ->
     My_data = [

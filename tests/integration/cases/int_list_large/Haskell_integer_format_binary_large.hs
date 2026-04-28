@@ -1,4 +1,4 @@
-module Check where
+module Fixture_int_list_large_Haskell_integer_format_binary_large where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -15,3 +15,5 @@ my_data = HList [
     0b11111111,
     -0b1010
     ]
+main :: IO ()
+main = seq my_data (return ())

@@ -1,0 +1,5 @@
+Set([
+    "apple",
+    "banana",
+    "cherry"
+])

@@ -1,5 +1,5 @@
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 // note
 var my_data = 42;
     }

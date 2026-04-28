@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 auto my_data = JSONValue("2024-01-15T12:30:00");
 my_data = JSONValue("2024-01-15T12:30:00");
 }

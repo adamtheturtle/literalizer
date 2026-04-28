@@ -65,6 +65,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -134,13 +135,21 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
                 )
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            val_type = unique[0] if len(unique) == 1 else "dynamic"
+            match unique:
+                case [single]:
+                    val_type = single
+                case _:
+                    val_type = "dynamic"
             return f"Map<{default_dict_key_type}, {val_type}>"
         case set():
             if not data:
                 return f"Set<{default_set_element_type}>"
-            elem_types = sorted({recurse(data=e) for e in data})
-            elem_type = elem_types[0] if len(elem_types) == 1 else "dynamic"
+            elem_types_sorted = sorted({recurse(data=e) for e in data})
+            match elem_types_sorted:
+                case [single]:
+                    elem_type = single
+                case _:
+                    elem_type = "dynamic"
             return f"Set<{elem_type}>"
         case list():
             if not data:
@@ -152,7 +161,11 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
                 return f"({', '.join(elem_types)},)"
             elem_types = [recurse(data=e) for e in data]
             unique = list(dict.fromkeys(elem_types))
-            elem_type = unique[0] if len(unique) == 1 else "dynamic"
+            match unique:
+                case [single]:
+                    elem_type = single
+                case _:
+                    elem_type = "dynamic"
             return f"List<{elem_type}>"
         case _ as unreachable:
             assert_never(unreachable)
@@ -292,6 +305,7 @@ class Dart(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="("),
@@ -306,6 +320,7 @@ class Dart(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -319,6 +334,7 @@ class Dart(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -602,6 +618,8 @@ class Dart(metaclass=LanguageCls):
         CallSupport.NOT_IMPLEMENTED_BY_TOOL
     )
 
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
+
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
 
@@ -686,19 +704,19 @@ class Dart(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -781,6 +799,7 @@ class Dart(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

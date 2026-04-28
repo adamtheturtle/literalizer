@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"host", ((CVal){.s = "localhost"})},
     {"port", ((CVal){.s = NULL})},  // not configured yet
@@ -27,4 +27,5 @@ my_data = ((CVal){.m = (CKV[]){
     {"debug", ((CVal){.b = true})},
 }});
     (void)my_data;
+    return 0;
 }

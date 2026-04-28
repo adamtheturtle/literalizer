@@ -20,7 +20,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_iso,
 )
@@ -68,6 +67,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -108,13 +108,12 @@ class _JavaModifiers(enum.Enum):
 
 
 def _java_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Java stub declarations for a call name."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (
             f"static Object {parts[0]}(Object... args) {{ return null; }}",
@@ -183,6 +182,23 @@ def _format_datetime_java_zoned(value: datetime.datetime) -> str:
         f"{value.hour}, {value.minute}, {value.second}, "
         f'{nanoseconds}, ZoneId.of("{timezone_name}"))'
     )
+
+
+@beartype
+def _format_datetime_java_instant(value: datetime.datetime) -> str:
+    """Format a datetime as a Java ``Instant.parse(...)`` call.
+
+    ``Instant.parse`` rejects strings without a timezone offset, so a
+    naive datetime (no :attr:`~datetime.datetime.tzinfo`) is rendered
+    with a trailing ``Z`` — Python's :meth:`~datetime.datetime.isoformat`
+    emits no offset for naive datetimes, which Java reads as invalid.
+    Treating naive values as UTC matches the ISO 8601 convention for
+    unqualified timestamps.
+    """
+    iso = value.isoformat()
+    if value.tzinfo is None:
+        iso += "Z"
+    return f'Instant.parse("{iso}")'
 
 
 @beartype
@@ -544,6 +560,8 @@ class Java(metaclass=LanguageCls):
               e.g. ``List.of(1, 2, 3)``.
     """
 
+    module_name: str = "Module"
+
     extension = ".java"
     pygments_name = "java"
     supports_default_set_element_type = False
@@ -608,9 +626,7 @@ class Java(metaclass=LanguageCls):
         """Datetime formatting options for Java."""
 
         INSTANT = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='Instant.parse("{iso}")',
-            ),
+            formatter=_format_datetime_java_instant,
             preamble_lines=("import java.time.Instant;",),
         )
         ZONED = DatetimeFormatConfig(
@@ -655,6 +671,7 @@ class Java(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         LIST = SequenceFormatConfig(
             sequence_open=_list_of_open,
@@ -669,6 +686,7 @@ class Java(metaclass=LanguageCls):
             empty_sequence="List.of()",
             preamble_lines=("import java.util.List;",),
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -681,6 +699,7 @@ class Java(metaclass=LanguageCls):
             preamble_lines=("import java.util.Set;",),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=False,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="new TreeSet<>(Set.of("),
@@ -691,7 +710,8 @@ class Java(metaclass=LanguageCls):
                 "import java.util.TreeSet;",
             ),
             set_opener_template="",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
+            supports_trailing_comma=False,
         )
 
     class CommentFormats(enum.Enum):
@@ -732,6 +752,7 @@ class Java(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("import java.util.Map;",),
             narrowed_open=None,
+            supports_trailing_comma=False,
         )
         HASH_MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new HashMap<>(Map.ofEntries("),
@@ -746,6 +767,7 @@ class Java(metaclass=LanguageCls):
                 "import java.util.Map;",
             ),
             narrowed_open=None,
+            supports_trailing_comma=False,
         )
 
     class EmptyDictKey(enum.Enum):
@@ -851,6 +873,7 @@ class Java(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -870,6 +893,7 @@ class Java(metaclass=LanguageCls):
         ),
     )
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -948,20 +972,22 @@ class Java(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Java declaration in a ``class Check`` scope.
+        """Wrap a Java declaration in a ``class`` scope named after
+        the configured module name.
 
         When *content* starts with a class-field modifier keyword
         (``public``, ``private``, ``protected``, ``static``) the
         declaration is placed at class-field scope, which is the only
         context where those modifiers are valid.  Otherwise the
-        declaration goes inside ``public static void check()`` so that
-        local-only forms like ``var x = 42;`` compile.
+        declaration goes inside a ``public static void`` method named
+        after the configured module name so that local-only forms like
+        ``var x = 42;`` compile.
         """
         del variable_name
         first_token = (
@@ -984,35 +1010,37 @@ class Java(metaclass=LanguageCls):
             line for line in body_preamble if not line.startswith("static ")
         )
         class_block = "\n".join(class_lines) + "\n" if class_lines else ""
+        method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         if is_class_field:
             field_preamble = (
                 "\n".join(method_lines) + "\n" if method_lines else ""
             )
             return (
-                f"class Check {{\n{class_block}{field_preamble}{content}\n}}"
+                f"class {self.module_name} {{\n"
+                f"{class_block}{field_preamble}{content}\n}}"
             )
         content = prepend_body_preamble(
             content=content,
             body_preamble=method_lines,
         )
         return (
-            "class Check {\n"
+            f"class {self.module_name} {{\n"
             f"{class_block}"
-            "    public static void check() {\n"
+            f"    public static void {method_name}() {{\n"
             f"{content}\n"
             "    }\n"
             "}"
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Java declaration + assignment in a static method."""
-        return Java.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -1098,19 +1126,19 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _java_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

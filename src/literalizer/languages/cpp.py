@@ -67,6 +67,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -307,6 +308,7 @@ def _make_initializer_list_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
+        narrowed_empty_form=None,
     )
 
 
@@ -329,6 +331,7 @@ def _make_array_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
+        narrowed_empty_form=None,
     )
 
 
@@ -789,10 +792,9 @@ def _infer_value_kind(*, value: str) -> ValueKind:
 
 
 def _cpp_call_stub(
-    name: str, _params: Sequence[str], stub_return: StubReturn, /
+    parts: Sequence[str], _params: Sequence[str], stub_return: StubReturn, /
 ) -> tuple[str, ...]:
     """Return C++ stub declarations for a call name."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
     root = parts[0]
@@ -851,6 +853,8 @@ class Cpp(metaclass=LanguageCls):
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
     """
+
+    module_name: str = "Module"
 
     extension = ".cpp"
     pygments_name = "cpp"
@@ -948,6 +952,7 @@ class Cpp(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
         def get_config(
@@ -999,6 +1004,7 @@ class Cpp(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=("#include <map>",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             ),
             opener_template="std::map<std::string, {type_name}>{{",
         )
@@ -1012,6 +1018,7 @@ class Cpp(metaclass=LanguageCls):
                 empty_dict=None,
                 preamble_lines=("#include <unordered_map>",),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             ),
             opener_template=("std::unordered_map<std::string, {type_name}>{{"),
         )
@@ -1154,6 +1161,7 @@ class Cpp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -1170,6 +1178,7 @@ class Cpp(metaclass=LanguageCls):
         ),
     )
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -1203,22 +1212,25 @@ class Cpp(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a C++ declaration in a function body."""
+        """Wrap a C++ declaration in a main function."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"void check_() {{\n{content}{use_line}\n}}"
+        return (
+            f"int {self.module_name}() {{\n{content}{use_line}\n"
+            "    return 0;\n}"
+        )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -1231,7 +1243,7 @@ class Cpp(metaclass=LanguageCls):
         clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
         """
         mid_use = f"(void){variable_name};\n"
-        return Cpp.wrap_in_file(
+        return self.wrap_in_file(
             content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -1307,19 +1319,19 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _cpp_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

@@ -51,6 +51,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -122,12 +123,14 @@ def _format_variable_declaration(
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a SystemVerilog variable declaration."""
-    if isinstance(data, (list, set)):
-        return f"static _VVal {name}[] = {value};"
-    if isinstance(data, dict):
-        return f"static _VKV {name}[] = {value};"
-    wrapped = _format_sv_entry(original=data, formatted=value)
-    return f"static _VVal {name} = {wrapped};"
+    match data:
+        case list() | set():
+            return f"static _VVal {name}[] = {value};"
+        case dict():
+            return f"static _VKV {name}[] = {value};"
+        case _:
+            wrapped = _format_sv_entry(original=data, formatted=value)
+            return f"static _VVal {name} = {wrapped};"
 
 
 @beartype
@@ -143,6 +146,8 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
+
+    module_name: str = "Module"
 
     extension = ".sv"
     pygments_name = "systemverilog"
@@ -202,6 +207,7 @@ class SystemVerilog(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -214,6 +220,7 @@ class SystemVerilog(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -351,15 +358,17 @@ class SystemVerilog(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -370,17 +379,20 @@ class SystemVerilog(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"module check;\ninitial begin\n{content}\nend\nendmodule"
+        return (
+            f"module {self.module_name};\n"
+            f"initial begin\n{content}\nend\nendmodule"
+        )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap SystemVerilog declaration + assignment in a module."""
-        return SystemVerilog.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -486,19 +498,19 @@ class SystemVerilog(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -549,6 +561,7 @@ class SystemVerilog(metaclass=LanguageCls):
             empty_dict="'{}",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

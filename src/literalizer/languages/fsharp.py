@@ -62,6 +62,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -179,13 +180,12 @@ def _build_fsharp_declaration(
 
 
 def _fsharp_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return F# stub declarations for a call name."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
         param_list = ", ".join(f"_{p}: obj" for p in params)
         return (f"let {parts[0]} ({param_list}) : obj = null",)
@@ -240,6 +240,8 @@ class FSharp(metaclass=LanguageCls):
             Defaults to ``"F"``, producing constructors like ``FNull``,
             ``FBool``, ``FInt``, etc.
     """
+
+    module_name: str = "Module"
 
     extension = ".fs"
     pygments_name = "fsharp"
@@ -310,6 +312,7 @@ class FSharp(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type="Val",
+            narrowed_empty_form=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="[|"),
@@ -324,6 +327,7 @@ class FSharp(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type="Val array",
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -336,6 +340,7 @@ class FSharp(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -485,15 +490,17 @@ class FSharp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -504,10 +511,10 @@ class FSharp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return "module Check\n\n" + content
+        return f"module {self.module_name}\n\n" + content
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -517,17 +524,18 @@ class FSharp(metaclass=LanguageCls):
         functions.
         """
         del variable_name
-        decl_indented = textwrap.indent(text=declaration, prefix="    ")
-        assign_indented = textwrap.indent(text=assignment, prefix="    ")
+        decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
+        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""
-        body = "module Check\n\n" + preamble
+        camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
+        body = f"module {self.module_name}\n\n" + preamble
         body += (
-            "let private _checkDeclaration () =\n"
+            f"let private _{camel_name}Declaration () =\n"
             + decl_indented
-            + "\n    ignore my_data\n\n"
-            + "let private _checkAssignment () =\n"
+            + f"\n{self.indent}ignore my_data\n\n"
+            + f"let private _{camel_name}Assignment () =\n"
             + assign_indented
-            + "\n    ignore my_data"
+            + f"\n{self.indent}ignore my_data"
         )
         return body
 
@@ -595,19 +603,19 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _fsharp_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -684,6 +692,7 @@ class FSharp(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

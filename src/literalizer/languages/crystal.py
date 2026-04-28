@@ -4,14 +4,16 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -60,16 +62,40 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
-    wrap_combined_in_file_noop,
-    wrap_in_file_noop,
+    prepend_body_preamble,
 )
 from literalizer._types import Value
+
+
+def _to_pascal_case(name: str) -> str:
+    """Convert *name* to PascalCase."""
+    return IdentifierCase.PASCAL.convert(name=name)
+
+
+_crystal_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int32",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type="String",
+        list_template="Array({inner})",
+        dict_type_template="Hash(String, {inner})",
+        fallback_value_type="String",
+    ),
+    template="[] of {type}",
+    fallback_type="String",
+)
 
 
 @beartype
@@ -85,34 +111,37 @@ def _format_crystal_i128_literal(value: int) -> str:
 
 @beartype
 def _crystal_call_stub(
-    name: str, params: Sequence[str], _stub_return: StubReturn, /
+    format_class_name: Callable[[str], str],
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
 ) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
     param_list = ", ".join(f"{param} = nil" for param in params)
     method_stub = f"def {{name}}({param_list}); 0; end"
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (method_stub.format(name=parts[0]),)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if not fields:
-        cls = root.capitalize() + "Type_"
+        cls = format_class_name(root) + "Type_"
         return (
             f"class {cls}; {method_stub.format(name=method)}; end",
             f"{root} = {cls}.new",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type_"
+    inner_cls = format_class_name(fields[-1]) + "Type_"
     lines.append(f"class {inner_cls}; {method_stub.format(name=method)}; end")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type_"
+        cls = format_class_name(fields[i]) + "Type_"
         lines.append(
             f"class {cls}; def {fields[i + 1]}; {prev_cls}.new; end; end"
         )
         prev_cls = cls
-    root_cls = root.capitalize() + "Type_"
+    root_cls = format_class_name(root) + "Type_"
     lines.append(
         f"class {root_cls}; def {fields[0]}; {prev_cls}.new; end; end"
     )
@@ -192,6 +221,7 @@ class Crystal(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="{"),
@@ -206,6 +236,7 @@ class Crystal(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -219,6 +250,7 @@ class Crystal(metaclass=LanguageCls):
                 preamble_lines=('require "set"',),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -263,6 +295,7 @@ class Crystal(metaclass=LanguageCls):
                 empty_template="{{}} of {key_type} => {type}",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -394,6 +427,7 @@ class Crystal(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -401,35 +435,37 @@ class Crystal(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
+        """Wrap a Crystal declaration in a module."""
+        del variable_name
+        body = prepend_body_preamble(
             content=content,
-            variable_name=variable_name,
             body_preamble=body_preamble,
         )
+        return f"module {self.module_name}\nextend self\n{body}\nend"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
+        """Wrap Crystal declaration + assignment in a module."""
+        return self.wrap_in_file(
+            content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
 
+    module_name: str = "Check"
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
@@ -513,19 +549,19 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _crystal_call_stub
+        return partial(_crystal_call_stub, _to_pascal_case)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -541,7 +577,10 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_crystal_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
@@ -651,4 +690,5 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

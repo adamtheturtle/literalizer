@@ -66,6 +66,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -120,30 +121,32 @@ def _swift_param(name: str, /) -> str:
 
 
 def _swift_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
     param_list = ", ".join(_swift_param(p) for p in params)
-    parts = name.split(sep=".")
     if len(parts) == 1:
-        return (f"func {parts[0]}({param_list}) -> Any {{ 0 }}",)
+        return (
+            f"@discardableResult func {parts[0]}({param_list}) -> Any {{ 0 }}",
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    method_decl = (
+        f"@discardableResult func {method}({param_list}) -> Any {{ 0 }}"
+    )
     if not fields:
         cls = f"_{root}Type"
         return (
-            f"class {cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}",
+            f"class {cls} {{ {method_decl} }}",
             f"let {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1]}Type"
-    lines.append(
-        f"class {inner_cls} {{ func {method}({param_list}) -> Any {{ 0 }} }}"
-    )
+    lines.append(f"class {inner_cls} {{ {method_decl} }}")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = f"_{fields[i]}Type"
@@ -198,12 +201,13 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
                 return f"[String: {default_dict_value_type}]"
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            has_nil = "Any?" in unique
-            val_type = (
-                unique[0]
-                if len(unique) == 1
-                else ("Any?" if has_nil else "Any")
-            )
+            match unique:
+                case [single]:
+                    val_type = single
+                case _ if "Any?" in unique:
+                    val_type = "Any?"
+                case _:
+                    val_type = "Any"
             return f"[String: {val_type}]"
         case set():
             return f"Set<{default_set_element_type}>"
@@ -217,12 +221,13 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
                 return f"({', '.join(elem_types)})"
             elem_types = [recurse(data=e) for e in data]
             unique = list(dict.fromkeys(elem_types))
-            has_nil = "Any?" in unique
-            elem_type = (
-                unique[0]
-                if len(unique) == 1
-                else ("Any?" if has_nil else "Any")
-            )
+            match unique:
+                case [single]:
+                    elem_type = single
+                case _ if "Any?" in unique:
+                    elem_type = "Any?"
+                case _:
+                    elem_type = "Any"
             return f"[{elem_type}]"
         case _ as unreachable:
             assert_never(unreachable)
@@ -404,6 +409,7 @@ class Swift(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -458,6 +464,7 @@ class Swift(metaclass=LanguageCls):
                 empty_template="[{key_type}: {type}]()",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -665,6 +672,7 @@ class Swift(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -781,19 +789,19 @@ class Swift(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _swift_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

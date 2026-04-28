@@ -1,4 +1,4 @@
-object Check {
+object Fixture_simple_dict_Scala_combined {
 var my_data = Map(
     "name" -> "Alice",
     "age" -> 30,

@@ -1,3 +1,5 @@
+module Fixture_comments_sequence_before_Crystal_combined
+extend self
 my_data = [
     # first
     "a",
@@ -10,3 +12,4 @@ my_data = [
     # second
     "b",
 ]
+end

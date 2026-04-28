@@ -3,9 +3,10 @@
 #include <map>
 #include <vector>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::map<std::string, std::variant<std::map<std::string, std::variant<std::map<std::string, std::map<std::string, std::variant<std::string, std::vector<std::string>>>>, int>>, std::vector<std::map<std::string, std::variant<std::string, std::map<std::string, std::variant<int, std::vector<std::string>>>>>>>>>{
     {"level1", std::map<std::string, std::variant<std::map<std::string, std::variant<std::map<std::string, std::map<std::string, std::variant<std::string, std::vector<std::string>>>>, int>>, std::vector<std::map<std::string, std::variant<std::string, std::map<std::string, std::variant<int, std::vector<std::string>>>>>>>>{{"level2", std::map<std::string, std::variant<std::map<std::string, std::map<std::string, std::variant<std::string, std::vector<std::string>>>>, int>>{{"level3", std::map<std::string, std::map<std::string, std::variant<std::string, std::vector<std::string>>>>{{"level4", std::map<std::string, std::variant<std::string, std::vector<std::string>>>{{"value", "deep"}, {"items", std::vector<std::string>{"a", "b"}}}}}}, {"sibling", 42}}}, {"tags", std::vector<std::map<std::string, std::variant<std::string, std::map<std::string, std::variant<int, std::vector<std::string>>>>>>{std::map<std::string, std::variant<std::string, std::map<std::string, std::variant<int, std::vector<std::string>>>>>{{"name", "tag1"}, {"meta", std::map<std::string, std::variant<int, std::vector<std::string>>>{{"priority", 1}, {"labels", std::vector<std::string>{"x", "y"}}}}}}}}},
 };
     (void)my_data;
+    return 0;
 }

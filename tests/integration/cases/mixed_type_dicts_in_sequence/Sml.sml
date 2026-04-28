@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SBool of bool
   | SStr of string
@@ -9,5 +7,4 @@ val my_data : val_t = SList [
     SMap [("type", SStr "create"), ("pr_id", SStr "pr_1"), ("draft", SBool true)],
     SMap [("type", SStr "create"), ("pr_id", SStr "pr_2")]
 ]
-
-end
+val _ = my_data

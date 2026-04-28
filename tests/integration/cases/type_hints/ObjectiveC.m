@@ -1,8 +1,9 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @{
     @"name": @"Alice",
-    @"age": @(30),
+    @"age": @30,
     @"active": @YES,
     @"score": [NSNull null],
     @"joined": @"2024-01-15",
@@ -10,4 +11,6 @@ id my_data = @{
     @"avatar": @"48656c6c6f",
 };
     (void)my_data;
+}
+    return 0;
 }

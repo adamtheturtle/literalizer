@@ -1,4 +1,4 @@
-object Check {
+object Fixture_call_deep_dotted_method_Scala_call {
 class _ClientType { def post(data: Any = null): Any = null }
 class _ApiType { val client = new _ClientType }
 class _ObjType { val api = new _ApiType }

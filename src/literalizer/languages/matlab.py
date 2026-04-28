@@ -50,6 +50,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -169,7 +170,7 @@ def _format_containers_map_entry(
 
 @beartype
 def _matlab_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -185,7 +186,7 @@ def _matlab_call_stub(
     fields, so the stub is a single assignment irrespective of depth.
     """
     anon = "@(varargin) []"
-    return (f"{name} = {anon};",)
+    return (f"{'.'.join(parts)} = {anon};",)
 
 
 @beartype
@@ -257,6 +258,7 @@ class Matlab(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -269,6 +271,7 @@ class Matlab(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -308,10 +311,12 @@ class Matlab(metaclass=LanguageCls):
             empty_dict="struct()",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
         CONTAINERS_MAP = DictFormatConfig(
             dict_open=_containers_map_open,
             narrowed_open=None,
+            supports_trailing_comma=True,
             close="})",
             format_entry=_format_containers_map_entry,
             empty_dict="containers.Map()",
@@ -426,6 +431,7 @@ class Matlab(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -530,14 +536,14 @@ class Matlab(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _matlab_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -547,7 +553,7 @@ class Matlab(metaclass=LanguageCls):
         return self.call_style.value
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

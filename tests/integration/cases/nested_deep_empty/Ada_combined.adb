@@ -1,17 +1,10 @@
-procedure Check is
-   procedure Check_Declaration is
-      my_data : A_Val := AList'(
-          AList'(AList'(1 .. 0 => ANull), AList'(1 .. 0 => ANull))
-      );
-   begin
-      null;
-   end Check_Declaration;
-   procedure Check_Assignment is
-   begin
-      my_data := AList'(
-          AList'(AList'(1 .. 0 => ANull), AList'(1 .. 0 => ANull))
-      );
-   end Check_Assignment;
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AList'[
+        AList'[AList'[], AList'[]]
+    ];
 begin
-   null;
-end Check;
+    my_data := AList'[
+        AList'[AList'[], AList'[]]
+    ];
+end Main;

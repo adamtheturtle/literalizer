@@ -4,6 +4,129 @@ Changelog
 Next
 ----
 
+- C, C++, Objective-C, and D fixtures now emit a ``main`` entry point
+  directly (``int main(void)``/``int main()``/``void main()``) instead
+  of a ``check_()``/``_check()`` function that required a separate
+  per-language driver script.  Haskell non-call fixtures now append
+  ``main = seq my_data (return ())`` to the module, and SML fixtures
+  are emitted as top-level declarations ending with ``val _ = my_data``
+  instead of inside a ``structure Check = struct … end`` wrapper.  All
+  six driver scripts (``c_main.c``, ``cpp_main.cpp``, ``objc_main.m``,
+  ``d_main.d``, ``sml_force.sml``, ``sml_main.mlb``,
+  ``sml_call_main.mlb``) have been removed.  CI now compiles and runs
+  each fixture directly without a linking step against a driver object.
+  ``run_haskell.py`` no longer generates a ``Main.hs`` wrapper; it
+  compiles every fixture with ``-main-is <module>``.
+- Ada output now uses Ada 2022 container aggregates (``AList'[...]``,
+  ``AMap'[...]``, ``ASet'[...]``) and emits a ``with A_Stub; use
+  A_Stub;`` context clause so each fixture compiles and runs against
+  a checked-in stub package.  The lint workflow gained a "Run Ada
+  files" step that builds and executes every fixture, replacing the
+  previous syntax-only check.  The combined declaration + assignment
+  wrapper now keeps both forms in a single procedure scope so the
+  assignment can reach ``my_data``.
+- ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local``
+  bindings before the call expressions, so call-mode output with
+  ``ref_declarations`` is supported.  Previously the integration
+  harness skipped ``Jsonnet`` for ref-declaration cases because the
+  array-wrapped output had no place for variable bindings.  The
+  ``DeclarationStyles.ASSIGN`` template changed from ``{value}`` to
+  ``local {name} = {value};``, and ``Jsonnet`` now overrides
+  ``wrap_calls_with_declarations`` to emit those bindings before
+  ``wrap_in_file`` wraps the calls in ``[ … ]``.
+- C single-name call stubs (e.g. ``emit``, ``process``) are now emitted
+  as ``static`` definitions with a stub body instead of bare forward
+  declarations, so generated fixtures can be linked and run.  The lint
+  workflow now compiles each C fixture against a small ``c_main.c``
+  driver and executes the resulting binary, surfacing runtime errors
+  that the previous ``-fsyntax-only`` check missed.
+- ``Crystal.wrap_in_file`` now wraps content in a
+  ``module Check ... end`` block with ``extend self``, matching what
+  Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
+  ``module_name`` constructor argument (default ``"Check"``) to
+  control the wrapper name.  Callers that relied on
+  ``literalize(language=Crystal(), wrap_in_file=True)`` returning bare
+  content will now receive a ``module`` block.
+- Java sets and dicts no longer emit a trailing comma when
+  ``trailing_comma=TrailingCommas.YES`` is requested.  ``Set.of(...)``
+  and ``Map.ofEntries(...)`` are method calls and the previous output
+  was rejected by ``javac``.  ``SetFormatConfig`` and
+  ``DictFormatConfig`` gain a ``supports_trailing_comma`` field
+  (defaults to ``True``) mirroring ``SequenceFormatConfig``; formats
+  built around method-call syntax can opt out.
+- Added ``CallStyleEnum`` as the base class for per-language
+  ``CallStyles`` enums.  Its :attr:`config` accessor returns the
+  enum member's value typed as the :data:`CallStyle` union, removing
+  the ``cast("CallStyle", self.call_style.value)`` boilerplate
+  previously duplicated in every multi-style language module.
+- ``module_name`` has moved from a parameter on ``literalize`` and
+  ``literalize_call`` to a constructor argument on the ten languages
+  whose ``wrap_in_file`` introduces a named scope: ``C``, ``Cpp``,
+  ``D``, ``Erlang``, ``Fortran``, ``FSharp``, ``Java``, ``ObjectiveC``,
+  ``Occam`` and ``SystemVerilog``.  Pass it when constructing the
+  language (e.g. ``Java(module_name="Foo")``); it defaults to
+  ``"Module"``.  Languages whose wrappers do not introduce a named
+  scope no longer accept ``module_name`` at all, so passing it where
+  it has no effect is now a ``TypeError`` instead of being silently
+  ignored.  ``Language.wrap_in_file`` and
+  ``Language.wrap_combined_in_file`` lose the ``module_name``
+  parameter; the named-scope languages read ``self.module_name``
+  instead.  Languages must now be instantiated before being passed to
+  ``literalize`` (``language=Python()`` rather than
+  ``language=Python``).
+- OCaml integer values outside the signed 64-bit range now raise
+  ``UnrepresentableIntegerError`` instead of emitting an
+  ``int_of_string`` fallback that overflowed OCaml's 63-bit native
+  ``int`` at runtime and silently misrepresented the data.
+- ``literalize_call`` now supports Visual Basic.  The default style is
+  positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
+  VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs
+  are emitted as module-level ``Class`` and ``Function`` blocks and
+  the call body is placed inside ``Sub _calls()`` because VB does not
+  allow bare expression statements at module scope.
+- Added ``literalize_call`` support for ``Zig``.  ``Zig.CallStyles``
+  now exposes a ``POSITIONAL`` member backed by
+  :class:`PositionalCallStyle`, and ``format_call_preamble_stub``
+  emits file-scope Zig stub declarations because Zig disallows
+  nested function definitions inside ``main``.  Dotted targets like
+  ``app.client.fetch`` are realized as a nested ``struct`` chain rooted at
+  a module-level constant, and call arguments are wrapped in the
+  ``ZVal`` union so anonymous union literals coerce to a concrete
+  type at the call site.
+- ``literalize_call`` now emits R stub declarations
+  (``name <- function(...) NULL``) for the called function and any
+  call-transform wrappers, so generated R call output runs cleanly
+  under ``Rscript`` without ``could not find function`` errors.
+- Removed ``R.TrailingCommas.YES``: R's ``list()`` rejects empty
+  arguments, so ``list(1, 2,)`` parses but raises at runtime.  Only
+  ``R.TrailingCommas.NO`` remains.
+- Fixed Dhall typed-empty literals for doubly-nested lists.  Input like
+  ``[[[1, 2]], [], [[3, 4]]]`` previously rendered the empty sibling as
+  ``[] : List List Integer``, which is invalid Dhall (parses as
+  ``(List List) Integer``).  The inner ``List`` type is now
+  parenthesized, producing ``[] : List (List Integer)``.
+- ``infer_element_type`` no longer gives up when a nested list is empty
+  alongside non-empty homogeneous siblings: empty inner lists are now
+  skipped during inference, so input like ``[[1, 2], [], [3, 4]]``
+  resolves to ``ListType(inner=int)`` instead of falling back to
+  ``None`` (mixed types).  When the rendered list literal contains an
+  empty inner list beside non-empty list siblings, the empty inner now
+  inherits the typed sequence opener of its siblings, so generated
+  literals type-check cleanly under strongly typed languages
+  (``new int[]{}`` instead of ``new Object[]{}`` for Java,
+  ``std::vector<int>{}`` for C++, ``[]int{}`` for Go, ``vec![]`` for
+  Rust, ``New Integer() {}`` for Visual Basic, etc.).
+- Documented the preamble-duplication sharp edge that arises when a
+  caller composes :func:`literalize` (declaring a ``{"$ref": "name"}``
+  variable) with :func:`literalize_call` (referencing it) into a
+  single source file: each call independently computes its own
+  ``preamble`` and ``body_preamble``, so the combined output contains
+  duplicates that strict compilers reject and a linter flags.  The
+  ``literalize_call`` reference now points at the new
+  "Composing declarations and calls" section in
+  ``docs/source/function-call-use-case.rst``, which shows a worked
+  Haskell example with the combined ``body_preamble`` blocks already
+  deduplicated.
 - ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
   (``*name*``) at the call site so they resolve to the matching
   ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by

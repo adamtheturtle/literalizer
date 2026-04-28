@@ -82,15 +82,15 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-js
           xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
 
+      # The host compiles each fixture into an in-memory assembly, then
+      # reflectively constructs `Check` and invokes its `check()` method
+      # (or runs field initializers on field-only fixtures), so javac
+      # emit-success and runtime errors (e.g. bad `Instant.parse` input)
+      # both fail here.
       - name: Lint Java
         run: |-
           find tests/integration/cases -name '*.java' -print0 > /tmp/files-java
           xargs -0 java CheckJavaSyntax.java < /tmp/files-java
-
-      - name: Lint C
-        run: |-
-          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c
-          xargs -0 clang -fsyntax-only -std=c11 < /tmp/files-c
 
       - name: Lint Php
         run: |-
@@ -145,11 +145,15 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
-  # Split out from lint-fast because `odin check` intermittently hangs
-  # in CI; isolating it means a hang only stalls this job instead of
-  # blocking every other lint-fast language behind the same timeout.
+  # Split out from lint-fast because two odin invocations on the same
+  # runner deadlock regardless of filesystem isolation.  The matrix
+  # spreads shards across separate runners so no two odin processes
+  # ever share a kernel; each shard runs its files serially.
   lint-odin:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -158,13 +162,18 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      # Run serially: parallel `odin check` invocations are the
-      # suspected cause of the intermittent hangs, so feed fixtures
-      # one at a time until the upstream issue is understood.
-      - name: Lint Odin
+      - name: Build Odin files
         run: |-
-          find tests/integration/cases -name '*.odin' -print0 > /tmp/files-odin
-          xargs -0 -I{} odin check {} -file < /tmp/files-odin
+          mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
+          n=${#files[@]}
+          for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
+            src=$(realpath "${files[i]}")
+            ( wd=$(mktemp -d)
+              trap 'rm -rf "$wd"' EXIT
+              cp "$src" "$wd/main.odin"
+              cd "$wd"
+              odin build . -out:"$wd/prog" ) || exit 1
+          done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
@@ -302,6 +311,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-ada
+      - name: Run Ada files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_ada.py < /tmp/files-ada
 
       - name: Lint Occam
         run: |-
@@ -396,10 +407,9 @@ jobs:
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
-      # Fixtures only declare `structure Check` with a `my_data` val;
-      # MLton never evaluates the body unless a top-level expression
-      # references it, so compile alongside a small force file that
-      # forces `Check.my_data` to be constructed.
+      # Every fixture defines its own entry point at top level, so compile
+      # and run each file directly. Each invocation gets a private tmpdir
+      # so parallel builds don't clobber each other's output binary.
       - name: Lint Sml
         run: |-
           find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml
@@ -407,9 +417,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.sml"
-          cp .github/scripts/sml_force.sml "$tmpdir/force.sml"
-          cp .github/scripts/sml_main.mlb "$tmpdir/main.mlb"
-          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          mlton -output "$tmpdir/out" "$tmpdir/check.sml" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
@@ -439,7 +447,7 @@ jobs:
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
-          gleam-version: latest
+          gleam-version: v1.16.0
           otp-version: '27'
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -475,23 +483,41 @@ jobs:
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
       # Compile every fixture in a single erlc invocation to pay the
-      # BEAM VM startup cost once. Erlang requires the module name to
-      # match the filename, so fixtures (all declared `-module(check).`)
-      # are renamed to `fixture_N.erl` with the module declaration
-      # rewritten; the mapping is printed so failures still point back
-      # to the original path.
+      # BEAM VM startup cost once. Each fixture already carries a unique
+      # module name derived from its case directory and stem, so a plain
+      # copy suffices; no sed rewriting needed.
       - name: Lint Erlang
+        env:
+          ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
           find tests/integration/cases -name '*.erl' -print0 > /tmp/files-erlang
-          tmpdir=$(mktemp -d)
-          i=0
+          mkdir -p "$ERLANG_FIXTURE_DIR"
           while IFS= read -r -d '' f; do
-            name="fixture_$i"
-            sed "1s/^-module(check)\./-module($name)./" "$f" > "$tmpdir/$name.erl"
-            printf '%s.erl <- %s\n' "$name" "$f"
-            i=$((i+1))
+            dir=${f%/*}; dir=${dir##*/}
+            stem=$(basename "$f" .erl)
+            name="fixture_${dir,,}_${stem,,}"
+            cp "$f" "$ERLANG_FIXTURE_DIR/$name.erl"
           done < /tmp/files-erlang
-          (cd "$tmpdir" && erlc -Werror fixture_*.erl)
+          (cd "$ERLANG_FIXTURE_DIR" && erlc -Werror fixture_*.erl)
+
+      # `erlc` only compiles; runtime errors (undefined functions, missing
+      # imports, failed assertions) slip past unless each fixture is
+      # actually executed. Every module name starts with ``fixture_``;
+      # invoke each in a single BEAM VM and collect failures so one bad
+      # fixture does not mask others.
+      - name: Run Erlang files
+        env:
+          ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
+        run: |-
+          modules=$(find "$ERLANG_FIXTURE_DIR" -maxdepth 1 -name '*.beam' -printf '%f\n' | sed 's|\.beam$||' | paste -sd, -)
+          erl -noshell -pa "$ERLANG_FIXTURE_DIR" -eval "
+            Run = fun(M) ->
+                try M:x(), ok
+                catch K:R:S -> io:format(\"FAIL ~p: ~p:~p~n~p~n\", [M,K,R,S]), error
+                end
+            end,
+            Results = [Run(M) || M <- [$modules]],
+            case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
@@ -500,10 +526,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install clj-kondo
+      - name: Install clj-kondo and Babashka
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: latest
+          bb: latest
       - name: Install Groovy
         uses: wtfjoke/setup-groovy@v3
         with:
@@ -513,6 +540,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj
           xargs -0 clj-kondo --lint < /tmp/files-clj
+      - name: Run Clojure files
+        run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
 
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
@@ -543,31 +572,20 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
-      # Most fixtures declare only `module Check` with a `my_data` val;
-      # GHC never evaluates its body unless a top-level expression
-      # references it, so compile alongside a small Main wrapper that
-      # forces `Check.my_data`. Fixtures that already define their own
-      # `main` compile with `-main-is Check` instead.
       - name: Lint Haskell
         run: |-
           find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell
+          workspace=$(mktemp -d)
           tmpdir=$(mktemp -d)
           xargs -0 -n1 ghc -fno-code -Wall -Werror -outputdir "$tmpdir" < /tmp/files-haskell
-          # shellcheck disable=SC2016  # $0/$tmpdir expand in the inner shell
-          xargs -0 -P "$(nproc)" -n1 bash -c '
-            tmpdir=$(mktemp -d)
-            trap "rm -rf \"$tmpdir\"" EXIT
-            cp "$0" "$tmpdir/Check.hs"
-            if grep -qE "^main " "$0"; then
-              ghc -Wall -Werror -main-is Check -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Check.hs" || exit 1
-            else
-              cp .github/scripts/haskell_main.hs "$tmpdir/Main.hs"
-              ghc -Wall -Werror -outputdir "$tmpdir" \
-                -o "$tmpdir/run" "$tmpdir/Main.hs" "$tmpdir/Check.hs" || exit 1
-            fi
-            "$tmpdir/run" || exit 1
-          ' < /tmp/files-haskell
+          while IFS= read -r -d '' f; do
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .hs)
+            mod="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/$mod.hs"
+          done < /tmp/files-haskell
+          find "$workspace" -name '*.hs' -print0 | \
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_haskell.py
 
       - name: Lint PureScript
         run: |-
@@ -578,8 +596,10 @@ jobs:
 
   # Ubuntu's packaged clang-tidy is several releases behind and is the
   # dominant cost of this job on runners. Pull a recent build from PyPI
-  # via uv instead. Shared across C and C++ since it's the same tool.
-  lint-clang-tidy:
+  # via uv instead.
+  # Pass compile flags after `--` so clang-tidy treats them as the full
+  # compile command and skips searching for a compile_commands.json.
+  lint-c-tidy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -592,12 +612,24 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
-      # Pass compile flags after `--` so clang-tidy treats them as the full
-      # compile command and skips searching for a compile_commands.json.
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c11 < /tmp/files-c-tidy
+
+  lint-cpp-tidy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Install clang-tidy
+        run: uv tool install clang-tidy
       - name: Run clang-tidy on C++ files
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
@@ -618,6 +650,37 @@ jobs:
         run: find tests/integration/cases -name '*.cob' -print0 > /tmp/files-to-lint
       - name: Check COBOL syntax
         run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
+      - name: Run COBOL files
+        run: |-
+          cat > /tmp/run-cobol.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cobc -x -free "$1" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
+
+  lint-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
+      # Each fixture defines its own main, so compile and run directly.
+      # The build-and-run step also surfaces any syntax errors, so a
+      # separate `-fsyntax-only` pass would be redundant.
+      - name: Run C files
+        run: |-
+          cat > /tmp/run-c.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          clang -std=c11 "$1" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -636,21 +699,16 @@ jobs:
       - name: Build precompiled header
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
-      # Fixtures define `void check_()` with no main, so compile alongside
-      # `.github/scripts/cpp_main.cpp` which invokes it and link into a
-      # runnable binary. Compile `cpp_main.cpp` once up front so each
-      # fixture link reuses the object instead of re-parsing the same TU.
+      # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
-      - name: Build cpp_main object
-        run: clang++ -std=c++20 -c .github/scripts/cpp_main.cpp -o /tmp/cpp_main.o
       - name: Run C++ files
         run: |-
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           clang++ -std=c++20 -include-pch /tmp/pch.hpp.pch "$1" \
-            /tmp/cpp_main.o -o "$tmpdir/run" || exit 1
+            -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
@@ -699,11 +757,11 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          swiftc -typecheck "$tmpdir/check.swift" || exit 1
+          swiftc -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        run: xargs -0 -P "$(nproc)" -n1 swift < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 swift -warnings-as-errors < /tmp/files-to-lint
 
   lint-ocaml:
     runs-on: ubuntu-latest
@@ -722,6 +780,12 @@ jobs:
         run: |-
           tmpdir=$(mktemp -d)
           xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+      # Fixtures only declare ``module Check = struct ... end`` with a
+      # ``my_data`` let-binding; OCaml evaluates struct bodies when the
+      # module is initialized, so running the file as a script forces
+      # the binding's right-hand side to execute.
+      - name: Run OCaml files
+        run: xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml < /tmp/files-to-lint
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -757,23 +821,21 @@ jobs:
         uses: VirtusLab/scala-cli-setup@v1
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
-      # per fixture. Fixtures all declare `object Check { ... }`, so
-      # they are renamed to a unique `object FixtureN` to avoid
-      # collisions; a generated `@main` references each one to force
-      # its val initializers to load. The mapping is printed so
-      # failures still point back to the original path.
+      # per fixture. Each fixture already carries a unique object name
+      # derived from its case directory and stem, so a plain copy
+      # suffices; no sed rewriting needed.
       - name: Run Scala files
         run: |-
           workspace=$(mktemp -d)
           main="$workspace/Main.scala"
           printf '@main def __run(): Unit = {\n' > "$main"
-          i=0
           while IFS= read -r -d '' f; do
-            sed "s/^object Check {/object Fixture$i {/" "$f" \
-              > "$workspace/Fixture$i.scala"
-            printf 'Fixture%s.scala <- %s\n' "$i" "$f"
-            printf '  val _%s = Fixture%s\n' "$i" "$i" >> "$main"
-            i=$((i+1))
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .scala)
+            name="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/${name}.scala"
+            printf '%s.scala <- %s\n' "$name" "$f"
+            printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
           scala-cli run "$workspace" --main-class __run
@@ -909,6 +971,8 @@ jobs:
       - name: Check R syntax
         run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
           < /tmp/files-to-lint
+      - name: Run R files
+        run: xargs -0 -P "$(nproc)" -n1 Rscript < /tmp/files-to-lint
 
   lint-d:
     runs-on: ubuntu-latest
@@ -925,6 +989,19 @@ jobs:
           compiler: dmd-latest
       - name: Check D syntax
         run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
+      # Each fixture defines its own main, so compile and run directly.
+      # Each invocation gets a private tmpdir so parallel builds don't
+      # clobber each other's intermediate object files or output binary.
+      - name: Run D files
+        run: |-
+          cat > /tmp/run-d.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.d"
+          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
 
   lint-crystal:
     runs-on: ubuntu-latest
@@ -937,41 +1014,28 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: 1.20.0
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
-      # of per fixture. Each fixture is wrapped in a unique
-      # `module FixtureN ... end` to avoid collisions: many fixtures
-      # share a basename (111 copies of `Crystal.cr`), 6 declare the
-      # same `class ThrottlerType_` / `class ClientType_` / etc., and
-      # two reuse the top-level `def emit` / `def process`. `extend
-      # self` lets unqualified calls like `emit(...)` inside the module
-      # body resolve to the module's own `def emit`. Any
-      # `require "set"` from the original fixture is hoisted to the top
-      # of its per-fixture file (before the module wrapper, since
-      # Crystal rejects `require` inside type declarations) and stripped
-      # from the wrapped body, so each fixture keeps its own dependency.
-      # The driver then `require`s every fixture so each module body
-      # executes at program start. The `fixture_N.cr <- original-path`
-      # mapping is printed so failures still point back to the source.
+      # of per fixture. Each fixture already carries a unique module name
+      # derived from its case directory and stem, so a plain copy
+      # suffices; no shell wrapping or sed rewriting needed. The driver
+      # `require`s every fixture so each module body executes at program
+      # start. The `name.cr <- original-path` mapping is printed so
+      # failures still point back to the source.
       - name: Run Crystal files
         run: |-
           workspace=$(mktemp -d)
           driver="$workspace/run_all.cr"
           : > "$driver"
-          i=0
           while IFS= read -r -d '' f; do
-            {
-              if grep -q '^require "set"$' "$f"; then
-                printf 'require "set"\n'
-              fi
-              printf 'module Fixture%d\n' "$i"
-              printf 'extend self\n'
-              sed '/^require "set"$/d' "$f"
-              printf 'end\n'
-            } > "$workspace/fixture_$i.cr"
-            printf 'require "./fixture_%d"\n' "$i" >> "$driver"
-            printf 'fixture_%d.cr <- %s\n' "$i" "$f"
-            i=$((i+1))
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .cr)
+            name="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/${name}.cr"
+            printf 'require "./%s"\n' "$name" >> "$driver"
+            printf '%s.cr <- %s\n' "$name" "$f"
           done < /tmp/files-to-lint
           crystal run "$driver"
 
@@ -1142,8 +1206,37 @@ jobs:
         uses: mlugg/setup-zig@v2
         with:
           version: 0.14.0
-      - name: Check Zig
-        run: xargs -0 -P "$(nproc)" -n1 zig build-obj -fno-emit-bin < /tmp/files-to-lint
+      # Compile every fixture in a single `zig run` invocation to pay
+      # the Zig compiler + std parse cost once instead of per fixture.
+      # Fixtures all declare `pub fn main() void`, renamed to a unique
+      # `pub fn fixtureN()` and `@import`-ed from a generated driver
+      # that calls each one so every fixture body still executes. The
+      # mapping is printed so failures still point back to the original
+      # path.
+      - name: Run Zig files
+        run: |-
+          workspace=$(mktemp -d)
+          driver="$workspace/main.zig"
+          imports="$workspace/imports.zig.part"
+          calls="$workspace/calls.zig.part"
+          : > "$imports"
+          : > "$calls"
+          i=0
+          while IFS= read -r -d '' f; do
+            sed "s/^pub fn main(/pub fn fixture$i(/" "$f" \
+              > "$workspace/fixture_$i.zig"
+            printf 'const fix%d = @import("fixture_%d.zig");\n' "$i" "$i" >> "$imports"
+            printf '    fix%d.fixture%d();\n' "$i" "$i" >> "$calls"
+            printf 'fixture_%d.zig <- %s\n' "$i" "$f"
+            i=$((i+1))
+          done < /tmp/files-to-lint
+          {
+            cat "$imports"
+            printf 'pub fn main() void {\n'
+            cat "$calls"
+            printf '}\n'
+          } > "$driver"
+          zig run "$driver"
 
   lint-systemverilog:
     runs-on: ubuntu-latest
@@ -1182,6 +1275,10 @@ jobs:
       - name: Check V syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
           < /tmp/files-to-lint
+      - name: Run V files
+        run: |
+          grep -z -v 'heterogeneous_strategy_error' /tmp/files-to-lint > /tmp/files-to-run || true
+          xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
 
   lint-objectivec:
     runs-on: macos-latest
@@ -1203,22 +1300,17 @@ jobs:
       - name: Check Objective-C syntax
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror -include-pch
           /tmp/pch.h.pch < /tmp/files-to-lint
-      # Fixtures define `check_(void)` with no main entry point, so
-      # compile each alongside a tiny wrapper that calls it. Compile
-      # `objc_main.m` once up front so each fixture link reuses the
-      # object instead of re-parsing the same TU. Link against Foundation
-      # and execute to surface runtime errors. Each invocation gets a
-      # private tmpdir so parallel builds don't clobber each other's
-      # output binary.
-      - name: Build objc_main object
-        run: clang -c .github/scripts/objc_main.m -o /tmp/objc_main.o
+      # Each fixture defines its own main, so compile and run directly.
+      # Link against Foundation and execute to surface runtime errors.
+      # Each invocation gets a private tmpdir so parallel builds don't
+      # clobber each other's output binary.
       - name: Run Objective-C files
         run: |-
           cat > /tmp/run-objc.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           clang -framework Foundation -Werror -include-pch /tmp/pch.h.pch "$1" \
-            /tmp/objc_main.o -o "$tmpdir/out" || exit 1
+            -o "$tmpdir/out" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
@@ -1262,7 +1354,9 @@ jobs:
       - lint-beam
       - lint-jvm-mini
       - lint-haskell-family
-      - lint-clang-tidy
+      - lint-c-tidy
+      - lint-cpp-tidy
+      - lint-c
       - lint-cobol
       - lint-cpp
       - lint-kotlin

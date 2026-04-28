@@ -1,4 +1,4 @@
--module(check).
+-module(fixture_call_mixed_type_dicts_erlang_call).
 -export([x/0]).
 'app.mgr.op'(_) -> ok.
 x() ->

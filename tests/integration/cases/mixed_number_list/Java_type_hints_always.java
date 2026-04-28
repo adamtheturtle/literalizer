@@ -1,5 +1,5 @@
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 double[] my_data = new double[]{
     1,
     2.5,

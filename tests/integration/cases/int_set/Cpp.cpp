@@ -1,9 +1,10 @@
 #include <initializer_list>
-void check_() {
+int main() {
 auto my_data = std::initializer_list<int>{
     1,
     2,
     3,
 };
     (void)my_data;
+    return 0;
 }

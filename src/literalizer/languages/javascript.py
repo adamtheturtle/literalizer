@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -64,6 +64,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -77,14 +78,14 @@ from literalizer._types import Value
 
 
 def _js_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
-    root = name.split(sep=".", maxsplit=1)[0]
-    if "." in name:
+    root = parts[0]
+    if len(parts) > 1:
         proxy = "new Proxy(function(){}, {get: g})"
         handler = f"get: function g() {{ return {proxy}; }}"
         return (f"var {root} = new Proxy({{}}, {{{handler}}});",)
@@ -180,6 +181,7 @@ class JavaScript(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -192,6 +194,7 @@ class JavaScript(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -267,6 +270,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
         MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new Map(["),
@@ -278,6 +282,7 @@ class JavaScript(metaclass=LanguageCls):
             empty_dict="new Map()",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     class EmptyDictKey(enum.Enum):
@@ -423,6 +428,7 @@ class JavaScript(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -522,19 +528,19 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _js_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -671,4 +677,5 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

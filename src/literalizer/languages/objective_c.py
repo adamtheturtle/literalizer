@@ -4,6 +4,7 @@ import base64
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -50,6 +51,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     no_call_stub,
     no_data_preamble,
@@ -59,18 +61,33 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+# A formatted numeric value can follow ``@`` directly when it is a
+# bare unsigned numeric literal (digits, hex/exponent letters, dot,
+# optional ``+``/``-`` after ``e``/``E`` for scientific notation, and
+# integer-suffix letters).  Anything else — a leading ``-``, an
+# identifier like ``INFINITY``/``NAN``, or an embedded comment —
+# requires the ``@(...)`` boxed-expression form.
+_OBJC_BARE_NUMERIC = re.compile(
+    pattern=r"\A[0-9](?:[0-9a-zA-Z._]|[eE][+-])*\Z",
+)
+
 
 @beartype
 def _format_objc_entry(original: Value, formatted: str, /) -> str:
     """Wrap a formatted entry for use inside an Objective-C collection.
 
     Only bare numeric values (``int`` / ``float``, but not ``bool``)
-    need ``@(...)`` wrapping; everything else is already a valid
-    Objective-C object expression.
+    need ``@`` boxing; everything else is already a valid Objective-C
+    object expression.  The redundant ``@(...)`` parentheses are
+    dropped when the formatted value is a bare numeric literal so
+    that clang-tidy's ``readability-redundant-parentheses`` check
+    passes.
     """
-    if isinstance(original, (int, float)) and not isinstance(original, bool):
-        return f"@({formatted})"
-    return formatted
+    if isinstance(original, bool) or not isinstance(original, (int, float)):
+        return formatted
+    if _OBJC_BARE_NUMERIC.fullmatch(string=formatted):
+        return f"@{formatted}"
+    return f"@({formatted})"
 
 
 @beartype
@@ -143,20 +160,19 @@ def _objc_global_root(root: str, /) -> str:
 
 
 @beartype
-def _objc_format_call_target(name: str, /) -> str:
+def _objc_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite the root of a dotted call target to its k-prefixed form
     so the call site matches the renamed const global emitted by
     :func:`_objc_call_stub`.  Single-name calls resolve to a ``static``
     function (not a const global) and are returned unchanged.
     """
-    parts = name.split(sep=".")
     if len(parts) == 1:
-        return name
+        return parts[0]
     return ".".join((_objc_global_root(parts[0]), *parts[1:]))
 
 
 def _objc_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     /,
@@ -189,7 +205,6 @@ def _objc_call_stub(
     return_stmt = " return nil;" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (
             f"static {return_keyword} {parts[0]}({stub_signature}) "
@@ -237,6 +252,8 @@ def _objc_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
+
+    module_name: str = "Module"
 
     extension = ".m"
     pygments_name = "objective-c"
@@ -305,6 +322,7 @@ class ObjectiveC(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -317,6 +335,7 @@ class ObjectiveC(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -458,29 +477,35 @@ class ObjectiveC(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Objective-C declaration in a function."""
+        """Wrap an Objective-C declaration in a main function."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"void check_(void) {{\n{content}{use_line}\n}}"
+        return (
+            f"int {self.module_name}(void) {{\n"
+            f"@autoreleasepool {{\n{content}{use_line}\n"
+            "}\n    return 0;\n}"
+        )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -493,7 +518,7 @@ class ObjectiveC(metaclass=LanguageCls):
         clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
         """
         mid_use = f"(void){variable_name};\n"
-        return ObjectiveC.wrap_in_file(
+        return self.wrap_in_file(
             content=f"{declaration}\n{mid_use}{assignment}",
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -531,7 +556,7 @@ class ObjectiveC(metaclass=LanguageCls):
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = True
-    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = (
@@ -586,19 +611,19 @@ class ObjectiveC(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return _objc_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target so the root matches the
         ``k``-prefixed const global emitted by :func:`_objc_call_stub`.
         """
@@ -651,6 +676,7 @@ class ObjectiveC(metaclass=LanguageCls):
             empty_dict="@{}",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

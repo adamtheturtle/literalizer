@@ -1,15 +1,15 @@
-module Check
+module Main
 
 type Val =
     | FList of Val list
-let private _checkDeclaration () =
+let private _mainDeclaration () =
     let mutable my_data: Val = FList [
         FList [];
         FList []
     ]
     ignore my_data
 
-let private _checkAssignment () =
+let private _mainAssignment () =
     let my_data: Val = FList [
         FList [];
         FList []

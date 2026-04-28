@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    make_narrowed_empty_form,
     make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
@@ -62,6 +63,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -71,6 +73,24 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+
+_mojo_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type="String",
+        list_template="List[{inner}]",
+        dict_type_template="Dict[String, {inner}]",
+        fallback_value_type="String",
+    ),
+    template="List[{type}]()",
+    fallback_type="String",
+)
 
 
 @beartype
@@ -329,6 +349,7 @@ class Mojo(metaclass=LanguageCls):
                 preamble_lines=("from std.collections import Set",),
                 set_opener_template="Set[{type_name}](",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
 
@@ -373,6 +394,7 @@ class Mojo(metaclass=LanguageCls):
                 empty_template="Dict[{key_type}, {type}]()",
                 preamble_lines=(),
                 narrowed_open=None,
+                supports_trailing_comma=True,
             )
         )
 
@@ -522,9 +544,10 @@ class Mojo(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -535,11 +558,11 @@ class Mojo(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         content = content + f"\n_ = {variable_name}"
-        indented = textwrap.indent(text=content, prefix="    ")
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return f"def main():\n{indented}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
@@ -551,7 +574,7 @@ class Mojo(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use = f"_ = {variable_name}"
-        return Mojo.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + f"\n{use}\n" + assignment,
             variable_name=variable_name,
             body_preamble=(),
@@ -665,19 +688,19 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -693,8 +716,12 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format(
+        base = self.sequence_format(
             default_type=self.default_sequence_element_type,
+        )
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_mojo_narrowed_empty_form,
         )
 
     @cached_property

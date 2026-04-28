@@ -1,4 +1,4 @@
-module Check where
+module Fixture_int_key_dict_Haskell where
 data Val = HStr String | HMap [(String, Val)]
 my_data :: Val
 my_data = HMap [
@@ -6,3 +6,5 @@ my_data = HMap [
     ("2", HStr "two"),
     ("42", HStr "answer")
     ]
+main :: IO ()
+main = seq my_data (return ())

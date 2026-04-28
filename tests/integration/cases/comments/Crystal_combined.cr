@@ -1,3 +1,5 @@
+module Fixture_comments_Crystal_combined
+extend self
 my_data = {
     # Server configuration
     "host" => "localhost",  # default host
@@ -12,3 +14,4 @@ my_data = {
     # Enable debug mode
     "debug" => true,
 }
+end

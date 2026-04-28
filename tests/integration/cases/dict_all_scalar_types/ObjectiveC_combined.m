@@ -1,9 +1,10 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @{
     @"s": @"string",
-    @"i": @(1),
-    @"f": @(1.5),
+    @"i": @1,
+    @"f": @1.5,
     @"b": @YES,
     @"n": [NSNull null],
     @"d": @"2024-01-15",
@@ -13,8 +14,8 @@ id my_data = @{
 (void)my_data;
 my_data = @{
     @"s": @"string",
-    @"i": @(1),
-    @"f": @(1.5),
+    @"i": @1,
+    @"f": @1.5,
     @"b": @YES,
     @"n": [NSNull null],
     @"d": @"2024-01-15",
@@ -22,4 +23,6 @@ my_data = @{
     @"by": @"48656c6c6f",
 };
     (void)my_data;
+}
+    return 0;
 }

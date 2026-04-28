@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 from collections.abc import Callable, Sequence
-from typing import Protocol, assert_never, cast, runtime_checkable
+from typing import Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -31,6 +31,7 @@ class SequenceFormatConfig:
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
     declared_type: str | None
+    narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -95,6 +96,7 @@ class SetFormatConfig:
     preamble_lines: tuple[str, ...]
     set_opener_template: str
     supports_heterogeneity: bool
+    supports_trailing_comma: bool
 
     def with_typed_opener(
         self,
@@ -134,6 +136,7 @@ class DictFormatConfig:
     empty_dict: str | None
     preamble_lines: tuple[str, ...]
     narrowed_open: str | None
+    supports_trailing_comma: bool
 
 
 @dataclasses.dataclass(frozen=True)
@@ -282,6 +285,7 @@ class FloatSpecialsMixin:
     _positive_infinity: str
     _negative_infinity: str
     _nan: str
+    _formatter: Callable[[float], str]
 
     def __init_subclass__(
         cls,
@@ -296,6 +300,10 @@ class FloatSpecialsMixin:
         cls._negative_infinity = negative_infinity
         cls._nan = nan
 
+    def __init__(self, formatter: Callable[[float], str], /) -> None:
+        """Capture the per-member formatter from the enum value."""
+        self._formatter = formatter
+
     def __call__(self, value: float, /) -> str:
         """Format a float, handling inf and nan."""
         if math.isinf(value):
@@ -304,8 +312,7 @@ class FloatSpecialsMixin:
             return self._positive_infinity
         if math.isnan(value):
             return self._nan
-        formatter: Callable[[float], str] = cast("enum.Enum", self).value
-        return formatter(value)
+        return self._formatter(value)
 
 
 class StubReturn(enum.Enum):
@@ -476,6 +483,7 @@ class LanguageCls(type):
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
     modifier_combinations: tuple[ModifierCombination, ...] = ()
+    module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
     supports_default_set_element_type: bool
@@ -486,25 +494,6 @@ class LanguageCls(type):
     supports_non_printable_ascii_dict_keys: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
-
-    @staticmethod
-    def wrap_in_file(
-        content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap a code snippet in a complete, valid file."""
-        raise NotImplementedError
-
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap a declaration and assignment in a complete, valid file."""
-        raise NotImplementedError
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1153,16 +1142,16 @@ class Language(Protocol):
     @property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declaration lines for a name used in a call
         expression.
 
-        *name* is either a simple identifier (``"process"``) for a
-        function call, or a dotted path (``"throttler.check"``) for a
-        method call on an object.  The second argument is the list of
-        parameter names (e.g. ``["user_id", "ts"]``) so that
-        keyword-style languages can generate stubs with matching named
-        parameters.
+        *parts* is a sequence of name parts -- a single element for
+        simple function calls (e.g. ``("process",)``), multiple for
+        method calls (e.g. ``("throttler", "check")``).  The second
+        argument is the list of parameter names (e.g.
+        ``["user_id", "ts"]``) so that keyword-style languages can
+        generate stubs with matching named parameters.
         *stub_return* controls the return type of the generated stub:
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
@@ -1182,7 +1171,7 @@ class Language(Protocol):
     @property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Like :attr:`format_call_stub` but the lines are placed
         **before** the language wrapper — at file, package, or module
         scope.
@@ -1194,9 +1183,9 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_call_target(self) -> Callable[[str], str]:
-        """Rewrite a dotted call target (``"app.client.fetch"``) into
-        the form required by this language's call expression syntax.
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Rewrite a sequence of call target parts into the form
+        required by this language's call expression syntax.
 
         Most languages accept dotted member-access as-is and use
         :data:`identity_call_target`.  PHP overrides this to produce
@@ -1218,8 +1207,8 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -1227,14 +1216,35 @@ class Language(Protocol):
         """Wrap a code snippet in a complete, valid file."""
         ...  # pylint: disable=unnecessary-ellipsis
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a sequence of top-level *declarations* (each one a
+        full ``literalize`` ``bare_code`` for a ``$ref`` target)
+        alongside a block of bare call expressions in a complete,
+        valid file.
+
+        Most languages can splice the declarations directly in front
+        of the calls and route through :meth:`wrap_in_file` in call
+        mode; they assign :data:`default_wrap_calls_with_declarations`
+        as a no-op wrapper.  Languages whose call-mode wrapping moves
+        bare expressions into a different scope than top-level
+        bindings (e.g. Haskell's ``main = do`` block, where bindings
+        belong at module scope) override this method.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     def validate_spec_for_data(self, data: Value) -> None:
@@ -1251,7 +1261,7 @@ class Language(Protocol):
 
 
 def _no_call_stub(
-    _name: str,
+    _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -1260,18 +1270,18 @@ def _no_call_stub(
     return ()
 
 
-no_call_stub: Callable[[str, Sequence[str], StubReturn], tuple[str, ...]] = (
-    _no_call_stub
-)
+no_call_stub: Callable[
+    [Sequence[str], Sequence[str], StubReturn], tuple[str, ...]
+] = _no_call_stub
 """Shared callable for languages that need no call stubs."""
 
 
-def _identity_call_target(name: str, /) -> str:
-    """Return *name* unchanged."""
-    return name
+def _identity_call_target(parts: Sequence[str], /) -> str:
+    """Return the parts joined with ``"."``."""
+    return ".".join(parts)
 
 
-identity_call_target: Callable[[str], str] = _identity_call_target
+identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
 
 
@@ -1330,6 +1340,33 @@ check.
 """
 
 
+def _default_wrap_calls_with_declarations(
+    self: "Language",
+    declarations: tuple[str, ...],
+    calls: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Default ``wrap_calls_with_declarations`` — concatenate the
+    *declarations* and *calls* and route through :meth:`wrap_in_file`
+    in call mode.
+    """
+    content = "\n".join((*declarations, calls)) if declarations else calls
+    return self.wrap_in_file(
+        content=content,
+        variable_name="",
+        body_preamble=body_preamble,
+    )
+
+
+default_wrap_calls_with_declarations: Callable[
+    ["Language", tuple[str, ...], str, tuple[str, ...]], str
+] = _default_wrap_calls_with_declarations
+"""Shared callable for languages whose call-mode :meth:`wrap_in_file`
+already accepts the declarations spliced in front of the call
+expressions.
+"""
+
+
 @beartype
 def value_contains(data: Value, predicate: Callable[[Value], bool]) -> bool:
     """Return ``True`` if any element of *data* satisfies *predicate*.
@@ -1341,13 +1378,18 @@ def value_contains(data: Value, predicate: Callable[[Value], bool]) -> bool:
     """
     if predicate(data):
         return True
-    if isinstance(data, dict):
-        return any(
-            value_contains(data=v, predicate=predicate) for v in data.values()
-        )
-    if isinstance(data, (list, set)):
-        return any(value_contains(data=v, predicate=predicate) for v in data)
-    return False
+    match data:
+        case dict():
+            return any(
+                value_contains(data=v, predicate=predicate)
+                for v in data.values()
+            )
+        case list() | set():
+            return any(
+                value_contains(data=v, predicate=predicate) for v in data
+            )
+        case _:
+            return False
 
 
 @beartype

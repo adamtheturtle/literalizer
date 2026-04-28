@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SInt of LargeInt.int
   | SStr of string
@@ -8,5 +6,4 @@ val my_data : val_t = SMap [
     ("a", SMap [("x", SInt 1)]),
     ("b", SInt 2)
 ]
-
-end
+val _ = my_data

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <vector>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::vector<std::variant<int, std::string, bool, std::nullptr_t>>{
     1,
     "hello",
@@ -18,4 +18,5 @@ my_data = std::vector<std::variant<int, std::string, bool, std::nullptr_t>>{
     nullptr,
 };
     (void)my_data;
+    return 0;
 }

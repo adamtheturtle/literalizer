@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SNull
   | SStr of string
@@ -9,5 +7,4 @@ val my_data : val_t = SMap [
     ("b", SNull)
     (* trailing *)
 ]
-
-end
+val _ = my_data

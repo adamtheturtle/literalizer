@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -64,6 +64,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -74,11 +75,10 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
-def _php_format_call_target(name: str, /) -> str:
+def _php_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a dotted call target into PHP's ``$obj->method`` form."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
-        return name
+        return parts[0]
     return "$" + parts[0] + "".join(f"->{p}" for p in parts[1:])
 
 
@@ -88,14 +88,13 @@ def _php_format_call_ref_identifier(name: str, /) -> str:
 
 
 def _php_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return PHP stub declarations for a call name."""
     param_list = ", ".join(f"${p}" for p in params)
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"function {parts[0]}({param_list}) {{}}",)
     root = parts[0]
@@ -203,6 +202,7 @@ class Php(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -215,6 +215,7 @@ class Php(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -405,6 +406,7 @@ class Php(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -509,12 +511,12 @@ class Php(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _php_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into PHP's ``$obj->method``
         form.
         """
@@ -530,7 +532,7 @@ class Php(metaclass=LanguageCls):
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -567,6 +569,7 @@ class Php(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -655,4 +658,5 @@ class Php(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

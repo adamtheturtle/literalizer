@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SNull
   | SBool of bool
@@ -12,5 +10,4 @@ val my_data : val_t = SList [
     SBool true,
     SNull
 ]
-
-end
+val _ = my_data

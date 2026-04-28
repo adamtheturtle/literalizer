@@ -1,5 +1,6 @@
-procedure Check is
-   my_data : A_Val := AList'(1 .. 0 => ANull);
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AList'[];
 begin
-   null;
-end Check;
+    null;
+end Main;

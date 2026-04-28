@@ -1,4 +1,4 @@
-module Check
+module Main
 
 type Val =
     | FNull

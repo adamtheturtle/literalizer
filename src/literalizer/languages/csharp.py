@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -76,6 +76,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -273,7 +274,7 @@ class _CSharpDictSpec:
 
 
 def _csharp_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
@@ -289,7 +290,6 @@ def _csharp_call_stub(
     failing at runtime.
     """
     param_list = ", ".join(f"object {p} = null" for p in params)
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"static object {parts[0]}({param_list}) => null;",)
     root = parts[0]
@@ -463,6 +463,7 @@ class CSharp(metaclass=LanguageCls):
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
         SORTED_SET = enum.member(
@@ -472,7 +473,8 @@ class CSharp(metaclass=LanguageCls):
                 empty_template="new SortedSet<{type}>()",
                 preamble_lines=("using System.Collections.Generic;",),
                 set_opener_template="new SortedSet<{type_name}> {{",
-                supports_heterogeneity=True,
+                supports_heterogeneity=False,
+                supports_trailing_comma=True,
             )
         )
 
@@ -637,6 +639,7 @@ class CSharp(metaclass=LanguageCls):
         ),
     )
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
@@ -848,19 +851,19 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _csharp_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -914,9 +917,30 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
-        return self.sequence_format(
-            default_type=self.default_sequence_element_type,
+        """Configuration for the chosen sequence format.
+
+        ``()`` parses as an invalid expression in C#; the language's
+        ``ValueTuple.Create()`` (or ``Array.Empty<T>()`` for the array
+        format) is the syntactically valid empty form, so prefer it
+        whenever an empty inner list sits beside non-empty siblings.
+        """
+        element_type = self.default_sequence_element_type
+        base = self.sequence_format(default_type=element_type)
+        empty = (
+            f"Array.Empty<{element_type}>()"
+            if self.sequence_format.name == "ARRAY"
+            else "ValueTuple.Create()"
+        )
+
+        def _narrowed_empty_form(
+            _siblings: Sequence[list[Value]],
+        ) -> str:
+            """Return the C# typed empty literal for this format."""
+            return empty
+
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=_narrowed_empty_form,
         )
 
     @cached_property
@@ -968,6 +992,7 @@ class CSharp(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -1102,4 +1127,5 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

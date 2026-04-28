@@ -1,4 +1,7 @@
+module Fixture_call_transform_no_wrapper_Crystal_call
+extend self
 def process(value = nil); 0; end
 process(value: "hello");
 process(value: 42);
 process(value: true);
+end

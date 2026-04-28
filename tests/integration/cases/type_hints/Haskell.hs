@@ -1,4 +1,4 @@
-module Check where
+module Fixture_type_hints_Haskell where
 import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
 instance Num Val where
@@ -19,3 +19,5 @@ my_data = HMap [
     ("last_login", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 45000))),
     ("avatar", HStr "48656c6c6f")
     ]
+main :: IO ()
+main = seq my_data (return ())

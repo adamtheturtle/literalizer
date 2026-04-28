@@ -19,8 +19,9 @@ struct clientType_ { void (*post)(CVal); };
 struct apiType_ { struct clientType_ client; };
 struct objType_ { struct apiType_ api; };
 static const struct objType_ obj = { .api = { .client = { .post = obj_api_client_post_stub_ } } };
-void check_(void) {
+int main(void) {
 obj.api.client.post(((CVal){.s = "hello"}));
 obj.api.client.post(((CVal){.i = 42}));
 obj.api.client.post(((CVal){.b = true}));
+    return 0;
 }

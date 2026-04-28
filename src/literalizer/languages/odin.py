@@ -43,7 +43,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -54,11 +53,13 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -120,6 +121,45 @@ def _nil_safe_declaration(
         )
 
     return _format
+
+
+@beartype
+def _odin_call_preamble_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return file-scope Odin stub declarations for a call name."""
+    if len(parts) == 1:
+        return (f"{parts[0]} :: proc(args: ..any) -> any {{ return nil }}",)
+    root = parts[0]
+    method = parts[-1]
+    chain = parts[:-1]
+    holder = chain[-1]
+    holder_type = f"{holder.title()}Type_"
+    helper_name = f"_{holder}_{method}_"
+    lines: list[str] = [
+        f"{helper_name} :: proc(args: ..any) -> any {{ return nil }}",
+        f"{holder_type} :: struct {{ {method}: proc(..any) -> any }}",
+    ]
+    prev_type = holder_type
+    for i in range(len(chain) - 2, 0, -1):
+        curr = chain[i]
+        child = chain[i + 1]
+        curr_type = f"{curr.title()}Type_"
+        lines.append(f"{curr_type} :: struct {{ {child}: {prev_type} }}")
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    if len(chain) > 1:
+        lines.append(f"{root_type} :: struct {{ {chain[1]}: {prev_type} }}")
+    init_expr = f"{holder_type}{{ {method} = {helper_name} }}"
+    for i in range(len(chain) - 2, -1, -1):
+        outer_type = f"{chain[i].title()}Type_"
+        inner_field = chain[i + 1]
+        init_expr = f"{outer_type}{{ {inner_field} = {init_expr} }}"
+    lines.append(f"{root}: {root_type} = {init_expr}")
+    return tuple(lines)
 
 
 @beartype
@@ -185,6 +225,7 @@ class Odin(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -198,6 +239,7 @@ class Odin(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=False,
+                supports_trailing_comma=True,
             )
         )
 
@@ -355,6 +397,8 @@ class Odin(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Odin call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -378,6 +422,7 @@ class Odin(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -390,7 +435,8 @@ class Odin(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"\nmain :: proc() {{\n{content}\n_ = {variable_name}\n}}"
+        use_line = f"\n_ = {variable_name}" if variable_name else ""
+        return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -447,9 +493,12 @@ class Odin(metaclass=LanguageCls):
     )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ('import "core:math"',)
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -491,19 +540,19 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _odin_call_preamble_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -568,6 +617,7 @@ class Odin(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

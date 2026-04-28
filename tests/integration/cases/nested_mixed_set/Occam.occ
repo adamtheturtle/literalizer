@@ -11,11 +11,11 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "Alice")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "tags"; MOBILE LIT(lit.set; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.int; 42), MOBILE LIT(lit.str; MOBILE []BYTE "apple")]))
-  ]):
-  SEQ
-    SKIP
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "Alice")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "tags"; MOBILE LIT(lit.set; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.int; 42), MOBILE LIT(lit.str; MOBILE []BYTE "apple")]))
+    ]):
+    SEQ
+        SKIP
 :

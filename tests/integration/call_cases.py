@@ -10,6 +10,7 @@ import dataclasses
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from beartype import beartype
@@ -21,14 +22,13 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import (
-    Haskell,
-    Hcl,
-    Jsonnet,
-)
+from literalizer.languages import Sml
 
 from .check_golden import check_golden
-from .language_specs import sorted_languages
+from .language_specs import sorted_languages, with_per_fixture_module_name
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 @beartype
@@ -40,25 +40,6 @@ def _prepend_preamble(
     if not preamble:
         return wrapped
     return "\n".join(preamble) + "\n" + wrapped
-
-
-@beartype
-def _dedupe_ordered(*, lines: Iterable[str]) -> tuple[str, ...]:
-    """Return *lines* with duplicates removed, preserving first-seen order.
-
-    Used when a ``literalize_call`` test combines declarations for
-    ``{"$ref": "name"}`` variables with the call itself — both halves
-    may request the same imports or type-definition body preamble, and
-    emitting them twice would break strict compilers.
-    """
-    seen: set[str] = set()
-    result: list[str] = []
-    for line in lines:
-        if line in seen:
-            continue
-        seen.add(line)
-        result.append(line)
-    return tuple(result)
 
 
 @beartype
@@ -176,6 +157,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_deep_dotted_method",
         target_function="obj.api.client.post",
         parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_snake_dotted_method",
+        target_function="my_app.http_client.fetch",
+        parameter_names=["payload"],
         call_transform=None,
         transform_stub_names=[],
         per_element=True,
@@ -323,29 +316,15 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
-# Languages where the current integration harness cannot produce a
-# golden that passes its language-specific lint step for a
-# ``ref_declarations``-using case.  The feature itself renders the ref
-# marker as an identifier correctly; the limitations below are about
-# how the resulting declarations+calls compose into a complete file
-# or how names line up with the declaration site — see
-# https://github.com/adamtheturtle/literalizer/issues/1473 for the
-# per-language identifier rename hook that will close the
-# name-mangling gaps.
-REF_CASE_INCOMPATIBLE: frozenset[literalizer.LanguageCls] = frozenset(
-    {
-        # ``wrap_in_file`` places content inside ``main = do``; a
-        # multi-line ``name = value`` binding needs ``let`` in a
-        # do-block, which the harness does not inject.
-        Haskell,
-        # ``wrap_in_file`` renames each content line as ``_N = …``,
-        # which breaks multi-line variable declarations.
-        Hcl,
-        # ``wrap_in_file`` wraps content in ``[ … ]`` as an expression
-        # list; variable declarations don't fit the shape.
-        Jsonnet,
-    }
-)
+# Per-case language exclusions: cases whose target function or parameter
+# names use a reserved keyword in a given language, making a valid lint-
+# passing stub impossible to generate.
+CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
+    # target_function "app.mgr.op" has "op" as the innermost name; "op"
+    # is a reserved word in SML and cannot be used as a fun or val
+    # identifier, so no valid stub can be produced.
+    "call_mixed_type_dicts": frozenset({Sml}),
+}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -368,7 +347,9 @@ def discover_call_cases() -> list[CallCase]:
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
                 continue
-            if config.ref_declarations and lang_cls in REF_CASE_INCOMPATIBLE:
+            if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
+                config.case_dir_name, frozenset()
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
@@ -408,6 +389,7 @@ def run_call_golden_case(
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
         # First element of ``identifier_cases`` is the language's
@@ -483,51 +465,65 @@ def run_call_golden_case(
         if config.call_transform is not None
         else StubReturn.VOID
     )
+    target_function_parts = tuple(config.target_function.split(sep="."))
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     preamble_stubs.extend(
         spec.format_call_preamble_stub(
-            config.target_function,
+            target_function_parts,
             config.parameter_names,
             stub_return,
         ),
     )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
+        wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(
             spec.format_call_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),
         )
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
-                wrapper_name,
+                wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
             ),
         )
-    decl_body_preambles = tuple(
-        line for d in decl_results for line in d.body_preamble
-    )
     decl_preambles = tuple(line for d in decl_results for line in d.preamble)
-    call_body_preamble = _dedupe_ordered(
-        lines=decl_body_preambles + result.body_preamble + tuple(body_stubs)
+    # Recompute the body preamble across the union of types observed in
+    # every declaration *and* the call.  Concatenating each piece's
+    # already-rendered body preamble would emit overlapping
+    # type-definition strings (e.g. Haskell's ``data Val = ...`` with
+    # different constructor sets) that no string-level duplicate
+    # filter can reconcile.  Combine ``source_data`` from every piece
+    # so ``compute_body_preamble`` can inspect actual values when it
+    # needs to (e.g. Haskell's datetime microsecond-precision check).
+    empty_types: frozenset[type] = frozenset()
+    union_types = empty_types.union(
+        *(d.types_present for d in decl_results),
+        result.types_present,
     )
-    content = "\n".join(
-        [d.bare_code for d in decl_results] + [result.bare_code]
+    combined_source_data: list[Value] = [
+        *(d.source_data for d in decl_results),
+        result.source_data,
+    ]
+    unified_body_preamble = spec.compute_body_preamble(
+        union_types, combined_source_data
     )
-
-    wrapped = spec.wrap_in_file(
-        content=content,
-        variable_name="",
+    call_body_preamble = unified_body_preamble + tuple(body_stubs)
+    declarations_bare_codes = tuple(d.bare_code for d in decl_results)
+    wrapped = spec.wrap_calls_with_declarations(
+        declarations=declarations_bare_codes,
+        calls=result.bare_code,
         body_preamble=call_body_preamble,
     )
     all_preamble = _dedupe_preamble_blocks(

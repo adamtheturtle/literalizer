@@ -12,6 +12,8 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -56,6 +58,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -97,6 +100,25 @@ def _unescape_dhall_string(value: str) -> str:
         return _simple_escapes[match.group(1)]
 
     return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
+
+
+_dhall_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=make_element_to_type(
+        str_type="Text",
+        bool_type="Bool",
+        int_type="Integer",
+        float_type="Double",
+        mixed_numeric_type="Text",
+        bytes_type="Text",
+        date_type="Text",
+        datetime_type="Text",
+        list_template="(List {inner})",
+        dict_type_template=None,
+        fallback_value_type="Text",
+    ),
+    template="[] : List {type}",
+    fallback_type="Text",
+)
 
 
 @beartype
@@ -382,6 +404,7 @@ class Dhall(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=True,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -394,6 +417,7 @@ class Dhall(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -558,6 +582,7 @@ class Dhall(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -688,19 +713,19 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -716,7 +741,10 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_dhall_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
@@ -738,6 +766,7 @@ class Dhall(metaclass=LanguageCls):
             empty_dict="{=}",
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_int_list_Haskell where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -14,3 +14,5 @@ my_data = HList [
     2,
     3
     ]
+main :: IO ()
+main = seq my_data (return ())

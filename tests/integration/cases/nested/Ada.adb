@@ -1,7 +1,8 @@
-procedure Check is
-   my_data : A_Val := AMap'(
-       AEntry ("users", AList'(AMap'(AEntry ("name", AStr ("Bob")), AEntry ("tags", AList'(AStr ("admin"), AStr ("user")))), AMap'(AEntry ("name", AStr ("Carol")), AEntry ("tags", AList'(AStr ("guest"))))))
-   );
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AMap'[
+        AEntry ("users", AList'[AMap'[AEntry ("name", AStr ("Bob")), AEntry ("tags", AList'[AStr ("admin"), AStr ("user")])], AMap'[AEntry ("name", AStr ("Carol")), AEntry ("tags", AList'[AStr ("guest")])]])
+    ];
 begin
-   null;
-end Check;
+    null;
+end Main;

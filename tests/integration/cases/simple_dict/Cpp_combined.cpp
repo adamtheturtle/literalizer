@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <map>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
     {"name", "Alice"},
     {"age", 30},
@@ -18,4 +18,5 @@ my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullpt
     {"score", nullptr},
 };
     (void)my_data;
+    return 0;
 }

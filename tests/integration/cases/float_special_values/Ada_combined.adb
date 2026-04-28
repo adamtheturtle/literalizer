@@ -1,21 +1,20 @@
-procedure Check is
-   procedure Check_Declaration is
-      my_data : A_Val := AList'(
-          AFloat (1.0 / 0.0),
-          AFloat (-1.0 / 0.0),
-          AFloat (0.0 / 0.0)
-      );
-   begin
-      null;
-   end Check_Declaration;
-   procedure Check_Assignment is
-   begin
-      my_data := AList'(
-          AFloat (1.0 / 0.0),
-          AFloat (-1.0 / 0.0),
-          AFloat (0.0 / 0.0)
-      );
-   end Check_Assignment;
+with A_Stub; use A_Stub;
+procedure Main is
+    pragma Suppress (Division_Check);
+    Zero : Long_Float := 0.0;
+    pragma Volatile (Zero);
+    NaN : constant Long_Float := Zero / Zero;
+    Neg_Inf : constant Long_Float := -1.0 / Zero;
+    Pos_Inf : constant Long_Float := 1.0 / Zero;
+    my_data : A_Val := AList'[
+        AFloat (Pos_Inf),
+        AFloat (Neg_Inf),
+        AFloat (NaN)
+    ];
 begin
-   null;
-end Check;
+    my_data := AList'[
+        AFloat (Pos_Inf),
+        AFloat (Neg_Inf),
+        AFloat (NaN)
+    ];
+end Main;

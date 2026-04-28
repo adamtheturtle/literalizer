@@ -54,6 +54,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -64,16 +65,28 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
+
+
+def _d_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
+    """Keep D's ``parseJSON("[]")`` empty literal beside typed siblings.
+
+    ``JSONValue([])`` rejects an empty ``void[]`` payload when the
+    template expands; the language's ``parseJSON("[]")`` empty form
+    returns a fresh ``JSONValue`` array and is accepted alongside
+    typed siblings.
+    """
+    return _D_EMPTY_JSON_ARRAY
+
 
 @beartype
 def _d_call_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return D stub declarations for a call name."""
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"int {parts[0]}(T...)(T args) {{ return 0; }}",)
     root = parts[0]
@@ -134,6 +147,8 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 class D(metaclass=LanguageCls):
     """D language specification."""
 
+    module_name: str = "Module"
+
     extension = ".d"
     pygments_name = "d"
     supports_default_set_element_type = False
@@ -185,13 +200,14 @@ class D(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence='parseJSON("[]")',
+            empty_sequence=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -200,10 +216,11 @@ class D(metaclass=LanguageCls):
         SET = SetFormatConfig(
             set_open=fixed_open(open_str="JSONValue(["),
             close="])",
-            empty_set='parseJSON("[]")',
+            empty_set=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -366,6 +383,7 @@ class D(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -373,30 +391,31 @@ class D(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a D declaration in a function."""
+        """Wrap a D declaration in a main function."""
         del variable_name
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void _check() {{\n{content}\n}}"
+        return f"void {self.module_name}() {{\n{content}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap D declaration + assignment in a function."""
-        return D.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -490,19 +509,19 @@ class D(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _d_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -518,7 +537,10 @@ class D(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        return dataclasses.replace(
+            self.sequence_format.value,
+            narrowed_empty_form=_d_narrowed_empty_form,
+        )
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
@@ -543,6 +565,7 @@ class D(metaclass=LanguageCls):
             empty_dict='parseJSON("{}")',
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

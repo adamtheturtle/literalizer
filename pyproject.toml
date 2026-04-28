@@ -50,17 +50,17 @@ optional-dependencies.dev = [
     "interrogate==1.7.0",
     "mypy[faster-cache]==1.20.2",
     "mypy-strict-kwargs==2026.1.12",
-    "prek==0.3.10",
+    "prek==0.3.11",
     "pydocstringformatter==0.7.5",
     "pygments==2.20.0",
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.1",
     "pyproject-fmt==2.21.1",
-    "pyrefly==0.62.0",
+    "pyrefly==0.63.0",
     "pyright==1.1.409",
     "pyroma==5.0.1",
     "pytest==9.0.3",
-    "pytest-beartype-tests==2026.4.20",
+    "pytest-beartype-tests==2026.4.26",
     "pytest-codspeed==4.4.0",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
@@ -133,6 +133,8 @@ lint.per-file-ignores."doccmd_*.py" = [
     "ERA001",
     # Allow asserts in docs.
     "S101",
+    # Allow print() in docs for output-illustrating examples.
+    "T201",
 ]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
@@ -281,6 +283,8 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "CheckJavaSyntax.java",
+    "a_stub.adb",
+    "a_stub.ads",
     ".clj-kondo",
     ".clj-kondo/**",
     ".clang-tidy",

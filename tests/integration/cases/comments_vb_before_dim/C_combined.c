@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     // Configuration
     {"name", ((CVal){.s = "app"})},
@@ -29,4 +29,5 @@ my_data = ((CVal){.m = (CKV[]){
     {"port", ((CVal){.i = 3000})},
 }});
     (void)my_data;
+    return 0;
 }

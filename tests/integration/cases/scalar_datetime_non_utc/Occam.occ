@@ -11,8 +11,8 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC check ()
-  VAL MOBILE LIT my_data IS "2024-01-15T18:00:00+05:30":
-  SEQ
-    SKIP
+PROC main ()
+    VAL MOBILE LIT my_data IS "2024-01-15T18:00:00+05:30":
+    SEQ
+        SKIP
 :

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_sequence_of_dicts_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -13,3 +13,5 @@ my_data = HList [
     HMap [("name", HStr "Alice"), ("age", 30)],
     HMap [("name", HStr "Bob"), ("age", 25)]
     ]
+main :: IO ()
+main = seq my_data (return ())

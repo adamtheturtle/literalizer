@@ -1,0 +1,4 @@
+module Fixture_scalar_int_Crystal_numeric_separator_underscore
+extend self
+my_data = 42
+end

@@ -11,12 +11,12 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC check ()
-  VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-      MOBILE LIT(lit.pair; MOBILE []BYTE "host"; MOBILE LIT(lit.str; MOBILE []BYTE "localhost")),
-      MOBILE LIT(lit.pair; MOBILE []BYTE "port"; MOBILE LIT(lit.null)),  -- not configured yet
-      MOBILE LIT(lit.pair; MOBILE []BYTE "debug"; MOBILE LIT(lit.bool; TRUE))
-  ]):
-  SEQ
-    SKIP
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "host"; MOBILE LIT(lit.str; MOBILE []BYTE "localhost")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "port"; MOBILE LIT(lit.null)),  -- not configured yet
+        MOBILE LIT(lit.pair; MOBILE []BYTE "debug"; MOBILE LIT(lit.bool; TRUE))
+    ]):
+    SEQ
+        SKIP
 :

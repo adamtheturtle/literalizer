@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_float_Haskell where
 data Val = HFloat Double
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
@@ -12,3 +12,5 @@ instance Fractional Val where
     _ / _ = error "not implemented"
 my_data :: Val
 my_data = 3.14
+main :: IO ()
+main = seq my_data (return ())

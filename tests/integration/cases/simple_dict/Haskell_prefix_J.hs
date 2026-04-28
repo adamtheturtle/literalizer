@@ -1,4 +1,4 @@
-module Check where
+module Fixture_simple_dict_Haskell_prefix_J where
 data Val = JNull | JBool Bool | JInt Integer | JStr String | JMap [(String, Val)]
 instance Num Val where
     fromInteger = JInt
@@ -15,3 +15,5 @@ my_data = JMap [
     ("active", JBool True),
     ("score", JNull)
     ]
+main :: IO ()
+main = seq my_data (return ())

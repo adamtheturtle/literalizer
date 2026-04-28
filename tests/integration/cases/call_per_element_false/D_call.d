@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 int process(T...)(T args) { return 0; }
 process(1);
 }

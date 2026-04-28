@@ -8,7 +8,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -76,6 +76,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -178,11 +179,6 @@ def _kotlin_type_to_opener(
     ``DictType`` — the LIST format handles dicts via the config
     resolver before calling this function.
     """
-    if isinstance(element_type, DictType):
-        return None
-    if isinstance(element_type, ListType):
-        inner = _kotlin_type_to_opener(element_type=element_type.inner)
-        return "arrayOf(" if inner is not None else None
     scalar_openers: dict[type, str] = {
         str: "arrayOf(",
         bool: "booleanArrayOf(",
@@ -192,7 +188,14 @@ def _kotlin_type_to_opener(
         datetime.date: "arrayOf(",
         datetime.datetime: "arrayOf(",
     }
-    return scalar_openers.get(element_type)
+    match element_type:
+        case DictType():
+            return None
+        case ListType():
+            inner = _kotlin_type_to_opener(element_type=element_type.inner)
+            return "arrayOf(" if inner is not None else None
+        case _:
+            return scalar_openers.get(element_type)
 
 
 @beartype
@@ -250,7 +253,11 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 )
             val_types = [recurse(data=v) for v in data.values()]
             unique = list(dict.fromkeys(val_types))
-            val_type = unique[0] if len(unique) == 1 else "Any?"
+            match unique:
+                case [single]:
+                    val_type = single
+                case _:
+                    val_type = "Any?"
             outer = (
                 dict_outer
                 if not isinstance(data, (ordereddict, OrderedDict))
@@ -261,7 +268,11 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             if not data:
                 return f"{set_outer}<{default_set_element_type}>"
             elem_types = sorted({recurse(data=e) for e in data})
-            elem_type = elem_types[0] if len(elem_types) == 1 else "Any?"
+            match elem_types:
+                case [single]:
+                    elem_type = single
+                case _:
+                    elem_type = "Any?"
             return f"{set_outer}<{elem_type}>"
         case list():
             if not data:
@@ -270,11 +281,13 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 return "List<Any?>"
             if sequence_format_name == "TUPLE":
                 elem_types = [recurse(data=e) for e in data]
-                if len(data) == 2:  # noqa: PLR2004
-                    return f"Pair<{', '.join(elem_types)}>"
-                if len(data) == 3:  # noqa: PLR2004
-                    return f"Triple<{', '.join(elem_types)}>"
-                return "List<Any?>"
+                match data:
+                    case [_, _]:
+                        return f"Pair<{', '.join(elem_types)}>"
+                    case [_, _, _]:
+                        return f"Triple<{', '.join(elem_types)}>"
+                    case _:
+                        return "List<Any?>"
             if sequence_format_name == "ARRAY":
                 return "Array<Any?>"
             # LIST format — use typed arrays matching the opener
@@ -339,14 +352,13 @@ class _KotlinDictSpec:
 
 
 def _kotlin_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
     param_list = ", ".join(f"{p}: Any? = null" for p in params)
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"fun {parts[0]}({param_list}): Any? = null",)
     root = parts[0]
@@ -496,6 +508,7 @@ class Kotlin(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="arrayOf<Any?>("),
@@ -510,6 +523,7 @@ class Kotlin(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=_kotlin_tuple_open,
@@ -524,6 +538,7 @@ class Kotlin(metaclass=LanguageCls):
             empty_sequence=None,
             preamble_lines=(),
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -537,6 +552,7 @@ class Kotlin(metaclass=LanguageCls):
                 preamble_lines=(),
                 set_opener_template="",
                 supports_heterogeneity=True,
+                supports_trailing_comma=True,
             )
         )
         SORTED_SET = enum.member(
@@ -546,7 +562,8 @@ class Kotlin(metaclass=LanguageCls):
                 empty_template=None,
                 preamble_lines=(),
                 set_opener_template="sortedSetOf<{type_name}>(",
-                supports_heterogeneity=True,
+                supports_heterogeneity=False,
+                supports_trailing_comma=True,
             )
         )
 
@@ -783,6 +800,7 @@ class Kotlin(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -895,19 +913,19 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _kotlin_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -992,6 +1010,7 @@ class Kotlin(metaclass=LanguageCls):
                 ),
             ),
             narrowed_open=None,
+            supports_trailing_comma=True,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" to ",
@@ -1119,4 +1138,5 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

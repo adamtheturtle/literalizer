@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Check where
+module Fixture_string_list_Haskell_string_format_double where
 import Data.String (IsString(fromString))
 data Val = HStr String | HList [Val]
 instance IsString Val where
@@ -10,3 +10,5 @@ my_data = HList [
     "bar",
     "baz"
     ]
+main :: IO ()
+main = seq my_data (return ())

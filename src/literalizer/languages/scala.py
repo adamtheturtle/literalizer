@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, cast
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -65,6 +65,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -157,14 +158,13 @@ class _ScalaDictSpec:
 
 
 def _scala_call_stub(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
     param_list = ", ".join(f"{p}: Any = null" for p in params)
-    parts = name.split(sep=".")
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}): Any = null",)
     root = parts[0]
@@ -207,6 +207,7 @@ class Scala(metaclass=LanguageCls):
     supports_non_printable_ascii_dict_keys = True
     supports_variable_names = True
     supports_dotted_calls = True
+    module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -285,6 +286,7 @@ class Scala(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         SEQ = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="Seq("),
@@ -299,6 +301,7 @@ class Scala(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="Array("),
@@ -313,6 +316,7 @@ class Scala(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -325,14 +329,16 @@ class Scala(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
         TREE_SET = SetFormatConfig(
             set_open=fixed_open(open_str="TreeSet("),
             close=")",
-            empty_set=None,
+            empty_set="TreeSet.empty[Int]",
             preamble_lines=("import scala.collection.immutable.TreeSet",),
             set_opener_template="TreeSet[{type_name}](",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -507,6 +513,7 @@ class Scala(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -514,9 +521,10 @@ class Scala(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -527,17 +535,17 @@ class Scala(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"object Check {{\n{content}\n}}"
+        return f"object {self.module_name} {{\n{content}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap Scala declaration + assignment in an object."""
-        return Scala.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -623,19 +631,19 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return _scala_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -720,6 +728,7 @@ class Scala(metaclass=LanguageCls):
                 fallback=dict_spec.fallback,
             ),
             narrowed_open=None,
+            supports_trailing_comma=True,
             close=")",
             format_entry=dict_entry_with_separator(
                 separator=" -> ",
@@ -821,4 +830,5 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return cast("CallStyle", self.call_style.value)
+        config: CallStyle = self.call_style.value
+        return config

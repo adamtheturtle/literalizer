@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-void check_() {
+int main() {
 auto my_data = std::vector<double>{
     0.0,
     1.0,
@@ -8,4 +8,5 @@ auto my_data = std::vector<double>{
     1.0e-3,
 };
     (void)my_data;
+    return 0;
 }

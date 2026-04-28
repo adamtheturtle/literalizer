@@ -1,4 +1,4 @@
-module Check where
+module Fixture_dict_with_nulls_Haskell where
 data Val = HNull | HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -14,3 +14,5 @@ my_data = HMap [
     ("score", HNull),
     ("age", 30)
     ]
+main :: IO ()
+main = seq my_data (return ())

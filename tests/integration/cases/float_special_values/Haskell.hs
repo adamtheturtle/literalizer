@@ -1,4 +1,4 @@
-module Check where
+module Fixture_float_special_values_Haskell where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
@@ -17,3 +17,5 @@ my_data = HList [
     (-1/0),
     (0/0)
     ]
+main :: IO ()
+main = seq my_data (return ())

@@ -1,9 +1,10 @@
-procedure Check is
-   my_data : A_Val := AList'(
-       AFloat (1.1),
-       AFloat (-2.2),
-       AFloat (3.3)
-   );
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AList'[
+        AFloat (1.1),
+        AFloat (-2.2),
+        AFloat (3.3)
+    ];
 begin
-   null;
-end Check;
+    null;
+end Main;

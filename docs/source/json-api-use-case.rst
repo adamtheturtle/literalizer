@@ -93,9 +93,9 @@ Output
 Python
 ~~~~~~
 
-.. skip doccmd[all]: next
-
 .. code-block:: python
+
+   """Illustrative JSON request and response payloads."""
 
    request_body = {
        "name": "Alice",
@@ -108,6 +108,10 @@ Python
        "email": "alice@example.com",
        "created": True,
    }
+
+   expected_id = 42
+   assert request_body["name"] == "Alice"
+   assert response["id"] == expected_id
 
 JavaScript
 ~~~~~~~~~~

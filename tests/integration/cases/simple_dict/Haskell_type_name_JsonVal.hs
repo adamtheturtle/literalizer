@@ -1,4 +1,4 @@
-module Check where
+module Fixture_simple_dict_Haskell_type_name_JsonVal where
 data JsonVal = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, JsonVal)]
 instance Num JsonVal where
     fromInteger = HInt
@@ -15,3 +15,5 @@ my_data = HMap [
     ("active", HBool True),
     ("score", HNull)
     ]
+main :: IO ()
+main = seq my_data (return ())

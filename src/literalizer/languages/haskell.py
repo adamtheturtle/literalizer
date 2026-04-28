@@ -70,20 +70,20 @@ from literalizer._types import Value
 
 @beartype
 def _haskell_call_preamble_stub(
-    name: str,
+    parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
     """Emit ``OverloadedRecordDot`` when the call target contains dots."""
-    if "." in name:
+    if len(parts) > 1:
         return ("{-# LANGUAGE OverloadedRecordDot #-}",)
     return ()
 
 
 @beartype
 def _build_haskell_call_stub_lines(
-    name: str,
+    parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     type_name: str,
@@ -95,7 +95,6 @@ def _build_haskell_call_stub_lines(
     else:
         ret = "IO ()"
         body = "return ()"
-    parts = name.split(sep=".")
     # Transform-wrapper stubs are passed a single placeholder param
     # starting with ``_`` and receive the (already typed) result of
     # another call. Declare them with a polymorphic argument so GHC
@@ -154,20 +153,20 @@ def _build_haskell_call_stub_lines(
 
 def _build_haskell_call_stub(
     type_name: str,
-) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
     """Build a call stub function that uses *type_name* for field
     types.
     """
 
     def _haskell_call_stub(
-        name: str,
+        parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
         return _build_haskell_call_stub_lines(
-            name=name,
+            parts=parts,
             params=params,
             stub_return=stub_return,
             type_name=type_name,
@@ -463,36 +462,40 @@ def _num_instance(
 
 def _has_microsecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime with microseconds."""
-    if isinstance(data, datetime.datetime):
-        return bool(data.microsecond)
-    if isinstance(data, datetime.date):
-        return False
-    if isinstance(data, (ordereddict, dict)):
-        return any(
-            _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        )
-    if isinstance(data, (list, set)):
-        return any(_has_microsecond_datetime(data=v) for v in data)
-    return False
+    match data:
+        case datetime.datetime():
+            return bool(data.microsecond)
+        case datetime.date():
+            return False
+        case ordereddict() | dict():
+            return any(
+                _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case list() | set():
+            return any(_has_microsecond_datetime(data=v) for v in data)
+        case _:
+            return False
 
 
 def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime without
     microseconds.
     """
-    if isinstance(data, datetime.datetime):
-        return not data.microsecond
-    if isinstance(data, datetime.date):
-        return False
-    if isinstance(data, (ordereddict, dict)):
-        return any(
-            _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        )
-    if isinstance(data, (list, set)):
-        return any(_has_nonmicrosecond_datetime(data=v) for v in data)
-    return False
+    match data:
+        case datetime.datetime():
+            return not data.microsecond
+        case datetime.date():
+            return False
+        case ordereddict() | dict():
+            return any(
+                _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case list() | set():
+            return any(_has_nonmicrosecond_datetime(data=v) for v in data)
+        case _:
+            return False
 
 
 def _datetime_import_items(
@@ -987,6 +990,7 @@ class Haskell(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type="Val",
+            narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="("),
@@ -1001,6 +1005,7 @@ class Haskell(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -1013,6 +1018,7 @@ class Haskell(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -1169,6 +1175,7 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -1176,8 +1183,8 @@ class Haskell(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -1196,13 +1203,52 @@ class Haskell(metaclass=LanguageCls):
                 for line in content.split(sep="\n")
             )
             return (
-                "module Check where\n"
+                f"module {self.module_name} where\n"
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
                 + "\n    pure ()"
             )
-        return "module Check where\n" + preamble + "\n" + content
+        return (
+            f"module {self.module_name} where\n"
+            + preamble
+            + "\n"
+            + content
+            + f"\nmain :: IO ()\nmain = seq {variable_name} (return ())"
+        )
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a sequence of top-level *declarations* alongside a
+        block of bare call expressions.
+
+        Top-level ``name :: Type`` / ``name = value`` bindings stay at
+        module scope and only the *calls* go inside ``main = do``.  The
+        integration harness pairs each ``$ref`` declaration's
+        ``bare_code`` with a downstream call and uses this hook to
+        avoid concatenating both halves into one ``content`` string,
+        which would otherwise force the bindings into a ``do``-block
+        where they would need ``let`` injection.
+        """
+        preamble = "\n".join(body_preamble)
+        indented_calls = "\n".join(
+            f"    _ <- {line}" if line.strip() else line
+            for line in calls.split(sep="\n")
+        )
+        declaration_block = "\n".join(declarations)
+        return (
+            f"module {self.module_name} where\n"
+            + preamble
+            + "\n"
+            + (declaration_block + "\n" if declaration_block else "")
+            + "main :: IO ()\nmain = do\n"
+            + indented_calls
+            + "\n    pure ()"
+        )
 
     @staticmethod
     def wrap_combined_in_file(
@@ -1242,6 +1288,7 @@ class Haskell(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     indent: str = "    "
+    module_name: str = "Check"
     type_name: str = "Val"
     constructor_prefix: str = "H"
 
@@ -1356,6 +1403,7 @@ class Haskell(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property
@@ -1501,19 +1549,19 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Callable that returns Haskell stub declarations for a call."""
         return _build_haskell_call_stub(type_name=self.type_name)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Callable that returns preamble stub declarations."""
         return _haskell_call_preamble_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_deep_mixed_Haskell where
 data Val = HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -12,3 +12,5 @@ my_data :: Val
 my_data = HList [
     HList [HList [1, 2], HList [HStr "a", HStr "b"]]
     ]
+main :: IO ()
+main = seq my_data (return ())

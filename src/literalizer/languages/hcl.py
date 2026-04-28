@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -50,6 +51,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -60,6 +62,66 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
+
+
+@dataclasses.dataclass
+class _HclScanState:
+    """Mutable HCL bracket/string scan state across lines."""
+
+    depth: int = 0
+    in_string: bool = False
+    escaped: bool = False
+
+
+@beartype
+def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
+    r"""Update *state* by scanning brackets and strings in *line*.
+
+    Tracks ``\`` escapes inside strings so a backslash-escaped quote
+    (``"a\"b"``) does not flip ``in_string`` at the wrong character.
+    Without this, an odd number of escaped quotes would leave the
+    scanner stuck inside a phantom string and merge later statements
+    into it.
+    """
+    for char in line:
+        if state.escaped:
+            state.escaped = False
+            continue
+        if state.in_string:
+            if char == "\\":
+                state.escaped = True
+            elif char == '"':
+                state.in_string = False
+            continue
+        if char == '"':
+            state.in_string = True
+        elif char in "[{(":
+            state.depth += 1
+        elif char in "]})":
+            state.depth -= 1
+
+
+@beartype
+def _split_top_level_statements(*, content: str) -> list[str]:
+    r"""Split *content* into top-level HCL statements.
+
+    A statement boundary is a line that returns the bracket and string
+    nesting to depth zero.  Multi-line list or object literals stay
+    grouped with their opening line so a declaration like ``name = [\n
+    ...\n]`` is preserved as a single statement.
+    """
+    statements: list[str] = []
+    current: list[str] = []
+    state = _HclScanState()
+    for line in content.split(sep="\n"):
+        current.append(line)
+        _advance_scan_state(line=line, state=state)
+        if state.depth == 0 and not state.in_string:
+            statements.append("\n".join(current))
+            current = []
+    return statements
 
 
 @beartype
@@ -125,6 +187,7 @@ class Hcl(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
+            narrowed_empty_form=None,
         )
 
     class SetFormats(enum.Enum):
@@ -137,6 +200,7 @@ class Hcl(metaclass=LanguageCls):
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
+            supports_trailing_comma=True,
         )
 
     class CommentFormats(enum.Enum):
@@ -277,6 +341,7 @@ class Hcl(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -286,9 +351,12 @@ class Hcl(metaclass=LanguageCls):
     ) -> str:
         """Wrap code in a valid HCL file.
 
-        When *variable_name* is empty (call rendering), each content line
-        is a bare function call which is not valid HCL.  Assign each to a
-        unique local so the file parses.
+        When *variable_name* is empty (call rendering), bare function
+        calls are not valid HCL, so each is assigned to a unique local
+        ``_N``.  Top-level ``name = value`` statements (including
+        multi-line list/object literals) are already valid HCL and pass
+        through unchanged so a mixed file of variable declarations and
+        calls parses correctly.
         """
         if variable_name:
             return wrap_in_file_noop(
@@ -296,11 +364,17 @@ class Hcl(metaclass=LanguageCls):
                 variable_name=variable_name,
                 body_preamble=body_preamble,
             )
-        lines = content.split(sep="\n") if content else []
-        assigned = [
-            f"_{i} = {line}" for i, line in enumerate(iterable=lines) if line
-        ]
-        result = "\n".join(assigned)
+        statements = _split_top_level_statements(content=content)
+        rendered: list[str] = []
+        call_counter = 0
+        for statement in statements:
+            first_line = statement.split(sep="\n", maxsplit=1)[0]
+            if _HCL_DECLARATION_PATTERN.match(string=first_line):
+                rendered.append(statement)
+            else:
+                rendered.append(f"_{call_counter} = {statement}")
+                call_counter += 1
+        result = "\n".join(rendered)
         return prepend_body_preamble(
             content=result,
             body_preamble=body_preamble,
@@ -399,19 +473,19 @@ class Hcl(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[str, Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
     @cached_property
-    def format_call_target(self) -> Callable[[str], str]:
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
@@ -452,6 +526,7 @@ class Hcl(metaclass=LanguageCls):
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
+            supports_trailing_comma=True,
         )
 
     @cached_property

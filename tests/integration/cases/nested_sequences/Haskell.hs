@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_sequences_Haskell where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -13,3 +13,5 @@ my_data = HList [
     HList [HList [1, 2], HList [3, 4]],
     HList [HList [5]]
     ]
+main :: IO ()
+main = seq my_data (return ())

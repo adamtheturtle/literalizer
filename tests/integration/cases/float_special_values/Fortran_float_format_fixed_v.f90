@@ -16,13 +16,13 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-program check
-  use fval_m
-  implicit none
-  type(fval_t) :: my_data
-  my_data = flist([fval_t :: &
-      freal(ieee_value(0.0, ieee_positive_inf)), &
-      freal(ieee_value(0.0, ieee_negative_inf)), &
-      freal(ieee_value(0.0, ieee_quiet_nan)) &
-  ])
-end program check
+program main
+    use fval_m
+    implicit none
+    type(fval_t) :: my_data
+    my_data = flist([fval_t :: &
+        freal(ieee_value(0.0, ieee_positive_inf)), &
+        freal(ieee_value(0.0, ieee_negative_inf)), &
+        freal(ieee_value(0.0, ieee_quiet_nan)) &
+    ])
+end program main
