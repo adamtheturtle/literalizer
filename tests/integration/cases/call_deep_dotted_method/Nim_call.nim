@@ -3,7 +3,7 @@ type ApiType = object
     client: ClientType
 type ObjType = object
     api: ApiType
-proc post(self: ClientType; args: varargs[untyped]) = discard
+template post(self: ClientType; args: varargs[untyped]) = discard
 var obj: ObjType
 obj.api.client.post("hello")
 obj.api.client.post(42)

@@ -1,5 +1,5 @@
 import json
-proc process(args: varargs[untyped]) = discard
+template process(args: varargs[untyped]) = discard
 var myVar = @[
     1,
     2,

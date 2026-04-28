@@ -424,9 +424,11 @@ def _nim_call_stub(
         return_clause = ": untyped"
         body = "0"
     if len(parts) == 1:
-        return (
-            f"proc {method}(args: varargs[untyped]){return_clause} = {body}",
+        tmpl = (
+            f"template {method}(args: varargs[untyped])"
+            f"{return_clause} = {body}"
         )
+        return (tmpl,)
     chain = list(parts[:-1])
     holder = chain[-1]
     holder_type = f"{holder.title()}Type"
@@ -442,11 +444,11 @@ def _nim_call_stub(
                 f"{indent}{inner}: {inner_type}",
             ]
         )
-    proc_sig = (
-        f"proc {method}(self: {holder_type};"
+    tmpl_sig = (
+        f"template {method}(self: {holder_type};"
         f" args: varargs[untyped]){return_clause} = {body}"
     )
-    lines.append(proc_sig)
+    lines.append(tmpl_sig)
     root = chain[0]
     root_type = f"{root.title()}Type"
     lines.append(f"var {root}: {root_type}")
