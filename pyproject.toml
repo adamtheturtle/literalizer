@@ -321,7 +321,7 @@ mypy_path = ".github/scripts"
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
-search_path = [ ".", "src" ]
+search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
@@ -332,7 +332,7 @@ reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 executionEnvironments = [
     { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
-    { root = ".github/scripts", extraPaths = [ ".github/scripts" ] },
+    { root = ".github/scripts", extraPaths = [ ".github/scripts", "." ] },
 ]
 
 [tool.ty]
