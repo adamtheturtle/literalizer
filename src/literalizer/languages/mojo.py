@@ -113,7 +113,7 @@ def _mojo_call_stub(
     if len(parts) == 1:
         return ()
     root = parts[0]
-    init_expr = _mojo_init_expr(parts)
+    init_expr = _mojo_init_expr(parts=parts)
     return (f"var {root} = {init_expr}",)
 
 
