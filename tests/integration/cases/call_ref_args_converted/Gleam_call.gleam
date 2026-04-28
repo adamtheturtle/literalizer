@@ -2,7 +2,7 @@ pub type GVal {
   GInt(Int)
   GList(List(GVal))
 }
-pub fn process(_data: a, _count: b) -> Nil { panic }
+pub fn process(_data: a, _count: b) -> Nil { Nil }
 
 pub fn main() {
   let my_var = GList([

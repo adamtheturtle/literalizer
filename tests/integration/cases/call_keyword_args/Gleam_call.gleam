@@ -3,8 +3,8 @@ pub type GVal {
   GStr(String)
   GList(List(GVal))
 }
-pub fn throttler_check(_user_id: a, _ts: b) -> Nil { panic }
-pub fn emit(__arg: a) -> Nil { panic }
+pub fn throttler_check(_user_id: a, _ts: b) -> Nil { Nil }
+pub fn emit(__arg: a) -> Nil { Nil }
 
 pub fn main() {
   emit(throttler_check(GStr("user_1"), GFloat(1000.0)))

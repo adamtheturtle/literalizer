@@ -4,7 +4,7 @@ pub type GVal {
   GList(List(GVal))
   GDict(List(#(String, GVal)))
 }
-pub fn app_mgr_op(_operation: a) -> Nil { panic }
+pub fn app_mgr_op(_operation: a) -> Nil { Nil }
 
 pub fn main() {
   app_mgr_op(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1")), #("draft", GBool(True))]))

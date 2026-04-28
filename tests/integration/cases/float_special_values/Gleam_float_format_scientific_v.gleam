@@ -5,9 +5,9 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GList([
-    GFloat(todo),
-    GFloat(todo),
-    GFloat(todo),
+    GFloat(0.0),
+    GFloat(0.0),
+    GFloat(0.0),
   ])
   let _ = my_data
 }

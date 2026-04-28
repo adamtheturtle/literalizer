@@ -4,7 +4,7 @@ pub type GVal {
   GStr(String)
   GList(List(GVal))
 }
-pub fn obj_api_client_post(_data: a) -> Nil { panic }
+pub fn obj_api_client_post(_data: a) -> Nil { Nil }
 
 pub fn main() {
   obj_api_client_post(GStr("hello"))

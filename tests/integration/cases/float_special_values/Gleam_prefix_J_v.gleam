@@ -5,9 +5,9 @@ pub type GVal {
 
 pub fn main() {
   let my_data = JList([
-    JFloat(todo),
-    JFloat(todo),
-    JFloat(todo),
+    JFloat(0.0),
+    JFloat(0.0),
+    JFloat(0.0),
   ])
   let _ = my_data
 }
