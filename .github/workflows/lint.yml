@@ -582,20 +582,36 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
+      # Compile all fixtures in a single ghc invocation to pay GHC's
+      # startup cost once. Each fixture already carries a unique module
+      # name derived from its case directory and stem, so a plain copy
+      # suffices; no sed rewriting needed. A generated Main.hs driver
+      # imports every fixture qualified and calls its main so one run
+      # exercises them all.
       - name: Lint Haskell
         run: |-
           find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell
           workspace=$(mktemp -d)
           tmpdir=$(mktemp -d)
-          xargs -0 -n1 ghc -fno-code -Wall -Werror -outputdir "$tmpdir" < /tmp/files-haskell
+          imports=$(mktemp)
+          calls=$(mktemp)
           while IFS= read -r -d '' f; do
             dir=$(basename "$(dirname "$f")")
             stem=$(basename "$f" .hs)
             mod="Fixture_${dir}_${stem}"
-            cp "$f" "$workspace/$mod.hs"
+            cp "$f" "$workspace/${mod}.hs"
+            printf '%s.hs <- %s\n' "$mod" "$f"
+            printf 'import qualified %s\n' "$mod" >> "$imports"
+            printf '  %s.main\n' "$mod" >> "$calls"
           done < /tmp/files-haskell
-          find "$workspace" -name '*.hs' -print0 | \
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_haskell.py
+          {
+            printf 'module Main where\n'
+            cat "$imports"
+            printf 'main :: IO ()\nmain = do\n'
+            cat "$calls"
+          } > "$workspace/Main.hs"
+          (cd "$workspace" && ghc -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
+          "$tmpdir/run"
 
       - name: Lint PureScript
         run: |-
