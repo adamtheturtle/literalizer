@@ -1,6 +1,6 @@
 import java.util.List;
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 List<Object> my_data = List.of();
     }
 }

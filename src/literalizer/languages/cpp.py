@@ -1224,7 +1224,10 @@ class Cpp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"auto main() -> int {{\n{content}{use_line}\n    return 0;\n}}"
+        return (
+            f"auto {self.module_name}() -> int {{\n{content}{use_line}\n"
+            "    return 0;\n}"
+        )
 
     def wrap_combined_in_file(
         self,

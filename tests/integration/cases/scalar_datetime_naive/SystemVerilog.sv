@@ -9,7 +9,7 @@ typedef struct {
     string k;
     _VVal v;
 } _VKV;
-module check;
+module main;
 initial begin
 static _VVal my_data = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15T12:30:00"};
 end

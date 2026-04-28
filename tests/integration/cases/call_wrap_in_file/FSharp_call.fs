@@ -1,4 +1,4 @@
-module Check
+module Main
 
 let process (_a: obj, _b: obj) : obj = null
 type Val =

@@ -1,4 +1,4 @@
 import java.util.Set;
-class Check {
+class Main {
 static Set<Object> my_data = Set.of();
 }

@@ -1,6 +1,6 @@
 import java.util.Set;
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 final Set<Object> my_data = Set.of();
     }
 }

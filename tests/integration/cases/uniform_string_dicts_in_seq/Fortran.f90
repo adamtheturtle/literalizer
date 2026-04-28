@@ -15,7 +15,7 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-program check
+program main
     use fval_m
     implicit none
     type(fval_t) :: my_data
@@ -23,4 +23,4 @@ program check
         fmap([fval_t :: fentry('first', fstr('Alice')), fentry('last', fstr('Smith'))]), &
         fmap([fval_t :: fentry('first', fstr('Bob')), fentry('last', fstr('Jones'))]) &
     ])
-end program check
+end program main

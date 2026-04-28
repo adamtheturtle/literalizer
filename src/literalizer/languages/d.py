@@ -405,7 +405,7 @@ class D(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        return f"void main() {{\n{content}\n}}"
+        return f"void {self.module_name}() {{\n{content}\n}}"
 
     def wrap_combined_in_file(
         self,

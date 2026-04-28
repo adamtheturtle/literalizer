@@ -1,6 +1,6 @@
 import java.util.Map;
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 var my_data = Map.ofEntries(
     Map.entry("a", 1),
     Map.entry("b", 3000000000L),

@@ -15,7 +15,7 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-subroutine check_declaration()
+subroutine main_declaration()
     use fval_m
     implicit none
     type(fval_t) :: my_data
@@ -23,9 +23,9 @@ subroutine check_declaration()
         fstr("2024-01-15"), &
         fstr("2024-02-20") &
     ])
-end subroutine check_declaration
+end subroutine main_declaration
 
-subroutine check_assignment()
+subroutine main_assignment()
     use fval_m
     implicit none
     type(fval_t) :: my_data
@@ -33,9 +33,9 @@ subroutine check_assignment()
         fstr("2024-01-15"), &
         fstr("2024-02-20") &
     ])
-end subroutine check_assignment
+end subroutine main_assignment
 
 program main
-    call check_declaration()
-    call check_assignment()
+    call main_declaration()
+    call main_assignment()
 end program main

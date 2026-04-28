@@ -1,4 +1,4 @@
-module Check
+module Main
 
 type Val =
     | FList of Val list

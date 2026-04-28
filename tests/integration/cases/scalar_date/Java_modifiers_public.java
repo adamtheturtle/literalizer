@@ -1,4 +1,4 @@
 import java.time.LocalDate;
-class Check {
+class Main {
 public LocalDate my_data = LocalDate.of(2024, 1, 15);
 }
