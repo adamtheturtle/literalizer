@@ -1,4 +1,4 @@
-module Fixture_int_list_haskell_integer_format_binary where
+module Fixture_int_list_Haskell_integer_format_binary where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

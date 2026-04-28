@@ -1,4 +1,4 @@
-module Fixture_simple_sequence_crystal_combined
+module Fixture_simple_sequence_Crystal_combined
 extend self
 my_data = [
     1,

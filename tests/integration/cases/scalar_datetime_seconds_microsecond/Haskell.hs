@@ -1,4 +1,4 @@
-module Fixture_scalar_datetime_seconds_microsecond_haskell where
+module Fixture_scalar_datetime_seconds_microsecond_Haskell where
 import Data.Time (UTCTime(..), fromGregorian, picosecondsToDiffTime)
 data Val = HDatetime UTCTime
 my_data :: Val

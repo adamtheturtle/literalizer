@@ -1,4 +1,4 @@
-module Fixture_nested_collection_multi_space_string_haskell where
+module Fixture_nested_collection_multi_space_string_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

@@ -1,4 +1,4 @@
-module Fixture_comments_vb_before_dim_haskell where
+module Fixture_comments_vb_before_dim_Haskell where
 data Val = HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

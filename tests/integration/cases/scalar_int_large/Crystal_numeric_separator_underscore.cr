@@ -1,4 +1,4 @@
-module Fixture_scalar_int_large_crystal_numeric_separator_underscore
+module Fixture_scalar_int_large_Crystal_numeric_separator_underscore
 extend self
 my_data = 2_147_483_648
 end

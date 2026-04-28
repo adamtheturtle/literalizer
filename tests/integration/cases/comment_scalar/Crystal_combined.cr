@@ -1,4 +1,4 @@
-module Fixture_comment_scalar_crystal_combined
+module Fixture_comment_scalar_Crystal_combined
 extend self
 my_data = # note
 42

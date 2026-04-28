@@ -1,4 +1,4 @@
-module Fixture_simple_sequence_crystal_trailing_comma_no
+module Fixture_simple_sequence_Crystal_trailing_comma_no
 extend self
 my_data = [
     1,

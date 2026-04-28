@@ -1,4 +1,4 @@
-object Fixture_string_with_backslash_scala_combined {
+object Fixture_string_with_backslash_Scala_combined {
 var my_data = List[String](
     "C:\\path\\to\\file",
     "back\\\\slash",

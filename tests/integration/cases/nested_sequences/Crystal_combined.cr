@@ -1,4 +1,4 @@
-module Fixture_nested_sequences_crystal_combined
+module Fixture_nested_sequences_Crystal_combined
 extend self
 my_data = [
     [[1, 2], [3, 4]],

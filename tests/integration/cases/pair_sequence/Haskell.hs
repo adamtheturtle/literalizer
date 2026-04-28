@@ -1,4 +1,4 @@
-module Fixture_pair_sequence_haskell where
+module Fixture_pair_sequence_Haskell where
 data Val = HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

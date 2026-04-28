@@ -1,4 +1,4 @@
-module Fixture_set_comments_haskell where
+module Fixture_set_comments_Haskell where
 data Val = HStr String | HSet [Val]
 my_data :: Val
 my_data = HSet [

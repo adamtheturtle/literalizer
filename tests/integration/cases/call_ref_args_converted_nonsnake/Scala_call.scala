@@ -1,4 +1,4 @@
-object Fixture_call_ref_args_converted_nonsnake_scala_call {
+object Fixture_call_ref_args_converted_nonsnake_Scala_call {
 def process(data: Any = null, count: Any = null): Any = null
 val myVar = List[Int](
     1,

@@ -1,4 +1,4 @@
-module Fixture_dict_mixed_int_widths_crystal
+module Fixture_dict_mixed_int_widths_Crystal
 extend self
 my_data = {
     "a" => 1,

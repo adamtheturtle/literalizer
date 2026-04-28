@@ -1,4 +1,4 @@
-object Fixture_call_deep_dotted_transformed_scala_call {
+object Fixture_call_deep_dotted_transformed_Scala_call {
 class _ClientType { def fetch(payload: Any = null): Any = null }
 class _AppType { val client = new _ClientType }
 val app = new _AppType

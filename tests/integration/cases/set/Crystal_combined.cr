@@ -1,5 +1,5 @@
 require "set"
-module Fixture_set_crystal_combined
+module Fixture_set_Crystal_combined
 extend self
 my_data = Set{
     "apple",

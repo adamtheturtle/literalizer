@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module Fixture_call_snake_dotted_method_haskell_call where
+module Fixture_call_snake_dotted_method_Haskell_call where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

@@ -1,4 +1,4 @@
-module Fixture_date_list_haskell where
+module Fixture_date_list_Haskell where
 import Data.Time (Day, fromGregorian)
 data Val = HList [Val] | HDate Day
 my_data :: Val

@@ -1,4 +1,4 @@
-module Fixture_float_special_values_crystal_combined
+module Fixture_float_special_values_Crystal_combined
 extend self
 my_data = [
     Float64::INFINITY,

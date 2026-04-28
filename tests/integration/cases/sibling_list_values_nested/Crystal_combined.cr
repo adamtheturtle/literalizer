@@ -1,4 +1,4 @@
-module Fixture_sibling_list_values_nested_crystal_combined
+module Fixture_sibling_list_values_nested_Crystal_combined
 extend self
 my_data = {
     "lint" => [2, [] of Nil],

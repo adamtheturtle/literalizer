@@ -1,7 +1,7 @@
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-object Fixture_type_hints_scala_combined {
+object Fixture_type_hints_Scala_combined {
 var my_data = Map(
     "name" -> "Alice",
     "age" -> 30,

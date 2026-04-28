@@ -1,4 +1,4 @@
-object Fixture_simple_dict_scala {
+object Fixture_simple_dict_Scala {
 val my_data = Map(
     "name" -> "Alice",
     "age" -> 30,

@@ -1,4 +1,4 @@
-module Fixture_dates_haskell where
+module Fixture_dates_Haskell where
 import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
 data Val = HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
 my_data :: Val

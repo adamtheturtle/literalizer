@@ -1,4 +1,4 @@
-module Fixture_float_special_values_haskell_prefix_j_v where
+module Fixture_float_special_values_Haskell_prefix_J_v where
 data Val = JFloat Double | JList [Val]
 instance Num Val where
     fromInteger n = JFloat (fromIntegral n)

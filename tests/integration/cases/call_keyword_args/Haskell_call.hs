@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module Fixture_call_keyword_args_haskell_call where
+module Fixture_call_keyword_args_Haskell_call where
 data Val = HFloat Double | HStr String | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

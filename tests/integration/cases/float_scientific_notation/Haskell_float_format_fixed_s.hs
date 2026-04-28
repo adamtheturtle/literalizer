@@ -1,4 +1,4 @@
-module Fixture_float_scientific_notation_haskell_float_format_fixed_s where
+module Fixture_float_scientific_notation_Haskell_float_format_fixed_s where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

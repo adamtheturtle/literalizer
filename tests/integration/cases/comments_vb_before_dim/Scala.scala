@@ -1,4 +1,4 @@
-object Fixture_comments_vb_before_dim_scala {
+object Fixture_comments_vb_before_dim_Scala {
 val my_data = Map(
     // Configuration
     "name" -> "app",

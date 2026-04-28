@@ -1,4 +1,4 @@
-module Fixture_float_special_values_haskell_type_name_jsonval_v where
+module Fixture_float_special_values_Haskell_type_name_JsonVal_v where
 data JsonVal = HFloat Double | HList [JsonVal]
 instance Num JsonVal where
     fromInteger n = HFloat (fromIntegral n)

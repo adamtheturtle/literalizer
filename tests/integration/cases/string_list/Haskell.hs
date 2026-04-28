@@ -1,4 +1,4 @@
-module Fixture_string_list_haskell where
+module Fixture_string_list_Haskell where
 data Val = HStr String | HList [Val]
 my_data :: Val
 my_data = HList [

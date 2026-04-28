@@ -1,4 +1,4 @@
-module Fixture_mixed_type_dicts_in_sequence_haskell where
+module Fixture_mixed_type_dicts_in_sequence_Haskell where
 data Val = HBool Bool | HStr String | HList [Val] | HMap [(String, Val)]
 my_data :: Val
 my_data = HList [

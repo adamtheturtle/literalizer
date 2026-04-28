@@ -1,4 +1,4 @@
-object Fixture_comments_scala_combined {
+object Fixture_comments_Scala_combined {
 var my_data = Map(
     // Server configuration
     "host" -> "localhost",  // default host

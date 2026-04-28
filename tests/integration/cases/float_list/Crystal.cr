@@ -1,4 +1,4 @@
-module Fixture_float_list_crystal
+module Fixture_float_list_Crystal
 extend self
 my_data = [
     1.1,

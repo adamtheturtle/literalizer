@@ -1,4 +1,4 @@
-module Fixture_float_negative_zero_crystal
+module Fixture_float_negative_zero_Crystal
 extend self
 my_data = [
     -0.0,

@@ -1,4 +1,4 @@
-module Fixture_float_list_haskell_sequence_tuple_float where
+module Fixture_float_list_Haskell_sequence_tuple_float where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

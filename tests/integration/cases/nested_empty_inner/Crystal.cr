@@ -1,4 +1,4 @@
-module Fixture_nested_empty_inner_crystal
+module Fixture_nested_empty_inner_Crystal
 extend self
 my_data = [
     [] of Nil,

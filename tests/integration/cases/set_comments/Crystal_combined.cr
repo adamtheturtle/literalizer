@@ -1,5 +1,5 @@
 require "set"
-module Fixture_set_comments_crystal_combined
+module Fixture_set_comments_Crystal_combined
 extend self
 my_data = Set{
     "apple",  # inline comment

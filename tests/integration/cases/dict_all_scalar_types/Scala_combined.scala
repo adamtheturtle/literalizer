@@ -1,7 +1,7 @@
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-object Fixture_dict_all_scalar_types_scala_combined {
+object Fixture_dict_all_scalar_types_Scala_combined {
 var my_data = Map(
     "s" -> "string",
     "i" -> 1,

@@ -1,4 +1,4 @@
-object Fixture_call_keyword_args_scala_call {
+object Fixture_call_keyword_args_Scala_call {
 class _ThrottlerType { def check(user_id: Any = null, ts: Any = null): Any = null }
 val throttler = new _ThrottlerType
 def emit(_arg: Any = null): Any = null

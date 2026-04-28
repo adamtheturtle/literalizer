@@ -1,4 +1,4 @@
-module Fixture_comments_multi_line_crystal
+module Fixture_comments_multi_line_Crystal
 extend self
 my_data = [
     # line 1

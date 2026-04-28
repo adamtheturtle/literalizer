@@ -1,4 +1,4 @@
-module Fixture_scalars_crystal_combined
+module Fixture_scalars_Crystal_combined
 extend self
 my_data = [
     42,

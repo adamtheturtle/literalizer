@@ -1,4 +1,4 @@
-object Fixture_set_comments_unsorted_order_scala_combined {
+object Fixture_set_comments_unsorted_order_Scala_combined {
 var my_data = Set[String](
     // before apple
     "apple",

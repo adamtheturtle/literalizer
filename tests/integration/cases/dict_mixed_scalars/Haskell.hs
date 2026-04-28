@@ -1,4 +1,4 @@
-module Fixture_dict_mixed_scalars_haskell where
+module Fixture_dict_mixed_scalars_Haskell where
 data Val = HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

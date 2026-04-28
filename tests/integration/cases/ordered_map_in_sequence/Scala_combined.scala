@@ -1,4 +1,4 @@
-object Fixture_ordered_map_in_sequence_scala_combined {
+object Fixture_ordered_map_in_sequence_Scala_combined {
 var my_data = List(
     scala.collection.immutable.ListMap("a" -> 1),
     "hello",

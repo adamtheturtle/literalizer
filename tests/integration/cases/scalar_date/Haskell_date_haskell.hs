@@ -1,4 +1,4 @@
-module Fixture_scalar_date_haskell_date_haskell where
+module Fixture_scalar_date_Haskell_date_haskell where
 import Data.Time (Day, fromGregorian)
 data Val = HDate Day
 my_data :: Val

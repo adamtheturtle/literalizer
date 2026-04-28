@@ -1,4 +1,4 @@
-module Fixture_nested_haskell where
+module Fixture_nested_Haskell where
 data Val = HStr String | HList [Val] | HMap [(String, Val)]
 my_data :: Val
 my_data = HMap [

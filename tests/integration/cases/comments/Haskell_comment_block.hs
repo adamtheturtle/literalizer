@@ -1,4 +1,4 @@
-module Fixture_comments_haskell_comment_block where
+module Fixture_comments_Haskell_comment_block where
 data Val = HBool Bool | HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

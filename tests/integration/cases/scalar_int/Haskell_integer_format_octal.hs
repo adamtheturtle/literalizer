@@ -1,4 +1,4 @@
-module Fixture_scalar_int_haskell_integer_format_octal where
+module Fixture_scalar_int_Haskell_integer_format_octal where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

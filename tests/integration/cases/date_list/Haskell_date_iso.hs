@@ -1,4 +1,4 @@
-module Fixture_date_list_haskell_date_iso where
+module Fixture_date_list_Haskell_date_iso where
 data Val = HList [Val] | HStr String
 my_data :: Val
 my_data = HList [

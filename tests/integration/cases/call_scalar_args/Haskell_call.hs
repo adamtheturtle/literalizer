@@ -1,4 +1,4 @@
-module Fixture_call_scalar_args_haskell_call where
+module Fixture_call_scalar_args_Haskell_call where
 data Val = HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

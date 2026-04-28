@@ -1,4 +1,4 @@
-module Fixture_simple_sequence_haskell where
+module Fixture_simple_sequence_Haskell where
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

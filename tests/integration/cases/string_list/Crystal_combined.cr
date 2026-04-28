@@ -1,4 +1,4 @@
-module Fixture_string_list_crystal_combined
+module Fixture_string_list_Crystal_combined
 extend self
 my_data = [
     "foo",

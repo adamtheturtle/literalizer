@@ -1,4 +1,4 @@
-object Fixture_string_list_scala_combined {
+object Fixture_string_list_Scala_combined {
 var my_data = List[String](
     "foo",
     "bar",

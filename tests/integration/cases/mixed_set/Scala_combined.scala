@@ -1,4 +1,4 @@
-object Fixture_mixed_set_scala_combined {
+object Fixture_mixed_set_Scala_combined {
 var my_data = Set(
     true,
     42,

@@ -1,4 +1,4 @@
-module Fixture_binary_haskell_bytes_format_hex where
+module Fixture_binary_Haskell_bytes_format_hex where
 data Val = HStr String | HList [Val]
 my_data :: Val
 my_data = HList [

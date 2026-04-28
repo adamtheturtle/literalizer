@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module Fixture_call_mixed_type_dicts_haskell_call where
+module Fixture_call_mixed_type_dicts_Haskell_call where
 data Val = HBool Bool | HStr String | HList [Val] | HMap [(String, Val)]
 data MgrType_ = MgrType_ { op :: Val -> IO () }
 data AppType_ = AppType_ { mgr :: MgrType_ }

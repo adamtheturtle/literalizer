@@ -1,4 +1,4 @@
-module Fixture_dict_with_list_value_crystal_combined
+module Fixture_dict_with_list_value_Crystal_combined
 extend self
 my_data = {
     "name" => "Alice",

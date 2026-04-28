@@ -1,4 +1,4 @@
-object Fixture_scalars_scala_combined {
+object Fixture_scalars_Scala_combined {
 var my_data = List(
     42,
     3.14,

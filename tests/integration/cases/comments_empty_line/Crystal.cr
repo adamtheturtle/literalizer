@@ -1,4 +1,4 @@
-module Fixture_comments_empty_line_crystal
+module Fixture_comments_empty_line_Crystal
 extend self
 my_data = [
     "a",

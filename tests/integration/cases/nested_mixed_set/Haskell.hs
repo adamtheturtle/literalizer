@@ -1,4 +1,4 @@
-module Fixture_nested_mixed_set_haskell where
+module Fixture_nested_mixed_set_Haskell where
 data Val = HBool Bool | HInt Integer | HStr String | HMap [(String, Val)] | HSet [Val]
 instance Num Val where
     fromInteger = HInt

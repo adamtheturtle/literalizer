@@ -1,4 +1,4 @@
-module Fixture_type_hints_crystal
+module Fixture_type_hints_Crystal
 extend self
 my_data = {
     "name" => "Alice",

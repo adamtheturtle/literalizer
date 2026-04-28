@@ -1,4 +1,4 @@
-module Fixture_sibling_list_values_uniform_inner_haskell where
+module Fixture_sibling_list_values_uniform_inner_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

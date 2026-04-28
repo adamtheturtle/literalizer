@@ -1,4 +1,4 @@
-module Fixture_scalar_datetime_naive_haskell_datetime_haskell_naive where
+module Fixture_scalar_datetime_naive_Haskell_datetime_haskell_naive where
 import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime)
 data Val = HDatetime UTCTime
 my_data :: Val

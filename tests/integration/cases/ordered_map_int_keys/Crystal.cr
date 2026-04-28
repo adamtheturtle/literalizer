@@ -1,4 +1,4 @@
-module Fixture_ordered_map_int_keys_crystal
+module Fixture_ordered_map_int_keys_Crystal
 extend self
 my_data = {
     "1" => "one",

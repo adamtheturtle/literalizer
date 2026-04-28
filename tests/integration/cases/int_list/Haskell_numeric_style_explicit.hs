@@ -1,4 +1,4 @@
-module Fixture_int_list_haskell_numeric_style_explicit where
+module Fixture_int_list_Haskell_numeric_style_explicit where
 data Val = HInt Integer | HList [Val]
 my_data :: Val
 my_data = HList [

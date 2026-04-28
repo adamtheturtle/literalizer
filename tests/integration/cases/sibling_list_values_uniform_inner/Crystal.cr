@@ -1,4 +1,4 @@
-module Fixture_sibling_list_values_uniform_inner_crystal
+module Fixture_sibling_list_values_uniform_inner_Crystal
 extend self
 my_data = {
     "lint" => [2, [1]],

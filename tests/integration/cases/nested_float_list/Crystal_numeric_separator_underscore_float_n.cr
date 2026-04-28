@@ -1,4 +1,4 @@
-module Fixture_nested_float_list_crystal_numeric_separator_underscore_float_n
+module Fixture_nested_float_list_Crystal_numeric_separator_underscore_float_n
 extend self
 my_data = [
     [1.5, 2.5],

@@ -1,4 +1,4 @@
-module Fixture_nested_deep_mixed_haskell where
+module Fixture_nested_deep_mixed_Haskell where
 data Val = HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

@@ -1,4 +1,4 @@
-module Fixture_int_list_large_haskell_integer_format_octal_large where
+module Fixture_int_list_large_Haskell_integer_format_octal_large where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

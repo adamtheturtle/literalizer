@@ -1,4 +1,4 @@
-module Fixture_bool_list_crystal_combined
+module Fixture_bool_list_Crystal_combined
 extend self
 my_data = [
     true,

@@ -1,4 +1,4 @@
-module Fixture_no_comment_haskell where
+module Fixture_no_comment_Haskell where
 data Val = HStr String | HMap [(String, Val)]
 my_data :: Val
 my_data = HMap [

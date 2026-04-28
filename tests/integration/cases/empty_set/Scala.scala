@@ -1,3 +1,3 @@
-object Fixture_empty_set_scala {
+object Fixture_empty_set_Scala {
 val my_data = Set()
 }

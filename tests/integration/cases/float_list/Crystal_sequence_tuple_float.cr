@@ -1,4 +1,4 @@
-module Fixture_float_list_crystal_sequence_tuple_float
+module Fixture_float_list_Crystal_sequence_tuple_float
 extend self
 my_data = {
     1.1,

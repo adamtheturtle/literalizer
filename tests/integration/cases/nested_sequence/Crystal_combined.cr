@@ -1,4 +1,4 @@
-module Fixture_nested_sequence_crystal_combined
+module Fixture_nested_sequence_Crystal_combined
 extend self
 my_data = [
     true,

@@ -1,4 +1,4 @@
-module Fixture_int_list_crystal_numeric_separator_underscore
+module Fixture_int_list_Crystal_numeric_separator_underscore
 extend self
 my_data = [
     1,

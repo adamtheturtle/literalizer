@@ -1,4 +1,4 @@
-module Fixture_scalar_int_very_negative_large_crystal_combined
+module Fixture_scalar_int_very_negative_large_Crystal_combined
 extend self
 my_data = -9223372036854775809_i128
 my_data = -9223372036854775809_i128

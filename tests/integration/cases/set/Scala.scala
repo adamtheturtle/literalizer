@@ -1,4 +1,4 @@
-object Fixture_set_scala {
+object Fixture_set_Scala {
 val my_data = Set[String](
     "apple",
     "banana",

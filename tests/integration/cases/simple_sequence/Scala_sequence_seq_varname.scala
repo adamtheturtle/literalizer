@@ -1,4 +1,4 @@
-object Fixture_simple_sequence_scala_sequence_seq_varname {
+object Fixture_simple_sequence_Scala_sequence_seq_varname {
 val my_data = Seq(
     1,
     "hello",

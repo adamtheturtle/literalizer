@@ -1,4 +1,4 @@
-module Fixture_date_list_crystal_combined
+module Fixture_date_list_Crystal_combined
 extend self
 my_data = [
     "2024-01-15",

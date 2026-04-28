@@ -1,4 +1,4 @@
-module Fixture_datetime_list_haskell_datetime_haskell where
+module Fixture_datetime_list_Haskell_datetime_haskell where
 import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
 data Val = HList [Val] | HDatetime UTCTime
 my_data :: Val

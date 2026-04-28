@@ -1,4 +1,4 @@
-module Fixture_nested_mixed_types_crystal
+module Fixture_nested_mixed_types_Crystal
 extend self
 my_data = [
     [1, 2],

@@ -1,4 +1,4 @@
-module Fixture_mixed_number_list_haskell where
+module Fixture_mixed_number_list_Haskell where
 data Val = HInt Integer | HFloat Double | HList [Val]
 instance Num Val where
     fromInteger = HInt

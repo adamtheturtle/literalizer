@@ -1,4 +1,4 @@
-module Fixture_sequence_of_dicts_haskell where
+module Fixture_sequence_of_dicts_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

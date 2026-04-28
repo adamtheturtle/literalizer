@@ -1,4 +1,4 @@
-module Fixture_type_hints_haskell where
+module Fixture_type_hints_Haskell where
 import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
 instance Num Val where

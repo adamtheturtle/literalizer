@@ -1,4 +1,4 @@
-module Fixture_int_list_large_haskell where
+module Fixture_int_list_large_Haskell where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

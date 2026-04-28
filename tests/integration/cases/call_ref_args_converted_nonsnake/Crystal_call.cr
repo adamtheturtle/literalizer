@@ -1,4 +1,4 @@
-module Fixture_call_ref_args_converted_nonsnake_crystal_call
+module Fixture_call_ref_args_converted_nonsnake_Crystal_call
 extend self
 def process(data = nil, count = nil); 0; end
 my_var = [

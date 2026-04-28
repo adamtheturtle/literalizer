@@ -1,3 +1,3 @@
-object Fixture_scalar_string_scala {
+object Fixture_scalar_string_Scala {
 val my_data = "hello"
 }

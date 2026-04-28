@@ -1,4 +1,4 @@
-module Fixture_mixed_number_dict_crystal_combined
+module Fixture_mixed_number_dict_Crystal_combined
 extend self
 my_data = {
     "a" => 1,

@@ -1,4 +1,4 @@
-module Fixture_scalar_float_crystal_numeric_separator_underscore_float_scalar
+module Fixture_scalar_float_Crystal_numeric_separator_underscore_float_scalar
 extend self
 my_data = 3.14
 end

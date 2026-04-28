@@ -1,4 +1,4 @@
-module Fixture_string_with_percent_haskell where
+module Fixture_string_with_percent_Haskell where
 data Val = HStr String | HList [Val]
 my_data :: Val
 my_data = HList [

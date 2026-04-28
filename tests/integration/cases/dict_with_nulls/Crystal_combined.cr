@@ -1,4 +1,4 @@
-module Fixture_dict_with_nulls_crystal_combined
+module Fixture_dict_with_nulls_Crystal_combined
 extend self
 my_data = {
     "name" => "Alice",

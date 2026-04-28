@@ -1,4 +1,4 @@
-module Fixture_nested_list_with_empty_sibling_crystal_combined
+module Fixture_nested_list_with_empty_sibling_Crystal_combined
 extend self
 my_data = [
     [1, 2],

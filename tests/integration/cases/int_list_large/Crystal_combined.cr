@@ -1,4 +1,4 @@
-module Fixture_int_list_large_crystal_combined
+module Fixture_int_list_large_Crystal_combined
 extend self
 my_data = [
     1000000,

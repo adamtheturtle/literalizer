@@ -1,4 +1,4 @@
-module Fixture_float_special_values_haskell where
+module Fixture_float_special_values_Haskell where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

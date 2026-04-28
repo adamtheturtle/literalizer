@@ -1,4 +1,4 @@
-module Fixture_dict_all_scalar_types_haskell where
+module Fixture_dict_all_scalar_types_Haskell where
 import Data.Time (Day, fromGregorian, UTCTime(..), secondsToDiffTime)
 data Val = HNull | HBool Bool | HInt Integer | HFloat Double | HStr String | HMap [(String, Val)] | HDate Day | HDatetime UTCTime
 instance Num Val where

@@ -1,4 +1,4 @@
-module Fixture_scalar_int_large_haskell where
+module Fixture_scalar_int_large_Haskell where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

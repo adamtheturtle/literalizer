@@ -1,4 +1,4 @@
-module Fixture_nested_float_list_haskell_float_format_scientific_n where
+module Fixture_nested_float_list_Haskell_float_format_scientific_n where
 data Val = HFloat Double | HList [Val]
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)

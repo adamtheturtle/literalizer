@@ -1,4 +1,4 @@
-module Fixture_call_deep_dotted_transformed_crystal_call
+module Fixture_call_deep_dotted_transformed_Crystal_call
 extend self
 class ClientType_; def fetch(payload = nil); 0; end; end
 class AppType_; def client; ClientType_.new; end; end

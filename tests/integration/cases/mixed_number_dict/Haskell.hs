@@ -1,4 +1,4 @@
-module Fixture_mixed_number_dict_haskell where
+module Fixture_mixed_number_dict_Haskell where
 data Val = HInt Integer | HFloat Double | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

@@ -1,4 +1,4 @@
-module Fixture_int_list_with_zero_crystal
+module Fixture_int_list_with_zero_Crystal
 extend self
 my_data = [
     0,

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Fixture_string_list_haskell_string_format_double where
+module Fixture_string_list_Haskell_string_format_double where
 import Data.String (IsString(fromString))
 data Val = HStr String | HList [Val]
 instance IsString Val where

@@ -1,4 +1,4 @@
-module Fixture_call_keyword_args_crystal_call
+module Fixture_call_keyword_args_Crystal_call
 extend self
 class ThrottlerType_; def check(user_id = nil, ts = nil); 0; end; end
 throttler = ThrottlerType_.new

@@ -1,4 +1,4 @@
-module Fixture_uniform_string_dicts_in_seq_haskell where
+module Fixture_uniform_string_dicts_in_seq_Haskell where
 data Val = HStr String | HList [Val] | HMap [(String, Val)]
 my_data :: Val
 my_data = HList [

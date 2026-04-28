@@ -1,4 +1,4 @@
-module Fixture_float_scientific_notation_crystal_float_format_scientific_s
+module Fixture_float_scientific_notation_Crystal_float_format_scientific_s
 extend self
 my_data = [
     0.0,

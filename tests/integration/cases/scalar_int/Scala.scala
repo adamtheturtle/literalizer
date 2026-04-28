@@ -1,3 +1,3 @@
-object Fixture_scalar_int_scala {
+object Fixture_scalar_int_Scala {
 val my_data = 42
 }

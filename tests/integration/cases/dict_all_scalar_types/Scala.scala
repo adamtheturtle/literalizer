@@ -1,7 +1,7 @@
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
-object Fixture_dict_all_scalar_types_scala {
+object Fixture_dict_all_scalar_types_Scala {
 val my_data = Map(
     "s" -> "string",
     "i" -> 1,

@@ -1,4 +1,4 @@
-object Fixture_simple_sequence_scala_trailing_comma_no {
+object Fixture_simple_sequence_Scala_trailing_comma_no {
 val my_data = List(
     1,
     "hello",

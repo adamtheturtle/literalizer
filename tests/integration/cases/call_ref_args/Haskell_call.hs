@@ -1,4 +1,4 @@
-module Fixture_call_ref_args_haskell_call where
+module Fixture_call_ref_args_Haskell_call where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

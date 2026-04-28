@@ -1,4 +1,4 @@
-module Fixture_nested_empty_inner_haskell where
+module Fixture_nested_empty_inner_Haskell where
 data Val = HList [Val]
 my_data :: Val
 my_data = HList [

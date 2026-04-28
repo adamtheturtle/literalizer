@@ -1,4 +1,4 @@
-module Fixture_call_wrap_in_file_haskell_call where
+module Fixture_call_wrap_in_file_Haskell_call where
 process :: (Val, Val) -> IO ()
 process _ = return ()
 data Val = HInt Integer | HList [Val]
