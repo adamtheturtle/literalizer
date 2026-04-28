@@ -8,6 +8,7 @@ imports from this module to enumerate every expected golden filename.
 import dataclasses
 import enum
 import functools
+import math
 from pathlib import Path
 
 from beartype import beartype
@@ -65,6 +66,45 @@ def cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
+@beartype
+def has_special_floats(data: object) -> bool:
+    """Return ``True`` if *data* contains a non-finite float (``inf``,
+    ``-inf``, or ``nan``).
+    """
+    if isinstance(data, float):
+        return not math.isfinite(data)
+    if isinstance(data, dict):
+        return any(
+            has_special_floats(data=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+        )
+    if isinstance(data, list):
+        return any(
+            has_special_floats(data=item)  # pyright: ignore[reportUnknownArgumentType]
+            for item in data  # pyright: ignore[reportUnknownVariableType]
+        )
+    return False
+
+
+@functools.cache
+@beartype
+def cases_with_special_floats(
+    cases_dir: Path,
+) -> frozenset[str]:
+    """Return case directory names whose input YAML contains a
+    non-finite float that some languages cannot produce at runtime.
+    """
+    yaml = YAML()
+    result: set[str] = set()
+    for case_dir in cases_dir.iterdir():
+        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+            stream=(case_dir / "input.yaml").read_text(),
+        )
+        if has_special_floats(data=loaded):
+            result.add(case_dir.name)
+    return frozenset(result)
+
+
 @functools.cache
 @beartype
 def discover_cases(
@@ -75,16 +115,20 @@ def discover_cases(
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
+    special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
+        special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
             if (
                 non_trivial
                 and not lang_cls.supports_non_printable_ascii_dict_keys
             ):
+                continue
+            if special_float and not lang_cls.supports_special_floats:
                 continue
             cases.append((case_dir.name, lang_cls))
     return cases
@@ -134,17 +178,21 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
+    special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     cases: list[CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
+        special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
             lang_name = lang_cls.__name__
             if (
                 non_trivial
                 and not lang_cls.supports_non_printable_ascii_dict_keys
             ):
+                continue
+            if special_float and not lang_cls.supports_special_floats:
                 continue
             spec = make_spec(lang_cls=lang_cls)
             redef_styles = find_redefinition_styles(spec=spec)

@@ -34,6 +34,7 @@ from literalizer.exceptions import (
     NullInCollectionError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnrepresentableSpecialFloatError,
     UnsupportedIdentifierCaseError,
 )
 from literalizer.languages import (
@@ -613,6 +614,27 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
     )
     assert "_p25: z" in line
     assert "_p26: a1" in line
+
+
+@pytest.mark.parametrize(
+    argnames="yaml_value",
+    argvalues=[".inf", "-.inf", ".nan"],
+    ids=["positive_infinity", "negative_infinity", "nan"],
+)
+def test_gleam_special_floats_raise(yaml_value: str) -> None:
+    """Gleam raises ``UnrepresentableSpecialFloatError`` for non-finite
+    floats.
+
+    Gleam targets Erlang, which has no expression that evaluates to a
+    non-finite float, so the literalizer surfaces this at literalize
+    time rather than producing output that panics at ``gleam run``.
+    """
+    with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
+        literalize(
+            source=f"- {yaml_value}\n",
+            input_format=InputFormat.YAML,
+            language=Gleam(),
+        )
 
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
