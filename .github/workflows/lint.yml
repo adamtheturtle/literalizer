@@ -162,7 +162,7 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run Odin files
+      - name: Build Odin files
         run: |-
           mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
@@ -172,7 +172,7 @@ jobs:
               trap 'rm -rf "$wd"' EXIT
               cp "$src" "$wd/main.odin"
               cd "$wd"
-              odin run . -out:"$wd/prog" ) || exit 1
+              odin build . -out:"$wd/prog" ) || exit 1
           done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
