@@ -588,7 +588,7 @@ jobs:
       # suffices; no sed rewriting needed. A generated Main.hs driver
       # imports every fixture qualified and calls its main so one run
       # exercises them all.
-      - name: Lint and run Haskell
+      - name: Lint Haskell
         run: |-
           find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell
           workspace=$(mktemp -d)
