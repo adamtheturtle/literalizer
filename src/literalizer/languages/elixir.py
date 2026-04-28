@@ -109,9 +109,9 @@ def _elixir_call_stub(
     level by :meth:`Elixir.wrap_in_file`.  For dotted names only the
     variable binding is returned (the module stubs are preamble).
     """
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
-        param_list = ", ".join(_elixir_param(p) for p in params)
+        param_list = ", ".join(_elixir_param(name=p) for p in params)
         return (f"def {parts[0]}({param_list}), do: nil",)
     root = parts[0]
     root_module = root.capitalize() + "Type_"
@@ -131,13 +131,13 @@ def _elixir_call_preamble_stub(
     For dotted names a chain of ``defmodule`` stubs is emitted so each
     intermediate module exposes the next step as a function.
     """
-    parts = name.split(".")
+    parts = name.split(sep=".")
     if len(parts) == 1:
         return ()
     root = parts[0]
     method = parts[-1]
     fields = list(parts[1:-1])
-    param_list = ", ".join(_elixir_param(p) for p in params)
+    param_list = ", ".join(_elixir_param(name=p) for p in params)
     if not fields:
         root_module = root.capitalize() + "Type_"
         sig = f"{method}({param_list}), do: nil"
