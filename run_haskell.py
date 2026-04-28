@@ -1,7 +1,8 @@
 """Compile and run a Haskell golden fixture via GHC.
 
-Every fixture defines its own ``main`` entry point, so each is compiled
-directly with ``-main-is <module>``.
+Every fixture defines its own ``main`` entry point under a
+``module Fixture_<case>_<variant> where`` declaration, so each is
+compiled with ``-main-is <module>`` using the declared module name.
 """
 
 import subprocess
@@ -10,11 +11,19 @@ import tempfile
 from pathlib import Path
 
 
+def _module_name(*, src: Path) -> str:
+    """Return the module name declared in *src*."""
+    for line in src.read_text(encoding="utf-8").splitlines():
+        if line.startswith("module "):
+            return line.split()[1]
+    return src.stem
+
+
 def main() -> None:
     """Compile and run the given Haskell golden file."""
     filename = sys.argv[1]
     src = Path(filename)
-    mod = src.stem
+    mod = _module_name(src=src)
 
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
