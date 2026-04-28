@@ -125,10 +125,6 @@ lint.ignore = [
     # public API design.
     "PLR0913",
 ]
-lint.per-file-ignores.".github/scripts/*.py" = [
-    # These are standalone scripts, not part of a package.
-    "INP001",
-]
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles
     # formatting but docstrings in docs may not match this style.
