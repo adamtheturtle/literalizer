@@ -9,5 +9,5 @@
     5
     6
 ))
-(process data my_var count 42)
-(process data my_other count 7)
+(process my_var 42)
+(process my_other 7)

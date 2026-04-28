@@ -1783,6 +1783,8 @@ def _format_call_args(
         ):
             return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
+            if not kw_prefix:
+                return sep.join(formatted)
             if len(params) != len(formatted):
                 raise ParameterCountMismatchError(
                     expected=len(params), got=len(formatted)
