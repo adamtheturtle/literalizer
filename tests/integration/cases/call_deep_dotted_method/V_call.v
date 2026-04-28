@@ -1,16 +1,16 @@
 interface IVal {}
 interface ICallArg_ {}
-struct clientType_ {}
-fn (r clientType_) post(args ...ICallArg_) {}
-struct apiType_ {
-	client clientType_
+struct ClientType_ {}
+fn (r ClientType_) post(args ...ICallArg_) {}
+struct ApiType_ {
+	client ClientType_
 }
-struct objType_ {
-	api apiType_
+struct ObjType_ {
+	api ApiType_
 }
 
 fn main() {
-	obj := objType_{}
+	obj := ObjType_{}
 	obj.api.client.post('hello');
 	obj.api.client.post(42);
 	obj.api.client.post(true);
