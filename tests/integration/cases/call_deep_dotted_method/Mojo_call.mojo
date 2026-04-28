@@ -1,14 +1,15 @@
-struct _ClientType:
-    fn __init__(inout self): pass
-    def post(self, *args: object) -> object: return object()
-struct _ApiType:
+@fieldwise_init
+struct _ClientType(Copyable, Movable):
+    fn post[*Ts: AnyType](self, *args: *Ts):
+        pass
+@fieldwise_init
+struct _ApiType(Copyable, Movable):
     var client: _ClientType
-    fn __init__(inout self): self.client = _ClientType()
-struct _ObjType:
+@fieldwise_init
+struct _ObjType(Copyable, Movable):
     var api: _ApiType
-    fn __init__(inout self): self.api = _ApiType()
 def main():
-    var obj = _ObjType()
+    var obj = _ObjType(_ApiType(_ClientType()))
     obj.api.client.post("hello")
     obj.api.client.post(42)
     obj.api.client.post(True)

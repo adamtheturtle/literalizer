@@ -74,6 +74,28 @@ from literalizer._language import (
 from literalizer._types import Scalar, Value
 
 
+def _mojo_init_expr(parts: Sequence[str]) -> str:
+    """Return the constructor expression for a multi-part call target.
+
+    For a 2-part target like ``throttler.check``, returns
+    ``_ThrottlerType()``.  For a 3-part target like
+    ``app.client.fetch``, returns ``_AppType(_ClientType())``.
+    ``@fieldwise_init`` generates a memberwise init, so each struct
+    that holds a field is constructed by passing the inner instance.
+    """
+    root = parts[0]
+    fields = parts[1:-1]
+    root_type = f"_{root.capitalize()}Type"
+    if not fields:
+        return f"{root_type}()"
+    inner_type = f"_{fields[-1].capitalize()}Type"
+    expr = f"{inner_type}()"
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"_{fields[i].capitalize()}Type"
+        expr = f"{curr_type}({expr})"
+    return f"{root_type}({expr})"
+
+
 @beartype
 def _mojo_call_stub(
     parts: Sequence[str],
@@ -81,11 +103,18 @@ def _mojo_call_stub(
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return Mojo body stub declarations for a call name."""
+    """Return Mojo body stub declarations for a call name.
+
+    1-part names (e.g. ``process``) are handled entirely in the file-
+    scope preamble stub; the body stub is empty.  Multi-part names
+    (e.g. ``app.client.fetch``) need a ``var`` declaration inside
+    ``def main()`` to instantiate the root object.
+    """
     if len(parts) == 1:
-        return (f"def {parts[0]}(*args: object) -> object: return object()",)
+        return ()
     root = parts[0]
-    return (f"var {root} = _{root.capitalize()}Type()",)
+    init_expr = _mojo_init_expr(parts)
+    return (f"var {root} = {init_expr}",)
 
 
 @beartype
@@ -95,38 +124,53 @@ def _mojo_call_preamble_stub(
     _stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return Mojo file-scope struct stubs for a dotted call name."""
+    """Return Mojo file-scope stubs for a call name.
+
+    1-part names become a module-level generic ``fn``.  Multi-part
+    names become ``@fieldwise_init`` structs: the innermost struct
+    holds the method, and each enclosing struct holds a field of the
+    next inner type.
+    """
     if len(parts) == 1:
-        return ()
+        return (f"fn {parts[0]}[*Ts: AnyType](*args: *Ts):\n    pass",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     indent = "    "
-    ctor_no_fields = f"{indent}fn __init__(inout self): pass"
+    struct_header = "(Copyable, Movable)"
     method_stub = (
-        f"{indent}def {method}(self, *args: object) -> object: return object()"
+        f"{indent}fn {method}[*Ts: AnyType](self, *args: *Ts):\n"
+        f"{indent}    pass"
     )
     if not fields:
         type_name = f"_{root.capitalize()}Type"
-        return (f"struct {type_name}:\n{ctor_no_fields}\n{method_stub}",)
-    lines: list[str] = []
+        return (
+            f"@fieldwise_init\n"
+            f"struct {type_name}{struct_header}:\n"
+            f"{method_stub}",
+        )
+    blocks: list[str] = []
     inner_type = f"_{fields[-1].capitalize()}Type"
-    lines.append(f"struct {inner_type}:\n{ctor_no_fields}\n{method_stub}")
+    blocks.append(
+        f"@fieldwise_init\nstruct {inner_type}{struct_header}:\n{method_stub}"
+    )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
         curr_type = f"_{fields[i].capitalize()}Type"
         field = fields[i + 1]
-        ctor = f"{indent}fn __init__(inout self): self.{field} = {prev_type}()"
-        lines.append(
-            f"struct {curr_type}:\n{indent}var {field}: {prev_type}\n{ctor}"
+        blocks.append(
+            f"@fieldwise_init\n"
+            f"struct {curr_type}{struct_header}:\n"
+            f"{indent}var {field}: {prev_type}"
         )
         prev_type = curr_type
     root_type = f"_{root.capitalize()}Type"
-    ctor = f"{indent}fn __init__(inout self): self.{fields[0]} = {prev_type}()"
-    lines.append(
-        f"struct {root_type}:\n{indent}var {fields[0]}: {prev_type}\n{ctor}"
+    blocks.append(
+        f"@fieldwise_init\n"
+        f"struct {root_type}{struct_header}:\n"
+        f"{indent}var {fields[0]}: {prev_type}"
     )
-    return tuple(lines)
+    return ("\n".join(blocks),)
 
 
 _mojo_narrowed_empty_form = make_narrowed_empty_form(

@@ -1,12 +1,14 @@
-struct _ClientType:
-    fn __init__(inout self): pass
-    def fetch(self, *args: object) -> object: return object()
-struct _AppType:
+@fieldwise_init
+struct _ClientType(Copyable, Movable):
+    fn fetch[*Ts: AnyType](self, *args: *Ts):
+        pass
+@fieldwise_init
+struct _AppType(Copyable, Movable):
     var client: _ClientType
-    fn __init__(inout self): self.client = _ClientType()
+fn emit[*Ts: AnyType](*args: *Ts):
+    pass
 def main():
-    var app = _AppType()
-    def emit(*args: object) -> object: return object()
+    var app = _AppType(_ClientType())
     emit(app.client.fetch("hello"))
     emit(app.client.fetch(42))
     emit(app.client.fetch(True))

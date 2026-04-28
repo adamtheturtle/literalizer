@@ -1,5 +1,6 @@
+fn process[*Ts: AnyType](*args: *Ts):
+    pass
 def main():
-    def process(*args: object) -> object: return object()
     var my_var = [
         1,
         2,

@@ -1,8 +1,10 @@
-struct _ThrottlerType:
-    fn __init__(inout self): pass
-    def check(self, *args: object) -> object: return object()
+@fieldwise_init
+struct _ThrottlerType(Copyable, Movable):
+    fn check[*Ts: AnyType](self, *args: *Ts):
+        pass
+fn emit[*Ts: AnyType](*args: *Ts):
+    pass
 def main():
     var throttler = _ThrottlerType()
-    def emit(*args: object) -> object: return object()
     emit(throttler.check("user_1", 1000.0))
     emit(throttler.check("user_2", 2000.5))
