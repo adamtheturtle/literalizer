@@ -322,7 +322,10 @@ class Tcl(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Tcl call style options."""
 
-        COMMAND = CommandCallStyle(arg_separator=" ")
+        COMMAND = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} [{inner}]",
+        )
 
     call_styles = CallStyles
 

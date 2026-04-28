@@ -231,18 +231,22 @@ class PrefixCallStyle:
 class CommandCallStyle:
     """Shell-command-style calls: ``func value1 value2``.
 
-    Used by shell languages (Bash, POSIX sh) where the function name
-    is followed by space-separated positional arguments with no
+    Used by shell languages (Bash, POSIX sh) and Tcl where the function
+    name is followed by space-separated positional arguments with no
     surrounding parentheses.  *arg_separator* is the string between
     the target and each argument (typically a single space).
 
     When a ``call_transform`` like ``lambda c: f"emit({c})"`` is
     supplied, the wrapper word is extracted and the inner call is
-    wrapped in ``$(...)`` command substitution (e.g.
-    ``emit "$(target arg1 arg2)"``).
+    formatted using *wrapped_call_template*, a ``str.format``-style
+    template with ``{wrapper}`` and ``{inner}`` placeholders (e.g.
+    the default ``'{wrapper} "$({inner})"'`` produces
+    ``emit "$(target arg1 arg2)"`` for Bash; Tcl uses
+    ``'{wrapper} [{inner}]'`` instead).
     """
 
     arg_separator: str
+    wrapped_call_template: str = '{wrapper} "$({inner})"'
 
 
 CallStyle = (

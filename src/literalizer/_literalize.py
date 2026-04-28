@@ -1874,12 +1874,13 @@ def _assemble_command_call(
     args_str: str,
     call_transform: Callable[[str], str] | None,
     arg_separator: str,
+    wrapped_call_template: str,
 ) -> str:
     """Build ``target arg1 arg2`` for :class:`CommandCallStyle`.
 
-    With a wrapper transform the inner call is captured via ``$(...)``
-    and passed as a quoted argument to the wrapper, e.g.
-    ``emit "$(target arg1 arg2)"``.
+    With a wrapper transform the inner call is formatted using
+    *wrapped_call_template* (e.g. ``emit "$(target arg1 arg2)"`` for
+    Bash or ``emit [target arg1 arg2]`` for Tcl).
     """
     call_expr = (
         f"{target_function}{arg_separator}{args_str}"
@@ -1891,7 +1892,10 @@ def _assemble_command_call(
             call_transform=call_transform,
         )
         if wrapper:
-            call_expr = f'{wrapper} "$({call_expr})"'
+            call_expr = wrapped_call_template.format(
+                wrapper=wrapper,
+                inner=call_expr,
+            )
     return call_expr
 
 
@@ -1927,12 +1931,16 @@ def _assemble_call(
                 call_transform=call_transform,
                 arg_separator=sep,
             )
-        case CommandCallStyle(arg_separator=sep):
+        case CommandCallStyle(
+            arg_separator=sep,
+            wrapped_call_template=wrapped_call_template,
+        ):
             call_expr = _assemble_command_call(
                 target_function=target_function,
                 args_str=args_str,
                 call_transform=call_transform,
                 arg_separator=sep,
+                wrapped_call_template=wrapped_call_template,
             )
         case _ as unreachable:
             assert_never(unreachable)
