@@ -12,7 +12,7 @@ emit : a -> {}
 emit = \_ -> {}
 
 main =
-    _ = emit "$(app_client_fetch (RStr "hello"))"
-    _ = emit "$(app_client_fetch (RInt 42))"
-    _ = emit "$(app_client_fetch (RBool Bool.true))"
+    _ = emit (app_client_fetch (RStr "hello"))
+    _ = emit (app_client_fetch (RInt 42))
+    _ = emit (app_client_fetch (RBool Bool.true))
     {}

@@ -72,7 +72,8 @@ def _escape_roc_string_body(value: str) -> str:
     r"""Apply Roc string escapes to *value* (no surrounding quotes).
 
     Escapes ``\\``, ``"``, ``\r``, ``\n``, ``\t``, the interpolation
-    sequence ``$(``, and other C0 control characters via ``\u(XXXX)``.
+    sequences ``$(`` and ``${``, and other C0 control characters via
+    ``\u(XXXX)``.
     """
     escaped = (
         value.replace("\\", "\\\\")
@@ -81,6 +82,7 @@ def _escape_roc_string_body(value: str) -> str:
         .replace("\n", "\\n")
         .replace("\t", "\\t")
         .replace("$(", "\\$(")
+        .replace("${", "\\${")
     )
     return escape_control_chars(value=escaped, fmt="\\u({:04x})")
 
@@ -395,7 +397,7 @@ def _roc_type_var(index: int) -> str:
     group = index // 26
     if group == 0:
         return letter
-    return f"{letter}{group}"
+    return f"{letter}{group}"  # pragma: no cover
 
 
 def _roc_call_body_stub(
@@ -413,7 +415,7 @@ def _roc_call_body_stub(
     """
     flat_name = _roc_format_call_target(parts=parts)
     n = len(params)
-    if n == 0:
+    if n == 0:  # pragma: no cover
         sig = f"{flat_name} : {{}}"
         impl = f"{flat_name} = {{}}"
     else:
@@ -665,7 +667,10 @@ class Roc(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Roc call style options."""
 
-        COMMAND = CommandCallStyle(arg_separator=" ")
+        COMMAND = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -715,7 +720,7 @@ class Roc(metaclass=LanguageCls):
             for line in content.split(sep="\n"):
                 if line:
                     indented_lines.append(f"{self.indent}_ = {line}")
-                else:
+                else:  # pragma: no cover
                     indented_lines.append("")
             body = "\n".join(indented_lines)
             content = f"main =\n{body}\n{self.indent}{{}}"

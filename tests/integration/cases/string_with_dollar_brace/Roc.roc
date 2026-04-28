@@ -7,6 +7,6 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RStr "prefix ${HOME} suffix",
-    RStr "${interpolated}",
+    RStr "prefix \${HOME} suffix",
+    RStr "\${interpolated}",
     ]

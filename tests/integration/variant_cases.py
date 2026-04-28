@@ -33,6 +33,7 @@ from literalizer.languages import (
     Odin,
     PureScript,
     Python,
+    Roc,
     Rust,
     Swift,
     VisualBasic,
@@ -134,6 +135,7 @@ TYPE_NAME_OVERRIDES: dict[literalizer.LanguageCls, str] = {
     Haskell: "JsonVal",
     OCaml: "json_t",
     PureScript: "JsonVal",
+    Roc: "JsonVal",
 }
 
 CONSTRUCTOR_PREFIX_OVERRIDES: dict[literalizer.LanguageCls, str] = {
@@ -143,6 +145,7 @@ CONSTRUCTOR_PREFIX_OVERRIDES: dict[literalizer.LanguageCls, str] = {
     Haskell: "J",
     OCaml: "J",
     PureScript: "J",
+    Roc: "J",
 }
 
 # Languages whose heterogeneous-value enum name is configurable (Rust's
