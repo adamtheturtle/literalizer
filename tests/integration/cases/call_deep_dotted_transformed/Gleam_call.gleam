@@ -4,8 +4,8 @@ pub type GVal {
   GStr(String)
   GList(List(GVal))
 }
-pub fn app_client_fetch(_payload: a) -> Nil { Nil }
-pub fn emit(__arg: a) -> Nil { Nil }
+pub fn app_client_fetch(_payload: a) -> Nil { panic }
+pub fn emit(__arg: a) -> Nil { panic }
 
 pub fn main() {
   emit(app_client_fetch(GStr("hello")))

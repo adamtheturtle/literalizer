@@ -5,14 +5,14 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GList([
-    GFloat(0.0),
-    GFloat(0.0),
-    GFloat(0.0),
+    GFloat(todo),
+    GFloat(todo),
+    GFloat(todo),
   ])
   let my_data = GList([
-    GFloat(0.0),
-    GFloat(0.0),
-    GFloat(0.0),
+    GFloat(todo),
+    GFloat(todo),
+    GFloat(todo),
   ])
   let _ = my_data
 }

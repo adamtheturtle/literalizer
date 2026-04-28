@@ -4,7 +4,7 @@ pub type GVal {
   GStr(String)
   GList(List(GVal))
 }
-pub fn process(_value: a) -> Nil { Nil }
+pub fn process(_value: a) -> Nil { panic }
 
 pub fn main() {
   process(GStr("hello"))
