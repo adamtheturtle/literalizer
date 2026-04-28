@@ -227,24 +227,24 @@ def _dhall_call_stub(
 
 
 @beartype
-def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
+def _dhall_format_call_arg(original: Scalar, formatted: str, /) -> str:
     """Wrap a formatted scalar in the appropriate ``DVal`` constructor.
 
     Booleans, integers, floats, and strings each get their own
     ``DVal.DXxx`` tag so the stub (which accepts ``DVal``) type-checks
-    against heterogeneous call arguments.  Complex values (lists,
-    records) are left unwrapped; those cases are excluded from Dhall's
-    supported call test suite.
+    against heterogeneous call arguments.
     """
-    if isinstance(original, bool):
-        return f"DVal.DBool {formatted}"
-    if isinstance(original, int):
-        return f"DVal.DInteger {formatted}"
-    if isinstance(original, float):
-        return f"DVal.DDouble {formatted}"
-    if isinstance(original, (str, bytes, datetime.date)) or original is None:
-        return f"DVal.DText {formatted}"
-    return formatted  # pragma: no cover
+    match original:
+        case bool():
+            return f"DVal.DBool {formatted}"
+        case int():
+            return f"DVal.DInteger {formatted}"
+        case float():
+            return f"DVal.DDouble {formatted}"
+        case str() | bytes() | datetime.datetime() | datetime.date() | None:
+            return f"DVal.DText {formatted}"
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -270,13 +270,16 @@ _DHALL_BRACKET_DELTA: dict[str, tuple[str, int]] = {
     "]": ("bracket", -1),
 }
 
+# Matches a Dhall double-quoted string literal including escape sequences,
+# so string contents are stripped before scanning for structural patterns.
+_DHALL_STRING_RE = re.compile(pattern=r'"(?:[^"\\]|\\.)*"')
+
 
 def _dhall_validate_call_stmt(call_expr: str) -> None:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     call expressions that cannot be represented as valid Dhall.
 
-    Two patterns are rejected, both detected in a single pass that
-    tracks string-literal boundaries so quoted content is ignored:
+    Two patterns are rejected:
 
     * A word character directly followed by ``(`` — a call-transform
       wrapper (e.g. ``emit(...)``) written without the whitespace that
@@ -284,23 +287,16 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
     * A top-level comma inside parentheses — indicates more than one
       positional argument, which Dhall cannot represent because it has
       no tuple type.
+
+    String literals are stripped first so that quoted content is never
+    mistaken for one of these patterns.
     """
+    sanitized = _DHALL_STRING_RE.sub(repl="", string=call_expr)
     depths: dict[str, int] = {"paren": 0, "brace": 0, "bracket": 0}
-    in_string = False
     prev_is_word = False
-    i = 0
-    while i < len(call_expr):
-        c = call_expr[i]
+    for c in sanitized:
         next_prev_is_word = False
-        if in_string:
-            if c == "\\":  # pragma: no cover
-                i += 2
-                continue
-            if c == '"':
-                in_string = False
-        elif c == '"':
-            in_string = True
-        elif c == "(":
+        if c == "(":
             if prev_is_word:
                 raise CallArgNotSupportedError(
                     language_name="Dhall",
@@ -330,7 +326,6 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
         else:
             next_prev_is_word = c.isalnum() or c == "_"
         prev_is_word = next_prev_is_word
-        i += 1
 
 
 def _dhall_reject_ref_identifier(name: str) -> str:
@@ -899,7 +894,7 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_call_preamble_stub
 
     @cached_property
-    def format_call_arg(self) -> Callable[[Value, str], str]:
+    def format_call_arg(self) -> Callable[[Scalar, str], str]:
         """Wrap each scalar call argument in the ``DVal`` union tag."""
         return _dhall_format_call_arg
 
