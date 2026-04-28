@@ -96,16 +96,6 @@ def _wren_call_stub(
     root = parts[0]
     intermediates = list(parts[1:-1])
 
-    if not intermediates:
-        cls_name = root.capitalize() + "_"
-        return (
-            f"class {cls_name} {{",
-            f"{indent}construct new() {{}}",
-            f"{indent}{method}({param_list}) {{}}",
-            "}",
-            f"var {root} = {cls_name}.new()",
-        )
-
     lines: list[str] = []
     inner_cls_name = (
         "".join(p.capitalize() for p in [root, *intermediates]) + "_"
