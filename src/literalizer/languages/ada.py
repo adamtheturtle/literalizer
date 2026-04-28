@@ -191,7 +191,7 @@ def _ada_call_stub(
     """
     method = parts[-1]
     method_ada = method.title()
-    param_list = "; ".join(f"{p.title()} : A_Val" for p in params)
+    param_list = "; ".join(f"{p.strip('_').title()} : A_Val" for p in params)
 
     if len(parts) == 1:
         if stub_return is StubReturn.VOID:
@@ -217,7 +217,7 @@ def _ada_call_stub(
     fields = parts[1:-1]
 
     if not fields:
-        type_name = f"{root.title()}Type_"
+        type_name = f"{root.title()}_T"
         return (
             f"type {type_name} is tagged null record;",
             _ada_method_stub(
@@ -230,7 +230,7 @@ def _ada_call_stub(
         )
 
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = f"{fields[-1].title()}_T"
     lines.append(f"type {inner_type} is tagged null record;")
     lines.append(
         _ada_method_stub(
@@ -242,14 +242,14 @@ def _ada_call_stub(
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{fields[i].title()}_T"
         lines.append(
             f"type {curr_type} is tagged record"
             f" {fields[i + 1].title()} : {prev_type};"
             f" end record;"
         )
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = f"{root.title()}_T"
     lines.append(
         f"type {root_type} is tagged record"
         f" {fields[0].title()} : {prev_type};"

@@ -1,9 +1,9 @@
 with A_Stub; use A_Stub;
 procedure Main is
-    type Http_ClientType_ is tagged null record;
-    procedure Fetch (Self : in out Http_ClientType_; Payload : A_Val) is begin null; end Fetch;
-    type My_AppType_ is tagged record Http_Client : Http_ClientType_; end record;
-    My_App : My_AppType_;
+    type Http_Client_T is tagged null record;
+    procedure Fetch (Self : in out Http_Client_T; Payload : A_Val) is begin null; end Fetch;
+    type My_App_T is tagged record Http_Client : Http_Client_T; end record;
+    My_App : My_App_T;
 begin
     my_app.http_client.fetch(payload => "hello");
     my_app.http_client.fetch(payload => 42);
