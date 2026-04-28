@@ -376,7 +376,8 @@ def _run_wrap_in_file_case(
     spec: literalizer.Language,
     yaml_string: str,
     effective_ref_case: literalizer.IdentifierCase | None,
-    lang_cls: type[literalizer.Language],
+    lang_name: str,
+    lang_extension: str,
     golden_path: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -397,16 +398,14 @@ def _run_wrap_in_file_case(
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous input"
-        )
+        pytest.skip(f"{lang_name} cannot represent this heterogeneous input")
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_cls.__name__} rejected call arg: {exc.reason}")
+        pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
     check_golden(
         file_regression=file_regression,
         contents=wrap_result.code + "\n",
-        extension=lang_cls.extension,
+        extension=lang_extension,
         newline="",
         golden_path=golden_path,
     )
@@ -453,7 +452,8 @@ def run_call_golden_case(
             spec=spec,
             yaml_string=yaml_string,
             effective_ref_case=effective_ref_case,
-            lang_cls=lang_cls,
+            lang_name=lang_cls.__name__,
+            lang_extension=lang_cls.extension,
             golden_path=golden_path,
             file_regression=file_regression,
         )
