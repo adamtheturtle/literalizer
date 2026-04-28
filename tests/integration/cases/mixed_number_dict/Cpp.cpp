@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-int main() {
+auto main() -> int {
 auto my_data = std::map<std::string, double>{
     {"a", 1},
     {"b", 2.5},

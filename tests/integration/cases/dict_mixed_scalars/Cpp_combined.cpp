@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <variant>
-int main() {
+auto main() -> int {
 auto my_data = std::map<std::string, std::variant<int, std::string>>{
     {"a", 1},
     {"b", "x"},

@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <cstddef>
-int main() {
+auto main() -> int {
 auto my_data = std::map<std::string, std::nullptr_t>{};
     (void)my_data;
     return 0;

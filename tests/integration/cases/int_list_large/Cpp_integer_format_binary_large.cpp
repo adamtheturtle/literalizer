@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-int main() {
+auto main() -> int {
 auto my_data = std::vector<int>{
     0b11110100001001000000,
     -0b10011010010,

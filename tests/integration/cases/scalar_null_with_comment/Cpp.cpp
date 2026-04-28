@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <cstddef>
-int main() {
+auto main() -> int {
 // note
 auto my_data = nullptr;
     (void)my_data;

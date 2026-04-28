@@ -3,7 +3,7 @@
 #include <vector>
 #include <variant>
 auto process(auto...) { return 0; }
-int main() {
+auto main() -> int {
 process("hello");
 process(42);
 process(true);

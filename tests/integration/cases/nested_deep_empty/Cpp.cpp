@@ -2,7 +2,7 @@
 #include <vector>
 #include <cstddef>
 #include <variant>
-int main() {
+auto main() -> int {
 auto my_data = std::vector<std::vector<std::vector<std::nullptr_t>>>{
     std::vector<std::vector<std::nullptr_t>>{std::vector<std::nullptr_t>{}, std::vector<std::nullptr_t>{}},
 };

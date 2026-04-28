@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <string>
-int main() {
+auto main() -> int {
 const auto my_data = std::initializer_list<std::string>{
     "apple",
     "banana",

@@ -1,5 +1,5 @@
 #include <initializer_list>
-int main() {
+auto main() -> int {
 auto my_data = -2147483649;
 (void)my_data;
 my_data = -2147483649;

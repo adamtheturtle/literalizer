@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <string>
-int main() {
+auto main() -> int {
 auto my_data = std::initializer_list<std::string>{
     "2024-01-15",
     "2024-06-01",

@@ -1,5 +1,5 @@
 #include <initializer_list>
-int main() {
+auto main() -> int {
 auto my_data = std::initializer_list<int>{
     1,
     2,

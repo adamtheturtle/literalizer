@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 #include <variant>
-int main() {
+auto main() -> int {
 auto my_data = std::vector<std::map<std::string, std::variant<std::string, int>>>{
     std::map<std::string, std::variant<std::string, int>>{{"key", "hello   world"}, {"value", 1}},
 };

@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-int main() {
+auto main() -> int {
 auto my_data = std::map<std::string, std::string>{
     {"my-key", "value1"},
     {"another-key", "value2"},

@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <vector>
 auto process(auto...) { return 0; }
-int main() {
+auto main() -> int {
 auto my_var = std::vector<int>{
     1,
     2,

@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstddef>
 #include <variant>
-int main() {
+auto main() -> int {
 auto my_data = std::vector<std::map<std::string, std::nullptr_t>>{
     std::map<std::string, std::nullptr_t>{},
     std::map<std::string, std::nullptr_t>{},
