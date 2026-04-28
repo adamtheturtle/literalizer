@@ -274,7 +274,8 @@ _DHALL_DEPTH_DELTA: dict[str, tuple[str, int]] = {
 
 
 def _dhall_has_multi_arg_in_call(stmt: str) -> bool:
-    """Return True when *stmt* contains a top-level comma inside parens.
+    """Return True when *call_expr* contains a top-level comma in
+    parentheses.
 
     A top-level comma (at parenthesis depth 1, brace depth 0, bracket
     depth 0, outside any string literal) means the call was rendered
@@ -920,7 +921,9 @@ class Dhall(metaclass=LanguageCls):
         """
 
         def _wrap(stmt: str) -> str:
-            """Validate *stmt* then wrap it as a ``let _ =`` binding."""
+            """Validate *call_expr* then wrap it as a ``let _ =``
+            binding.
+            """
             _dhall_validate_call_stmt(stmt=stmt)
             return f"let _ = {stmt}"
 
