@@ -60,7 +60,7 @@ def test_unsupported_ref_case_raises() -> None:
     """Passing an unsupported ref_case raises
     UnsupportedIdentifierCaseError.
     """
-    with pytest.raises(UnsupportedIdentifierCaseError):
+    with pytest.raises(expected_exception=UnsupportedIdentifierCaseError):
         literalizer.literalize(
             source='{"$ref": "my_var"}',
             input_format=literalizer.InputFormat.JSON,

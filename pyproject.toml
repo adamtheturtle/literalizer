@@ -307,6 +307,15 @@ exclude = [
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
+[[tool.mypy.overrides]]
+# Ref case golden files intentionally reference undefined identifiers.
+module = [
+    "tests.integration.cases.literalize_ref_in_dict.*",
+    "tests.integration.cases.literalize_ref_in_list.*",
+    "tests.integration.cases.literalize_ref_whole.*",
+]
+ignore_errors = true
+
 [tool.pyrefly]
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
 # `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
@@ -316,6 +325,11 @@ follow_untyped_imports = true
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
+project-excludes = [
+    "tests/integration/cases/literalize_ref_in_dict/**",
+    "tests/integration/cases/literalize_ref_in_list/**",
+    "tests/integration/cases/literalize_ref_whole/**",
+]
 search_path = [ ".", "src" ]
 
 [tool.pyright]
@@ -332,7 +346,15 @@ executionEnvironments = [
 [tool.ty]
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
-overrides = []
+
+[[tool.ty.overrides]]
+# Ref case golden files intentionally reference undefined identifiers.
+include = [
+    "tests/integration/cases/literalize_ref_in_dict/**",
+    "tests/integration/cases/literalize_ref_in_list/**",
+    "tests/integration/cases/literalize_ref_whole/**",
+]
+rules.unresolved-reference = "ignore"
 
 [tool.pytest]
 ini_options.xfail_strict = true
