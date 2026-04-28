@@ -165,21 +165,23 @@ def _purescript_has_large_int(val: Value) -> bool:
     """Return True if *val* contains an integer that overflows
     PureScript's 32-bit ``Int``.
     """
-    if isinstance(val, bool):
-        return False
-    if isinstance(val, int):
-        return not _purescript_int_fits_in_int32(value=val)
-    if isinstance(val, list):
-        return any(_purescript_has_large_int(val=v) for v in val)
-    if isinstance(val, dict):
-        return any(_purescript_has_large_int(val=v) for v in val.values())
-    if isinstance(val, set):
-        return any(
-            _purescript_has_large_int(val=v)
-            for v in val
-            if isinstance(v, int) and not isinstance(v, bool)
-        )
-    return False
+    match val:
+        case bool():
+            return False
+        case int():
+            return not _purescript_int_fits_in_int32(value=val)
+        case list():
+            return any(_purescript_has_large_int(val=v) for v in val)
+        case dict():
+            return any(_purescript_has_large_int(val=v) for v in val.values())
+        case set():
+            return any(
+                _purescript_has_large_int(val=v)
+                for v in val
+                if isinstance(v, int) and not isinstance(v, bool)
+            )
+        case _:
+            return False
 
 
 @beartype

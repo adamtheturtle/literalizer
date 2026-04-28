@@ -372,13 +372,15 @@ def _gleam_format_call_target(parts: Sequence[str]) -> str:
 @beartype
 def _scalar_gleam_type(*, value: Value) -> type:
     """Return the preamble-relevant type bucket for a scalar *value*."""
-    if isinstance(value, datetime.datetime):
-        return datetime.datetime
-    if isinstance(value, datetime.date):
-        return datetime.date
-    if value is None:
-        return type(None)
-    return type(value)
+    match value:
+        case datetime.datetime():
+            return datetime.datetime
+        case datetime.date():
+            return datetime.date
+        case None:
+            return type(None)
+        case _:
+            return type(value)
 
 
 @beartype
