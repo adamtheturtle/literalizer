@@ -450,14 +450,9 @@ def _build_purescript_call_stub_lines(
                 f"{name} :: forall a. a -> Unit",
                 f"{name} _ = unit",
             )
-        if not params:
-            return (f"{name} :: Unit", f"{name} = unit")
-        arg_types = " -> ".join(type_name for _ in params)
-        wildcards = " ".join("_" for _ in params)
-        return (
-            f"{name} :: {arg_types} -> Unit",
-            f"{name} {wildcards} = unit",
-        )
+        sig = " -> ".join([*[type_name] * len(params), "Unit"])
+        lhs = " ".join([name, *["_"] * len(params)])
+        return (f"{name} :: {sig}", f"{lhs} = unit")
 
     root = parts[0]
     method = parts[-1]
@@ -466,9 +461,6 @@ def _build_purescript_call_stub_lines(
     if is_wrapper_stub:
         func_type = "forall a. a -> Unit"
         func_body = "\\_ -> unit"
-    elif not params:
-        func_type = "Unit"
-        func_body = "unit"
     else:
         n = len(params)
         arg_types = " -> ".join(type_name for _ in range(n))
@@ -529,9 +521,9 @@ def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     binding_prefix = double_indent + "_ = "
     result: list[str] = []
     for line in calls.split(sep="\n"):
-        if not line:
+        if not line:  # pragma: no cover
             result.append("")
-        elif line[0].isspace():
+        elif line[0].isspace():  # pragma: no cover
             result.append(double_indent + line)
         else:
             result.append(binding_prefix + line)

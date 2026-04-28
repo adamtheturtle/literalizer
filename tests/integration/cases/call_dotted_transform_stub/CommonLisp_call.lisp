@@ -1,0 +1,6 @@
+(defun process (&rest args) (declare (ignore args)) 0)
+(defun log (&rest args) (declare (ignore args)) nil)
+(defun log.emit (&rest args) (declare (ignore args)) nil)
+(log.emit (process :value "hello"))
+(log.emit (process :value 42))
+(log.emit (process :value t))

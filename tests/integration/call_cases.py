@@ -285,6 +285,30 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_negative_int",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_dotted_transform_stub",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda c: f"log.emit({c})",
+        transform_stub_names=["log.emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
         # the generated file includes its own target-function stub.
         case_dir_name="call_wrap_in_file",

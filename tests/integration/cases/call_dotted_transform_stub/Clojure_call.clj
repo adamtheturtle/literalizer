@@ -1,0 +1,6 @@
+(defn process [& _args] 0)
+(defn log [& _args] nil)
+(defn log.emit [& _args] nil)
+(log.emit (process :value "hello"))
+(log.emit (process :value 42))
+(log.emit (process :value true))
