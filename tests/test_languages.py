@@ -626,8 +626,8 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
     floats.
 
     Gleam targets Erlang, which has no expression that evaluates to a
-    non-finite float, so the literalizer surfaces this at codegen time
-    rather than producing output that panics at ``gleam run``.
+    non-finite float, so the literalizer surfaces this at literalize
+    time rather than producing output that panics at ``gleam run``.
     """
     with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
         literalize(
