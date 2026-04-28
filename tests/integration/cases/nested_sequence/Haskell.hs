@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_sequence_Haskell where
 data Val = HNull | HBool Bool | HInt Integer | HStr String | HList [Val]
 instance Num Val where
     fromInteger = HInt

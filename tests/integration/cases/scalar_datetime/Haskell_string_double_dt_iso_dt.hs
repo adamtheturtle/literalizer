@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Check where
+module Fixture_scalar_datetime_Haskell_string_double_dt_iso_dt where
 import Data.String (IsString(fromString))
 data Val = HStr String
 instance IsString Val where

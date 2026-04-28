@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_date_Haskell_type_name_JsonVal_date where
 import Data.Time (Day, fromGregorian)
 data JsonVal = HDate Day
 my_data :: JsonVal

@@ -14,7 +14,13 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import ALL_LANGUAGES, Crystal, Erlang, Scala
+from literalizer.languages import (
+    ALL_LANGUAGES,
+    Crystal,
+    Erlang,
+    Haskell,
+    Scala,
+)
 
 
 @beartype
@@ -57,6 +63,19 @@ def crystal_module_name(*, golden_path: Path) -> str:
 
 
 @beartype
+def haskell_module_name(*, golden_path: Path) -> str:
+    """Return the Haskell module name for *golden_path*.
+
+    Produces a deterministic, per-fixture name so every compiled
+    ``.hs`` file in CI has a unique module declaration without needing
+    ``sed`` rewriting.
+    """
+    dir_name = golden_path.parent.name
+    stem = golden_path.stem
+    return f"Fixture_{dir_name}_{stem}"
+
+
+@beartype
 def with_per_fixture_module_name(
     *,
     spec: literalizer.Language,
@@ -65,8 +84,8 @@ def with_per_fixture_module_name(
     """Return *spec* with a per-fixture ``module_name`` if applicable.
 
     Languages whose CI lint requires unique module names (Crystal, Erlang,
-    Scala) get a deterministic name derived from *golden_path*; all other
-    languages are returned unchanged.
+    Haskell, Scala) get a deterministic name derived from *golden_path*; all
+    other languages are returned unchanged.
     """
     if isinstance(spec, Crystal):
         return dataclasses.replace(
@@ -77,6 +96,11 @@ def with_per_fixture_module_name(
         return dataclasses.replace(
             spec,
             module_name=erlang_module_name(golden_path=golden_path),
+        )
+    if isinstance(spec, Haskell):
+        return dataclasses.replace(
+            spec,
+            module_name=haskell_module_name(golden_path=golden_path),
         )
     if isinstance(spec, Scala):
         return dataclasses.replace(

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_datetime_list_Haskell where
 import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDiffTime)
 data Val = HList [Val] | HDatetime UTCTime
 my_data :: Val

@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_float_Haskell_float_format_fixed where
 data Val = HFloat Double
 instance Num Val where
     fromInteger n = HFloat (fromIntegral n)
