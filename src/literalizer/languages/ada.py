@@ -220,7 +220,12 @@ def _ada_call_stub(
         type_name = f"{root.title()}Type_"
         return (
             f"type {type_name} is tagged null record;",
-            _ada_method_stub(method_ada, type_name, param_list, stub_return),
+            _ada_method_stub(
+                method_ada=method_ada,
+                type_name=type_name,
+                param_list=param_list,
+                stub_return=stub_return,
+            ),
             f"{root.title()} : {type_name};",
         )
 
@@ -228,7 +233,12 @@ def _ada_call_stub(
     inner_type = f"{fields[-1].title()}Type_"
     lines.append(f"type {inner_type} is tagged null record;")
     lines.append(
-        _ada_method_stub(method_ada, inner_type, param_list, stub_return)
+        _ada_method_stub(
+            method_ada=method_ada,
+            type_name=inner_type,
+            param_list=param_list,
+            stub_return=stub_return,
+        )
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
