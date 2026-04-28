@@ -1,4 +1,4 @@
-module Check
+module Fixture_scalars_Crystal
 extend self
 my_data = [
     42,

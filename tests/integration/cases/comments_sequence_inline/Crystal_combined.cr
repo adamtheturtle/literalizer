@@ -1,4 +1,4 @@
-module Check
+module Fixture_comments_sequence_inline_Crystal_combined
 extend self
 my_data = [
     "a",  # note a

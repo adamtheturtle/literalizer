@@ -162,7 +162,7 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run Odin files
+      - name: Build Odin files
         run: |-
           mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
@@ -172,7 +172,7 @@ jobs:
               trap 'rm -rf "$wd"' EXIT
               cp "$src" "$wd/main.odin"
               cd "$wd"
-              odin run . -out:"$wd/prog" ) || exit 1
+              odin build . -out:"$wd/prog" ) || exit 1
           done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
@@ -1053,39 +1053,24 @@ jobs:
           crystal: 1.20.0
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
-      # of per fixture. Each fixture is wrapped in a unique
-      # `module FixtureN ... end` to avoid collisions: many fixtures
-      # share a basename (111 copies of `Crystal.cr`), 6 declare the
-      # same `class ThrottlerType_` / `class ClientType_` / etc., and
-      # two reuse the top-level `def emit` / `def process`. `extend
-      # self` lets unqualified calls like `emit(...)` inside the module
-      # body resolve to the module's own `def emit`. Any
-      # `require "set"` from the original fixture is hoisted to the top
-      # of its per-fixture file (before the module wrapper, since
-      # Crystal rejects `require` inside type declarations) and stripped
-      # from the wrapped body, so each fixture keeps its own dependency.
-      # The driver then `require`s every fixture so each module body
-      # executes at program start. The `fixture_N.cr <- original-path`
-      # mapping is printed so failures still point back to the source.
+      # of per fixture. Each fixture already carries a unique module name
+      # derived from its case directory and stem, so a plain copy
+      # suffices; no shell wrapping or sed rewriting needed. The driver
+      # `require`s every fixture so each module body executes at program
+      # start. The `name.cr <- original-path` mapping is printed so
+      # failures still point back to the source.
       - name: Run Crystal files
         run: |-
           workspace=$(mktemp -d)
           driver="$workspace/run_all.cr"
           : > "$driver"
-          i=0
           while IFS= read -r -d '' f; do
-            {
-              if grep -q '^require "set"$' "$f"; then
-                printf 'require "set"\n'
-              fi
-              printf 'module Fixture%d\n' "$i"
-              printf 'extend self\n'
-              sed '/^require "set"$/d' "$f"
-              printf 'end\n'
-            } > "$workspace/fixture_$i.cr"
-            printf 'require "./fixture_%d"\n' "$i" >> "$driver"
-            printf 'fixture_%d.cr <- %s\n' "$i" "$f"
-            i=$((i+1))
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .cr)
+            name="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/${name}.cr"
+            printf 'require "./%s"\n' "$name" >> "$driver"
+            printf '%s.cr <- %s\n' "$name" "$f"
           done < /tmp/files-to-lint
           crystal run "$driver"
 

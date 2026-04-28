@@ -1,4 +1,4 @@
-module Check
+module Fixture_ordered_map_nested_values_Crystal_combined
 extend self
 my_data = {
     "name" => "Alice",

@@ -1,5 +1,5 @@
 require "set"
-module Check
+module Fixture_set_comments_unsorted_order_Crystal_combined
 extend self
 my_data = Set{
     # before apple

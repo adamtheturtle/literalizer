@@ -1,4 +1,4 @@
-module Check
+module Fixture_dict_with_hyphen_keys_Crystal_combined
 extend self
 my_data = {
     "my-key" => "value1",

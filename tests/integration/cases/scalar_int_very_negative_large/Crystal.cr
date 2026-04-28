@@ -1,4 +1,4 @@
-module Check
+module Fixture_scalar_int_very_negative_large_Crystal
 extend self
 my_data = -9223372036854775809_i128
 end

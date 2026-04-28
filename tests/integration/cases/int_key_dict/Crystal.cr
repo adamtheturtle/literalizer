@@ -1,4 +1,4 @@
-module Check
+module Fixture_int_key_dict_Crystal
 extend self
 my_data = {
     "1" => "one",
