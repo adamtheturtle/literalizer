@@ -1063,7 +1063,8 @@ jobs:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
+        run: find tests/integration/cases -name '*.mojo' -not -name '*_ref.mojo' -print0
+          > /tmp/files-to-lint
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -1298,7 +1299,8 @@ jobs:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
+        run: find tests/integration/cases -name 'ObjectiveC*.m' -not -name 'ObjectiveC*_ref.m'
+          -print0 > /tmp/files-to-lint
       # Every fixture `#import`s `<Foundation/Foundation.h>`, whose parse
       # cost dominates each tiny TU. Precompile Foundation once and
       # preload it in the syntax-check and build-and-run steps so the
@@ -1333,7 +1335,8 @@ jobs:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
+        run: find tests/integration/cases -name 'ObjectiveC*.m' -not -name 'ObjectiveC*_ref.m'
+          -print0 > /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula. The PyPI clang-tidy (used in the
       # Ubuntu jobs) doesn't work here: it can't find Apple's Foundation
