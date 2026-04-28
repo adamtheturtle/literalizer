@@ -39,10 +39,10 @@ def main() -> None:
                 "-main-is",
                 mod,
                 "-outputdir",
-                str(tmpdir),
+                str(object=tmpdir),
                 "-o",
-                str(tmpdir / "run"),
-                str(src),
+                str(object=tmpdir / "run"),
+                str(object=src),
             ]
         else:
             main_hs = tmpdir / "Main.hs"
@@ -55,11 +55,11 @@ def main() -> None:
                 "-Wall",
                 "-Werror",
                 "-outputdir",
-                str(tmpdir),
+                str(object=tmpdir),
                 "-o",
-                str(tmpdir / "run"),
-                str(main_hs),
-                str(src),
+                str(object=tmpdir / "run"),
+                str(object=main_hs),
+                str(object=src),
             ]
 
         compile_result = subprocess.run(
@@ -76,7 +76,7 @@ def main() -> None:
             sys.exit(1)
 
         run_result = subprocess.run(
-            args=[str(tmpdir / "run")],
+            args=[str(object=tmpdir / "run")],
             capture_output=True,
             text=True,
             check=False,
