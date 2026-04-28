@@ -396,7 +396,7 @@ def _run_wrap_in_file_case(
             wrap_in_file=True,
             ref_case=effective_ref_case,
         )
-    except HeterogeneousCollectionError:
+    except HeterogeneousCollectionError:  # pragma: no cover
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} cannot represent this heterogeneous input")
     except CallArgNotSupportedError as exc:

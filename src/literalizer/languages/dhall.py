@@ -244,7 +244,7 @@ def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
         return f"DVal.DDouble {formatted}"
     if isinstance(original, (str, bytes, datetime.date)) or original is None:
         return f"DVal.DText {formatted}"
-    return formatted
+    return formatted  # pragma: no cover
 
 
 @beartype
@@ -293,7 +293,7 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
         c = call_expr[i]
         next_prev_is_word = False
         if in_string:
-            if c == "\\":
+            if c == "\\":  # pragma: no cover
                 i += 2
                 continue
             if c == '"':
