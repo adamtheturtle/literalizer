@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SReal of real
   | SList of val_t list
@@ -8,5 +6,4 @@ val my_data : val_t = SList [
     SReal (~2.2),
     SReal 3.3
 ]
-
-end
+val _ = my_data

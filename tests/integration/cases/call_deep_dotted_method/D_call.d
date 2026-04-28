@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 struct ClientType_ { int post(T...)(T args) { return 0; } }
 struct ApiType_ { ClientType_ client; }
 struct ObjType_ { ApiType_ api; }

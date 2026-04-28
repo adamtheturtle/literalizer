@@ -7,3 +7,5 @@ my_data = HSet [
     HStr "banana"  -- banana inline
     -- trailing
     ]
+main :: IO ()
+main = seq my_data (return ())

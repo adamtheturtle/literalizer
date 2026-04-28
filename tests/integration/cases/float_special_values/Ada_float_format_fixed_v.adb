@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     pragma Suppress (Division_Check);
     Zero : Long_Float := 0.0;
     pragma Volatile (Zero);
@@ -13,4 +13,4 @@ procedure Check is
     ];
 begin
     null;
-end Check;
+end Main;

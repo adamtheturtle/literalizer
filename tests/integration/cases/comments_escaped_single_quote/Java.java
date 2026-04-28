@@ -1,6 +1,6 @@
 import java.util.Map;
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 var my_data = Map.ofEntries(
     Map.entry("key", "it's here")  // a comment
 );

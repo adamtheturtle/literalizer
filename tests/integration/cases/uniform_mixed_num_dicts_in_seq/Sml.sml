@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SInt of LargeInt.int
   | SReal of real
@@ -10,5 +8,4 @@ val my_data : val_t = SList [
     SMap [("x", SInt 1), ("y", SReal 2.5)],
     SMap [("x", SInt 3), ("y", SReal 4.0)]
 ]
-
-end
+val _ = my_data

@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AInt (1),
         AFloat (2.5),
@@ -11,4 +11,4 @@ begin
         AFloat (2.5),
         AInt (3)
     ];
-end Check;
+end Main;

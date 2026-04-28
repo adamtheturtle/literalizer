@@ -14,11 +14,12 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = 1.100000}),
     ((CVal){.f = -2.200000}),
     ((CVal){.f = 3.300000}),
 }});
     (void)my_data;
+    return 0;
 }

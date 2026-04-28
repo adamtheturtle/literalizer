@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SInt of LargeInt.int
   | SList of val_t list
@@ -9,5 +7,4 @@ val my_data : val_t = SList [
     SInt 255,
     SInt (~10)
 ]
-
-end
+val _ = my_data

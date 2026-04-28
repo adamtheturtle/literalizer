@@ -6,3 +6,5 @@ my_data = HList [
     HStr "line1\rline2",
     HStr "\x01"
     ]
+main :: IO ()
+main = seq my_data (return ())

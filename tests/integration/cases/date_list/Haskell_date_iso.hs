@@ -5,3 +5,5 @@ my_data = HList [
     HStr "2024-01-15",
     HStr "2024-02-20"
     ]
+main :: IO ()
+main = seq my_data (return ())

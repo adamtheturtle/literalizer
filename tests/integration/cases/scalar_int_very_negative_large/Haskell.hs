@@ -9,3 +9,5 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
 my_data :: Val
 my_data = -9223372036854775809
+main :: IO ()
+main = seq my_data (return ())

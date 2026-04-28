@@ -1,5 +1,6 @@
 #include <initializer_list>
-void check_() {
+int main() {
 auto my_data = true;
     (void)my_data;
+    return 0;
 }

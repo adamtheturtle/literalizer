@@ -6,3 +6,5 @@ my_data = HList [
     HBool False,
     HBool True
     ]
+main :: IO ()
+main = seq my_data (return ())

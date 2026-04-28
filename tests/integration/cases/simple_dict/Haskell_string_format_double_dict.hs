@@ -19,3 +19,5 @@ my_data = HMap [
     ("active", HBool True),
     ("score", HNull)
     ]
+main :: IO ()
+main = seq my_data (return ())

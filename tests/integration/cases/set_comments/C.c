@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "apple"}),  // inline comment
     // before banana
@@ -22,4 +22,5 @@ CVal my_data = ((CVal){.a = (CVal[]){
     // trailing
 }});
     (void)my_data;
+    return 0;
 }

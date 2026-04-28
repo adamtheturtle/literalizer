@@ -12,3 +12,5 @@ my_data :: Val
 my_data = HList [
     HMap [("key", HStr "hello   world"), ("value", 1)]
     ]
+main :: IO ()
+main = seq my_data (return ())

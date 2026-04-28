@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     // first
     ((CVal){.s = "a"}),
@@ -29,4 +29,5 @@ my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "b"}),
 }});
     (void)my_data;
+    return 0;
 }

@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := ASet'[
         AStr ("apple"),
         AStr ("banana"),
@@ -11,4 +11,4 @@ begin
         AStr ("banana"),
         AStr ("cherry")
     ];
-end Check;
+end Main;

@@ -15,11 +15,11 @@ contains
   function fset(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fentry(k, u) result(v); character(len=*), intent(in) :: k; type(fval_t), intent(in) :: u; type(fval_t) :: v; end function
 end module fval_m
-program check
+program main
     use fval_m
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         flist([fval_t :: flist([fval_t :: fint(1_int64), fint(2_int64)]), flist([fval_t :: fstr('a'), fstr('b')])]) &
     ])
-end program check
+end program main

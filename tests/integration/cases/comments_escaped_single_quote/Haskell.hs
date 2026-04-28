@@ -4,3 +4,5 @@ my_data :: Val
 my_data = HMap [
     ("key", HStr "it's here")  -- a comment
     ]
+main :: IO ()
+main = seq my_data (return ())

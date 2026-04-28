@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SNull
   | SInt of LargeInt.int
@@ -10,5 +8,4 @@ val my_data : val_t = SMap [
     ("score", SNull),
     ("age", SInt 30)
 ]
-
-end
+val _ = my_data

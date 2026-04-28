@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AList'[AList'[AInt (1), AInt (2)], AList'[AInt (3), AInt (4)]],
         AList'[AList'[AInt (5)]]
@@ -9,4 +9,4 @@ begin
         AList'[AList'[AInt (1), AInt (2)], AList'[AInt (3), AInt (4)]],
         AList'[AList'[AInt (5)]]
     ];
-end Check;
+end Main;

@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AStr ("foo"),
         AStr ("bar"),
@@ -11,4 +11,4 @@ begin
         AStr ("bar"),
         AStr ("baz")
     ];
-end Check;
+end Main;

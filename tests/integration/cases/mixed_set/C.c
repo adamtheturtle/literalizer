@@ -14,11 +14,12 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.b = true}),
     ((CVal){.i = 42}),
     ((CVal){.s = "apple"}),
 }});
     (void)my_data;
+    return 0;
 }

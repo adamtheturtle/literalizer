@@ -5,3 +5,5 @@ my_data = HList [
     HStr "prefix ${HOME} suffix",
     HStr "${interpolated}"
     ]
+main :: IO ()
+main = seq my_data (return ())

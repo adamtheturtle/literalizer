@@ -13,3 +13,5 @@ my_data = HMap [
     ("a", HMap [("x", 1)]),
     ("b", 2)
     ]
+main :: IO ()
+main = seq my_data (return ())

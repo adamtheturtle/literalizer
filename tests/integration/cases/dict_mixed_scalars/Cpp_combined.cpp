@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::variant<int, std::string>>{
     {"a", 1},
     {"b", "x"},
@@ -13,4 +13,5 @@ my_data = std::map<std::string, std::variant<int, std::string>>{
     {"b", "x"},
 };
     (void)my_data;
+    return 0;
 }

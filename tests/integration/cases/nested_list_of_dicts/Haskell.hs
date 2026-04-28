@@ -5,3 +5,5 @@ my_data = HList [
     HList [HMap [("name", HStr "Alice")], HMap [("name", HStr "Bob")]],
     HList [HMap [("name", HStr "Charlie")], HMap [("name", HStr "Dave")]]
     ]
+main :: IO ()
+main = seq my_data (return ())

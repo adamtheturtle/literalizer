@@ -9,7 +9,7 @@ typedef struct {
     string k;
     _VVal v;
 } _VKV;
-module check;
+module main;
 initial begin
 static _VVal my_data[] = '{
     // # section

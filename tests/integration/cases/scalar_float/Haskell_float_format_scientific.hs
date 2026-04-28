@@ -12,3 +12,5 @@ instance Fractional Val where
     _ / _ = error "not implemented"
 my_data :: Val
 my_data = 3.14
+main :: IO ()
+main = seq my_data (return ())

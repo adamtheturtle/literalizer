@@ -15,11 +15,12 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 #include <math.h>
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = INFINITY}),
     ((CVal){.f = -INFINITY}),
     ((CVal){.f = NAN}),
 }});
     (void)my_data;
+    return 0;
 }

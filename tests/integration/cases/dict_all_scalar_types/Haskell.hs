@@ -24,3 +24,5 @@ my_data = HMap [
     ("dt", HDatetime (UTCTime (fromGregorian 2024 1 15) (secondsToDiffTime 43200))),
     ("by", HStr "48656c6c6f")
     ]
+main :: IO ()
+main = seq my_data (return ())

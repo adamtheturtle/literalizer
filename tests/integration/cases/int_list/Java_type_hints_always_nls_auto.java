@@ -1,5 +1,5 @@
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 long[] my_data = new long[]{
     1L,
     2L,

@@ -2,7 +2,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-void check_() {
+int main() {
 auto my_data = std::vector<std::pair<std::string, std::string>>{
     {"1", "one"},
     {"2", "two"},
@@ -15,4 +15,5 @@ my_data = std::vector<std::pair<std::string, std::string>>{
     {"42", "answer"},
 };
     (void)my_data;
+    return 0;
 }

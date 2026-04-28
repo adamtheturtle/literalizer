@@ -9,7 +9,7 @@ typedef struct {
     string k;
     _VVal v;
 } _VKV;
-module check;
+module main;
 initial begin
 static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_REAL, i: 0, r: $bitstoreal(64'h7FF0000000000000), s: ""},

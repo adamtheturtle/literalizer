@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SBool of bool
   | SInt of LargeInt.int
@@ -12,5 +10,4 @@ val my_data : val_t = SMap [
     (* Enable debug mode *)
     ("debug", SBool true)
 ]
-
-end
+val _ = my_data

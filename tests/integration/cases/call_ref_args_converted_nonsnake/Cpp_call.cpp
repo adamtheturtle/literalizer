@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <vector>
 auto process(auto...) { return 0; }
-void check_() {
+int main() {
 auto my_var = std::vector<int>{
     1,
     2,
@@ -14,4 +14,5 @@ auto my_other = std::vector<int>{
 };
 process(my_var, 42);
 process(my_other, 7);
+    return 0;
 }

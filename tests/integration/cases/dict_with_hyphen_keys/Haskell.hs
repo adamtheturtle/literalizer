@@ -6,3 +6,5 @@ my_data = HMap [
     ("another-key", HStr "value2"),
     ("normal_key", HStr "value3")
     ]
+main :: IO ()
+main = seq my_data (return ())

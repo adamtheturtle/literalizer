@@ -17,3 +17,5 @@ my_data = JList [
     (-1/0),
     (0/0)
     ]
+main :: IO ()
+main = seq my_data (return ())

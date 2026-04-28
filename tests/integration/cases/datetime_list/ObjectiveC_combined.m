@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @[
     @"2024-01-15T12:30:00.123456+00:00",
     @"2024-06-01T08:00:00+00:00",
@@ -10,4 +11,6 @@ my_data = @[
     @"2024-06-01T08:00:00+00:00",
 ];
     (void)my_data;
+}
+    return 0;
 }

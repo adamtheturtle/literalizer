@@ -1,9 +1,12 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = [NSSet setWithArray:@[
     @"apple",
     @"banana",
     @"cherry"
 ]];
     (void)my_data;
+}
+    return 0;
 }

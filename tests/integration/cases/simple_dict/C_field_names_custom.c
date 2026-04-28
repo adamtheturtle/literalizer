@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *key; CVal val; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.dict = (CKV[]){
     {"name", ((CVal){.str = "Alice"})},
     {"age", ((CVal){.integer = 30})},
@@ -22,4 +22,5 @@ CVal my_data = ((CVal){.dict = (CKV[]){
     {"score", ((CVal){.str = NULL})},
 }});
     (void)my_data;
+    return 0;
 }

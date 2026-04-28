@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SBool of bool
   | SInt of LargeInt.int
@@ -13,5 +11,4 @@ val my_data : val_t = SList [
     SBool false,
     SStr "hello \"world\""
 ]
-
-end
+val _ = my_data

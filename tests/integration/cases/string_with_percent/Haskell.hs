@@ -5,3 +5,5 @@ my_data = HList [
     HStr "100% done",
     HStr "%(name) is here"
     ]
+main :: IO ()
+main = seq my_data (return ())

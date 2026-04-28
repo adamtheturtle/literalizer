@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-void check_() {
+int main() {
 auto my_data = std::vector<bool>{
     true,
     false,
@@ -13,4 +13,5 @@ my_data = std::vector<bool>{
     true,
 };
     (void)my_data;
+    return 0;
 }

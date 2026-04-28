@@ -8,3 +8,5 @@ my_data = HList [
     HBool False,
     HStr "hello \"world\""
     ]
+main :: IO ()
+main = seq my_data (return ())

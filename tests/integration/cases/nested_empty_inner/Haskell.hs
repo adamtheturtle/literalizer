@@ -5,3 +5,5 @@ my_data = HList [
     HList [],
     HList []
     ]
+main :: IO ()
+main = seq my_data (return ())

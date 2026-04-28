@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AMap'[AEntry ("a", AInt (1))],
         AStr ("hello")
@@ -9,4 +9,4 @@ begin
         AMap'[AEntry ("a", AInt (1))],
         AStr ("hello")
     ];
-end Check;
+end Main;

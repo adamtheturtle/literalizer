@@ -12,3 +12,5 @@ my_data :: Val
 my_data = HMap [
     ("level1", HMap [("level2", HMap [("level3", HMap [("level4", HMap [("value", HStr "deep"), ("items", HList [HStr "a", HStr "b"])])]), ("sibling", 42)]), ("tags", HList [HMap [("name", HStr "tag1"), ("meta", HMap [("priority", 1), ("labels", HList [HStr "x", HStr "y"])])]])])
     ]
+main :: IO ()
+main = seq my_data (return ())

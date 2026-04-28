@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::variant<std::string, int, bool>>{
     // Server configuration
     {"host", "localhost"},  // default host
@@ -19,4 +19,5 @@ my_data = std::map<std::string, std::variant<std::string, int, bool>>{
     {"debug", true},
 };
     (void)my_data;
+    return 0;
 }

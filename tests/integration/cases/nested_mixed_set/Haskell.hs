@@ -13,3 +13,5 @@ my_data = HMap [
     ("name", HStr "Alice"),
     ("tags", HSet [HBool True, 42, HStr "apple"])
     ]
+main :: IO ()
+main = seq my_data (return ())

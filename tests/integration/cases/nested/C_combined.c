@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"users", ((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"name", ((CVal){.s = "Bob"})}, {"tags", ((CVal){.a = (CVal[]){((CVal){.s = "admin"}), ((CVal){.s = "user"})}})}}}), ((CVal){.m = (CKV[]){{"name", ((CVal){.s = "Carol"})}, {"tags", ((CVal){.a = (CVal[]){((CVal){.s = "guest"})}})}}})}})},
 }});
@@ -23,4 +23,5 @@ my_data = ((CVal){.m = (CKV[]){
     {"users", ((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"name", ((CVal){.s = "Bob"})}, {"tags", ((CVal){.a = (CVal[]){((CVal){.s = "admin"}), ((CVal){.s = "user"})}})}}}), ((CVal){.m = (CKV[]){{"name", ((CVal){.s = "Carol"})}, {"tags", ((CVal){.a = (CVal[]){((CVal){.s = "guest"})}})}}})}})},
 }});
     (void)my_data;
+    return 0;
 }

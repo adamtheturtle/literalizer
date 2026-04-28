@@ -1,11 +1,11 @@
-module Check
+module Main
 
 type Val =
     | FBool of bool
     | FInt of int64
     | FStr of string
     | FMap of (string * Val) list
-let private _checkDeclaration () =
+let private _mainDeclaration () =
     let mutable my_data: Val = FMap [
         // Server configuration
         ("host", FStr "localhost");  // default host
@@ -15,7 +15,7 @@ let private _checkDeclaration () =
     ]
     ignore my_data
 
-let private _checkAssignment () =
+let private _mainAssignment () =
     let my_data: Val = FMap [
         // Server configuration
         ("host", FStr "localhost");  // default host

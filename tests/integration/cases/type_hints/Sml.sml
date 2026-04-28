@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SNull
   | SBool of bool
@@ -17,5 +15,4 @@ val my_data : val_t = SMap [
     ("last_login", SDatetime ((2024, 1, 15), (12, 30, 0))),
     ("avatar", SStr "48656c6c6f")
 ]
-
-end
+val _ = my_data

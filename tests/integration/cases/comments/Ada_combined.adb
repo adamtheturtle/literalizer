@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AMap'[
         -- Server configuration
         AEntry ("host", AStr ("localhost")),  -- default host
@@ -15,4 +15,4 @@ begin
         -- Enable debug mode
         AEntry ("debug", ABool (True))
     ];
-end Check;
+end Main;

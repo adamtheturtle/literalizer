@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <variant>
-void check_() {
+int main() {
 auto my_data = std::map<std::string, std::variant<std::string, int>>{
     // Configuration
     {"name", "app"},
@@ -10,4 +10,5 @@ auto my_data = std::map<std::string, std::variant<std::string, int>>{
     {"port", 3000},
 };
     (void)my_data;
+    return 0;
 }

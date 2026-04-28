@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AMap'[
         AEntry ("a", AInt (1)),
         AEntry ("b", AInt (3000000000)),
@@ -7,4 +7,4 @@ procedure Check is
     ];
 begin
     null;
-end Check;
+end Main;

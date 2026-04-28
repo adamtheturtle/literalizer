@@ -440,13 +440,16 @@ class C(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a C declaration in a function."""
+        """Wrap a C declaration in a main function."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
-        return f"void {self.module_name}_(void) {{\n{content}{use_line}\n}}"
+        return (
+            f"int {self.module_name}(void) {{\n{content}{use_line}\n"
+            "    return 0;\n}"
+        )
 
     def wrap_combined_in_file(
         self,

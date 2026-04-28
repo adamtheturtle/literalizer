@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 struct ThrottlerType_ { int check(T...)(T args) { return 0; } }
 ThrottlerType_ throttler;
 int emit(T...)(T args) { return 0; }

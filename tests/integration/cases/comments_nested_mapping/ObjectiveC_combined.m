@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @{
     @"a": @{@"x": @1},
     @"b": @2,
@@ -10,4 +11,6 @@ my_data = @{
     @"b": @2,
 };
     (void)my_data;
+}
+    return 0;
 }

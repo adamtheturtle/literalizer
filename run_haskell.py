@@ -1,9 +1,8 @@
 """Compile and run a Haskell golden fixture via GHC.
 
-Most fixtures declare only ``my_data`` with no ``main``; for those we
-compile a generated ``Main.hs`` wrapper that forces evaluation of it.
-Call fixtures (stem ending ``_call``) define their own ``main`` and are
-compiled directly with ``-main-is <module>``.
+Every fixture defines its own ``main`` entry point under a
+``module Fixture_<case>_<variant> where`` declaration, so each is
+compiled with ``-main-is <module>`` using the declared module name.
 """
 
 import subprocess
@@ -11,56 +10,36 @@ import sys
 import tempfile
 from pathlib import Path
 
-_MAIN_TEMPLATE = """\
-module Main where
 
-import {mod}
-
-main :: IO ()
-main = seq {mod}.my_data (return ())
-"""
+def _module_name(*, src: Path) -> str:
+    """Return the module name from the ``module … where`` declaration line."""
+    for line in src.read_text(encoding="utf-8").splitlines():
+        if line.startswith("module "):
+            return line.split()[1]
+    return src.stem
 
 
 def main() -> None:
     """Compile and run the given Haskell golden file."""
     filename = sys.argv[1]
     src = Path(filename)
-    mod = src.stem
-    is_call = mod.endswith("_call")
+    mod = _module_name(src=src)
 
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
 
-        if is_call:
-            compile_args = [
-                "ghc",
-                "-Wall",
-                "-Werror",
-                "-main-is",
-                mod,
-                "-outputdir",
-                str(object=tmpdir),
-                "-o",
-                str(object=tmpdir / "run"),
-                str(object=src),
-            ]
-        else:
-            main_hs = tmpdir / "Main.hs"
-            main_hs.write_text(
-                data=_MAIN_TEMPLATE.format(mod=mod),
-                encoding="utf-8",
-            )
-            compile_args = [
-                "ghc",
-                "-Wall",
-                "-Werror",
-                "-outputdir",
-                str(object=tmpdir),
-                "-o",
-                str(object=tmpdir / "run"),
-                str(object=main_hs),
-                str(object=src),
-            ]
+        compile_args = [
+            "ghc",
+            "-Wall",
+            "-Werror",
+            "-main-is",
+            mod,
+            "-outputdir",
+            str(object=tmpdir),
+            "-o",
+            str(object=tmpdir / "run"),
+            str(object=src),
+        ]
 
         compile_result = subprocess.run(
             args=compile_args,

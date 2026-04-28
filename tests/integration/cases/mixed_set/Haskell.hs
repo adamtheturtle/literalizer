@@ -14,3 +14,5 @@ my_data = HSet [
     42,
     HStr "apple"
     ]
+main :: IO ()
+main = seq my_data (return ())

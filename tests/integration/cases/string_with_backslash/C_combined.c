@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "C:\\path\\to\\file"}),
     ((CVal){.s = "back\\\\slash"}),
@@ -35,4 +35,5 @@ my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "line1\\nline2\nwith newline"}),
 }});
     (void)my_data;
+    return 0;
 }

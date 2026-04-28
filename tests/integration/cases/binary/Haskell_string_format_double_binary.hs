@@ -8,3 +8,5 @@ my_data :: Val
 my_data = HList [
     "48656c6c6f"
     ]
+main :: IO ()
+main = seq my_data (return ())

@@ -15,7 +15,7 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 static void process(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; }
-void check_(void) {
+int main(void) {
 CVal my_var = ((CVal){.a = (CVal[]){
     ((CVal){.i = 1}),
     ((CVal){.i = 2}),
@@ -28,4 +28,5 @@ CVal my_other = ((CVal){.a = (CVal[]){
 }});
 process(my_var, ((CVal){.i = 42}));
 process(my_other, ((CVal){.i = 7}));
+    return 0;
 }

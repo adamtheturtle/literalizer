@@ -1,5 +1,5 @@
 import std.json;
-void _check() {
+void main() {
 struct ClientType_ { int fetch(T...)(T args) { return 0; } }
 struct AppType_ { ClientType_ client; }
 AppType_ app;

@@ -6,3 +6,5 @@ instance IsString Val where
     fromString = HStr
 my_data :: Val
 my_data = "hello"
+main :: IO ()
+main = seq my_data (return ())

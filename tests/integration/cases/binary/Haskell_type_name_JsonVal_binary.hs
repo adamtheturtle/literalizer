@@ -4,3 +4,5 @@ my_data :: JsonVal
 my_data = HList [
     HStr "48656c6c6f"
     ]
+main :: IO ()
+main = seq my_data (return ())

@@ -1,5 +1,5 @@
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 var my_data = new int[]{
     0b11110100001001000000,
     -0b10011010010,

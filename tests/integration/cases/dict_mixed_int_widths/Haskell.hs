@@ -14,3 +14,5 @@ my_data = HMap [
     ("b", 3000000000),
     ("c", HStr "x")
     ]
+main :: IO ()
+main = seq my_data (return ())

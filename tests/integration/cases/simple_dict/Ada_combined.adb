@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AMap'[
         AEntry ("name", AStr ("Alice")),
         AEntry ("age", AInt (30)),
@@ -13,4 +13,4 @@ begin
         AEntry ("active", ABool (True)),
         AEntry ("score", ANull)
     ];
-end Check;
+end Main;

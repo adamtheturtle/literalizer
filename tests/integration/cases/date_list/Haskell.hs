@@ -6,3 +6,5 @@ my_data = HList [
     HDate (fromGregorian 2024 1 15),
     HDate (fromGregorian 2024 2 20)
     ]
+main :: IO ()
+main = seq my_data (return ())

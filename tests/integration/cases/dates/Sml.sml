@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SStr of string
   | SDate of (int * int * int)
@@ -9,5 +7,4 @@ val my_data : val_t = SMap [
     ("date", SDate (2024, 1, 15)),
     ("datetime", SDatetime ((2024, 1, 15), (12, 30, 0)))
 ]
-
-end
+val _ = my_data

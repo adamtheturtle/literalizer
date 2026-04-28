@@ -1,7 +1,4 @@
-structure Check = struct
-
 datatype val_t =
     SNull
 val my_data : val_t = SNull
-
-end
+val _ = my_data

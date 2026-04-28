@@ -11,7 +11,7 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC check ()
+PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.null):
     SEQ
         SKIP

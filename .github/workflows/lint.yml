@@ -407,35 +407,20 @@ jobs:
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
-      # Non-call fixtures declare `structure Check` with a `my_data` val;
-      # MLton never evaluates the body unless a top-level expression
-      # references it, so compile alongside a small force file that
-      # forces `Check.my_data` to be constructed.
-      # Call fixtures use val _ = … bindings that already force evaluation,
-      # so they are compiled without the force file.
+      # Every fixture defines its own entry point at top level, so compile
+      # and run each file directly. Each invocation gets a private tmpdir
+      # so parallel builds don't clobber each other's output binary.
       - name: Lint Sml
         run: |-
-          find tests/integration/cases -name '*.sml' ! -name '*_call.sml' -print0 > /tmp/files-sml
+          find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml
           cat > /tmp/run-sml.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.sml"
-          cp .github/scripts/sml_force.sml "$tmpdir/force.sml"
-          cp .github/scripts/sml_main.mlb "$tmpdir/main.mlb"
-          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
+          mlton -output "$tmpdir/out" "$tmpdir/check.sml" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
-          find tests/integration/cases -name '*_call.sml' -print0 > /tmp/files-sml-call
-          cat > /tmp/run-sml-call.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/check.sml"
-          cp .github/scripts/sml_call_main.mlb "$tmpdir/main.mlb"
-          mlton -output "$tmpdir/out" "$tmpdir/main.mlb" || exit 1
-          "$tmpdir/out" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml-call.sh < /tmp/files-sml-call
 
       - name: Lint Dhall
         run: |-
@@ -684,20 +669,15 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
-      # Fixtures define `void check_(void)` with no main, so compile each
-      # alongside `.github/scripts/c_main.c` which invokes it. Compile
-      # `c_main.c` once up front so each fixture link reuses the object
-      # instead of re-parsing the same TU. The build-and-run step also
-      # surfaces any syntax errors, so a separate `-fsyntax-only` pass
-      # would be redundant.
-      - name: Build c_main object
-        run: clang -std=c11 -c .github/scripts/c_main.c -o /tmp/c_main.o
+      # Each fixture defines its own main, so compile and run directly.
+      # The build-and-run step also surfaces any syntax errors, so a
+      # separate `-fsyntax-only` pass would be redundant.
       - name: Run C files
         run: |-
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c11 "$1" /tmp/c_main.o -o "$tmpdir/run" || exit 1
+          clang -std=c11 "$1" -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
@@ -719,21 +699,16 @@ jobs:
       - name: Build precompiled header
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
-      # Fixtures define `void check_()` with no main, so compile alongside
-      # `.github/scripts/cpp_main.cpp` which invokes it and link into a
-      # runnable binary. Compile `cpp_main.cpp` once up front so each
-      # fixture link reuses the object instead of re-parsing the same TU.
+      # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
-      - name: Build cpp_main object
-        run: clang++ -std=c++20 -c .github/scripts/cpp_main.cpp -o /tmp/cpp_main.o
       - name: Run C++ files
         run: |-
           cat > /tmp/run-cpp.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           clang++ -std=c++20 -include-pch /tmp/pch.hpp.pch "$1" \
-            /tmp/cpp_main.o -o "$tmpdir/run" || exit 1
+            -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
@@ -1014,10 +989,8 @@ jobs:
           compiler: dmd-latest
       - name: Check D syntax
         run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
-      # Fixtures define `void _check()` with no main entry point, so
-      # compile each alongside `.github/scripts/d_main.d`, which imports
-      # the fixture as module `check` and invokes `_check()`. Each
-      # invocation gets a private tmpdir so parallel builds don't
+      # Each fixture defines its own main, so compile and run directly.
+      # Each invocation gets a private tmpdir so parallel builds don't
       # clobber each other's intermediate object files or output binary.
       - name: Run D files
         run: |-
@@ -1025,8 +998,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          cp .github/scripts/d_main.d "$tmpdir/main.d"
-          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/main.d" "$tmpdir/check.d" || exit 1
+          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
@@ -1328,22 +1300,17 @@ jobs:
       - name: Check Objective-C syntax
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror -include-pch
           /tmp/pch.h.pch < /tmp/files-to-lint
-      # Fixtures define `check_(void)` with no main entry point, so
-      # compile each alongside a tiny wrapper that calls it. Compile
-      # `objc_main.m` once up front so each fixture link reuses the
-      # object instead of re-parsing the same TU. Link against Foundation
-      # and execute to surface runtime errors. Each invocation gets a
-      # private tmpdir so parallel builds don't clobber each other's
-      # output binary.
-      - name: Build objc_main object
-        run: clang -c .github/scripts/objc_main.m -o /tmp/objc_main.o
+      # Each fixture defines its own main, so compile and run directly.
+      # Link against Foundation and execute to surface runtime errors.
+      # Each invocation gets a private tmpdir so parallel builds don't
+      # clobber each other's output binary.
       - name: Run Objective-C files
         run: |-
           cat > /tmp/run-objc.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           clang -framework Foundation -Werror -include-pch /tmp/pch.h.pch "$1" \
-            /tmp/objc_main.o -o "$tmpdir/out" || exit 1
+            -o "$tmpdir/out" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint

@@ -1,6 +1,6 @@
 import java.time.LocalDate;
-class Check {
-    public static void check() {
+class Main {
+    public static void main() {
 var my_data = LocalDate.of(2024, 1, 15);
     }
 }

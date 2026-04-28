@@ -6,3 +6,5 @@ my_data = HMap [
     ("b", HNull)
     -- trailing
     ]
+main :: IO ()
+main = seq my_data (return ())

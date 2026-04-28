@@ -5,3 +5,5 @@ my_data = HMap [
     ("description", HStr "# not a comment\n"),
     ("name", HStr "foo")
     ]
+main :: IO ()
+main = seq my_data (return ())

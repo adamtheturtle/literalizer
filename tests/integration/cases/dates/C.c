@@ -14,10 +14,11 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-void check_(void) {
+int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"date", ((CVal){.s = "2024-01-15"})},
     {"datetime", ((CVal){.s = "2024-01-15T12:30:00+00:00"})},
 }});
     (void)my_data;
+    return 0;
 }

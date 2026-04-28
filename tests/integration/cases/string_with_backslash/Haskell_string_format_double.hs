@@ -14,3 +14,5 @@ my_data = HList [
     "both \"quotes''' here",
     "line1\\nline2\nwith newline"
     ]
+main :: IO ()
+main = seq my_data (return ())

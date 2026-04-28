@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @[
     @YES,
     @"hi",
@@ -14,4 +15,6 @@ my_data = @[
     [NSNull null],
 ];
     (void)my_data;
+}
+    return 0;
 }

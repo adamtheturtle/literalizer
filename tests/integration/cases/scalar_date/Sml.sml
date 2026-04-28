@@ -1,7 +1,4 @@
-structure Check = struct
-
 datatype val_t =
     SDate of (int * int * int)
 val my_data : val_t = SDate (2024, 1, 15)
-
-end
+val _ = my_data

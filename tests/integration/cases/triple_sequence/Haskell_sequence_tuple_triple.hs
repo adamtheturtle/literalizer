@@ -14,3 +14,5 @@ my_data = (
     HStr "hello",
     HBool True
     )
+main :: IO ()
+main = seq my_data (return ())

@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AInt (42),
         AFloat (3.14),
@@ -15,4 +15,4 @@ begin
         ABool (False),
         AStr ("hello ""world""")
     ];
-end Check;
+end Main;

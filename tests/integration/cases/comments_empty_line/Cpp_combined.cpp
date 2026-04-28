@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-void check_() {
+int main() {
 auto my_data = std::vector<std::string>{
     "a",
     //
@@ -14,4 +14,5 @@ my_data = std::vector<std::string>{
     "b",
 };
     (void)my_data;
+    return 0;
 }

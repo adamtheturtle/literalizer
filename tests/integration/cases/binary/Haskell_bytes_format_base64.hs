@@ -4,3 +4,5 @@ my_data :: Val
 my_data = HList [
     HStr "SGVsbG8="
     ]
+main :: IO ()
+main = seq my_data (return ())

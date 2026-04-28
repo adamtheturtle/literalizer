@@ -1,5 +1,3 @@
-structure Check = struct
-
 datatype val_t =
     SBool of bool
   | SInt of LargeInt.int
@@ -13,5 +11,3 @@ end
 val _ = app.client.fetch("hello")
 val _ = app.client.fetch(42)
 val _ = app.client.fetch(SBool true)
-
-end

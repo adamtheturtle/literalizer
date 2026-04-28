@@ -1,5 +1,8 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @42;
     (void)my_data;
+}
+    return 0;
 }

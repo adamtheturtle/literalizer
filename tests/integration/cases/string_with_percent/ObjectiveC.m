@@ -1,8 +1,11 @@
 #import <Foundation/Foundation.h>
-void check_(void) {
+int main(void) {
+@autoreleasepool {
 id my_data = @[
     @"100% done",
     @"%(name) is here",
 ];
     (void)my_data;
+}
+    return 0;
 }
