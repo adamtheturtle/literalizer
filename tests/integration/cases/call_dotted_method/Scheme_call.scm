@@ -1,0 +1,6 @@
+(define app (lambda args (if #f #f)))
+(define app.client (lambda args (if #f #f)))
+(define app.client.fetch (lambda args (if #f #f)))
+(app.client.fetch "hello")
+(app.client.fetch 42)
+(app.client.fetch #t)

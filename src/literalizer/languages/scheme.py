@@ -34,7 +34,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -45,6 +44,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PrefixCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -61,6 +61,28 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _scheme_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Scheme stub definitions for a call name.
+
+    For dotted names like ``app.client.fetch``, one ``define`` is
+    emitted per prefix so that intermediate identifiers are bound.
+    Each stub accepts any number of positional arguments via a rest
+    parameter.  Stub bodies are ``(if #f #f)`` (the unspecified value)
+    for void stubs and ``0`` for value stubs.
+    """
+    body = "(if #f #f)" if stub_return is StubReturn.VOID else "0"
+    return tuple(
+        f"(define {'.'.join(parts[: i + 1])} (lambda args {body}))"
+        for i in range(len(parts))
+    )
 
 
 @beartype
@@ -257,6 +279,11 @@ class Scheme(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Scheme call style options."""
 
+        PREFIX = PrefixCallStyle(
+            arg_separator=" ",
+            keyword_prefix="",
+        )
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -331,6 +358,7 @@ class Scheme(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    call_style: CallStyles = CallStyles.PREFIX
     indent: str = "    "
 
     null_literal: ClassVar[str] = "'()"
@@ -346,9 +374,11 @@ class Scheme(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Return the active call-style configuration."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -397,7 +427,7 @@ class Scheme(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _scheme_call_stub
 
     @cached_property
     def format_call_preamble_stub(
