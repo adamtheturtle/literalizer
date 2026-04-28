@@ -166,13 +166,17 @@ jobs:
         run: |-
           mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
+          build_odin() {
+            local src="$1"
+            local wd
+            wd=$(mktemp -d)
+            trap 'rm -rf "$wd"' RETURN
+            cp "$src" "$wd/main.odin"
+            ( cd "$wd" && odin build . -out:"$wd/prog" )
+          }
           for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
             src=$(realpath "${files[i]}")
-            ( wd=$(mktemp -d)
-              trap 'rm -rf "$wd"' EXIT
-              cp "$src" "$wd/main.odin"
-              cd "$wd"
-              odin build . -out:"$wd/prog" ) || exit 1
+            build_odin "$src" || build_odin "$src" || exit 1
           done
 
   # Fixture languages whose interpreter is a quick `apt-get install`.
@@ -289,7 +293,7 @@ jobs:
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
-          xargs -0 uv run --no-project python check_elm_syntax.py < /tmp/files-elm
+          PYTHONPATH=. xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
           xargs -0 uv run --no-project python run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
@@ -310,19 +314,19 @@ jobs:
       - name: Lint Ada
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_ada_syntax.py < /tmp/files-ada
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_ada_syntax.py < /tmp/files-ada
       - name: Run Ada files
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python run_ada.py < /tmp/files-ada
 
       - name: Lint Occam
         run: |-
           find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_occam_syntax.py < /tmp/files-occam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_occam_syntax.py < /tmp/files-occam
 
       - name: Lint Toml
         run: |-
           find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml
-          xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python check_toml_syntax.py < /tmp/files-toml
+          xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python .github/scripts/check_toml_syntax.py < /tmp/files-toml
 
       - name: Lint Yaml
         run: |-
@@ -455,7 +459,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       # Populate a shared primed project once up front so each parallel
-      # `check_gleam_syntax.py` worker can copy from it instead of
+      # `.github/scripts/check_gleam_syntax.py` worker can copy from it instead of
       # running its own `gleam deps download`. 168 parallel downloads
       # otherwise hammer hex.pm and trip transient network failures.
       - name: Prime Gleam project
@@ -469,7 +473,7 @@ jobs:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
           find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_gleam_syntax.py < /tmp/files-gleam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
       # `elixir` compiles the module but never invokes it. The script
@@ -590,7 +594,7 @@ jobs:
       - name: Lint PureScript
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript
-          xargs -0 -P "$(nproc)" -n 1 uv run --no-project python check_purescript_syntax.py < /tmp/files-purescript
+          PYTHONPATH=. xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
       - name: Run PureScript files
         run: xargs -0 uv run --no-project python run_purescript.py < /tmp/files-purescript
 
@@ -1273,7 +1277,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python check_v_syntax.py
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_v_syntax.py
           < /tmp/files-to-lint
       - name: Run V files
         run: |
