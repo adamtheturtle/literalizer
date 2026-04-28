@@ -612,7 +612,7 @@ class Dart(metaclass=LanguageCls):
         # my_data sentinel so the CI lint harness can import it.
         indented = "\n".join(
             f"{self.indent}{line}" if line.strip() else line
-            for line in content.split("\n")
+            for line in content.split(sep="\n")
         )
         parts: list[str] = []
         if body_preamble:
