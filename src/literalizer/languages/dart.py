@@ -614,14 +614,15 @@ class Dart(metaclass=LanguageCls):
             f"{self.indent}{line}" if line.strip() else line
             for line in content.split(sep="\n")
         )
-        parts: list[str] = []
-        if body_preamble:
-            parts.append("\n".join(body_preamble))
-        parts.append("final my_data = null;")
-        parts.append("void main() {")
-        parts.append(indented)
-        parts.append("}")
-        return "\n".join(parts)
+        return "\n".join(
+            [
+                *body_preamble,
+                "final my_data = null;",
+                "void main() {",
+                indented,
+                "}",
+            ]
+        )
 
     @staticmethod
     def wrap_combined_in_file(
