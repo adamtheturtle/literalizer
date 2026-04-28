@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
+  (:class:`~literalizer.IdentifierCase`).  When set, any
+  ``{"$ref": "name"}`` mapping in the input data -- at the top level or
+  nested inside dicts and lists -- is rendered as a bare identifier
+  instead of a literal dict.  The identifier is case-converted to match
+  the language's conventions (e.g. ``my_var`` becomes ``myVar`` for
+  JavaScript).  Languages apply their own sigil prefix via
+  ``format_call_ref_identifier`` (e.g. ``$my_var`` for PHP).  Without
+  ``ref_case``, ``$ref`` mappings are treated as ordinary literal dicts,
+  preserving backwards compatibility.  Passing a case not in
+  ``language.identifier_cases`` raises
+  :exc:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
 - C, C++, Objective-C, and D fixtures now emit a ``main`` entry point
   directly (``int main(void)``/``int main()``/``void main()``) instead
   of a ``check_()``/``_check()`` function that required a separate

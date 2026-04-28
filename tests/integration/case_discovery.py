@@ -21,6 +21,7 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+from .literalize_ref_cases import LITERALIZE_REF_CASE_CONFIGS
 
 
 @beartype
@@ -72,12 +73,17 @@ def discover_cases(
 ) -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
     call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
+    ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
+            continue
+        if case_dir.name in ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         for lang_cls in sorted_languages():
@@ -131,12 +137,17 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     styles.
     """
     call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
+    ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     cases: list[CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
+            continue
+        if case_dir.name in ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         for lang_cls in sorted_languages():
