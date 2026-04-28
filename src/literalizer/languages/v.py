@@ -225,7 +225,9 @@ def _v_call_preamble_stub(
         )
 
     def _cap_type(name: str, /) -> str:
-        """Return *name* capitalised and suffixed with ``Type_``."""
+        """Return *name* with an upper-case first letter and ``Type_``
+        suffix.
+        """
         return name[0].upper() + name[1:] + "Type_"
 
     root = parts[0]
