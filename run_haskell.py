@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def _module_name(*, src: Path) -> str:
-    """Return the module name declared in *src*."""
+    """Return the module name from the ``module … where`` declaration line."""
     for line in src.read_text(encoding="utf-8").splitlines():
         if line.startswith("module "):
             return line.split()[1]
