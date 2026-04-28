@@ -242,7 +242,7 @@ def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
         return f"DVal.DInteger {formatted}"
     if isinstance(original, float):
         return f"DVal.DDouble {formatted}"
-    if isinstance(original, str):
+    if isinstance(original, (str, bytes, datetime.date)) or original is None:
         return f"DVal.DText {formatted}"
     return formatted
 
@@ -260,11 +260,9 @@ def _dhall_format_call_target(parts: Sequence[str], /) -> str:
     return ".".join(parts) + " "
 
 
-_DHALL_WORD_BEFORE_PAREN_RE = re.compile(pattern=r"[A-Za-z_0-9]\(")
-
-
-_DHALL_DEPTH_DELTA: dict[str, tuple[str, int]] = {
-    "(": ("paren", +1),
+# Maps closing/brace/bracket chars to their depth-tracking key and delta.
+# ``(`` is handled separately so the word-before-paren check fires first.
+_DHALL_BRACKET_DELTA: dict[str, tuple[str, int]] = {
     ")": ("paren", -1),
     "{": ("brace", +1),
     "}": ("brace", -1),
@@ -273,47 +271,12 @@ _DHALL_DEPTH_DELTA: dict[str, tuple[str, int]] = {
 }
 
 
-def _dhall_has_multi_arg_in_call(stmt: str) -> bool:
-    """Return True when *call_expr* contains a top-level comma in
-    parentheses.
-
-    A top-level comma (at parenthesis depth 1, brace depth 0, bracket
-    depth 0, outside any string literal) means the call was rendered
-    with more than one positional argument, which is invalid Dhall
-    because Dhall has no tuple type.
-    """
-    depths: dict[str, int] = {"paren": 0, "brace": 0, "bracket": 0}
-    in_string = False
-    i = 0
-    while i < len(stmt):
-        c = stmt[i]
-        if in_string:
-            if c == "\\":
-                i += 2
-                continue
-            if c == '"':
-                in_string = False
-        elif c == '"':
-            in_string = True
-        elif c in _DHALL_DEPTH_DELTA:
-            key, delta = _DHALL_DEPTH_DELTA[c]
-            depths[key] += delta
-        elif (
-            c == ","
-            and depths["paren"] >= 1
-            and depths["brace"] == 0
-            and depths["bracket"] == 0
-        ):
-            return True
-        i += 1
-    return False
-
-
-def _dhall_validate_call_stmt(stmt: str) -> None:
+def _dhall_validate_call_stmt(call_expr: str) -> None:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     call expressions that cannot be represented as valid Dhall.
 
-    Two patterns are rejected:
+    Two patterns are rejected, both detected in a single pass that
+    tracks string-literal boundaries so quoted content is ignored:
 
     * A word character directly followed by ``(`` — a call-transform
       wrapper (e.g. ``emit(...)``) written without the whitespace that
@@ -322,23 +285,52 @@ def _dhall_validate_call_stmt(stmt: str) -> None:
       positional argument, which Dhall cannot represent because it has
       no tuple type.
     """
-    if _DHALL_WORD_BEFORE_PAREN_RE.search(string=stmt):
-        raise CallArgNotSupportedError(
-            language_name="Dhall",
-            reason=(
-                "call_transform produces a function application without "
-                "the whitespace Dhall requires before '(' "
-                f"(in: {stmt!r})"
-            ),
-        )
-    if _dhall_has_multi_arg_in_call(stmt=stmt):
-        raise CallArgNotSupportedError(
-            language_name="Dhall",
-            reason=(
-                "Dhall has no tuple type; PositionalCallStyle cannot "
-                "represent calls with more than one argument"
-            ),
-        )
+    depths: dict[str, int] = {"paren": 0, "brace": 0, "bracket": 0}
+    in_string = False
+    prev_is_word = False
+    i = 0
+    while i < len(call_expr):
+        c = call_expr[i]
+        next_prev_is_word = False
+        if in_string:
+            if c == "\\":
+                i += 2
+                continue
+            if c == '"':
+                in_string = False
+        elif c == '"':
+            in_string = True
+        elif c == "(":
+            if prev_is_word:
+                raise CallArgNotSupportedError(
+                    language_name="Dhall",
+                    reason=(
+                        "call_transform produces a function application "
+                        "without the whitespace Dhall requires before '(' "
+                        f"(in: {call_expr!r})"
+                    ),
+                )
+            depths["paren"] += 1
+        elif c in _DHALL_BRACKET_DELTA:
+            key, delta = _DHALL_BRACKET_DELTA[c]
+            depths[key] += delta
+        elif (
+            c == ","
+            and depths["paren"] >= 1
+            and depths["brace"] == 0
+            and depths["bracket"] == 0
+        ):
+            raise CallArgNotSupportedError(
+                language_name="Dhall",
+                reason=(
+                    "Dhall has no tuple type; PositionalCallStyle cannot "
+                    "represent calls with more than one argument"
+                ),
+            )
+        else:
+            next_prev_is_word = c.isalnum() or c == "_"
+        prev_is_word = next_prev_is_word
+        i += 1
 
 
 def _dhall_reject_ref_identifier(name: str) -> str:
@@ -924,7 +916,7 @@ class Dhall(metaclass=LanguageCls):
             """Validate *call_expr* then wrap it as a ``let _ =``
             binding.
             """
-            _dhall_validate_call_stmt(stmt=stmt)
+            _dhall_validate_call_stmt(call_expr=stmt)
             return f"let _ = {stmt}"
 
         return _wrap
