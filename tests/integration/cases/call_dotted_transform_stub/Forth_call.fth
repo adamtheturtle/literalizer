@@ -1,6 +1,6 @@
 : process ;
-: log ;
-: log.emit ;
-s\" hello" process log.emit
-42 process log.emit
-true process log.emit
+: tracer ;
+: tracer.emit ;
+s\" hello" process tracer.emit
+42 process tracer.emit
+true process tracer.emit

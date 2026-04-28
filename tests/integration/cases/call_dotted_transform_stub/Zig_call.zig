@@ -11,10 +11,10 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 fn process(value: ZVal) void { _ = value; }
-const LogType_ = struct { fn emit(self: LogType_, _arg: anytype) void { _ = self; _ = _arg; } };
-const log: LogType_ = .{};
+const TracerType_ = struct { fn emit(self: TracerType_, _arg: anytype) void { _ = self; _ = _arg; } };
+const tracer: TracerType_ = .{};
 pub fn main() void {
-    log.emit(process(.{ .str = "hello" }));
-    log.emit(process(.{ .int = 42 }));
-    log.emit(process(.{ .bool = true }));
+    tracer.emit(process(.{ .str = "hello" }));
+    tracer.emit(process(.{ .int = 42 }));
+    tracer.emit(process(.{ .bool = true }));
 }

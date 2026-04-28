@@ -1,5 +1,5 @@
 proc process {args} {return {}}
-proc log.emit {args} {}
-log.emit [process "hello"]
-log.emit [process 42]
-log.emit [process 1]
+proc tracer.emit {args} {}
+tracer.emit [process "hello"]
+tracer.emit [process 42]
+tracer.emit [process 1]

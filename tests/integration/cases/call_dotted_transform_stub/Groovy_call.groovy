@@ -1,6 +1,6 @@
 def process(Map _args) { null }
-class _LogType { def emit(Map _args) { null } }
-def log = new _LogType()
-log.emit(process(value: "hello"))
-log.emit(process(value: 42))
-log.emit(process(value: true))
+class _TracerType { def emit(Map _args) { null } }
+def tracer = new _TracerType()
+tracer.emit(process(value: "hello"))
+tracer.emit(process(value: 42))
+tracer.emit(process(value: true))

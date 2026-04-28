@@ -1,11 +1,11 @@
 package main
 func process(args ...any) any { return nil }
-type logType_ struct{}
-func (logType_) emit(args ...any) any { return nil }
-var log logType_
+type tracerType_ struct{}
+func (tracerType_) emit(args ...any) any { return nil }
+var tracer tracerType_
 
 func main() {
-log.emit(process("hello"));
-log.emit(process(42));
-log.emit(process(true));
+tracer.emit(process("hello"));
+tracer.emit(process(42));
+tracer.emit(process(true));
 }

@@ -1,5 +1,5 @@
 function process() {}
-var log = new Proxy({}, {get: function g() { return new Proxy(function(){}, {get: g}); }});
-log.emit(process({ value: "hello" }));
-log.emit(process({ value: 42 }));
-log.emit(process({ value: true }));
+var tracer = new Proxy({}, {get: function g() { return new Proxy(function(){}, {get: g}); }});
+tracer.emit(process({ value: "hello" }));
+tracer.emit(process({ value: 42 }));
+tracer.emit(process({ value: true }));

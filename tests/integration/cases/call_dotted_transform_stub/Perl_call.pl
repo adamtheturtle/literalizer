@@ -1,6 +1,6 @@
 sub process {}
-sub log {}
+sub tracer {}
 sub emit {}
-log.emit(process("hello"));
-log.emit(process(42));
-log.emit(process(1));
+tracer.emit(process("hello"));
+tracer.emit(process(42));
+tracer.emit(process(1));

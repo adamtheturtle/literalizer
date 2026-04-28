@@ -1,9 +1,9 @@
 dynamic process({dynamic value}) => null;
-class _LogType { dynamic emit(dynamic _arg) => null; }
-final log = _LogType();
+class _TracerType { dynamic emit(dynamic _arg) => null; }
+final tracer = _TracerType();
 final my_data = null;
 void main() {
-    log.emit(process(value: "hello"));
-    log.emit(process(value: 42));
-    log.emit(process(value: true));
+    tracer.emit(process(value: "hello"));
+    tracer.emit(process(value: 42));
+    tracer.emit(process(value: true));
 }

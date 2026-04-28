@@ -6,9 +6,9 @@ type Val =
     | FStr of string
     | FList of Val list
 let process (_value: obj) : obj = null
-type LogType_() =
+type TracerType_() =
     member _.emit(__arg: obj) : obj = null
-let log = LogType_()
-log.emit(process("hello"))
-log.emit(process(42))
-log.emit(process(FBool true))
+let tracer = TracerType_()
+tracer.emit(process("hello"))
+tracer.emit(process(42))
+tracer.emit(process(FBool true))

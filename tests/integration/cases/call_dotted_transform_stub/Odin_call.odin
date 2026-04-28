@@ -1,12 +1,12 @@
 #+feature dynamic-literals
 package main
 process :: proc(args: ..any) -> any { return nil }
-_log_emit_ :: proc(args: ..any) -> any { return nil }
-LogType_ :: struct { emit: proc(..any) -> any }
+_tracer_emit_ :: proc(args: ..any) -> any { return nil }
+TracerType_ :: struct { emit: proc(..any) -> any }
 
 main :: proc() {
-log: LogType_ = LogType_{ emit = _log_emit_ }
-log.emit(process("hello"));
-log.emit(process(42));
-log.emit(process(true));
+tracer: TracerType_ = TracerType_{ emit = _tracer_emit_ }
+tracer.emit(process("hello"));
+tracer.emit(process(42));
+tracer.emit(process(true));
 }

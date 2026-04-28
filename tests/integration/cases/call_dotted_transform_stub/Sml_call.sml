@@ -4,9 +4,9 @@ datatype val_t =
   | SStr of string
   | SList of val_t list
 fun process _ = ()
-structure log = struct
+structure tracer = struct
 fun emit _ = ()
 end
-val _ = log.emit(process("hello"))
-val _ = log.emit(process(42))
-val _ = log.emit(process(SBool true))
+val _ = tracer.emit(process("hello"))
+val _ = tracer.emit(process(42))
+val _ = tracer.emit(process(SBool true))

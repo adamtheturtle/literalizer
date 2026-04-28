@@ -1,5 +1,5 @@
 process <- function(...) NULL
-log.emit <- function(...) NULL
-log.emit(process(value = "hello"))
-log.emit(process(value = 42))
-log.emit(process(value = TRUE))
+tracer.emit <- function(...) NULL
+tracer.emit(process(value = "hello"))
+tracer.emit(process(value = 42))
+tracer.emit(process(value = TRUE))

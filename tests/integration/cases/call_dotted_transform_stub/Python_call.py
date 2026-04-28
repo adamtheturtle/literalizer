@@ -1,7 +1,7 @@
 def process(*_args: object, **_kwargs: object) -> object: ...
-class _LogType:
+class _TracerType:
     def emit(self, *_args: object, **_kwargs: object) -> object: ...
-log = _LogType()
-log.emit(process(value="hello"))
-log.emit(process(value=42))
-log.emit(process(value=True))
+tracer = _TracerType()
+tracer.emit(process(value="hello"))
+tracer.emit(process(value=42))
+tracer.emit(process(value=True))

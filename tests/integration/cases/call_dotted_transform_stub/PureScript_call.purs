@@ -9,15 +9,15 @@ data Val
     | PList (Array Val)
 process :: Val -> Unit
 process _ = unit
-log :: { emit :: forall a. a -> Unit }
-log = { emit: \_ -> unit }
+tracer :: { emit :: forall a. a -> Unit }
+tracer = { emit: \_ -> unit }
 
 
 main :: Unit
 main =
     let
-        _ = log.emit(process (PStr "hello"))
-        _ = log.emit(process (PInt 42))
-        _ = log.emit(process (PBool true))
+        _ = tracer.emit(process (PStr "hello"))
+        _ = tracer.emit(process (PInt 42))
+        _ = tracer.emit(process (PBool true))
     in
     unit

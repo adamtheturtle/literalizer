@@ -1,8 +1,8 @@
 -module(fixture_call_dotted_transform_stub_erlang_call).
 -export([x/0]).
 process(_) -> undefined.
-'log.emit'(_) -> ok.
+'tracer.emit'(_) -> ok.
 x() ->
-    log.emit(process("hello")),
-    log.emit(process(42)),
-    log.emit(process(true)).
+    tracer.emit(process("hello")),
+    tracer.emit(process(42)),
+    tracer.emit(process(true)).

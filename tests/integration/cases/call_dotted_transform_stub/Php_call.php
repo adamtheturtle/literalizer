@@ -1,7 +1,7 @@
 <?php
 function process($value) {}
-class LogType { function emit($_arg) {} }
-$log = new LogType();
-log.emit(process(value: "hello"));
-log.emit(process(value: 42));
-log.emit(process(value: true));
+class TracerType { function emit($_arg) {} }
+$tracer = new TracerType();
+tracer.emit(process(value: "hello"));
+tracer.emit(process(value: 42));
+tracer.emit(process(value: true));

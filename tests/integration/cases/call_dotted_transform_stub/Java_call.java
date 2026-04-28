@@ -1,10 +1,10 @@
 class Main {
 static Object process(Object... args) { return null; }
-static class LogType_ { Object emit(Object... args) { return null; } }
-static LogType_ log = new LogType_();
+static class TracerType_ { Object emit(Object... args) { return null; } }
+static TracerType_ tracer = new TracerType_();
     public static void main() {
-log.emit(process("hello"));
-log.emit(process(42));
-log.emit(process(true));
+tracer.emit(process("hello"));
+tracer.emit(process(42));
+tracer.emit(process(true));
     }
 }

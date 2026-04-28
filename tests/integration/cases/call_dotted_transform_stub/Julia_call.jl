@@ -1,6 +1,6 @@
 process(args...; kwargs...) = nothing
-struct LogType; emit; end
-log = LogType((args...; kwargs...) -> nothing)
-log.emit(process(value="hello"))
-log.emit(process(value=42))
-log.emit(process(value=true))
+struct TracerType; emit; end
+tracer = TracerType((args...; kwargs...) -> nothing)
+tracer.emit(process(value="hello"))
+tracer.emit(process(value=42))
+tracer.emit(process(value=true))

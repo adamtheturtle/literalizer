@@ -3,15 +3,15 @@ Module Check
     Function process(value As Object) As Object
         Return Nothing
     End Function
-    Class LogType_0_
+    Class TracerType_0_
         Public Function emit(_arg As Object) As Object
             Return Nothing
         End Function
     End Class
-    Dim log As New LogType_0_()
+    Dim tracer As New TracerType_0_()
     Sub _calls()
-        log.emit(process("hello"))
-        log.emit(process(42))
-        log.emit(process(True))
+        tracer.emit(process("hello"))
+        tracer.emit(process(42))
+        tracer.emit(process(True))
     End Sub
 End Module

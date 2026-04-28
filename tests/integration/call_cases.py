@@ -22,7 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Hcl, ObjectiveC, Sml
+from literalizer.languages import Elm, Gleam, Hcl, ObjectiveC, Raku, Sml
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -300,8 +300,8 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_dotted_transform_stub",
         target_function="process",
         parameter_names=["value"],
-        call_transform=lambda c: f"log.emit({c})",
-        transform_stub_names=["log.emit"],
+        call_transform=lambda c: f"tracer.emit({c})",
+        transform_stub_names=["tracer.emit"],
         per_element=True,
         call_style_type=None,
         ref_declarations={},
@@ -348,10 +348,16 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
-    # call_transform wraps calls with "log.emit(...)" — a dotted expression
-    # HCL cannot parse as a function call, and "log" conflicts with C's
-    # built-in log() function making "log.emit(...)" invalid in ObjectiveC.
-    "call_dotted_transform_stub": frozenset({Hcl, ObjectiveC}),
+    # call_transform wraps calls with "tracer.emit(...)" — a dotted expression.
+    # HCL cannot parse dotted expressions as function calls.
+    # Elm and Gleam treat "tracer.emit" as module-qualified access (no
+    # "tracer" module exists), so the call cannot be syntactically valid.
+    # Raku requires a sigil ("$tracer") for variable method dispatch; bare
+    # "tracer" in "tracer.emit(...)" is not resolvable as a declared name.
+    # ObjectiveC's lint scripts do not support the C-struct dotted-call.
+    "call_dotted_transform_stub": frozenset(
+        {Elm, Gleam, Hcl, ObjectiveC, Raku}
+    ),
 }
 
 

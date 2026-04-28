@@ -1,6 +1,6 @@
 function process {}
-class LogType_ { [object] emit([object] $_arg) { return $null } }
-$log = [LogType_]::new()
-log.emit(process("hello"))
-log.emit(process(42))
-log.emit(process($true))
+class TracerType_ { [object] emit([object] $_arg) { return $null } }
+$tracer = [TracerType_]::new()
+tracer.emit(process("hello"))
+tracer.emit(process(42))
+tracer.emit(process($true))

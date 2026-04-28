@@ -3,11 +3,11 @@
 #include <vector>
 #include <variant>
 auto process(auto...) { return 0; }
-struct logType_ { auto emit(auto...) const { return 0; } };
-const logType_ log;
+struct tracerType_ { void emit(auto...) const {} };
+const tracerType_ tracer;
 int main() {
-log.emit(process("hello"));
-log.emit(process(42));
-log.emit(process(true));
+tracer.emit(process("hello"));
+tracer.emit(process(42));
+tracer.emit(process(true));
     return 0;
 }

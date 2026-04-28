@@ -1,5 +1,5 @@
 function process(...) end
-log = {emit = function(...) end}
-log.emit(process("hello"))
-log.emit(process(42))
-log.emit(process(true))
+tracer = {emit = function(...) end}
+tracer.emit(process("hello"))
+tracer.emit(process(42))
+tracer.emit(process(true))

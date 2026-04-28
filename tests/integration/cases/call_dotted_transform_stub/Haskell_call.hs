@@ -11,12 +11,12 @@ instance Num Val where
     negate _ = error "not implemented"
 process :: Val -> IO Val
 process _ = return undefined
-data LogType_ = LogType_ { emit :: Val -> IO () }
-log :: LogType_
-log = LogType_ { emit = \_ -> return () }
+data TracerType_ = TracerType_ { emit :: Val -> IO () }
+tracer :: TracerType_
+tracer = TracerType_ { emit = \_ -> return () }
 main :: IO ()
 main = do
-    _ <- log.emit(process(HStr "hello"))
-    _ <- log.emit(process(42))
-    _ <- log.emit(process(HBool True))
+    _ <- tracer.emit(process(HStr "hello"))
+    _ <- tracer.emit(process(42))
+    _ <- tracer.emit(process(HBool True))
     pure ()
