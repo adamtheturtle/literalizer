@@ -5,4 +5,4 @@ Val : [
 ]
 
 my_data : Val
-my_data = RInt -9223372036854775809
+my_data = RInt -9223372036854775809i128

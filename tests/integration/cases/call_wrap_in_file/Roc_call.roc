@@ -2,12 +2,8 @@ module [main]
 
 process : a, b -> {}
 process = \_, _ -> {}
-Val : [
-    RInt I128,
-    RList (List Val),
-]
 
 main =
-    _ = process (RInt 1) (RInt 2)
-    _ = process (RInt 3) (RInt 4)
+    dbg (process (RInt 1i128) (RInt 2i128))
+    dbg (process (RInt 3i128) (RInt 4i128))
     {}

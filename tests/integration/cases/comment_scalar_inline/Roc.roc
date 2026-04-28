@@ -5,4 +5,4 @@ Val : [
 ]
 
 my_data : Val
-my_data = RInt 42  # note
+my_data = RInt 42i128  # note

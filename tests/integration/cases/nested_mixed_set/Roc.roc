@@ -11,5 +11,5 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("name", RStr "Alice"),
-    ("tags", RSet [RBool Bool.true, RInt 42, RStr "apple"]),
+    ("tags", RSet [RBool Bool.true, RInt 42i128, RStr "apple"]),
     ]

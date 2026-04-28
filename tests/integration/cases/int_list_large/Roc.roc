@@ -7,8 +7,8 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RInt 1000000,
-    RInt -1234,
-    RInt 255,
-    RInt -10,
+    RInt 1000000i128,
+    RInt -1234i128,
+    RInt 255i128,
+    RInt -10i128,
     ]

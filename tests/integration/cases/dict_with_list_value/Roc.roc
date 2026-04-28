@@ -10,5 +10,5 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("name", RStr "Alice"),
-    ("scores", RList [RInt 10, RInt 20, RInt 30]),
+    ("scores", RList [RInt 10i128, RInt 20i128, RInt 30i128]),
     ]

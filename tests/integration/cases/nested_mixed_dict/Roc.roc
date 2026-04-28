@@ -9,5 +9,5 @@ Val : [
 
 my_data : Val
 my_data = RDict [
-    ("outer", RDict [("a", RInt 1), ("b", RStr "x"), ("c", RNull)]),
+    ("outer", RDict [("a", RInt 1i128), ("b", RStr "x"), ("c", RNull)]),
     ]

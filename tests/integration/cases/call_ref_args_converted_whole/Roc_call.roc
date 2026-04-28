@@ -7,12 +7,12 @@ Val : [
 process : a -> {}
 process = \_ -> {}
 
+my_var : Val
+my_var = RList [
+    RInt 1i128,
+    RInt 2i128,
+    RInt 3i128,
+    ]
 main =
-    _ = my_var : Val
-    _ = my_var = RList [
-    _ =     RInt 1,
-    _ =     RInt 2,
-    _ =     RInt 3,
-    _ =     ]
-    _ = process my_var
+    dbg (process my_var)
     {}

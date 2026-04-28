@@ -10,7 +10,7 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RInt 42,
+    RInt 42i128,
     RFloat 3.14,
     RBool Bool.true,
     RBool Bool.false,

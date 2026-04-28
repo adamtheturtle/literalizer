@@ -11,7 +11,7 @@ Val : [
 my_data : Val
 my_data = JDict [
     ("name", JStr "Alice"),
-    ("age", JInt 30),
+    ("age", JInt 30i128),
     ("active", JBool Bool.true),
     ("score", JNull),
     ]

@@ -8,6 +8,6 @@ Val : [
 
 my_data : Val
 my_data = RDict [
-    ("a", RDict [("x", RInt 1)]),
-    ("b", RInt 2),
+    ("a", RDict [("x", RInt 1i128)]),
+    ("b", RInt 2i128),
     ]

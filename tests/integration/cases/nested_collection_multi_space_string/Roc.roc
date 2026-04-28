@@ -9,5 +9,5 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RDict [("key", RStr "hello   world"), ("value", RInt 1)],
+    RDict [("key", RStr "hello   world"), ("value", RInt 1i128)],
     ]

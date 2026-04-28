@@ -9,6 +9,6 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RDict [("a", RInt 1)],
+    RDict [("a", RInt 1i128)],
     RStr "hello",
     ]

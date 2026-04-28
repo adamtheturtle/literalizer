@@ -12,6 +12,6 @@ my_data : Val
 my_data = RList [
     RBool Bool.true,
     RStr "hi",
-    RList [RInt 1, RInt 2],
+    RList [RInt 1i128, RInt 2i128],
     RNull,
     ]

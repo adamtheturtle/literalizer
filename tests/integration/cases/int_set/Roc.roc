@@ -7,7 +7,7 @@ Val : [
 
 my_data : Val
 my_data = RSet [
-    RInt 1,
-    RInt 2,
-    RInt 3,
+    RInt 1i128,
+    RInt 2i128,
+    RInt 3i128,
     ]

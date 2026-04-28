@@ -10,7 +10,7 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RInt 1,
+    RInt 1i128,
     RStr "hello",
     RBool Bool.true,
     RNull,

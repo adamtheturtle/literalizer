@@ -11,5 +11,5 @@ my_data = RDict [
     # Configuration
     ("name", RStr "app"),
     # Port setting
-    ("port", RInt 3000),
+    ("port", RInt 3000i128),
     ]

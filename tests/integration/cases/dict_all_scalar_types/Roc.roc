@@ -12,7 +12,7 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("s", RStr "string"),
-    ("i", RInt 1),
+    ("i", RInt 1i128),
     ("f", RFloat 1.5),
     ("b", RBool Bool.true),
     ("n", RNull),

@@ -8,6 +8,6 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RList [RInt 1, RStr "a"],
-    RList [RInt 2, RStr "b"],
+    RList [RInt 1i128, RStr "a"],
+    RList [RInt 2i128, RStr "b"],
     ]

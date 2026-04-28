@@ -11,7 +11,7 @@ JsonVal : [
 my_data : JsonVal
 my_data = RDict [
     ("name", RStr "Alice"),
-    ("age", RInt 30),
+    ("age", RInt 30i128),
     ("active", RBool Bool.true),
     ("score", RNull),
     ]

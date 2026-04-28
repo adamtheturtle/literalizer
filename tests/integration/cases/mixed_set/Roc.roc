@@ -10,6 +10,6 @@ Val : [
 my_data : Val
 my_data = RSet [
     RBool Bool.true,
-    RInt 42,
+    RInt 42i128,
     RStr "apple",
     ]

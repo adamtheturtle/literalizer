@@ -6,4 +6,4 @@ Val : [
 
 my_data : Val
 my_data = # note
-RInt 42
+RInt 42i128

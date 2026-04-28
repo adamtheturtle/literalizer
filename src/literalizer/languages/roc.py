@@ -57,7 +57,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     no_call_stub,
     no_data_preamble,
@@ -199,8 +198,16 @@ def _build_roc_str_formatter(
 def _apply_roc_integer(
     value: int, prefix: str, base: Callable[[int], str]
 ) -> str:
-    """Format an integer with a ``{prefix}Int`` constructor."""
-    return f"{prefix}Int {base(value)}"
+    """Format an integer with a ``{prefix}Int`` constructor.
+
+    The ``i128`` literal suffix pins the integer type, which the Roc
+    inference engine otherwise narrows to the smallest signed/unsigned
+    width that fits each individual literal — producing spurious
+    list-element-type-mismatch errors when, say, ``255`` (fits ``U8``)
+    sits beside ``-10`` (needs a signed type) inside the same
+    ``List Val``.
+    """
+    return f"{prefix}Int {base(value)}i128"
 
 
 def _build_roc_integer_formatter(
@@ -433,6 +440,26 @@ def _roc_format_call_arg(_value: Value, formatted: str) -> str:
     space-separated call syntax.
     """
     return f"({formatted})"
+
+
+def _indent_call_lines(*, content: str, indent: str) -> str:
+    """Indent each line of *content* into a Roc ``main`` body.
+
+    Top-level lines (no leading whitespace) are wrapped in
+    ``dbg (...)`` so Roc does not flag the discarded pure-function
+    result as an ``UNNECESSARY DEFINITION``.  Continuation lines that
+    already start with whitespace are kept as-is so multi-line
+    expressions remain syntactically intact.
+    """
+    out: list[str] = []
+    for line in content.split(sep="\n"):
+        if not line:  # pragma: no cover
+            out.append("")
+        elif line[0].isspace():  # pragma: no cover
+            out.append(f"{indent}{line}")
+        else:
+            out.append(f"{indent}dbg ({line})")
+    return "\n".join(out)
 
 
 @beartype
@@ -694,7 +721,6 @@ class Roc(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def wrap_in_file(
         self,
@@ -707,24 +733,79 @@ class Roc(metaclass=LanguageCls):
         The module exposes *variable_name* (or ``main`` when empty, in
         call mode) so the file is a syntactically valid Roc module.
         Body-preamble lines (the ``Val`` type alias and any call
-        stubs) sit at module scope after the header, while in call
-        mode the call expressions are bound via ``_ = …`` inside
-        ``main``.
+        stubs) sit at module scope after the header.  In call mode
+        each top-level call expression is wrapped in ``dbg (...)``
+        inside ``main``: a plain ``_ = pure_call`` would trip the
+        Roc ``UNNECESSARY DEFINITION`` warning, which ``roc check``
+        exits non-zero on, whereas ``dbg`` is treated as side
+        effecting.
+
+        In call mode the ``Val`` type alias is dropped because nothing
+        in the wrapped output annotates a binding with ``: Val`` —
+        keeping it would trip the Roc ``UNUSED DEFINITION`` warning
+        when the alias has no recursive (``List``/``Dict``/``Set``)
+        self-reference for the compiler to consider load-bearing.
         """
         exposed = variable_name or "main"
+        if variable_name:
+            effective_preamble = body_preamble
+        else:
+            effective_preamble = self._strip_type_alias(
+                body_preamble=body_preamble,
+            )
         preamble_str = (
-            "\n".join(body_preamble) + "\n\n" if body_preamble else ""
+            "\n".join(effective_preamble) + "\n\n"
+            if effective_preamble
+            else ""
         )
         if not variable_name:
-            indented_lines: list[str] = []
-            for line in content.split(sep="\n"):
-                if line:
-                    indented_lines.append(f"{self.indent}_ = {line}")
-                else:  # pragma: no cover
-                    indented_lines.append("")
-            body = "\n".join(indented_lines)
+            body = _indent_call_lines(content=content, indent=self.indent)
             content = f"main =\n{body}\n{self.indent}{{}}"
         return f"module [{exposed}]\n\n{preamble_str}{content}"
+
+    def _strip_type_alias(
+        self,
+        *,
+        body_preamble: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        """Drop the ``Val`` tag-union alias from *body_preamble*.
+
+        Used in call modes where nothing in the wrapped output
+        references ``: Val``, so emitting the alias would generate an
+        ``UNUSED DEFINITION`` warning in Roc.
+        """
+        prefix = f"{self.type_name} : ["
+        return tuple(
+            line for line in body_preamble if not line.startswith(prefix)
+        )
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Roc declarations and call expressions in a module.
+
+        Declarations (variable bindings spanning multiple lines) are
+        kept verbatim at module scope alongside the ``Val`` type
+        alias and call stubs; only the top-level call lines inside
+        ``main`` are wrapped in ``dbg (...)``.
+        """
+        decl_block = "\n".join(declarations) + "\n" if declarations else ""
+        body = _indent_call_lines(content=calls, indent=self.indent)
+        main_block = f"main =\n{body}\n{self.indent}{{}}"
+        effective_preamble = (
+            body_preamble
+            if declarations
+            else self._strip_type_alias(body_preamble=body_preamble)
+        )
+        preamble_str = (
+            "\n".join(effective_preamble) + "\n\n"
+            if effective_preamble
+            else ""
+        )
+        return f"module [main]\n\n{preamble_str}{decl_block}{main_block}"
 
     @staticmethod
     def wrap_combined_in_file(
