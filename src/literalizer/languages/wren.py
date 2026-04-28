@@ -36,7 +36,6 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -47,6 +46,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -54,7 +54,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -63,6 +62,86 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _wren_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Wren stub declarations for a call name.
+
+    Single-part names get a class with a ``call`` instance method so
+    the call expression ``name.call(args)`` is valid.  Multi-part
+    dotted names like ``app.client.fetch`` produce a chain of classes
+    where each intermediate exposes a getter returning the next object.
+    """
+    param_list = ", ".join(params)
+
+    if len(parts) == 1:
+        cls_name = parts[0].capitalize() + "_"
+        return (
+            f"class {cls_name} {{",
+            f"    call({param_list}) {{}}",
+            "}",
+            f"var {parts[0]} = {cls_name}.new()",
+        )
+
+    method = parts[-1]
+    root = parts[0]
+    intermediates = list(parts[1:-1])
+
+    if not intermediates:
+        cls_name = root.capitalize() + "_"
+        return (
+            f"class {cls_name} {{",
+            f"    {method}({param_list}) {{}}",
+            "}",
+            f"var {root} = {cls_name}.new()",
+        )
+
+    lines: list[str] = []
+    inner_cls_name = (
+        "".join(p.capitalize() for p in [root, *intermediates]) + "_"
+    )
+    lines.append(f"class {inner_cls_name} {{")
+    lines.append(f"    {method}({param_list}) {{}}")
+    lines.append("}")
+
+    prev_cls_name = inner_cls_name
+    for i in range(len(intermediates) - 1, -1, -1):
+        field = intermediates[i]
+        if i == 0:
+            outer_cls_name = root.capitalize() + "_"
+        else:
+            outer_cls_name = (
+                "".join(p.capitalize() for p in [root, *intermediates[:i]])
+                + "_"
+            )
+        lines.append(f"class {outer_cls_name} {{")
+        lines.append(f"    {field} {{ _{field} }}")
+        lines.append("    construct new() {")
+        lines.append(f"        _{field} = {prev_cls_name}.new()")
+        lines.append("    }")
+        lines.append("}")
+        prev_cls_name = outer_cls_name
+
+    lines.append(f"var {root} = {prev_cls_name}.new()")
+    return tuple(lines)
+
+
+@beartype
+def _wren_format_call_target(parts: Sequence[str]) -> str:
+    """Rewrite call target parts into Wren call syntax.
+
+    Single-part names become ``name.call`` since Wren has no free
+    functions; multi-part dotted names are joined with ``.`` as-is.
+    """
+    if len(parts) == 1:
+        return f"{parts[0]}.call"
+    return ".".join(parts)
 
 
 @beartype
@@ -279,6 +358,8 @@ class Wren(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Wren call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -370,9 +451,7 @@ class Wren(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -407,11 +486,16 @@ class Wren(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Return the active call-style configuration."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _wren_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -425,7 +509,7 @@ class Wren(metaclass=LanguageCls):
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _wren_format_call_target
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
