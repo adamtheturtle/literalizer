@@ -336,14 +336,18 @@ def data_has_out_of_range_int(*, data: Value) -> bool:
     need to add a preamble (e.g. an ``import`` statement) conditionally
     on the presence of a very large integer scalar.
     """
-    if isinstance(data, bool):
-        return False
-    if isinstance(data, int):
-        return not I64_MIN <= data <= I64_MAX
-    if isinstance(data, list):
-        return any(data_has_out_of_range_int(data=v) for v in data)
-    if isinstance(data, set):
-        return any(data_has_out_of_range_int(data=v) for v in data)
-    if isinstance(data, dict):
-        return any(data_has_out_of_range_int(data=v) for v in data.values())
-    return False
+    match data:
+        case bool():
+            return False
+        case int():
+            return not I64_MIN <= data <= I64_MAX
+        case list():
+            return any(data_has_out_of_range_int(data=v) for v in data)
+        case set():
+            return any(data_has_out_of_range_int(data=v) for v in data)
+        case dict():
+            return any(
+                data_has_out_of_range_int(data=v) for v in data.values()
+            )
+        case _:
+            return False
