@@ -321,7 +321,7 @@ def _dhall_validate_call_stmt(stmt: str) -> None:
       positional argument, which Dhall cannot represent because it has
       no tuple type.
     """
-    if _DHALL_WORD_BEFORE_PAREN_RE.search(stmt):
+    if _DHALL_WORD_BEFORE_PAREN_RE.search(string=stmt):
         raise CallArgNotSupportedError(
             language_name="Dhall",
             reason=(

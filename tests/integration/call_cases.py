@@ -376,7 +376,7 @@ def _run_wrap_in_file_case(
     spec: literalizer.Language,
     yaml_string: str,
     effective_ref_case: literalizer.IdentifierCase | None,
-    lang_cls: literalizer.LanguageCls,
+    lang_cls: type[literalizer.Language],
     golden_path: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
