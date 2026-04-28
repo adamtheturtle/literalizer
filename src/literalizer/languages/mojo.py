@@ -80,7 +80,7 @@ def _mojo_init_expr(parts: Sequence[str]) -> str:
     For a 2-part target like ``throttler.check``, returns
     ``_ThrottlerType()``.  For a 3-part target like
     ``app.client.fetch``, returns ``_AppType(_ClientType())``.
-    ``@fieldwise_init`` generates a memberwise init, so each struct
+    ``@fieldwise_init`` generates a field-by-field init, so each struct
     that holds a field is constructed by passing the inner instance.
     """
     root = parts[0]
@@ -127,8 +127,8 @@ def _mojo_call_preamble_stub(
     """Return Mojo file-scope stubs for a call name.
 
     1-part names become a module-level generic ``fn``.  Multi-part
-    names become ``@fieldwise_init`` structs: the innermost struct
-    holds the method, and each enclosing struct holds a field of the
+    names become ``@fieldwise_init`` struct types: the innermost type
+    holds the method, and each enclosing type holds a field of the
     next inner type.
     """
     if len(parts) == 1:
