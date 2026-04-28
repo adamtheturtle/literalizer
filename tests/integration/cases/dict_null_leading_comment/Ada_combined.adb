@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AMap'[
         -- comment
         AEntry ("name", AStr ("Alice")),
@@ -11,4 +11,4 @@ begin
         AEntry ("name", AStr ("Alice")),
         AEntry ("score", ANull)
     ];
-end Check;
+end Main;

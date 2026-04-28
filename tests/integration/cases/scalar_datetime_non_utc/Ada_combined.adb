@@ -1,6 +1,6 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AStr ("2024-01-15T18:00:00+05:30");
 begin
     my_data := AStr ("2024-01-15T18:00:00+05:30");
-end Check;
+end Main;

@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AStr ("line1" & Character'Val(13) & Character'Val(10) & "line2"),
         AStr ("line1" & Character'Val(13) & "line2"),
@@ -7,4 +7,4 @@ procedure Check is
     ];
 begin
     null;
-end Check;
+end Main;

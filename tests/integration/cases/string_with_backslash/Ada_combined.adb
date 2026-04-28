@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AStr ("C:\path\to\file"),
         AStr ("back\\slash"),
@@ -19,4 +19,4 @@ begin
         AStr ("both ""quotes''' here"),
         AStr ("line1\nline2" & Character'Val(10) & "with newline")
     ];
-end Check;
+end Main;

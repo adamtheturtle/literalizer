@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AList'[
         AStr ("100% done"),
         AStr ("%(name) is here")
@@ -9,4 +9,4 @@ begin
         AStr ("100% done"),
         AStr ("%(name) is here")
     ];
-end Check;
+end Main;

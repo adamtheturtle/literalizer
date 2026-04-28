@@ -1,6 +1,6 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := ASet'[];
 begin
     my_data := ASet'[];
-end Check;
+end Main;

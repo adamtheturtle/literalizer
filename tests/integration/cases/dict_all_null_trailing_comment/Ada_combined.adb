@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AMap'[
         AEntry ("a", ANull),
         AEntry ("b", ANull)
@@ -11,4 +11,4 @@ begin
         AEntry ("b", ANull)
         -- trailing
     ];
-end Check;
+end Main;

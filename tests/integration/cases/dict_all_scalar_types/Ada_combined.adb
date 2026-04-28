@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := AMap'[
         AEntry ("s", AStr ("string")),
         AEntry ("i", AInt (1)),
@@ -21,4 +21,4 @@ begin
         AEntry ("dt", AStr ("2024-01-15T12:00:00")),
         AEntry ("by", AStr ("48656c6c6f"))
     ];
-end Check;
+end Main;

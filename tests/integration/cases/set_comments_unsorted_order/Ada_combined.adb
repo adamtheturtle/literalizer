@@ -1,5 +1,5 @@
 with A_Stub; use A_Stub;
-procedure Check is
+procedure Main is
     my_data : A_Val := ASet'[
         -- before apple
         AStr ("apple"),
@@ -13,4 +13,4 @@ begin
         AStr ("banana")  -- banana inline
         -- trailing
     ];
-end Check;
+end Main;
