@@ -123,12 +123,14 @@ def _format_variable_declaration(
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a SystemVerilog variable declaration."""
-    if isinstance(data, (list, set)):
-        return f"static _VVal {name}[] = {value};"
-    if isinstance(data, dict):
-        return f"static _VKV {name}[] = {value};"
-    wrapped = _format_sv_entry(original=data, formatted=value)
-    return f"static _VVal {name} = {wrapped};"
+    match data:
+        case list() | set():
+            return f"static _VVal {name}[] = {value};"
+        case dict():
+            return f"static _VKV {name}[] = {value};"
+        case _:
+            wrapped = _format_sv_entry(original=data, formatted=value)
+            return f"static _VVal {name} = {wrapped};"
 
 
 @beartype

@@ -144,34 +144,36 @@ def _resolve_element_to_type(
     fallback_value_type: str | None,
 ) -> str | None:
     """Resolve a Python element type to a language type name."""
-    if isinstance(element_type, DictType):
-        if dict_type_template is None:
-            return None
-        resolved: str | None = None
-        if element_type.value_type is not None:
-            resolved = _resolve_element_to_type(
-                element_type=element_type.value_type,
+    match element_type:
+        case DictType():
+            if dict_type_template is None:
+                return None
+            resolved: str | None = None
+            if element_type.value_type is not None:
+                resolved = _resolve_element_to_type(
+                    element_type=element_type.value_type,
+                    scalar_types=scalar_types,
+                    list_template=list_template,
+                    dict_type_template=dict_type_template,
+                    fallback_value_type=fallback_value_type,
+                )
+            inner = resolved if resolved is not None else fallback_value_type
+            if inner is None:
+                return None
+            return dict_type_template.format(inner=inner)
+        case ListType():
+            inner = _resolve_element_to_type(
+                element_type=element_type.inner,
                 scalar_types=scalar_types,
                 list_template=list_template,
                 dict_type_template=dict_type_template,
                 fallback_value_type=fallback_value_type,
             )
-        inner = resolved if resolved is not None else fallback_value_type
-        if inner is None:
-            return None
-        return dict_type_template.format(inner=inner)
-    if isinstance(element_type, ListType):
-        inner = _resolve_element_to_type(
-            element_type=element_type.inner,
-            scalar_types=scalar_types,
-            list_template=list_template,
-            dict_type_template=dict_type_template,
-            fallback_value_type=fallback_value_type,
-        )
-        if inner is None:
-            return None
-        return list_template.format(inner=inner)
-    return scalar_types.get(element_type)
+            if inner is None:
+                return None
+            return list_template.format(inner=inner)
+        case _:
+            return scalar_types.get(element_type)
 
 
 @beartype

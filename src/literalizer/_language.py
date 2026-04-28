@@ -1378,13 +1378,18 @@ def value_contains(data: Value, predicate: Callable[[Value], bool]) -> bool:
     """
     if predicate(data):
         return True
-    if isinstance(data, dict):
-        return any(
-            value_contains(data=v, predicate=predicate) for v in data.values()
-        )
-    if isinstance(data, (list, set)):
-        return any(value_contains(data=v, predicate=predicate) for v in data)
-    return False
+    match data:
+        case dict():
+            return any(
+                value_contains(data=v, predicate=predicate)
+                for v in data.values()
+            )
+        case list() | set():
+            return any(
+                value_contains(data=v, predicate=predicate) for v in data
+            )
+        case _:
+            return False
 
 
 @beartype

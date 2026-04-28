@@ -462,36 +462,40 @@ def _num_instance(
 
 def _has_microsecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime with microseconds."""
-    if isinstance(data, datetime.datetime):
-        return bool(data.microsecond)
-    if isinstance(data, datetime.date):
-        return False
-    if isinstance(data, (ordereddict, dict)):
-        return any(
-            _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        )
-    if isinstance(data, (list, set)):
-        return any(_has_microsecond_datetime(data=v) for v in data)
-    return False
+    match data:
+        case datetime.datetime():
+            return bool(data.microsecond)
+        case datetime.date():
+            return False
+        case ordereddict() | dict():
+            return any(
+                _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case list() | set():
+            return any(_has_microsecond_datetime(data=v) for v in data)
+        case _:
+            return False
 
 
 def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime without
     microseconds.
     """
-    if isinstance(data, datetime.datetime):
-        return not data.microsecond
-    if isinstance(data, datetime.date):
-        return False
-    if isinstance(data, (ordereddict, dict)):
-        return any(
-            _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-        )
-    if isinstance(data, (list, set)):
-        return any(_has_nonmicrosecond_datetime(data=v) for v in data)
-    return False
+    match data:
+        case datetime.datetime():
+            return not data.microsecond
+        case datetime.date():
+            return False
+        case ordereddict() | dict():
+            return any(
+                _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case list() | set():
+            return any(_has_nonmicrosecond_datetime(data=v) for v in data)
+        case _:
+            return False
 
 
 def _datetime_import_items(
