@@ -47,7 +47,6 @@ from literalizer._heterogeneous import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -58,6 +57,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -66,13 +66,68 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
-    no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+
+
+@beartype
+def _mojo_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Mojo body stub declarations for a call name."""
+    if len(parts) == 1:
+        return (f"def {parts[0]}(*args: object) -> object: return object()",)
+    root = parts[0]
+    return (f"var {root} = _{root.capitalize()}Type()",)
+
+
+@beartype
+def _mojo_call_preamble_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Mojo file-scope struct stubs for a dotted call name."""
+    if len(parts) == 1:
+        return ()
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    indent = "    "
+    ctor_no_fields = f"{indent}fn __init__(inout self): pass"
+    method_stub = (
+        f"{indent}def {method}(self, *args: object) -> object: return object()"
+    )
+    if not fields:
+        type_name = f"_{root.capitalize()}Type"
+        return (f"struct {type_name}:\n{ctor_no_fields}\n{method_stub}",)
+    lines: list[str] = []
+    inner_type = f"_{fields[-1].capitalize()}Type"
+    lines.append(f"struct {inner_type}:\n{ctor_no_fields}\n{method_stub}")
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"_{fields[i].capitalize()}Type"
+        field = fields[i + 1]
+        ctor = f"{indent}fn __init__(inout self): self.{field} = {prev_type}()"
+        lines.append(
+            f"struct {curr_type}:\n{indent}var {field}: {prev_type}\n{ctor}"
+        )
+        prev_type = curr_type
+    root_type = f"_{root.capitalize()}Type"
+    ctor = f"{indent}fn __init__(inout self): self.{fields[0]} = {prev_type}()"
+    lines.append(
+        f"struct {root_type}:\n{indent}var {fields[0]}: {prev_type}\n{ctor}"
+    )
+    return tuple(lines)
+
 
 _mojo_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=make_element_to_type(
@@ -493,6 +548,8 @@ class Mojo(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Mojo call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -557,7 +614,8 @@ class Mojo(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        content = content + f"\n_ = {variable_name}"
+        if variable_name:
+            content = content + f"\n_ = {variable_name}"
         indented = textwrap.indent(text=content, prefix=self.indent)
         return f"def main():\n{indented}"
 
@@ -622,9 +680,7 @@ class Mojo(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ("import std.math",)
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -690,14 +746,14 @@ class Mojo(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _mojo_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _mojo_call_preamble_stub
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -712,6 +768,12 @@ class Mojo(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        config: CallStyle = self.call_style.value
+        return config
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
