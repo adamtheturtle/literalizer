@@ -1,4 +1,4 @@
-module Check where
+module Fixture_int_list_with_zero_Haskell_integer_format_hex_zero where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

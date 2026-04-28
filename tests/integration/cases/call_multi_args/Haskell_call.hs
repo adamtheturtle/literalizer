@@ -1,4 +1,4 @@
-module Check where
+module Fixture_call_multi_args_Haskell_call where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

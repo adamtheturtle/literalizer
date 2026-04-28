@@ -1,4 +1,4 @@
-module Check where
+module Fixture_date_set_Haskell where
 import Data.Time (Day, fromGregorian)
 data Val = HSet [Val] | HDate Day
 my_data :: Val

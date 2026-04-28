@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_int_large_Haskell_integer_format_hex where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

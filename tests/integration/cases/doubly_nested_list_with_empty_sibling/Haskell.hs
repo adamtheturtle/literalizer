@@ -1,4 +1,4 @@
-module Check where
+module Fixture_doubly_nested_list_with_empty_sibling_Haskell where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

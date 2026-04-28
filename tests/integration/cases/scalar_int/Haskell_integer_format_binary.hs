@@ -1,4 +1,4 @@
-module Check where
+module Fixture_scalar_int_Haskell_integer_format_binary where
 data Val = HInt Integer
 instance Num Val where
     fromInteger = HInt

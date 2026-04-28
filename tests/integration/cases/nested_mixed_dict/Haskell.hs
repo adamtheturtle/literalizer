@@ -1,4 +1,4 @@
-module Check where
+module Fixture_nested_mixed_dict_Haskell where
 data Val = HNull | HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

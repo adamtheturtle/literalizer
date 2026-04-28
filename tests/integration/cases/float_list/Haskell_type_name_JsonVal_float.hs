@@ -1,4 +1,4 @@
-module Check where
+module Fixture_float_list_Haskell_type_name_JsonVal_float where
 data JsonVal = HFloat Double | HList [JsonVal]
 instance Num JsonVal where
     fromInteger n = HFloat (fromIntegral n)

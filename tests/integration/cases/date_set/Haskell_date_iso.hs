@@ -1,4 +1,4 @@
-module Check where
+module Fixture_date_set_Haskell_date_iso where
 data Val = HSet [Val] | HStr String
 my_data :: Val
 my_data = HSet [

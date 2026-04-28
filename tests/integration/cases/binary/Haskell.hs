@@ -1,4 +1,4 @@
-module Check where
+module Fixture_binary_Haskell where
 data Val = HStr String | HList [Val]
 my_data :: Val
 my_data = HList [
