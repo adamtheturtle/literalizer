@@ -4,7 +4,7 @@ pub type GVal {
   GStr(String)
   GList(List(GVal))
 }
-pub fn my_app_http_client_fetch(_payload: a) -> Nil { panic }
+pub fn my_app_http_client_fetch(_payload: a) -> Nil { Nil }
 
 pub fn main() {
   my_app_http_client_fetch(GStr("hello"))
