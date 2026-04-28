@@ -324,9 +324,9 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
-    # call_transform wraps the call as "emit(inner)" which is not valid
-    # Wren: Wren has no free-function call syntax, so identifier(args)
-    # is a parse error at the top level.
+    # call_transform wraps output as "emit(inner)", which is invalid in
+    # Wren: Wren has no free-function call syntax, so a bare call like
+    # "name(value)" is a parse error at the top level.
     "call_keyword_args": frozenset({Wren}),
     "call_deep_dotted_transformed": frozenset({Wren}),
 }
