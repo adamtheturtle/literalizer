@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @{
     @"name": @"Alice",
     @"age": @30,
@@ -20,5 +21,6 @@ my_data = @{
     @"avatar": @"48656c6c6f",
 };
     (void)my_data;
+}
     return 0;
 }

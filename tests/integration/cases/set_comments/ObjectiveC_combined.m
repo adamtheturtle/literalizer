@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = [NSSet setWithArray:@[
     @"apple",  // inline comment
     // before banana
@@ -14,5 +15,6 @@ my_data = [NSSet setWithArray:@[
     // trailing
 ]];
     (void)my_data;
+}
     return 0;
 }

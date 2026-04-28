@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @[
     @"prefix ${HOME} suffix",
     @"${interpolated}",
@@ -10,5 +11,6 @@ my_data = @[
     @"${interpolated}",
 ];
     (void)my_data;
+}
     return 0;
 }

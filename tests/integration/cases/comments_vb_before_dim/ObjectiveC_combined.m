@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @{
     // Configuration
     @"name": @"app",
@@ -14,5 +15,6 @@ my_data = @{
     @"port": @3000,
 };
     (void)my_data;
+}
     return 0;
 }

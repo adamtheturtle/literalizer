@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @[
     @"price $10",
     @"$HOME",
@@ -10,5 +11,6 @@ my_data = @[
     @"$HOME",
 ];
     (void)my_data;
+}
     return 0;
 }

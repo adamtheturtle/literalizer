@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = [NSSet setWithArray:@[
     // before apple
     @"apple",
@@ -7,5 +8,6 @@ id my_data = [NSSet setWithArray:@[
     // trailing
 ]];
     (void)my_data;
+}
     return 0;
 }

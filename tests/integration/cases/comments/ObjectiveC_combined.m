@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @{
     // Server configuration
     @"host": @"localhost",  // default host
@@ -16,5 +17,6 @@ my_data = @{
     @"debug": @YES,
 };
     (void)my_data;
+}
     return 0;
 }

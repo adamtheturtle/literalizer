@@ -1,9 +1,11 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @[
     @[@1.5, @2.5],
     @[@3.5, @4.5],
 ];
     (void)my_data;
+}
     return 0;
 }

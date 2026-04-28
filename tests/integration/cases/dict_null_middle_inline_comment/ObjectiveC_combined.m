@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 int main(void) {
+@autoreleasepool {
 id my_data = @{
     @"host": @"localhost",
     @"port": [NSNull null],  // not configured yet
@@ -12,5 +13,6 @@ my_data = @{
     @"debug": @YES,
 };
     (void)my_data;
+}
     return 0;
 }

@@ -499,8 +499,9 @@ class ObjectiveC(metaclass=LanguageCls):
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
         return (
-            f"int {self.module_name}(void) {{\n{content}{use_line}\n"
-            "    return 0;\n}"
+            f"int {self.module_name}(void) {{\n"
+            f"@autoreleasepool {{\n{content}{use_line}\n"
+            "}\n    return 0;\n}"
         )
 
     def wrap_combined_in_file(
