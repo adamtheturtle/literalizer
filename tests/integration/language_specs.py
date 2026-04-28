@@ -164,9 +164,7 @@ def make_spec(
         lang_cls, "__dataclass_fields__", {}
     )
     if has_module_name and "module_name" not in kwargs:
-        kwargs["module_name"] = lang_cls.module_name_case.convert(
-            name=lang_cls.default_module_name,
-        )
+        kwargs["module_name"] = lang_cls.module_name_case.convert(name="check")
     return cached_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),
