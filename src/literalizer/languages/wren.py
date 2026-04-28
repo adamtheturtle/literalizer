@@ -79,12 +79,14 @@ def _wren_call_stub(
     dotted names like ``app.client.fetch`` produce a chain of classes
     where each intermediate exposes a getter returning the next object.
     """
-    param_list = ", ".join(params)
+    # Wren parameter names may not start with "_" (reserved for fields).
+    param_list = ", ".join(p.lstrip("_") or p for p in params)
 
     if len(parts) == 1:
         cls_name = parts[0].capitalize() + "_"
         return (
             f"class {cls_name} {{",
+            f"{indent}construct new() {{}}",
             f"{indent}call({param_list}) {{}}",
             "}",
             f"var {parts[0]} = {cls_name}.new()",
@@ -98,6 +100,7 @@ def _wren_call_stub(
         cls_name = root.capitalize() + "_"
         return (
             f"class {cls_name} {{",
+            f"{indent}construct new() {{}}",
             f"{indent}{method}({param_list}) {{}}",
             "}",
             f"var {root} = {cls_name}.new()",
@@ -108,6 +111,7 @@ def _wren_call_stub(
         "".join(p.capitalize() for p in [root, *intermediates]) + "_"
     )
     lines.append(f"class {inner_cls_name} {{")
+    lines.append(f"{indent}construct new() {{}}")
     lines.append(f"{indent}{method}({param_list}) {{}}")
     lines.append("}")
 

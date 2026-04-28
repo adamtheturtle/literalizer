@@ -1,4 +1,5 @@
 class My_appHttp_client_ {
+    construct new() {}
     fetch(payload) {}
 }
 class My_app_ {

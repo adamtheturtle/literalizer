@@ -1,4 +1,5 @@
 class Process_ {
+    construct new() {}
     call(data, count) {}
 }
 var process = Process_.new()

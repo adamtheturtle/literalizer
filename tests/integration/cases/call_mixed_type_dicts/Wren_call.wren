@@ -1,4 +1,5 @@
 class AppMgr_ {
+    construct new() {}
     op(operation) {}
 }
 class App_ {

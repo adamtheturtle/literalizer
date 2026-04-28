@@ -1,4 +1,5 @@
 class AppClient_ {
+    construct new() {}
     fetch(payload) {}
 }
 class App_ {
@@ -9,7 +10,8 @@ class App_ {
 }
 var app = App_.new()
 class Emit_ {
-    call(_arg) {}
+    construct new() {}
+    call(arg) {}
 }
 var emit = Emit_.new()
 emit(app.client.fetch("hello"))

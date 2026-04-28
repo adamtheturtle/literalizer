@@ -1,4 +1,5 @@
 class ObjApiClient_ {
+    construct new() {}
     post(data) {}
 }
 class ObjApi_ {

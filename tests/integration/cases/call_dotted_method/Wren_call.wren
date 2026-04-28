@@ -1,4 +1,5 @@
 class AppClient_ {
+    construct new() {}
     fetch(payload) {}
 }
 class App_ {
