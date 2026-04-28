@@ -207,7 +207,13 @@ def _dart_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Dart stub declarations for a call name."""
-    param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
+    # Named parameters can't start with '_' in Dart. When all params
+    # start with '_' (e.g. transform stubs like ["_arg"]), use required
+    # positional syntax so callers can pass the value positionally.
+    if params and all(p.startswith("_") for p in params):
+        param_list = ", ".join(f"dynamic {p}" for p in params)
+    else:
+        param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
     if len(parts) == 1:
         return (f"dynamic {parts[0]}({param_list}) => null;",)
     root = parts[0]
@@ -587,18 +593,35 @@ class Dart(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
     )
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+        """Wrap code in a valid file."""
+        if variable_name:
+            return wrap_in_file_noop(
+                content=content,
+                variable_name=variable_name,
+                body_preamble=body_preamble,
+            )
+        # Call mode: top-level expression statements are invalid in Dart.
+        # Class/function stubs go at file scope; call expressions and
+        # ref-arg declarations go inside void main(). Add a top-level
+        # my_data sentinel so the CI lint harness can import it.
+        indented = "\n".join(
+            f"{self.indent}{line}" if line.strip() else line
+            for line in content.split("\n")
         )
+        parts: list[str] = []
+        if body_preamble:
+            parts.append("\n".join(body_preamble))
+        parts.append("final my_data = null;")
+        parts.append("void main() {")
+        parts.append(indented)
+        parts.append("}")
+        return "\n".join(parts)
 
     @staticmethod
     def wrap_combined_in_file(

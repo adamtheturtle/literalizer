@@ -1,3 +1,6 @@
 dynamic process({dynamic value, dynamic count}) => null;
-process(value: 1, count: 42);
-process(value: 2, count: 100);
+final my_data = null;
+void main() {
+    process(value: 1, count: 42);
+    process(value: 2, count: 100);
+}

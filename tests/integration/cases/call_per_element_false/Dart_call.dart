@@ -1,2 +1,5 @@
 dynamic process({dynamic data}) => null;
-process(data: 1);
+final my_data = null;
+void main() {
+    process(data: 1);
+}
