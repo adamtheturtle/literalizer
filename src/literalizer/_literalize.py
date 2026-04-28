@@ -1715,10 +1715,10 @@ def _format_prefix_call_args(
     sep: str,
     kw_prefix: str,
 ) -> str:
-    """Format args for :class:`PrefixCallStyle`.
+    """Format values for :class:`PrefixCallStyle`.
 
-    When *kw_prefix* is empty the args are positional (values only).
-    Otherwise each arg is emitted as ``{kw_prefix}{name}{sep}{value}``.
+    When *kw_prefix* is empty the call is positional (values only).
+    Otherwise each value is emitted as ``{kw_prefix}{name}{sep}{value}``.
     """
     if not kw_prefix:
         return sep.join(formatted)
