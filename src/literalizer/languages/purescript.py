@@ -437,6 +437,10 @@ def _build_purescript_call_stub_lines(
     stubs declared with ``forall a. a -> Unit`` can consume them.
     """
     del stub_return
+    # Transform-wrapper stubs are always passed a single placeholder param
+    # starting with ``_`` (e.g. ``_arg``).  Declare them polymorphic so
+    # PureScript never needs to unify the wrapped ``Unit`` result with
+    # ``{type_name}``.
     is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
 
     if len(parts) == 1:
@@ -532,6 +536,39 @@ def _indent_purescript_let_calls(calls: str, indent: str) -> str:
         else:
             result.append(binding_prefix + line)
     return "\n".join(result)
+
+
+def _build_purescript_call_output(
+    preamble: str,
+    decl_part: str,
+    calls: str,
+    indent: str,
+) -> str:
+    """Build a complete PureScript module string for call mode.
+
+    Ensures ``import Prelude`` is present (needed for ``Unit`` and
+    ``unit``) and wraps the call expressions in a ``let … in unit``
+    block.  *decl_part* is an optional newline-prefixed block of
+    module-scope declarations to insert before ``main``.
+    """
+    if "import Prelude" not in preamble:
+        preamble = (
+            "import Prelude\n" + preamble if preamble else "import Prelude"
+        )
+    return (
+        "module Check where\n\n\n"
+        + preamble
+        + decl_part
+        + "\n\n\nmain :: Unit\nmain =\n"
+        + indent
+        + "let\n"
+        + _indent_purescript_let_calls(calls=calls, indent=indent)
+        + "\n"
+        + indent
+        + "in\n"
+        + indent
+        + "unit"
+    )
 
 
 _INT_BASE: dict[str, Callable[[int], str]] = {
@@ -840,26 +877,14 @@ class PureScript(metaclass=LanguageCls):
         expressions are bound inside a ``let … in unit`` block so that
         bare expressions are not required at the top level.
         """
-        indent = self.indent
         preamble = "\n".join(body_preamble)
-        indented_calls = _indent_purescript_let_calls(
-            calls=calls, indent=indent
-        )
         declaration_block = "\n".join(declarations)
         decl_part = "\n" + declaration_block if declaration_block else ""
-        return (
-            "module Check where\n\n\n"
-            + preamble
-            + decl_part
-            + "\n\n\nmain :: Unit\nmain =\n"
-            + indent
-            + "let\n"
-            + indented_calls
-            + "\n"
-            + indent
-            + "in\n"
-            + indent
-            + "unit"
+        return _build_purescript_call_output(
+            preamble=preamble,
+            decl_part=decl_part,
+            calls=calls,
+            indent=self.indent,
         )
 
     def wrap_in_file(
@@ -869,24 +894,13 @@ class PureScript(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a PureScript value declaration in a module."""
-        indent = self.indent
         preamble = "\n".join(body_preamble)
         if not variable_name:
-            indented = _indent_purescript_let_calls(
-                calls=content, indent=indent
-            )
-            return (
-                "module Check where\n\n\n"
-                + preamble
-                + "\n\n\nmain :: Unit\nmain =\n"
-                + indent
-                + "let\n"
-                + indented
-                + "\n"
-                + indent
-                + "in\n"
-                + indent
-                + "unit"
+            return _build_purescript_call_output(
+                preamble=preamble,
+                decl_part="",
+                calls=content,
+                indent=self.indent,
             )
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 

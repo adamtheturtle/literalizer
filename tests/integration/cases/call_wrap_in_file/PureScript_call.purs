@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 process :: Val -> Val -> Unit
 process _ _ = unit
 data Val

@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Tuple a b = Tuple a b
 data Val
     = PBool Boolean

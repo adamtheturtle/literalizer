@@ -1,6 +1,7 @@
 module Check where
 
 
+import Prelude
 data Val
     = PFloat Number
     | PStr String
