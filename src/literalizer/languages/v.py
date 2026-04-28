@@ -210,7 +210,7 @@ def _v_call_preamble_stub(
     """Return V preamble stub declarations for a call name.
 
     Includes ``interface ICallArg_ {}`` in every result so that
-    the caller can deduplicate across multiple combined stubs.
+    duplicate copies can be dropped when multiple stubs are combined.
     For dotted targets like ``app.client.fetch``, one struct per
     prefix level is emitted together with the method declaration.
     """
