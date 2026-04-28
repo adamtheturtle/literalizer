@@ -42,7 +42,6 @@ from literalizer._heterogeneous import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -53,22 +52,22 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
-    identity_call_target,
-    no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
     wrap_in_file_noop,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import InvalidDictKeyError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    InvalidDictKeyError,
+)
 
 _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$")
 
@@ -180,6 +179,170 @@ def _format_dhall_dict_entry(
         )
         raise InvalidDictKeyError(msg)
     return f"`{raw}` = {formatted_value}"
+
+
+_DHALL_DVAL_TYPE = (
+    "let DVal = "
+    "< DBool : Bool | DDouble : Double | DInteger : Integer | DText : Text >"
+)
+
+
+@beartype
+def _dhall_call_preamble_stub(
+    _parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return the ``DVal`` union-type definition for Dhall call stubs."""
+    return (_DHALL_DVAL_TYPE,)
+
+
+@beartype
+def _dhall_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    r"""Return Dhall let-binding stub declarations for a call target.
+
+    Single-part targets produce ``let name = \(_ : DVal) -> body``.
+    Dotted targets nest record literals: ``app.client.fetch`` becomes
+    ``let app = { client = { fetch = \(_ : DVal) -> body } }``.
+    The *stub_return* controls the body: ``VOID`` stubs return ``{=}``;
+    ``VALUE`` stubs return ``DVal.DBool True`` so the result type
+    matches callers that consume the return value (e.g. a transform
+    wrapper like ``emit``).
+    """
+    body = "{=}" if stub_return is StubReturn.VOID else "DVal.DBool True"
+    fn_expr = f"\\(_ : DVal) -> {body}"
+    if len(parts) == 1:
+        return (f"let {parts[0]} = {fn_expr}",)
+    root = parts[0]
+    nested: str = fn_expr
+    for field in reversed(parts[1:]):
+        nested = f"{{ {field} = {nested} }}"
+    return (f"let {root} = {nested}",)
+
+
+@beartype
+def _dhall_format_call_arg(original: Scalar, formatted: str, /) -> str:
+    """Wrap a formatted scalar in the appropriate ``DVal`` constructor.
+
+    Booleans, integers, floats, and strings each get their own
+    ``DVal.DXxx`` tag so the stub (which accepts ``DVal``) type-checks
+    against heterogeneous call arguments.
+    """
+    match original:
+        case bool():
+            return f"DVal.DBool {formatted}"
+        case int():
+            return f"DVal.DInteger {formatted}"
+        case float():
+            return f"DVal.DDouble {formatted}"
+        case str() | bytes() | datetime.datetime() | datetime.date() | None:
+            return f"DVal.DText {formatted}"
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _dhall_format_call_target(parts: Sequence[str], /) -> str:
+    """Join call target parts with dots and append a trailing space.
+
+    Dhall requires whitespace between a function expression and its
+    argument.  :class:`~literalizer._language.PositionalCallStyle`
+    emits ``target(args)`` with no gap; a trailing space on the target
+    string turns that into ``target (args)``, which is valid Dhall
+    function-application syntax.
+    """
+    return ".".join(parts) + " "
+
+
+# Maps closing/brace/bracket chars to their depth-tracking key and delta.
+# ``(`` is handled separately so the word-before-paren check fires first.
+_DHALL_BRACKET_DELTA: dict[str, tuple[str, int]] = {
+    ")": ("paren", -1),
+    "{": ("brace", +1),
+    "}": ("brace", -1),
+    "[": ("bracket", +1),
+    "]": ("bracket", -1),
+}
+
+# Matches a Dhall double-quoted string literal including escape sequences,
+# so string contents are stripped before scanning for structural patterns.
+_DHALL_STRING_RE = re.compile(pattern=r'"(?:[^"\\]|\\.)*"')
+
+
+def _dhall_validate_call_stmt(call_expr: str) -> None:
+    """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
+    call expressions that cannot be represented as valid Dhall.
+
+    Two patterns are rejected:
+
+    * A word character directly followed by ``(`` — a call-transform
+      wrapper (e.g. ``emit(...)``) written without the whitespace that
+      Dhall requires before a function argument.
+    * A top-level comma inside parentheses — indicates more than one
+      positional argument, which Dhall cannot represent because it has
+      no tuple type.
+
+    String literals are stripped first so that quoted content is never
+    mistaken for one of these patterns.
+    """
+    sanitized = _DHALL_STRING_RE.sub(repl="", string=call_expr)
+    depths: dict[str, int] = {"paren": 0, "brace": 0, "bracket": 0}
+    prev_is_word = False
+    for c in sanitized:
+        next_prev_is_word = False
+        if c == "(":
+            if prev_is_word:
+                raise CallArgNotSupportedError(
+                    language_name="Dhall",
+                    reason=(
+                        "call_transform produces a function application "
+                        "without the whitespace Dhall requires before '(' "
+                        f"(in: {call_expr!r})"
+                    ),
+                )
+            depths["paren"] += 1
+        elif c in _DHALL_BRACKET_DELTA:
+            key, delta = _DHALL_BRACKET_DELTA[c]
+            depths[key] += delta
+        elif (
+            c == ","
+            and depths["paren"] >= 1
+            and depths["brace"] == 0
+            and depths["bracket"] == 0
+        ):
+            raise CallArgNotSupportedError(
+                language_name="Dhall",
+                reason=(
+                    "Dhall has no tuple type; PositionalCallStyle cannot "
+                    "represent calls with more than one argument"
+                ),
+            )
+        else:
+            next_prev_is_word = c.isalnum() or c == "_"
+        prev_is_word = next_prev_is_word
+
+
+def _dhall_reject_ref_identifier(name: str) -> str:
+    """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
+    any ``$ref`` argument.
+
+    Dhall's stub parameter type is ``DVal``, but a ref variable holds a
+    concrete type (e.g. ``List Integer``) that Dhall's type-checker
+    cannot unify with ``DVal``.
+    """
+    raise CallArgNotSupportedError(
+        language_name="Dhall",
+        reason=(
+            f"ref variable {name!r} has a concrete type that cannot be "
+            "unified with the DVal stub parameter type"
+        ),
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -536,6 +699,8 @@ class Dhall(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Dhall call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -582,7 +747,6 @@ class Dhall(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
@@ -590,12 +754,25 @@ class Dhall(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
+        """Wrap code in a valid Dhall file.
+
+        When *variable_name* is empty the call is from a call context
+        (either :meth:`wrap_calls_with_declarations` or
+        :func:`~literalizer.literalize_call` with ``wrap_in_file=True``);
+        both need a closing ``in {=}`` to complete the ``let``-chain
+        into a valid Dhall expression.  When *variable_name* is set the
+        call is from a regular :func:`~literalizer.literalize` path
+        whose content already ends with the ``in <varname>`` clause
+        produced by the variable form.
+        """
+        wrapped = wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
+        if not variable_name:
+            wrapped += "\nin {=}"
+        return wrapped
 
     @staticmethod
     def wrap_combined_in_file(
@@ -635,6 +812,7 @@ class Dhall(metaclass=LanguageCls):
     )
     heterogeneous_value_union_name: str = "Value"
     indent: str = "  "
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     null_literal: ClassVar[str] = '""'
     true_literal: ClassVar[str] = "True"
@@ -649,9 +827,6 @@ class Dhall(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -711,32 +886,83 @@ class Dhall(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _dhall_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
-        """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        """Return the ``DVal`` union-type preamble for a call
+        expression.
+        """
+        return _dhall_call_preamble_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Scalar, str], str]:
+        """Wrap each scalar call argument in the ``DVal`` union tag."""
+        return _dhall_format_call_arg
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Validate and wrap a call expression as a ``let _ =`` binding.
+
+        Raises :exc:`~literalizer.exceptions.CallArgNotSupportedError`
+        if the rendered call contains a function application without the
+        required whitespace, or more than one positional argument.
+        """
+
+        def _wrap(stmt: str) -> str:
+            """Validate *call_expr* then wrap it as a ``let _ =``
+            binding.
+            """
+            _dhall_validate_call_stmt(call_expr=stmt)
+            return f"let _ = {stmt}"
+
+        return _wrap
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Join declarations and calls into a Dhall let-chain.
+
+        Delegates to :meth:`wrap_in_file` with an empty variable name,
+        which appends the ``in {=}`` terminator needed by both
+        this path and the ``wrap_in_file=True`` call path.
+        """
+        content = "\n".join((*declarations, calls)) if declarations else calls
+        return self.wrap_in_file(
+            content=content,
+            variable_name="",
+            body_preamble=body_preamble,
+        )
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _dhall_format_call_target
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Raise for any ``$ref`` argument.
+
+        Dhall's stub parameter type is ``DVal``; a ref variable holds a
+        concrete type that Dhall's type-checker cannot unify with it.
         """
-        return identity_call_ref_identifier
+        return _dhall_reject_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
