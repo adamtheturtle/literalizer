@@ -339,6 +339,7 @@ executionEnvironments = [
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
 overrides = []
+environment.extra-paths = [ ".github/scripts" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true
