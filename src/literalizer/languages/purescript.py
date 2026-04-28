@@ -359,25 +359,27 @@ def _build_purescript_body_preamble(
         Prelude is required for ``negate`` (any negative int or float)
         and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
         """
-        if isinstance(val, (int, float)) and not isinstance(val, bool):
-            if isinstance(val, float):
-                return (
-                    math.copysign(1, val) < 0
-                    or math.isinf(val)
-                    or math.isnan(val)
+        match val:
+            case int() | float() if not isinstance(val, bool):
+                if isinstance(val, float):
+                    return (
+                        math.copysign(1, val) < 0
+                        or math.isinf(val)
+                        or math.isnan(val)
+                    )
+                return val < 0
+            case list():
+                return any(_needs_prelude(val=v) for v in val)
+            case dict():
+                return any(_needs_prelude(val=v) for v in val.values())
+            case set():
+                return any(
+                    _needs_prelude(val=v)
+                    for v in val
+                    if isinstance(v, (int, float)) and not isinstance(v, bool)
                 )
-            return val < 0
-        if isinstance(val, list):
-            return any(_needs_prelude(val=v) for v in val)
-        if isinstance(val, dict):
-            return any(_needs_prelude(val=v) for v in val.values())
-        if isinstance(val, set):
-            return any(
-                _needs_prelude(val=v)
-                for v in val
-                if isinstance(v, (int, float)) and not isinstance(v, bool)
-            )
-        return False
+            case _:
+                return False
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""

@@ -179,11 +179,6 @@ def _kotlin_type_to_opener(
     ``DictType`` — the LIST format handles dicts via the config
     resolver before calling this function.
     """
-    if isinstance(element_type, DictType):
-        return None
-    if isinstance(element_type, ListType):
-        inner = _kotlin_type_to_opener(element_type=element_type.inner)
-        return "arrayOf(" if inner is not None else None
     scalar_openers: dict[type, str] = {
         str: "arrayOf(",
         bool: "booleanArrayOf(",
@@ -193,7 +188,14 @@ def _kotlin_type_to_opener(
         datetime.date: "arrayOf(",
         datetime.datetime: "arrayOf(",
     }
-    return scalar_openers.get(element_type)
+    match element_type:
+        case DictType():
+            return None
+        case ListType():
+            inner = _kotlin_type_to_opener(element_type=element_type.inner)
+            return "arrayOf(" if inner is not None else None
+        case _:
+            return scalar_openers.get(element_type)
 
 
 @beartype
