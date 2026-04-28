@@ -158,6 +158,8 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 class Ada(metaclass=LanguageCls):
     """Ada language specification."""
 
+    module_name: str = "Check"
+
     extension = ".adb"
     pygments_name = "ada"
     supports_default_set_element_type = False
@@ -357,6 +359,7 @@ class Ada(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -380,8 +383,8 @@ class Ada(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             "with A_Stub; use A_Stub;\n"
-            f"procedure Check is\n{indented}\n"
-            f"begin\n{self.indent}null;\nend Check;"
+            f"procedure {self.module_name} is\n{indented}\n"
+            f"begin\n{self.indent}null;\nend {self.module_name};"
         )
 
     def wrap_combined_in_file(
@@ -409,11 +412,11 @@ class Ada(metaclass=LanguageCls):
         assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         return (
             "with A_Stub; use A_Stub;\n"
-            "procedure Check is\n"
+            f"procedure {self.module_name} is\n"
             f"{decl_indented}\n"
             "begin\n"
             f"{assign_indented}\n"
-            "end Check;"
+            f"end {self.module_name};"
         )
 
     date_format: DateFormats = DateFormats.ISO
