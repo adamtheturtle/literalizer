@@ -524,7 +524,7 @@ def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     double_indent = indent * 2
     binding_prefix = double_indent + "_ = "
     result: list[str] = []
-    for line in calls.split("\n"):
+    for line in calls.split(sep="\n"):
         if not line:
             result.append("")
         elif line[0].isspace():
