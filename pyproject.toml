@@ -306,9 +306,11 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    ".github/scripts/_gleam_fixture.py",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
+mypy_path = ".github/scripts"
 
 [tool.pyrefly]
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
@@ -330,6 +332,7 @@ reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 executionEnvironments = [
     { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
+    { root = ".github/scripts", extraPaths = [ ".github/scripts" ] },
 ]
 
 [tool.ty]
