@@ -1708,6 +1708,31 @@ def _format_single_call_arg(
 
 
 @beartype
+def _format_prefix_call_args(
+    *,
+    formatted: list[str],
+    params: Sequence[str],
+    sep: str,
+    kw_prefix: str,
+) -> str:
+    """Format args for :class:`PrefixCallStyle`.
+
+    When *kw_prefix* is empty the args are positional (values only).
+    Otherwise each arg is emitted as ``{kw_prefix}{name}{sep}{value}``.
+    """
+    if not kw_prefix:
+        return sep.join(formatted)
+    if len(params) != len(formatted):
+        raise ParameterCountMismatchError(
+            expected=len(params), got=len(formatted)
+        )
+    return sep.join(
+        f"{kw_prefix}{name}{sep}{val}"
+        for name, val in zip(params, formatted, strict=True)
+    )
+
+
+@beartype
 def _format_call_args(
     *,
     values: list[Value],
@@ -1783,15 +1808,11 @@ def _format_call_args(
         ):
             return sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
-            if not kw_prefix:
-                return sep.join(formatted)
-            if len(params) != len(formatted):
-                raise ParameterCountMismatchError(
-                    expected=len(params), got=len(formatted)
-                )
-            return sep.join(
-                f"{kw_prefix}{name}{sep}{val}"
-                for name, val in zip(params, formatted, strict=True)
+            return _format_prefix_call_args(
+                formatted=formatted,
+                params=params,
+                sep=sep,
+                kw_prefix=kw_prefix,
             )
         case _ as unreachable:
             assert_never(unreachable)
