@@ -370,6 +370,49 @@ def discover_call_cases() -> list[CallCase]:
 
 
 @beartype
+def _run_wrap_in_file_case(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    yaml_string: str,
+    effective_ref_case: literalizer.IdentifierCase | None,
+    lang_cls: literalizer.LanguageCls,
+    golden_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Run ``literalize_call(..., wrap_in_file=True)`` and check
+    golden.
+    """
+    try:
+        wrap_result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+            wrap_in_file=True,
+            ref_case=effective_ref_case,
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous input"
+        )
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_cls.__name__} rejected call arg: {exc.reason}")
+    check_golden(
+        file_regression=file_regression,
+        contents=wrap_result.code + "\n",
+        extension=lang_cls.extension,
+        newline="",
+        golden_path=golden_path,
+    )
+
+
+@beartype
 def run_call_golden_case(
     *,
     config: CallCaseConfig,
@@ -405,23 +448,14 @@ def run_call_golden_case(
         effective_ref_case = None
         declarations = config.ref_declarations
     if config.wrap_in_file:
-        wrap_result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            per_element=config.per_element,
-            wrap_in_file=True,
-            ref_case=effective_ref_case,
-        )
-        check_golden(
-            file_regression=file_regression,
-            contents=wrap_result.code + "\n",
-            extension=lang_cls.extension,
-            newline="",
+        _run_wrap_in_file_case(
+            config=config,
+            spec=spec,
+            yaml_string=yaml_string,
+            effective_ref_case=effective_ref_case,
+            lang_cls=lang_cls,
             golden_path=golden_path,
+            file_regression=file_regression,
         )
         return
     try:
