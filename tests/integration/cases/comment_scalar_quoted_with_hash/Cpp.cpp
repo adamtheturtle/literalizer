@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <string>
-auto main() -> int {
+int main() {
 // note
 const auto* my_data = "hello # world";
     (void)my_data;

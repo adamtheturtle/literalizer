@@ -5,7 +5,7 @@
 struct clientType_ { void fetch(auto...) const {} };
 struct appType_ { clientType_ client; };
 const appType_ app;
-auto main() -> int {
+int main() {
 app.client.fetch("hello");
 app.client.fetch(42);
 app.client.fetch(true);

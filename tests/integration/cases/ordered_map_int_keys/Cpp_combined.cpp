@@ -2,7 +2,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-auto main() -> int {
+int main() {
 auto my_data = std::vector<std::pair<std::string, std::string>>{
     {"1", "one"},
     {"2", "two"},

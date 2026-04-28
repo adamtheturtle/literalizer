@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <string>
-auto main() -> int {
+int main() {
 auto my_data = std::initializer_list<std::string>{
     "apple",  // inline comment
     // before banana

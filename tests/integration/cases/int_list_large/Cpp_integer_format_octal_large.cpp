@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-auto main() -> int {
+int main() {
 auto my_data = std::vector<int>{
     03641100,
     -02322,

@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <array>
-auto main() -> int {
+int main() {
 auto my_data = std::array<double, 3>{
     1.1,
     -2.2,

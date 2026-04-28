@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <variant>
-auto main() -> int {
+int main() {
 auto my_data = std::vector<std::variant<int, double, bool, std::string>>{
     42,
     3.14,

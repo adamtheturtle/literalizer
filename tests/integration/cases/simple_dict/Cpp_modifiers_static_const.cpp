@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <map>
 #include <variant>
-auto main() -> int {
+int main() {
 static const auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
     {"name", "Alice"},
     {"age", 30},

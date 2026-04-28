@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-auto main() -> int {
+int main() {
 auto my_data = std::vector<double>{
     1,
     2.5,

@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstddef>
 #include <variant>
-auto main() -> int {
+int main() {
 auto my_data = std::vector<std::variant<std::vector<int>, std::vector<std::nullptr_t>, std::vector<std::string>>>{
     std::vector<int>{1, 2},
     std::vector<std::nullptr_t>{},

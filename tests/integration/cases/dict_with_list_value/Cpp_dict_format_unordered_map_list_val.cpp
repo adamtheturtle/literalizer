@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <variant>
-auto main() -> int {
+int main() {
 auto my_data = std::unordered_map<std::string, std::variant<std::string, std::vector<int>>>{
     {"name", "Alice"},
     {"scores", std::vector<int>{10, 20, 30}},

@@ -1225,7 +1225,7 @@ class Cpp(metaclass=LanguageCls):
         )
         use_line = f"\n    (void){variable_name};" if variable_name else ""
         return (
-            f"auto {self.module_name}() -> int {{\n{content}{use_line}\n"
+            f"int {self.module_name}() {{\n{content}{use_line}\n"
             "    return 0;\n}"
         )
 

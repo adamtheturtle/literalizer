@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <cstddef>
-auto main() -> int {
+int main() {
 auto my_data = std::initializer_list<std::nullptr_t>{};
 (void)my_data;
 my_data = std::initializer_list<std::nullptr_t>{};

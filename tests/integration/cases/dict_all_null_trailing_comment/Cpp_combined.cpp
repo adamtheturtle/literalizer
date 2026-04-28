@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <map>
 #include <variant>
-auto main() -> int {
+int main() {
 auto my_data = std::map<std::string, std::nullptr_t>{
     {"a", nullptr},
     {"b", nullptr},

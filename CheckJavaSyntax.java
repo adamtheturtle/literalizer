@@ -17,10 +17,10 @@ import javax.tools.ToolProvider;
 // JavaCompiler API and a private URLClassLoader so the compiler and JVM
 // stay warm across fixtures instead of cold-starting a JVM per file like
 // the previous `javac` bash loop did. Fixtures either expose a
-// `public static void check()` method (wrapping the literal in a method
-// body) or declare `my_data` as a field on `class Check`; either way the
-// host triggers static-init, constructs a `Check` instance to run any
-// instance-field initializers, and invokes `check()` when present, so
+// `public static void main()` method (wrapping the literal in a method
+// body) or declare `my_data` as a field on `class Main`; either way the
+// host triggers static-init, constructs a `Main` instance to run any
+// instance-field initializers, and invokes `main()` when present, so
 // runtime errors (e.g. a bad `Instant.parse` argument) surface here
 // instead of passing silently.
 public class CheckJavaSyntax {
@@ -34,7 +34,7 @@ public class CheckJavaSyntax {
         try (final StandardJavaFileManager fileManager =
                 compiler.getStandardFileManager(null, null, null)) {
             for (final String filename : args) {
-                // Each fixture declares `class Check`, so give every file
+                // Each fixture declares `class Main`, so give every file
                 // its own output directory to avoid class-name collisions.
                 final Path classDir = Files.createTempDirectory("javac");
                 final Iterable<? extends JavaFileObject> units =
@@ -59,10 +59,10 @@ public class CheckJavaSyntax {
         System.exit(failed ? 1 : 0);
     }
 
-    // Load `Check` from a private class loader rooted at *classDir*,
+    // Load `Main` from a private class loader rooted at *classDir*,
     // construct an instance (forcing both static- and instance-field
-    // initializers), and invoke `check()` if the fixture defines one.
-    // `Check` is package-private in every fixture, so `setAccessible`
+    // initializers), and invoke `main()` if the fixture defines one.
+    // `Main` is package-private in every fixture, so `setAccessible`
     // is required before invoking members reflectively.
     private static boolean runFixture(final String filename, final Path classDir) {
         final URL[] urls;
@@ -73,15 +73,15 @@ public class CheckJavaSyntax {
             return false;
         }
         try (final URLClassLoader loader = new URLClassLoader(urls)) {
-            final Class<?> checkClass = Class.forName("Check", true, loader);
+            final Class<?> checkClass = Class.forName("Main", true, loader);
             final Constructor<?> constructor = checkClass.getDeclaredConstructor();
             constructor.setAccessible(true);
             final Object instance = constructor.newInstance();
             final Method checkMethod;
             try {
-                checkMethod = checkClass.getDeclaredMethod("check");
+                checkMethod = checkClass.getDeclaredMethod("main");
             } catch (final NoSuchMethodException e) {
-                // Field-only fixtures — constructing `Check` above
+                // Field-only fixtures — constructing `Main` above
                 // already ran the field initializer.
                 return true;
             }

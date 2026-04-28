@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <cmath>
 #include <vector>
-auto main() -> int {
+int main() {
 auto my_data = std::vector<double>{
     static_cast<double>(INFINITY),
     -static_cast<double>(INFINITY),

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <unordered_map>
 #include <variant>
-auto main() -> int {
+int main() {
 auto my_data = std::unordered_map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
     {"name", "Alice"},
     {"age", 30},
