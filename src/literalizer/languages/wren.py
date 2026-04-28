@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -66,6 +66,7 @@ from literalizer._types import Value
 
 @beartype
 def _wren_call_stub(
+    indent: str,
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
@@ -84,7 +85,7 @@ def _wren_call_stub(
         cls_name = parts[0].capitalize() + "_"
         return (
             f"class {cls_name} {{",
-            f"    call({param_list}) {{}}",
+            f"{indent}call({param_list}) {{}}",
             "}",
             f"var {parts[0]} = {cls_name}.new()",
         )
@@ -97,7 +98,7 @@ def _wren_call_stub(
         cls_name = root.capitalize() + "_"
         return (
             f"class {cls_name} {{",
-            f"    {method}({param_list}) {{}}",
+            f"{indent}{method}({param_list}) {{}}",
             "}",
             f"var {root} = {cls_name}.new()",
         )
@@ -107,7 +108,7 @@ def _wren_call_stub(
         "".join(p.capitalize() for p in [root, *intermediates]) + "_"
     )
     lines.append(f"class {inner_cls_name} {{")
-    lines.append(f"    {method}({param_list}) {{}}")
+    lines.append(f"{indent}{method}({param_list}) {{}}")
     lines.append("}")
 
     prev_cls_name = inner_cls_name
@@ -121,10 +122,10 @@ def _wren_call_stub(
                 + "_"
             )
         lines.append(f"class {outer_cls_name} {{")
-        lines.append(f"    {field} {{ _{field} }}")
-        lines.append("    construct new() {")
-        lines.append(f"        _{field} = {prev_cls_name}.new()")
-        lines.append("    }")
+        lines.append(f"{indent}{field} {{ _{field} }}")
+        lines.append(f"{indent}construct new() {{")
+        lines.append(f"{indent}{indent}_{field} = {prev_cls_name}.new()")
+        lines.append(f"{indent}}}")
         lines.append("}")
         prev_cls_name = outer_cls_name
 
@@ -495,7 +496,7 @@ class Wren(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _wren_call_stub
+        return partial(_wren_call_stub, self.indent)
 
     @cached_property
     def format_call_preamble_stub(
