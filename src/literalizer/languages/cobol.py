@@ -258,7 +258,7 @@ def _cobol_call_stub(
     """Return a nested COBOL program stub for a call target.
 
     The stub is a minimal nested program that accepts any arguments
-    and stops immediately, serving as a compilable placeholder for the
+    and stops immediately, acting as a valid placeholder for the
     called subprogram.
     """
     name = _to_cobol_name(python_name=parts[-1])
