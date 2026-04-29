@@ -286,7 +286,7 @@ def _format_ordered_map_value(
     spec: Language,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
-    expand_refs: bool = False,
+    expand_refs: bool,
 ) -> str:
     """Format an ordered map as a native language literal."""
     ordered_map_cfg = spec.ordered_map_format_config
@@ -351,7 +351,7 @@ def _format_dict_value(
     open_override: str | None,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
-    expand_refs: bool = False,
+    expand_refs: bool,
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -429,7 +429,7 @@ def _format_dict_entry_value(
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
-    expand_refs: bool = False,
+    expand_refs: bool,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -736,7 +736,7 @@ def _format_sequence_child(
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
-    expand_refs: bool = False,
+    expand_refs: bool,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -801,7 +801,7 @@ def _format_list_value(
     sequence_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
-    expand_refs: bool = False,
+    expand_refs: bool,
 ) -> str:
     """Format a list as a native language literal.
 
@@ -887,7 +887,7 @@ def _format_value(
     wrap_ids: frozenset[int],
     sequence_open_override: str | None,
     ref_case: IdentifierCase | None,
-    expand_refs: bool = False,
+    expand_refs: bool,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -1050,6 +1050,7 @@ def _format_collection_lines(
                     wrap_ids=wrap_ids,
                     sequence_open_override=None,
                     ref_case=ref_case,
+                    expand_refs=False,
                 )
                 formatted_val = _maybe_wrap_child(
                     parent_id=parent_id,
@@ -1062,6 +1063,7 @@ def _format_collection_lines(
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ref_case=ref_case,
+                        expand_refs=False,
                     ),
                     spec=spec,
                 )
@@ -1109,6 +1111,7 @@ def _format_collection_lines(
                             wrap_ids=wrap_ids,
                             sequence_open_override=None,
                             ref_case=ref_case,
+                            expand_refs=False,
                         ),
                         spec=spec,
                     ),
@@ -1151,6 +1154,7 @@ def _format_collection_lines(
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
                             ref_case=ref_case,
+                            expand_refs=False,
                         ),
                         spec=spec,
                     ),
@@ -1247,6 +1251,7 @@ def _literalize(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            expand_refs=False,
         )
         return f"{line_prefix}{formatted}"
 
@@ -1269,6 +1274,7 @@ def _literalize(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            expand_refs=False,
         )
         return f"{line_prefix}{formatted}"
 
