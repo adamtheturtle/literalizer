@@ -493,6 +493,9 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Roc,
         }
     ),
+    # Mojo rejects the transfer operator (^) on trivial register types such as
+    # Int, so a $ref inside a dict literal (which requires ^) cannot compile.
+    "call_ref_nested_in_dict": frozenset({Mojo}),
 }
 
 
