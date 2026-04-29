@@ -1,9 +1,9 @@
 let val_x = {
   _ = "_";
-}; in val_x
+}; in
 let val_y = {
   _ = "_";
-}; in val_y
+}; in
 let my_data = [
   val_x
   val_y

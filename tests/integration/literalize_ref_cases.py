@@ -72,6 +72,7 @@ def _collect_ref_names(data: object) -> list[str]:
 
 
 _STUB_ASSIGN_LINE_RE = re.compile(pattern=r"^\w+\s*=(?!=)")
+_NIX_STUB_IN_RE = re.compile(pattern=r"^(.*;\s+in)\s+\w+\s*$")
 
 
 def _split_stub(stub_code: str) -> tuple[list[str], list[str]]:
@@ -109,6 +110,22 @@ def _split_stubs(
         decl_lines.extend(stub_decl)
         assign_lines.extend(stub_assign)
     return decl_lines, assign_lines
+
+
+def _strip_nix_stub_in_expr(stub_code: str) -> str:
+    """For Nix-style stubs ending in ``; in var_name``, strip ``var_name``.
+
+    This transforms ``let var = {...}; in var`` into ``let var = {...}; in``
+    so that when the stub is prepended before the next expression the result
+    is valid nested Nix: ``let a = ...; in let b = ...; in b``.
+    """
+    lines = stub_code.split(sep="\n")
+    for i in range(len(lines) - 1, -1, -1):
+        m = _NIX_STUB_IN_RE.match(string=lines[i])
+        if m:
+            lines[i] = m.group(1)
+            return "\n".join(lines)
+    return stub_code
 
 
 def _find_first_occurrence(lines: list[str], lower_name: str) -> int | None:
@@ -252,7 +269,8 @@ def inject_stubs_before_variable(
 
     all_stub_lines: list[str] = []
     for stub_code in stub_codes:
-        all_stub_lines.extend(stub_code.split(sep="\n"))
+        processed = _strip_nix_stub_in_expr(stub_code=stub_code)
+        all_stub_lines.extend(processed.split(sep="\n"))
     indented = _indented(stub_line_list=all_stub_lines)
     return "\n".join(lines[:decl_idx] + indented + lines[decl_idx:])
 
