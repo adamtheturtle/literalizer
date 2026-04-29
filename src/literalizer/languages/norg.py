@@ -60,6 +60,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
 @beartype
@@ -84,7 +85,6 @@ class Norg(metaclass=LanguageCls):
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
-    supports_non_printable_ascii_dict_keys = True
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
@@ -310,7 +310,7 @@ class Norg(metaclass=LanguageCls):
         upstream.
         """
         del declaration, assignment, variable_name, body_preamble
-        raise NotImplementedError
+        raise WrapCombinedInFileNotSupportedError
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

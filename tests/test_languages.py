@@ -36,6 +36,7 @@ from literalizer.exceptions import (
     PerElementNotListError,
     UnrepresentableSpecialFloatError,
     UnsupportedIdentifierCaseError,
+    WrapCombinedInFileNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
@@ -688,7 +689,7 @@ def test_wrap_combined_in_file_unsupported_raises(
     these languages before reaching ``wrap_combined_in_file``, but the
     method itself must still satisfy the :class:`Language` protocol.
     """
-    with pytest.raises(expected_exception=NotImplementedError):
+    with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
         language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",

@@ -253,7 +253,6 @@ class Go(metaclass=LanguageCls):
     supports_default_dict_value_type = True
     supports_default_dict_key_type = True
     supports_default_ordered_map_value_type = True
-    supports_non_printable_ascii_dict_keys = True
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
