@@ -145,6 +145,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_comments",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_negative_int",
         target_function="process",
         parameter_names=["value"],

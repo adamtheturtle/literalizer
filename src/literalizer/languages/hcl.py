@@ -370,7 +370,9 @@ class Hcl(metaclass=LanguageCls):
         call_counter = 0
         for statement in statements:
             first_line = statement.split(sep="\n", maxsplit=1)[0]
-            if _HCL_DECLARATION_PATTERN.match(string=first_line):
+            if first_line.lstrip().startswith(
+                "#"
+            ) or _HCL_DECLARATION_PATTERN.match(string=first_line):
                 rendered.append(statement)
             else:
                 rendered.append(f"_{call_counter} = {statement}")
