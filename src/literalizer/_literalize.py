@@ -286,6 +286,7 @@ def _format_ordered_map_value(
     spec: Language,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    expand_refs: bool = False,
 ) -> str:
     """Format an ordered map as a native language literal."""
     ordered_map_cfg = spec.ordered_map_format_config
@@ -316,6 +317,7 @@ def _format_ordered_map_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
                 ref_case=ref_case,
+                expand_refs=expand_refs,
             ),
             v,
             _maybe_wrap_child(
@@ -329,6 +331,7 @@ def _format_ordered_map_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ref_case=ref_case,
+                    expand_refs=expand_refs,
                 ),
                 spec=spec,
             ),
@@ -348,6 +351,7 @@ def _format_dict_value(
     open_override: str | None,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    expand_refs: bool = False,
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -385,6 +389,7 @@ def _format_dict_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
                 ref_case=ref_case,
+                expand_refs=expand_refs,
             ),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
@@ -398,6 +403,7 @@ def _format_dict_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ref_case=ref_case,
+                    expand_refs=expand_refs,
                 ),
                 spec=spec,
             ),
@@ -423,6 +429,7 @@ def _format_dict_entry_value(
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    expand_refs: bool = False,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -442,6 +449,7 @@ def _format_dict_entry_value(
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
             ref_case=ref_case,
+            expand_refs=expand_refs,
         )
     return _format_value(
         value=value,
@@ -450,6 +458,7 @@ def _format_dict_entry_value(
         wrap_ids=wrap_ids,
         sequence_open_override=None,
         ref_case=ref_case,
+        expand_refs=expand_refs,
     )
 
 
@@ -727,6 +736,7 @@ def _format_sequence_child(
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    expand_refs: bool = False,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -778,6 +788,7 @@ def _format_sequence_child(
             parent_override if parent_override is not None else sibling_open
         ),
         ref_case=ref_case,
+        expand_refs=expand_refs,
     )
 
 
@@ -790,6 +801,7 @@ def _format_list_value(
     sequence_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    expand_refs: bool = False,
 ) -> str:
     """Format a list as a native language literal.
 
@@ -838,6 +850,7 @@ def _format_list_value(
                         child_sequence_open_overrides
                     ),
                     ref_case=ref_case,
+                    expand_refs=expand_refs,
                 ),
                 spec=spec,
             ),
@@ -874,6 +887,7 @@ def _format_value(
     wrap_ids: frozenset[int],
     sequence_open_override: str | None,
     ref_case: IdentifierCase | None,
+    expand_refs: bool = False,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -894,17 +908,19 @@ def _format_value(
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
     hook.
 
-    When *ref_case* is set, ``{"$ref": "name"}`` markers anywhere in
-    the value tree are rendered as bare identifiers via
-    :attr:`~literalizer._language.Language.format_call_ref_identifier`,
-    with the identifier name converted to *ref_case* first.  When
-    *ref_case* is ``None``, ``{"$ref": "name"}`` dicts are formatted as
-    ordinary literal dicts.
+    When *ref_case* is set or *expand_refs* is ``True``,
+    ``{"$ref": "name"}`` markers anywhere in the value tree are rendered
+    as bare identifiers via
+    :attr:`~literalizer._language.Language.format_call_ref_identifier`.
+    When *ref_case* is set the identifier name is converted to that case
+    first.  When both are absent, ``{"$ref": "name"}`` dicts are
+    formatted as ordinary literal dicts.
     """
-    if ref_case is not None:
+    if ref_case is not None or expand_refs:
         ref_name = _extract_call_arg_ref_name(value=value)
         if ref_name is not None:
-            ref_name = ref_case.convert(name=ref_name)
+            if ref_case is not None:
+                ref_name = ref_case.convert(name=ref_name)
             return spec.format_call_ref_identifier(ref_name)
     match value:
         case ordereddict():
@@ -913,6 +929,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
+                expand_refs=expand_refs,
             )
         case dict():
             return _format_dict_value(
@@ -921,6 +938,7 @@ def _format_value(
                 open_override=dict_open_override,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
+                expand_refs=expand_refs,
             )
         case set():
             return _format_set_value(value=value, spec=spec, wrap_ids=wrap_ids)
@@ -932,6 +950,7 @@ def _format_value(
                 sequence_open_override=sequence_open_override,
                 child_sequence_open_overrides=(),
                 ref_case=ref_case,
+                expand_refs=expand_refs,
             )
         case _:
             return _format_scalar(value=value, spec=spec)
@@ -1710,6 +1729,33 @@ def _extract_call_arg_ref_name(*, value: Value) -> str | None:
 
 
 @beartype
+def _strip_refs_from_value(value: Value) -> Value:
+    """Return *value* with ``{"$ref": "name"}`` markers removed at any
+    depth.
+
+    Used to produce ref-free data for preamble inference, validation,
+    and wrap-id computation so that the ``{str: str}`` shape of a ref
+    marker never influences type-dependent logic.
+    """
+    if isinstance(value, list):
+        return [
+            _strip_refs_from_value(item)
+            for item in value
+            if _extract_call_arg_ref_name(value=item) is None
+        ]
+    if (
+        isinstance(value, dict)
+        and _extract_call_arg_ref_name(value=value) is None
+    ):
+        return {
+            k: _strip_refs_from_value(v)
+            for k, v in value.items()
+            if _extract_call_arg_ref_name(value=v) is None
+        }
+    return value
+
+
+@beartype
 def _strip_call_arg_refs_for_preamble(
     *,
     data: Value,
@@ -1726,6 +1772,8 @@ def _strip_call_arg_refs_for_preamble(
     When *per_element* is ``True``, *data* is a list of argument lists
     and refs are stripped from each inner list.  Otherwise a
     top-level ref becomes an empty list, standing in for "no data".
+    Refs nested inside list or dict argument values are also stripped
+    recursively.
     """
     if per_element:
         if not isinstance(data, list):
@@ -1735,17 +1783,17 @@ def _strip_call_arg_refs_for_preamble(
             if isinstance(element, list):
                 result.append(
                     [
-                        v
+                        _strip_refs_from_value(v)
                         for v in element
                         if _extract_call_arg_ref_name(value=v) is None
                     ]
                 )
             elif _extract_call_arg_ref_name(value=element) is None:
-                result.append(element)
+                result.append(_strip_refs_from_value(element))
         return result
     if _extract_call_arg_ref_name(value=data) is not None:
         return []
-    return data
+    return _strip_refs_from_value(data)
 
 
 @beartype
@@ -1779,7 +1827,8 @@ def _format_single_call_arg(
             dict_open_override=dict_open_override,
             wrap_ids=wrap_ids,
             sequence_open_override=None,
-            ref_case=None,
+            ref_case=ref_case,
+            expand_refs=True,
         ),
     )
 
@@ -2097,9 +2146,9 @@ def _render_call_per_element(
             if _extract_call_arg_ref_name(value=v) is None
         ]
         for value in non_ref_args:
-            check_data(data=value, spec=language)
+            check_data(data=_strip_refs_from_value(value), spec=language)
             if validate_call_arg is not None:
-                validate_call_arg(value)
+                validate_call_arg(_strip_refs_from_value(value))
         call_wrap_ids = (
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
@@ -2151,14 +2200,15 @@ def _render_call_whole(
     that case shape validation and wrap-id computation are skipped.
     """
     if _extract_call_arg_ref_name(value=data) is None:
-        check_data(data=data, spec=language)
+        stripped_data = _strip_refs_from_value(data)
+        check_data(data=stripped_data, spec=language)
         validate_call_arg: Callable[[Value], None] | None = getattr(
             language,
             "validate_call_arg",
             None,
         )
         if validate_call_arg is not None:
-            validate_call_arg(data)
+            validate_call_arg(stripped_data)
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
