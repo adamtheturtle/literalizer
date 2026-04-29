@@ -732,11 +732,13 @@ def test_apply_collection_comments_to_elements_multiline_render() -> None:
     rendered_elements = [
         "first_line_of_element_0\nsecond_line_of_element_0",
         "element_1",
+        "element_2_no_inline",
     ]
     collection_comments = CollectionComments(
         elements=(
             ElementComments(before=("before element 0",), inline="inline 0"),
             ElementComments(before=("before element 1",), inline="inline 1"),
+            ElementComments(before=(), inline=""),
         ),
         trailing=("trailing",),
     )
@@ -752,5 +754,6 @@ def test_apply_collection_comments_to_elements_multiline_render() -> None:
         "second_line_of_element_0  # inline 0\n"
         "# before element 1\n"
         "element_1  # inline 1\n"
+        "element_2_no_inline\n"
         "# trailing"
     )
