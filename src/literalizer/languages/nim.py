@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar, assert_never, cast
 
@@ -48,7 +48,6 @@ from literalizer._heterogeneous import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -59,6 +58,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -401,6 +401,101 @@ def _build_object_variant_preamble(
 
 
 @beartype
+def _nim_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+    *,
+    indent: str,
+) -> tuple[str, ...]:
+    """Return Nim stub declarations for a call name.
+
+    VOID stubs use templates with ``varargs[untyped]``.  VALUE stubs use
+    generic ``proc`` definitions with ``{.discardable.}`` because the
+    ``{.discardable.}`` pragma is not valid on templates in Nim 2.x, and
+    calling a value-returning template at statement level raises a
+    compiler error without it.
+
+    For single-part names the stub is emitted at module scope.  For
+    dotted names object types are built bottom-up so that the Uniform
+    Function Call Syntax of Nim lets the caller write
+    ``app.client.fetch(x)`` as sugar for ``fetch(app.client, x)``.
+    """
+    method = parts[-1]
+
+    if stub_return is StubReturn.VOID:
+        if len(parts) == 1:
+            return (f"template {method}(args: varargs[untyped]) = discard",)
+        chain = list(parts[:-1])
+        holder = chain[-1]
+        holder_type = f"{holder.title()}Type"
+        lines: list[str] = [f"type {holder_type} = object"]
+        for i in range(len(chain) - 2, -1, -1):
+            outer = chain[i]
+            inner = chain[i + 1]
+            inner_type = f"{inner.title()}Type"
+            outer_type = f"{outer.title()}Type"
+            lines.extend(
+                [
+                    f"type {outer_type} = object",
+                    f"{indent}{inner}: {inner_type}",
+                ]
+            )
+        lines.append(
+            f"template {method}(self: {holder_type};"
+            f" args: varargs[untyped]) = discard"
+        )
+        root = chain[0]
+        root_type = f"{root.title()}Type"
+        lines.append(f"var {root}: {root_type}")
+        return tuple(lines)
+
+    # VALUE: use a generic proc instead of a template
+    type_params = [f"T{i}" for i in range(len(_params))]
+    type_clause = f"[{', '.join(type_params)}]" if type_params else ""
+    if len(parts) == 1:
+        params_str = "; ".join(
+            f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
+        )
+        return (
+            f"proc {method}{type_clause}"
+            f"({params_str}): int {{.discardable.}} = 0",
+        )
+    chain = list(parts[:-1])
+    holder = chain[-1]
+    holder_type = f"{holder.title()}Type"
+    lines = [f"type {holder_type} = object"]
+    for i in range(len(chain) - 2, -1, -1):
+        outer = chain[i]
+        inner = chain[i + 1]
+        inner_type = f"{inner.title()}Type"
+        outer_type = f"{outer.title()}Type"
+        lines.extend(
+            [
+                f"type {outer_type} = object",
+                f"{indent}{inner}: {inner_type}",
+            ]
+        )
+    params_str = "; ".join(
+        f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
+    )
+    self_and_params = (
+        f"self: {holder_type}; {params_str}"
+        if params_str
+        else f"self: {holder_type}"
+    )
+    lines.append(
+        f"proc {method}{type_clause}"
+        f"({self_and_params}): int {{.discardable.}} = 0"
+    )
+    root = chain[0]
+    root_type = f"{root.title()}Type"
+    lines.append(f"var {root}: {root_type}")
+    return tuple(lines)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Nim(metaclass=LanguageCls):
     """Nim language specification.
@@ -692,6 +787,8 @@ class Nim(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Nim call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -803,6 +900,7 @@ class Nim(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_variant_name: str = "Value"
+    call_style: CallStyles = CallStyles.POSITIONAL
     indent: str = "    "
 
     def __post_init__(self) -> None:
@@ -840,9 +938,11 @@ class Nim(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -953,7 +1053,7 @@ class Nim(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return partial(_nim_call_stub, indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(
@@ -961,6 +1061,19 @@ class Nim(metaclass=LanguageCls):
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """No data-dependent preamble for call context.
+
+        The ``data_dependent_preamble`` method of Nim adds
+        ``import json`` for variable declarations that use ``%*``.
+        Call arguments are formatted as inline literals and never use
+        ``%*``, so ``import json`` is never needed in a call context.
+        """
+        return no_data_preamble
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
