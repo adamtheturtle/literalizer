@@ -22,7 +22,21 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Ada, Fortran, Sml, Wren
+from literalizer.languages import (
+    Ada,
+    Elm,
+    Erlang,
+    Fortran,
+    Gleam,
+    Haskell,
+    Hcl,
+    ObjectiveC,
+    Php,
+    PowerShell,
+    Raku,
+    Sml,
+    Wren,
+)
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -202,6 +216,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_dotted_transform_stub",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda c: f"tracer.emit({c})",
+        transform_stub_names=["tracer.emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],
@@ -346,6 +372,12 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # "name(value)" is a parse error at the top level.
     "call_keyword_args": frozenset({Wren}),
     "call_deep_dotted_transformed": frozenset({Wren}),
+    # call_transform wraps output as "tracer.emit(inner)" — a dotted method
+    # call — and transform_stub_names=["tracer.emit"] requires a struct/object
+    # stub whose syntax is invalid or unsupported in several languages.
+    "call_dotted_transform_stub": frozenset(
+        {Elm, Erlang, Gleam, Haskell, Hcl, ObjectiveC, Php, PowerShell, Raku}
+    ),
 }
 
 
