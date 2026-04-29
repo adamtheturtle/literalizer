@@ -708,7 +708,7 @@ class Fortran(metaclass=LanguageCls):
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:
-        """Prepend ``call `` to each Fortran call statement."""
+        """Prepend the Fortran ``call`` keyword to each call statement."""
         return _fortran_call_statement
 
     @cached_property
