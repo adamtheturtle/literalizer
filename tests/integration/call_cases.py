@@ -26,6 +26,7 @@ from literalizer.languages import (
     Ada,
     Elm,
     Erlang,
+    Fortran,
     Gleam,
     Haskell,
     Hcl,
@@ -133,6 +134,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_negative_int",
         target_function="process",
         parameter_names=["value"],
         call_transform=None,
@@ -392,11 +405,11 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Roc,
         }
     ),
-    # Ada does not allow function-call results to be silently discarded:
-    # a function call cannot appear as a statement.  The identity
-    # call_transform (lambda c: c) causes a VALUE stub but the call is
-    # used as a bare statement, which GNAT rejects.
-    "call_transform_no_wrapper": frozenset({Ada}),
+    # Ada and Fortran do not allow function-call results to be silently
+    # discarded: a function call cannot appear as a statement.  The
+    # identity call_transform (lambda c: c) causes a VALUE stub but the
+    # call is used as a bare statement, which both compilers reject.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren: Wren has no free-function call syntax, so a bare call like
     # "name(value)" is a parse error at the top level.
