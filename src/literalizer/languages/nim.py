@@ -279,7 +279,7 @@ class _HeterogeneousStrategyConfig:
 
     build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
     build_preamble: Callable[
-        [str, str, str],
+        [str, str, str, str],
         Callable[[Value], tuple[str, ...]],
     ]
 
@@ -298,6 +298,7 @@ def _build_error_preamble(
     _variant_name: str,
     _date_type: str,
     _datetime_type: str,
+    _indent: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
@@ -357,6 +358,7 @@ def _build_object_variant_preamble(
     variant_name: str,
     date_type: str,
     datetime_type: str,
+    indent: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """OBJECT_VARIANT strategy: emit an object-variant ``type`` block."""
@@ -379,20 +381,21 @@ def _build_object_variant_preamble(
                 continue
             seen.add(signature.kind_name)
             variants.append(signature)
+        half_indent = " " * (len(indent) // 2)
         kind_type = f"{variant_name}Kind"
         lines: list[str] = [
             "type",
-            f"  {kind_type} = enum",
-            "    " + ", ".join(v.kind_name for v in variants),
-            f"  {variant_name} = object",
-            f"    case kind: {kind_type}",
+            f"{half_indent}{kind_type} = enum",
+            f"{indent}{', '.join(v.kind_name for v in variants)}",
+            f"{half_indent}{variant_name} = object",
+            f"{indent}case kind: {kind_type}",
         ]
         for variant in variants:
             if variant.field_name is None:
-                lines.append(f"    of {variant.kind_name}: discard")
+                lines.append(f"{indent}of {variant.kind_name}: discard")
             else:
                 lines.append(
-                    f"    of {variant.kind_name}: "
+                    f"{indent}of {variant.kind_name}: "
                     f"{variant.field_name}: {variant.field_type}"
                 )
         return tuple(lines)
@@ -997,6 +1000,7 @@ class Nim(metaclass=LanguageCls):
             self.heterogeneous_value_variant_name,
             self._heterogeneous_variant_date_type,
             self._heterogeneous_variant_datetime_type,
+            self.indent,
         )
         if self._uses_object_variant:
             return strategy_preamble

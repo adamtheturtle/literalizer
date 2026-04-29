@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -221,16 +221,21 @@ def _build_sml_declaration(
     return _format
 
 
-def _format_sml_preamble_lines(lines: list[str]) -> tuple[str, ...]:
+def _format_sml_preamble_lines(
+    lines: list[str],
+    *,
+    indent: str,
+) -> tuple[str, ...]:
     """Format deduplicated preamble lines with SML ``datatype`` syntax.
 
     The first constructor is indented; subsequent constructors are
     prefixed with ``|``.
     """
+    pipe_prefix = " " * max(0, len(indent) - 2) + "| "
     return (
         lines[0],
-        "    " + lines[1],
-        *(f"  | {line}" for line in lines[2:]),
+        indent + lines[1],
+        *(f"{pipe_prefix}{line}" for line in lines[2:]),
     )
 
 
@@ -882,5 +887,8 @@ class Sml(metaclass=LanguageCls):
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
-            format_lines=_format_sml_preamble_lines,
+            format_lines=partial(
+                _format_sml_preamble_lines,
+                indent=self.indent,
+            ),
         )
