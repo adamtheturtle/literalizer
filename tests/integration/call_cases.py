@@ -30,9 +30,11 @@ from literalizer.languages import (
     Gleam,
     Haskell,
     Hcl,
+    Jsonnet,
     ObjectiveC,
     Php,
     PowerShell,
+    PureScript,
     Raku,
     Roc,
     Sml,
@@ -401,6 +403,24 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Php,
             PowerShell,
             Raku,
+            Roc,
+        }
+    ),
+    # Languages whose default call wrappers prepend a token to each
+    # statement (Elm/Haskell/PureScript ``_ = ``/``_ <- ``, Roc's
+    # ``dbg(...)``) or whose comment syntax interacts with the
+    # statement separator (Erlang's trailing ``.``, Jsonnet's array
+    # comma being swallowed by ``//``). These cannot represent a
+    # standalone comment line in the wrapped self-contained file even
+    # though :func:`literalizer.literalize_call` itself produces
+    # syntactically valid per-call comments.
+    "call_comments": frozenset(
+        {
+            Elm,
+            Erlang,
+            Haskell,
+            Jsonnet,
+            PureScript,
             Roc,
         }
     ),
