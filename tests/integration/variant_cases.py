@@ -9,6 +9,7 @@ import dataclasses
 import enum
 import functools
 from collections.abc import Callable, Iterable
+from pathlib import Path
 
 from beartype import beartype
 
@@ -37,7 +38,10 @@ from literalizer.languages import (
     VisualBasic,
 )
 
+from .case_discovery import cases_with_special_floats
 from .language_specs import make_spec, sorted_languages
+
+_CASES_DIR = Path(__file__).parent / "cases"
 
 
 @beartype
@@ -1350,6 +1354,7 @@ def build_variant_cases() -> list[VariantCase]:
     declared inputs in :data:`AXIS_INPUTS`, plus the bespoke modifier
     cases from :func:`build_modifier_variant_cases`.
     """
+    special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
     cases: list[VariantCase] = []
     for axis_key, inputs in AXIS_INPUTS.items():
         variants = _variants_for_axis(axis_key=axis_key)
@@ -1364,6 +1369,10 @@ def build_variant_cases() -> list[VariantCase]:
                     ),
                 )
                 for ci in inputs
+                if not (
+                    ci.case_dir_name in special_float_cases
+                    and not variant.lang_cls.supports_special_floats
+                )
             )
     cases.extend(build_modifier_variant_cases())
     return cases

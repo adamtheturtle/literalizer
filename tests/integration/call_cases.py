@@ -22,7 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Ada, Sml
+from literalizer.languages import Ada, Sml, Wren
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -316,9 +316,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
-# Per-case language exclusions: cases whose target function or parameter
-# names use a reserved keyword in a given language, making a valid lint-
-# passing stub impossible to generate.
+# Per-case language exclusions: cases whose target function, parameter
+# names, or call_transform wrapper use syntax that is invalid in a given
+# language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # target_function "app.mgr.op" has "op" as the innermost name; "op"
     # is a reserved word in SML and cannot be used as a fun or val
@@ -329,6 +329,11 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # call_transform (lambda c: c) causes a VALUE stub but the call is
     # used as a bare statement, which GNAT rejects.
     "call_transform_no_wrapper": frozenset({Ada}),
+    # call_transform wraps output as "emit(inner)", which is invalid in
+    # Wren: Wren has no free-function call syntax, so a bare call like
+    # "name(value)" is a parse error at the top level.
+    "call_keyword_args": frozenset({Wren}),
+    "call_deep_dotted_transformed": frozenset({Wren}),
 }
 
 

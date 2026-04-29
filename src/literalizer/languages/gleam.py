@@ -67,6 +67,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableSpecialFloatError
 
 
 @beartype
@@ -503,7 +504,7 @@ class Gleam(metaclass=LanguageCls):
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
-    supports_non_printable_ascii_dict_keys = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_dotted_calls = True
 
@@ -1044,27 +1045,33 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
-        """Callable that formats a float value as a literal."""
+        """Callable that formats a float value as a literal.
+
+        Non-finite values raise :class:`UnrepresentableSpecialFloatError`
+        because Gleam's Erlang target has no expression that evaluates
+        to a non-finite float.
+        """
+        finite: Callable[[float], str]
         if self.constructor_prefix == "G":
-            return self.float_format
-        _pos_inf = f"{self.constructor_prefix}Float(todo)"
-        _neg_inf = f"{self.constructor_prefix}Float(todo)"
-        _nan_val = f"{self.constructor_prefix}Float(todo)"
-        _float_finite = _build_gleam_float_wrapper(
-            prefix=self.constructor_prefix,
-            inner=_GLEAM_FLOAT_BASE[self.float_format.name],
-        )
+            finite = self.float_format
+        else:
+            finite = _build_gleam_float_wrapper(
+                prefix=self.constructor_prefix,
+                inner=_GLEAM_FLOAT_BASE[self.float_format.name],
+            )
 
         @beartype
-        def _format_float_with_specials(value: float) -> str:
-            """Format a float, handling inf and nan."""
-            if math.isinf(value):
-                return _neg_inf if value < 0 else _pos_inf
-            if math.isnan(value):
-                return _nan_val
-            return _float_finite(value)
+        def _format(value: float) -> str:
+            """Delegate finite values; raise for inf and nan."""
+            if not math.isfinite(value):
+                msg = (
+                    f"Gleam cannot represent special float {value!r} on "
+                    "the Erlang target."
+                )
+                raise UnrepresentableSpecialFloatError(msg)
+            return finite(value)
 
-        return _format_float_with_specials
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:

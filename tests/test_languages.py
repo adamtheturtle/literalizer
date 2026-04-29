@@ -34,7 +34,9 @@ from literalizer.exceptions import (
     NullInCollectionError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnrepresentableSpecialFloatError,
     UnsupportedIdentifierCaseError,
+    WrapCombinedInFileNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
@@ -615,6 +617,27 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
     assert "_p26: a1" in line
 
 
+@pytest.mark.parametrize(
+    argnames="yaml_value",
+    argvalues=[".inf", "-.inf", ".nan"],
+    ids=["positive_infinity", "negative_infinity", "nan"],
+)
+def test_gleam_special_floats_raise(yaml_value: str) -> None:
+    """Gleam raises ``UnrepresentableSpecialFloatError`` for non-finite
+    floats.
+
+    Gleam targets Erlang, which has no expression that evaluates to a
+    non-finite float, so the literalizer surfaces this at literalize
+    time rather than producing output that panics at ``gleam run``.
+    """
+    with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
+        literalize(
+            source=f"- {yaml_value}\n",
+            input_format=InputFormat.YAML,
+            language=Gleam(),
+        )
+
+
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
     expected_msg = "BothVariableForms requires wrap_in_file=True"
@@ -666,7 +689,7 @@ def test_wrap_combined_in_file_unsupported_raises(
     these languages before reaching ``wrap_combined_in_file``, but the
     method itself must still satisfy the :class:`Language` protocol.
     """
-    with pytest.raises(expected_exception=NotImplementedError):
+    with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
         language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",

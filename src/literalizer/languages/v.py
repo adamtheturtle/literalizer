@@ -46,7 +46,6 @@ from literalizer._heterogeneous import collect_heterogeneous_container_ids
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -57,6 +56,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -65,7 +65,6 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
-    no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_spec_for_data,
@@ -202,6 +201,87 @@ def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
 
 
 @beartype
+def _v_call_preamble_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return V preamble stub declarations for a call name.
+
+    Includes ``interface ICallArg_ {}`` in every result so that
+    duplicate copies can be dropped when multiple stubs are combined.
+    For dotted targets like ``app.client.fetch``, one struct per
+    prefix level is emitted together with the method declaration.
+    """
+    iface = "interface ICallArg_ {}"
+
+    if len(parts) == 1:
+        if stub_return is StubReturn.VOID:
+            return (iface, f"fn {parts[0]}(args ...ICallArg_) {{}}")
+        return (
+            iface,
+            f"fn {parts[0]}(args ...ICallArg_) ICallArg_ {{ return 0 }}",
+        )
+
+    def _cap_type(name: str, /) -> str:
+        """Return *name* with an upper-case first letter and ``Type_``
+        suffix.
+        """
+        return name[0].upper() + name[1:] + "Type_"
+
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    receiver_type = _cap_type(fields[-1]) if fields else _cap_type(root)
+
+    if stub_return is StubReturn.VOID:
+        method_line = (
+            f"fn (r {receiver_type}) {method}(args ...ICallArg_) {{}}"
+        )
+    else:
+        method_line = (
+            f"fn (r {receiver_type}) {method}(args ...ICallArg_)"
+            f" ICallArg_ {{ return 0 }}"
+        )
+
+    lines: list[str] = [iface, f"struct {receiver_type} {{}}", method_line]
+
+    if fields:
+        prev_type = receiver_type
+        for i in range(len(fields) - 2, -1, -1):
+            curr_type = _cap_type(fields[i])
+            field = fields[i + 1]
+            lines.append(f"struct {curr_type} {{\n\t{field} {prev_type}\n}}")
+            prev_type = curr_type
+        root_type = _cap_type(root)
+        lines.append(f"struct {root_type} {{\n\t{fields[0]} {prev_type}\n}}")
+
+    return tuple(lines)
+
+
+@beartype
+def _v_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return V body-level variable stubs for a call name.
+
+    For dotted targets the root variable is declared inside ``fn main``
+    so it is in scope when the call expression is evaluated.  Simple
+    one-part targets are declared at file level (preamble) and need no
+    body stub.
+    """
+    if len(parts) == 1:
+        return ()
+    root = parts[0]
+    root_type = root[0].upper() + root[1:] + "Type_"
+    return (f"{root} := {root_type}{{}}",)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class V(metaclass=LanguageCls):
     """V language specification.
@@ -222,7 +302,7 @@ class V(metaclass=LanguageCls):
     supports_default_dict_value_type = False
     supports_default_dict_key_type = False
     supports_default_ordered_map_value_type = False
-    supports_non_printable_ascii_dict_keys = True
+    supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
 
@@ -445,6 +525,8 @@ class V(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """V call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -492,7 +574,8 @@ class V(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix="\t")
-        return f"\nfn main() {{\n{indented}\n\t_ = {variable_name}\n}}"
+        use_line = f"\n\t_ = {variable_name}" if variable_name else ""
+        return f"\nfn main() {{\n{indented}{use_line}\n}}"
 
     @staticmethod
     def wrap_combined_in_file(
@@ -532,6 +615,7 @@ class V(metaclass=LanguageCls):
         HeterogeneousStrategies.INTERFACE
     )
     indent: str = "\t"
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     null_literal: ClassVar[str] = "unsafe { nil }"
     true_literal: ClassVar[str] = "true"
@@ -546,9 +630,11 @@ class V(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ("import math",)
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Return the active call-style configuration."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -592,14 +678,14 @@ class V(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _v_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return no_call_stub
+        return _v_call_preamble_stub
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:

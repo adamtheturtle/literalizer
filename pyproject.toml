@@ -61,7 +61,7 @@ optional-dependencies.dev = [
     "pyroma==5.0.1",
     "pytest==9.0.3",
     "pytest-beartype-tests==2026.4.26",
-    "pytest-codspeed==4.4.0",
+    "pytest-codspeed==4.5.0",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
@@ -77,7 +77,7 @@ optional-dependencies.dev = [
     "sphinx-pyproject==0.3.0",
     "sphinx-substitution-extensions==2026.1.12",
     "sphinxcontrib-spelling==8.0.2",
-    "ty==0.0.32",
+    "ty==0.0.33",
     "types-pygments==2.20.0.20260408",
     "vulture==2.16",
     "yamlfix==1.19.1",
@@ -280,8 +280,6 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "CheckJavaSyntax.java",
-    "a_stub.adb",
-    "a_stub.ads",
     ".clj-kondo",
     ".clj-kondo/**",
     ".clang-tidy",
@@ -316,7 +314,7 @@ follow_untyped_imports = true
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
-search_path = [ ".", "src" ]
+search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
@@ -333,6 +331,7 @@ executionEnvironments = [
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
 overrides = []
+environment.extra-paths = [ ".github/scripts" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true
