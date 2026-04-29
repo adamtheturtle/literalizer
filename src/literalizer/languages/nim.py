@@ -411,28 +411,60 @@ def _nim_call_stub(
 ) -> tuple[str, ...]:
     """Return Nim stub declarations for a call name.
 
-    For a single-part name a top-level proc with a varargs parameter is
-    emitted.  For dotted names object types are built bottom-up so that
-    Nim's Uniform Function Call Syntax lets the caller write
+    VOID stubs use templates with ``varargs[untyped]``.  VALUE stubs use
+    generic procs with ``{.discardable.}`` because templates do not
+    support that pragma in Nim 2.x, and calling a value-returning
+    template at statement level raises a compiler error without it.
+
+    For single-part names the stub is emitted at module scope.  For
+    dotted names object types are built bottom-up so that Nim's Uniform
+    Function Call Syntax lets the caller write
     ``app.client.fetch(x)`` as sugar for ``fetch(app.client, x)``.
     """
     method = parts[-1]
+
     if stub_return is StubReturn.VOID:
-        return_clause = ""
-        body = "discard"
-    else:
-        return_clause = ": untyped {.discardable.}"
-        body = "0"
-    if len(parts) == 1:
-        tmpl = (
-            f"template {method}(args: varargs[untyped])"
-            f"{return_clause} = {body}"
+        if len(parts) == 1:
+            return (f"template {method}(args: varargs[untyped]) = discard",)
+        chain = list(parts[:-1])
+        holder = chain[-1]
+        holder_type = f"{holder.title()}Type"
+        lines: list[str] = [f"type {holder_type} = object"]
+        for i in range(len(chain) - 2, -1, -1):
+            outer = chain[i]
+            inner = chain[i + 1]
+            inner_type = f"{inner.title()}Type"
+            outer_type = f"{outer.title()}Type"
+            lines.extend(
+                [
+                    f"type {outer_type} = object",
+                    f"{indent}{inner}: {inner_type}",
+                ]
+            )
+        lines.append(
+            f"template {method}(self: {holder_type};"
+            f" args: varargs[untyped]) = discard"
         )
-        return (tmpl,)
+        root = chain[0]
+        root_type = f"{root.title()}Type"
+        lines.append(f"var {root}: {root_type}")
+        return tuple(lines)
+
+    # VALUE: generic procs so {.discardable.} is valid
+    type_params = [f"T{i}" for i in range(len(_params))]
+    type_clause = f"[{', '.join(type_params)}]" if type_params else ""
+    if len(parts) == 1:
+        params_str = "; ".join(
+            f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
+        )
+        return (
+            f"proc {method}{type_clause}"
+            f"({params_str}): int {{.discardable.}} = 0",
+        )
     chain = list(parts[:-1])
     holder = chain[-1]
     holder_type = f"{holder.title()}Type"
-    lines: list[str] = [f"type {holder_type} = object"]
+    lines = [f"type {holder_type} = object"]
     for i in range(len(chain) - 2, -1, -1):
         outer = chain[i]
         inner = chain[i + 1]
@@ -444,11 +476,18 @@ def _nim_call_stub(
                 f"{indent}{inner}: {inner_type}",
             ]
         )
-    tmpl_sig = (
-        f"template {method}(self: {holder_type};"
-        f" args: varargs[untyped]){return_clause} = {body}"
+    params_str = "; ".join(
+        f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
     )
-    lines.append(tmpl_sig)
+    self_and_params = (
+        f"self: {holder_type}; {params_str}"
+        if params_str
+        else f"self: {holder_type}"
+    )
+    lines.append(
+        f"proc {method}{type_clause}"
+        f"({self_and_params}): int {{.discardable.}} = 0"
+    )
     root = chain[0]
     root_type = f"{root.title()}Type"
     lines.append(f"var {root}: {root_type}")

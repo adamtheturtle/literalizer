@@ -1,7 +1,7 @@
 type ClientType = object
 type AppType = object
     client: ClientType
-template fetch(self: ClientType; args: varargs[untyped]): untyped {.discardable.} = 0
+proc fetch[T0](self: ClientType; payload: T0): int {.discardable.} = 0
 var app: AppType
 template emit(args: varargs[untyped]) = discard
 emit(app.client.fetch("hello"))
