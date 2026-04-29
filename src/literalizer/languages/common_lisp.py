@@ -114,7 +114,7 @@ class CommonLisp(metaclass=LanguageCls):
 
     extension = ".lisp"
     pygments_name = "common-lisp"
-    variable_name_support = Support.NOT_IMPLEMENTED_BY_TOOL
+    variable_name_support = Support.SUPPORTED
     dotted_call_support = Support.SUPPORTED
 
     class DateFormats(enum.Enum):

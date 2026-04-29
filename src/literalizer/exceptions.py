@@ -168,7 +168,7 @@ class DottedCallsNotSupportedByToolError(Exception):
     supports dotted calls.
     """
 
-    def __init__(self, *, language_name: str) -> None:
+    def __init__(self, *, language_name: str) -> None:  # pragma: no cover
         """Create a ``DottedCallsNotSupportedByToolError``."""
         super().__init__(
             f"literalizer does not support dotted call target rendering "

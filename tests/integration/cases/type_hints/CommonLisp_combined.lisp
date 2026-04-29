@@ -1,0 +1,18 @@
+(defparameter *my_data* (list
+    (cons "name" "Alice")
+    (cons "age" 30)
+    (cons "active" t)
+    (cons "score" nil)
+    (cons "joined" "2024-01-15")
+    (cons "last_login" "2024-01-15T12:30:00+00:00")
+    (cons "avatar" "48656c6c6f")
+))
+(setf *my_data* (list
+    (cons "name" "Alice")
+    (cons "age" 30)
+    (cons "active" t)
+    (cons "score" nil)
+    (cons "joined" "2024-01-15")
+    (cons "last_login" "2024-01-15T12:30:00+00:00")
+    (cons "avatar" "48656c6c6f")
+))

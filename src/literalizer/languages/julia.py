@@ -144,7 +144,7 @@ class Julia(metaclass=LanguageCls):
 
     extension = ".jl"
     pygments_name = "julia"
-    variable_name_support = Support.NOT_IMPLEMENTED_BY_TOOL
+    variable_name_support = Support.SUPPORTED
     dotted_call_support = Support.SUPPORTED
 
     class DateFormats(enum.Enum):

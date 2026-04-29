@@ -17,6 +17,8 @@ import literalizer
 from literalizer._language import Support
 from literalizer.languages import (
     C,
+    Clojure,
+    CommonLisp,
     Crystal,
     CSharp,
     Dart,
@@ -26,7 +28,9 @@ from literalizer.languages import (
     FSharp,
     Gleam,
     Go,
+    Groovy,
     Haskell,
+    Julia,
     Kotlin,
     Mojo,
     Nim,
@@ -34,8 +38,11 @@ from literalizer.languages import (
     Odin,
     PureScript,
     Python,
+    Racket,
     Roc,
+    Ruby,
     Rust,
+    Scheme,
     Swift,
     VisualBasic,
 )
@@ -48,13 +55,84 @@ from .language_specs import make_spec, sorted_languages
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
+# Languages whose variable_name_support is SUPPORTED but whose variant
+# test cases deliberately omit variable wrapping.  Keeping this list
+# here (test configuration) rather than on the language class avoids
+# conflating a per-test formatting choice with a language capability.
+_NO_VARIABLE_WRAP_LANGUAGES: frozenset[literalizer.LanguageCls] = frozenset(
+    {Clojure, CommonLisp, Julia, Racket, Ruby, Scheme}
+)
+
+# Languages included in each default-type variant test.  These sets
+# mirror the original ``supports_default_*`` True values and live here
+# rather than on the language class to keep test configuration in the
+# test layer.
+_DEFAULT_SET_ELEMENT_TYPE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
+    frozenset(
+        {
+            Crystal,
+            CSharp,
+            Dart,
+            Go,
+            Groovy,
+            Kotlin,
+            Mojo,
+            Odin,
+            Python,
+            Rust,
+            Swift,
+            VisualBasic,
+        }
+    )
+)
+_DEFAULT_SEQUENCE_ELEMENT_TYPE_LANGUAGES: frozenset[
+    literalizer.LanguageCls
+] = frozenset({CSharp, Go, Mojo, Python, Rust, Swift})
+_DEFAULT_DICT_VALUE_TYPE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
+    frozenset(
+        {
+            Crystal,
+            CSharp,
+            Dart,
+            Go,
+            Kotlin,
+            Mojo,
+            Python,
+            Rust,
+            Swift,
+            VisualBasic,
+        }
+    )
+)
+_DEFAULT_DICT_KEY_TYPE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
+    frozenset(
+        {
+            Crystal,
+            CSharp,
+            Dart,
+            Go,
+            Kotlin,
+            Mojo,
+            Python,
+            Rust,
+            Swift,
+            VisualBasic,
+        }
+    )
+)
+_DEFAULT_ORDERED_MAP_VALUE_TYPE_LANGUAGES: frozenset[
+    literalizer.LanguageCls
+] = frozenset({Go})
+
 
 @beartype
 def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
     """Return the wrap variable name for a language class."""
-    if lang_cls.variable_name_support == Support.SUPPORTED:
-        return "my_data"
-    return None
+    if lang_cls.variable_name_support != Support.SUPPORTED:
+        return None
+    if lang_cls in _NO_VARIABLE_WRAP_LANGUAGES:
+        return None
+    return "my_data"
 
 
 @beartype
@@ -272,9 +350,7 @@ def build_default_set_element_type_variants() -> Iterable[Variant]:
     """Build default-set-type variants for languages that support it."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if "default_set_element_type" not in getattr(
-            lang_cls, "__dataclass_fields__", {}
-        ):
+        if lang_cls not in _DEFAULT_SET_ELEMENT_TYPE_LANGUAGES:
             continue
         type_name = DEFAULT_SET_ELEMENT_TYPE_OVERRIDES.get(
             lang_cls,
@@ -299,9 +375,7 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if "default_sequence_element_type" not in getattr(
-            lang_cls, "__dataclass_fields__", {}
-        ):
+        if lang_cls not in _DEFAULT_SEQUENCE_ELEMENT_TYPE_LANGUAGES:
             continue
         type_name = DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES.get(
             lang_cls,
@@ -328,9 +402,7 @@ def build_default_dict_value_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if "default_dict_value_type" not in getattr(
-            lang_cls, "__dataclass_fields__", {}
-        ):
+        if lang_cls not in _DEFAULT_DICT_VALUE_TYPE_LANGUAGES:
             continue
         type_name = DEFAULT_DICT_VALUE_TYPE_OVERRIDES.get(
             lang_cls,
@@ -355,9 +427,7 @@ def build_default_dict_key_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if "default_dict_key_type" not in getattr(
-            lang_cls, "__dataclass_fields__", {}
-        ):
+        if lang_cls not in _DEFAULT_DICT_KEY_TYPE_LANGUAGES:
             continue
         type_name = DEFAULT_DICT_KEY_TYPE_OVERRIDES.get(
             lang_cls,
@@ -382,9 +452,7 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if "default_ordered_map_value_type" not in getattr(
-            lang_cls, "__dataclass_fields__", {}
-        ):
+        if lang_cls not in _DEFAULT_ORDERED_MAP_VALUE_TYPE_LANGUAGES:
             continue
         type_name = DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES.get(
             lang_cls,

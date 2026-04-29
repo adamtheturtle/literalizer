@@ -14,8 +14,9 @@ from literalizer import (
 )
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    VariableNamesNotSupportedByLanguageError,
 )
-from literalizer.languages import CSharp, Nim, Python, Rust
+from literalizer.languages import CSharp, Nim, Python, Rust, Yaml
 
 PYTHON_ALWAYS_HINTS = Python(
     date_format=Python.date_formats.PYTHON,
@@ -521,4 +522,17 @@ def test_nim_object_variant_const_raises() -> None:
                 Nim.heterogeneous_strategies.OBJECT_VARIANT
             ),
             declaration_style=Nim.declaration_styles.CONST,
+        )
+
+
+def test_yaml_variable_name_not_in_language() -> None:
+    """YAML has no variable declaration syntax; requesting one raises."""
+    with pytest.raises(
+        expected_exception=VariableNamesNotSupportedByLanguageError,
+    ):
+        literalize(
+            source="key: value",
+            input_format=InputFormat.YAML,
+            language=Yaml(),
+            variable_form=NewVariable(name="my_data"),
         )

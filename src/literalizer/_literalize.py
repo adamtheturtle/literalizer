@@ -2132,7 +2132,7 @@ def _check_dotted_call_support(
             raise DottedCallsNotSupportedByLanguageError(
                 language_name=type(language).__name__,
             )
-        case Support.NOT_IMPLEMENTED_BY_TOOL:
+        case Support.NOT_IMPLEMENTED_BY_TOOL:  # pragma: no cover
             raise DottedCallsNotSupportedByToolError(
                 language_name=type(language).__name__,
             )

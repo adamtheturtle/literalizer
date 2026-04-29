@@ -11,6 +11,10 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
+import literalizer
+from literalizer.exceptions import DottedCallsNotSupportedByLanguageError
+from literalizer.languages import Hcl
+
 from .call_cases import CallCase, discover_call_cases, run_call_golden_case
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .language_specs import make_spec
@@ -78,3 +82,17 @@ def test_call_variant_golden_file(
         cases_dir=cases_dir,
         file_regression=file_regression,
     )
+
+
+def test_hcl_dotted_call_not_in_language() -> None:
+    """HCL has no dotted function call syntax; a dotted target raises."""
+    with pytest.raises(
+        expected_exception=DottedCallsNotSupportedByLanguageError,
+    ):
+        literalizer.literalize_call(
+            source="[1, 2, 3]",
+            input_format=literalizer.InputFormat.JSON,
+            language=Hcl(),
+            target_function="obj.method",
+            parameter_names=("values",),
+        )

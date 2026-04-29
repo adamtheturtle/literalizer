@@ -1,0 +1,12 @@
+(def my_data [
+    ; first
+    "a"
+    ; second
+    "b"
+])
+(def my_data [
+    ; first
+    "a"
+    ; second
+    "b"
+])

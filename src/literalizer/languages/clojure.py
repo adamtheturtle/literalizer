@@ -96,7 +96,7 @@ class Clojure(metaclass=LanguageCls):
 
     extension = ".clj"
     pygments_name = "clojure"
-    variable_name_support = Support.NOT_IMPLEMENTED_BY_TOOL
+    variable_name_support = Support.SUPPORTED
     dotted_call_support = Support.SUPPORTED
 
     class DateFormats(enum.Enum):
