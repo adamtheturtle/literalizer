@@ -223,3 +223,47 @@ Inputs in other conventions are normalized to ``snake_case`` first, so
 ``userObj`` or ``UserObj`` also convert correctly, but at the cost of
 losing any preserved acronyms: ``HTTPRequest`` normalizes to
 ``http_request`` and converts back to Pascal case as ``HttpRequest``.
+
+References inside plain data structures
+----------------------------------------
+
+``{"$ref": "name"}`` markers also work inside data passed to
+:func:`~literalizer.literalize` -- not just inside call arguments.  This
+is useful when you want to emit a data structure where some values are
+references to variables declared elsewhere rather than inline literals.
+
+Pass ``ref_case`` to :func:`~literalizer.literalize` to activate ref
+resolution; without it, ``{"$ref": ...}`` is treated as an ordinary
+literal dict, preserving backwards compatibility.
+
+For example, suppose you have a configuration dict where ``timeout`` and
+``host`` are already declared as named constants and you want to reference
+them rather than repeat the values:
+
+.. code-block:: python
+
+   """Emit a config dict with variable references as values."""
+
+   from literalizer import IdentifierCase, InputFormat, literalize
+   from literalizer.languages import Python
+
+   config_json = (
+       '{"timeout": {"$ref": "timeout_secs"}, "host": {"$ref": "default_host"}}'
+   )
+
+   result = literalize(
+       source=config_json,
+       input_format=InputFormat.JSON,
+       language=Python(),
+       ref_case=IdentifierCase.SNAKE,
+   )
+   assert result.bare_code == (
+       '{\n    "timeout": timeout_secs,\n    "host": default_host,\n}'
+   )
+
+The same ``ref_case`` rules apply as for :func:`~literalizer.literalize_call`:
+the identifier is case-converted to the requested convention and any
+language-specific sigil is applied (e.g. ``$timeout_secs`` in PHP).
+Refs can appear at any depth -- nested inside dicts, inside lists, or as
+the top-level value -- and can be mixed freely with ordinary literals in
+the same structure.

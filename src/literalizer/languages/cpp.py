@@ -68,7 +68,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
@@ -1342,10 +1341,19 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
+
+        A direct copy assignment (``auto my_data = my_var``) triggers
+        clang-tidy ``performance-unnecessary-copy-initialization`` when
+        the variable is never modified.  Using ``std::move`` avoids the
+        copy and satisfies the linter.
         """
-        return identity_call_ref_identifier
+
+        def _format_cpp_ref_identifier(name: str, /) -> str:
+            """Wrap the identifier in ``std::move()``."""
+            return f"std::move({name})"
+
+        return _format_cpp_ref_identifier
 
     @cached_property
     def _cpp_date_type(self) -> str:
