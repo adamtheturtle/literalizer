@@ -155,18 +155,15 @@ def run_literalize_ref_golden_case(
         stub_codes: list[str] = []
         for raw_name in _collect_ref_names(data=raw_data):
             converted_name = ref_case.convert(name=raw_name)
-            try:
-                stub = literalizer.literalize(
-                    source='{"_": "_"}',
-                    input_format=literalizer.InputFormat.JSON,
-                    language=spec,
-                    variable_form=literalizer.NewVariable(
-                        name=converted_name,
-                    ),
-                    wrap_in_file=False,
-                )
-            except Exception:  # noqa: BLE001, S112  # pragma: no cover
-                continue  # pylint: disable=broad-exception-caught
+            stub = literalizer.literalize(
+                source='{"_": "_"}',
+                input_format=literalizer.InputFormat.JSON,
+                language=spec,
+                variable_form=literalizer.NewVariable(
+                    name=converted_name,
+                ),
+                wrap_in_file=False,
+            )
             stub_codes.append(stub.declaration_code)
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
         final_code = _inject_stubs_before_variable(

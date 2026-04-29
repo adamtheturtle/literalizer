@@ -74,7 +74,7 @@ def test_unsupported_ref_case_raises() -> None:
 def test_inject_stubs_returns_code_unchanged_when_variable_absent() -> None:
     """No injection occurs when the variable name is absent from the code.
 
-    Guards the fallthrough path in ``_inject_stubs_before_variable``
+    Guards the fall-through path in ``_inject_stubs_before_variable``
     for languages whose generated code does not contain the variable
     name in a form the search can locate.
     """
