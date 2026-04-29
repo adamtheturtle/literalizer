@@ -223,7 +223,9 @@ jobs:
           key: kroc-${{ env.KROC_REV }}-ubuntu-22.04
       - name: Install KRoC build deps
         if: steps.cache-kroc.outputs.cache-hit != 'true'
-        run: sudo apt-get install -y -qq gcc-multilib libc6-dev-i386
+        run: |-
+          sudo apt-get install -y -qq gcc-multilib libc6-dev-i386 python2
+          sudo ln -sf /usr/bin/python2 /usr/local/bin/python
       - name: Build KRoC
         if: steps.cache-kroc.outputs.cache-hit != 'true'
         run: |-
