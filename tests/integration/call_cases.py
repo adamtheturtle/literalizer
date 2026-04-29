@@ -22,7 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Sml
+from literalizer.languages import Ada, Sml
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -324,6 +324,11 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
+    # Ada does not allow function-call results to be silently discarded:
+    # a function call cannot appear as a statement.  The identity
+    # call_transform (lambda c: c) causes a VALUE stub but the call is
+    # used as a bare statement, which GNAT rejects.
+    "call_transform_no_wrapper": frozenset({Ada}),
 }
 
 

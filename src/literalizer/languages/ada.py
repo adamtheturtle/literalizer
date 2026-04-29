@@ -53,7 +53,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -153,110 +152,47 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
-def _ada_method_stub(
-    method_ada: str,
-    type_name: str,
-    param_list: str,
-    stub_return: StubReturn,
-) -> str:
-    """Return a single Ada procedure or function stub for a tagged type
-    method.
-    """
-    if stub_return is StubReturn.VOID:
-        self_param = f"Self : in out {type_name}"
-        all_params = (
-            f"{self_param}; {param_list}" if param_list else self_param
-        )
-        return (
-            f"procedure {method_ada} ({all_params})"
-            f" is begin null; end {method_ada};"
-        )
-    self_param = f"Self : {type_name}"
-    all_params = f"{self_param}; {param_list}" if param_list else self_param
-    return f"function {method_ada} ({all_params}) return A_Val is (ANull);"
-
-
-@beartype
 def _ada_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     /,
 ) -> tuple[str, ...]:
-    """Return Ada stub declarations for a call name.
+    """Return Ada stub declarations for a call expression.
 
     Stubs go in the declarative section of the enclosing procedure.
-    For dotted names like ``app.client.fetch``, tagged record types are
-    declared so that Ada 2005+ prefix notation is valid at the call site.
+    Only the innermost name is used: ``app.client.fetch`` produces the
+    same stub as ``fetch``, so that the call site can use a simple
+    ``Fetch(...)`` rather than Ada prefix notation (which requires
+    package-scope declarations).
     """
-    method = parts[-1]
-    method_ada = method.title()
+    method_ada = parts[-1].title()
     param_list = "; ".join(f"{p.strip('_').title()} : A_Val" for p in params)
 
-    if len(parts) == 1:
-        if stub_return is StubReturn.VOID:
-            if param_list:
-                stub = (
-                    f"procedure {method_ada} ({param_list})"
-                    f" is begin null; end {method_ada};"
-                )
-            else:
-                stub = (
-                    f"procedure {method_ada} is begin null; end {method_ada};"
-                )
-        elif param_list:
+    if stub_return is StubReturn.VOID:
+        if param_list:
             stub = (
-                f"function {method_ada} ({param_list})"
-                f" return A_Val is (ANull);"
+                f"procedure {method_ada} ({param_list})"
+                f" is begin null; end {method_ada};"
             )
         else:
-            stub = f"function {method_ada} return A_Val is (ANull);"
-        return (stub,)
+            stub = f"procedure {method_ada} is begin null; end {method_ada};"
+    elif param_list:
+        stub = f"function {method_ada} ({param_list}) return A_Val is (ANull);"
+    else:
+        stub = f"function {method_ada} return A_Val is (ANull);"
+    return (stub,)
 
-    root = parts[0]
-    fields = parts[1:-1]
 
-    if not fields:
-        type_name = f"{root.title()}_T"
-        return (
-            f"type {type_name} is tagged null record;",
-            _ada_method_stub(
-                method_ada=method_ada,
-                type_name=type_name,
-                param_list=param_list,
-                stub_return=stub_return,
-            ),
-            f"{root.title()} : {type_name};",
-        )
+@beartype
+def _ada_call_target(parts: Sequence[str], /) -> str:
+    """Return the title-cased method name for an Ada call expression.
 
-    lines: list[str] = []
-    inner_type = f"{fields[-1].title()}_T"
-    lines.append(f"type {inner_type} is tagged null record;")
-    lines.append(
-        _ada_method_stub(
-            method_ada=method_ada,
-            type_name=inner_type,
-            param_list=param_list,
-            stub_return=stub_return,
-        )
-    )
-    prev_type = inner_type
-    for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}_T"
-        lines.append(
-            f"type {curr_type} is tagged record"
-            f" {fields[i + 1].title()} : {prev_type};"
-            f" end record;"
-        )
-        prev_type = curr_type
-    root_type = f"{root.title()}_T"
-    lines.append(
-        f"type {root_type} is tagged record"
-        f" {fields[0].title()} : {prev_type};"
-        f" end record;"
-    )
-    lines.append(f"{root.title()} : {root_type};")
-    return tuple(lines)
+    Ada primitive operations (needed for prefix notation) must be in a
+    package spec, not a procedure body.  Using the plain method name
+    avoids prefix notation while keeping the stub compilable.
+    """
+    return parts[-1].title()
 
 
 @beartype
@@ -670,7 +606,12 @@ class Ada(metaclass=LanguageCls):
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _ada_call_target
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap a call argument in the appropriate A_Val constructor."""
+        return _format_ada_entry
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:

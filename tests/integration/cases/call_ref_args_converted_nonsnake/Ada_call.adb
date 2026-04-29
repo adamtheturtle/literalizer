@@ -12,6 +12,6 @@ procedure Main is
         AInt (6)
     ];
 begin
-    process(data => my_var, count => 42);
-    process(data => my_other, count => 7);
+    Process(data => my_var, count => AInt (42));
+    Process(data => my_other, count => AInt (7));
 end Main;

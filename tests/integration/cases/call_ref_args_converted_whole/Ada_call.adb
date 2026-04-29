@@ -7,5 +7,5 @@ procedure Main is
         AInt (3)
     ];
 begin
-    process(data => my_var);
+    Process(data => my_var);
 end Main;
