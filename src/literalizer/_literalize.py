@@ -7,10 +7,16 @@ from collections.abc import Callable, Sequence
 from typing import assert_never, cast
 
 from beartype import BeartypeConf, beartype
+from ruamel.yaml.comments import CommentedSeq
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._checks import check_data
-from literalizer._comments import prepend_collection_comments
+from literalizer._comments import (
+    CollectionComments,
+    apply_collection_comments,
+    extract_yaml_comments,
+    prepend_collection_comments,
+)
 from literalizer._comments_resolve import (
     ResolvedComments,
     resolve_toml_comments,
@@ -1980,6 +1986,7 @@ def _render_call_per_element(
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
+    collection_comments: CollectionComments | None = None,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -2045,7 +2052,18 @@ def _render_call_per_element(
                 )
             )
         )
-    return "\n".join(lines)
+    base = "\n".join(lines)
+    if collection_comments is not None:
+        comment_cfg = language.comment_config
+        base = apply_collection_comments(
+            collection_comments=collection_comments,
+            base=base,
+            comment_prefix=comment_cfg.prefix,
+            comment_suffix=comment_cfg.suffix,
+            comment_line_prefix="",
+            include_delimiters=False,
+        )
+    return base
 
 
 @beartype
@@ -2210,6 +2228,15 @@ def literalize_call(
                 f"got {type(data).__name__}"
             )
             raise PerElementNotListError(msg)
+        collection_comments: CollectionComments | None = None
+        if (
+            input_format is InputFormat.YAML
+            and parsed.yaml_needs_comment_resolve
+            and isinstance(parsed.raw_data, CommentedSeq)
+        ):
+            collection_comments = extract_yaml_comments(
+                ruamel_data=parsed.raw_data,
+            )
         result = _render_call_per_element(
             data=data,
             language=language,
@@ -2218,6 +2245,7 @@ def literalize_call(
             parameter_names=parameter_names,
             call_transform=call_transform,
             ref_case=ref_case,
+            collection_comments=collection_comments,
         )
     else:
         result = _render_call_whole(

@@ -30,9 +30,11 @@ from literalizer.languages import (
     Gleam,
     Haskell,
     Hcl,
+    Jsonnet,
     ObjectiveC,
     Php,
     PowerShell,
+    PureScript,
     Raku,
     Roc,
     Sml,
@@ -134,6 +136,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_comments",
         target_function="process",
         parameter_names=["value"],
         call_transform=None,
@@ -389,6 +403,24 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Php,
             PowerShell,
             Raku,
+            Roc,
+        }
+    ),
+    # Languages whose default call wrappers prepend a token to each
+    # statement (Elm, Haskell, and PureScript ``_ = ``/``_ <- ``, Roc
+    # ``dbg(...)``) or whose comment syntax interacts with the
+    # statement separator (Erlang trailing ``.``, Jsonnet array
+    # comma being swallowed by ``//``). These cannot represent a
+    # standalone comment line in the wrapped self-contained file even
+    # though :func:`literalizer.literalize_call` itself produces
+    # syntactically valid per-call comments.
+    "call_comments": frozenset(
+        {
+            Elm,
+            Erlang,
+            Haskell,
+            Jsonnet,
+            PureScript,
             Roc,
         }
     ),

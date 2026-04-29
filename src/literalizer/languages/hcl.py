@@ -344,8 +344,8 @@ class Hcl(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -368,9 +368,12 @@ class Hcl(metaclass=LanguageCls):
         statements = _split_top_level_statements(content=content)
         rendered: list[str] = []
         call_counter = 0
+        comment_prefix = self.comment_config.prefix
         for statement in statements:
             first_line = statement.split(sep="\n", maxsplit=1)[0]
-            if _HCL_DECLARATION_PATTERN.match(string=first_line):
+            if first_line.lstrip().startswith(
+                comment_prefix
+            ) or _HCL_DECLARATION_PATTERN.match(string=first_line):
                 rendered.append(statement)
             else:
                 rendered.append(f"_{call_counter} = {statement}")
