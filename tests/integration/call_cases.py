@@ -376,7 +376,19 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
     "call_dotted_transform_stub": frozenset(
-        {Elm, Erlang, Gleam, Haskell, Hcl, ObjectiveC, Php, PowerShell, Raku}
+        {
+            Ada,
+            Elm,
+            Erlang,
+            Fortran,
+            Gleam,
+            Haskell,
+            Hcl,
+            ObjectiveC,
+            Php,
+            PowerShell,
+            Raku,
+        }
     ),
 }
 
