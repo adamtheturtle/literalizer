@@ -2305,10 +2305,15 @@ def literalize_call(
         language=language,
         has_variable_declaration=False,
     )
+    _call_ddp: Callable[[Value], tuple[str, ...]] = getattr(
+        language,
+        "call_data_dependent_preamble",
+        language.data_dependent_preamble,
+    )
     preamble = (
         tuple(language.static_preamble)
         + computed.header
-        + language.data_dependent_preamble(data_for_preamble)
+        + _call_ddp(data_for_preamble)
     )
 
     if wrap_in_file:

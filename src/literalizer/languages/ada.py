@@ -37,7 +37,6 @@ from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -46,15 +45,14 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    KeywordCallStyle,
     LanguageCls,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -151,6 +149,50 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
     """
     wrapped = _format_ada_entry(original=data, formatted=value)
     return f"{name} := {wrapped};"
+
+
+@beartype
+def _ada_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return Ada stub declarations for a call expression.
+
+    Stubs go in the declarative section of the enclosing procedure.
+    Only the innermost name is used: ``app.client.fetch`` produces the
+    same stub as ``fetch``, so that the call site can use a simple
+    ``Fetch(...)`` rather than Ada prefix notation (which requires
+    package-scope declarations).
+    """
+    method_ada = parts[-1].title()
+    param_list = "; ".join(f"{p.strip('_').title()} : A_Val" for p in params)
+
+    if stub_return is StubReturn.VOID:
+        if param_list:
+            stub = (
+                f"procedure {method_ada} ({param_list})"
+                f" is begin null; end {method_ada};"
+            )
+        else:
+            stub = f"procedure {method_ada} is begin null; end {method_ada};"
+    elif param_list:
+        stub = f"function {method_ada} ({param_list}) return A_Val is (ANull);"
+    else:
+        stub = f"function {method_ada} return A_Val is (ANull);"
+    return (stub,)
+
+
+@beartype
+def _ada_call_target(parts: Sequence[str], /) -> str:
+    """Return the title-cased method name for an Ada call expression.
+
+    Ada primitive operations (needed for prefix notation) must be in a
+    package spec, not a procedure body.  Using the plain method name
+    avoids prefix notation and produces a stub that GNAT can compile.
+    """
+    return parts[-1].title()
 
 
 @beartype
@@ -343,6 +385,8 @@ class Ada(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Ada call style options."""
 
+        KEYWORD = KeywordCallStyle(separator=" => ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -366,7 +410,23 @@ class Ada(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Ada call stubs and variable declarations alongside calls.
+
+        Stubs and variable declarations go in the declarative section;
+        call expressions go in the executable section.
+        """
+        return self.wrap_in_file(
+            content=calls,
+            variable_name="",
+            body_preamble=(*body_preamble, *declarations),
+        )
 
     def wrap_in_file(
         self,
@@ -374,18 +434,41 @@ class Ada(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Ada object declaration inside a procedure."""
-        del variable_name
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
+        """Wrap an Ada object declaration or call block inside a procedure.
+
+        When *variable_name* is non-empty (variable declaration mode),
+        *body_preamble* and *content* go in the declarative section and
+        the executable section contains only ``null;``.  When
+        *variable_name* is empty (call mode), *body_preamble* (stubs)
+        goes in the declarative section and *content* (calls) goes in
+        the executable section.
+        """
+        if variable_name:
+            content = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            indented = textwrap.indent(text=content, prefix=self.indent)
+            return (
+                "with A_Stub; use A_Stub;\n"
+                f"procedure {self.module_name} is\n{indented}\n"
+                f"begin\n{self.indent}null;\nend {self.module_name};"
+            )
+        decl_section = "\n".join(body_preamble)
+        decl_indented = (
+            textwrap.indent(text=decl_section, prefix=self.indent)
+            if decl_section
+            else ""
         )
-        indented = textwrap.indent(text=content, prefix=self.indent)
-        return (
-            "with A_Stub; use A_Stub;\n"
-            f"procedure {self.module_name} is\n{indented}\n"
-            f"begin\n{self.indent}null;\nend {self.module_name};"
-        )
+        calls_indented = textwrap.indent(text=content, prefix=self.indent)
+        parts = [
+            "with A_Stub; use A_Stub;",
+            f"procedure {self.module_name} is",
+        ]
+        if decl_indented:
+            parts.append(decl_indented)
+        parts.extend(["begin", calls_indented, f"end {self.module_name};"])
+        return "\n".join(parts)
 
     def wrap_combined_in_file(
         self,
@@ -442,6 +525,7 @@ class Ada(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    call_style: CallStyles = CallStyles.KEYWORD
     indent: str = "    "
 
     null_literal: ClassVar[str] = "ANull"
@@ -457,9 +541,6 @@ class Ada(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -502,11 +583,16 @@ class Ada(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _ada_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -520,7 +606,12 @@ class Ada(metaclass=LanguageCls):
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _ada_call_target
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap a call argument in the appropriate A_Val constructor."""
+        return _format_ada_entry
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:

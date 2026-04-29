@@ -42,7 +42,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -57,7 +57,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -428,6 +427,145 @@ def _build_purescript_body_preamble(
     return _compute
 
 
+@beartype
+def _build_purescript_call_stub_lines(
+    parts: Sequence[str],
+    params: Sequence[str],
+    stub_return: StubReturn,
+    type_name: str,
+) -> tuple[str, ...]:
+    """Return PureScript stub declarations for a call name.
+
+    All stubs return ``Unit`` regardless of *stub_return*, so wrapper
+    stubs declared with ``forall a. a -> Unit`` can consume them.
+    """
+    del stub_return
+    # Transform-wrapper stubs are always passed a single placeholder param
+    # starting with ``_`` (e.g. ``_arg``).  Declare them polymorphic so
+    # PureScript never needs to unify the wrapped ``Unit`` result with
+    # ``{type_name}``.
+    is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
+
+    if len(parts) == 1:
+        name = parts[0]
+        if is_wrapper_stub:
+            return (
+                f"{name} :: forall a. a -> Unit",
+                f"{name} _ = unit",
+            )
+        sig = " -> ".join([*[type_name] * len(params), "Unit"])
+        lhs = " ".join([name, *["_"] * len(params)])
+        return (f"{name} :: {sig}", f"{lhs} = unit")
+
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+
+    if is_wrapper_stub:
+        func_type = "forall a. a -> Unit"
+        func_body = "\\_ -> unit"
+    else:
+        n = len(params)
+        arg_types = " -> ".join(type_name for _ in range(n))
+        func_type = f"{arg_types} -> Unit"
+        wildcards = " ".join("_" for _ in range(n))
+        func_body = f"\\{wildcards} -> unit"
+
+    inner_type = f"{{ {method} :: {func_type} }}"
+    inner_val = f"{{ {method}: {func_body} }}"
+    for field in reversed(fields):
+        inner_type = f"{{ {field} :: {inner_type} }}"
+        inner_val = f"{{ {field}: {inner_val} }}"
+
+    return (f"{root} :: {inner_type}", f"{root} = {inner_val}")
+
+
+def _build_purescript_call_stub(
+    type_name: str,
+) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    """Build a call stub factory that uses *type_name* for parameter types."""
+
+    @beartype
+    def _purescript_call_stub(
+        parts: Sequence[str],
+        params: Sequence[str],
+        stub_return: StubReturn,
+        /,
+    ) -> tuple[str, ...]:
+        """Delegate to module-level implementation."""
+        return _build_purescript_call_stub_lines(
+            parts=parts,
+            params=params,
+            stub_return=stub_return,
+            type_name=type_name,
+        )
+
+    return _purescript_call_stub
+
+
+@beartype
+def _purescript_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted PureScript value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
+
+
+def _indent_purescript_let_calls(calls: str, indent: str) -> str:
+    """Indent call expressions for a PureScript ``let`` block.
+
+    Lines that start without whitespace begin a new call expression and
+    receive two levels of *indent* plus ``_ = ``.  Lines that start with
+    whitespace are continuations of a multi-line argument and receive two
+    additional levels of *indent* so they remain indented relative to the
+    binding.
+    """
+    double_indent = indent * 2
+    binding_prefix = double_indent + "_ = "
+    result: list[str] = []
+    for line in calls.split(sep="\n"):
+        if not line:  # pragma: no cover
+            result.append("")
+        elif line[0].isspace():  # pragma: no cover
+            result.append(double_indent + line)
+        else:
+            result.append(binding_prefix + line)
+    return "\n".join(result)
+
+
+def _build_purescript_call_output(
+    preamble: str,
+    decl_part: str,
+    calls: str,
+    indent: str,
+) -> str:
+    """Build a complete PureScript module string for call mode.
+
+    Ensures ``import Prelude`` is present (needed for ``Unit`` and
+    ``unit``) and wraps the call expressions in a ``let … in unit``
+    block.  *decl_part* is an optional newline-prefixed block of
+    module-scope declarations to insert before ``main``.
+    """
+    if "import Prelude" not in preamble:
+        preamble = (
+            "import Prelude\n" + preamble if preamble else "import Prelude"
+        )
+    return (
+        "module Check where\n\n\n"
+        + preamble
+        + decl_part
+        + "\n\n\nmain :: Unit\nmain =\n"
+        + indent
+        + "let\n"
+        + _indent_purescript_let_calls(calls=calls, indent=indent)
+        + "\n"
+        + indent
+        + "in\n"
+        + indent
+        + "unit"
+    )
+
+
 _INT_BASE: dict[str, Callable[[int], str]] = {
     "DECIMAL": str,
     "HEX": format_integer_hex,
@@ -694,6 +832,11 @@ class PureScript(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """PureScript call style options."""
 
+        COMMAND = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper}({inner})",
+        )
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -716,17 +859,44 @@ class PureScript(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap declarations and calls in a PureScript module.
+
+        Variable declarations go at module scope before ``main``; call
+        expressions are bound inside a ``let … in unit`` block so that
+        bare expressions are not required at the top level.
+        """
+        preamble = "\n".join(body_preamble)
+        declaration_block = "\n".join(declarations)
+        decl_part = "\n" + declaration_block if declaration_block else ""
+        return _build_purescript_call_output(
+            preamble=preamble,
+            decl_part=decl_part,
+            calls=calls,
+            indent=self.indent,
+        )
+
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a PureScript value declaration in a module."""
-        del variable_name
         preamble = "\n".join(body_preamble)
+        if not variable_name:
+            return _build_purescript_call_output(
+                preamble=preamble,
+                decl_part="",
+                calls=content,
+                indent=self.indent,
+            )
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
     @staticmethod
@@ -762,6 +932,7 @@ class PureScript(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.COMMAND
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -779,9 +950,11 @@ class PureScript(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -820,7 +993,12 @@ class PureScript(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _build_purescript_call_stub(type_name=self.type_name)
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap each formatted call argument in parentheses."""
+        return _purescript_format_call_arg
 
     @cached_property
     def format_call_preamble_stub(

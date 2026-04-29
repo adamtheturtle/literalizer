@@ -22,7 +22,22 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Sml, Wren
+from literalizer.languages import (
+    Ada,
+    Elm,
+    Erlang,
+    Fortran,
+    Gleam,
+    Haskell,
+    Hcl,
+    ObjectiveC,
+    Php,
+    PowerShell,
+    Raku,
+    Roc,
+    Sml,
+    Wren,
+)
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -130,6 +145,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_negative_int",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_multi_args",
         target_function="process",
         parameter_names=["value", "count"],
@@ -183,6 +210,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         parameter_names=["payload"],
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_dotted_transform_stub",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda c: f"tracer.emit({c})",
+        transform_stub_names=["tracer.emit"],
         per_element=True,
         call_style_type=None,
         ref_declarations={},
@@ -324,11 +363,35 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
+    # Ada and Fortran do not allow function-call results to be silently
+    # discarded: a function call cannot appear as a statement.  The
+    # identity call_transform (lambda c: c) causes a VALUE stub but the
+    # call is used as a bare statement, which both compilers reject.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren: Wren has no free-function call syntax, so a bare call like
     # "name(value)" is a parse error at the top level.
     "call_keyword_args": frozenset({Wren}),
     "call_deep_dotted_transformed": frozenset({Wren}),
+    # call_transform wraps output as "tracer.emit(inner)" — a dotted method
+    # call — and transform_stub_names=["tracer.emit"] requires a struct/object
+    # stub whose syntax is invalid or unsupported in several languages.
+    "call_dotted_transform_stub": frozenset(
+        {
+            Ada,
+            Elm,
+            Erlang,
+            Fortran,
+            Gleam,
+            Haskell,
+            Hcl,
+            ObjectiveC,
+            Php,
+            PowerShell,
+            Raku,
+            Roc,
+        }
+    ),
 }
 
 
