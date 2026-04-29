@@ -135,7 +135,7 @@ def _ocaml_call_stub(
     are emitted so that ``App.Client.fetch arg`` is valid at the call
     site.  The innermost name becomes a ``let`` declaration that accepts
     any argument and returns unit.  Each module-path component has its
-    first character uppercased, as OCaml requires module names to begin
+    first character in uppercase, as OCaml requires module names to begin
     with an uppercase letter.
     """
     method = parts[-1]
@@ -151,8 +151,8 @@ def _ocaml_call_target(parts: Sequence[str], /) -> str:
     """Return the dotted OCaml call target for a sequence of name parts.
 
     Module components (all but the last) have their first character
-    uppercased because OCaml requires module names to begin with an
-    uppercase letter.
+    converted to uppercase because OCaml requires module names to begin
+    with an uppercase letter.
     """
     if len(parts) == 1:
         return parts[0]

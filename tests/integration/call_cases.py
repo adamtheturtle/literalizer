@@ -406,7 +406,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
     # OCaml module names must begin with an uppercase letter, so the stub
-    # is emitted as "module Tracer = struct" but the hardcoded call_transform
+    # is emitted as "module Tracer = struct" but the embedded call_transform
     # produces the lowercase "tracer.emit(...)" which is unbound at the call
     # site.
     "call_dotted_transform_stub": frozenset(
