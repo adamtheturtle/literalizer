@@ -520,3 +520,61 @@ def apply_collection_comments(
         include_delimiters=include_delimiters,
     )
     return literalize_yaml_collection(ctx=ctx)
+
+
+@beartype
+def apply_collection_comments_to_elements(
+    *,
+    rendered_elements: list[str],
+    collection_comments: CollectionComments,
+    comment_prefix: str,
+    comment_suffix: str,
+) -> str:
+    """Apply comments to a list of pre-rendered element strings.
+
+    Unlike :func:`apply_collection_comments`, this function operates at
+    element granularity rather than line granularity.  Each entry in
+    *rendered_elements* may span multiple lines (e.g. a multi-line call
+    expression), and comments are still attached to the correct element.
+
+    Before-comments are emitted as standalone lines immediately before
+    their element.  Inline comments are appended to the last line of
+    their element.  Trailing comments follow all elements.
+    """
+    _empty = ElementComments(before=(), inline="")
+    padded: list[ElementComments] = list(collection_comments.elements) + [
+        _empty
+    ] * max(0, len(rendered_elements) - len(collection_comments.elements))
+
+    result: list[str] = []
+    for element_str, ec in zip(rendered_elements, padded, strict=True):
+        result.extend(
+            _format_comment(
+                text=comment_text,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                line_prefix="",
+            )
+            for comment_text in ec.before
+        )
+        if ec.inline:
+            element_lines = element_str.split("\n")
+            element_lines[-1] = (
+                f"{element_lines[-1]}  {comment_prefix} {ec.inline}"
+                f"{comment_suffix}"
+            )
+            result.append("\n".join(element_lines))
+        else:
+            result.append(element_str)
+
+    result.extend(
+        _format_comment(
+            text=comment_text,
+            comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
+            line_prefix="",
+        )
+        for comment_text in collection_comments.trailing
+    )
+
+    return "\n".join(result)
