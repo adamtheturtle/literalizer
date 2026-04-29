@@ -217,6 +217,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_dotted_transform_stub",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda c: f"tracer.emit({c})",
+        transform_stub_names=["tracer.emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],

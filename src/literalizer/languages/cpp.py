@@ -804,12 +804,12 @@ def _cpp_call_stub(
         type_name = f"{root}Type_"
         if stub_return is StubReturn.VALUE:
             method_decl = (
-                f" [[nodiscard]] auto {method}(auto...) const {{ return 0; }}"
+                f"[[nodiscard]] auto {method}(auto...) const {{ return 0; }}"
             )
         else:
-            method_decl = f" void {method}(auto...) const {{}}"
+            method_decl = f"void {method}(auto...) const {{}}"
         return (
-            f"struct {type_name} {{{method_decl} }};",
+            f"struct {type_name} {{ {method_decl} }};",
             f"const {type_name} {root};",
         )
     lines: list[str] = []
