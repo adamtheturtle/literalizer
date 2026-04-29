@@ -7,5 +7,7 @@ data Val
     | PDict (Array (Tuple String Val))
 
 
+myVar :: Val
+myVar = PInt 0
 my_data :: Val
 my_data = myVar

@@ -18,6 +18,10 @@ end module fval_m
 program main
     use fval_m
     implicit none
+    type(fval_t) :: x
+    x = fint(0_int64)
+    type(fval_t) :: y
+    y = fint(0_int64)
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         x, &

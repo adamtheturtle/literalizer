@@ -12,6 +12,7 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC main ()
+    VAL MOBILE LIT MY_VAR IS 0:
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.pair; MOBILE []BYTE "key"; MY_VAR)
     ]):

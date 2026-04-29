@@ -15,6 +15,8 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
+CVal x = ((CVal){.i = 0});
+CVal y = ((CVal){.i = 0});
 CVal my_data = ((CVal){.a = (CVal[]){
     x,
     y,

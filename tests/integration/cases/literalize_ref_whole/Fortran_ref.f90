@@ -18,6 +18,8 @@ end module fval_m
 program main
     use fval_m
     implicit none
+    type(fval_t) :: my_var
+    my_var = fint(0_int64)
     type(fval_t) :: my_data
     my_data = my_var
 end program main

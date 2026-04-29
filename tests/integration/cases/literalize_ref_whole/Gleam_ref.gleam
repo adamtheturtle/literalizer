@@ -4,6 +4,7 @@ pub type GVal {
 }
 
 pub fn main() {
+  let my_var = GInt(0)
   let my_data = my_var
   let _ = my_data
 }

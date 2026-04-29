@@ -11,6 +11,8 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
+    const x: ZVal = .{ .int = 0 };
+    const y: ZVal = .{ .int = 0 };
     const my_data: ZVal = .{ .arr = &.{
         x,
         y,

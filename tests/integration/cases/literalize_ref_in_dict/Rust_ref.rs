@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 fn main() {
+    let my_var = 0;
     let my_data = HashMap::from([
         ("key", my_var),
     ]);

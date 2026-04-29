@@ -11,10 +11,12 @@ language's default identifier case.  The runner
 import dataclasses
 import functools
 from pathlib import Path
+from typing import cast
 
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
+from ruamel.yaml import YAML as _YAML
 
 import literalizer
 from literalizer.exceptions import (
@@ -62,6 +64,48 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     ]
 
 
+def _collect_ref_names(data: object) -> list[str]:
+    """Recursively collect all ``$ref`` name values from parsed data."""
+    if isinstance(data, dict):
+        typed_data = cast("dict[object, object]", data)
+        if len(typed_data) == 1 and "$ref" in typed_data:
+            name = typed_data["$ref"]
+            return [name] if isinstance(name, str) else []
+        return [
+            n for v in typed_data.values() for n in _collect_ref_names(data=v)
+        ]
+    if isinstance(data, list):
+        typed_list = cast("list[object]", data)
+        return [
+            n for item in typed_list for n in _collect_ref_names(data=item)
+        ]
+    return []
+
+
+def _inject_stubs_before_variable(
+    code: str,
+    variable_name: str,
+    stub_codes: list[str],
+) -> str:
+    """Insert stub declarations before the first line containing
+    ``variable_name``.
+    """
+    if not stub_codes or not variable_name:
+        return code
+    lines = code.split(sep="\n")
+    for i, line in enumerate(iterable=lines):
+        if variable_name in line:
+            indent = len(line) - len(line.lstrip())
+            prefix = " " * indent
+            stub_lines = [
+                prefix + stub_line if stub_line else ""
+                for stub_code in stub_codes
+                for stub_line in stub_code.split(sep="\n")
+            ]
+            return "\n".join(lines[:i] + stub_lines + lines[i:])
+    return code
+
+
 @beartype
 def run_literalize_ref_golden_case(
     *,
@@ -75,7 +119,9 @@ def run_literalize_ref_golden_case(
     """Run a literalize ``$ref`` golden-file case against *golden_name*.
 
     Uses the language's first (default) identifier case so the ref
-    identifier is spelled idiomatically for each language.
+    identifier is spelled idiomatically for each language.  A stub
+    declaration for each referenced identifier is injected before the
+    first use so the golden file is a complete, compilable unit.
     """
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
@@ -104,9 +150,37 @@ def run_literalize_ref_golden_case(
         pytest.skip(
             f"{lang_cls.__name__} rejected ref identifier: {exc.reason}"
         )
+    final_code = result.code
+    if wrap_variable_form(lang_cls=lang_cls) is not None:
+        ruamel_yaml = _YAML()
+        raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
+            stream=yaml_string,
+        )
+        stub_codes: list[str] = []
+        for raw_name in _collect_ref_names(data=raw_data):
+            converted_name = ref_case.convert(name=raw_name)
+            try:
+                stub = literalizer.literalize(
+                    source="0",
+                    input_format=literalizer.InputFormat.JSON,
+                    language=spec,
+                    variable_form=literalizer.NewVariable(
+                        name=converted_name,
+                    ),
+                    wrap_in_file=False,
+                )
+            except Exception:  # noqa: BLE001, S112
+                continue
+            stub_codes.append(stub.declaration_code)
+        variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
+        final_code = _inject_stubs_before_variable(
+            code=result.code,
+            variable_name=variable_form_obj.name if variable_form_obj else "",
+            stub_codes=stub_codes,
+        )
     check_golden(
         file_regression=file_regression,
-        contents=result.code + "\n",
+        contents=final_code + "\n",
         extension=lang_cls.extension,
         newline="",
         golden_path=golden_path,

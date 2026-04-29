@@ -11,6 +11,8 @@ typedef struct {
 } _VKV;
 module main;
 initial begin
+static _VVal x = _VVal'{tag: _VVAL_INT, i: 0, r: 0.0, s: ""};
+static _VVal y = _VVal'{tag: _VVAL_INT, i: 0, r: 0.0, s: ""};
 static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "x"},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "y"}

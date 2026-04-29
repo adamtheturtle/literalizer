@@ -5,6 +5,8 @@ pub type GVal {
 }
 
 pub fn main() {
+  let x = GInt(0)
+  let y = GInt(0)
   let my_data = GList([
     x,
     y,

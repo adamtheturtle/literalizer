@@ -8,6 +8,10 @@ data Val
     | PDict (Array (Tuple String Val))
 
 
+x :: Val
+x = PInt 0
+y :: Val
+y = PInt 0
 my_data :: Val
 my_data = PList [
     x,

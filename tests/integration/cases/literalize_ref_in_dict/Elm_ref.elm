@@ -6,6 +6,8 @@ type Val
     | EDict (List ( String, Val ))
 
 
+myVar : Val
+myVar = EInt 0
 my_data : Val
 my_data = EDict [
     ("key", myVar)
