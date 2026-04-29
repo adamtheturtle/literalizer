@@ -455,19 +455,12 @@ class SystemVerilog(metaclass=LanguageCls):
                 content=content,
                 body_preamble=body_preamble,
             )
-            return (
-                f"module {self.module_name};\n"
-                f"initial begin\n{content}\nend\nendmodule"
-            )
-        if body_preamble:
-            stubs = "\n".join(body_preamble)
-            return (
-                f"module {self.module_name};\n"
-                f"{stubs}\n"
-                f"initial begin\n{content}\nend\nendmodule"
-            )
+            stubs_block = ""
+        else:
+            stubs_block = "".join(f"{s}\n" for s in body_preamble)
         return (
             f"module {self.module_name};\n"
+            f"{stubs_block}"
             f"initial begin\n{content}\nend\nendmodule"
         )
 
