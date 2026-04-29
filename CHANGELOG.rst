@@ -4,6 +4,19 @@ Changelog
 Next
 ----
 
+- Added ``literalize_call`` support for ``PureScript``.
+  ``PureScript.CallStyles.COMMAND`` renders calls as space-separated
+  arguments (``process (PStr "hello") (PInt 1)``); each argument is
+  wrapped in parentheses so curried application parses correctly.
+  ``format_call_stub`` emits a type signature and a wildcard-binding
+  definition at module scope (e.g. ``process :: Val -> Unit`` /
+  ``process _ = unit``); dotted targets like ``app.client.fetch``
+  produce a nested record stub (``app :: { client :: { fetch :: Val ->
+  Unit } }``).  Call expressions are placed in a ``let ... in unit``
+  block inside a ``main :: Unit`` declaration.  PureScript is excluded
+  from the ``call_comments`` and ``call_comments_dict_args`` test cases
+  because its ``_ = ...`` binding prefix cannot accommodate a
+  standalone comment line in the wrapped output.
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any
   ``{"$ref": "name"}`` mapping in the input data -- at the top level or
