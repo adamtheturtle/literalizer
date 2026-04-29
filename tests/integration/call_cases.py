@@ -390,11 +390,14 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # Ada has no object-method call syntax; "tracer" is not a defined object.
     # The Roc stub generator produces a flat "tracer_emit" function; "tracer"
     # is never bound, so "tracer.emit(...)" is an unrecognized name error.
+    # Fortran uses "%" for member access, not "."; "tracer.emit" is a
+    # syntax error in a CALL statement.
     "call_dotted_transform_stub": frozenset(
         {
             Ada,
             Elm,
             Erlang,
+            Fortran,
             Gleam,
             Haskell,
             Hcl,
