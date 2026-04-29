@@ -32,6 +32,7 @@ from literalizer.languages import (
     Haskell,
     Hcl,
     Jsonnet,
+    Mojo,
     ObjectiveC,
     Php,
     PowerShell,
@@ -444,6 +445,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Erlang,
             Haskell,
             Jsonnet,
+            Mojo,
             PureScript,
             Roc,
         }
