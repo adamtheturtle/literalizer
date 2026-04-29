@@ -231,7 +231,7 @@ def _cobol_call_target(parts: Sequence[str], /) -> str:
     ``"FETCH" USING`` so that the call site emits
     ``CALL "FETCH" USING BY CONTENT ...``.
     """
-    return f'"{_to_cobol_name(parts[-1])}" USING'
+    return f'"{_to_cobol_name(python_name=parts[-1])}" USING'
 
 
 @beartype
@@ -261,7 +261,7 @@ def _cobol_call_stub(
     and stops immediately, serving as a compilable placeholder for the
     called subprogram.
     """
-    name = _to_cobol_name(parts[-1])
+    name = _to_cobol_name(python_name=parts[-1])
     stub = "\n".join(
         [
             "IDENTIFICATION DIVISION.",
