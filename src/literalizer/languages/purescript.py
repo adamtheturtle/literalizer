@@ -483,7 +483,7 @@ def _build_purescript_call_stub_lines(
 def _build_purescript_call_stub(
     type_name: str,
 ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
-    """Build a call stub factory that uses *type_name* for arg types."""
+    """Build a call stub factory that uses *type_name* for parameter types."""
 
     @beartype
     def _purescript_call_stub(
