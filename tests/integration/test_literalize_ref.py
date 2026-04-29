@@ -82,6 +82,6 @@ def test_inject_stubs_returns_code_unchanged_when_variable_absent() -> None:
     result = inject_stubs_before_variable(
         code=code,
         variable_name="my_data",
-        stub_codes=["stub_var = 'value'"],
+        stub_entries=[("stub_var", "stub_var = 'value'")],
     )
     assert result == code

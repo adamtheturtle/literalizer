@@ -7,10 +7,10 @@ Val : [
 ]
 
 val_x : Val
-val_y : Val
 val_x = RDict [
     ("_", RStr "_"),
     ]
+val_y : Val
 val_y = RDict [
     ("_", RStr "_"),
     ]

@@ -74,28 +74,40 @@ def _collect_ref_names(data: object) -> list[str]:
 _STUB_ASSIGN_LINE_RE = re.compile(pattern=r"^\w+\s*=(?!=)")
 
 
+def _split_stub(stub_code: str) -> tuple[list[str], list[str]]:
+    """Split a single Fortran-style stub into declaration and assignment
+    lines.
+
+    The split point is the first line (after stripping leading whitespace)
+    that looks like ``identifier =``, indicating the start of an executable
+    assignment.  Lines before that point are type declarations; from that
+    point on are executable statements.
+
+    The caller guarantees the stub contains at least one assignment line.
+    """
+    stub_lines = stub_code.split(sep="\n")
+    split_idx = next(
+        j
+        for j, stub_line in enumerate(iterable=stub_lines)
+        if _STUB_ASSIGN_LINE_RE.match(string=stub_line.lstrip())
+    )
+    return stub_lines[:split_idx], stub_lines[split_idx:]
+
+
 def _split_stubs(
     stub_codes: list[str],
 ) -> tuple[list[str], list[str]]:
-    """Split each stub code into declaration lines and assignment lines.
+    """Aggregate declaration and assignment lines across multiple stubs.
 
-    The split point is the first line (after stripping leading whitespace)
-    that looks like
-    ``identifier =``, indicating the start of an executable assignment.
-    Lines before that point are type/signature declarations; from that
-    point on are executable statements.
+    Each stub is split via :func:`_split_stub`.  The results are
+    concatenated so all declaration lines precede all assignment lines.
     """
     decl_lines: list[str] = []
     assign_lines: list[str] = []
     for stub_code in stub_codes:
-        stub_lines = stub_code.split(sep="\n")
-        split_idx = len(stub_lines)
-        for j, stub_line in enumerate(iterable=stub_lines):
-            if _STUB_ASSIGN_LINE_RE.match(string=stub_line.lstrip()):
-                split_idx = j
-                break
-        decl_lines.extend(stub_lines[:split_idx])
-        assign_lines.extend(stub_lines[split_idx:])
+        stub_decl, stub_assign = _split_stub(stub_code=stub_code)
+        decl_lines.extend(stub_decl)
+        assign_lines.extend(stub_assign)
     return decl_lines, assign_lines
 
 
@@ -113,71 +125,97 @@ def _find_first_occurrence(lines: list[str], lower_name: str) -> int | None:
     return None
 
 
-def _find_assignment_line(lines: list[str], lower_name: str) -> int | None:
-    """Return the index of the first line whose stripped content starts
-    with ``lower_name`` followed by a non-identifier character.
+def _find_assignment_line(
+    lines: list[str], lower_name: str, after_idx: int
+) -> int:
+    """Return the index of the first line at or after ``after_idx`` whose
+    stripped content starts with ``lower_name`` followed by ``=``.
 
-    This locates the main-variable assignment (as opposed to a type
-    declaration that merely mentions the variable name).
+    This locates the main-variable assignment statement in Fortran-style
+    code where the type declaration and assignment are on separate lines.
+    The caller guarantees the assignment exists.
     """
-    for i, line in enumerate(iterable=lines):
-        lower_stripped = line.lstrip().lower()
-        if not lower_stripped.startswith(lower_name):
-            continue
-        post = len(lower_name)
-        if post < len(lower_stripped) and (
-            lower_stripped[post].isalnum() or lower_stripped[post] == "_"
+    return next(
+        i
+        for i in range(after_idx, len(lines))
+        if lines[i].lstrip().lower().startswith(lower_name)
+        and _STUB_ASSIGN_LINE_RE.match(string=lines[i].lstrip().lower())
+    )
+
+
+def _stub_needs_global_split(stub_code: str, stub_var: str) -> bool:
+    """Return True only when the stub uses Fortran-style two-phase layout.
+
+    Fortran stubs have a type declaration line that does NOT start with
+    the variable name, followed by an assignment line that does.  For
+    annotation-style stubs (Roc, PureScript, Haskell, Elm, etc.) the
+    annotation line starts with the variable name, so those stubs must
+    be kept together as a unit.
+
+    The detection works by finding the assignment line (first line
+    starting with ``stub_var`` followed by ``=``), then checking whether
+    any line before it also starts with ``stub_var``.  If a preceding
+    line starts with ``stub_var``, the stub uses annotation style and
+    must not be split globally.  If no assignment line exists at all
+    (e.g. Nix ``let var = {...}``) the stub is also kept as a unit.
+    """
+    lower_var = stub_var.lower()
+    stub_lines = stub_code.split(sep="\n")
+    assign_idx: int | None = None
+    for j, stub_line in enumerate(iterable=stub_lines):
+        stripped = stub_line.lstrip().lower()
+        if _STUB_ASSIGN_LINE_RE.match(string=stripped) and stripped.startswith(
+            lower_var
         ):
-            continue
-        raw_idx = line.lower().find(lower_name)
-        if raw_idx > 0 and line[raw_idx - 1] == "[":
-            continue
-        return i
-    return None
+            assign_idx = j
+            break
+    if assign_idx is None:
+        return False
+    for stub_line in stub_lines[:assign_idx]:
+        if stub_line.lstrip().lower().startswith(lower_var):
+            return False
+    return True
 
 
 def inject_stubs_before_variable(
     code: str,
     variable_name: str,
-    stub_codes: list[str],
+    stub_entries: list[tuple[str, str]],
 ) -> str:
     """Insert stub declarations before ``variable_name`` using a
     case-insensitive match.
 
-    For languages like Fortran where ``declaration_code`` contains both
-    a type-declaration statement and an executable assignment, the stubs
-    are split at the first assignment line (detected by
-    ``identifier =``) and injected in two phases so that all
-    declarations precede all executable statements:
+    Each entry in ``stub_entries`` is a ``(stub_var_name, stub_code)``
+    pair.
 
-    1. Declaration lines of each stub are inserted before the first
-       line that contains ``variable_name``.
-    2. Assignment lines of each stub are inserted before the first line
-       whose content (after stripping leading whitespace) *starts with*
-       ``variable_name`` (the main-variable's own assignment).
+    For annotation-style languages (Roc, PureScript, Haskell, Elm, etc.)
+    each stub is injected as a complete unit immediately before
+    ``variable_name`` so that annotations immediately precede their
+    definitions.
 
-    For languages where declaration and assignment are on the same line
-    (Python, C, JavaScript, …) both injection points coincide and the
-    behavior is identical to a single-location insert.
+    For Fortran-style stubs where the declaration and assignment must be
+    separated, all stubs are split and injected in two phases:
+
+    1. Declaration lines inserted before the first line that contains
+       ``variable_name``.
+    2. Assignment lines inserted before the first line whose stripped
+       content starts with ``variable_name``.
 
     The case-insensitive search handles languages such as Erlang that
-    capitalize variable names in output (e.g. ``my_data`` →
+    capitalize variable names in output (e.g. ``my_data`` ->
     ``My_data``).  Matches where the variable name is immediately
     preceded by ``[`` are skipped to avoid false positives on
     module-declaration lines in Roc such as ``module [my_data]``.
     """
-    if not stub_codes or not variable_name:
+    if not stub_entries or not variable_name:
         return code
 
-    decl_stub_lines, assign_stub_lines = _split_stubs(stub_codes=stub_codes)
     lines = code.split(sep="\n")
     lower_name = variable_name.lower()
 
     decl_idx = _find_first_occurrence(lines=lines, lower_name=lower_name)
     if decl_idx is None:
         return code
-
-    assign_idx = _find_assignment_line(lines=lines, lower_name=lower_name)
 
     indent = len(lines[decl_idx]) - len(lines[decl_idx].lstrip())
     prefix = " " * indent
@@ -186,23 +224,37 @@ def inject_stubs_before_variable(
         """Apply the main variable's indentation prefix to stub lines."""
         return [prefix + sl if sl else "" for sl in stub_line_list]
 
-    if assign_idx is None or assign_idx == decl_idx:
-        all_stub = decl_stub_lines + assign_stub_lines
-        indented = _indented(stub_line_list=all_stub)
-        return "\n".join(lines[:decl_idx] + indented + lines[decl_idx:])
+    needs_global_split = any(
+        _stub_needs_global_split(stub_code=stub_code, stub_var=stub_var)
+        for stub_var, stub_code in stub_entries
+    )
 
-    result = list(lines)
-    if decl_stub_lines:
+    stub_codes = [stub_code for _stub_var, stub_code in stub_entries]
+
+    if needs_global_split:
+        decl_stub_lines, assign_stub_lines = _split_stubs(
+            stub_codes=stub_codes
+        )
+        assign_idx = _find_assignment_line(
+            lines=lines, lower_name=lower_name, after_idx=decl_idx
+        )
+
+        result = list(lines)
         indented_decl = _indented(stub_line_list=decl_stub_lines)
         result = result[:decl_idx] + indented_decl + result[decl_idx:]
-    adjusted_assign = assign_idx + len(decl_stub_lines)
-    if assign_stub_lines:
+        adjusted_assign = assign_idx + len(decl_stub_lines)
         result = (
             result[:adjusted_assign]
             + _indented(stub_line_list=assign_stub_lines)
             + result[adjusted_assign:]
         )
-    return "\n".join(result)
+        return "\n".join(result)
+
+    all_stub_lines: list[str] = []
+    for stub_code in stub_codes:
+        all_stub_lines.extend(stub_code.split(sep="\n"))
+    indented = _indented(stub_line_list=all_stub_lines)
+    return "\n".join(lines[:decl_idx] + indented + lines[decl_idx:])
 
 
 @beartype
@@ -252,7 +304,7 @@ def run_literalize_ref_golden_case(
         raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=yaml_string,
         )
-        stub_codes: list[str] = []
+        stub_entries: list[tuple[str, str]] = []
         for raw_name in _collect_ref_names(data=raw_data):
             converted_name = ref_case.convert(name=raw_name)
             stub = literalizer.literalize(
@@ -264,12 +316,12 @@ def run_literalize_ref_golden_case(
                 ),
                 wrap_in_file=False,
             )
-            stub_codes.append(stub.declaration_code)
+            stub_entries.append((converted_name, stub.declaration_code))
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
         final_code = inject_stubs_before_variable(
             code=result.code,
             variable_name=variable_form_obj.name if variable_form_obj else "",
-            stub_codes=stub_codes,
+            stub_entries=stub_entries,
         )
     check_golden(
         file_regression=file_regression,

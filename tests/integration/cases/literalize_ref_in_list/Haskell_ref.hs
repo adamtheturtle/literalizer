@@ -1,10 +1,10 @@
 module Fixture_literalize_ref_in_list_Haskell_ref where
 data Val = HStr String | HList [Val] | HMap [(String, Val)]
 valX :: Val
-valY :: Val
 valX = HMap [
     ("_", HStr "_")
     ]
+valY :: Val
 valY = HMap [
     ("_", HStr "_")
     ]
