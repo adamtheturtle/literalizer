@@ -280,8 +280,6 @@ ignore = [
     "tests/**",
     "zizmor.yml",
     "CheckJavaSyntax.java",
-    "a_stub.adb",
-    "a_stub.ads",
     ".clj-kondo",
     ".clj-kondo/**",
     ".clang-tidy",
@@ -316,7 +314,7 @@ follow_untyped_imports = true
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
-search_path = [ ".", "src" ]
+search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
@@ -333,6 +331,7 @@ executionEnvironments = [
 analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
 overrides = []
+environment.extra-paths = [ ".github/scripts" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true
