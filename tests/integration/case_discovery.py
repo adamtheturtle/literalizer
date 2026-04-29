@@ -15,6 +15,7 @@ from beartype import beartype
 from ruamel.yaml import YAML
 
 import literalizer
+from literalizer.exceptions import InvalidDictKeyError
 
 from .call_cases import CALL_CASE_CONFIGS
 from .language_specs import (
@@ -22,6 +23,28 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+
+
+@functools.cache
+def _lang_raises_for_non_printable_ascii_dict_keys(
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Return ``True`` if the language raises :exc:`InvalidDictKeyError`
+    for a dict key containing a non-printable ASCII character.
+
+    Used to skip golden-file cases whose input contains such keys for
+    languages whose contract is to raise :exc:`InvalidDictKeyError` for
+    those inputs rather than produce rendered output.
+    """
+    try:
+        literalizer.literalize(
+            source='{"key\\u0001": 1}',
+            input_format=literalizer.InputFormat.JSON,
+            language=lang_cls(),
+        )
+    except InvalidDictKeyError:
+        return True
+    return False
 
 
 @beartype
@@ -123,9 +146,8 @@ def discover_cases(
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
-            if (
-                non_trivial
-                and not lang_cls.supports_non_printable_ascii_dict_keys
+            if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
+                lang_cls
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:
@@ -187,9 +209,8 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
         special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
             lang_name = lang_cls.__name__
-            if (
-                non_trivial
-                and not lang_cls.supports_non_printable_ascii_dict_keys
+            if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
+                lang_cls
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:

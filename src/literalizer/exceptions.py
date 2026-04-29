@@ -188,3 +188,14 @@ class UnsupportedIdentifierCaseError(Exception):
         )
         self.language_name = language_name
         self.case_name = case_name
+
+
+class WrapCombinedInFileNotSupportedError(Exception):
+    """Raised when a language does not support ``wrap_combined_in_file``.
+
+    Languages that raise this error do not support
+    :class:`~literalizer.BothVariableForms`; ``literalize()`` rejects
+    that form before reaching ``wrap_combined_in_file``, but each
+    language implementation still raises this typed exception as a
+    safety net.
+    """
