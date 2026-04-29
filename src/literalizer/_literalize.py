@@ -2152,9 +2152,10 @@ def _render_call_per_element(
             if _extract_call_arg_ref_name(value=v) is None
         ]
         for value in non_ref_args:
-            check_data(data=_strip_refs_from_value(value=value), spec=language)
+            stripped_value = _strip_refs_from_value(value=value)
+            check_data(data=stripped_value, spec=language)
             if validate_call_arg is not None:
-                validate_call_arg(_strip_refs_from_value(value=value))
+                validate_call_arg(stripped_value)
         call_wrap_ids = (
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
