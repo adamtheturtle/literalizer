@@ -570,7 +570,7 @@ class Cobol(metaclass=LanguageCls):
                 + f"{stubs}\n"
                 + "END PROGRAM CHECK."
             )
-        return (
+        return (  # pragma: no cover
             Cobol._PROGRAM_PREFIX
             + "PROCEDURE DIVISION.\n"
             + f"{indented}\n"
