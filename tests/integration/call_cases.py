@@ -375,7 +375,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # Haskell record fields require a monomorphic type; "emit :: Val -> IO ()"
     # cannot accept "IO Val" from process without RankNTypes.
     # Ada has no object-method call syntax; "tracer" is not a defined object.
-    # Roc's stub generator produces a flat "tracer_emit" function; "tracer"
+    # The Roc stub generator produces a flat "tracer_emit" function; "tracer"
     # is never bound, so "tracer.emit(...)" is an unrecognized name error.
     "call_dotted_transform_stub": frozenset(
         {
