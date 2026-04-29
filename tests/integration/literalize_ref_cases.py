@@ -70,7 +70,7 @@ def _collect_ref_names(data: object) -> list[str]:
     return []
 
 
-def _inject_stubs_before_variable(
+def inject_stubs_before_variable(
     code: str,
     variable_name: str,
     stub_codes: list[str],
@@ -166,7 +166,7 @@ def run_literalize_ref_golden_case(
             )
             stub_codes.append(stub.declaration_code)
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
-        final_code = _inject_stubs_before_variable(
+        final_code = inject_stubs_before_variable(
             code=result.code,
             variable_name=variable_form_obj.name if variable_form_obj else "",
             stub_codes=stub_codes,
