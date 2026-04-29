@@ -79,10 +79,10 @@ def _inject_stubs_before_variable(
     ``variable_name`` using a case-insensitive match.
 
     The case-insensitive search handles languages such as Erlang that
-    capitalise variable names in output (e.g. ``my_data`` →
+    capitalize variable names in output (e.g. ``my_data`` →
     ``My_data``).  Matches where the variable name is immediately
     preceded by ``[`` are skipped to avoid false positives on
-    module-declaration lines such as Roc's ``module [my_data]``.
+    module-declaration lines in Roc such as ``module [my_data]``.
     """
     if not stub_codes or not variable_name:
         return code
@@ -120,7 +120,7 @@ def run_literalize_ref_golden_case(
     Uses the language's first (default) identifier case so the ref
     identifier is spelled idiomatically for each language.  A stub
     declaration for each referenced identifier is injected before the
-    first use so the golden file is a complete, compilable unit.
+    first use so the golden file is a complete unit that can be compiled.
     """
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
@@ -168,7 +168,7 @@ def run_literalize_ref_golden_case(
                     ),
                     wrap_in_file=False,
                 )
-            except Exception:  # noqa: BLE001, S112
+            except Exception:  # noqa: BLE001, S112  # pylint: disable=broad-exception-caught
                 continue
             stub_codes.append(stub.declaration_code)
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)

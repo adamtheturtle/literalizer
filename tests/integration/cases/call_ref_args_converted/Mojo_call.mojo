@@ -11,5 +11,5 @@ def main():
         5,
         6,
     ]
-    process(my_var, 42)
-    process(my_other, 7)
+    process(my_var^, 42)
+    process(my_other^, 7)

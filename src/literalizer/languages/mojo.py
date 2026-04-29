@@ -807,7 +807,7 @@ class Mojo(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``^`` to trigger Mojo's move/transfer semantics.
+        """Append ``^`` to trigger move/transfer semantics in Mojo.
 
         Mojo ``Dict`` does not implement ``Copyable``, so a bare
         variable reference fails to compile.  Using ``^`` transfers
