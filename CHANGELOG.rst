@@ -13,6 +13,11 @@ Next
   may be added in future releases.  Both ``version_formats`` and
   ``language_version`` are part of the :class:`~literalizer.Language`
   protocol, so custom language implementations must also define them.
+
+2026.04.29
+----------
+
+
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any
   ``{"$ref": "name"}`` mapping in the input data -- at the top level or
