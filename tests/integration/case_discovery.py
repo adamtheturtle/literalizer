@@ -38,6 +38,7 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(case_dir_name="literalize_ref_whole"),
     LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_dict"),
     LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_list"),
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_heterogeneous"),
 ]
 
 

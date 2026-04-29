@@ -8,6 +8,8 @@ import literalizer
 from literalizer.exceptions import UnsupportedIdentifierCaseError
 from literalizer.languages import Python
 
+from .literalize_ref_cases import _inject_stubs_before_variable
+
 
 def test_ref_without_ref_case_treated_as_literal() -> None:
     """Without ref_case, $ref dicts are treated as ordinary literal
@@ -67,3 +69,19 @@ def test_unsupported_ref_case_raises() -> None:
             language=Python(),
             ref_case=literalizer.IdentifierCase.KEBAB,
         )
+
+
+def test_inject_stubs_returns_code_unchanged_when_variable_absent() -> None:
+    """No injection occurs when the variable name is absent from the code.
+
+    Guards the fallthrough path in ``_inject_stubs_before_variable``
+    for languages whose generated code does not contain the variable
+    name in a form the search can locate.
+    """
+    code = "x = 1\ny = 2\n"
+    result = _inject_stubs_before_variable(
+        code=code,
+        variable_name="my_data",
+        stub_codes=["stub_var = 'value'"],
+    )
+    assert result == code

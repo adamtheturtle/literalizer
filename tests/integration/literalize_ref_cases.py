@@ -126,9 +126,6 @@ def run_literalize_ref_golden_case(
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    if not spec.identifier_cases:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_cls.__name__} has no identifier cases")
     ref_case = spec.identifier_cases[0]
     try:
         result = literalizer.literalize(
@@ -168,8 +165,8 @@ def run_literalize_ref_golden_case(
                     ),
                     wrap_in_file=False,
                 )
-            except Exception:  # noqa: BLE001, S112  # pylint: disable=broad-exception-caught
-                continue
+            except Exception:  # noqa: BLE001, S112  # pragma: no cover
+                continue  # pylint: disable=broad-exception-caught
             stub_codes.append(stub.declaration_code)
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
         final_code = _inject_stubs_before_variable(
