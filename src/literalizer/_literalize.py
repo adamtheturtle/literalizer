@@ -1630,6 +1630,12 @@ def literalize(
         UnsupportedIdentifierCaseError: If *ref_case* is not in
             :attr:`~literalizer._language.Language.identifier_cases`
             for the target language.
+        VariableNamesNotSupportedByLanguageError: If *variable_form* is
+            not ``None`` and the target language has no variable
+            declaration syntax.
+        VariableNamesNotSupportedByToolError: If *variable_form* is not
+            ``None`` and the target language has variable declaration
+            syntax but literalizer has not yet implemented it.
     """
     if variable_form is not None:
         match language.variable_name_support:

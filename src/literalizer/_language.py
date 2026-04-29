@@ -277,9 +277,10 @@ class CallSupport(enum.Enum):
 
 
 class Support(enum.Enum):
-    """Tri-state describing the level of support for a language capability.
+    """Three-way enum describing the level of support for a language
+    capability.
 
-    Modelled on :class:`CallSupport` but for capabilities where there is
+    Modeled on :class:`CallSupport` but for capabilities where there is
     no accompanying configuration object.
     """
 
