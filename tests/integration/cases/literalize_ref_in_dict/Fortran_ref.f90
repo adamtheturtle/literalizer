@@ -19,10 +19,10 @@ program main
     use fval_m
     implicit none
     type(fval_t) :: my_var
+    type(fval_t) :: my_data
     my_var = fmap([fval_t :: &
         fentry('_', fstr('_')) &
     ])
-    type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
         fentry('key', my_var) &
     ])

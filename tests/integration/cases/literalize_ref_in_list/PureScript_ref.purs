@@ -9,10 +9,10 @@ data Val
 
 
 valX :: Val
+valY :: Val
 valX = PDict [
     (Tuple "_" (PStr "_"))
     ]
-valY :: Val
 valY = PDict [
     (Tuple "_" (PStr "_"))
     ]

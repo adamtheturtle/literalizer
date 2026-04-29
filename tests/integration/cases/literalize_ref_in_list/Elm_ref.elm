@@ -8,10 +8,10 @@ type Val
 
 
 valX : Val
+valY : Val
 valX = EDict [
     ("_", EStr "_")
     ]
-valY : Val
 valY = EDict [
     ("_", EStr "_")
     ]

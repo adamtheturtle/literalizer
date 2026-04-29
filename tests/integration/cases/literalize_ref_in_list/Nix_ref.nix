@@ -1,7 +1,7 @@
 let val_x = {
+let val_y = {
   _ = "_";
 }; in val_x
-let val_y = {
   _ = "_";
 }; in val_y
 let my_data = [

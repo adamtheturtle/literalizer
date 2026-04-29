@@ -10,6 +10,7 @@ language's default identifier case.  The runner
 
 import dataclasses
 import functools
+import re
 from pathlib import Path
 from typing import cast
 
@@ -70,13 +71,94 @@ def _collect_ref_names(data: object) -> list[str]:
     return []
 
 
+_STUB_ASSIGN_LINE_RE = re.compile(pattern=r"^\w+\s*=(?!=)")
+
+
+def _split_stubs(
+    stub_codes: list[str],
+) -> tuple[list[str], list[str]]:
+    """Split each stub code into declaration lines and assignment lines.
+
+    The split point is the first line (after stripping leading whitespace)
+    that looks like
+    ``identifier =``, indicating the start of an executable assignment.
+    Lines before that point are type/signature declarations; from that
+    point on are executable statements.
+    """
+    decl_lines: list[str] = []
+    assign_lines: list[str] = []
+    for stub_code in stub_codes:
+        stub_lines = stub_code.split(sep="\n")
+        split_idx = len(stub_lines)
+        for j, stub_line in enumerate(iterable=stub_lines):
+            if _STUB_ASSIGN_LINE_RE.match(stub_line.lstrip()):
+                split_idx = j
+                break
+        decl_lines.extend(stub_lines[:split_idx])
+        assign_lines.extend(stub_lines[split_idx:])
+    return decl_lines, assign_lines
+
+
+def _find_first_occurrence(lines: list[str], lower_name: str) -> int | None:
+    """Return the index of the first line containing ``lower_name`` that
+    is not immediately preceded by ``[``.
+    """
+    for i, line in enumerate(iterable=lines):
+        idx = line.lower().find(lower_name)
+        if idx == -1:
+            continue
+        if idx > 0 and line[idx - 1] == "[":
+            continue
+        return i
+    return None
+
+
+def _find_assignment_line(lines: list[str], lower_name: str) -> int | None:
+    """Return the index of the first line whose stripped content starts
+    with ``lower_name`` followed by a non-identifier character.
+
+    This locates the main-variable assignment (as opposed to a type
+    declaration that merely mentions the variable name).
+    """
+    for i, line in enumerate(iterable=lines):
+        lower_stripped = line.lstrip().lower()
+        if not lower_stripped.startswith(lower_name):
+            continue
+        post = len(lower_name)
+        if post < len(lower_stripped) and (
+            lower_stripped[post].isalnum() or lower_stripped[post] == "_"
+        ):
+            continue
+        raw_idx = line.lower().find(lower_name)
+        if raw_idx > 0 and line[raw_idx - 1] == "[":
+            continue
+        return i
+    return None
+
+
 def inject_stubs_before_variable(
     code: str,
     variable_name: str,
     stub_codes: list[str],
 ) -> str:
-    """Insert stub declarations before the first line containing
-    ``variable_name`` using a case-insensitive match.
+    """Insert stub declarations before ``variable_name`` using a
+    case-insensitive match.
+
+    For languages like Fortran where ``declaration_code`` contains both
+    a type-declaration statement and an executable assignment, the stubs
+    are split at the first assignment line (detected by
+    ``identifier =``) and injected in two phases so that all
+    declarations precede all executable statements:
+
+    1. Declaration lines of each stub are inserted before the first
+       line that contains ``variable_name``.
+    2. Assignment lines of each stub are inserted before the first line
+       whose content (after stripping leading whitespace) *starts with*
+       ``variable_name`` (the main-variable's own assignment).
+
+    For languages where declaration and assignment are on the same line
+    (Python, C, JavaScript, …) both injection points coincide and the
+    behavior is identical to a single-location insert.
 
     The case-insensitive search handles languages such as Erlang that
     capitalize variable names in output (e.g. ``my_data`` →
@@ -86,23 +168,43 @@ def inject_stubs_before_variable(
     """
     if not stub_codes or not variable_name:
         return code
+
+    decl_stub_lines, assign_stub_lines = _split_stubs(stub_codes=stub_codes)
     lines = code.split(sep="\n")
     lower_name = variable_name.lower()
-    for i, line in enumerate(iterable=lines):
-        idx = line.lower().find(lower_name)
-        if idx == -1:
-            continue
-        if idx > 0 and line[idx - 1] == "[":
-            continue
-        indent = len(line) - len(line.lstrip())
-        prefix = " " * indent
-        stub_lines = [
-            prefix + stub_line if stub_line else ""
-            for stub_code in stub_codes
-            for stub_line in stub_code.split(sep="\n")
-        ]
-        return "\n".join(lines[:i] + stub_lines + lines[i:])
-    return code
+
+    decl_idx = _find_first_occurrence(lines=lines, lower_name=lower_name)
+    if decl_idx is None:
+        return code
+
+    assign_idx = _find_assignment_line(lines=lines, lower_name=lower_name)
+
+    indent = len(lines[decl_idx]) - len(lines[decl_idx].lstrip())
+    prefix = " " * indent
+
+    def _indented(stub_line_list: list[str]) -> list[str]:
+        """Apply the main variable's indentation prefix to stub lines."""
+        return [prefix + sl if sl else "" for sl in stub_line_list]
+
+    if assign_idx is None or assign_idx == decl_idx:
+        all_stub = decl_stub_lines + assign_stub_lines
+        return "\n".join(
+            lines[:decl_idx] + _indented(all_stub) + lines[decl_idx:]
+        )
+
+    result = list(lines)
+    if decl_stub_lines:
+        result = (
+            result[:decl_idx] + _indented(decl_stub_lines) + result[decl_idx:]
+        )
+    adjusted_assign = assign_idx + len(decl_stub_lines)
+    if assign_stub_lines:
+        result = (
+            result[:adjusted_assign]
+            + _indented(assign_stub_lines)
+            + result[adjusted_assign:]
+        )
+    return "\n".join(result)
 
 
 @beartype
