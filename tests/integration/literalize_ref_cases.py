@@ -188,10 +188,10 @@ def _stub_needs_global_split(stub_code: str, stub_var: str) -> bool:
             break
     if assign_idx is None:
         return False
-    for stub_line in stub_lines[:assign_idx]:
-        if stub_line.lstrip().lower().startswith(lower_var):
-            return False
-    return True
+    return not any(
+        stub_line.lstrip().lower().startswith(lower_var)
+        for stub_line in stub_lines[:assign_idx]
+    )
 
 
 def inject_stubs_before_variable(
