@@ -1115,7 +1115,7 @@ def _format_collection_lines(
                 trailing_comma=seq_trailing,
                 spec=spec,
             )
-        case _ as unreachable:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as unreachable:
             assert_never(unreachable)
     return lines
 
@@ -1831,7 +1831,7 @@ def _format_call_args(
                 sep=sep,
                 kw_prefix=kw_prefix,
             )
-        case _ as unreachable:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as unreachable:
             assert_never(unreachable)
 
 
@@ -1982,7 +1982,7 @@ def _assemble_call(
                 arg_separator=sep,
                 wrapped_call_template=wrapped_call_template,
             )
-        case _ as unreachable:  # pyright: ignore[reportUnnecessaryComparison]
+        case _ as unreachable:
             assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
 
