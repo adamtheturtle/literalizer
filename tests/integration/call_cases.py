@@ -22,7 +22,18 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Elm, Gleam, Hcl, ObjectiveC, Raku, Sml, Wren
+from literalizer.languages import (
+    Elm,
+    Erlang,
+    Gleam,
+    Haskell,
+    Hcl,
+    ObjectiveC,
+    Php,
+    Raku,
+    Sml,
+    Wren,
+)
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -355,8 +366,13 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # Raku requires a sigil ("$tracer") for variable method dispatch; bare
     # "tracer" in "tracer.emit(...)" is not resolvable as a declared name.
     # ObjectiveC's lint scripts do not support the C-struct dotted-call.
+    # Erlang's "." terminates a clause; "tracer.emit(...)" is a syntax error.
+    # PHP's "." is string concatenation; "tracer" is treated as a bare
+    # constant, not an object, so "tracer.emit(...)" is invalid.
+    # Haskell record fields require a monomorphic type; "emit :: Val -> IO ()"
+    # cannot accept "IO Val" from process without RankNTypes.
     "call_dotted_transform_stub": frozenset(
-        {Elm, Gleam, Hcl, ObjectiveC, Raku}
+        {Elm, Erlang, Gleam, Haskell, Hcl, ObjectiveC, Raku, Php}
     ),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren: Wren has no free-function call syntax, so a bare call like
