@@ -176,7 +176,6 @@ class Nix(metaclass=LanguageCls):
 
     extension = ".nix"
     pygments_name = "nix"
-    language_version = "2.x"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -375,6 +374,13 @@ class Nix(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Nix."""
+
+        V2 = "2.x"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -432,6 +438,7 @@ class Nix(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2
     indent: str = "  "
 
     null_literal: ClassVar[str] = "null"

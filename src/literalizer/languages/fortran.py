@@ -303,7 +303,6 @@ class Fortran(metaclass=LanguageCls):
 
     extension = ".f90"
     pygments_name = "fortran"
-    language_version = "2003"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -509,6 +508,13 @@ class Fortran(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Fortran."""
+
+        V2003 = "2003"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -626,6 +632,7 @@ class Fortran(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2003
     indent: str = "    "
     null_name: str = "fnull"
     bool_name: str = "fbool"

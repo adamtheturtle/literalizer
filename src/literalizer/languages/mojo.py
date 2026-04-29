@@ -375,7 +375,6 @@ class Mojo(metaclass=LanguageCls):
 
     extension = ".mojo"
     pygments_name = "mojo"
-    language_version = "24.5"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
@@ -639,6 +638,13 @@ class Mojo(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Mojo."""
+
+        V24_5 = "24.5"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -710,6 +716,7 @@ class Mojo(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_variant_name: str = "Value"
+    language_version: VersionFormats = VersionFormats.V24_5
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None"

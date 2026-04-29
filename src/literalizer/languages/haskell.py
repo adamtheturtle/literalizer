@@ -924,7 +924,6 @@ class Haskell(metaclass=LanguageCls):
 
     extension = ".hs"
     pygments_name = "haskell"
-    language_version = "Haskell 2010"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -1177,6 +1176,13 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Haskell."""
+
+        HASKELL_2010 = "Haskell 2010"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
@@ -1289,6 +1295,7 @@ class Haskell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.HASKELL_2010
     indent: str = "    "
     module_name: str = "Check"
     type_name: str = "Val"

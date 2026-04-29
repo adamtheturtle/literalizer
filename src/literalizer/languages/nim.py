@@ -519,7 +519,6 @@ class Nim(metaclass=LanguageCls):
 
     extension = ".nim"
     pygments_name = "nim"
-    language_version = "2.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -841,6 +840,13 @@ class Nim(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Nim."""
+
+        V2 = "2.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -902,6 +908,7 @@ class Nim(metaclass=LanguageCls):
     )
     heterogeneous_value_variant_name: str = "Value"
     call_style: CallStyles = CallStyles.POSITIONAL
+    language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
     def __post_init__(self) -> None:

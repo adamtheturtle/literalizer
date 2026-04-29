@@ -500,7 +500,6 @@ class Roc(metaclass=LanguageCls):
 
     extension = ".roc"
     pygments_name = "text"
-    language_version = "0.0.5"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -717,6 +716,13 @@ class Roc(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Roc."""
+
+        V0 = "0.0.5"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -846,6 +852,7 @@ class Roc(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V0
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "R"

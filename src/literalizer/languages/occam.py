@@ -90,7 +90,6 @@ class Occam(metaclass=LanguageCls):
 
     extension = ".occ"
     pygments_name = None
-    language_version = "2"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -294,6 +293,13 @@ class Occam(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Occam."""
+
+        V2 = "2"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
@@ -361,6 +367,7 @@ class Occam(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
     null_literal: ClassVar[str] = "MOBILE LIT(lit.null)"

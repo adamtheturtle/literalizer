@@ -348,7 +348,6 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
-    language_version = "10.0"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
@@ -621,6 +620,13 @@ class CSharp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for C#."""
+
+        V10 = "10.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
@@ -793,6 +799,7 @@ class CSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V10
     indent: str = "    "
 
     null_literal: ClassVar[str] = "(object?)null"

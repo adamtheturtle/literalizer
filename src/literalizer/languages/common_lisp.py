@@ -104,7 +104,6 @@ class CommonLisp(metaclass=LanguageCls):
 
     extension = ".lisp"
     pygments_name = "common-lisp"
-    language_version = "ANSI CL"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -317,6 +316,13 @@ class CommonLisp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Common Lisp."""
+
+        ANSI = "ANSI CL"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.KEBAB,
     )
@@ -376,6 +382,7 @@ class CommonLisp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.ANSI
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nil"

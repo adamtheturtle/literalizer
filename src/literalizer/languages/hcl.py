@@ -132,7 +132,6 @@ class Hcl(metaclass=LanguageCls):
 
     extension = ".hcl"
     pygments_name = "hcl"
-    language_version = "2"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -338,6 +337,13 @@ class Hcl(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for HCL."""
+
+        V2 = "2"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
     )
@@ -422,6 +428,7 @@ class Hcl(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

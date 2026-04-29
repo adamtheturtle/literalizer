@@ -677,7 +677,6 @@ class Rust(metaclass=LanguageCls):
 
     extension = ".rs"
     pygments_name = "rust"
-    language_version = "2021"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
@@ -1202,6 +1201,13 @@ class Rust(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Rust."""
+
+        EDITION_2021 = "2021"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -1268,6 +1274,7 @@ class Rust(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_enum_name: str = "Value"
+    language_version: VersionFormats = VersionFormats.EDITION_2021
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None::<()>"

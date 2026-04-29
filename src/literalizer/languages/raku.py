@@ -172,7 +172,6 @@ class Raku(metaclass=LanguageCls):
 
     extension = ".raku"
     pygments_name = "raku"
-    language_version = "6.d"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -426,6 +425,13 @@ class Raku(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Raku."""
+
+        V6D = "6.d"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.KEBAB,
@@ -486,6 +492,7 @@ class Raku(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V6D
     indent: str = "    "
 
     null_literal: ClassVar[str] = "Nil"

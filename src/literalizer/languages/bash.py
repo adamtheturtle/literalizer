@@ -177,7 +177,6 @@ class Bash(metaclass=LanguageCls):
 
     extension = ".sh"
     pygments_name = "bash"
-    language_version = "5.1"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -382,6 +381,13 @@ class Bash(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Bash."""
+
+        V5_1 = "5.1"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -464,6 +470,7 @@ class Bash(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V5_1
     indent: str = "    "
 
     null_literal: ClassVar[str] = '""'

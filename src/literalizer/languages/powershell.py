@@ -154,7 +154,6 @@ class PowerShell(metaclass=LanguageCls):
 
     extension = ".ps1"
     pygments_name = "powershell"
-    language_version = "7.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -360,6 +359,13 @@ class PowerShell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for PowerShell."""
+
+        V7 = "7.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
@@ -420,6 +426,7 @@ class PowerShell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V7
     indent: str = "    "
 
     null_literal: ClassVar[str] = "$null"

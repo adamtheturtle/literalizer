@@ -165,7 +165,6 @@ class Crystal(metaclass=LanguageCls):
 
     extension = ".cr"
     pygments_name = "crystal"
-    language_version = "1.0"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
@@ -428,6 +427,13 @@ class Crystal(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Crystal."""
+
+        V1 = "1.0"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -494,6 +500,7 @@ class Crystal(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nil"

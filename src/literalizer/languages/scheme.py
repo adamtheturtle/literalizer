@@ -92,7 +92,6 @@ class Scheme(metaclass=LanguageCls):
 
     extension = ".scm"
     pygments_name = "scheme"
-    language_version = "R7RS"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -301,6 +300,13 @@ class Scheme(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Scheme."""
+
+        R7RS = "R7RS"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.KEBAB,
     )
@@ -360,6 +366,7 @@ class Scheme(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.PREFIX
+    language_version: VersionFormats = VersionFormats.R7RS
     indent: str = "    "
 
     null_literal: ClassVar[str] = "'()"

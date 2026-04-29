@@ -511,7 +511,6 @@ class Python(metaclass=LanguageCls):
 
     extension = ".py"
     pygments_name = "python"
-    language_version = "3.12"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
@@ -895,6 +894,13 @@ class Python(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Python."""
+
+        PY_3_12 = "3.12"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -960,6 +966,7 @@ class Python(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.PY_3_12
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None"

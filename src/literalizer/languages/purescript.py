@@ -636,7 +636,6 @@ class PureScript(metaclass=LanguageCls):
 
     extension = ".purs"
     pygments_name = None
-    language_version = "0.15"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -854,6 +853,13 @@ class PureScript(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for PureScript."""
+
+        V0_15 = "0.15"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -937,6 +943,7 @@ class PureScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V0_15
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "P"

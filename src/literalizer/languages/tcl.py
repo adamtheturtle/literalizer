@@ -137,7 +137,6 @@ class Tcl(metaclass=LanguageCls):
 
     extension = ".tcl"
     pygments_name = "tcl"
-    language_version = "8.6"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -344,6 +343,13 @@ class Tcl(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Tcl."""
+
+        V8_6 = "8.6"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -404,6 +410,7 @@ class Tcl(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V8_6
     indent: str = "    "
 
     null_literal: ClassVar[str] = '""'

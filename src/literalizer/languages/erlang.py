@@ -186,7 +186,6 @@ class Erlang(metaclass=LanguageCls):
 
     extension = ".erl"
     pygments_name = "erlang"
-    language_version = "OTP 25"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -410,6 +409,13 @@ class Erlang(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Erlang."""
+
+        OTP_25 = "OTP 25"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -494,6 +500,7 @@ class Erlang(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.OTP_25
     indent: str = "    "
 
     null_literal: ClassVar[str] = "undefined"

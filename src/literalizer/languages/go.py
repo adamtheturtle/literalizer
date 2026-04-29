@@ -248,7 +248,6 @@ class Go(metaclass=LanguageCls):
 
     extension = ".go"
     pygments_name = "go"
-    language_version = "1.18"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
@@ -509,6 +508,13 @@ class Go(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Go."""
+
+        V1_18 = "1.18"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
@@ -574,6 +580,7 @@ class Go(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1_18
     indent: str = "\t"
 
     null_literal: ClassVar[str] = "nil"

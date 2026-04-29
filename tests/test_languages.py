@@ -431,9 +431,13 @@ def test_language_version_is_non_empty_string(
     *,
     language_cls: LanguageCls,
 ) -> None:
-    """Every language class declares a non-empty ``language_version``."""
-    assert isinstance(language_cls.language_version, str)
-    assert language_cls.language_version
+    """Every language's default ``language_version`` is an enum member
+    whose value is a non-empty string.
+    """
+    spec = language_cls()
+    assert isinstance(spec.language_version, enum.Enum)
+    assert isinstance(spec.language_version.value, str)
+    assert spec.language_version.value
 
 
 @pytest.mark.parametrize(
@@ -520,6 +524,8 @@ def test_format_enumeration_properties(
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
     assert issubclass(spec.call_styles, enum.Enum)
+    assert issubclass(spec.version_formats, enum.Enum)
+    assert len(spec.version_formats) >= 1
 
 
 def test_python_no_any_import_when_all_defaults_overridden() -> None:

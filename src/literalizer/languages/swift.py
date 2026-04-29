@@ -316,7 +316,6 @@ class Swift(metaclass=LanguageCls):
 
     extension = ".swift"
     pygments_name = "swift"
-    language_version = "5.9"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
@@ -666,6 +665,13 @@ class Swift(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Swift."""
+
+        V5_9 = "5.9"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -731,6 +737,7 @@ class Swift(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V5_9
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nil"

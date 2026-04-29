@@ -296,7 +296,6 @@ class V(metaclass=LanguageCls):
 
     extension = ".v"
     pygments_name = "v"
-    language_version = "0.4"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -553,6 +552,13 @@ class V(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for V."""
+
+        V0_4 = "0.4"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -614,6 +620,7 @@ class V(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.INTERFACE
     )
+    language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "\t"
     call_style: CallStyles = CallStyles.POSITIONAL
 

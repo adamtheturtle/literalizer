@@ -499,7 +499,6 @@ class Gleam(metaclass=LanguageCls):
 
     extension = ".gleam"
     pygments_name = "gleam"
-    language_version = "1.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -790,6 +789,13 @@ class Gleam(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Gleam."""
+
+        V1 = "1.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -853,6 +859,7 @@ class Gleam(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1
     indent: str = "  "
     type_name: str = "GVal"
     constructor_prefix: str = "G"

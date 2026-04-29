@@ -185,7 +185,6 @@ class Forth(metaclass=LanguageCls):
 
     extension = ".fth"
     pygments_name = "forth"
-    language_version = "ANS Forth"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -394,6 +393,13 @@ class Forth(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Forth."""
+
+        ANS = "ANS Forth"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.SNAKE,
@@ -453,6 +459,7 @@ class Forth(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.ANS
     indent: str = "    "
 
     null_literal: ClassVar[str] = "0"

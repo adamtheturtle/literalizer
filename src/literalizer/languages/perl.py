@@ -139,7 +139,6 @@ class Perl(metaclass=LanguageCls):
 
     extension = ".pl"
     pygments_name = "perl"
-    language_version = "5.36"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -392,6 +391,13 @@ class Perl(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Perl."""
+
+        V5_36 = "5.36"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -452,6 +458,7 @@ class Perl(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V5_36
     indent: str = "    "
 
     null_literal: ClassVar[str] = "undef"

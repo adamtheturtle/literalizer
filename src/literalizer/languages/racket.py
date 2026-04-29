@@ -96,7 +96,6 @@ class Racket(metaclass=LanguageCls):
 
     extension = ".rkt"
     pygments_name = "racket"
-    language_version = "8.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -305,6 +304,13 @@ class Racket(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Racket."""
+
+        V8 = "8.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.KEBAB,
         IdentifierCase.SNAKE,
@@ -365,6 +371,7 @@ class Racket(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V8
     indent: str = "    "
 
     null_literal: ClassVar[str] = "(void)"

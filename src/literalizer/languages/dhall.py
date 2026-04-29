@@ -512,7 +512,6 @@ class Dhall(metaclass=LanguageCls):
 
     extension = ".dhall"
     pygments_name = None
-    language_version = "17.0.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -743,6 +742,13 @@ class Dhall(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Dhall."""
+
+        V17 = "17.0.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -813,6 +819,7 @@ class Dhall(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_union_name: str = "Value"
+    language_version: VersionFormats = VersionFormats.V17
     indent: str = "  "
     call_style: CallStyles = CallStyles.POSITIONAL
 

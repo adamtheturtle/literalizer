@@ -138,7 +138,6 @@ class Php(metaclass=LanguageCls):
 
     extension = ".php"
     pygments_name = "php"
-    language_version = "8.1"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -399,6 +398,13 @@ class Php(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for PHP."""
+
+        V8_1 = "8.1"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -461,6 +467,7 @@ class Php(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V8_1
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

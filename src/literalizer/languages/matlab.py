@@ -196,7 +196,6 @@ class Matlab(metaclass=LanguageCls):
 
     extension = ".m"
     pygments_name = "matlab"
-    language_version = "R2022a"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -425,6 +424,13 @@ class Matlab(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for MATLAB."""
+
+        R2022A = "R2022a"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -485,6 +491,7 @@ class Matlab(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.R2022A
     indent: str = "    "
 
     null_literal: ClassVar[str] = "[]"

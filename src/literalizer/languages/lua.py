@@ -129,7 +129,6 @@ class Lua(metaclass=LanguageCls):
 
     extension = ".lua"
     pygments_name = "lua"
-    language_version = "5.4"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -349,6 +348,13 @@ class Lua(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Lua."""
+
+        V5_4 = "5.4"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -409,6 +415,7 @@ class Lua(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V5_4
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nil"

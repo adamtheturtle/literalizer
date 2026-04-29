@@ -235,7 +235,6 @@ class TypeScript(metaclass=LanguageCls):
 
     extension = ".ts"
     pygments_name = "typescript"
-    language_version = "5.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -601,6 +600,13 @@ class TypeScript(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for TypeScript."""
+
+        V5 = "5.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -662,6 +668,7 @@ class TypeScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V5
     indent: str = "  "
 
     null_literal: ClassVar[str] = "null"

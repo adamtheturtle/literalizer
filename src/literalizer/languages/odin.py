@@ -200,7 +200,6 @@ class Odin(metaclass=LanguageCls):
 
     extension = ".odin"
     pygments_name = "odin"
-    language_version = "dev-2024"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -447,6 +446,13 @@ class Odin(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Odin."""
+
+        DEV_2024 = "dev-2024"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -507,6 +513,7 @@ class Odin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.DEV_2024
     indent: str = "\t"
 
     null_literal: ClassVar[str] = "nil"

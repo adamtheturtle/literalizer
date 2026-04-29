@@ -124,7 +124,6 @@ class Jsonnet(metaclass=LanguageCls):
 
     extension = ".jsonnet"
     pygments_name = "jsonnet"
-    language_version = "0.20"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -330,6 +329,13 @@ class Jsonnet(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Jsonnet."""
+
+        V0_20 = "0.20"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -420,6 +426,7 @@ class Jsonnet(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V0_20
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

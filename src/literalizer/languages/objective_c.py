@@ -257,7 +257,6 @@ class ObjectiveC(metaclass=LanguageCls):
 
     extension = ".m"
     pygments_name = "objective-c"
-    language_version = "2.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -478,6 +477,13 @@ class ObjectiveC(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Objective-C."""
+
+        V2 = "2.0"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
@@ -548,6 +554,7 @@ class ObjectiveC(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
     null_literal: ClassVar[str] = "[NSNull null]"

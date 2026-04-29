@@ -108,7 +108,6 @@ class Json5(metaclass=LanguageCls):
 
     extension = ".json5"
     pygments_name = "json5"
-    language_version = "1.0.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -306,6 +305,13 @@ class Json5(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for JSON5."""
+
+        V1 = "1.0.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -363,6 +369,7 @@ class Json5(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

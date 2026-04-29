@@ -149,7 +149,6 @@ class Ruby(metaclass=LanguageCls):
 
     extension = ".rb"
     pygments_name = "ruby"
-    language_version = "3.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -418,6 +417,13 @@ class Ruby(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Ruby."""
+
+        V3 = "3.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -479,6 +485,7 @@ class Ruby(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V3
     indent: str = "  "
 
     null_literal: ClassVar[str] = "nil"

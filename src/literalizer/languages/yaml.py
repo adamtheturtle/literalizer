@@ -82,7 +82,6 @@ class Yaml(metaclass=LanguageCls):
 
     extension = ".yaml"
     pygments_name = "yaml"
-    language_version = "1.2"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -288,6 +287,13 @@ class Yaml(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for YAML."""
+
+        V1_2 = "1.2"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
     )
@@ -344,6 +350,7 @@ class Yaml(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1_2
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

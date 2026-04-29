@@ -115,7 +115,6 @@ class JavaScript(metaclass=LanguageCls):
 
     extension = ".js"
     pygments_name = "javascript"
-    language_version = "ES2015"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -422,6 +421,13 @@ class JavaScript(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for JavaScript."""
+
+        ES2015 = "ES2015"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -483,6 +489,7 @@ class JavaScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.ES2015
     indent: str = "  "
 
     null_literal: ClassVar[str] = "null"

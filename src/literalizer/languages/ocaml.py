@@ -196,7 +196,6 @@ class OCaml(metaclass=LanguageCls):
 
     extension = ".ml"
     pygments_name = "ocaml"
-    language_version = "5.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -456,6 +455,13 @@ class OCaml(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for OCaml."""
+
+        V5 = "5.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -514,6 +520,7 @@ class OCaml(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V5
     indent: str = "    "
     type_name: str = "val_t"
     constructor_prefix: str = "O"

@@ -4,12 +4,15 @@ Changelog
 Next
 ----
 
-- Every built-in language class now exposes a ``language_version`` string
-  attribute that documents the version of the target language the generated
-  code is written for (e.g. ``Ada.language_version == "Ada 2022"``,
-  ``Python.language_version == "3.12"``).  The attribute is part of the
-  :class:`~literalizer.Language` protocol, so custom language
-  implementations must also define it.
+- Every built-in language class now exposes a ``VersionFormats`` enum and a
+  configurable ``language_version`` constructor parameter that selects which
+  version of the target language the generated code is written for.  For
+  example, ``Ada().language_version`` defaults to
+  ``Ada.version_formats.ADA_2022``, whose ``.value`` is ``"Ada 2022"``.
+  Each language currently defines a single version; additional versions
+  may be added in future releases.  Both ``version_formats`` and
+  ``language_version`` are part of the :class:`~literalizer.Language`
+  protocol, so custom language implementations must also define them.
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any
   ``{"$ref": "name"}`` mapping in the input data -- at the top level or

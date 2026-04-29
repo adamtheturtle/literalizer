@@ -151,7 +151,6 @@ class SystemVerilog(metaclass=LanguageCls):
 
     extension = ".sv"
     pygments_name = "systemverilog"
-    language_version = "IEEE 1800-2017"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -359,6 +358,13 @@ class SystemVerilog(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for SystemVerilog."""
+
+        IEEE_1800_2017 = "IEEE 1800-2017"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -422,6 +428,7 @@ class SystemVerilog(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.IEEE_1800_2017
     indent: str = "    "
 
     null_literal: ClassVar[str] = (

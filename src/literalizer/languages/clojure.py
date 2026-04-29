@@ -95,7 +95,6 @@ class Clojure(metaclass=LanguageCls):
 
     extension = ".clj"
     pygments_name = "clojure"
-    language_version = "1.11"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -300,6 +299,13 @@ class Clojure(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Clojure."""
+
+        V1_11 = "1.11"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.KEBAB,
     )
@@ -359,6 +365,7 @@ class Clojure(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1_11
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nil"

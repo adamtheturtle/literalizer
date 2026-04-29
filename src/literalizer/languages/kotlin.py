@@ -419,7 +419,6 @@ class Kotlin(metaclass=LanguageCls):
 
     extension = ".kts"
     pygments_name = "kotlin"
-    language_version = "1.9"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
@@ -794,6 +793,13 @@ class Kotlin(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Kotlin."""
+
+        V1_9 = "1.9"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -858,6 +864,7 @@ class Kotlin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

@@ -254,7 +254,6 @@ class VisualBasic(metaclass=LanguageCls):
 
     extension = ".vb"
     pygments_name = "vb.net"
-    language_version = ".NET 6"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True
@@ -473,6 +472,13 @@ class VisualBasic(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Visual Basic."""
+
+        DOTNET_6 = ".NET 6"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
@@ -583,6 +589,7 @@ class VisualBasic(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.DOTNET_6
     indent: str = "    "
 
     null_literal: ClassVar[str] = "Nothing"

@@ -860,7 +860,6 @@ class Cpp(metaclass=LanguageCls):
 
     extension = ".cpp"
     pygments_name = "cpp"
-    language_version = "C++20"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -1164,6 +1163,13 @@ class Cpp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for C++."""
+
+        CPP20 = "C++20"
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -1276,6 +1282,7 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
     null_literal: ClassVar[str] = "nullptr"

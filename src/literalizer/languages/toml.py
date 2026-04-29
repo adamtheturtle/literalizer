@@ -108,7 +108,6 @@ class Toml(metaclass=LanguageCls):
 
     extension = ".toml"
     pygments_name = "toml"
-    language_version = "1.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -314,6 +313,13 @@ class Toml(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for TOML."""
+
+        V1 = "1.0"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
     )
@@ -370,6 +376,7 @@ class Toml(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V1
     indent: str = "    "
 
     null_literal: ClassVar[str] = '""'

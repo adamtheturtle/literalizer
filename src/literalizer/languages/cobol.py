@@ -272,7 +272,6 @@ class Cobol(metaclass=LanguageCls):
 
     extension = ".cob"
     pygments_name = "cobol"
-    language_version = "2002"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -470,6 +469,13 @@ class Cobol(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for COBOL."""
+
+        V2002 = "2002"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
     )
@@ -543,6 +549,7 @@ class Cobol(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2002
     indent: str = "    "
 
     null_literal: ClassVar[str] = "SPACES"

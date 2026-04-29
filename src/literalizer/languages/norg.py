@@ -80,7 +80,6 @@ class Norg(metaclass=LanguageCls):
 
     extension = ".norg"
     pygments_name = None
-    language_version = "0.14"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -280,6 +279,13 @@ class Norg(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Norg."""
+
+        V0_14 = "0.14"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
     )
@@ -336,6 +342,7 @@ class Norg(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V0_14
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"

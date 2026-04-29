@@ -284,7 +284,6 @@ class Sml(metaclass=LanguageCls):
 
     extension = ".sml"
     pygments_name = "sml"
-    language_version = "SML '97"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
@@ -520,6 +519,13 @@ class Sml(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for SML."""
+
+        SML_97 = "SML '97"
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -579,6 +585,7 @@ class Sml(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.SML_97
     indent: str = "    "
     type_name: str = "val_t"
     constructor_prefix: str = "S"
