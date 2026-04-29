@@ -276,6 +276,27 @@ class CallSupport(enum.Enum):
     """
 
 
+class Support(enum.Enum):
+    """Tri-state describing the level of support for a language capability.
+
+    Modelled on :class:`CallSupport` but for capabilities where there is
+    no accompanying configuration object.
+    """
+
+    NOT_IN_LANGUAGE = "not_in_language"
+    """The target language has no syntax for this feature."""
+
+    NOT_IMPLEMENTED_BY_TOOL = "not_implemented_by_tool"
+    """The target language has syntax for this feature but literalizer
+    has not yet implemented it.
+    """
+
+    SUPPORTED = "supported"
+    """The target language supports this feature and literalizer has
+    implemented it.
+    """
+
+
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
@@ -490,14 +511,8 @@ class LanguageCls(type):
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
-    supports_default_set_element_type: bool
-    supports_default_sequence_element_type: bool
-    supports_default_dict_value_type: bool
-    supports_default_dict_key_type: bool
-    supports_default_ordered_map_value_type: bool
-    supports_special_floats: bool
-    supports_variable_names: bool
-    supports_dotted_calls: bool
+    variable_name_support: Support
+    dotted_call_support: Support
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -869,6 +884,33 @@ class Language(Protocol):
         emitted as standalone comment lines immediately before the
         variable declaration rather than being appended after the
         value.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def variable_name_support(self) -> Support:
+        """Whether the language supports variable declarations.
+
+        :attr:`~Support.NOT_IN_LANGUAGE` means the language has no
+        variable declaration syntax (e.g. YAML, JSON5).
+        :attr:`~Support.NOT_IMPLEMENTED_BY_TOOL` means the language has
+        variable syntax but literalizer has not yet implemented it.
+        :attr:`~Support.SUPPORTED` means variable declarations are
+        fully supported.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dotted_call_support(self) -> Support:
+        """Whether the language supports dotted function call targets
+        (e.g. ``foo.bar.baz(args)``).
+
+        :attr:`~Support.NOT_IN_LANGUAGE` means the language has no
+        dotted call syntax.
+        :attr:`~Support.NOT_IMPLEMENTED_BY_TOOL` means the language
+        supports it but literalizer has not yet implemented it.
+        :attr:`~Support.SUPPORTED` means dotted call targets are
+        fully supported.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

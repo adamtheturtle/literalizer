@@ -56,6 +56,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
+    Support,
     TrailingCommaConfig,
     identity_call_ref_identifier,
     no_call_stub,
@@ -500,14 +501,8 @@ class Roc(metaclass=LanguageCls):
 
     extension = ".roc"
     pygments_name = "text"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
-    supports_variable_names = True
-    supports_dotted_calls = True
-    supports_special_floats = True
+    variable_name_support = Support.SUPPORTED
+    dotted_call_support = Support.SUPPORTED
 
     class DateFormats(enum.Enum):
         """Date format options for Roc."""

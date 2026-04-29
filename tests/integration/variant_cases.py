@@ -14,6 +14,7 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
+from literalizer._language import Support
 from literalizer.languages import (
     C,
     Crystal,
@@ -39,7 +40,10 @@ from literalizer.languages import (
     VisualBasic,
 )
 
-from .case_discovery import cases_with_special_floats
+from .case_discovery import (
+    cases_with_special_floats,
+    lang_raises_for_special_floats,
+)
 from .language_specs import make_spec, sorted_languages
 
 _CASES_DIR = Path(__file__).parent / "cases"
@@ -48,7 +52,9 @@ _CASES_DIR = Path(__file__).parent / "cases"
 @beartype
 def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
     """Return the wrap variable name for a language class."""
-    return "my_data" if lang_cls.supports_variable_names else None
+    if lang_cls.variable_name_support == Support.SUPPORTED:
+        return "my_data"
+    return None
 
 
 @beartype
@@ -266,7 +272,9 @@ def build_default_set_element_type_variants() -> Iterable[Variant]:
     """Build default-set-type variants for languages that support it."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_set_element_type:
+        if "default_set_element_type" not in getattr(
+            lang_cls, "__dataclass_fields__", {}
+        ):
             continue
         type_name = DEFAULT_SET_ELEMENT_TYPE_OVERRIDES.get(
             lang_cls,
@@ -291,7 +299,9 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_sequence_element_type:
+        if "default_sequence_element_type" not in getattr(
+            lang_cls, "__dataclass_fields__", {}
+        ):
             continue
         type_name = DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES.get(
             lang_cls,
@@ -318,7 +328,9 @@ def build_default_dict_value_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_dict_value_type:
+        if "default_dict_value_type" not in getattr(
+            lang_cls, "__dataclass_fields__", {}
+        ):
             continue
         type_name = DEFAULT_DICT_VALUE_TYPE_OVERRIDES.get(
             lang_cls,
@@ -343,7 +355,9 @@ def build_default_dict_key_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_dict_key_type:
+        if "default_dict_key_type" not in getattr(
+            lang_cls, "__dataclass_fields__", {}
+        ):
             continue
         type_name = DEFAULT_DICT_KEY_TYPE_OVERRIDES.get(
             lang_cls,
@@ -368,7 +382,9 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_ordered_map_value_type:
+        if "default_ordered_map_value_type" not in getattr(
+            lang_cls, "__dataclass_fields__", {}
+        ):
             continue
         type_name = DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES.get(
             lang_cls,
@@ -1374,7 +1390,7 @@ def build_variant_cases() -> list[VariantCase]:
                 for ci in inputs
                 if not (
                     ci.case_dir_name in special_float_cases
-                    and not variant.lang_cls.supports_special_floats
+                    and lang_raises_for_special_floats(variant.lang_cls)
                 )
             )
     cases.extend(build_modifier_variant_cases())

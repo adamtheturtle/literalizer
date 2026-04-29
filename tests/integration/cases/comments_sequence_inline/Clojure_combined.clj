@@ -1,8 +1,0 @@
-(def my_data [
-    "a"  ; note a
-    "b"  ; note b
-])
-(def my_data [
-    "a"  ; note a
-    "b"  ; note b
-])

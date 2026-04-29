@@ -125,6 +125,58 @@ class CallsNotSupportedByToolError(Exception):
         self.language_name = language_name
 
 
+class VariableNamesNotSupportedByLanguageError(Exception):
+    """Raised when the target language has no variable declaration syntax
+    (e.g. pure data formats like YAML, JSON5).
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``VariableNamesNotSupportedByLanguageError``."""
+        super().__init__(f"{language_name} has no variable declaration syntax")
+        self.language_name = language_name
+
+
+class VariableNamesNotSupportedByToolError(Exception):
+    """Raised when literalizer has not yet implemented variable declaration
+    rendering for the target language, even though the language itself has
+    variable syntax.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``VariableNamesNotSupportedByToolError``."""
+        super().__init__(
+            f"literalizer does not support variable declaration rendering "
+            f"for {language_name}"
+        )
+        self.language_name = language_name
+
+
+class DottedCallsNotSupportedByLanguageError(Exception):
+    """Raised when the target language has no dotted function call syntax
+    (e.g. ``foo.bar(args)``).
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``DottedCallsNotSupportedByLanguageError``."""
+        super().__init__(f"{language_name} has no dotted function call syntax")
+        self.language_name = language_name
+
+
+class DottedCallsNotSupportedByToolError(Exception):
+    """Raised when literalizer has not yet implemented dotted call target
+    rendering for the target language, even though the language itself
+    supports dotted calls.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``DottedCallsNotSupportedByToolError``."""
+        super().__init__(
+            f"literalizer does not support dotted call target rendering "
+            f"for {language_name}"
+        )
+        self.language_name = language_name
+
+
 class CallArgNotSupportedError(Exception):
     """Raised when a call argument value cannot be expressed as a
     positional argument in the target language's call syntax.

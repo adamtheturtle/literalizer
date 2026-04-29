@@ -49,6 +49,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
+    Support,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
@@ -132,14 +133,8 @@ class Hcl(metaclass=LanguageCls):
 
     extension = ".hcl"
     pygments_name = "hcl"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
-    supports_special_floats = True
-    supports_variable_names = True
-    supports_dotted_calls = False
+    variable_name_support = Support.SUPPORTED
+    dotted_call_support = Support.NOT_IN_LANGUAGE
 
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""

@@ -15,7 +15,10 @@ from beartype import beartype
 from ruamel.yaml import YAML
 
 import literalizer
-from literalizer.exceptions import InvalidDictKeyError
+from literalizer.exceptions import (
+    InvalidDictKeyError,
+    UnrepresentableSpecialFloatError,
+)
 
 from .call_cases import CALL_CASE_CONFIGS
 from .language_specs import (
@@ -43,6 +46,29 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
             language=lang_cls(),
         )
     except InvalidDictKeyError:
+        return True
+    return False
+
+
+@functools.cache
+def lang_raises_for_special_floats(
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Return ``True`` if the language raises
+    :exc:`UnrepresentableSpecialFloatError` for a non-finite float.
+
+    Used to skip golden-file cases whose input contains special floats for
+    languages whose contract is to raise
+    :exc:`UnrepresentableSpecialFloatError` for those inputs rather than
+    produce rendered output.
+    """
+    try:
+        literalizer.literalize(
+            source="{value: .inf}",
+            input_format=literalizer.InputFormat.YAML,
+            language=lang_cls(),
+        )
+    except UnrepresentableSpecialFloatError:
         return True
     return False
 
@@ -150,7 +176,7 @@ def discover_cases(
                 lang_cls
             ):
                 continue
-            if special_float and not lang_cls.supports_special_floats:
+            if special_float and lang_raises_for_special_floats(lang_cls):
                 continue
             cases.append((case_dir.name, lang_cls))
     return cases
@@ -213,7 +239,7 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
                 lang_cls
             ):
                 continue
-            if special_float and not lang_cls.supports_special_floats:
+            if special_float and lang_raises_for_special_floats(lang_cls):
                 continue
             spec = make_spec(lang_cls=lang_cls)
             redef_styles = find_redefinition_styles(spec=spec)

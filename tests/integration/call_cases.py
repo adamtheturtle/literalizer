@@ -17,10 +17,11 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._language import StubReturn
+from literalizer._language import StubReturn, Support
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
+    VariableNamesNotSupportedByToolError,
 )
 from literalizer.languages import Ada, Sml, Wren
 
@@ -367,7 +368,9 @@ def discover_call_cases() -> list[CallCase]:
             if len(lang_cls.CallStyles) == 0:
                 continue
             has_dotted_target = "." in config.target_function
-            if has_dotted_target and not lang_cls.supports_dotted_calls:
+            if has_dotted_target and (
+                lang_cls.dotted_call_support != Support.SUPPORTED
+            ):
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
@@ -509,6 +512,12 @@ def run_call_golden_case(
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_cls.__name__} rejected call arg: {exc.reason}",
+        )
+    except VariableNamesNotSupportedByToolError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} does not yet support variable"
+            " declaration rendering",
         )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []

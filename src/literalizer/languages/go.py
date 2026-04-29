@@ -64,6 +64,7 @@ from literalizer._language import (
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
+    Support,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
@@ -248,14 +249,8 @@ class Go(metaclass=LanguageCls):
 
     extension = ".go"
     pygments_name = "go"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = True
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = True
-    supports_special_floats = True
-    supports_variable_names = True
-    supports_dotted_calls = True
+    variable_name_support = Support.SUPPORTED
+    dotted_call_support = Support.SUPPORTED
 
     class DateFormats(enum.Enum):
         """Date format options for Go."""

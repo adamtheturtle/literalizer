@@ -42,6 +42,7 @@ from literalizer.languages import (
     Bash,
     Cobol,
     Dart,
+    Elixir,
     Fortran,
     FSharp,
     Gleam,
@@ -668,7 +669,7 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
         literalize(
             source="42",
             input_format=InputFormat.JSON,
-            language=Yaml(),
+            language=Elixir(),
             variable_form=BothVariableForms(name="x"),
             wrap_in_file=True,
         )

@@ -32,6 +32,7 @@ from literalizer._language import (
     PostfixCallStyle,
     PrefixCallStyle,
     StubReturn,
+    Support,
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._preamble import compute_preamble
@@ -39,9 +40,13 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallsNotSupportedByLanguageError,
+    DottedCallsNotSupportedByToolError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
+    VariableNamesNotSupportedByLanguageError,
+    VariableNamesNotSupportedByToolError,
 )
 
 
@@ -1110,7 +1115,7 @@ def _format_collection_lines(
                 trailing_comma=seq_trailing,
                 spec=spec,
             )
-        case _ as unreachable:
+        case _ as unreachable:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(unreachable)
     return lines
 
@@ -1557,6 +1562,18 @@ def literalize(
             and *wrap_in_file* is ``False``, or if the language's
             ``declaration_style`` does not support redefinition.
     """
+    if variable_form is not None:
+        match language.variable_name_support:
+            case Support.NOT_IN_LANGUAGE:
+                raise VariableNamesNotSupportedByLanguageError(
+                    language_name=type(language).__name__,
+                )
+            case Support.NOT_IMPLEMENTED_BY_TOOL:
+                raise VariableNamesNotSupportedByToolError(
+                    language_name=type(language).__name__,
+                )
+            case Support.SUPPORTED:
+                pass
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
             msg = "BothVariableForms requires wrap_in_file=True"
@@ -1814,7 +1831,7 @@ def _format_call_args(
                 sep=sep,
                 kw_prefix=kw_prefix,
             )
-        case _ as unreachable:
+        case _ as unreachable:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(unreachable)
 
 
@@ -1965,7 +1982,7 @@ def _assemble_call(
                 arg_separator=sep,
                 wrapped_call_template=wrapped_call_template,
             )
-        case _ as unreachable:
+        case _ as unreachable:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(unreachable)
     return f"{call_expr}{statement_terminator}"
 
@@ -2102,6 +2119,28 @@ def _render_call_whole(
 
 
 @beartype
+def _check_dotted_call_support(
+    *,
+    language: Language,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Raise if *language* does not support a dotted call target."""
+    if len(target_function_parts) <= 1:
+        return
+    match language.dotted_call_support:
+        case Support.NOT_IN_LANGUAGE:
+            raise DottedCallsNotSupportedByLanguageError(
+                language_name=type(language).__name__,
+            )
+        case Support.NOT_IMPLEMENTED_BY_TOOL:
+            raise DottedCallsNotSupportedByToolError(
+                language_name=type(language).__name__,
+            )
+        case Support.SUPPORTED:
+            pass
+
+
+@beartype
 def literalize_call(
     *,
     source: str,
@@ -2191,6 +2230,10 @@ def literalize_call(
             pass
 
     target_function_parts = tuple(target_function.split(sep="."))
+    _check_dotted_call_support(
+        language=language,
+        target_function_parts=target_function_parts,
+    )
     if ref_case is not None and ref_case not in language.identifier_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,

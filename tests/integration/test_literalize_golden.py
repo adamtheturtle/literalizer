@@ -18,6 +18,7 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     NullInCollectionError,
     UnrepresentableIntegerError,
+    VariableNamesNotSupportedByToolError,
 )
 
 from .case_discovery import (
@@ -155,6 +156,12 @@ def test_golden_file_combined_variable_forms(
                 pytest.skip(
                     f"{lang_cls.__name__} cannot represent this "
                     "heterogeneous input"
+                )
+            except VariableNamesNotSupportedByToolError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_cls.__name__} does not yet support variable "
+                    "declaration rendering"
                 )
             check_golden(
                 file_regression=file_regression,
