@@ -412,13 +412,14 @@ def _nim_call_stub(
     """Return Nim stub declarations for a call name.
 
     VOID stubs use templates with ``varargs[untyped]``.  VALUE stubs use
-    generic procs with ``{.discardable.}`` because templates do not
-    support that pragma in Nim 2.x, and calling a value-returning
-    template at statement level raises a compiler error without it.
+    generic ``proc`` definitions with ``{.discardable.}`` because the
+    ``{.discardable.}`` pragma is not valid on templates in Nim 2.x, and
+    calling a value-returning template at statement level raises a
+    compiler error without it.
 
     For single-part names the stub is emitted at module scope.  For
-    dotted names object types are built bottom-up so that Nim's Uniform
-    Function Call Syntax lets the caller write
+    dotted names object types are built bottom-up so that the Uniform
+    Function Call Syntax of Nim lets the caller write
     ``app.client.fetch(x)`` as sugar for ``fetch(app.client, x)``.
     """
     method = parts[-1]
@@ -450,7 +451,7 @@ def _nim_call_stub(
         lines.append(f"var {root}: {root_type}")
         return tuple(lines)
 
-    # VALUE: generic procs so {.discardable.} is valid
+    # VALUE: use a generic proc instead of a template
     type_params = [f"T{i}" for i in range(len(_params))]
     type_clause = f"[{', '.join(type_params)}]" if type_params else ""
     if len(parts) == 1:
@@ -1067,10 +1068,10 @@ class Nim(metaclass=LanguageCls):
     ) -> Callable[[Value], tuple[str, ...]]:
         """No data-dependent preamble for call context.
 
-        Nim's ``data_dependent_preamble`` adds ``import json`` for
-        variable declarations that use ``%*``.  Call arguments are
-        formatted as inline literals and never use ``%*``, so
-        ``import json`` is never needed in a call context.
+        The ``data_dependent_preamble`` method of Nim adds
+        ``import json`` for variable declarations that use ``%*``.
+        Call arguments are formatted as inline literals and never use
+        ``%*``, so ``import json`` is never needed in a call context.
         """
         return no_data_preamble
 
