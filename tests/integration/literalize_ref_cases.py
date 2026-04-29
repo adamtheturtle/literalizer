@@ -76,21 +76,32 @@ def _inject_stubs_before_variable(
     stub_codes: list[str],
 ) -> str:
     """Insert stub declarations before the first line containing
-    ``variable_name``.
+    ``variable_name`` using a case-insensitive match.
+
+    The case-insensitive search handles languages such as Erlang that
+    capitalise variable names in output (e.g. ``my_data`` →
+    ``My_data``).  Matches where the variable name is immediately
+    preceded by ``[`` are skipped to avoid false positives on
+    module-declaration lines such as Roc's ``module [my_data]``.
     """
     if not stub_codes or not variable_name:
         return code
     lines = code.split(sep="\n")
+    lower_name = variable_name.lower()
     for i, line in enumerate(iterable=lines):
-        if variable_name in line:
-            indent = len(line) - len(line.lstrip())
-            prefix = " " * indent
-            stub_lines = [
-                prefix + stub_line if stub_line else ""
-                for stub_code in stub_codes
-                for stub_line in stub_code.split(sep="\n")
-            ]
-            return "\n".join(lines[:i] + stub_lines + lines[i:])
+        idx = line.lower().find(lower_name)
+        if idx == -1:
+            continue
+        if idx > 0 and line[idx - 1] == "[":
+            continue
+        indent = len(line) - len(line.lstrip())
+        prefix = " " * indent
+        stub_lines = [
+            prefix + stub_line if stub_line else ""
+            for stub_code in stub_codes
+            for stub_line in stub_code.split(sep="\n")
+        ]
+        return "\n".join(lines[:i] + stub_lines + lines[i:])
     return code
 
 

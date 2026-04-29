@@ -6,7 +6,7 @@ def main():
         "_": "_",
     }
     var my_data = [
-        val_x,
-        val_y,
+        val_x^,
+        val_y^,
     ]
     _ = my_data

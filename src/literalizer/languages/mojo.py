@@ -64,7 +64,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
@@ -808,10 +807,18 @@ class Mojo(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Append ``^`` to trigger Mojo's move/transfer semantics.
+
+        Mojo ``Dict`` does not implement ``Copyable``, so a bare
+        variable reference fails to compile.  Using ``^`` transfers
+        ownership instead of copying.
         """
-        return identity_call_ref_identifier
+
+        def _format_mojo_ref_identifier(name: str, /) -> str:
+            """Append ``^`` for the Mojo transfer operator."""
+            return f"{name}^"
+
+        return _format_mojo_ref_identifier
 
     @cached_property
     def call_style_config(self) -> CallStyle:
