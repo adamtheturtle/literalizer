@@ -24,6 +24,7 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Ada,
+    Dhall,
     Elm,
     Erlang,
     Fortran,
@@ -31,6 +32,7 @@ from literalizer.languages import (
     Haskell,
     Hcl,
     Jsonnet,
+    Mojo,
     ObjectiveC,
     Php,
     PowerShell,
@@ -148,6 +150,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_comments",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_comments_dict_args",
         target_function="process",
         parameter_names=["value"],
         call_transform=None,
@@ -420,6 +434,18 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Erlang,
             Haskell,
             Jsonnet,
+            PureScript,
+            Roc,
+        }
+    ),
+    "call_comments_dict_args": frozenset(
+        {
+            Dhall,
+            Elm,
+            Erlang,
+            Haskell,
+            Jsonnet,
+            Mojo,
             PureScript,
             Roc,
         }

@@ -13,7 +13,7 @@ from ruamel.yaml.compat import ordereddict
 from literalizer._checks import check_data
 from literalizer._comments import (
     CollectionComments,
-    apply_collection_comments,
+    apply_collection_comments_to_elements,
     extract_yaml_comments,
     prepend_collection_comments,
 )
@@ -285,6 +285,7 @@ def _format_ordered_map_value(
     value: ordereddict,
     spec: Language,
     wrap_ids: frozenset[int],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format an ordered map as a native language literal."""
     ordered_map_cfg = spec.ordered_map_format_config
@@ -314,6 +315,7 @@ def _format_ordered_map_value(
                 dict_open_override=None,
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
+                ref_case=ref_case,
             ),
             v,
             _maybe_wrap_child(
@@ -326,6 +328,7 @@ def _format_ordered_map_value(
                     wrap_ids=wrap_ids,
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
+                    ref_case=ref_case,
                 ),
                 spec=spec,
             ),
@@ -344,6 +347,7 @@ def _format_dict_value(
     spec: Language,
     open_override: str | None,
     wrap_ids: frozenset[int],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -380,6 +384,7 @@ def _format_dict_value(
                 dict_open_override=None,
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
+                ref_case=ref_case,
             ),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
@@ -392,6 +397,7 @@ def _format_dict_value(
                     wrap_ids=wrap_ids,
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
+                    ref_case=ref_case,
                 ),
                 spec=spec,
             ),
@@ -416,6 +422,7 @@ def _format_dict_entry_value(
     wrap_ids: frozenset[int],
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -434,6 +441,7 @@ def _format_dict_entry_value(
             wrap_ids=wrap_ids,
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
+            ref_case=ref_case,
         )
     return _format_value(
         value=value,
@@ -441,6 +449,7 @@ def _format_dict_entry_value(
         dict_open_override=None,
         wrap_ids=wrap_ids,
         sequence_open_override=None,
+        ref_case=ref_case,
     )
 
 
@@ -717,6 +726,7 @@ def _format_sequence_child(
     wrap_ids: frozenset[int],
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -767,6 +777,7 @@ def _format_sequence_child(
         sequence_open_override=(
             parent_override if parent_override is not None else sibling_open
         ),
+        ref_case=ref_case,
     )
 
 
@@ -778,6 +789,7 @@ def _format_list_value(
     wrap_ids: frozenset[int],
     sequence_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format a list as a native language literal.
 
@@ -825,6 +837,7 @@ def _format_list_value(
                     child_sequence_open_overrides=(
                         child_sequence_open_overrides
                     ),
+                    ref_case=ref_case,
                 ),
                 spec=spec,
             ),
@@ -860,6 +873,7 @@ def _format_value(
     dict_open_override: str | None,
     wrap_ids: frozenset[int],
     sequence_open_override: str | None,
+    ref_case: IdentifierCase | None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -879,13 +893,26 @@ def _format_value(
     be wrapped by the spec's
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
     hook.
+
+    When *ref_case* is set, ``{"$ref": "name"}`` markers anywhere in
+    the value tree are rendered as bare identifiers via
+    :attr:`~literalizer._language.Language.format_call_ref_identifier`,
+    with the identifier name converted to *ref_case* first.  When
+    *ref_case* is ``None``, ``{"$ref": "name"}`` dicts are formatted as
+    ordinary literal dicts.
     """
+    if ref_case is not None:
+        ref_name = _extract_call_arg_ref_name(value=value)
+        if ref_name is not None:
+            ref_name = ref_case.convert(name=ref_name)
+            return spec.format_call_ref_identifier(ref_name)
     match value:
         case ordereddict():
             return _format_ordered_map_value(
                 value=value,
                 spec=spec,
                 wrap_ids=wrap_ids,
+                ref_case=ref_case,
             )
         case dict():
             return _format_dict_value(
@@ -893,6 +920,7 @@ def _format_value(
                 spec=spec,
                 open_override=dict_open_override,
                 wrap_ids=wrap_ids,
+                ref_case=ref_case,
             )
         case set():
             return _format_set_value(value=value, spec=spec, wrap_ids=wrap_ids)
@@ -903,6 +931,7 @@ def _format_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=sequence_open_override,
                 child_sequence_open_overrides=(),
+                ref_case=ref_case,
             )
         case _:
             return _format_scalar(value=value, spec=spec)
@@ -970,6 +999,7 @@ def _format_collection_lines(
     trailing_comma: bool,
     is_ordered_map: bool,
     wrap_ids: frozenset[int],
+    ref_case: IdentifierCase | None,
 ) -> list[str]:
     """Format collection elements as indented lines."""
     lines: list[str] = []
@@ -994,12 +1024,13 @@ def _format_collection_lines(
             )
             formatted_entries: list[str] = []
             for k, v in entries:
-                formatted_key = _format_value(
+                formatted_key: str = _format_value(
                     value=k,
                     spec=spec,
                     dict_open_override=None,
                     wrap_ids=wrap_ids,
                     sequence_open_override=None,
+                    ref_case=ref_case,
                 )
                 formatted_val = _maybe_wrap_child(
                     parent_id=parent_id,
@@ -1011,6 +1042,7 @@ def _format_collection_lines(
                         wrap_ids=wrap_ids,
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
+                        ref_case=ref_case,
                     ),
                     spec=spec,
                 )
@@ -1057,6 +1089,7 @@ def _format_collection_lines(
                             dict_open_override=None,
                             wrap_ids=wrap_ids,
                             sequence_open_override=None,
+                            ref_case=ref_case,
                         ),
                         spec=spec,
                     ),
@@ -1098,6 +1131,7 @@ def _format_collection_lines(
                             wrap_ids=wrap_ids,
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
+                            ref_case=ref_case,
                         ),
                         spec=spec,
                     ),
@@ -1128,6 +1162,7 @@ def _literalize(
     language: Language,
     line_prefix: str,
     include_delimiters: bool,
+    ref_case: IdentifierCase | None = None,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -1153,7 +1188,16 @@ def _literalize(
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
+        ref_case: When set, any ``{"$ref": "name"}`` mapping is rendered
+            as a bare identifier instead of a literal dict.
     """
+    if ref_case is not None:
+        ref_name = _extract_call_arg_ref_name(value=data)
+        if ref_name is not None:
+            ref_name = ref_case.convert(name=ref_name)
+            identifier = language.format_call_ref_identifier(ref_name)
+            return f"{line_prefix}{identifier}"
+
     check_data(data=data, spec=language)
 
     wrap_ids = _compute_wrap_ids(data=data, spec=language)
@@ -1177,12 +1221,13 @@ def _literalize(
     # delegate to _format_value which already returns the correct
     # compact representation (e.g. ``{}``, ``[]``).
     if not data and include_delimiters:
-        formatted = _format_value(
+        formatted: str = _format_value(
             value=data,
             spec=language,
             dict_open_override=None,
             wrap_ids=wrap_ids,
             sequence_open_override=None,
+            ref_case=ref_case,
         )
         return f"{line_prefix}{formatted}"
 
@@ -1204,6 +1249,7 @@ def _literalize(
             dict_open_override=None,
             wrap_ids=wrap_ids,
             sequence_open_override=None,
+            ref_case=ref_case,
         )
         return f"{line_prefix}{formatted}"
 
@@ -1213,13 +1259,14 @@ def _literalize(
 
     is_ordered_map = isinstance(data, ordereddict)
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
-    lines = _format_collection_lines(
+    lines: list[str] = _format_collection_lines(
         data=data,
         spec=language,
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         wrap_ids=wrap_ids,
+        ref_case=ref_case,
     )
 
     body = "\n".join(lines)
@@ -1301,6 +1348,7 @@ def _literalize_pre_form(
     language: Language,
     pre_indent_level: int,
     include_delimiters: bool,
+    ref_case: IdentifierCase | None = None,
 ) -> _PreFormState:
     """Run the variable-form-independent phase of :func:`literalize`.
 
@@ -1318,6 +1366,7 @@ def _literalize_pre_form(
         language=language,
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
+        ref_case=ref_case,
     )
 
     comment_line_prefix = (
@@ -1451,6 +1500,7 @@ def _literalize_both_forms(
     pre_indent_level: int,
     include_delimiters: bool,
     variable_form: BothVariableForms,
+    ref_case: IdentifierCase | None = None,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
     pre_form = _literalize_pre_form(
@@ -1459,6 +1509,7 @@ def _literalize_both_forms(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
+        ref_case=ref_case,
     )
     declaration = _literalize_apply_form(
         pre_form=pre_form,
@@ -1506,6 +1557,7 @@ def literalize(
     include_delimiters: bool = True,
     variable_form: VariableForm | None = None,
     wrap_in_file: bool = False,
+    ref_case: IdentifierCase | None = None,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
@@ -1545,6 +1597,14 @@ def literalize(
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
+        ref_case: When set, ``{"$ref": "name"}`` markers anywhere in
+            the data are rendered as bare identifiers using the
+            language's
+            :attr:`~literalizer._language.Language.format_call_ref_identifier`
+            hook, with the identifier name first converted to
+            *ref_case*.  When ``None`` (default), ``{"$ref": ...}``
+            dicts are treated as ordinary literal dicts with no special
+            handling.
 
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
@@ -1562,7 +1622,15 @@ def literalize(
         ValueError: If *variable_form* is :class:`BothVariableForms`
             and *wrap_in_file* is ``False``, or if the language's
             ``declaration_style`` does not support redefinition.
+        UnsupportedIdentifierCaseError: If *ref_case* is not in
+            :attr:`~literalizer._language.Language.identifier_cases`
+            for the target language.
     """
+    if ref_case is not None and ref_case not in language.identifier_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
             msg = "BothVariableForms requires wrap_in_file=True"
@@ -1581,6 +1649,7 @@ def literalize(
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
             variable_form=variable_form,
+            ref_case=ref_case,
         )
 
     pre_form = _literalize_pre_form(
@@ -1589,6 +1658,7 @@ def literalize(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
+        ref_case=ref_case,
     )
     return _literalize_apply_form(
         pre_form=pre_form,
@@ -1709,6 +1779,7 @@ def _format_single_call_arg(
             dict_open_override=dict_open_override,
             wrap_ids=wrap_ids,
             sequence_open_override=None,
+            ref_case=None,
         ),
     )
 
@@ -2017,7 +2088,7 @@ def _render_call_per_element(
         "format_call_statement",
         _identity_call_statement,
     )
-    lines: list[str] = []
+    rendered_elements: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
         non_ref_args = [
@@ -2041,7 +2112,7 @@ def _render_call_per_element(
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
         )
-        lines.append(
+        rendered_elements.append(
             format_call_statement(
                 _assemble_call(
                     target_function=target_function,
@@ -2052,18 +2123,15 @@ def _render_call_per_element(
                 )
             )
         )
-    base = "\n".join(lines)
     if collection_comments is not None:
         comment_cfg = language.comment_config
-        base = apply_collection_comments(
+        return apply_collection_comments_to_elements(
+            rendered_elements=rendered_elements,
             collection_comments=collection_comments,
-            base=base,
             comment_prefix=comment_cfg.prefix,
             comment_suffix=comment_cfg.suffix,
-            comment_line_prefix="",
-            include_delimiters=False,
         )
-    return base
+    return "\n".join(rendered_elements)
 
 
 @beartype
