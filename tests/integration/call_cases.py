@@ -339,7 +339,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # Ada and Fortran do not allow function-call results to be silently
     # discarded: a function call cannot appear as a statement.  The
     # identity call_transform (lambda c: c) causes a VALUE stub but the
-    # call is used as a bare statement, which GNAT and gfortran reject.
+    # call is used as a bare statement, which both compilers reject.
     "call_transform_no_wrapper": frozenset({Ada, Fortran}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren: Wren has no free-function call syntax, so a bare call like

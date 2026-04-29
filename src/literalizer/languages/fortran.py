@@ -733,8 +733,7 @@ class Fortran(metaclass=LanguageCls):
         is a two-part string: a ``type(fval_t) :: name`` declaration on
         the first line and an assignment on the remaining lines.  This
         method splits them so that all type-declaration lines appear
-        before any assignment or call lines, producing a program that
-        gfortran accepts.
+        before any assignment or call lines, producing a valid program.
 
         Call stubs are placed in the ``contains`` section via
         :meth:`wrap_in_file`.
