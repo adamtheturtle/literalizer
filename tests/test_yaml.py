@@ -10,11 +10,6 @@ from literalizer import (
     NewVariable,
     literalize,
 )
-from literalizer._comments import (
-    CollectionComments,
-    ElementComments,
-    apply_collection_comments_to_elements,
-)
 from literalizer.exceptions import (
     HeterogeneousCollectionError,
     InvalidDictKeyError,
@@ -720,40 +715,3 @@ def test_dhall_backtick_label_unescaping() -> None:
         } in my_data"""
     )
     assert result.code == expected
-
-
-def test_apply_collection_comments_to_elements_multiline_render() -> None:
-    """Comments attach to the correct element when a render is multi-line.
-
-    ``apply_collection_comments_to_elements`` operates at element
-    granularity, so a rendered element that spans multiple lines does
-    not shift later comments to the wrong element.
-    """
-    rendered_elements = [
-        "first_line_of_element_0\nsecond_line_of_element_0",
-        "element_1",
-        "element_2_no_inline",
-    ]
-    collection_comments = CollectionComments(
-        elements=(
-            ElementComments(before=("before element 0",), inline="inline 0"),
-            ElementComments(before=("before element 1",), inline="inline 1"),
-            ElementComments(before=(), inline=""),
-        ),
-        trailing=("trailing",),
-    )
-    result = apply_collection_comments_to_elements(
-        rendered_elements=rendered_elements,
-        collection_comments=collection_comments,
-        comment_prefix="#",
-        comment_suffix="",
-    )
-    assert result == (
-        "# before element 0\n"
-        "first_line_of_element_0\n"
-        "second_line_of_element_0  # inline 0\n"
-        "# before element 1\n"
-        "element_1  # inline 1\n"
-        "element_2_no_inline\n"
-        "# trailing"
-    )

@@ -1,0 +1,7 @@
+---
+# Test cases
+- {type: create, pr_id: pr_1}  # first case
+- {type: update, pr_id: pr_2}  # second case
+# third case
+- {type: delete, pr_id: pr_3}
+# trailing comment
