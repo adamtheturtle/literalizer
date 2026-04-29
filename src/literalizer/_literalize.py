@@ -1729,7 +1729,7 @@ def _extract_call_arg_ref_name(*, value: Value) -> str | None:
 
 
 @beartype
-def _strip_refs_from_value(value: Value) -> Value:
+def _strip_refs_from_value(*, value: Value) -> Value:
     """Return *value* with ``{"$ref": "name"}`` markers removed at any
     depth.
 
@@ -1739,7 +1739,7 @@ def _strip_refs_from_value(value: Value) -> Value:
     """
     if isinstance(value, list):
         return [
-            _strip_refs_from_value(item)
+            _strip_refs_from_value(value=item)
             for item in value
             if _extract_call_arg_ref_name(value=item) is None
         ]
@@ -1748,7 +1748,7 @@ def _strip_refs_from_value(value: Value) -> Value:
         and _extract_call_arg_ref_name(value=value) is None
     ):
         return {
-            k: _strip_refs_from_value(v)
+            k: _strip_refs_from_value(value=v)
             for k, v in value.items()
             if _extract_call_arg_ref_name(value=v) is None
         }
@@ -1783,17 +1783,17 @@ def _strip_call_arg_refs_for_preamble(
             if isinstance(element, list):
                 result.append(
                     [
-                        _strip_refs_from_value(v)
+                        _strip_refs_from_value(value=v)
                         for v in element
                         if _extract_call_arg_ref_name(value=v) is None
                     ]
                 )
             elif _extract_call_arg_ref_name(value=element) is None:
-                result.append(_strip_refs_from_value(element))
+                result.append(_strip_refs_from_value(value=element))
         return result
     if _extract_call_arg_ref_name(value=data) is not None:
         return []
-    return _strip_refs_from_value(data)
+    return _strip_refs_from_value(value=data)
 
 
 @beartype
@@ -2146,9 +2146,9 @@ def _render_call_per_element(
             if _extract_call_arg_ref_name(value=v) is None
         ]
         for value in non_ref_args:
-            check_data(data=_strip_refs_from_value(value), spec=language)
+            check_data(data=_strip_refs_from_value(value=value), spec=language)
             if validate_call_arg is not None:
-                validate_call_arg(_strip_refs_from_value(value))
+                validate_call_arg(_strip_refs_from_value(value=value))
         call_wrap_ids = (
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
@@ -2200,7 +2200,7 @@ def _render_call_whole(
     that case shape validation and wrap-id computation are skipped.
     """
     if _extract_call_arg_ref_name(value=data) is None:
-        stripped_data = _strip_refs_from_value(data)
+        stripped_data = _strip_refs_from_value(value=data)
         check_data(data=stripped_data, spec=language)
         validate_call_arg: Callable[[Value], None] | None = getattr(
             language,
