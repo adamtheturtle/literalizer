@@ -64,7 +64,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
@@ -691,10 +690,17 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Append ``.clone()`` to copy a V map value.
+
+        V maps are not automatically copyable in direct assignment
+        context, so ``.clone()`` is required to produce a valid copy.
         """
-        return identity_call_ref_identifier
+
+        def _format_v_ref_identifier(name: str, /) -> str:
+            """Append ``.clone()`` for V map copy semantics."""
+            return f"{name}.clone()"
+
+        return _format_v_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

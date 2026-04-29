@@ -23,7 +23,26 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
     VariableNamesNotSupportedByToolError,
 )
-from literalizer.languages import Ada, Sml, Wren
+from literalizer.languages import (
+    Ada,
+    Dhall,
+    Elm,
+    Erlang,
+    Fortran,
+    Gleam,
+    Haskell,
+    Hcl,
+    Jsonnet,
+    Mojo,
+    ObjectiveC,
+    Php,
+    PowerShell,
+    PureScript,
+    Raku,
+    Roc,
+    Sml,
+    Wren,
+)
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -131,6 +150,30 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_comments",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_comments_dict_args",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_negative_int",
         target_function="process",
         parameter_names=["value"],
@@ -196,6 +239,18 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         parameter_names=["payload"],
         call_transform=lambda c: f"emit({c})",
         transform_stub_names=["emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_dotted_transform_stub",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda c: f"tracer.emit({c})",
+        transform_stub_names=["tracer.emit"],
         per_element=True,
         call_style_type=None,
         ref_declarations={},
@@ -337,16 +392,65 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
-    # Ada does not allow function-call results to be silently discarded:
-    # a function call cannot appear as a statement.  The identity
-    # call_transform (lambda c: c) causes a VALUE stub but the call is
-    # used as a bare statement, which GNAT rejects.
-    "call_transform_no_wrapper": frozenset({Ada}),
+    # Ada and Fortran do not allow function-call results to be silently
+    # discarded: a function call cannot appear as a statement.  The
+    # identity call_transform (lambda c: c) causes a VALUE stub but the
+    # call is used as a bare statement, which both compilers reject.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren: Wren has no free-function call syntax, so a bare call like
     # "name(value)" is a parse error at the top level.
     "call_keyword_args": frozenset({Wren}),
     "call_deep_dotted_transformed": frozenset({Wren}),
+    # call_transform wraps output as "tracer.emit(inner)" — a dotted method
+    # call — and transform_stub_names=["tracer.emit"] requires a struct/object
+    # stub whose syntax is invalid or unsupported in several languages.
+    "call_dotted_transform_stub": frozenset(
+        {
+            Ada,
+            Elm,
+            Erlang,
+            Fortran,
+            Gleam,
+            Haskell,
+            Hcl,
+            ObjectiveC,
+            Php,
+            PowerShell,
+            Raku,
+            Roc,
+        }
+    ),
+    # Languages whose default call wrappers prepend a token to each
+    # statement (Elm, Haskell, and PureScript ``_ = ``/``_ <- ``, Roc
+    # ``dbg(...)``) or whose comment syntax interacts with the
+    # statement separator (Erlang trailing ``.``, Jsonnet array
+    # comma being swallowed by ``//``). These cannot represent a
+    # standalone comment line in the wrapped self-contained file even
+    # though :func:`literalizer.literalize_call` itself produces
+    # syntactically valid per-call comments.
+    "call_comments": frozenset(
+        {
+            Elm,
+            Erlang,
+            Haskell,
+            Jsonnet,
+            PureScript,
+            Roc,
+        }
+    ),
+    "call_comments_dict_args": frozenset(
+        {
+            Dhall,
+            Elm,
+            Erlang,
+            Haskell,
+            Jsonnet,
+            Mojo,
+            PureScript,
+            Roc,
+        }
+    ),
 }
 
 

@@ -67,7 +67,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -77,6 +76,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import CallArgNotSupportedError
 
 
 def _to_pascal_case(name: str) -> str:
@@ -539,10 +539,25 @@ class Ruby(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Raise for any ``{"$ref": "name"}`` identifier.
+
+        Ruby output is not wrapped in a function body; variable
+        references require a surrounding assignment that cannot be
+        injected via the call framework.
         """
-        return identity_call_ref_identifier
+
+        def _raise_for_ruby_ref(name: str, /) -> str:
+            """Raise ``CallArgNotSupportedError`` unconditionally."""
+            raise CallArgNotSupportedError(
+                language_name="Ruby",
+                reason=(
+                    "Ruby output is not wrapped in a function body; "
+                    f"variable references require a surrounding "
+                    f"assignment (got {name!r})"
+                ),
+            )
+
+        return _raise_for_ruby_ref
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

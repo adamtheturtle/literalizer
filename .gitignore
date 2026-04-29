@@ -31,6 +31,9 @@ venv/
 # uv
 uv.lock
 
+# Fortran build artifacts
+*.mod
+
 # Editor
 .mypy_cache/
 .clj-kondo/.cache

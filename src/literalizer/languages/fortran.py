@@ -5,7 +5,7 @@ import datetime
 import enum
 import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -36,7 +36,6 @@ from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -47,15 +46,14 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     Support,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -226,6 +224,75 @@ def _build_format_variable_assignment(
         )
 
     return _format_variable_assignment
+
+
+@beartype
+def _fortran_call_target(parts: Sequence[str], /) -> str:
+    """Return the last component of a dotted call target as the Fortran
+    procedure name.
+
+    ``app.client.fetch`` produces ``fetch`` so the generated call and
+    stub use a simple identifier that Fortran can declare as an internal
+    procedure without object/module prefix notation.
+    """
+    return parts[-1]
+
+
+@beartype
+def _fortran_call_statement(call: str, /) -> str:
+    """Prepend ``call `` to a Fortran subroutine-call statement.
+
+    All top-level call statements in the generated output invoke void
+    subroutines (or subroutines wrapping a value-returning function),
+    which require the ``call`` keyword in Fortran.
+    """
+    return f"call {call}"
+
+
+@beartype
+def _fortran_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+    *,
+    indent: str,
+) -> tuple[str, ...]:
+    """Return a Fortran internal-procedure stub for a call expression.
+
+    VOID stubs emit a ``subroutine``; VALUE stubs emit a ``function``
+    that returns ``type(fval_t)`` via ``fnull()``.  Both use ``implicit
+    none`` and declare each parameter as ``type(fval_t), intent(in)``.
+    The host program's ``use fval_m`` provides ``fval_t`` and ``fnull``
+    via host association, so no additional ``use`` statement is needed.
+
+    Leading underscores are stripped from parameter names so that a
+    placeholder like ``_arg`` becomes the valid Fortran identifier
+    ``arg``.
+    """
+    method = parts[-1]
+    clean_params = [p.lstrip("_") or p for p in params]
+
+    if stub_return is StubReturn.VOID:
+        param_str = f"({', '.join(clean_params)})" if clean_params else "()"
+        lines: list[str] = [f"subroutine {method}{param_str}"]
+        lines.append(f"{indent}implicit none")
+        if clean_params:
+            joined = ", ".join(clean_params)
+            lines.append(f"{indent}type(fval_t), intent(in) :: {joined}")
+        lines.append(f"end subroutine {method}")
+        return ("\n".join(lines),)
+
+    param_str = f"({', '.join(clean_params)})" if clean_params else "()"
+    lines = [f"function {method}{param_str} result(r)"]
+    lines.append(f"{indent}implicit none")
+    if clean_params:
+        joined = ", ".join(clean_params)
+        lines.append(f"{indent}type(fval_t), intent(in) :: {joined}")
+    lines.append(f"{indent}type(fval_t) :: r")
+    lines.append(f"{indent}r = fnull()")
+    lines.append(f"end function {method}")
+    return ("\n".join(lines),)
 
 
 @beartype
@@ -418,6 +485,8 @@ class Fortran(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Fortran call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -441,7 +510,6 @@ class Fortran(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
-    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     def wrap_in_file(
         self,
@@ -449,13 +517,42 @@ class Fortran(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a Fortran variable declaration in a program."""
-        del variable_name
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
-        )
+        """Wrap a Fortran variable declaration or call block in a program.
+
+        When *variable_name* is non-empty (variable declaration mode),
+        *body_preamble* is prepended before *content* in the program
+        body.  When *variable_name* is empty (call mode), *body_preamble*
+        holds internal-procedure stubs that go in the ``contains`` section
+        after the executable statements in *content*.
+        """
+        if variable_name:
+            content = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            indented = textwrap.indent(text=content, prefix=self.indent)
+            return (
+                f"program {self.module_name}\n"
+                f"{self.indent}use fval_m\n"
+                f"{self.indent}implicit none\n"
+                f"{indented}\n"
+                f"end program {self.module_name}"
+            )
         indented = textwrap.indent(text=content, prefix=self.indent)
+        if body_preamble:
+            stubs_str = "\n".join(body_preamble)
+            indented_stubs = textwrap.indent(
+                text=stubs_str, prefix=self.indent
+            )
+            return (
+                f"program {self.module_name}\n"
+                f"{self.indent}use fval_m\n"
+                f"{self.indent}implicit none\n"
+                f"{indented}\n"
+                f"contains\n"
+                f"{indented_stubs}\n"
+                f"end program {self.module_name}"
+            )
         return (
             f"program {self.module_name}\n"
             f"{self.indent}use fval_m\n"
@@ -544,9 +641,7 @@ class Fortran(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = (
         "  use, intrinsic :: ieee_arithmetic",
     )
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -574,11 +669,16 @@ class Fortran(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return partial(_fortran_call_stub, indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(
@@ -592,7 +692,19 @@ class Fortran(metaclass=LanguageCls):
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _fortran_call_target
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap a call argument in the appropriate ``fval_t``
+        constructor.
+        """
+        return self._format_entry
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Prepend the Fortran ``call`` keyword to each call statement."""
+        return _fortran_call_statement
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
@@ -600,6 +712,42 @@ class Fortran(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    def wrap_calls_with_declarations(
+        self,
+        declarations: tuple[str, ...],
+        calls: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap Fortran call stubs and variable declarations alongside
+        calls.
+
+        Fortran requires all specification statements (type
+        declarations) to precede executable statements (assignments and
+        calls).  Each declaration *bare_code* from :func:`literalize`
+        is a two-part string: a ``type(fval_t) :: name`` declaration on
+        the first line and an assignment on the remaining lines.  This
+        method splits them so that all type-declaration lines appear
+        before any assignment or call lines, producing a valid program.
+
+        Call stubs are placed in the ``contains`` section via
+        :meth:`wrap_in_file`.
+        """
+        type_decls: list[str] = []
+        exec_stmts: list[str] = []
+        for bare_code in declarations:
+            lines = bare_code.splitlines()
+            if not lines:
+                continue
+            type_decls.append(lines[0])
+            exec_stmts.extend(lines[1:])
+        body_parts: list[str] = [*type_decls, *exec_stmts, calls]
+        content = "\n".join(body_parts)
+        return self.wrap_in_file(
+            content=content,
+            variable_name="",
+            body_preamble=body_preamble,
+        )
 
     @cached_property
     def _format_entry(self) -> Callable[[Value, str], str]:

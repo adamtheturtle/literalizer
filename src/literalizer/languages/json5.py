@@ -55,7 +55,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -64,7 +63,10 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -429,10 +431,23 @@ class Json5(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Raise for any ``{"$ref": "name"}`` identifier.
+
+        JSON5 is a data format; values must be literals, not variable
+        references, so refs are not supported.
         """
-        return identity_call_ref_identifier
+
+        def _raise_for_json5_ref(name: str, /) -> str:
+            """Raise ``CallArgNotSupportedError`` unconditionally."""
+            raise CallArgNotSupportedError(
+                language_name="JSON5",
+                reason=(
+                    "JSON5 values must be literals, not variable "
+                    f"references (got {name!r})"
+                ),
+            )
+
+        return _raise_for_json5_ref
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

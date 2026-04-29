@@ -53,7 +53,6 @@ from literalizer._language import (
     Support,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -62,7 +61,10 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -483,10 +485,23 @@ class Jsonnet(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Raise for any ``{"$ref": "name"}`` identifier.
+
+        Jsonnet output snippets do not include a ``local`` preamble,
+        so variable references cannot be resolved.
         """
-        return identity_call_ref_identifier
+
+        def _raise_for_jsonnet_ref(name: str, /) -> str:
+            """Raise ``CallArgNotSupportedError`` unconditionally."""
+            raise CallArgNotSupportedError(
+                language_name="Jsonnet",
+                reason=(
+                    "Jsonnet variable references require a ``local`` "
+                    f"preamble that is not generated (got {name!r})"
+                ),
+            )
+
+        return _raise_for_jsonnet_ref
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

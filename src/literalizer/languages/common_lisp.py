@@ -60,6 +60,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import CallArgNotSupportedError
 
 
 @beartype
@@ -70,16 +71,6 @@ def _format_cons_entry(
 ) -> str:
     """Format a Common Lisp association-list entry as a ``cons`` pair."""
     return f"(cons {key} {formatted_value})"
-
-
-def _format_common_lisp_call_ref_identifier(name: str, /) -> str:
-    """Wrap a ``$ref`` identifier in Common Lisp earmuffs.
-
-    The ``DEFPARAMETER`` declaration style binds variables as
-    ``*name*``, so the call site must wrap the bare name in the
-    matching ``*...*`` markers to resolve to the bound value.
-    """
-    return f"*{name}*"
 
 
 def _common_lisp_call_stub(
@@ -465,10 +456,25 @@ class CommonLisp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Raise for any ``{"$ref": "name"}`` identifier.
+
+        Common Lisp output is not wrapped in a function body, so
+        ``*name*`` global-variable references require a surrounding
+        ``DEFPARAMETER`` that cannot be injected.
         """
-        return _format_common_lisp_call_ref_identifier
+
+        def _raise_for_common_lisp_ref(name: str, /) -> str:
+            """Raise ``CallArgNotSupportedError`` unconditionally."""
+            raise CallArgNotSupportedError(
+                language_name="CommonLisp",
+                reason=(
+                    "Common Lisp output is not wrapped in a function "
+                    "body; ``*name*`` references require a surrounding "
+                    f"DEFPARAMETER that cannot be injected (got {name!r})"
+                ),
+            )
+
+        return _raise_for_common_lisp_ref
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
