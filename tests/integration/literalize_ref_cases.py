@@ -91,7 +91,7 @@ def _split_stubs(
         stub_lines = stub_code.split(sep="\n")
         split_idx = len(stub_lines)
         for j, stub_line in enumerate(iterable=stub_lines):
-            if _STUB_ASSIGN_LINE_RE.match(stub_line.lstrip()):
+            if _STUB_ASSIGN_LINE_RE.match(string=stub_line.lstrip()):
                 split_idx = j
                 break
         decl_lines.extend(stub_lines[:split_idx])
@@ -188,20 +188,18 @@ def inject_stubs_before_variable(
 
     if assign_idx is None or assign_idx == decl_idx:
         all_stub = decl_stub_lines + assign_stub_lines
-        return "\n".join(
-            lines[:decl_idx] + _indented(all_stub) + lines[decl_idx:]
-        )
+        indented = _indented(stub_line_list=all_stub)
+        return "\n".join(lines[:decl_idx] + indented + lines[decl_idx:])
 
     result = list(lines)
     if decl_stub_lines:
-        result = (
-            result[:decl_idx] + _indented(decl_stub_lines) + result[decl_idx:]
-        )
+        indented_decl = _indented(stub_line_list=decl_stub_lines)
+        result = result[:decl_idx] + indented_decl + result[decl_idx:]
     adjusted_assign = assign_idx + len(decl_stub_lines)
     if assign_stub_lines:
         result = (
             result[:adjusted_assign]
-            + _indented(assign_stub_lines)
+            + _indented(stub_line_list=assign_stub_lines)
             + result[adjusted_assign:]
         )
     return "\n".join(result)
