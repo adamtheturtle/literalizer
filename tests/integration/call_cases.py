@@ -22,7 +22,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import Ada, Sml, Wren
+from literalizer.languages import Ada, Fortran, Sml, Wren
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -336,11 +336,11 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
-    # Ada does not allow function-call results to be silently discarded:
-    # a function call cannot appear as a statement.  The identity
-    # call_transform (lambda c: c) causes a VALUE stub but the call is
-    # used as a bare statement, which GNAT rejects.
-    "call_transform_no_wrapper": frozenset({Ada}),
+    # Ada and Fortran do not allow function-call results to be silently
+    # discarded: a function call cannot appear as a statement.  The
+    # identity call_transform (lambda c: c) causes a VALUE stub but the
+    # call is used as a bare statement, which both compilers reject.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren: Wren has no free-function call syntax, so a bare call like
     # "name(value)" is a parse error at the top level.

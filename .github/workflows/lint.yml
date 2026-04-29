@@ -560,9 +560,7 @@ jobs:
           clj-kondo: latest
           bb: latest
       - name: Install Groovy
-        uses: wtfjoke/setup-groovy@v3
-        with:
-          groovy-version: 4.x
+        run: sudo apt-get install -y groovy
 
       - name: Lint Clojure
         run: |-
