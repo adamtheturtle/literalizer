@@ -1770,7 +1770,12 @@ def _format_single_call_arg(
     if ref_name is not None:
         if ref_case is not None:
             ref_name = ref_case.convert(name=ref_name)
-        return language.format_call_ref_identifier(ref_name)
+        format_call_arg_ref: Callable[[str], str] = getattr(
+            language,
+            "format_call_arg_ref_identifier",
+            language.format_call_ref_identifier,
+        )
+        return format_call_arg_ref(ref_name)
     return wrap_arg(
         value,
         _format_value(
