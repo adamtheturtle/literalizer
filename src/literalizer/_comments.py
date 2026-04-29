@@ -558,7 +558,7 @@ def apply_collection_comments_to_elements(
             for comment_text in ec.before
         )
         if ec.inline:
-            element_lines = element_str.split("\n")
+            element_lines = element_str.split(sep="\n")
             element_lines[-1] = (
                 f"{element_lines[-1]}  {comment_prefix} {ec.inline}"
                 f"{comment_suffix}"
