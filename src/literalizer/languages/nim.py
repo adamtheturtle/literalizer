@@ -421,7 +421,7 @@ def _nim_call_stub(
         return_clause = ""
         body = "discard"
     else:
-        return_clause = ": untyped"
+        return_clause = ": untyped {.discardable.}"
         body = "0"
     if len(parts) == 1:
         tmpl = (
@@ -1021,6 +1021,19 @@ class Nim(metaclass=LanguageCls):
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """No data-dependent preamble for call context.
+
+        Nim's ``data_dependent_preamble`` adds ``import json`` for
+        variable declarations that use ``%*``.  Call arguments are
+        formatted as inline literals and never use ``%*``, so
+        ``import json`` is never needed in a call context.
+        """
+        return no_data_preamble
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:

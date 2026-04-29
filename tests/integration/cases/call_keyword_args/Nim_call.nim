@@ -1,6 +1,5 @@
-import json
 type ThrottlerType = object
-template check(self: ThrottlerType; args: varargs[untyped]): untyped = 0
+template check(self: ThrottlerType; args: varargs[untyped]): untyped {.discardable.} = 0
 var throttler: ThrottlerType
 template emit(args: varargs[untyped]) = discard
 emit(throttler.check("user_1", 1000.0))

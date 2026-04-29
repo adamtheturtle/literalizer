@@ -1,4 +1,3 @@
-import json
 template process(args: varargs[untyped]) = discard
 var my_var = @[
     1,
