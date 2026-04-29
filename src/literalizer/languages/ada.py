@@ -190,7 +190,7 @@ def _ada_call_target(parts: Sequence[str], /) -> str:
 
     Ada primitive operations (needed for prefix notation) must be in a
     package spec, not a procedure body.  Using the plain method name
-    avoids prefix notation while keeping the stub compilable.
+    avoids prefix notation and produces a stub that GNAT can compile.
     """
     return parts[-1].title()
 
