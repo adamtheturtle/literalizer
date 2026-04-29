@@ -228,7 +228,7 @@ jobs:
         if: steps.cache-kroc.outputs.cache-hit != 'true'
         run: |-
           git clone --depth=1 https://github.com/concurrency/kroc /tmp/kroc-src
-          cd /tmp/kroc-src && ./build --prefix=/tmp/kroc-install
+          cd /tmp/kroc-src && CFLAGS=-fcommon ./build --prefix=/tmp/kroc-install
       - name: Install 32-bit runtime and add KRoC to environment
         run: |-
           sudo apt-get install -y -qq libc6-i386
