@@ -305,6 +305,15 @@ exclude = [
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
 
+[[tool.mypy.overrides]]
+# Ref case golden files intentionally reference undefined identifiers.
+module = [
+    "tests.integration.cases.literalize_ref_in_dict.*",
+    "tests.integration.cases.literalize_ref_in_list.*",
+    "tests.integration.cases.literalize_ref_whole.*",
+]
+ignore_errors = true
+
 [tool.pyrefly]
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
 # `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are

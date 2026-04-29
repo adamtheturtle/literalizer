@@ -1,0 +1,19 @@
+* val_x
+@code json
+{
+    "_": "_"
+}
+@end
+* val_y
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+[
+    val_x,
+    val_y
+]
+@end

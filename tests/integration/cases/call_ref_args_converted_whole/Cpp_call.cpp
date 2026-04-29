@@ -8,6 +8,6 @@ auto my_var = std::vector<int>{
     2,
     3,
 };
-process(my_var);
+process(std::move(my_var));
     return 0;
 }

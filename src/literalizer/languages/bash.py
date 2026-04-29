@@ -57,12 +57,14 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    InvalidDictKeyError,
+)
 
 
 @beartype
@@ -106,6 +108,39 @@ def _format_bash_dict_entry(
 ) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
     return f"[{key}]={_to_bash_value(item=formatted_value)}"
+
+
+@beartype
+def _bash_validate_spec_for_data(_self: object, data: Value) -> None:
+    """Raise for dict keys that Bash cannot represent."""
+    _bash_validate_dict_keys(data=data)
+
+
+@beartype
+def _bash_validate_dict_keys(data: Value) -> None:
+    """Raise InvalidDictKeyError for any empty or non-printable-ASCII key.
+
+    Bash associative arrays reject empty-string subscripts at runtime,
+    and control characters cannot be expressed in a Bash double-quoted
+    key literal.
+    """
+    if isinstance(data, dict):
+        for raw_key in data:
+            if (
+                not raw_key
+                or not raw_key.isprintable()
+                or not raw_key.isascii()
+            ):
+                msg = (
+                    f"Bash does not support the dict key {raw_key!r}. "
+                    "Associative-array keys must be non-empty printable ASCII."
+                )
+                raise InvalidDictKeyError(msg)
+        for v in data.values():
+            _bash_validate_dict_keys(data=v)
+    elif isinstance(data, list):
+        for item in data:
+            _bash_validate_dict_keys(data=item)
 
 
 @beartype
@@ -351,7 +386,7 @@ class Bash(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    validate_spec_for_data = _bash_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod

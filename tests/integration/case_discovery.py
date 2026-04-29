@@ -25,6 +25,23 @@ from .language_specs import (
 )
 
 
+@dataclasses.dataclass(frozen=True)
+class LiteralizeRefCaseConfig:
+    """Configuration for a ``literalize`` ``$ref`` golden-file test
+    case.
+    """
+
+    case_dir_name: str
+
+
+LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_whole"),
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_dict"),
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_list"),
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_heterogeneous"),
+]
+
+
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
     lang_cls: literalizer.LanguageCls,
@@ -135,6 +152,9 @@ def discover_cases(
 ) -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
     call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
+    ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
@@ -142,6 +162,8 @@ def discover_cases(
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
+            continue
+        if case_dir.name in ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
@@ -197,6 +219,9 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     styles.
     """
     call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
+    ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
@@ -204,6 +229,8 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     cases: list[CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in call_case_dirs:
+            continue
+        if case_dir.name in ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases

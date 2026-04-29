@@ -52,7 +52,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -61,6 +60,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import CallArgNotSupportedError
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
@@ -634,10 +634,23 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        """Raise for any ``{"$ref": "name"}`` identifier.
+
+        COBOL DATA DIVISION VALUE clauses only accept literals, not
+        identifier references, so refs are not supported.
         """
-        return identity_call_ref_identifier
+
+        def _raise_for_cobol_ref(name: str, /) -> str:
+            """Raise ``CallArgNotSupportedError`` unconditionally."""
+            raise CallArgNotSupportedError(
+                language_name="COBOL",
+                reason=(
+                    "COBOL DATA DIVISION VALUE clauses only accept "
+                    f"literals, not identifier references (got {name!r})"
+                ),
+            )
+
+        return _raise_for_cobol_ref
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
