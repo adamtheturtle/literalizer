@@ -15,7 +15,7 @@ Ada, Bash, C, C#, C++, Clojure, COBOL, Common Lisp, Crystal, D, Dart, Dhall,
 Elixir, Elm, Erlang, F#, Fortran, Gleam, Go, Groovy, Haskell, HCL, Java,
 JavaScript, JSON5, Jsonnet, Julia, Kotlin, Lua, MATLAB, Mojo, Nim, Norg,
 Objective-C, OCaml, Occam-pi, Odin, Perl, PHP, PowerShell, PureScript, Python,
-R, Racket, Raku, Ruby, Rust, Scala, Scheme, Swift, SystemVerilog, TOML,
+R, Racket, Raku, Roc, Ruby, Rust, Scala, Scheme, Swift, SystemVerilog, TOML,
 TypeScript, Visual Basic, YAML, Zig.
 
 Installation

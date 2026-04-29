@@ -87,7 +87,16 @@ Php
 Postfix
 PureScript
 Pygments
+RBool
+RDict
+RFloat
+RInt
+RList
+RNull
+RSet
+RStr
 Raku
+Roc
 SBool
 SDate
 SDatetime

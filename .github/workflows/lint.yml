@@ -179,6 +179,24 @@ jobs:
             build_odin "$src" || build_odin "$src" || exit 1
           done
 
+  lint-roc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Roc
+        run: |-
+          curl -fsSL https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz \
+            -o /tmp/roc.tar.gz
+          mkdir -p /tmp/roc-nightly
+          tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly --strip-components=1
+          sudo install /tmp/roc-nightly/roc /usr/local/bin/roc
+      - name: Lint Roc
+        run: |-
+          find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc
+          xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
+
   # Fixture languages whose interpreter is a quick `apt-get install`.
   # Grouped so the apt-get cost is paid once for the whole group.
   lint-apt-basics:
@@ -1401,6 +1419,7 @@ jobs:
       - lint-nim
       - lint-racket
       - lint-raku
+      - lint-roc
       - lint-rust
       - lint-zig
       - lint-systemverilog
