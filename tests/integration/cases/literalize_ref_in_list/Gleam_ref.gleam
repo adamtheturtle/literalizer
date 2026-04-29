@@ -5,11 +5,15 @@ pub type GVal {
 }
 
 pub fn main() {
-  let x = GInt(0)
-  let y = GInt(0)
+  let val_x = GDict([
+    #("_", GStr("_")),
+  ])
+  let val_y = GDict([
+    #("_", GStr("_")),
+  ])
   let my_data = GList([
-    x,
-    y,
+    val_x,
+    val_y,
   ])
   let _ = my_data
 }

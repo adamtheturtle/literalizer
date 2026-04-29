@@ -1,6 +1,10 @@
-final x = 0;
-final y = 0;
+final valX = <String, String>{
+    "_": "_",
+};
+final valY = <String, String>{
+    "_": "_",
+};
 final my_data = <Map<String, String>>[
-    x,
-    y,
+    valX,
+    valY,
 ];

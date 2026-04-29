@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -486,7 +487,7 @@ class Zig(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix=self.indent)
         if not variable_name:
             return f"pub fn main() void {{\n{indented}\n}}"
-        if "var " in content:
+        if re.search(pattern=r"^\s*var ", string=content, flags=re.MULTILINE):
             use = f"{self.indent}{variable_name} = .nil;"
         else:
             use = f"{self.indent}_ = {variable_name};"

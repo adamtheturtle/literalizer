@@ -1,11 +1,15 @@
 #import <Foundation/Foundation.h>
 int main(void) {
 @autoreleasepool {
-id x = @0;
-id y = @0;
+id valX = @{
+    @"_": @"_",
+};
+id valY = @{
+    @"_": @"_",
+};
 id my_data = @[
-    x,
-    y,
+    valX,
+    valY,
 ];
     (void)my_data;
 }

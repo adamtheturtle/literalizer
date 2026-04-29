@@ -2,10 +2,14 @@ datatype val_t =
     SStr of string
   | SList of val_t list
   | SMap of (string * val_t) list
-val x : val_t = SInt 0
-val y : val_t = SInt 0
+val val_x : val_t = SMap [
+    ("_", SStr "_")
+]
+val val_y : val_t = SMap [
+    ("_", SStr "_")
+]
 val my_data : val_t = SList [
-    x,
-    y
+    val_x,
+    val_y
 ]
 val _ = my_data

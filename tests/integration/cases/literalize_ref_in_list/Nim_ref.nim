@@ -1,7 +1,11 @@
 import json
-var x = %* 0
-var y = %* 0
+var valX = %* {
+    "_": "_"
+}
+var valY = %* {
+    "_": "_"
+}
 var my_data = %* [
-    x,
-    y
+    valX,
+    valY
 ]

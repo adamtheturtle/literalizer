@@ -1,6 +1,10 @@
-val x = 0
-val y = 0
+val valX = mapOf<String, String>(
+    "_" to "_",
+)
+val valY = mapOf<String, String>(
+    "_" to "_",
+)
 val my_data = listOf<Map<String, String>>(
-    x,
-    y,
+    valX,
+    valY,
 )

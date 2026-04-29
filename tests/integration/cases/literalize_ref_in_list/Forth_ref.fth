@@ -1,6 +1,6 @@
-: X 0 ;
-: Y 0 ;
+: VAL_X     s\" _" s\" _" ;
+: VAL_Y     s\" _" s\" _" ;
 : my_data
-    X
-    Y
+    VAL_X
+    VAL_Y
 ;

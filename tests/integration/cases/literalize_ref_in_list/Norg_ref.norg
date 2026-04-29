@@ -1,15 +1,19 @@
-* x
+* val_x
 @code json
-0
+{
+    "_": "_"
+}
 @end
-* y
+* val_y
 @code json
-0
+{
+    "_": "_"
+}
 @end
 * my_data
 @code json
 [
-    x,
-    y
+    val_x,
+    val_y
 ]
 @end

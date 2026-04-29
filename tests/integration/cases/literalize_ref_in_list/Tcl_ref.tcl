@@ -1,6 +1,10 @@
-set x 0
-set y 0
+set val_x [dict create \
+    "_" "_" \
+]
+set val_y [dict create \
+    "_" "_" \
+]
 set my_data [list \
-    x \
-    y \
+    val_x \
+    val_y \
 ]

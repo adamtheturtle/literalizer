@@ -7,6 +7,8 @@ type Val
 
 
 myVar : Val
-myVar = EInt 0
+myVar = EDict [
+    ("_", EStr "_")
+    ]
 my_data : Val
 my_data = myVar

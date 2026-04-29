@@ -23,7 +23,22 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
-from .literalize_ref_cases import LITERALIZE_REF_CASE_CONFIGS
+
+
+@dataclasses.dataclass(frozen=True)
+class LiteralizeRefCaseConfig:
+    """Configuration for a ``literalize`` ``$ref`` golden-file test
+    case.
+    """
+
+    case_dir_name: str
+
+
+LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_whole"),
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_dict"),
+    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_list"),
+]
 
 
 @functools.cache

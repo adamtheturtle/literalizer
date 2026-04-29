@@ -1,3 +1,5 @@
-const myVar = 0;
+const myVar = {
+  "_": "_",
+};
 const my_data = myVar;
 export {};

@@ -1,6 +1,10 @@
-def x = 0
-def y = 0
+def valX = [
+    "_": "_",
+]
+def valY = [
+    "_": "_",
+]
 def my_data = [
-    x,
-    y,
+    valX,
+    valY,
 ]

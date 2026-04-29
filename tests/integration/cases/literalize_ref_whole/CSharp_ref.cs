@@ -1,3 +1,5 @@
 using System.Collections.Generic;
-var MyVar = 0;
+var MyVar = new Dictionary<string, string> {
+    ["_"] = "_"
+};
 var my_data = MyVar;

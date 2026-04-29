@@ -1,6 +1,10 @@
-x <- 0
-y <- 0
+val_x <- list(
+    "_" = "_"
+)
+val_y <- list(
+    "_" = "_"
+)
 my_data <- list(
-    x,
-    y
+    val_x,
+    val_y
 )

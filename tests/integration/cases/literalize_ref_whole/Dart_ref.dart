@@ -1,2 +1,4 @@
-final myVar = 0;
+final myVar = <String, String>{
+    "_": "_",
+};
 final my_data = myVar;

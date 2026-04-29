@@ -8,6 +8,8 @@ data Val
 
 
 myVar :: Val
-myVar = PInt 0
+myVar = PDict [
+    (Tuple "_" (PStr "_"))
+    ]
 my_data :: Val
 my_data = myVar

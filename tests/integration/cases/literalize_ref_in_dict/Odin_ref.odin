@@ -2,7 +2,9 @@
 package main
 
 main :: proc() {
-my_var := 0
+my_var := map[string]any{
+	"_" = "_",
+}
 my_data := map[string]any{
 	"key" = my_var,
 }

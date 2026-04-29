@@ -1,6 +1,8 @@
 
 fn main() {
- my_var := 0
+ my_var := {
+ 	'_': '_',
+ }
 	my_data := my_var
 	_ = my_data
 }

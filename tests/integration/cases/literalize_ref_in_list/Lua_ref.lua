@@ -1,6 +1,10 @@
-local x = 0
-local y = 0
+local val_x = {
+    ["_"] = "_",
+}
+local val_y = {
+    ["_"] = "_",
+}
 local my_data = {
-    x,
-    y,
+    val_x,
+    val_y,
 }

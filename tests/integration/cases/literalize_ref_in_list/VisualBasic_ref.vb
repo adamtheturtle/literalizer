@@ -1,9 +1,13 @@
 Imports System.Collections.Generic
 Module Check
-    Dim X = 0
-    Dim Y = 0
+    Dim ValX = New Dictionary(Of String, Object) From {
+        {"_", "_"}
+    }
+    Dim ValY = New Dictionary(Of String, Object) From {
+        {"_", "_"}
+    }
     Dim my_data = New Object() {
-        X,
-        Y
+        ValX,
+        ValY
     }
 End Module

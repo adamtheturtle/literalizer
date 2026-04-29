@@ -1,10 +1,14 @@
 use std::collections::HashMap;
 fn main() {
-    let x = 0;
-    let y = 0;
+    let val_x = HashMap::from([
+        ("_", "_"),
+    ]);
+    let val_y = HashMap::from([
+        ("_", "_"),
+    ]);
     let my_data = vec![
-        x,
-        y,
+        val_x,
+        val_y,
     ];
     let _ = my_data;
 }

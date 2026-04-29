@@ -2,11 +2,15 @@
 package main
 
 main :: proc() {
-x := 0
-y := 0
+val_x := map[string]any{
+	"_" = "_",
+}
+val_y := map[string]any{
+	"_" = "_",
+}
 my_data := [dynamic]any{
-	x,
-	y,
+	val_x,
+	val_y,
 }
 _ = my_data
 }

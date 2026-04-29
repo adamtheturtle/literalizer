@@ -1,7 +1,9 @@
 package main
 
 func main() {
-MyVar := 0
+MyVar := map[string]string{
+	"_": "_",
+}
 my_data := MyVar
 _ = my_data
 }

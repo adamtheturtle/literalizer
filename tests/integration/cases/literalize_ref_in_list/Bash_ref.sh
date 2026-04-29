@@ -1,6 +1,10 @@
-declare x=0
-declare y=0
+declare -A val_x=(
+    ["_"]="_"
+)
+declare -A val_y=(
+    ["_"]="_"
+)
 declare my_data=(
-    "x"
-    "y"
+    "val_x"
+    "val_y"
 )

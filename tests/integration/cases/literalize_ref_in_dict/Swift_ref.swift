@@ -1,4 +1,6 @@
-let myVar: Any = 0
+let myVar: Any = [
+    "_": "_",
+]
 let my_data: Any = [
     "key": myVar,
 ]

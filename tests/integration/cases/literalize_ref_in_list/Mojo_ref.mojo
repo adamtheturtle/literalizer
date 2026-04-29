@@ -1,8 +1,12 @@
 def main():
-    var x = 0
-    var y = 0
+    var val_x = {
+        "_": "_",
+    }
+    var val_y = {
+        "_": "_",
+    }
     var my_data = [
-        x,
-        y,
+        val_x,
+        val_y,
     ]
     _ = my_data

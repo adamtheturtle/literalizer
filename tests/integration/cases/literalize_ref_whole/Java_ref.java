@@ -1,7 +1,9 @@
 import java.util.Map;
 class Main {
     public static void main() {
-var myVar = 0;
+var myVar = Map.ofEntries(
+    Map.entry("_", "_")
+);
 var my_data = myVar;
     }
 }

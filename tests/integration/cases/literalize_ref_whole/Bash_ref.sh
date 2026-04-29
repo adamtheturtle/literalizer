@@ -1,2 +1,4 @@
-declare my_var=0
+declare -A my_var=(
+    ["_"]="_"
+)
 declare my_data=my_var

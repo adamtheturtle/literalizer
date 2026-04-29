@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using System;
-var X = 0;
-var Y = 0;
+var ValX = new Dictionary<string, string> {
+    ["_"] = "_"
+};
+var ValY = new Dictionary<string, string> {
+    ["_"] = "_"
+};
 var my_data = (
-    X,
-    Y
+    ValX,
+    ValY
 );

@@ -1,11 +1,15 @@
 package main
 
 func main() {
-X := 0
-Y := 0
+ValX := map[string]string{
+	"_": "_",
+}
+ValY := map[string]string{
+	"_": "_",
+}
 my_data := []map[string]string{
-	X,
-	Y,
+	ValX,
+	ValY,
 }
 _ = my_data
 }

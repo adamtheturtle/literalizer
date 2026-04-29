@@ -8,12 +8,16 @@ data Val
     | PDict (Array (Tuple String Val))
 
 
-x :: Val
-x = PInt 0
-y :: Val
-y = PInt 0
+valX :: Val
+valX = PDict [
+    (Tuple "_" (PStr "_"))
+    ]
+valY :: Val
+valY = PDict [
+    (Tuple "_" (PStr "_"))
+    ]
 my_data :: Val
 my_data = PList [
-    x,
-    y
+    valX,
+    valY
     ]

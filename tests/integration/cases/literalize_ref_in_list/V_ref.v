@@ -1,10 +1,14 @@
 
 fn main() {
- x := 0
- y := 0
+ val_x := {
+ 	'_': '_',
+ }
+ val_y := {
+ 	'_': '_',
+ }
 	my_data := [
-		x,
-		y,
+		val_x,
+		val_y,
 	]
 	_ = my_data
 }

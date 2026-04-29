@@ -1,5 +1,5 @@
 #lang racket
 (list
-    x
-    y
+    val-x
+    val-y
 )

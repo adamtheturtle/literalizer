@@ -1,6 +1,10 @@
-const x = 0;
-const y = 0;
+const valX = {
+  "_": "_",
+};
+const valY = {
+  "_": "_",
+};
 const my_data = [
-  x,
-  y,
+  valX,
+  valY,
 ];

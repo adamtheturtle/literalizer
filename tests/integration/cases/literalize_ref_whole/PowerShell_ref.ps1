@@ -1,2 +1,4 @@
-$MyVar = 0
+$MyVar = @{
+    "_" = "_"
+}
 $my_data = $MyVar

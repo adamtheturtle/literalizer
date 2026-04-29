@@ -1,11 +1,15 @@
 import java.util.Map;
 class Main {
     public static void main() {
-var x = 0;
-var y = 0;
+var valX = Map.ofEntries(
+    Map.entry("_", "_")
+);
+var valY = Map.ofEntries(
+    Map.entry("_", "_")
+);
 var my_data = new Object[]{
-    x,
-    y
+    valX,
+    valY
 };
     }
 }

@@ -3,11 +3,15 @@
 #include <map>
 #include <vector>
 int main() {
-auto x = 0;
-auto y = 0;
+auto val_x = std::map<std::string, std::string>{
+    {"_", "_"},
+};
+auto val_y = std::map<std::string, std::string>{
+    {"_", "_"},
+};
 auto my_data = std::vector<std::map<std::string, std::string>>{
-    x,
-    y,
+    val_x,
+    val_y,
 };
     (void)my_data;
     return 0;

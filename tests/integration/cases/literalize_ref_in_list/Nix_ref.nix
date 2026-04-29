@@ -1,6 +1,10 @@
-let x = 0; in x
-let y = 0; in y
+let val_x = {
+  _ = "_";
+}; in val_x
+let val_y = {
+  _ = "_";
+}; in val_y
 let my_data = [
-  x
-  y
+  val_x
+  val_y
 ]; in my_data

@@ -2,7 +2,7 @@
 -export([x/0]).
 x() ->
     My_data = [
-        X,
-        Y
+        Val_x,
+        Val_y
     ],
     My_data.

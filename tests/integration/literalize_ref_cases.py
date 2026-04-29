@@ -24,25 +24,13 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
 )
 
+from .case_discovery import (
+    LITERALIZE_REF_CASE_CONFIGS,
+    LiteralizeRefCaseConfig,
+)
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
 from .variant_cases import wrap_variable_form
-
-
-@dataclasses.dataclass(frozen=True)
-class LiteralizeRefCaseConfig:
-    """Configuration for a ``literalize`` ``$ref`` golden-file test
-    case.
-    """
-
-    case_dir_name: str
-
-
-LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
-    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_whole"),
-    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_dict"),
-    LiteralizeRefCaseConfig(case_dir_name="literalize_ref_in_list"),
-]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -161,7 +149,7 @@ def run_literalize_ref_golden_case(
             converted_name = ref_case.convert(name=raw_name)
             try:
                 stub = literalizer.literalize(
-                    source="0",
+                    source='{"_": "_"}',
                     input_format=literalizer.InputFormat.JSON,
                     language=spec,
                     variable_form=literalizer.NewVariable(

@@ -4,11 +4,15 @@ type val_t =
   | OStr of string
   | OList of val_t list
   | OMap of (string * val_t) list
-let x : val_t = OInt 0
-let y : val_t = OInt 0
+let val_x : val_t = OMap [
+    ("_", OStr "_")
+]
+let val_y : val_t = OMap [
+    ("_", OStr "_")
+]
 let my_data : val_t = OList [
-    x;
-    y
+    val_x;
+    val_y
 ]
 
 end

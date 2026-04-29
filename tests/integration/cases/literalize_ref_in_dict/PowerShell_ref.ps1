@@ -1,4 +1,6 @@
-$MyVar = 0
+$MyVar = @{
+    "_" = "_"
+}
 $my_data = @{
     "key" = $MyVar
 }

@@ -1,6 +1,10 @@
-x = 0;
-y = 0;
+valX = struct(
+    '_', "_"
+);
+valY = struct(
+    '_', "_"
+);
 my_data = {
-    x,
-    y
+    valX,
+    valY
 };

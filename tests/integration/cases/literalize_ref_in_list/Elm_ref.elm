@@ -7,12 +7,16 @@ type Val
     | EDict (List ( String, Val ))
 
 
-x : Val
-x = EInt 0
-y : Val
-y = EInt 0
+valX : Val
+valX = EDict [
+    ("_", EStr "_")
+    ]
+valY : Val
+valY = EDict [
+    ("_", EStr "_")
+    ]
 my_data : Val
 my_data = EList [
-    x,
-    y
+    valX,
+    valY
     ]
