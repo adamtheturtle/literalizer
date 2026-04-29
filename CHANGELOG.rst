@@ -27,8 +27,11 @@ Next
   ``d_main.d``, ``sml_force.sml``, ``sml_main.mlb``,
   ``sml_call_main.mlb``) have been removed.  CI now compiles and runs
   each fixture directly without a linking step against a driver object.
-  ``run_haskell.py`` no longer generates a ``Main.hs`` wrapper; it
-  compiles every fixture with ``-main-is <module>``.
+  ``run_haskell.py`` has been removed; the CI now copies each Haskell
+  fixture to a temporary workspace (renaming to match its unique module
+  name), generates a ``Main.hs`` driver that imports every fixture
+  qualified and calls its ``main``, and compiles and runs them all in a
+  single ``ghc`` invocation.
 - Ada output now uses Ada 2022 container aggregates (``AList'[...]``,
   ``AMap'[...]``, ``ASet'[...]``) and emits a ``with A_Stub; use
   A_Stub;`` context clause so each fixture compiles and runs against
