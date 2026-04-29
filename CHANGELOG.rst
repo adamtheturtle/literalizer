@@ -9,6 +9,10 @@ Next
   argument, in addition to the existing support for top-level argument
   refs.  ``ref_case`` conversion and preamble stripping apply recursively
   to nested refs just as they do to top-level ones.
+
+2026.04.29
+----------
+
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any
   ``{"$ref": "name"}`` mapping in the input data -- at the top level or
