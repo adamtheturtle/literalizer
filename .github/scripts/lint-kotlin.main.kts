@@ -1,4 +1,3 @@
-@file:Repository("file:///tmp/m2")
 @file:DependsOn("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.3.20")
 @file:DependsOn("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20")
 

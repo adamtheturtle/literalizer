@@ -774,22 +774,6 @@ jobs:
           # ``.main.kts`` host blows up with NoClassDefFoundError.
           # 2.3.20 drops the stale reference.
           version: 2.3.20
-      # Seed a local Maven repository from the installed Kotlin distribution
-      # so that @file:DependsOn in lint-kotlin.main.kts resolves the
-      # compiler-embeddable JARs locally.  Maven Central may not yet carry
-      # a newly-released Kotlin version at CI time.
-      - name: Seed local Maven repository with Kotlin compiler JARs
-        run: |
-          KOTLIN_VERSION=2.3.20
-          for artifact in kotlin-compiler-embeddable kotlin-scripting-compiler-embeddable; do
-            dir="/tmp/m2/org/jetbrains/kotlin/${artifact}/${KOTLIN_VERSION}"
-            mkdir -p "${dir}"
-            cp "${KOTLIN_HOME}/lib/${artifact}.jar" \
-               "${dir}/${artifact}-${KOTLIN_VERSION}.jar"
-            printf '<project><modelVersion>4.0.0</modelVersion><groupId>org.jetbrains.kotlin</groupId><artifactId>%s</artifactId><version>%s</version></project>' \
-              "${artifact}" "${KOTLIN_VERSION}" \
-              > "${dir}/${artifact}-${KOTLIN_VERSION}.pom"
-          done
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm

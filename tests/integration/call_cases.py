@@ -34,6 +34,7 @@ from literalizer.languages import (
     Php,
     PowerShell,
     Raku,
+    Roc,
     Sml,
     Wren,
 )
@@ -388,6 +389,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Php,
             PowerShell,
             Raku,
+            Roc,
         }
     ),
 }
