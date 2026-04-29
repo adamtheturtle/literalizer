@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.29
+----------
+
+
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any
   ``{"$ref": "name"}`` mapping in the input data -- at the top level or
