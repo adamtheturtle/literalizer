@@ -16,6 +16,15 @@ Next
   preserving backwards compatibility.  Passing a case not in
   ``language.identifier_cases`` raises
   :exc:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
+- Added support for Roc as a new output language.  ``Roc`` emits a
+  ``Val`` tag-union type alias (``RNull``, ``RBool``, ``RInt``,
+  ``RFloat``, ``RStr``, ``RList``, ``RDict``, ``RSet``) inside the
+  module body, exposing the generated value via ``module [my_data]``.
+  Calls use the space-separated command syntax with each argument
+  wrapped in parentheses (``process (RInt 1) (RInt 2)``), with
+  module-level stubs of the form ``name : a, b -> {}``.  A new
+  ``lint-roc`` job in ``.github/workflows/lint.yml`` runs ``roc check``
+  against every ``.roc`` fixture using the upstream nightly tarball.
 - C, C++, Objective-C, and D fixtures now emit a ``main`` entry point
   directly (``int main(void)``/``int main()``/``void main()``) instead
   of a ``check_()``/``_check()`` function that required a separate

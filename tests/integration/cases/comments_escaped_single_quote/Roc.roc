@@ -1,0 +1,11 @@
+module [my_data]
+
+Val : [
+    RStr Str,
+    RDict (List (Str, Val)),
+]
+
+my_data : Val
+my_data = RDict [
+    ("key", RStr "it's here"),  # a comment
+    ]
