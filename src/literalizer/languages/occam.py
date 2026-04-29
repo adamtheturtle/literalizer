@@ -316,7 +316,7 @@ class Occam(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
         return (
-            f"\nPROC {self.module_name} ()\n"
+            f"\nPROC {self.module_name} (CHAN BYTE kyb?, scr!, err!)\n"
             + indented
             + "\n"
             + f"{self.indent}SEQ\n"

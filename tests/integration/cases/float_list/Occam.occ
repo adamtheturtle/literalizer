@@ -11,7 +11,7 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC main ()
+PROC main (CHAN BYTE kyb?, scr!, err!)
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.float; 1.1(REAL32)),
         MOBILE LIT(lit.float; -2.2(REAL32)),
