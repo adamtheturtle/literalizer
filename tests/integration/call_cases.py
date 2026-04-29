@@ -363,23 +363,19 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # is a reserved word in SML and cannot be used as a fun or val
     # identifier, so no valid stub can be produced.
     "call_mixed_type_dicts": frozenset({Sml}),
-    # call_transform wraps calls with "tracer.emit(...)" — a dotted expression.
-    # HCL cannot parse dotted expressions as function calls.
-    # Elm and Gleam treat "tracer.emit" as module-qualified access (no
-    # "tracer" module exists), so the call cannot be syntactically valid.
-    # Raku requires a sigil ("$tracer") for variable method dispatch; bare
-    # "tracer" in "tracer.emit(...)" is not resolvable as a declared name.
-    # The ObjectiveC lint scripts do not support the C-struct dotted-call.
-    # Erlang's "." terminates a clause; "tracer.emit(...)" is a syntax error.
-    # PHP's "." is string concatenation; "tracer" is treated as a bare
-    # constant, not an object, so "tracer.emit(...)" is invalid.
-    # Haskell record fields require a monomorphic type; "emit :: Val -> IO ()"
-    # cannot accept "IO Val" from process without RankNTypes.
-    # Ada has no object-method call syntax; "tracer" is not a defined object.
-    # The Roc stub generator produces a flat "tracer_emit" function; "tracer"
-    # is never bound, so "tracer.emit(...)" is an unrecognized name error.
-    # Fortran uses "%" for member access, not "."; "tracer.emit" is a
-    # syntax error in a CALL statement.
+    # Ada and Fortran do not allow function-call results to be silently
+    # discarded: a function call cannot appear as a statement.  The
+    # identity call_transform (lambda c: c) causes a VALUE stub but the
+    # call is used as a bare statement, which both compilers reject.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
+    # call_transform wraps output as "emit(inner)", which is invalid in
+    # Wren: Wren has no free-function call syntax, so a bare call like
+    # "name(value)" is a parse error at the top level.
+    "call_keyword_args": frozenset({Wren}),
+    "call_deep_dotted_transformed": frozenset({Wren}),
+    # call_transform wraps output as "tracer.emit(inner)" — a dotted method
+    # call — and transform_stub_names=["tracer.emit"] requires a struct/object
+    # stub whose syntax is invalid or unsupported in several languages.
     "call_dotted_transform_stub": frozenset(
         {
             Ada,
@@ -396,16 +392,6 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Roc,
         }
     ),
-    # Ada and Fortran do not allow function-call results to be silently
-    # discarded: a function call cannot appear as a statement.  The
-    # identity call_transform (lambda c: c) causes a VALUE stub but the
-    # call is used as a bare statement, which both compilers reject.
-    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
-    # call_transform wraps output as "emit(inner)", which is invalid in
-    # Wren: Wren has no free-function call syntax, so a bare call like
-    # "name(value)" is a parse error at the top level.
-    "call_keyword_args": frozenset({Wren}),
-    "call_deep_dotted_transformed": frozenset({Wren}),
 }
 
 
