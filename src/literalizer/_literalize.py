@@ -13,7 +13,7 @@ from ruamel.yaml.compat import ordereddict
 from literalizer._checks import check_data
 from literalizer._comments import (
     CollectionComments,
-    apply_collection_comments,
+    apply_collection_comments_to_elements,
     extract_yaml_comments,
     prepend_collection_comments,
 )
@@ -2017,7 +2017,7 @@ def _render_call_per_element(
         "format_call_statement",
         _identity_call_statement,
     )
-    lines: list[str] = []
+    rendered_elements: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
         non_ref_args = [
@@ -2041,7 +2041,7 @@ def _render_call_per_element(
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
         )
-        lines.append(
+        rendered_elements.append(
             format_call_statement(
                 _assemble_call(
                     target_function=target_function,
@@ -2052,18 +2052,15 @@ def _render_call_per_element(
                 )
             )
         )
-    base = "\n".join(lines)
     if collection_comments is not None:
         comment_cfg = language.comment_config
-        base = apply_collection_comments(
+        return apply_collection_comments_to_elements(
+            rendered_elements=rendered_elements,
             collection_comments=collection_comments,
-            base=base,
             comment_prefix=comment_cfg.prefix,
             comment_suffix=comment_cfg.suffix,
-            comment_line_prefix="",
-            include_delimiters=False,
         )
-    return base
+    return "\n".join(rendered_elements)
 
 
 @beartype
