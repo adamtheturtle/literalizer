@@ -19,8 +19,8 @@ from purescript_common import PRELUDE_JS, PRELUDE_PURS
 _NODE_DRIVER = (
     "import('./output/Check/index.js')"
     ".then(m => {"
-    " if (typeof m.my_data === 'undefined')"
-    " { throw new Error('Check.my_data is undefined'); }"
+    " if (typeof m.my_data === 'undefined' && typeof m.main === 'undefined')"
+    " { throw new Error('Neither Check.my_data nor Check.main is defined'); }"
     " })"
     ".catch(e => {"
     " console.error(e && e.stack ? e.stack : e);"

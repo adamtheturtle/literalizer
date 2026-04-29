@@ -33,6 +33,7 @@ from literalizer.languages import (
     Php,
     PowerShell,
     Raku,
+    Roc,
     Sml,
     Wren,
 )
@@ -373,8 +374,23 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # constant, not an object, so "tracer.emit(...)" is invalid.
     # Haskell record fields require a monomorphic type; "emit :: Val -> IO ()"
     # cannot accept "IO Val" from process without RankNTypes.
+    # Ada has no object-method call syntax; "tracer" is not a defined object.
+    # Roc's stub generator produces a flat "tracer_emit" function; "tracer"
+    # is never bound, so "tracer.emit(...)" is an unrecognized name error.
     "call_dotted_transform_stub": frozenset(
-        {Elm, Erlang, Gleam, Haskell, Hcl, ObjectiveC, Php, PowerShell, Raku}
+        {
+            Ada,
+            Elm,
+            Erlang,
+            Gleam,
+            Haskell,
+            Hcl,
+            ObjectiveC,
+            Php,
+            PowerShell,
+            Raku,
+            Roc,
+        }
     ),
     # Ada does not allow function-call results to be silently discarded:
     # a function call cannot appear as a statement.  The identity
