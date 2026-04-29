@@ -802,9 +802,12 @@ def _cpp_call_stub(
     fields = parts[1:-1]
     if not fields:
         type_name = f"{root}Type_"
+        if stub_return is StubReturn.VOID:
+            method_decl = f"void {method}(auto...) const {{}}"
+        else:
+            method_decl = f"auto {method}(auto...) const {{ return 0; }}"
         return (
-            f"struct {type_name} {{"
-            f" auto {method}(auto...) const {{ return 0; }} }};",
+            f"struct {type_name} {{ {method_decl} }};",
             f"const {type_name} {root};",
         )
     lines: list[str] = []

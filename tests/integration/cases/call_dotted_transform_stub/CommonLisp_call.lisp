@@ -1,0 +1,6 @@
+(defun process (&rest args) (declare (ignore args)) 0)
+(defun tracer (&rest args) (declare (ignore args)) nil)
+(defun tracer.emit (&rest args) (declare (ignore args)) nil)
+(tracer.emit (process :value "hello"))
+(tracer.emit (process :value 42))
+(tracer.emit (process :value t))

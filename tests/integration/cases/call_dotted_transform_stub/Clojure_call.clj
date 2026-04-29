@@ -1,0 +1,6 @@
+(defn process [& _args] 0)
+(defn tracer [& _args] nil)
+(defn tracer.emit [& _args] nil)
+(tracer.emit (process :value "hello"))
+(tracer.emit (process :value 42))
+(tracer.emit (process :value true))
