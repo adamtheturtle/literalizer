@@ -199,6 +199,7 @@ class Scala(metaclass=LanguageCls):
 
     extension = ".scala"
     pygments_name = "scala"
+    language_version = "3.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

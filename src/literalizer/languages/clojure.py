@@ -95,6 +95,7 @@ class Clojure(metaclass=LanguageCls):
 
     extension = ".clj"
     pygments_name = "clojure"
+    language_version = "1.11"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

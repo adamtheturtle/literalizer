@@ -138,6 +138,7 @@ class Php(metaclass=LanguageCls):
 
     extension = ".php"
     pygments_name = "php"
+    language_version = "8.1"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

@@ -284,6 +284,7 @@ class Sml(metaclass=LanguageCls):
 
     extension = ".sml"
     pygments_name = "sml"
+    language_version = "SML '97"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

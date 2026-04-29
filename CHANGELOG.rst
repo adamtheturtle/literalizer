@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- Every built-in language class now exposes a ``language_version`` string
+  attribute that documents the version of the target language the generated
+  code is written for (e.g. ``Ada.language_version == "Ada 2022"``,
+  ``Python.language_version == "3.12"``).  The attribute is part of the
+  :class:`~literalizer.Language` protocol, so custom language
+  implementations must also define it.
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any
   ``{"$ref": "name"}`` mapping in the input data -- at the top level or

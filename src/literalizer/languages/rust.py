@@ -677,6 +677,7 @@ class Rust(metaclass=LanguageCls):
 
     extension = ".rs"
     pygments_name = "rust"
+    language_version = "2021"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True

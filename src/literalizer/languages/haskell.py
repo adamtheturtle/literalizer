@@ -924,6 +924,7 @@ class Haskell(metaclass=LanguageCls):
 
     extension = ".hs"
     pygments_name = "haskell"
+    language_version = "Haskell 2010"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

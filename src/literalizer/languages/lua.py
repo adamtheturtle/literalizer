@@ -129,6 +129,7 @@ class Lua(metaclass=LanguageCls):
 
     extension = ".lua"
     pygments_name = "lua"
+    language_version = "5.4"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

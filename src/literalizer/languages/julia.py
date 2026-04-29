@@ -143,6 +143,7 @@ class Julia(metaclass=LanguageCls):
 
     extension = ".jl"
     pygments_name = "julia"
+    language_version = "1.9"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

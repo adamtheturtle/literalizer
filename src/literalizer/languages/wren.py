@@ -155,6 +155,7 @@ class Wren(metaclass=LanguageCls):
 
     extension = ".wren"
     pygments_name = "wren"
+    language_version = "0.4"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

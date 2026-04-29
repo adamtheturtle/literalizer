@@ -192,6 +192,7 @@ class Elixir(metaclass=LanguageCls):
 
     extension = ".ex"
     pygments_name = "elixir"
+    language_version = "1.14"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

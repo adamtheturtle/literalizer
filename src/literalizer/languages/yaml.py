@@ -82,6 +82,7 @@ class Yaml(metaclass=LanguageCls):
 
     extension = ".yaml"
     pygments_name = "yaml"
+    language_version = "1.2"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

@@ -564,6 +564,7 @@ class Java(metaclass=LanguageCls):
 
     extension = ".java"
     pygments_name = "java"
+    language_version = "11"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

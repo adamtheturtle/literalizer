@@ -257,6 +257,7 @@ class ObjectiveC(metaclass=LanguageCls):
 
     extension = ".m"
     pygments_name = "objective-c"
+    language_version = "2.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

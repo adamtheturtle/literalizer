@@ -860,6 +860,7 @@ class Cpp(metaclass=LanguageCls):
 
     extension = ".cpp"
     pygments_name = "cpp"
+    language_version = "C++20"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

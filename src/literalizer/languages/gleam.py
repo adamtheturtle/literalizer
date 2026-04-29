@@ -499,6 +499,7 @@ class Gleam(metaclass=LanguageCls):
 
     extension = ".gleam"
     pygments_name = "gleam"
+    language_version = "1.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

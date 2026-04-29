@@ -636,6 +636,7 @@ class PureScript(metaclass=LanguageCls):
 
     extension = ".purs"
     pygments_name = None
+    language_version = "0.15"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

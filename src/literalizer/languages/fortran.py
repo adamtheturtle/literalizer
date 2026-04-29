@@ -303,6 +303,7 @@ class Fortran(metaclass=LanguageCls):
 
     extension = ".f90"
     pygments_name = "fortran"
+    language_version = "2003"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

@@ -272,6 +272,7 @@ class Cobol(metaclass=LanguageCls):
 
     extension = ".cob"
     pygments_name = "cobol"
+    language_version = "2002"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

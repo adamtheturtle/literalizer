@@ -108,6 +108,7 @@ class Toml(metaclass=LanguageCls):
 
     extension = ".toml"
     pygments_name = "toml"
+    language_version = "1.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

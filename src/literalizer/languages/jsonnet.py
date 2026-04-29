@@ -124,6 +124,7 @@ class Jsonnet(metaclass=LanguageCls):
 
     extension = ".jsonnet"
     pygments_name = "jsonnet"
+    language_version = "0.20"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

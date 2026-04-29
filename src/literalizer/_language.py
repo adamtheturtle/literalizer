@@ -490,6 +490,7 @@ class LanguageCls(type):
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
+    language_version: str
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
     supports_default_dict_value_type: bool
@@ -698,6 +699,11 @@ class Language(Protocol):
 
     extension: str
     """The file extension for this language, including the leading dot."""
+
+    language_version: str
+    """The version of the target language that the generated code
+    targets.
+    """
 
     @property
     def pygments_name(self) -> str | None:

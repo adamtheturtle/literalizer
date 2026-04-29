@@ -90,6 +90,7 @@ class Occam(metaclass=LanguageCls):
 
     extension = ".occ"
     pygments_name = None
+    language_version = "2"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

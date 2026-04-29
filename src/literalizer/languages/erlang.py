@@ -186,6 +186,7 @@ class Erlang(metaclass=LanguageCls):
 
     extension = ".erl"
     pygments_name = "erlang"
+    language_version = "OTP 25"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

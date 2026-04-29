@@ -248,6 +248,7 @@ class Go(metaclass=LanguageCls):
 
     extension = ".go"
     pygments_name = "go"
+    language_version = "1.18"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True

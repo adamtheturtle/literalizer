@@ -92,6 +92,7 @@ class Scheme(metaclass=LanguageCls):
 
     extension = ".scm"
     pygments_name = "scheme"
+    language_version = "R7RS"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

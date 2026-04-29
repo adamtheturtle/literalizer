@@ -108,6 +108,7 @@ class Json5(metaclass=LanguageCls):
 
     extension = ".json5"
     pygments_name = "json5"
+    language_version = "1.0.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

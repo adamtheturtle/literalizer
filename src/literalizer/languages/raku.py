@@ -172,6 +172,7 @@ class Raku(metaclass=LanguageCls):
 
     extension = ".raku"
     pygments_name = "raku"
+    language_version = "6.d"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

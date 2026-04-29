@@ -375,6 +375,7 @@ class Mojo(metaclass=LanguageCls):
 
     extension = ".mojo"
     pygments_name = "mojo"
+    language_version = "24.5"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True

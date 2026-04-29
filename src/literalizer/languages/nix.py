@@ -176,6 +176,7 @@ class Nix(metaclass=LanguageCls):
 
     extension = ".nix"
     pygments_name = "nix"
+    language_version = "2.x"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

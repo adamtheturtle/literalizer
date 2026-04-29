@@ -137,6 +137,7 @@ class Tcl(metaclass=LanguageCls):
 
     extension = ".tcl"
     pygments_name = "tcl"
+    language_version = "8.6"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

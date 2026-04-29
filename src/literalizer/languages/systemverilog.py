@@ -151,6 +151,7 @@ class SystemVerilog(metaclass=LanguageCls):
 
     extension = ".sv"
     pygments_name = "systemverilog"
+    language_version = "IEEE 1800-2017"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

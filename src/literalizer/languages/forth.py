@@ -185,6 +185,7 @@ class Forth(metaclass=LanguageCls):
 
     extension = ".fth"
     pygments_name = "forth"
+    language_version = "ANS Forth"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

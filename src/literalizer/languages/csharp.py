@@ -348,6 +348,7 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
+    language_version = "10.0"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True

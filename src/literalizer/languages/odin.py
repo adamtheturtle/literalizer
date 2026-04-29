@@ -200,6 +200,7 @@ class Odin(metaclass=LanguageCls):
 
     extension = ".odin"
     pygments_name = "odin"
+    language_version = "dev-2024"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

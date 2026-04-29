@@ -196,6 +196,7 @@ class Matlab(metaclass=LanguageCls):
 
     extension = ".m"
     pygments_name = "matlab"
+    language_version = "R2022a"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

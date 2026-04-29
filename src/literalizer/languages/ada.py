@@ -204,6 +204,7 @@ class Ada(metaclass=LanguageCls):
 
     extension = ".adb"
     pygments_name = "ada"
+    language_version = "Ada 2022"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

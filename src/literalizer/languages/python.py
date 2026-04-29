@@ -511,6 +511,7 @@ class Python(metaclass=LanguageCls):
 
     extension = ".py"
     pygments_name = "python"
+    language_version = "3.12"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = True
     supports_default_dict_value_type = True

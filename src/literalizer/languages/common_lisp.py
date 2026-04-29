@@ -104,6 +104,7 @@ class CommonLisp(metaclass=LanguageCls):
 
     extension = ".lisp"
     pygments_name = "common-lisp"
+    language_version = "ANSI CL"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

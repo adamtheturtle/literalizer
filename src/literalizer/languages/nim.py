@@ -519,6 +519,7 @@ class Nim(metaclass=LanguageCls):
 
     extension = ".nim"
     pygments_name = "nim"
+    language_version = "2.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

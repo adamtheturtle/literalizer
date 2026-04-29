@@ -224,6 +224,7 @@ class Zig(metaclass=LanguageCls):
 
     extension = ".zig"
     pygments_name = "zig"
+    language_version = "0.12"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

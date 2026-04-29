@@ -484,6 +484,7 @@ class Elm(metaclass=LanguageCls):
 
     extension = ".elm"
     pygments_name = "elm"
+    language_version = "0.19"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

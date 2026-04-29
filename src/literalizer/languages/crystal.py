@@ -165,6 +165,7 @@ class Crystal(metaclass=LanguageCls):
 
     extension = ".cr"
     pygments_name = "crystal"
+    language_version = "1.0"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True

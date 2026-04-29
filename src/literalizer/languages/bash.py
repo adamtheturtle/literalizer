@@ -177,6 +177,7 @@ class Bash(metaclass=LanguageCls):
 
     extension = ".sh"
     pygments_name = "bash"
+    language_version = "5.1"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

@@ -419,6 +419,7 @@ class Kotlin(metaclass=LanguageCls):
 
     extension = ".kts"
     pygments_name = "kotlin"
+    language_version = "1.9"
     supports_default_set_element_type = True
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = True

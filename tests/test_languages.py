@@ -427,6 +427,20 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
     argvalues=_SORTED_LANGUAGES,
     ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
+def test_language_version_is_non_empty_string(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language class declares a non-empty ``language_version``."""
+    assert isinstance(language_cls.language_version, str)
+    assert language_cls.language_version
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
 def test_pygments_name_is_valid(
     *,
     language_cls: LanguageCls,

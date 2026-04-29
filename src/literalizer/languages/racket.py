@@ -96,6 +96,7 @@ class Racket(metaclass=LanguageCls):
 
     extension = ".rkt"
     pygments_name = "racket"
+    language_version = "8.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False

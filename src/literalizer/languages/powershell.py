@@ -154,6 +154,7 @@ class PowerShell(metaclass=LanguageCls):
 
     extension = ".ps1"
     pygments_name = "powershell"
+    language_version = "7.0"
     supports_default_set_element_type = False
     supports_default_sequence_element_type = False
     supports_default_dict_value_type = False
