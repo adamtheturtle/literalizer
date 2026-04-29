@@ -166,6 +166,16 @@ class UnrepresentableIntegerError(Exception):
     """
 
 
+class UnrepresentableSpecialFloatError(Exception):
+    """Raised when a non-finite float (``inf``, ``-inf``, or ``nan``)
+    is passed to a target language whose runtime cannot produce IEEE
+    754 special float values.
+
+    Used by Gleam on the Erlang target, which has no expression that
+    evaluates to a non-finite float.
+    """
+
+
 class UnsupportedIdentifierCaseError(Exception):
     """Raised when ``literalize_call`` is passed a ``ref_case`` that the
     target language's ``IdentifierCases`` enum does not expose.
@@ -178,3 +188,14 @@ class UnsupportedIdentifierCaseError(Exception):
         )
         self.language_name = language_name
         self.case_name = case_name
+
+
+class WrapCombinedInFileNotSupportedError(Exception):
+    """Raised when a language does not support ``wrap_combined_in_file``.
+
+    Languages that raise this error do not support
+    :class:`~literalizer.BothVariableForms`; ``literalize()`` rejects
+    that form before reaching ``wrap_combined_in_file``, but each
+    language implementation still raises this typed exception as a
+    safety net.
+    """
