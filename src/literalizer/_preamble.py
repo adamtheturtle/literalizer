@@ -177,7 +177,7 @@ def _has_special_float(*, data: Value) -> bool:
 def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     """Return *elements* with plain dicts pooled and ordered dicts pooled.
 
-    Mirrors the ``merge_dicts=True`` behaviour used by Python's
+    Mirrors the ``merge_dicts=True`` behavior used by Python's
     ``_collection_element_union`` for sequence elements: all plain-dict
     siblings are merged into a single representative dict (likewise for
     ordered-dict siblings) so that the element-type union is computed on
@@ -214,7 +214,7 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     return merged
 
 
-def _structural_type_id(  # noqa: C901, PLR0911, PLR0912
+def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     value: Value,
 ) -> str:
