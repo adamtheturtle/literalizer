@@ -95,6 +95,25 @@ def _format_datetime_python(value: datetime.datetime) -> str:
     ]
     if value.microsecond:
         parts.append(f"microsecond={value.microsecond}")
+    if value.tzinfo is not None and (offset := value.utcoffset()) is not None:
+        if offset == datetime.timedelta():
+            parts.append("tzinfo=datetime.UTC")
+        else:
+            total_seconds = int(offset.total_seconds())
+            sign = -1 if total_seconds < 0 else 1
+            abs_seconds = abs(total_seconds)
+            hours = sign * (abs_seconds // 3600)
+            minutes = sign * ((abs_seconds % 3600) // 60)
+            seconds = sign * (abs_seconds % 60)
+            td_parts = [f"hours={hours}"]
+            if minutes or seconds:
+                td_parts.append(f"minutes={minutes}")
+            if seconds:
+                td_parts.append(f"seconds={seconds}")
+            td_args = ", ".join(td_parts)
+            parts.append(
+                f"tzinfo=datetime.timezone(offset=datetime.timedelta({td_args}))"
+            )
     args = ", ".join(parts)
     return f"datetime.datetime({args})"
 
