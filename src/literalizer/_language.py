@@ -502,6 +502,7 @@ class LanguageCls(type):
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
     allows_bare_call_statement: bool
+    allows_empty_call_parens: bool
     call_returns_expression: bool
     supports_inline_multiline_dict_args: bool
     supports_module_name: bool
@@ -1149,6 +1150,11 @@ class Language(Protocol):
         has no call syntax at all, or literalizer has not yet
         implemented call rendering for it).
         """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def allows_empty_call_parens(self) -> bool:
+        """Whether an empty argument list is written as ``()``."""
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
