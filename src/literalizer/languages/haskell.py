@@ -1108,16 +1108,16 @@ class Haskell(metaclass=LanguageCls):
         instances.
         """
 
-        OVERLOADED = "overloaded"
-        EXPLICIT = "explicit"
+        OVERLOADED = enum.auto()
+        EXPLICIT = enum.auto()
 
     numeric_styles = NumericStyles
 
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
-        EXPLICIT = "explicit"
+        DOUBLE = enum.auto()
+        EXPLICIT = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1151,7 +1151,7 @@ class Haskell(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 

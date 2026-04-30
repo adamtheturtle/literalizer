@@ -297,7 +297,7 @@ class Nix(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.auto()
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
@@ -317,7 +317,7 @@ class Nix(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -327,7 +327,7 @@ class Nix(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats

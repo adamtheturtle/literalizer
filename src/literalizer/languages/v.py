@@ -487,7 +487,7 @@ class V(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        SINGLE = "single"
+        SINGLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -523,7 +523,7 @@ class V(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        NEWLINE = "newline"
+        NEWLINE = enum.auto()
 
     line_endings = LineEndings
 
