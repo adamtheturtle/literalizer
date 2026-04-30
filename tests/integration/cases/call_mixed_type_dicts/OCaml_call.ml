@@ -7,10 +7,10 @@ type val_t =
   | OMap of (string * val_t) list
 module App = struct
 module Mgr = struct
-let op _ = ()
+let run _ = ()
 end
 end
-let _ = App.Mgr.op(OMap [("type", OStr "create"); ("pr_id", OStr "pr_1"); ("draft", OBool true)])
-let _ = App.Mgr.op(OMap [("type", OStr "create"); ("pr_id", OStr "pr_2")])
+let _ = App.Mgr.run(OMap [("type", OStr "create"); ("pr_id", OStr "pr_1"); ("draft", OBool true)])
+let _ = App.Mgr.run(OMap [("type", OStr "create"); ("pr_id", OStr "pr_2")])
 
 end

@@ -1,5 +1,5 @@
 (define app (lambda args (if #f #f)))
 (define app.mgr (lambda args (if #f #f)))
-(define app.mgr.op (lambda args (if #f #f)))
-(app.mgr.op (list "type" "create" "pr_id" "pr_1" "draft" #t))
-(app.mgr.op (list "type" "create" "pr_id" "pr_2"))
+(define app.mgr.run (lambda args (if #f #f)))
+(app.mgr.run (list "type" "create" "pr_id" "pr_1" "draft" #t))
+(app.mgr.run (list "type" "create" "pr_id" "pr_2"))

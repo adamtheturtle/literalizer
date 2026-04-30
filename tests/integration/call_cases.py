@@ -433,7 +433,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
-        target_function="app.mgr.op",
+        target_function="app.mgr.run",
         parameter_names=["operation"],
         call_transform=None,
         transform_stub_names=[],

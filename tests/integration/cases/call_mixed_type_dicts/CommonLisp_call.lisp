@@ -1,5 +1,5 @@
 (defun app (&rest args) (declare (ignore args)) nil)
 (defun app.mgr (&rest args) (declare (ignore args)) nil)
-(defun app.mgr.op (&rest args) (declare (ignore args)) nil)
-(app.mgr.op :operation (list (cons "type" "create") (cons "pr_id" "pr_1") (cons "draft" t)))
-(app.mgr.op :operation (list (cons "type" "create") (cons "pr_id" "pr_2")))
+(defun app.mgr.run (&rest args) (declare (ignore args)) nil)
+(app.mgr.run :operation (list (cons "type" "create") (cons "pr_id" "pr_1") (cons "draft" t)))
+(app.mgr.run :operation (list (cons "type" "create") (cons "pr_id" "pr_2")))
