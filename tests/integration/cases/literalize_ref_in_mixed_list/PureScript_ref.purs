@@ -9,13 +9,13 @@ data Val
     | PDict (Array (Tuple String Val))
 
 
-x :: Val
-x = PDict [
+refX :: Val
+refX = PDict [
     (Tuple "_" (PStr "_"))
     ]
 my_data :: Val
 my_data = PList [
-    x,
+    refX,
     PInt 1,
     PInt 2
     ]

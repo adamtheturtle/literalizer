@@ -8,13 +8,13 @@ type Val
     | EDict (List ( String, Val ))
 
 
-x : Val
-x = EDict [
+refX : Val
+refX = EDict [
     ("_", EStr "_")
     ]
 my_data : Val
 my_data = EList [
-    x,
+    refX,
     EInt 1,
     EInt 2
     ]

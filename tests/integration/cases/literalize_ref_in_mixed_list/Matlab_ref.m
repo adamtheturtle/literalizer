@@ -1,8 +1,8 @@
-x = struct(
+refX = struct(
     '_', "_"
 );
 my_data = {
-    x,
+    refX,
     1,
     2
 };

@@ -4,11 +4,11 @@
 #include <vector>
 #include <variant>
 int main() {
-auto x = std::map<std::string, std::string>{
+auto ref_x = std::map<std::string, std::string>{
     {"_", "_"},
 };
 auto my_data = std::vector<std::variant<std::map<std::string, std::string>, int>>{
-    std::move(x),
+    std::move(ref_x),
     1,
     2,
 };

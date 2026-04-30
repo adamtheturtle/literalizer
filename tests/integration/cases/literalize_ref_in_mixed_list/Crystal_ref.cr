@@ -1,10 +1,10 @@
 module Fixture_literalize_ref_in_mixed_list_Crystal_ref
 extend self
-x = {
+ref_x = {
     "_" => "_",
 }
 my_data = [
-    x,
+    ref_x,
     1,
     2,
 ]

@@ -5,11 +5,11 @@ type Val =
     | FStr of string
     | FList of Val list
     | FMap of (string * Val) list
-let x: Val = FMap [
+let refX: Val = FMap [
     ("_", FStr "_")
 ]
 let my_data: Val = FList [
-    x;
+    refX;
     FInt 1L;
     FInt 2L
 ]

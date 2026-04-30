@@ -1,8 +1,8 @@
-const x = {
+const refX = {
   "_": "_",
 };
 const my_data = [
-  x,
+  refX,
   1,
   2,
 ];

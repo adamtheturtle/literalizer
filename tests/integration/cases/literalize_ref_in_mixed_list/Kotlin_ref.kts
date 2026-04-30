@@ -1,8 +1,8 @@
-val x = mapOf<String, String>(
+val refX = mapOf<String, String>(
     "_" to "_",
 )
 val my_data = listOf<Any?>(
-    x,
+    refX,
     1,
     2,
 )

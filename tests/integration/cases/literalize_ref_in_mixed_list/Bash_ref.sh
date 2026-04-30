@@ -1,8 +1,8 @@
-declare -A x=(
+declare -A ref_x=(
     ["_"]="_"
 )
 declare my_data=(
-    "x"
+    "ref_x"
     1
     2
 )

@@ -1,8 +1,8 @@
-set x [dict create \
+set ref_x [dict create \
     "_" "_" \
 ]
 set my_data [list \
-    x \
+    ref_x \
     1 \
     2 \
 ]

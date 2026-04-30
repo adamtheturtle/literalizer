@@ -7,13 +7,13 @@ Val : [
     RDict (List (Str, Val)),
 ]
 
-x : Val
-x = RDict [
+ref_x : Val
+ref_x = RDict [
     ("_", RStr "_"),
     ]
 my_data : Val
 my_data = RList [
-    x,
+    ref_x,
     RInt 1i128,
     RInt 2i128,
     ]

@@ -2,11 +2,11 @@
 package main
 
 main :: proc() {
-x := map[string]any{
+ref_x := map[string]any{
 	"_" = "_",
 }
 my_data := [dynamic]any{
-	x,
+	ref_x,
 	1,
 	2,
 }

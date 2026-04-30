@@ -1,8 +1,8 @@
-def x = [
+def refX = [
     "_": "_",
 ]
 def my_data = [
-    x,
+    refX,
     1,
     2,
 ]

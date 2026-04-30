@@ -1,12 +1,13 @@
+interface IVal {}
 
 fn main() {
- x := {
+ ref_x := {
  	'_': '_',
  }
 	my_data := [
-		x.clone(),
-		1,
-		2,
+		IVal(ref_x.clone()),
+		IVal(1),
+		IVal(2),
 	]
 	_ = my_data
 }

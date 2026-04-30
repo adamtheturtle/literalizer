@@ -1,8 +1,8 @@
-my $x = {
+my $ref_x = {
     "_" => "_",
 };
 my $my_data = [
-    $x,
+    $ref_x,
     1,
     2,
 ];

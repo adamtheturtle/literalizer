@@ -1,10 +1,10 @@
 defmodule Check do
   def x do
-    x = %{
+    ref_x = %{
         "_" => "_",
     }
     my_data = [
-        x,
+        ref_x,
         1,
         2,
     ]

@@ -1,8 +1,8 @@
-x <- list(
+ref_x <- list(
     "_" = "_"
 )
 my_data <- list(
-    x,
+    ref_x,
     1,
     2
 )

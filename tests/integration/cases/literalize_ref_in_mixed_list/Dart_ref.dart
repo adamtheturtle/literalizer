@@ -1,8 +1,8 @@
-final x = <String, String>{
+final refX = <String, String>{
     "_": "_",
 };
 final my_data = [
-    x,
+    refX,
     1,
     2,
 ];

@@ -1,11 +1,11 @@
 package main
 
 func main() {
-X := map[string]string{
+RefX := map[string]string{
 	"_": "_",
 }
 my_data := []any{
-	X,
+	RefX,
 	1,
 	2,
 }

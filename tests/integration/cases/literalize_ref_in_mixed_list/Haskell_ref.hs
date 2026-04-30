@@ -8,13 +8,13 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-x :: Val
-x = HMap [
+refX :: Val
+refX = HMap [
     ("_", HStr "_")
     ]
 my_data :: Val
 my_data = HList [
-    x,
+    refX,
     1,
     2
     ]

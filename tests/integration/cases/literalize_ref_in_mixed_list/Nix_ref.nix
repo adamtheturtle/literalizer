@@ -1,8 +1,8 @@
-let x = {
+let ref_x = {
   _ = "_";
 }; in
 let my_data = [
-  x
+  ref_x
   1
   2
 ]; in my_data

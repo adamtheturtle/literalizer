@@ -1,8 +1,8 @@
-let x: Any = [
+let refX: Any = [
     "_": "_",
 ]
 let my_data: Any = [
-    x,
+    refX,
     1,
     2,
 ]

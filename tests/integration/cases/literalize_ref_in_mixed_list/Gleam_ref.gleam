@@ -6,11 +6,11 @@ pub type GVal {
 }
 
 pub fn main() {
-  let x = GDict([
+  let ref_x = GDict([
     #("_", GStr("_")),
   ])
   let my_data = GList([
-    x,
+    ref_x,
     GInt(1),
     GInt(2),
   ])

@@ -107,7 +107,16 @@ def _make_v_i64_formatter(
     return _format
 
 
-def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
+def _is_ref_value(v: Value) -> bool:
+    """Return True if *v* looks like a ``{ref_key: name}`` ref marker."""
+    return (
+        isinstance(v, dict)
+        and len(v) == 1
+        and isinstance(next(iter(v.values())), str)
+    )
+
+
+def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex  # noqa: C901
     data: Value,
 ) -> frozenset[int]:
     """Return container ids that need interface-type wrapping in V.
@@ -119,6 +128,8 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
     * Containers with any ``None`` values (V cannot store ``none`` in
       typed collections).
     * Sets with mixed Python types.
+    * Lists that mix ref markers with non-ref elements (refs expand to
+      maps, which are heterogeneous with primitive types in V arrays).
     * Containers whose children have mixed V types because some
       children are in wrap_ids and others are not.
     """
@@ -143,15 +154,14 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
         if not children or any(v is None for v in children):
             wrap_ids.add(id(item))
             return
-        non_ref_children = [
-            v
-            for v in children
-            if not (
-                isinstance(v, dict)
-                and len(v) == 1
-                and isinstance(next(iter(v.values())), str)
-            )
-        ]
+        non_ref_children = [v for v in children if not _is_ref_value(v=v)]
+        if (
+            isinstance(item, list)
+            and len(non_ref_children) < len(children)
+            and non_ref_children
+        ):
+            wrap_ids.add(id(item))
+            return
         python_types = {type(v) for v in non_ref_children if v is not None}
         if len(python_types) > 1:
             wrap_ids.add(id(item))

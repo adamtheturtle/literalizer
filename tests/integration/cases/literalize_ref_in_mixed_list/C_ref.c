@@ -15,11 +15,11 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal x = ((CVal){.m = (CKV[]){
+CVal ref_x = ((CVal){.m = (CKV[]){
     {"_", ((CVal){.s = "_"})},
 }});
 CVal my_data = ((CVal){.a = (CVal[]){
-    x,
+    ref_x,
     ((CVal){.i = 1}),
     ((CVal){.i = 2}),
 }});

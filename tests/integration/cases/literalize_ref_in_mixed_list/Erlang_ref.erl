@@ -1,11 +1,11 @@
 -module(fixture_literalize_ref_in_mixed_list_erlang_ref).
 -export([x/0]).
 x() ->
-    X = #{
+    Ref_x = #{
         "_" => "_"
     },
     My_data = [
-        X,
+        Ref_x,
         1,
         2
     ],

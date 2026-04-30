@@ -18,13 +18,13 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: x
+    type(fval_t) :: ref_x
     type(fval_t) :: my_data
-    x = fmap([fval_t :: &
+    ref_x = fmap([fval_t :: &
         fentry('_', fstr('_')) &
     ])
     my_data = flist([fval_t :: &
-        x, &
+        ref_x, &
         fint(1_int64), &
         fint(2_int64) &
     ])

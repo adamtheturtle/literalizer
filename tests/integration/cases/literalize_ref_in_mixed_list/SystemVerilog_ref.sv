@@ -11,11 +11,11 @@ typedef struct {
 } _VKV;
 module main;
 initial begin
-static _VKV x[] = '{
+static _VKV ref_x[] = '{
     _VKV'{k: "_", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "_"}}
 };
 static _VVal my_data[] = '{
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "x"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "ref_x"},
     _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""}
 };
