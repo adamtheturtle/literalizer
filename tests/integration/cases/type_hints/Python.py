@@ -5,6 +5,6 @@ my_data = {
     "active": True,
     "score": None,
     "joined": datetime.date(year=2024, month=1, day=15),
-    "last_login": datetime.datetime(year=2024, month=1, day=15, hour=12, minute=30, second=0),
+    "last_login": datetime.datetime(year=2024, month=1, day=15, hour=12, minute=30, second=0, tzinfo=datetime.UTC),
     "avatar": "48656c6c6f",
 }

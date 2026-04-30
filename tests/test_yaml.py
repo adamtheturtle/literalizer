@@ -652,3 +652,23 @@ def test_dhall_backtick_label_unescaping() -> None:
         } in my_data"""
     )
     assert result.code == expected
+
+
+def test_python_datetime_whole_hour_offset() -> None:
+    """Python datetime with a whole-hour UTC offset includes only hours, no
+    minutes.
+    """
+    result = literalize(
+        source="2024-01-15T12:00:00+01:00\n",
+        input_format=InputFormat.YAML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=None,
+    )
+    expected = (
+        "datetime.datetime("
+        "year=2024, month=1, day=15, hour=12, minute=0, second=0, "
+        "tzinfo=datetime.timezone(offset=datetime.timedelta(hours=1)))"
+    )
+    assert result.code == expected
