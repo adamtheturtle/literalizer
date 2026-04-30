@@ -784,7 +784,7 @@ class Rust(metaclass=LanguageCls):
             """Return the Rust type annotation for this format."""
             cls = type(self)
             if self is cls.TUPLE:
-                msg = enum.auto()
+                msg = "Use per-element types for tuples"
                 raise IncompatibleFormatsError(msg)
             if self is cls.VEC:
                 return f"Vec<{element_type}>"

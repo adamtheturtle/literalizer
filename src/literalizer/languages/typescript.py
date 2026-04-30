@@ -95,7 +95,7 @@ def _ts_call_stub(
     """
     root = parts[0]
     if len(parts) > 1:
-        proxy = enum.auto()
+        proxy = "new Proxy(function(){}, {get: g})"
         handler = f"get: function g() {{ return {proxy}; }}"
         return (f"const {root}: any = new Proxy({{}}, {{{handler}}});",)
     return (f"const {root}: any = () => {{}};",)
