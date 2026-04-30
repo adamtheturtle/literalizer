@@ -764,8 +764,7 @@ def _format_variable_declaration(
 
     * ``const auto*`` — string literal (``"..."``), required by
       ``readability-qualified-auto``.
-    * ``auto`` — typed expression
-      (e.g. ``std::vector<int>{...}``).
+    * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
     When *modifiers* is non-empty, applicable modifier keywords
     (``static``, ``const``) are prepended.  ``const`` is not duplicated
