@@ -17,7 +17,6 @@ from literalizer.exceptions import (
     YAMLParseError,
 )
 from literalizer.languages import (
-    Cpp,
     Dhall,
     Go,
     Mojo,
@@ -151,68 +150,6 @@ def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
             input_format=InputFormat.YAML,
             language=PYTHON,
         )
-
-
-def test_cpp_array_binary_typed() -> None:
-    """C++ ARRAY format infers std::array<std::string, N> for binary
-    data.
-    """
-    cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
-    yaml_string = "- !!binary |\n    SGVsbG8=\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=cpp_array,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        std::array<std::string, 1>{
-            "48656c6c6f",
-        }""",
-    )
-    assert result.code == expected
-
-
-def test_cpp_array_null_list_fallback() -> None:
-    """C++ ARRAY format falls back when schema type is not directly
-    convertible (e.g. all-null list).
-    """
-    cpp_array = Cpp(sequence_format=Cpp.sequence_formats.ARRAY)
-    yaml_string = "- null\n- null\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=cpp_array,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        {
-            nullptr,
-            nullptr,
-        }""",
-    )
-    assert result.code == expected
-
-
-def test_yaml_set_inline_in_sequence() -> None:
-    """A !!set nested in a sequence is formatted inline using set
-    delimiters.
-    """
-    result = literalize(
-        source="- !!set\n  ? a\n  ? b\n",
-        input_format=InputFormat.YAML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-    assert result.code == '{"a", "b"},'
 
 
 def test_yaml_set_inline_with_format_set_entry() -> None:

@@ -1,0 +1,4 @@
+declare my_data=(
+    ""
+    ""
+)
