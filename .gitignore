@@ -43,3 +43,6 @@ uv.lock
 
 # Claude Code
 .claude/
+
+# Node
+node_modules/

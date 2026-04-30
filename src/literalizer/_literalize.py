@@ -1595,7 +1595,7 @@ def literalize(
     variable_form: VariableForm | None = None,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
-    ref_key: str = "ref",
+    ref_key: str = "$ref",
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
@@ -1645,7 +1645,7 @@ def literalize(
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
-            ref marker when *ref_case* is set.  Defaults to ``"ref"``.
+            ref marker when *ref_case* is set.  Defaults to ``"$ref"``.
 
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
@@ -2253,7 +2253,7 @@ def literalize_call(
     per_element: bool = True,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
-    ref_key: str = "ref",
+    ref_key: str = "$ref",
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -2302,7 +2302,7 @@ def literalize_call(
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as
-            a ref marker.  Defaults to ``"ref"``.
+            a ref marker.  Defaults to ``"$ref"``.
 
     .. note::
 

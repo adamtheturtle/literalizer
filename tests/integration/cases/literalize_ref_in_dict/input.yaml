@@ -1,3 +1,2 @@
----
 key:
-  ref: my_var
+  $ref: my_var

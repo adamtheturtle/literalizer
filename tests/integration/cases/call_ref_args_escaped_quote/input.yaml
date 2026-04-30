@@ -1,2 +1,2 @@
 ---
-- - { ref: my_str }
+- - { $ref: my_str }
