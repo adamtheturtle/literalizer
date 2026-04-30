@@ -559,7 +559,7 @@ class CallCase:
 
 
 @beartype
-def _lang_satisfies_config_constraints(
+def lang_satisfies_config_constraints(
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
 ) -> bool:
@@ -603,7 +603,7 @@ def discover_call_cases() -> list[CallCase]:
                 config.case_dir_name, frozenset()
             ):
                 continue
-            if not _lang_satisfies_config_constraints(
+            if not lang_satisfies_config_constraints(
                 lang_cls=lang_cls, config=config
             ):
                 continue
