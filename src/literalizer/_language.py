@@ -499,6 +499,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
+    has_free_function_calls: bool
     reserved_identifiers: frozenset[str] = frozenset()
     allows_bare_call_statement: bool = True
     call_returns_expression: bool

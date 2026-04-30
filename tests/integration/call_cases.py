@@ -41,7 +41,6 @@ from literalizer.languages import (
     PureScript,
     Raku,
     Roc,
-    Wren,
 )
 
 from .check_golden import check_golden
@@ -488,10 +487,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # call_transform wraps output as "emit(inner)", which is invalid in
-    # Wren (no free-function call syntax).
-    "call_keyword_args": frozenset({Wren}),
-    "call_deep_dotted_transformed": frozenset({Wren}),
+    # COBOL cannot pass multi-line DATA DIVISION entries inline in a CALL
+    # statement.  SML is excluded via reserved_identifiers ("op").
+    "call_mixed_type_dicts": frozenset({Cobol}),
+    # COBOL CALL statement produces no expression value that can be passed
+    # to another call, so emit(inner) is invalid.
+    "call_keyword_args": frozenset({Cobol}),
+    "call_deep_dotted_transformed": frozenset({Cobol}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
@@ -559,6 +561,19 @@ class CallCase:
 
 
 @beartype
+def _lang_supports_case(
+    config: CallCaseConfig,
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Return True if *lang_cls* can produce valid output for *config*."""
+    if "." in config.target_function and not lang_cls.supports_dotted_calls:
+        return False
+    return lang_cls.has_free_function_calls or not any(
+        "." not in name for name in config.transform_stub_names
+    )
+
+
+@beartype
 def _lang_satisfies_config_constraints(
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
@@ -593,8 +608,7 @@ def discover_call_cases() -> list[CallCase]:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue
-            has_dotted_target = "." in config.target_function
-            if has_dotted_target and not lang_cls.supports_dotted_calls:
+            if not _lang_supports_case(config=config, lang_cls=lang_cls):
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
