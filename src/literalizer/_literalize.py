@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import assert_never, cast
+from typing import Protocol, assert_never, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedSeq
@@ -49,6 +49,39 @@ from literalizer.exceptions import (
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
 )
+
+
+class _CallLanguage(Protocol):
+    """Narrowed view of :class:`Language` exposing call-hook attributes.
+
+    All four attributes are guaranteed at runtime by
+    :meth:`LanguageCls.__new__ <literalizer._language.LanguageCls.__new__>`,
+    which injects defaults for language classes that do not define them.
+    Use :func:`~typing.cast` to convert a :class:`Language` value before
+    accessing these attributes.
+    """
+
+    @property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Post-process each rendered call argument string."""
+        ...
+
+    @property
+    def validate_call_arg(self) -> Callable[[Value], None] | None:
+        """Validate a call argument, or ``None`` to skip."""
+        ...
+
+    @property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Wrap a call expression in any required statement form."""
+        ...
+
+    @property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Preamble lines for the call-expression context."""
+        ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1817,7 +1850,10 @@ def _format_call_args(
     *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
     identifier to that :class:`IdentifierCase` before emitting it.
     """
-    wrap_arg: Callable[[Value, str], str] = language.format_call_arg  # type: ignore[attr-defined, unresolved-attribute]
+    wrap_arg: Callable[[Value, str], str] = cast(
+        _CallLanguage,  # noqa: TC006
+        language,
+    ).format_call_arg
     formatted = [
         _format_single_call_arg(
             value=arg_value,
@@ -2052,11 +2088,12 @@ def _render_call_per_element(
         elements=data,
         spec=language,
     )
+    _call_lang = cast(_CallLanguage, language)  # noqa: TC006
     validate_call_arg: Callable[[Value], None] | None = (
-        language.validate_call_arg  # type: ignore[attr-defined, unresolved-attribute]
+        _call_lang.validate_call_arg
     )
     format_call_statement: Callable[[str], str] = (
-        language.format_call_statement  # type: ignore[attr-defined, unresolved-attribute]
+        _call_lang.format_call_statement
     )
     rendered_elements: list[str] = []
     for element in data:
@@ -2120,10 +2157,11 @@ def _render_call_whole(
     A single top-level ref marker renders as just the identifier; in
     that case shape validation and wrap-id computation are skipped.
     """
+    _call_lang = cast(_CallLanguage, language)  # noqa: TC006
     if _extract_call_arg_ref_name(value=data) is None:
         check_data(data=data, spec=language)
         validate_call_arg: Callable[[Value], None] | None = (
-            language.validate_call_arg  # type: ignore[attr-defined, unresolved-attribute]
+            _call_lang.validate_call_arg
         )
         if validate_call_arg is not None:
             validate_call_arg(data)
@@ -2131,7 +2169,7 @@ def _render_call_whole(
     else:
         call_wrap_ids = frozenset[int]()
     format_call_statement: Callable[[str], str] = (
-        language.format_call_statement  # type: ignore[attr-defined, unresolved-attribute]
+        _call_lang.format_call_statement
     )
     args_str = _format_call_args(
         values=[data],
@@ -2296,9 +2334,10 @@ def literalize_call(
         language=language,
         has_variable_declaration=False,
     )
-    _call_ddp: Callable[[Value], tuple[str, ...]] = (
-        language.call_data_dependent_preamble  # type: ignore[attr-defined, unresolved-attribute]
-    )
+    _call_ddp: Callable[[Value], tuple[str, ...]] = cast(
+        _CallLanguage,  # noqa: TC006
+        language,
+    ).call_data_dependent_preamble
     preamble = (
         tuple(language.static_preamble)
         + computed.header

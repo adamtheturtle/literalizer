@@ -529,19 +529,19 @@ class LanguageCls(type):
         """
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         if "format_call_arg" not in namespace:
-            cls.format_call_arg = property(  # type: ignore[attr-defined, misc]
+            cls.format_call_arg = property(  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                 lambda _: _default_format_call_arg
             )
         if "validate_call_arg" not in namespace:
-            cls.validate_call_arg = property(  # type: ignore[attr-defined, misc]
+            cls.validate_call_arg = property(  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                 lambda _: None
             )
         if "format_call_statement" not in namespace:
-            cls.format_call_statement = property(  # type: ignore[attr-defined, misc]
+            cls.format_call_statement = property(  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                 lambda _: _default_format_call_statement
             )
         if "call_data_dependent_preamble" not in namespace:
-            cls.call_data_dependent_preamble = property(  # type: ignore[attr-defined, misc]
+            cls.call_data_dependent_preamble = property(  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
                 lambda self: self.data_dependent_preamble
             )
         return cls

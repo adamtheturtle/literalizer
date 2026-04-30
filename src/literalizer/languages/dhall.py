@@ -916,9 +916,9 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_call_preamble_stub
 
     @cached_property
-    def format_call_arg(self) -> Callable[[Scalar, str], str]:
+    def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each scalar call argument in the ``DVal`` union tag."""
-        return _dhall_format_call_arg
+        return cast("Callable[[Value, str], str]", _dhall_format_call_arg)
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:
