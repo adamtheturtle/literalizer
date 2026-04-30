@@ -44,7 +44,7 @@ def test_call_after_decl_with_escaped_quote_preserved() -> None:
         variable_form=literalizer.NewVariable(name="my_str"),
     )
     call = literalizer.literalize_call(
-        source="---\n- - {$ref: my_str}\n",
+        source="---\n- - {ref: my_str}\n",
         input_format=literalizer.InputFormat.YAML,
         language=spec,
         target_function="process",

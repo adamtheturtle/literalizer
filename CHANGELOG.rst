@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call`
+  now accept a ``ref_key`` parameter (``str``, default ``"ref"``).  The
+  marker key used to identify variable-reference mappings in the input data
+  is now user-configurable: a single-key dict whose key equals *ref_key*
+  and whose value is a string is treated as a ref marker when *ref_case* is
+  set.  The previous hard-coded key ``"$ref"`` is no longer the default;
+  callers that relied on ``$ref`` must pass ``ref_key="$ref"`` explicitly.
+
 2026.04.30
 ----------
 
