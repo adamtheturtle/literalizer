@@ -4,5 +4,5 @@ fn process(args ...ICallArg_) {}
 
 fn main() {
 	my_str := 'a"b'
-	process(my_str.clone());
+	process(my_str);
 }

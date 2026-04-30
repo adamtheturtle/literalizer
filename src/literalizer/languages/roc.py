@@ -507,8 +507,10 @@ class Roc(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = False
     supports_special_floats = True
 
     class DateFormats(enum.Enum):

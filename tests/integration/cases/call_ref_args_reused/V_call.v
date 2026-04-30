@@ -8,7 +8,7 @@ fn main() {
 		6,
 	]
 	repeated_var := 1
-	process(repeated_var.clone(), 1);
-	process(single_var.clone(), 0);
-	process(repeated_var.clone(), 8);
+	process(repeated_var, 1);
+	process(single_var, 0);
+	process(repeated_var, 8);
 }

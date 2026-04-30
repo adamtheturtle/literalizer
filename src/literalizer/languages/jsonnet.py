@@ -132,8 +132,10 @@ class Jsonnet(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = False
     supports_dotted_calls = True
+    has_free_function_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     class DateFormats(enum.Enum):
         """Date format options for Jsonnet."""

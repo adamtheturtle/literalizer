@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.30.2
+------------
+
+
 2026.04.30.1
 ------------
 
@@ -40,10 +44,14 @@ Next
 2026.04.30
 ----------
 
+- :func:`~literalizer.literalize_call` now expands ``{"$ref": "name"}``
+  markers that appear nested inside list elements or dict values of an
+  argument, in addition to the existing support for top-level argument
+  refs.  ``ref_case`` conversion and preamble stripping apply recursively
+  to nested refs just as they do to top-level ones.
 
 2026.04.29
 ----------
-
 
 - :func:`~literalizer.literalize` now accepts a ``ref_case`` parameter
   (:class:`~literalizer.IdentifierCase`).  When set, any

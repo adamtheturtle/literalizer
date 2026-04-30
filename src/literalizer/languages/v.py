@@ -63,6 +63,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
@@ -141,7 +142,16 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
         if not children or any(v is None for v in children):
             wrap_ids.add(id(item))
             return
-        python_types = {type(v) for v in children if v is not None}
+        non_ref_children = [
+            v
+            for v in children
+            if not (
+                isinstance(v, dict)
+                and len(v) == 1
+                and isinstance(next(iter(v.values())), str)
+            )
+        ]
+        python_types = {type(v) for v in non_ref_children if v is not None}
         if len(python_types) > 1:
             wrap_ids.add(id(item))
             return
@@ -313,8 +323,10 @@ class V(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     class DateFormats(enum.Enum):
         """Date format options for V."""
@@ -716,27 +728,30 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``.clone()`` to copy a V map value.
+        """Append ``.clone()`` to the ref identifier.
 
-        V maps are not automatically copyable in direct assignment
-        context, so ``.clone()`` is required to produce a valid copy.
+        V maps cannot be copied by direct assignment; the caller must
+        explicitly clone the value.  ``$ref`` markers appear on the
+        right-hand side of an assignment emitted by
+        :func:`~literalizer.literalize`, so ``.clone()`` is required.
         """
 
-        def _format_v_ref_identifier(name: str, /) -> str:
-            """Append ``.clone()`` for V map copy semantics."""
+        def _clone(name: str, /) -> str:
+            """Return *name* with ``.clone()`` appended."""
             return f"{name}.clone()"
 
-        return _format_v_ref_identifier
+        return _clone
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
+        """Return the ref identifier unchanged in a call-argument context.
 
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
+        When a ``$ref`` is passed as a function argument (directly or
+        nested inside a container argument via
+        :func:`~literalizer.literalize_call`), V does not require
+        ``.clone()``; V passes the value automatically without copying.
         """
-        return self.format_call_ref_identifier
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier_consumable(

@@ -331,8 +331,10 @@ class Cobol(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
     call_returns_expression = False
     supports_inline_multiline_dict_args = False
+    supports_module_name = False
 
     class DateFormats(enum.Enum):
         """Date format options for Cobol."""

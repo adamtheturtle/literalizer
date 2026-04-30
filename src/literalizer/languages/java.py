@@ -572,8 +572,10 @@ class Java(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",

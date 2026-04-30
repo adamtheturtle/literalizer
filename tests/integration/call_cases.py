@@ -41,7 +41,6 @@ from literalizer.languages import (
     PureScript,
     Raku,
     Roc,
-    Wren,
 )
 
 from .check_golden import check_golden
@@ -64,22 +63,46 @@ def _prepend_preamble(
 
 @beartype
 def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
-    """Return preamble *blocks* with duplicate headers removed.
+    """Return preamble *blocks* with duplicates merged.
 
     Some languages emit multi-line preamble blocks whose first line is a
     stable header (for example, ``pub type GVal {`` in Gleam). When the
     call-test harness combines declaration preambles with call
-    preambles, the same header can appear multiple times with identical
-    bodies. Keep the first block per header.
+    preambles, the same header can appear multiple times with different
+    bodies. Blocks sharing the same header *and* footer are merged: the
+    first block's middle lines are kept as-is, and any additional middle
+    lines from subsequent blocks that are not yet present are appended.
+    Blocks that share only the header but differ in their footer (e.g.
+    two distinct type definitions sharing a common attribute decorator)
+    are kept as separate blocks.
     """
-    seen: set[str] = set()
-    result: list[str] = []
+    key_to_middle: dict[tuple[str, str], list[str]] = {}
+    order: list[tuple[str, str]] = []
     for block in blocks:
-        header = block.splitlines()[0] if block else ""
-        if header in seen:
+        lines = block.splitlines()
+        if not lines:  # pragma: no cover
             continue
-        seen.add(header)
-        result.append(block)
+        header = lines[0]
+        footer = lines[-1] if len(lines) > 1 else ""
+        key = (header, footer)
+        middle = lines[1:-1]
+        if key not in key_to_middle:
+            key_to_middle[key] = list(middle)
+            order.append(key)
+        else:
+            existing = set(key_to_middle[key])
+            for line in middle:
+                if line not in existing:
+                    key_to_middle[key].append(line)
+                    existing.add(line)
+    result: list[str] = []
+    for key in order:
+        header, footer = key
+        middle = key_to_middle[key]
+        parts: list[str] = [header, *middle]
+        if footer and footer != header:
+            parts.append(footer)
+        result.append("\n".join(parts))
     return tuple(result)
 
 
@@ -447,6 +470,58 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_ref_nested_in_list",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "42",
+            "my_other": "7",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_ref_nested_in_dict",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "42",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_ref_nested_converted",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "myVar": "42",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=True,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
         target_function="app.mgr.run",
         parameter_names=["operation"],
@@ -518,10 +593,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # call_transform wraps output as "emit(inner)", which is invalid in
-    # Wren (no free-function call syntax).
-    "call_keyword_args": frozenset({Wren}),
-    "call_deep_dotted_transformed": frozenset({Wren}),
+    # COBOL cannot pass multi-line DATA DIVISION entries inline in a CALL
+    # statement.  SML is excluded via reserved_identifiers ("op").
+    "call_mixed_type_dicts": frozenset({Cobol}),
+    # COBOL CALL statement produces no expression value that can be passed
+    # to another call, so emit(inner) is invalid.
+    "call_keyword_args": frozenset({Cobol}),
+    "call_deep_dotted_transformed": frozenset({Cobol}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
@@ -577,6 +655,9 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Roc,
         }
     ),
+    # Mojo rejects the transfer operator (^) on trivial register types such as
+    # Int, so a $ref inside a dict literal (which requires ^) cannot compile.
+    "call_ref_nested_in_dict": frozenset({Mojo}),
 }
 
 
@@ -586,6 +667,19 @@ class CallCase:
 
     config: CallCaseConfig
     lang_cls: literalizer.LanguageCls
+
+
+@beartype
+def _lang_supports_case(
+    config: CallCaseConfig,
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Return True if *lang_cls* can produce valid output for *config*."""
+    if "." in config.target_function and not lang_cls.supports_dotted_calls:
+        return False
+    return lang_cls.has_free_function_calls or not any(
+        "." not in name for name in config.transform_stub_names
+    )
 
 
 @beartype
@@ -623,8 +717,7 @@ def discover_call_cases() -> list[CallCase]:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue
-            has_dotted_target = "." in config.target_function
-            if has_dotted_target and not lang_cls.supports_dotted_calls:
+            if not _lang_supports_case(config=config, lang_cls=lang_cls):
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
