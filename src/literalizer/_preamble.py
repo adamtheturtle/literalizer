@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import math
 from collections import OrderedDict
+from typing import assert_never
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -276,6 +277,8 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
                 {_structural_type_id(value=v) for v in value.values()}
             )
             return f"dict({','.join(val_ids)})"
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def _has_union_in_type_hints(*, data: Value) -> bool:  # noqa: PLR0911

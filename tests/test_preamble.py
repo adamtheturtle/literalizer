@@ -167,6 +167,10 @@ class TestHasUnionInTypeHints:
         data: Value = cast("Value", {"a": 1})
         assert _has_union_in_type_hints(data=data) is False
 
+    def test_list_without_annotation(self) -> None:
+        """List with non-empty uniform scalars needs no annotation."""
+        assert _has_union_in_type_hints(data=cast("Value", [1, 2])) is False
+
     def test_scalar_returns_false(self) -> None:
         """Scalars never produce a union."""
         assert _has_union_in_type_hints(data=42) is False
