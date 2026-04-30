@@ -68,6 +68,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
@@ -1357,13 +1358,15 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
+        """Return the ref identifier unchanged in a call-argument context.
 
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
+        ``std::move`` on a trivially-copyable type (e.g. ``int``) is a
+        no-op that clang-tidy flags as ``performance-move-const-arg``.
+        Because the type of the referenced variable is unknown at code-
+        generation time, call-argument refs are emitted without
+        ``std::move`` so the generated code is always lint-clean.
         """
-        return self.format_call_ref_identifier
+        return identity_call_ref_identifier
 
     @cached_property
     def _cpp_date_type(self) -> str:

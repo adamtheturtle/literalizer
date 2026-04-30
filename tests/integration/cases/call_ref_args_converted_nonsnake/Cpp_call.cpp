@@ -12,7 +12,7 @@ auto my_other = std::vector<int>{
     5,
     6,
 };
-process(std::move(my_var), 42);
-process(std::move(my_other), 7);
+process(my_var, 42);
+process(my_other, 7);
     return 0;
 }

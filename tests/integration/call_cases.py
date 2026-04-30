@@ -83,7 +83,7 @@ def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
     order: list[tuple[str, str]] = []
     for block in blocks:
         lines = block.splitlines()
-        if not lines:
+        if not lines:  # pragma: no cover
             continue
         header = lines[0]
         footer = lines[-1] if len(lines) > 1 else ""
