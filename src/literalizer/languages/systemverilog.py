@@ -235,6 +235,7 @@ class SystemVerilog(metaclass=LanguageCls):
     allows_bare_call_statement = False
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = True
 
     class DateFormats(enum.Enum):
         """Date format options for SystemVerilog."""

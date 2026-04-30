@@ -140,6 +140,7 @@ class Lua(metaclass=LanguageCls):
     has_free_function_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     class DateFormats(enum.Enum):
         """Date format options for Lua."""
