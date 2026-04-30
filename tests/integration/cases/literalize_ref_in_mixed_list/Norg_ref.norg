@@ -1,0 +1,14 @@
+* ref_x
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+[
+    ref_x,
+    1,
+    2
+]
+@end

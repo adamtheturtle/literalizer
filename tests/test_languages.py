@@ -1051,6 +1051,20 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
         )
 
 
+def test_literalize_ref_case_unsupported_raises() -> None:
+    """``ref_case`` outside the language's ``identifier_cases`` raises."""
+    with pytest.raises(
+        expected_exception=UnsupportedIdentifierCaseError,
+        match=r"^Python does not support identifier case 'KEBAB'$",
+    ):
+        literalize(
+            source='{"$ref": "my_var"}',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            ref_case=IdentifierCase.KEBAB,
+        )
+
+
 def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
     """Non-empty declarations are placed before the wrapped call
     expression.

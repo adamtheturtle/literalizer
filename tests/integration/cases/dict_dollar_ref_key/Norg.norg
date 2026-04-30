@@ -1,0 +1,6 @@
+* my_data
+@code json
+{
+    "$ref": "my_var"
+}
+@end
