@@ -699,7 +699,7 @@ def test_nix_control_char_key_error() -> None:
 
 def test_dhall_backtick_label_unescaping() -> None:
     """Dhall backtick labels contain raw content, not escape sequences."""
-    yaml_string = '{"$ref": "value"}\n'
+    yaml_string = '{"$other": "value"}\n'
     result = literalize(
         source=yaml_string,
         input_format=InputFormat.YAML,
@@ -711,7 +711,7 @@ def test_dhall_backtick_label_unescaping() -> None:
     expected = textwrap.dedent(
         text="""\
         let my_data = {
-          `$ref` = "value",
+          `$other` = "value",
         } in my_data"""
     )
     assert result.code == expected
