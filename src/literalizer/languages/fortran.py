@@ -313,7 +313,7 @@ class Fortran(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     allows_bare_call_statement = False
-    reserved_identifiers = frozenset()
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
 
