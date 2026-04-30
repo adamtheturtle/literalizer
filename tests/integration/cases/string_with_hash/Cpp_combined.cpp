@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 int main() {
-const auto my_data = std::vector<std::string>{
+auto my_data = std::vector<std::string>{
     "issue #{42}",
     "color #red",
 };

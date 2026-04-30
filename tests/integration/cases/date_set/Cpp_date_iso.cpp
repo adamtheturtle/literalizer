@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 int main() {
-const auto my_data = std::initializer_list<std::string>{
+auto my_data = std::initializer_list<std::string>{
     "2024-01-15",
     "2024-06-01",
 };

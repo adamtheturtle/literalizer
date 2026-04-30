@@ -4,7 +4,7 @@
 #include <vector>
 #include <variant>
 int main() {
-const auto my_data = std::vector<std::variant<bool, std::string, std::vector<int>, std::nullptr_t>>{
+auto my_data = std::vector<std::variant<bool, std::string, std::vector<int>, std::nullptr_t>>{
     true,
     "hi",
     std::vector<int>{1, 2},

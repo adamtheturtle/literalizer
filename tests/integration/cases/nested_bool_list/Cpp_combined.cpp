@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <vector>
 int main() {
-const auto my_data = std::vector<std::vector<bool>>{
+auto my_data = std::vector<std::vector<bool>>{
     std::vector<bool>{true, false},
     std::vector<bool>{true, true},
 };

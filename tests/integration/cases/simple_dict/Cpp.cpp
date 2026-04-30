@@ -4,7 +4,7 @@
 #include <map>
 #include <variant>
 int main() {
-const auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
+auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

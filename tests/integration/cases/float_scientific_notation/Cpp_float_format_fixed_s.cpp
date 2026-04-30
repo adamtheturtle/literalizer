@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <vector>
 int main() {
-const auto my_data = std::vector<double>{
+auto my_data = std::vector<double>{
     0.000000,
     1.000000,
     1500.000000,

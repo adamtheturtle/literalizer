@@ -2,7 +2,7 @@
 #include <string>
 #include <variant>
 int main() {
-const auto my_data = std::initializer_list<std::variant<bool, int, std::string>>{
+auto my_data = std::initializer_list<std::variant<bool, int, std::string>>{
     true,
     42,
     "apple",

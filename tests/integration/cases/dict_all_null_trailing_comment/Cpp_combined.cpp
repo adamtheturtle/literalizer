@@ -4,7 +4,7 @@
 #include <map>
 #include <variant>
 int main() {
-const auto my_data = std::map<std::string, std::nullptr_t>{
+auto my_data = std::map<std::string, std::nullptr_t>{
     {"a", nullptr},
     {"b", nullptr},
     // trailing

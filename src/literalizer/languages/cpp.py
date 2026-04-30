@@ -763,25 +763,20 @@ def _format_variable_declaration(
     """Format a C++ variable declaration.
 
     * ``const auto*`` — string literal (``"..."``), required by
-      ``readability-qualified-auto``.  Already ``const``, so
-      ``misc-const-correctness`` is always satisfied and ``std::move()``
-      is never needed at call sites.
-    * ``const auto`` — typed expression (e.g. ``std::vector<int>{...}``).
-      Declaring as ``const`` means ``misc-const-correctness`` is
-      satisfied without applying ``std::move()`` at call sites.
+      ``readability-qualified-auto``.
+    * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
     When *modifiers* is non-empty, applicable modifier keywords
     (``static``, ``const``) are prepended.  ``const`` is not duplicated
-    against the built-in ``const auto*`` for string literals, and is
-    not duplicated against ``const auto`` for typed expressions.
+    against the built-in ``const auto*`` for string literals.
     """
     match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
             type_keyword = "const auto*"
             extra = modifiers - {_CppModifiers.CONST}
         case ValueKind.TYPED_EXPRESSION:
-            type_keyword = "const auto"
-            extra = modifiers - {_CppModifiers.CONST}
+            type_keyword = "auto"
+            extra = modifiers
         case _ as unreachable:
             assert_never(unreachable)  # pyrefly: ignore[bad-argument-type]
     prefix = _cpp_modifier_prefix(modifiers=extra)
@@ -1356,16 +1351,19 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Return the ``{"$ref": "name"}`` identifier unchanged.
+        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
 
-        Ref variables are declared ``const`` (either ``const auto*`` for
-        string literals or ``const auto`` for typed expressions), so
-        ``std::move()`` cannot be applied without triggering clang-tidy's
-        ``performance-move-const-arg`` check.  Passing by value is safe:
-        ``const auto*`` is trivially copyable, and ``const auto`` values
-        passed to ``auto process(auto...)`` are copied efficiently.
+        A direct copy assignment (``auto my_data = my_var``) triggers
+        clang-tidy ``performance-unnecessary-copy-initialization`` when
+        the variable is never modified.  Using ``std::move`` avoids the
+        copy and satisfies the linter.
         """
-        return identity_call_ref_identifier
+
+        def _format_cpp_ref_identifier(name: str, /) -> str:
+            """Wrap the identifier in ``std::move()``."""
+            return f"std::move({name})"
+
+        return _format_cpp_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
@@ -1385,17 +1383,18 @@ class Cpp(metaclass=LanguageCls):
     def format_call_arg_ref_identifier_consumable(
         self,
     ) -> Callable[[str], str]:
-        """Return the consumable call-argument ``$ref`` identifier
-        unchanged.
+        """Wrap a consumable call-argument ``$ref`` in ``std::move()``.
 
-        Ref variables are declared ``const`` (``const auto*`` for string
-        literals, ``const auto`` for typed expressions), so
-        ``std::move()`` cannot be applied without triggering clang-tidy's
-        ``performance-move-const-arg`` check.  Passing by value is safe:
-        the ``auto process(auto...)`` template takes copies, so no
-        move is required.
+        Used only for refs the caller declared as consumable on
+        :func:`~literalizer.literalize_call` and that appear in just
+        one call argument, so the move cannot strand a later use.
         """
-        return identity_call_ref_identifier
+
+        def _format_cpp_ref_identifier_consumable(name: str, /) -> str:
+            """Wrap the identifier in ``std::move()``."""
+            return f"std::move({name})"
+
+        return _format_cpp_ref_identifier_consumable
 
     @cached_property
     def _cpp_date_type(self) -> str:

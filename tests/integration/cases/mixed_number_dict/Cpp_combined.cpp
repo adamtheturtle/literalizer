@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 int main() {
-const auto my_data = std::map<std::string, double>{
+auto my_data = std::map<std::string, double>{
     {"a", 1},
     {"b", 2.5},
     {"c", 3},

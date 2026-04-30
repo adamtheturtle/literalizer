@@ -1,7 +1,7 @@
 #include <initializer_list>
 int main() {
 // note
-const auto my_data = 42;
+auto my_data = 42;
     (void)my_data;
     return 0;
 }

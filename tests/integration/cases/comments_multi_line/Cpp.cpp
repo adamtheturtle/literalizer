@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 int main() {
-const auto my_data = std::vector<std::string>{
+auto my_data = std::vector<std::string>{
     // line 1
     // line 2
     "a",

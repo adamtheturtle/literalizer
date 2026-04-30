@@ -4,7 +4,7 @@
 #include <vector>
 #include <variant>
 int main() {
-const auto my_data = std::vector<std::pair<std::string, std::variant<std::string, int, bool>>>{
+auto my_data = std::vector<std::pair<std::string, std::variant<std::string, int, bool>>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

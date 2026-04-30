@@ -3,7 +3,7 @@
 #include <vector>
 #include <variant>
 int main() {
-const auto my_data = std::vector<std::vector<std::variant<int, std::string>>>{
+auto my_data = std::vector<std::vector<std::variant<int, std::string>>>{
     std::vector<std::variant<int, std::string>>{1, "a"},
     std::vector<std::variant<int, std::string>>{2, "b"},
 };

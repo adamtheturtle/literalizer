@@ -3,7 +3,7 @@
 #include <utility>
 #include <vector>
 int main() {
-const auto my_data = std::vector<std::pair<std::string, std::string>>{
+auto my_data = std::vector<std::pair<std::string, std::string>>{
     {"1", "one"},
     {"2", "two"},
     {"42", "answer"},
