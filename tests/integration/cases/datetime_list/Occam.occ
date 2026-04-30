@@ -11,7 +11,7 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC main (CHAN BYTE kyb?, scr!, err!)
+PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15T12:30:00.123456+00:00"),
         MOBILE LIT(lit.str; MOBILE []BYTE "2024-06-01T08:00:00+00:00")
