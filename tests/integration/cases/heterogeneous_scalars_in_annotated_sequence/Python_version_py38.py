@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 from typing import Any, Tuple, Union
 my_data: Tuple[Union[bool, float, None, datetime.date, datetime.datetime, Tuple[Any, ...]], ...] = (

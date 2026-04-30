@@ -1090,7 +1090,6 @@ class Python(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
@@ -1233,16 +1232,21 @@ class Python(metaclass=LanguageCls):
         return self.comment_format.value
 
     @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Return PEP 563 future import for PY38 to allow subscripted
+        collections.OrderedDict in type annotations at runtime.
+        """
+        if self.language_version is Python.VersionFormats.PY38:
+            return ("from __future__ import annotations",)
+        return ()
+
+    @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        if self.language_version is Python.VersionFormats.PY38:
-            ordered_dict_import = "from typing import OrderedDict"
-        else:
-            ordered_dict_import = "from collections import OrderedDict"
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="OrderedDict(["),
             close="])",
-            preamble_lines=(ordered_dict_import,),
+            preamble_lines=("from collections import OrderedDict",),
         )
 
     @cached_property
