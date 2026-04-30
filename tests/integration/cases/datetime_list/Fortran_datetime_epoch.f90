@@ -20,7 +20,7 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fint(1705321800), &
-        fint(1717228800) &
+        fint(1705321800_int64), &
+        fint(1717228800_int64) &
     ])
 end program main

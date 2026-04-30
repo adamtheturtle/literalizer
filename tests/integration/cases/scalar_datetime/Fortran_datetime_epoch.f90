@@ -19,5 +19,5 @@ program main
     use fval_m
     implicit none
     type(fval_t) :: my_data
-    my_data = fint(1705321800)
+    my_data = fint(1705321800_int64)
 end program main
