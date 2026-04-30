@@ -433,7 +433,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
-        target_function="app.mgr.op",
+        target_function="app.mgr.run",
         parameter_names=["operation"],
         call_transform=None,
         transform_stub_names=[],
@@ -566,9 +566,6 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
-    innermost = config.target_function.split(sep=".")[-1]
-    if innermost in lang_cls.reserved_identifiers:
-        return False
     _probe = "__probe__"
     if (
         config.call_transform is not None

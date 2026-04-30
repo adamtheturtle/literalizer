@@ -6,9 +6,9 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
 type MgrType_() =
-    member _.op(_operation: obj) : obj = null
+    member _.run(_operation: obj) : obj = null
 type AppType_() =
     member _.mgr = MgrType_()
 let app = AppType_()
-app.mgr.op(FMap [("type", FStr "create"); ("pr_id", FStr "pr_1"); ("draft", FBool true)])
-app.mgr.op(FMap [("type", FStr "create"); ("pr_id", FStr "pr_2")])
+app.mgr.run(FMap [("type", FStr "create"); ("pr_id", FStr "pr_1"); ("draft", FBool true)])
+app.mgr.run(FMap [("type", FStr "create"); ("pr_id", FStr "pr_2")])

@@ -10,10 +10,10 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const MgrType_ = struct { fn op(self: MgrType_, operation: ZVal) void { _ = self; _ = operation; } };
+const MgrType_ = struct { fn run(self: MgrType_, operation: ZVal) void { _ = self; _ = operation; } };
 const AppType_ = struct { mgr: MgrType_ = .{} };
 const app: AppType_ = .{};
 pub fn main() void {
-    app.mgr.op(.{ .map = &.{.{ .key = "type", .val = .{ .str = "create" } }, .{ .key = "pr_id", .val = .{ .str = "pr_1" } }, .{ .key = "draft", .val = .{ .bool = true } }}});
-    app.mgr.op(.{ .map = &.{.{ .key = "type", .val = .{ .str = "create" } }, .{ .key = "pr_id", .val = .{ .str = "pr_2" } }}});
+    app.mgr.run(.{ .map = &.{.{ .key = "type", .val = .{ .str = "create" } }, .{ .key = "pr_id", .val = .{ .str = "pr_1" } }, .{ .key = "draft", .val = .{ .bool = true } }}});
+    app.mgr.run(.{ .map = &.{.{ .key = "type", .val = .{ .str = "create" } }, .{ .key = "pr_id", .val = .{ .str = "pr_2" } }}});
 }

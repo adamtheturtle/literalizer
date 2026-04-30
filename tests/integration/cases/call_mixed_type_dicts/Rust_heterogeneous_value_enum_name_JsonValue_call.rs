@@ -5,9 +5,9 @@ enum JsonValue {
 }
 fn main() {
     struct MgrType_;
-    impl MgrType_ { fn op<A>(&self, _operation: A) {} }
+    impl MgrType_ { fn run<A>(&self, _operation: A) {} }
     struct AppType_ { mgr: MgrType_ }
     let app = AppType_ { mgr: MgrType_ };
-    app.mgr.op(HashMap::from([("type", JsonValue::Str("create")), ("pr_id", JsonValue::Str("pr_1")), ("draft", JsonValue::Bool(true))]));
-    app.mgr.op(HashMap::from([("type", JsonValue::Str("create")), ("pr_id", JsonValue::Str("pr_2"))]));
+    app.mgr.run(HashMap::from([("type", JsonValue::Str("create")), ("pr_id", JsonValue::Str("pr_1")), ("draft", JsonValue::Bool(true))]));
+    app.mgr.run(HashMap::from([("type", JsonValue::Str("create")), ("pr_id", JsonValue::Str("pr_2"))]));
 }
