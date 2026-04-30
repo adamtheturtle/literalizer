@@ -344,7 +344,7 @@ class Matlab(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.auto()
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""

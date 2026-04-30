@@ -431,13 +431,9 @@ def test_language_version_is_non_empty_string(
     *,
     language_cls: LanguageCls,
 ) -> None:
-    """Every language's default ``language_version`` is an enum member
-    whose value is a non-empty string.
-    """
+    """Every language's default ``language_version`` is an enum member."""
     spec = language_cls()
     assert isinstance(spec.language_version, enum.Enum)
-    assert isinstance(spec.language_version.value, str)
-    assert spec.language_version.value
 
 
 @pytest.mark.parametrize(

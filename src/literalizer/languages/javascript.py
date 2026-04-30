@@ -86,7 +86,7 @@ def _js_call_stub(
     """Return JavaScript stub declarations for a call name."""
     root = parts[0]
     if len(parts) > 1:
-        proxy = "new Proxy(function(){}, {get: g})"
+        proxy = enum.auto()
         handler = f"get: function g() {{ return {proxy}; }}"
         return (f"var {root} = new Proxy({{}}, {{{handler}}});",)
     return (f"function {root}() {{}}",)

@@ -297,7 +297,7 @@ class VisualBasic(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Visual Basic."""
 
-        ARRAY = "array"
+        ARRAY = enum.auto()
 
     class SetFormats(enum.Enum):
         """Set type options for Visual Basic."""

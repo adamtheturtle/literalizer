@@ -205,7 +205,7 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
                 case [single]:
                     val_type = single
                 case _ if "Any?" in unique:
-                    val_type = "Any?"
+                    val_type = enum.auto()
                 case _:
                     val_type = "Any"
             return f"[String: {val_type}]"

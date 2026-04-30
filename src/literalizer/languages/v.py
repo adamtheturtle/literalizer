@@ -481,7 +481,7 @@ class V(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        SINGLE = "single"
+        SINGLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

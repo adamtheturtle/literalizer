@@ -347,7 +347,7 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
                 # Java cannot create arrays of generic types, so fall
                 # back to Object[] when the element type is generic.
                 if "<" in elem_type:
-                    elem_type = "Object"
+                    elem_type = enum.auto()
                 return f"{elem_type}[]"
             elem_type = _java_common_element_type(
                 elements=data,

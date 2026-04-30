@@ -448,7 +448,7 @@ class Go(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

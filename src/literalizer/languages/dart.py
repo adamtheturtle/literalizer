@@ -142,7 +142,7 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
                 case [single]:
                     val_type = single
                 case _:
-                    val_type = "dynamic"
+                    val_type = enum.auto()
             return f"Map<{default_dict_key_type}, {val_type}>"
         case set():
             if not data:
