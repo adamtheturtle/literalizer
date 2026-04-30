@@ -5,7 +5,7 @@ import datetime
 import enum
 import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -205,6 +205,8 @@ def _v_call_preamble_stub(
     _params: Sequence[str],
     stub_return: StubReturn,
     /,
+    *,
+    indent: str,
 ) -> tuple[str, ...]:
     """Return V preamble stub declarations for a call name.
 
@@ -251,10 +253,14 @@ def _v_call_preamble_stub(
         for i in range(len(fields) - 2, -1, -1):
             curr_type = _cap_type(fields[i])
             field = fields[i + 1]
-            lines.append(f"struct {curr_type} {{\n\t{field} {prev_type}\n}}")
+            lines.append(
+                f"struct {curr_type} {{\n{indent}{field} {prev_type}\n}}"
+            )
             prev_type = curr_type
         root_type = _cap_type(root)
-        lines.append(f"struct {root_type} {{\n\t{fields[0]} {prev_type}\n}}")
+        lines.append(
+            f"struct {root_type} {{\n{indent}{fields[0]} {prev_type}\n}}"
+        )
 
     return tuple(lines)
 
@@ -561,8 +567,8 @@ class V(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -572,19 +578,21 @@ class V(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix="\t")
-        use_line = f"\n\t_ = {variable_name}" if variable_name else ""
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        use_line = (
+            f"\n{self.indent}_ = {variable_name}" if variable_name else ""
+        )
         return f"\nfn main() {{\n{indented}{use_line}\n}}"
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap V declaration + assignment in ``fn main()``."""
-        return V.wrap_in_file(
+        return self.wrap_in_file(
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
@@ -684,7 +692,7 @@ class V(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return _v_call_preamble_stub
+        return partial(_v_call_preamble_stub, indent=self.indent)
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
