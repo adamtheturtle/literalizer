@@ -149,6 +149,7 @@ def _format_variable_declaration(
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Format a Python variable declaration.
 
@@ -171,6 +172,7 @@ def _format_variable_declaration(
             default_sequence_element_type=default_sequence_element_type,
             default_dict_value_type=default_dict_value_type,
             default_dict_key_type=default_dict_key_type,
+            join_union=join_union,
         )
     return f"{name} = {value}"
 
@@ -192,6 +194,7 @@ def _format_inline_type_hint_declaration(
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
@@ -206,19 +209,32 @@ def _format_inline_type_hint_declaration(
         default_sequence_element_type=default_sequence_element_type,
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
+        join_union=join_union,
     )
     return f"{name}: {hint} = {value}"
 
 
+def _join_union_pipe(types: list[str]) -> str:
+    """Join *types* with ``|`` (Python 3.10+ union syntax)."""
+    return " | ".join(types)
+
+
+def _join_union_typing(types: list[str]) -> str:
+    """Join *types* as ``Union[...]`` (Python 3.8-compatible)."""
+    return f"Union[{', '.join(types)}]"
+
+
 @beartype
-def _element_union(*, types: list[str]) -> str:
+def _element_union(
+    *, types: list[str], join_union: Callable[[list[str]], str]
+) -> str:
     """Remove duplicate *types* and join them into a union."""
     unique: list[str] = list(dict.fromkeys(types))
     match unique:
         case [only]:
             return only
         case _:
-            return " | ".join(unique)
+            return join_union(unique)
 
 
 @beartype
@@ -229,6 +245,7 @@ def _collection_element_union(
     sort: bool,
     merge_dicts: bool,
     default_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Return the element union for a collection, or *default_type* if
     empty.
@@ -245,7 +262,7 @@ def _collection_element_union(
     types = [recurse(data=e) for e in elements]
     if sort:
         types.sort()
-    return _element_union(types=types)
+    return _element_union(types=types, join_union=join_union)
 
 
 @beartype
@@ -294,6 +311,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
@@ -310,6 +328,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         default_sequence_element_type=default_sequence_element_type,
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
+        join_union=join_union,
     )
 
     # Order matters: datetime before date (datetime is a date subclass),
@@ -344,6 +363,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 sort=False,
                 merge_dicts=False,
                 default_type=default_dict_value_type,
+                join_union=join_union,
             )
             return f"{outer}[{key_hint}, {val_union}]"
         case set():
@@ -353,6 +373,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 sort=True,
                 merge_dicts=False,
                 default_type=default_set_element_type,
+                join_union=join_union,
             )
             return f"{set_hint}[{elem_union}]"
         case list():
@@ -362,6 +383,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 sort=False,
                 merge_dicts=True,
                 default_type=default_sequence_element_type,
+                join_union=join_union,
             )
             if sequence_hint.casefold() == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
@@ -485,10 +507,13 @@ def _build_type_hint_preamble_py38(
         imports: set[str] = set()
         if list in annotated_collection_types:
             imports.add(sequence_typing_name)
+            imports.add("Union")
         if set in annotated_collection_types:
             imports.add(set_typing_name)
+            imports.add("Union")
         if dict in annotated_collection_types:
             imports.add("Dict")
+            imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
         return (f"from typing import {', '.join(sorted(imports))}",)
@@ -727,6 +752,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
+            join_union: Callable[[list[str]], str],
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -759,6 +785,7 @@ class Python(metaclass=LanguageCls):
                         ),
                         default_dict_value_type=default_dict_value_type,
                         default_dict_key_type=default_dict_key_type,
+                        join_union=join_union,
                     )
 
                 return _always_formatter
@@ -789,6 +816,7 @@ class Python(metaclass=LanguageCls):
                     ),
                     default_dict_value_type=default_dict_value_type,
                     default_dict_key_type=default_dict_key_type,
+                    join_union=join_union,
                 )
 
             return _auto_formatter
@@ -1235,10 +1263,12 @@ class Python(metaclass=LanguageCls):
                 self.set_format.type_hint,
             )
             dict_hint = mapping["dict"]
+            join_union: Callable[[list[str]], str] = _join_union_typing
         else:
             sequence_hint = self.sequence_format.type_hint
             set_hint = self.set_format.type_hint
             dict_hint = "dict"
+            join_union = _join_union_pipe
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,
@@ -1250,6 +1280,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
             default_dict_key_type=self.default_dict_key_type,
+            join_union=join_union,
         )
 
     @cached_property

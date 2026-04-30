@@ -1,2 +1,2 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 my_data: Dict[str, Any] = {}

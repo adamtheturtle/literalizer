@@ -1,5 +1,5 @@
-from typing import Any, Dict, Tuple
-my_data: Tuple[Tuple[Any, ...] | Dict[str, Any], ...] = (
+from typing import Any, Dict, Tuple, Union
+my_data: Tuple[Union[Tuple[Any, ...], Dict[str, Any]], ...] = (
     (),
     {},
 )
