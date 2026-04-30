@@ -76,6 +76,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._preamble import HeterogeneousElements
 from literalizer._types import Value
 
 
@@ -507,12 +508,11 @@ def _build_type_hint_preamble_py38(
         imports: set[str] = set()
         if list in annotated_collection_types:
             imports.add(sequence_typing_name)
-            imports.add("Union")
         if set in annotated_collection_types:
             imports.add(set_typing_name)
-            imports.add("Union")
         if dict in annotated_collection_types:
             imports.add("Dict")
+        if HeterogeneousElements in annotated_collection_types:
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")

@@ -1,2 +1,2 @@
-from typing import Any, Set, Union
+from typing import Any, Set
 my_data: Set[Any] = set()
