@@ -428,6 +428,20 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
     argvalues=_SORTED_LANGUAGES,
     ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
+def test_language_version_is_non_empty_string(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language's default ``language_version`` is an enum member."""
+    spec = language_cls()
+    assert isinstance(spec.language_version, enum.Enum)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
 def test_pygments_name_is_valid(
     *,
     language_cls: LanguageCls,
@@ -508,6 +522,8 @@ def test_format_enumeration_properties(
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
     assert issubclass(spec.call_styles, enum.Enum)
+    assert issubclass(spec.version_formats, enum.Enum)
+    assert len(spec.version_formats) >= 1
 
 
 def test_python_no_any_import_when_all_defaults_overridden() -> None:
@@ -942,7 +958,7 @@ def test_literalize_call_arg_ref_all_refs() -> None:
     the empty non-ref list must not break wrap-id computation.
     """
     result = literalize_call(
-        source='[[{"$ref": "a"}, {"$ref": "b"}]]',
+        source='[[{"ref": "a"}, {"ref": "b"}]]',
         input_format=InputFormat.JSON,
         language=Go(),
         target_function="combine",
@@ -957,7 +973,7 @@ def test_literalize_call_arg_ref_top_level_element() -> None:
     call whose argument is the referenced identifier.
     """
     result = literalize_call(
-        source='[{"$ref": "a"}, {"$ref": "b"}]',
+        source='[{"ref": "a"}, {"ref": "b"}]',
         input_format=InputFormat.JSON,
         language=Go(),
         target_function="run",
@@ -971,7 +987,7 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
     as the single argument.
     """
     result = literalize_call(
-        source='{"$ref": "payload"}',
+        source='{"ref": "payload"}',
         input_format=InputFormat.JSON,
         language=Python(),
         target_function="publish",
@@ -982,26 +998,25 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
 
 
 def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
-    """A dict without the exact ``{"$ref": str}`` shape renders as a
-    normal dict literal (e.g. two-key dicts, or non-string ``$ref``
-    values).
+    """A dict without the exact ``{ref_key: str}`` shape renders as a
+    normal dict literal (e.g. two-key dicts, or non-string ref values).
     """
     two_key = literalize_call(
-        source='[[{"$ref": "x", "extra": 1}]]',
+        source='[[{"ref": "x", "extra": 1}]]',
         input_format=InputFormat.JSON,
         language=Python(),
         target_function="process",
         parameter_names=["data"],
     )
-    assert two_key.code == 'process(data={"$ref": "x", "extra": 1})'
+    assert two_key.code == 'process(data={"ref": "x", "extra": 1})'
     non_string_ref = literalize_call(
-        source='[[{"$ref": 42}]]',
+        source='[[{"ref": 42}]]',
         input_format=InputFormat.JSON,
         language=Python(),
         target_function="process",
         parameter_names=["data"],
     )
-    assert non_string_ref.code == 'process(data={"$ref": 42})'
+    assert non_string_ref.code == 'process(data={"ref": 42})'
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
@@ -1011,7 +1026,7 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
         match=r"^Expected 1 parameters but got 2 values$",
     ):
         literalize_call(
-            source='[[{"$ref": "a"}, {"$ref": "b"}]]',
+            source='[[{"ref": "a"}, {"ref": "b"}]]',
             input_format=InputFormat.JSON,
             language=Python(),
             target_function="f",
@@ -1026,7 +1041,7 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
         match=r"^Python does not support identifier case 'CAMEL'$",
     ):
         literalize_call(
-            source='[[{"$ref": "user_obj"}, 42]]',
+            source='[[{"ref": "user_obj"}, 42]]',
             input_format=InputFormat.JSON,
             language=Python(),
             target_function="process",

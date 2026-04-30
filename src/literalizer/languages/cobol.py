@@ -522,6 +522,13 @@ class Cobol(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for COBOL."""
+
+        V2002 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
     )
@@ -621,6 +628,7 @@ class Cobol(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V2002
     indent: str = "    "
 
     null_literal: ClassVar[str] = "SPACES"
