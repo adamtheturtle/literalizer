@@ -18,11 +18,11 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call op(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_1')), fentry('draft', fbool(.true.))]))
-    call op(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_2'))]))
+    call run(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_1')), fentry('draft', fbool(.true.))]))
+    call run(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_2'))]))
 contains
-    subroutine op(operation)
+    subroutine run(operation)
         implicit none
         type(fval_t), intent(in) :: operation
-    end subroutine op
+    end subroutine run
 end program main

@@ -4,6 +4,23 @@ Changelog
 Next
 ----
 
+2026.04.30.1
+------------
+
+
+- :func:`~literalizer.literalize_call` accepts a new ``consumable_refs``
+  parameter listing the ref identifiers the call may move from.  In C++,
+  only refs in this set -- and only when they appear in exactly one call
+  argument across the rendered calls -- are wrapped in ``std::move(...)``;
+  all other refs emit as the bare identifier so the variable remains
+  valid for any subsequent use (whether in a later per-element call
+  within the same ``literalize_call`` block, or elsewhere in the
+  surrounding source).  Mojo's ``^`` transfer operator is treated the
+  same way.  This is a breaking change: previously C++ unconditionally
+  wrapped every call-argument ref in ``std::move(...)``, which produced
+  use-after-move when the same variable was referenced by more than
+  one per-element call.  Pass ``consumable_refs={"my_var"}`` to
+  restore the previous behavior for ``my_var``.
 - :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call`
   now accept a ``ref_key`` parameter (``str``, default ``"$ref"``).  The
   marker key used to identify variable-reference mappings in the input data

@@ -499,6 +499,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
+    reserved_identifiers: frozenset[str] = frozenset()
     allows_bare_call_statement: bool = True
     call_returns_expression: bool
     supports_inline_multiline_dict_args: bool
@@ -1247,6 +1248,25 @@ class Language(Protocol):
         delegates to :attr:`format_call_ref_identifier`.  Override this
         to allow call-argument ``$ref`` values that would otherwise be
         rejected.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` call-argument identifier the
+        caller authorized as consumable on
+        :func:`~literalizer.literalize_call`.
+
+        Used only for refs the caller listed in ``consumable_refs`` and
+        that appear in exactly one call argument across the rendered
+        calls, so the consuming form cannot strand a later use.
+
+        The default implementation (provided by every language class)
+        delegates to :attr:`format_call_arg_ref_identifier`.  Languages
+        whose call-argument ``$ref`` semantics consume the variable
+        (notably C++ ``std::move``) override this.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

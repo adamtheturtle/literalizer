@@ -1369,8 +1369,33 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Delegate to :attr:`format_call_ref_identifier`."""
-        return self.format_call_ref_identifier
+        """Emit a call-argument ``$ref`` as the bare identifier.
+
+        ``std::move`` would consume the variable, which is unsafe when
+        the caller may use it again in a later call (or after the
+        ``literalize_call`` block).  Callers opt in to consuming a
+        specific ref by listing it in ``literalize_call``'s
+        ``consumable_refs`` set; in that case
+        :attr:`format_call_arg_ref_identifier_consumable` is used
+        instead and emits ``std::move(name)``.
+        """
+        return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Return the consumable call-argument ``$ref`` identifier
+        unchanged.
+
+        Ref variables are declared ``const`` (``const auto*`` for string
+        literals, ``const auto`` for typed expressions), so
+        ``std::move()`` cannot be applied without triggering clang-tidy's
+        ``performance-move-const-arg`` check.  Passing by value is safe:
+        the ``auto process(auto...)`` template takes copies, so no
+        move is required.
+        """
+        return identity_call_ref_identifier
 
     @cached_property
     def _cpp_date_type(self) -> str:
