@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -913,6 +914,11 @@ class Cpp(metaclass=LanguageCls):
             formatter=format_datetime_iso,
             preamble_lines=("#include <string>",),
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         @property

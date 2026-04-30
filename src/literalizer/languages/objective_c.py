@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
     datetime_iso_formatter,
+    format_datetime_epoch,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -299,6 +300,11 @@ class ObjectiveC(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template='@"{iso}"'),
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

@@ -19,6 +19,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     format_date_iso,
+    format_datetime_epoch,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -113,12 +114,6 @@ def _format_datetime_python(value: datetime.datetime) -> str:
             )
     args = ", ".join(parts)
     return f"datetime.datetime({args})"
-
-
-@beartype
-def _format_datetime_epoch(value: datetime.datetime) -> str:
-    """Format a datetime as seconds since the Unix epoch."""
-    return repr(value.timestamp())
 
 
 @beartype
@@ -575,7 +570,10 @@ class Python(metaclass=LanguageCls):
             formatter=_format_datetime_python,
             preamble_lines=("import datetime",),
         )
-        EPOCH = DatetimeFormatConfig(formatter=_format_datetime_epoch)
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -586,7 +584,7 @@ class Python(metaclass=LanguageCls):
             """The Python type hint for this datetime format."""
             if self is type(self).PYTHON:
                 return "datetime.datetime"
-            return "float"
+            return "int"
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options for Python."""

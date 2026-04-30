@@ -1,6 +1,7 @@
 """Date and datetime formatting functions."""
 
 import datetime
+import math
 from collections.abc import Callable
 
 from beartype import beartype
@@ -23,6 +24,14 @@ def format_datetime_iso(value: datetime.datetime) -> str:
     ``"2024-01-15T12:30:00"``.
     """
     return f'"{value.isoformat()}"'
+
+
+@beartype
+def format_datetime_epoch(value: datetime.datetime) -> str:
+    """Format a datetime as integer Unix epoch seconds."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=datetime.UTC)
+    return str(object=math.floor(value.timestamp()))
 
 
 @beartype
