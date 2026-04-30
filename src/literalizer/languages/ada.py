@@ -471,17 +471,22 @@ class Ada(metaclass=LanguageCls):
                 f"begin\n{self.indent}null;\nend {self.module_name};"
             )
         calls_indented = textwrap.indent(text=content, prefix=self.indent)
-        parts = [
-            "with A_Stub; use A_Stub;",
-            f"procedure {self.module_name} is",
-        ]
-        if body_preamble:  # pragma: no branch
-            decl_section = "\n".join(body_preamble)
-            parts.append(
-                textwrap.indent(text=decl_section, prefix=self.indent)
+        decl_section = textwrap.indent(
+            text="\n".join(body_preamble), prefix=self.indent
+        )
+        return "\n".join(
+            filter(
+                None,
+                [
+                    "with A_Stub; use A_Stub;",
+                    f"procedure {self.module_name} is",
+                    decl_section,
+                    "begin",
+                    calls_indented,
+                    f"end {self.module_name};",
+                ],
             )
-        parts.extend(["begin", calls_indented, f"end {self.module_name};"])
-        return "\n".join(parts)
+        )
 
     def wrap_combined_in_file(
         self,
