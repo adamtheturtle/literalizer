@@ -1226,7 +1226,7 @@ class Python(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        if self.language_version is Python.VersionFormats.PY38:  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        if self.language_version is Python.VersionFormats.PY38:
             mapping = self._py38_names
             sequence_hint = mapping.get(
                 self.sequence_format.type_hint,
@@ -1279,7 +1279,7 @@ class Python(metaclass=LanguageCls):
         """Type-hint preamble computed from the configured default
         types.
         """
-        if self.language_version is Python.VersionFormats.PY38:  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
+        if self.language_version is Python.VersionFormats.PY38:
             mapping = self._py38_names
             return _build_type_hint_preamble_py38(
                 sequence_typing_name=mapping.get(
