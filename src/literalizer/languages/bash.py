@@ -124,23 +124,27 @@ def _bash_validate_dict_keys(data: Value) -> None:
     and control characters cannot be expressed in a Bash double-quoted
     key literal.
     """
-    if isinstance(data, dict):
-        for raw_key in data:
-            if (
-                not raw_key
-                or not raw_key.isprintable()
-                or not raw_key.isascii()
-            ):
-                msg = (
-                    f"Bash does not support the dict key {raw_key!r}. "
-                    "Associative-array keys must be non-empty printable ASCII."
-                )
-                raise InvalidDictKeyError(msg)
-        for v in data.values():
-            _bash_validate_dict_keys(data=v)
-    elif isinstance(data, list):
-        for item in data:
-            _bash_validate_dict_keys(data=item)
+    match data:
+        case dict():
+            for raw_key in data:
+                if (
+                    not raw_key
+                    or not raw_key.isprintable()
+                    or not raw_key.isascii()
+                ):
+                    msg = (
+                        f"Bash does not support the dict key {raw_key!r}. "
+                        "Associative-array keys must be non-empty "
+                        "printable ASCII."
+                    )
+                    raise InvalidDictKeyError(msg)
+            for v in data.values():
+                _bash_validate_dict_keys(data=v)
+        case list():
+            for item in data:
+                _bash_validate_dict_keys(data=item)
+        case _:
+            pass
 
 
 @beartype
