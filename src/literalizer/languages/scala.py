@@ -209,6 +209,7 @@ class Scala(metaclass=LanguageCls):
     supports_dotted_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = True
     module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(

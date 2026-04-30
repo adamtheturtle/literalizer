@@ -164,6 +164,7 @@ class PowerShell(metaclass=LanguageCls):
     supports_dotted_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     class DateFormats(enum.Enum):
         """Date format options for PowerShell."""

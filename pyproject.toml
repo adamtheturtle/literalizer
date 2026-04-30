@@ -479,6 +479,8 @@ ignore_names = [
     "UNORDERED_MAP",
     "VERBATIM",
     "ZONED",
+    # Used by downstream consumers
+    "supports_module_name",
     # Used in documentation code examples
     "custom",
     "result",

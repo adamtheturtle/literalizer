@@ -503,6 +503,7 @@ class LanguageCls(type):
     allows_bare_call_statement: bool = True
     call_returns_expression: bool
     supports_inline_multiline_dict_args: bool
+    supports_module_name: bool
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""

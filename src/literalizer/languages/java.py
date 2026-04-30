@@ -574,6 +574,7 @@ class Java(metaclass=LanguageCls):
     supports_dotted_calls = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_module_name = True
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
