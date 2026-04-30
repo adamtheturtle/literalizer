@@ -1152,6 +1152,16 @@ class Java(metaclass=LanguageCls):
         return identity_call_ref_identifier
 
     @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
+
+    @cached_property
     def _suffix_is_auto(self) -> bool:
         """Whether the numeric-literal suffix is AUTO (long suffix)."""
         return self.numeric_literal_suffix.name == "AUTO"
