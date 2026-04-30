@@ -63,22 +63,46 @@ def _prepend_preamble(
 
 @beartype
 def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
-    """Return preamble *blocks* with duplicate headers removed.
+    """Return preamble *blocks* with duplicates merged.
 
     Some languages emit multi-line preamble blocks whose first line is a
     stable header (for example, ``pub type GVal {`` in Gleam). When the
     call-test harness combines declaration preambles with call
-    preambles, the same header can appear multiple times with identical
-    bodies. Keep the first block per header.
+    preambles, the same header can appear multiple times with different
+    bodies. Blocks sharing the same header *and* footer are merged: the
+    first block's middle lines are kept as-is, and any additional middle
+    lines from subsequent blocks that are not yet present are appended.
+    Blocks that share only the header but differ in their footer (e.g.
+    two distinct type definitions sharing a common attribute decorator)
+    are kept as separate blocks.
     """
-    seen: set[str] = set()
-    result: list[str] = []
+    key_to_middle: dict[tuple[str, str], list[str]] = {}
+    order: list[tuple[str, str]] = []
     for block in blocks:
-        header = block.splitlines()[0] if block else ""
-        if header in seen:
+        lines = block.splitlines()
+        if not lines:  # pragma: no cover
             continue
-        seen.add(header)
-        result.append(block)
+        header = lines[0]
+        footer = lines[-1] if len(lines) > 1 else ""
+        key = (header, footer)
+        middle = lines[1:-1]
+        if key not in key_to_middle:
+            key_to_middle[key] = list(middle)
+            order.append(key)
+        else:
+            existing = set(key_to_middle[key])
+            for line in middle:
+                if line not in existing:
+                    key_to_middle[key].append(line)
+                    existing.add(line)
+    result: list[str] = []
+    for key in order:
+        header, footer = key
+        middle = key_to_middle[key]
+        parts: list[str] = [header, *middle]
+        if footer and footer != header:
+            parts.append(footer)
+        result.append("\n".join(parts))
     return tuple(result)
 
 
@@ -431,6 +455,58 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_ref_nested_in_list",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "42",
+            "my_other": "7",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_ref_nested_in_dict",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_var": "42",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_ref_nested_converted",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "myVar": "42",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=True,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
         target_function="app.mgr.run",
         parameter_names=["operation"],
@@ -549,6 +625,9 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
             Roc,
         }
     ),
+    # Mojo rejects the transfer operator (^) on trivial register types such as
+    # Int, so a $ref inside a dict literal (which requires ^) cannot compile.
+    "call_ref_nested_in_dict": frozenset({Mojo}),
 }
 
 
