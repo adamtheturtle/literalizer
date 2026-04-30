@@ -54,13 +54,12 @@ def _needs_annotation(val: Value) -> bool:
     match val:
         case dict():
             return not val or any(
-                _needs_annotation(v)
-                for v in val.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                _needs_annotation(val=v) for v in val.values()
             )
         case set():
             return not val
         case list():
-            return not val or any(_needs_annotation(v) for v in val)
+            return not val or any(_needs_annotation(val=v) for v in val)
         case _:
             return False
 
