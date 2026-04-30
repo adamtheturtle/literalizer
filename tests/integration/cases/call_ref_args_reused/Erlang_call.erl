@@ -2,12 +2,12 @@
 -export([x/0]).
 process(_, _) -> ok.
 x() ->
-    Repeated_var = 1,
     Single_var = [
         4,
         5,
         6
     ],
+    Repeated_var = 1,
     process(Repeated_var, 1),
     process(Single_var, 0),
     process(Repeated_var, 8).

@@ -10,14 +10,14 @@ instance Num Val where
     negate _ = error "not implemented"
 process :: (Val, Val) -> IO ()
 process _ = return ()
-repeated_var :: Val
-repeated_var = 1
 single_var :: Val
 single_var = HList [
     4,
     5,
     6
     ]
+repeated_var :: Val
+repeated_var = 1
 main :: IO ()
 main = do
     _ <- process(repeated_var, 1)

@@ -18,14 +18,14 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: repeated_var
     type(fval_t) :: single_var
-    repeated_var = fint(1_int64)
+    type(fval_t) :: repeated_var
     single_var = flist([fval_t :: &
         fint(4_int64), &
         fint(5_int64), &
         fint(6_int64) &
     ])
+    repeated_var = fint(1_int64)
     call process(repeated_var, fint(1_int64))
     call process(single_var, fint(0_int64))
     call process(repeated_var, fint(8_int64))

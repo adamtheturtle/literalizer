@@ -334,9 +334,15 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_names=[],
         per_element=True,
         call_style_type=None,
+        # ``single_var`` is declared first so its preamble (which sees
+        # both ``int`` and ``list``) wins ``_dedupe_preamble_blocks``
+        # against the ``int``-only preamble emitted for
+        # ``repeated_var``.  Without this ordering, languages that emit
+        # a header-keyed type union (e.g. Gleam's ``pub type GVal``)
+        # end up missing the ``GList`` constructor.
         ref_declarations={
-            "repeated_var": "1",
             "single_var": "[4, 5, 6]",
+            "repeated_var": "1",
         },
         wrap_in_file=False,
         ref_case_per_language=False,

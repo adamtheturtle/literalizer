@@ -7,14 +7,14 @@ data Val
     | PList (Array Val)
 process :: Val -> Val -> Unit
 process _ _ = unit
-repeated_var :: Val
-repeated_var = PInt 1
 single_var :: Val
 single_var = PList [
     PInt 4,
     PInt 5,
     PInt 6
     ]
+repeated_var :: Val
+repeated_var = PInt 1
 
 
 main :: Unit

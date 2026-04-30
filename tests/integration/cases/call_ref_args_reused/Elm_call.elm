@@ -11,14 +11,14 @@ process _ = ()
 main : Program () () Never
 main =
     let
-        repeated_var : Val
-        repeated_var = EInt 1
         single_var : Val
         single_var = EList [
             EInt 4,
             EInt 5,
             EInt 6
             ]
+        repeated_var : Val
+        repeated_var = EInt 1
         _ = process(repeated_var, EInt 1)
         _ = process(single_var, EInt 0)
         _ = process(repeated_var, EInt 8)

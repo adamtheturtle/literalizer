@@ -12,12 +12,12 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn process(data: ZVal, count: ZVal) void { _ = data; _ = count; }
 pub fn main() void {
-    const repeated_var: ZVal = .{ .int = 1 };
     const single_var: ZVal = .{ .arr = &.{
         .{ .int = 4 },
         .{ .int = 5 },
         .{ .int = 6 },
     }};
+    const repeated_var: ZVal = .{ .int = 1 };
     process(repeated_var, .{ .int = 1 });
     process(single_var, .{ .int = 0 });
     process(repeated_var, .{ .int = 8 });
