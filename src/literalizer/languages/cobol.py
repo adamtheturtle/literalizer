@@ -166,6 +166,8 @@ def _format_cobol_sequence_entry(_original: Value, item: str) -> str:
     Nested collections are wrapped in a ``05 FILLER.`` group with
     inner level numbers bumped by 5.
     """
+    if not item.strip():
+        return _COBOL_EMPTY_LITERAL
     if "\n" in item:
         bumped = _bump_levels(content=item)
         return f"05 FILLER.\n{bumped}"
@@ -205,6 +207,8 @@ def _format_cobol_dict_entry(
     items with bumped level numbers.
     """
     name = _key_to_cobol_name(key_str=key)
+    if not formatted_value.strip():
+        return f"05 {name} PIC X(1) VALUE SPACES."
     if "\n" in formatted_value:
         bumped = _bump_levels(content=formatted_value)
         return f"05 {name}.\n{bumped}"

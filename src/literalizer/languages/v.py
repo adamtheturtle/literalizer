@@ -11,9 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import (
-    fixed_open,
-)
+from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_iso,
@@ -197,9 +195,11 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
 
     def _wrap(raw_value: Value, formatted: str) -> str:
         """Wrap a scalar as ``IVal(formatted)`` or the null sentinel."""
-        if raw_value is None:
-            return _V_NULL_WRAPPED
-        return f"{_V_IFACE_NAME}({formatted})"
+        match raw_value:
+            case None:
+                return _V_NULL_WRAPPED
+            case _:
+                return f"{_V_IFACE_NAME}({formatted})"
 
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
@@ -870,7 +870,11 @@ class V(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(open_str="{"),
+            ordered_map_open=(
+                lambda items: (
+                    f"map[string]{_V_IFACE_NAME}{{" if not items else "{"
+                )
+            ),
             close="}",
             preamble_lines=(),
         )

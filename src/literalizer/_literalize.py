@@ -139,6 +139,11 @@ class LiteralizeResult:
         )
 
 
+def _deduplicate_lines(lines: tuple[str, ...], /) -> tuple[str, ...]:
+    """Remove duplicate lines while preserving first-seen order."""
+    return tuple(dict.fromkeys(lines))
+
+
 @dataclasses.dataclass(frozen=True)
 class NewVariable:
     """Wrap output in a new variable declaration."""
@@ -1534,7 +1539,7 @@ def _literalize_apply_form(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
-    preamble = (
+    preamble = _deduplicate_lines(
         tuple(language.static_preamble)
         + computed.header
         + language.data_dependent_preamble(pre_form.data)
@@ -2562,7 +2567,7 @@ def literalize_call(
         "call_data_dependent_preamble",
         language.data_dependent_preamble,
     )
-    preamble = (
+    preamble = _deduplicate_lines(
         tuple(language.static_preamble)
         + computed.header
         + _call_ddp(data_for_preamble)

@@ -205,7 +205,7 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
         parts.append(f"std::chrono::seconds{{{value.second}}}")
     if value.microsecond:
         parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
-    return " + ".join(parts)
+    return f"std::chrono::system_clock::time_point{{{' + '.join(parts)}}}"
 
 
 @beartype
