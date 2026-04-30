@@ -1,0 +1,10 @@
+* my_var
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+my_var
+@end

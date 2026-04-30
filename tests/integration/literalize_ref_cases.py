@@ -200,7 +200,7 @@ def _stub_needs_global_split(stub_code: str, stub_var: str) -> bool:
     )
 
 
-def inject_stubs_before_variable(
+def _inject_stubs_before_variable(
     code: str,
     variable_name: str,
     stub_entries: list[tuple[str, str]],
@@ -346,7 +346,7 @@ def run_literalize_ref_golden_case(
             )
             stub_entries.append((converted_name, stub.declaration_code))
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
-        final_code = inject_stubs_before_variable(
+        final_code = _inject_stubs_before_variable(
             code=result.code,
             variable_name=variable_form_obj.name if variable_form_obj else "",
             stub_entries=stub_entries,

@@ -1,0 +1,12 @@
+* deep
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+{
+    "a": {"b": {"c": deep}}
+}
+@end

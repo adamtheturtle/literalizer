@@ -52,6 +52,18 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         case_dir_name="literalize_ref_heterogeneous",
         ref_key="$ref",
     ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_in_mixed_list",
+        ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_camel_name",
+        ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_deep_nesting",
+        ref_key="$ref",
+    ),
 ]
 
 

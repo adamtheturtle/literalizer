@@ -1,0 +1,14 @@
+* x
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+[
+    x,
+    1,
+    2
+]
+@end
