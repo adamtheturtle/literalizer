@@ -1,6 +1,6 @@
 Imports System.Collections.Generic
 Module Check
-    Dim my_data = New String() {
+    Dim my_data = New Integer() {
         1705321800,
         1717228800
     }
