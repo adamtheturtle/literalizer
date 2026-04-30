@@ -53,6 +53,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -299,6 +300,7 @@ class Sml(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset({"op"})
+    allows_bare_call_statement = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
     supports_module_name = False
@@ -536,6 +538,7 @@ class Sml(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,

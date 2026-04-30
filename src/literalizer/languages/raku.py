@@ -55,6 +55,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -181,6 +182,8 @@ class Raku(metaclass=LanguageCls):
     supports_variable_names = True
     supports_dotted_calls = True
     has_free_function_calls = True
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    allows_bare_call_statement = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
     supports_module_name = False
@@ -436,6 +439,7 @@ class Raku(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.KEBAB,
