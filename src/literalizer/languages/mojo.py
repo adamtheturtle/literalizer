@@ -31,7 +31,6 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_factories import (
     dict_format_factory,
-    sequence_format_factory,
     set_format_factory,
 )
 from literalizer._formatters.format_floats import (
@@ -71,6 +70,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+from literalizer.exceptions import NullInCollectionError
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
@@ -362,6 +362,40 @@ def _build_variant_preamble(
 
 
 @beartype
+def _mojo_list_open(items: list[Value]) -> str:
+    """Return ``[`` after checking for null elements.
+
+    Mojo cannot infer a list type from null-only elements.
+    """
+    if any(item is None for item in items):
+        msg = (
+            f"Mojo's list literal cannot contain null elements "
+            f"(got {len(items)} items, including null)."
+        )
+        raise NullInCollectionError(msg)
+    return "["
+
+
+def _mojo_list_format(default_type: str) -> SequenceFormatConfig:
+    """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
+    return SequenceFormatConfig(
+        sequence_open=_mojo_list_open,
+        close="]",
+        supports_heterogeneity=False,
+        single_element_trailing_comma=False,
+        supports_trailing_comma=True,
+        empty_sequence=f"List[{default_type}]()",
+        preamble_lines=(),
+        format_entry=passthrough_sequence_entry,
+        typed_opener_fallback=None,
+        uses_typed_literal_for_scalars=False,
+        requires_uniform_record_shapes=False,
+        declared_type=None,
+        narrowed_empty_form=None,
+    )
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
@@ -421,19 +455,7 @@ class Mojo(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Mojo."""
 
-        LIST = enum.member(
-            value=sequence_format_factory(
-                open_template="[",
-                close="]",
-                supports_heterogeneity=False,
-                single_element_trailing_comma=False,
-                supports_trailing_comma=True,
-                empty_template="List[{type}]()",
-                preamble_lines=(),
-                format_entry=passthrough_sequence_entry,
-                typed_opener_fallback_template=None,
-            )
-        )
+        LIST = enum.member(value=_mojo_list_format)
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""

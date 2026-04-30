@@ -88,6 +88,11 @@ def test_golden_file(
                 pytest.skip(
                     f"{lang_name} cannot represent this heterogeneous input",
                 )
+            except NullInCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_name} cannot represent null in a collection",
+                )
             # newline="" prevents Python text-mode from converting \r\n to
             # \n on Windows, which would corrupt golden files containing
             # literal CR bytes (e.g. CommonLisp string_control_chars).
@@ -155,6 +160,12 @@ def test_golden_file_combined_variable_forms(
                 pytest.skip(
                     f"{lang_cls.__name__} cannot represent this "
                     "heterogeneous input"
+                )
+            except NullInCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_cls.__name__} cannot represent null in a "
+                    "collection"
                 )
             check_golden(
                 file_regression=file_regression,
