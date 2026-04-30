@@ -42,7 +42,6 @@ from literalizer.languages import (
     Raku,
     Roc,
     Sml,
-    SystemVerilog,
 )
 
 from .check_golden import check_golden
@@ -394,13 +393,6 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # identifier, so no valid stub can be produced.  COBOL cannot pass
     # multi-line DATA DIVISION entries inline in a CALL statement.
     "call_mixed_type_dicts": frozenset({Cobol, Sml}),
-    # Ada and Fortran do not allow function-call results to be silently
-    # discarded: a function call cannot appear as a statement.  The
-    # identity call_transform (lambda c: c) causes a VALUE stub but the
-    # call is used as a bare statement, which both compilers reject.
-    # SystemVerilog requires void'(...) to discard a function return value;
-    # a bare function call as a statement is non-standard.
-    "call_transform_no_wrapper": frozenset({Ada, Fortran, SystemVerilog}),
     # COBOL CALL statement produces no expression value that can be passed
     # to another call, so emit(inner) is invalid.
     "call_keyword_args": frozenset({Cobol}),
@@ -472,6 +464,26 @@ class CallCase:
     lang_cls: literalizer.LanguageCls
 
 
+@beartype
+def _lang_supports_case(
+    config: CallCaseConfig,
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Return True if *lang_cls* can produce valid output for *config*."""
+    if "." in config.target_function and not lang_cls.supports_dotted_calls:
+        return False
+    if not lang_cls.has_free_function_calls and any(
+        "." not in name for name in config.transform_stub_names
+    ):
+        return False
+    _probe = "__probe__"
+    return not (
+        config.call_transform is not None
+        and config.call_transform(_probe) == _probe
+        and not lang_cls.allows_bare_call_statement
+    )
+
+
 @functools.cache
 @beartype
 def discover_call_cases() -> list[CallCase]:
@@ -481,12 +493,7 @@ def discover_call_cases() -> list[CallCase]:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue
-            has_dotted_target = "." in config.target_function
-            if has_dotted_target and not lang_cls.supports_dotted_calls:
-                continue
-            if not lang_cls.has_free_function_calls and any(
-                "." not in name for name in config.transform_stub_names
-            ):
+            if not _lang_supports_case(config, lang_cls):
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()

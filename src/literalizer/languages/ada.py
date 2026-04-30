@@ -213,6 +213,7 @@ class Ada(metaclass=LanguageCls):
     supports_variable_names = True
     supports_dotted_calls = True
     has_free_function_calls = True
+    allows_bare_call_statement = False
 
     class DateFormats(enum.Enum):
         """Date format options for Ada."""
