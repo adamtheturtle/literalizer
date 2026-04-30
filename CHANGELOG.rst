@@ -11,6 +11,15 @@ Next
   and whose value is a string is treated as a ref marker when *ref_case* is
   set.  The previous hard-coded key ``"$ref"`` is no longer the default;
   callers that relied on ``$ref`` must pass ``ref_key="$ref"`` explicitly.
+- Every built-in language class now exposes a ``VersionFormats`` enum and a
+  configurable ``language_version`` constructor parameter that selects which
+  version of the target language the generated code is written for.  For
+  example, ``Ada().language_version`` defaults to
+  ``Ada.version_formats.ADA_2022``, whose ``.value`` is ``"Ada 2022"``.
+  Each language currently defines a single version; additional versions
+  may be added in future releases.  Both ``version_formats`` and
+  ``language_version`` are part of the :class:`~literalizer.Language`
+  protocol, so custom language implementations must also define them.
 
 2026.04.30
 ----------

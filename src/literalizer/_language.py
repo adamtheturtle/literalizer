@@ -490,6 +490,7 @@ class LanguageCls(type):
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
+    VersionFormats: type[enum.Enum]
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
     supports_default_dict_value_type: bool
@@ -683,6 +684,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def version_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the target language versions
+        this language class supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def identifier_cases(self) -> tuple[IdentifierCase, ...]:
         """Identifier case conventions this language supports for
         ``$ref`` conversion.
@@ -698,6 +706,11 @@ class Language(Protocol):
 
     extension: str
     """The file extension for this language, including the leading dot."""
+
+    @property
+    def language_version(self) -> enum.Enum:
+        """The selected version of the target language."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
     @property
     def pygments_name(self) -> str | None:

@@ -639,6 +639,13 @@ class Mojo(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Mojo."""
+
+        V24_5 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -710,6 +717,7 @@ class Mojo(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_variant_name: str = "Value"
+    language_version: VersionFormats = VersionFormats.V24_5
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None"

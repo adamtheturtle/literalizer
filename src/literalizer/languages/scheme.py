@@ -300,6 +300,13 @@ class Scheme(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Scheme."""
+
+        R7RS = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.KEBAB,
     )
@@ -359,6 +366,7 @@ class Scheme(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.PREFIX
+    language_version: VersionFormats = VersionFormats.R7RS
     indent: str = "    "
 
     null_literal: ClassVar[str] = "'()"
