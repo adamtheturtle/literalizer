@@ -79,14 +79,23 @@ def _needs_annotation(val: Value) -> bool:
 
 
 @beartype
-def _walk_annotated_collections(*, val: Value, result: set[type]) -> None:
+def _walk_annotated_collections(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-many-branches
+    *,
+    val: Value,
+    result: set[type],
+) -> None:
     """Walk *val* and add collection types that appear in type annotations."""
     match val:
-        case ordereddict() | dict():
+        case ordereddict():
             if _needs_annotation(val=val):
-                result.add(dict)
+                result.add(ordereddict)
                 for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
                     _walk_annotated_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
+        case dict():
+            if _needs_annotation(val=val):
+                result.add(dict)
+                for v in val.values():
+                    _walk_annotated_collections(val=v, result=result)
         case set():
             if not val:
                 result.add(set)
@@ -95,6 +104,17 @@ def _walk_annotated_collections(*, val: Value, result: set[type]) -> None:
                 result.add(list)
                 for v in val:
                     _walk_annotated_collections(val=v, result=result)
+                    match v:
+                        case ordereddict():
+                            result.add(ordereddict)
+                        case dict():
+                            result.add(dict)
+                        case set():
+                            result.add(set)
+                        case list():
+                            result.add(list)
+                        case _:
+                            pass
         case _:
             pass
 

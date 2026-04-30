@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Tuple, Union
 my_data: Tuple[Union[Tuple[Any, ...], OrderedDict[str, Any]], ...] = (
     OrderedDict([]),
     (),

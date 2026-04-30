@@ -416,6 +416,11 @@ def _build_type_hint_preamble(
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
+            (
+                ordereddict,
+                default_dict_value_type == "Any"
+                or default_dict_key_type == "Any",
+            ),
             (set, default_set_element_type == "Any"),
             (list, default_sequence_element_type == "Any"),
         )
@@ -491,6 +496,11 @@ def _build_type_hint_preamble_py38(
         for t, needs in (
             (
                 dict,
+                default_dict_value_type == "Any"
+                or default_dict_key_type == "Any",
+            ),
+            (
+                ordereddict,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
