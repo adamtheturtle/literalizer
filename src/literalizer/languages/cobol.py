@@ -4,8 +4,9 @@ import dataclasses
 import datetime
 import enum
 import re
+import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -35,7 +36,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -52,7 +53,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -221,6 +221,57 @@ def _to_cobol_name(python_name: str) -> str:
     Converts the name to upper case and replaces underscores with hyphens.
     """
     return python_name.upper().replace("_", "-")
+
+
+@beartype
+def _cobol_call_target(parts: Sequence[str], /) -> str:
+    """Return the COBOL CALL literal and USING keyword for a call target.
+
+    Only the innermost name is used: ``app.client.fetch`` produces
+    ``"FETCH" USING`` so that the call site emits
+    ``CALL "FETCH" USING BY CONTENT ...``.
+    """
+    return f'"{_to_cobol_name(python_name=parts[-1])}" USING'
+
+
+@beartype
+def _cobol_format_call_arg(_value: Value, formatted: str, /) -> str:
+    """Prepend ``BY CONTENT`` to a COBOL CALL argument."""
+    return f"BY CONTENT {formatted}"
+
+
+@beartype
+def _cobol_call_statement(call: str, /) -> str:
+    """Wrap a COBOL call expression as a complete CALL statement."""
+    return f"CALL {call}."
+
+
+@beartype
+def _cobol_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+    *,
+    indent: str,
+) -> tuple[str, ...]:
+    """Return a nested COBOL program stub for a call target.
+
+    The stub is a minimal nested program that accepts any arguments
+    and stops immediately, acting as a valid placeholder for the
+    called subprogram.
+    """
+    name = _to_cobol_name(python_name=parts[-1])
+    stub = "\n".join(
+        [
+            "IDENTIFICATION DIVISION.",
+            f"PROGRAM-ID. {name}.",
+            "PROCEDURE DIVISION.",
+            f"{indent}STOP RUN.",
+            f"END PROGRAM {name}.",
+        ]
+    )
+    return (stub,)
 
 
 @beartype
@@ -453,6 +504,8 @@ class Cobol(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Cobol call style options."""
 
+        POSITIONAL = CommandCallStyle(arg_separator=" ")
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -484,19 +537,45 @@ class Cobol(metaclass=LanguageCls):
     )
     _PROGRAM_SUFFIX: ClassVar[str] = "PROCEDURE DIVISION.\n    STOP RUN."
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a COBOL variable declaration in a complete program."""
-        del variable_name
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
+        """Wrap a COBOL variable declaration or call block in a program.
+
+        In variable-declaration mode (*variable_name* is non-empty),
+        *content* goes in the DATA DIVISION and *body_preamble* is
+        prepended before it.  In call mode (*variable_name* is empty),
+        *content* holds PROCEDURE DIVISION statements and *body_preamble*
+        holds nested-program stubs that follow ``STOP RUN.``.
+        """
+        if variable_name:
+            content = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            return (
+                Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
+            )
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        if body_preamble:
+            stubs = "\n".join(body_preamble)
+            return (
+                Cobol._PROGRAM_PREFIX
+                + "PROCEDURE DIVISION.\n"
+                + f"{indented}\n"
+                + f"{self.indent}STOP RUN.\n"
+                + f"{stubs}\n"
+                + "END PROGRAM CHECK."
+            )
+        return (  # pragma: no cover
+            Cobol._PROGRAM_PREFIX
+            + "PROCEDURE DIVISION.\n"
+            + f"{indented}\n"
+            + f"{self.indent}STOP RUN."
         )
-        return Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
 
     @staticmethod
     def wrap_combined_in_file(
@@ -557,9 +636,7 @@ class Cobol(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -612,11 +689,18 @@ class Cobol(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
-        """Return stub declarations for a call expression."""
-        return no_call_stub
+        """Return nested-program stub declarations for a call
+        expression.
+        """
+        return partial(_cobol_call_stub, indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(
@@ -627,10 +711,18 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
-        """
-        return identity_call_target
+        """Return the quoted COBOL program name and USING keyword."""
+        return _cobol_call_target
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Prepend ``BY CONTENT`` to each COBOL CALL argument."""
+        return _cobol_format_call_arg
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Wrap a call expression as a complete COBOL CALL statement."""
+        return _cobol_call_statement
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
