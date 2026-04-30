@@ -2,8 +2,8 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @[
-    1705321800,
-    1717228800,
+    @1705321800,
+    @1717228800,
 ];
     (void)my_data;
 }

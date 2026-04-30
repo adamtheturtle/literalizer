@@ -527,7 +527,7 @@ def _datetime_import_items(
 
 
 @beartype
-def _build_scalar_body_preamble(  # noqa: C901
+def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,

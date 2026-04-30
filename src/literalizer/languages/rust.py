@@ -422,7 +422,7 @@ class _VariantSignature:
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
+def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex  # noqa: PLR0911
     *,
     value: Scalar,
     date_type: str,

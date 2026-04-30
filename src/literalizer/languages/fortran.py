@@ -77,6 +77,8 @@ def _apply_fortran_entry(
     match original:
         case bool():
             return formatted
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            return f"{int_name}({formatted})"
         case int():
             return f"{int_name}({formatted})"
         case float():

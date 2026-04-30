@@ -116,6 +116,8 @@ def _format_ada_entry(original: Value, formatted: str) -> str:
     match original:
         case bool():
             return formatted
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            return f"AInt ({formatted})"
         case int():
             return f"AInt ({formatted})"
         case float():

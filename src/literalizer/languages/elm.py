@@ -308,7 +308,6 @@ def _build_elm_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
-    date_type_produced: type,
     datetime_type_produced: type,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Elm.
@@ -323,14 +322,10 @@ def _build_elm_body_preamble(
         del data  # unused
         p = constructor_prefix
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes}
-        if date_type_produced is int:
-            int_types.add(datetime.date)
-        elif date_type_produced is str:
-            str_types.add(datetime.date)
+        str_types: set[type] = {str, bytes, datetime.date}
         if datetime_type_produced is int:
             int_types.add(datetime.datetime)
-        elif datetime_type_produced is str:
+        else:
             str_types.add(datetime.datetime)
         constructors = [
             constructor
@@ -1154,6 +1149,5 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
-            date_type_produced=self.date_format.value.type_produced,
             datetime_type_produced=self.datetime_format.value.type_produced,
         )

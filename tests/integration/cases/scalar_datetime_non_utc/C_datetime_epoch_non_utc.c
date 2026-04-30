@@ -15,7 +15,7 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal my_data = ((CVal){.s = 1705321800});
+CVal my_data = ((CVal){.i = 1705321800});
     (void)my_data;
     return 0;
 }

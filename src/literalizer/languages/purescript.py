@@ -362,11 +362,10 @@ _purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
 @beartype
-def _build_purescript_body_preamble(  # noqa: C901
+def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     *,
     type_name: str,
     constructor_prefix: str,
-    date_type_produced: type,
     datetime_type_produced: type,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for PureScript.
@@ -408,14 +407,10 @@ def _build_purescript_body_preamble(  # noqa: C901
         needs_tuple = bool(types & {dict, ordereddict})
         has_large_int = int in types and _purescript_has_large_int(val=data)
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes}
-        if date_type_produced is int:
-            int_types.add(datetime.date)
-        elif date_type_produced is str:
-            str_types.add(datetime.date)
+        str_types: set[type] = {str, bytes, datetime.date}
         if datetime_type_produced is int:
             int_types.add(datetime.datetime)
-        elif datetime_type_produced is str:
+        else:
             str_types.add(datetime.datetime)
         constructors = [
             constructor
@@ -1297,6 +1292,5 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
-            date_type_produced=self.date_format.value.type_produced,
             datetime_type_produced=self.datetime_format.value.type_produced,
         )

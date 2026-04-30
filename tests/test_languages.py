@@ -53,6 +53,7 @@ from literalizer.languages import (
     Nix,
     Python,
     Racket,
+    Rust,
     Yaml,
 )
 
@@ -70,6 +71,38 @@ FORTRAN = Fortran(
     module_name="check",
 )
 FSHARP = FSharp(module_name="check")
+
+
+def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
+    """Epoch datetimes use the integer variant in heterogeneous Rust
+    data.
+    """
+    result = literalize(
+        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
+        input_format=InputFormat.YAML,
+        language=Rust(
+            datetime_format=Rust.datetime_formats.EPOCH,
+            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+
+    assert result.preamble == (
+        "use std::collections::HashMap;",
+        "enum Value {",
+        "    I64(i64),",
+        "    Str(&'static str),",
+        "}",
+    )
+    assert result.code == textwrap.dedent(
+        text="""\
+        HashMap::from([
+            ("ts", Value::I64(1705321800)),
+            ("name", Value::Str("hi")),
+        ])"""
+    )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

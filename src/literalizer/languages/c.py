@@ -70,7 +70,7 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_format_c_entry(
+def _apply_format_c_entry(  # noqa: PLR0911
     *,
     original: Value,
     formatted: str,
@@ -81,6 +81,8 @@ def _apply_format_c_entry(
 ) -> str:
     """Wrap a formatted entry in the appropriate union literal."""
     match original:
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            return f"((CVal){{.{int_field} = {formatted}}})"
         case str() | bytes() | datetime.date():
             return f"((CVal){{.{string_field} = {formatted}}})"
         case bool():

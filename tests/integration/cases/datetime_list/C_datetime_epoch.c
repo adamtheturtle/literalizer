@@ -16,8 +16,8 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
-    ((CVal){.s = 1705321800}),
-    ((CVal){.s = 1717228800}),
+    ((CVal){.i = 1705321800}),
+    ((CVal){.i = 1717228800}),
 }});
     (void)my_data;
     return 0;
