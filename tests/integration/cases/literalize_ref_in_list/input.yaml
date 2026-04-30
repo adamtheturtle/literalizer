@@ -1,3 +1,2 @@
----
-- ref: val_x
-- ref: val_y
+- $ref: val_x
+- $ref: val_y

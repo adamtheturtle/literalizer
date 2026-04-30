@@ -264,15 +264,21 @@ jobs:
           find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
 
-  # Fixture languages linted by tools fetched via `npm install -g`.
+  # Fixture languages linted by npm tools.
   lint-npm-installed:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
-        run: npm install -g json5 tree-sitter-cli typescript tsx elm-format elm
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:

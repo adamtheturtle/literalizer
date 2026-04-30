@@ -1,7 +1,7 @@
 ---
-- - { ref: repeated_var }
+- - { $ref: repeated_var }
   - 1
-- - { ref: single_var }
+- - { $ref: single_var }
   - 0
-- - { ref: repeated_var }
+- - { $ref: repeated_var }
   - 8
