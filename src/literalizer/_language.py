@@ -499,6 +499,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
+    allows_bare_call_statement: bool = True
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
