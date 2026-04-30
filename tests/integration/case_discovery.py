@@ -38,19 +38,19 @@ class LiteralizeRefCaseConfig:
 LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_whole",
-        ref_key="ref",
+        ref_key="$ref",
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_in_dict",
-        ref_key="ref",
+        ref_key="$ref",
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_in_list",
-        ref_key="ref",
+        ref_key="$ref",
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_heterogeneous",
-        ref_key="ref",
+        ref_key="$ref",
     ),
 ]
 
