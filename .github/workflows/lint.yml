@@ -1348,6 +1348,7 @@ jobs:
           # the rendered Rust still compiles when the ref is reused;
           # V's ``format_call_ref_identifier`` always appends
           # ``.clone()``, and ``int.clone()`` is rejected by V.
+          # Tracked in https://github.com/adamtheturtle/literalizer/issues/1823.
           grep -z -v -e 'heterogeneous_strategy_error' \
             -e 'call_ref_args_reused' /tmp/files-to-lint \
             > /tmp/files-to-run || true
