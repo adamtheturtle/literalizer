@@ -145,7 +145,7 @@ def _find_first_occurrence(lines: list[str], lower_name: str) -> int | None:
         if idx > 0 and line[idx - 1] == "[":
             continue
         return i
-    return None
+    return None  # pragma: no cover
 
 
 def _find_assignment_line(
@@ -238,7 +238,7 @@ def _inject_stubs_before_variable(
 
     decl_idx = _find_first_occurrence(lines=lines, lower_name=lower_name)
     if decl_idx is None:
-        return code
+        return code  # pragma: no cover
 
     indent = len(lines[decl_idx]) - len(lines[decl_idx].lstrip())
     prefix = " " * indent
