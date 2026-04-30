@@ -42,6 +42,11 @@ jobs:
           --verbose
         env:
           UV_PYTHON: ${{ matrix.python-version }}
+          # pyright encodes the Windows drive letter colon as %3A when
+          # building file URIs for doccmd temp files, making them
+          # unresolvable (exit code 4). The check runs on Linux so this
+          # skip does not reduce coverage.
+          SKIP: ${{ runner.os == 'Windows' && 'pyright-docs' || '' }}
 
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
