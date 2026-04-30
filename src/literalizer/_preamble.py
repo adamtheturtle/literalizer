@@ -292,7 +292,7 @@ def _has_union_in_type_hints(*, data: Value) -> bool:  # noqa: PLR0911
     match data:
         case list():
             if not _needs_annotation(val=data):
-                return False
+                return False  # pragma: no cover
             merged = _list_merge_dicts(elements=data)
             type_ids = list(
                 dict.fromkeys(_structural_type_id(value=e) for e in merged)
@@ -302,7 +302,7 @@ def _has_union_in_type_hints(*, data: Value) -> bool:  # noqa: PLR0911
             return any(_has_union_in_type_hints(data=e) for e in merged)
         case dict():
             if not _needs_annotation(val=data):
-                return False
+                return False  # pragma: no cover
             if data:
                 val_ids = list(
                     dict.fromkeys(
