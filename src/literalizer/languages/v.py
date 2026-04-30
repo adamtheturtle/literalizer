@@ -125,12 +125,13 @@ def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
         """Recursively mark *item* and its containers if wrapping
         needed.
         """
-        if isinstance(item, dict):
-            children: list[Value] = list(item.values())
-        elif isinstance(item, (list, set)):
-            children = list(item)
-        else:
-            return
+        match item:
+            case dict():
+                children: list[Value] = list(item.values())
+            case list() | set():
+                children = list(item)
+            case _:
+                return
         for child in children:
             _visit(item=child)
         if id(item) in wrap_ids:
