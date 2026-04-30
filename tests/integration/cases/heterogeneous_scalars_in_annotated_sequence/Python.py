@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 from typing import Any
 my_data: tuple[bool | float | None | datetime.date | datetime.datetime | tuple[Any, ...], ...] = (

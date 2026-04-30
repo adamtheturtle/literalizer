@@ -1,3 +1,4 @@
+from __future__ import annotations
 class _ClientType:
     def post(self, *_args: object, **_kwargs: object) -> object: ...
 class _ApiType:

@@ -527,7 +527,7 @@ def _build_type_hint_preamble_py38(
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
         if not imports:
-            return ()
+            return ()  # pragma: no cover
         return (f"from typing import {', '.join(sorted(imports))}",)
 
     return _preamble
@@ -1233,12 +1233,10 @@ class Python(metaclass=LanguageCls):
 
     @cached_property
     def static_preamble(self) -> Sequence[str]:
-        """Return PEP 563 future import for PY38 to allow subscripted
-        collections.OrderedDict in type annotations at runtime.
+        """Return PEP 563 future import so annotations are never evaluated
+        at runtime, keeping generated files executable on Python 3.8+.
         """
-        if self.language_version is Python.VersionFormats.PY38:
-            return ("from __future__ import annotations",)
-        return ()
+        return ("from __future__ import annotations",)
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
