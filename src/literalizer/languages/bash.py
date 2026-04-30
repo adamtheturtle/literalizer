@@ -171,6 +171,29 @@ def _format_variable_declaration(
 
 
 @beartype
+def _bash_validate_call_arg(value: Value) -> None:
+    """Reject list, dict, and set values as Bash call arguments.
+
+    Bash commands take space-separated positional arguments and
+    have no syntax for inline compound literals — ``cmd (1 2 3)``
+    parses as ``cmd`` followed by a nested ``(...)`` child-process
+    group, and ``cmd (["k"]=v)`` likewise.  Callers that need to
+    pass a collection must declare it as a variable first and
+    pass the name via a ``$ref`` marker.
+    """
+    if isinstance(value, (list, dict, set, frozenset)):
+        raise CallArgNotSupportedError(
+            language_name="Bash",
+            reason=(
+                f"{type(value).__name__} values have no inline "
+                "literal form in a Bash command invocation; "
+                "declare the collection as a variable and pass "
+                "it via a $ref marker instead"
+            ),
+        )
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Bash(metaclass=LanguageCls):
     """Bash language specification."""
@@ -396,27 +419,10 @@ class Bash(metaclass=LanguageCls):
     validate_spec_for_data = _bash_validate_spec_for_data
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
-    def validate_call_arg(value: Value) -> None:
-        """Reject list, dict, and set values as Bash call arguments.
-
-        Bash commands take space-separated positional arguments and
-        have no syntax for inline compound literals — ``cmd (1 2 3)``
-        parses as ``cmd`` followed by a nested ``(...)`` child-process
-        group, and ``cmd (["k"]=v)`` likewise.  Callers that need to
-        pass a collection must declare it as a variable first and
-        pass the name via a ``$ref`` marker.
-        """
-        if isinstance(value, (list, dict, set, frozenset)):
-            raise CallArgNotSupportedError(
-                language_name="Bash",
-                reason=(
-                    f"{type(value).__name__} values have no inline "
-                    "literal form in a Bash command invocation; "
-                    "declare the collection as a variable and pass "
-                    "it via a $ref marker instead"
-                ),
-            )
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return the validator that rejects collection call arguments."""
+        return _bash_validate_call_arg
 
     @staticmethod
     def wrap_in_file(

@@ -1668,28 +1668,6 @@ def literalize(
     )
 
 
-@beartype
-def _identity_call_arg(_value: Value, formatted: str) -> str:
-    """Return *formatted* unchanged.
-
-    Default for :func:`_format_call_args` when a language does not
-    define ``format_call_arg``.  C and Objective-C override this to
-    wrap each argument in their canonical parameter type.
-    """
-    return formatted
-
-
-@beartype
-def _identity_call_statement(statement: str) -> str:
-    """Return *statement* unchanged.
-
-    Default when a language does not define ``format_call_statement``.
-    Languages that require call expressions to be wrapped in a
-    statement form (e.g. SML's ``val _ = expr``) override this.
-    """
-    return statement
-
-
 _CALL_ARG_REF_KEY = "$ref"
 
 
@@ -1839,11 +1817,7 @@ def _format_call_args(
     *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
     identifier to that :class:`IdentifierCase` before emitting it.
     """
-    wrap_arg: Callable[[Value, str], str] = getattr(
-        language,
-        "format_call_arg",
-        _identity_call_arg,
-    )
+    wrap_arg: Callable[[Value, str], str] = language.format_call_arg  # type: ignore[attr-defined, unresolved-attribute]
     formatted = [
         _format_single_call_arg(
             value=arg_value,
@@ -2078,15 +2052,11 @@ def _render_call_per_element(
         elements=data,
         spec=language,
     )
-    validate_call_arg: Callable[[Value], None] | None = getattr(
-        language,
-        "validate_call_arg",
-        None,
+    validate_call_arg: Callable[[Value], None] | None = (
+        language.validate_call_arg  # type: ignore[attr-defined, unresolved-attribute]
     )
-    format_call_statement: Callable[[str], str] = getattr(
-        language,
-        "format_call_statement",
-        _identity_call_statement,
+    format_call_statement: Callable[[str], str] = (
+        language.format_call_statement  # type: ignore[attr-defined, unresolved-attribute]
     )
     rendered_elements: list[str] = []
     for element in data:
@@ -2152,20 +2122,16 @@ def _render_call_whole(
     """
     if _extract_call_arg_ref_name(value=data) is None:
         check_data(data=data, spec=language)
-        validate_call_arg: Callable[[Value], None] | None = getattr(
-            language,
-            "validate_call_arg",
-            None,
+        validate_call_arg: Callable[[Value], None] | None = (
+            language.validate_call_arg  # type: ignore[attr-defined, unresolved-attribute]
         )
         if validate_call_arg is not None:
             validate_call_arg(data)
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
-    format_call_statement: Callable[[str], str] = getattr(
-        language,
-        "format_call_statement",
-        _identity_call_statement,
+    format_call_statement: Callable[[str], str] = (
+        language.format_call_statement  # type: ignore[attr-defined, unresolved-attribute]
     )
     args_str = _format_call_args(
         values=[data],
@@ -2330,10 +2296,8 @@ def literalize_call(
         language=language,
         has_variable_declaration=False,
     )
-    _call_ddp: Callable[[Value], tuple[str, ...]] = getattr(
-        language,
-        "call_data_dependent_preamble",
-        language.data_dependent_preamble,
+    _call_ddp: Callable[[Value], tuple[str, ...]] = (
+        language.call_data_dependent_preamble  # type: ignore[attr-defined, unresolved-attribute]
     )
     preamble = (
         tuple(language.static_preamble)

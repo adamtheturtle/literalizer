@@ -454,6 +454,16 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
+def _default_format_call_arg(_value: Value, formatted: str) -> str:
+    """Return *formatted* unchanged."""
+    return formatted
+
+
+def _default_format_call_statement(statement: str) -> str:
+    """Return *statement* unchanged."""
+    return statement
+
+
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -499,6 +509,42 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
+
+    @property
+    def has_module_name(cls) -> bool:
+        """Whether this language class accepts a ``module_name``
+        argument.
+        """
+        return hasattr(cls, "module_name")
+
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, object],
+        **kwargs: object,
+    ) -> "LanguageCls":
+        """Inject default call-hook properties for classes that omit
+        them.
+        """
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        if "format_call_arg" not in namespace:
+            cls.format_call_arg = property(  # type: ignore[attr-defined, misc]
+                lambda _: _default_format_call_arg
+            )
+        if "validate_call_arg" not in namespace:
+            cls.validate_call_arg = property(  # type: ignore[attr-defined, misc]
+                lambda _: None
+            )
+        if "format_call_statement" not in namespace:
+            cls.format_call_statement = property(  # type: ignore[attr-defined, misc]
+                lambda _: _default_format_call_statement
+            )
+        if "call_data_dependent_preamble" not in namespace:
+            cls.call_data_dependent_preamble = property(  # type: ignore[attr-defined, misc]
+                lambda self: self.data_dependent_preamble
+            )
+        return cls
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
