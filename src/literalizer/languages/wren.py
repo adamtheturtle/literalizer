@@ -167,6 +167,7 @@ class Wren(metaclass=LanguageCls):
     has_free_function_calls = False
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     allows_bare_call_statement = True
+    allows_empty_call_parens = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
     supports_module_name = False
