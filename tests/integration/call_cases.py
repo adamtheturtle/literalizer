@@ -41,7 +41,6 @@ from literalizer.languages import (
     PureScript,
     Raku,
     Roc,
-    Sml,
     SystemVerilog,
     Wren,
 )
@@ -390,11 +389,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # target_function "app.mgr.op" has "op" as the innermost name; "op"
-    # is a reserved word in SML and cannot be used as a fun or val
-    # identifier, so no valid stub can be produced.  COBOL cannot pass
-    # multi-line DATA DIVISION entries inline in a CALL statement.
-    "call_mixed_type_dicts": frozenset({Cobol, Sml}),
+    # COBOL cannot pass multi-line DATA DIVISION entries inline in a CALL
+    # statement.
+    "call_mixed_type_dicts": frozenset({Cobol}),
     # Ada and Fortran do not allow function-call results to be silently
     # discarded: a function call cannot appear as a statement.  The
     # identity call_transform (lambda c: c) causes a VALUE stub but the
@@ -489,6 +486,9 @@ def discover_call_cases() -> list[CallCase]:
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
             ):
+                continue
+            innermost = config.target_function.split(".")[-1]
+            if innermost in lang_cls.reserved_identifiers:
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
