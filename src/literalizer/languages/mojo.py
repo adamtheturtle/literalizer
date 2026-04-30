@@ -64,6 +64,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
@@ -831,24 +832,29 @@ class Mojo(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
+        """Emit a call-argument ``$ref`` as the bare identifier.
 
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
+        The Mojo transfer operator ``^`` consumes the variable, which
+        is unsafe when the caller may use it again in a later call (or
+        after the ``literalize_call`` block).  Callers opt in to
+        transferring a specific ref by listing it in
+        ``literalize_call``'s ``consumable_refs`` set; in that case
+        :attr:`format_call_arg_ref_identifier_consumable` is used
+        instead and appends ``^``.
         """
-        return self.format_call_ref_identifier
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
     ) -> Callable[[str], str]:
-        """Format a ``$ref`` the caller authorized as consumable.
+        """Append ``^`` to a consumable call-argument ``$ref``.
 
-        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
-        this to opt into a consuming form (e.g. C++ ``std::move``).
+        Used only for refs the caller declared as consumable on
+        :func:`~literalizer.literalize_call` and that appear in just
+        one call argument, so the transfer cannot strand a later use.
         """
-        return self.format_call_arg_ref_identifier
+        return self.format_call_ref_identifier
 
     @cached_property
     def call_style_config(self) -> CallStyle:
