@@ -432,6 +432,13 @@ class SystemVerilog(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for SystemVerilog."""
+
+        IEEE_1800_2017 = enum.auto()
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -506,6 +513,7 @@ class SystemVerilog(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.POSITIONAL
+    language_version: VersionFormats = VersionFormats.IEEE_1800_2017
     indent: str = "    "
 
     null_literal: ClassVar[str] = (

@@ -403,6 +403,13 @@ class Ada(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Ada."""
+
+        ADA_2022 = enum.auto()
+
+    version_formats = VersionFormats
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -526,6 +533,7 @@ class Ada(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.KEYWORD
+    language_version: VersionFormats = VersionFormats.ADA_2022
     indent: str = "    "
 
     null_literal: ClassVar[str] = "ANull"

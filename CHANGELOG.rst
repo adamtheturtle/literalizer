@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- Every built-in language class now exposes a ``VersionFormats`` enum and a
+  configurable ``language_version`` constructor parameter that selects which
+  version of the target language the generated code is written for.  For
+  example, ``Ada().language_version`` defaults to
+  ``Ada.version_formats.ADA_2022``, whose ``.value`` is ``"Ada 2022"``.
+  Each language currently defines a single version; additional versions
+  may be added in future releases.  Both ``version_formats`` and
+  ``language_version`` are part of the :class:`~literalizer.Language`
+  protocol, so custom language implementations must also define them.
+
 2026.04.30
 ----------
 

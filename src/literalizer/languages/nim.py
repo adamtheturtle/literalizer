@@ -843,6 +843,13 @@ class Nim(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Nim."""
+
+        V2 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -904,6 +911,7 @@ class Nim(metaclass=LanguageCls):
     )
     heterogeneous_value_variant_name: str = "Value"
     call_style: CallStyles = CallStyles.POSITIONAL
+    language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
     def __post_init__(self) -> None:

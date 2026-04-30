@@ -393,6 +393,13 @@ class Forth(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Forth."""
+
+        ANS = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.SNAKE,
@@ -452,6 +459,7 @@ class Forth(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.ANS
     indent: str = "    "
 
     null_literal: ClassVar[str] = "0"

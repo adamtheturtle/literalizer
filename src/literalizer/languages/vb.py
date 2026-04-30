@@ -474,6 +474,13 @@ class VisualBasic(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Visual Basic."""
+
+        DOTNET_6 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
@@ -584,6 +591,7 @@ class VisualBasic(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.DOTNET_6
     indent: str = "    "
 
     null_literal: ClassVar[str] = "Nothing"

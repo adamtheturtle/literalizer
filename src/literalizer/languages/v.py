@@ -558,6 +558,13 @@ class V(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for V."""
+
+        V0_4 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -621,6 +628,7 @@ class V(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.INTERFACE
     )
+    language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "\t"
     call_style: CallStyles = CallStyles.POSITIONAL
 
