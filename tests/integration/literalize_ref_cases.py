@@ -53,7 +53,7 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     ]
 
 
-def _collect_ref_names(data: object, *, ref_key: str = "ref") -> list[str]:
+def _collect_ref_names(data: object, *, ref_key: str = "$ref") -> list[str]:
     """Recursively collect all ref name values from parsed data."""
     match data:
         case dict():
