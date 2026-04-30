@@ -4,5 +4,5 @@ fn process(args ...ICallArg_) {}
 
 fn main() {
 	my_var := 42
-	process([IVal(my_var), IVal(42), IVal('static')]);
+	process([IVal({'ref': 'myVar'}), IVal(42), IVal('static')]);
 }

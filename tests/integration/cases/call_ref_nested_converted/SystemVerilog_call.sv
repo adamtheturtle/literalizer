@@ -13,6 +13,6 @@ module main;
 task process(input _VVal data); endtask
 initial begin
 static _VVal my_var = _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""};
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"my_var\"}, _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"static\"}}"});
+process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"ref\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"myVar\\\"}}}\"}, _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"static\"}}"});
 end
 endmodule

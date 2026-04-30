@@ -14,6 +14,6 @@ fn process(data: ZVal) void { _ = data; }
 pub fn main() void {
     const my_var: ZVal = .{ .int = 42 };
     const my_other: ZVal = .{ .int = 7 };
-    process(.{ .arr = &.{my_var, .{ .int = 42 }, .{ .str = "static" }}});
-    process(.{ .arr = &.{my_other, .{ .int = 7 }, .{ .str = "label" }}});
+    process(.{ .arr = &.{.{ .map = &.{.{ .key = "ref", .val = .{ .str = "my_var" } }}}, .{ .int = 42 }, .{ .str = "static" }}});
+    process(.{ .arr = &.{.{ .map = &.{.{ .key = "ref", .val = .{ .str = "my_other" } }}}, .{ .int = 7 }, .{ .str = "label" }}});
 }

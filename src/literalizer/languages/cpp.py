@@ -869,6 +869,8 @@ class Cpp(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
 
     class DateFormats(enum.Enum):
         """Date format options for C++."""
@@ -1366,15 +1368,34 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Return the ref identifier unchanged in a call-argument context.
+        """Emit a call-argument ``$ref`` as the bare identifier.
 
-        ``std::move`` on a trivially-copyable type (e.g. ``int``) is a
-        no-op that clang-tidy flags as ``performance-move-const-arg``.
-        Because the type of the referenced variable is unknown at code-
-        generation time, call-argument refs are emitted without
-        ``std::move`` so the generated code is always lint-clean.
+        ``std::move`` would consume the variable, which is unsafe when
+        the caller may use it again in a later call (or after the
+        ``literalize_call`` block).  Callers opt in to consuming a
+        specific ref by listing it in ``literalize_call``'s
+        ``consumable_refs`` set; in that case
+        :attr:`format_call_arg_ref_identifier_consumable` is used
+        instead and emits ``std::move(name)``.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Wrap a consumable call-argument ``$ref`` in ``std::move()``.
+
+        Used only for refs the caller declared as consumable on
+        :func:`~literalizer.literalize_call` and that appear in just
+        one call argument, so the move cannot strand a later use.
+        """
+
+        def _format_cpp_ref_identifier_consumable(name: str, /) -> str:
+            """Wrap the identifier in ``std::move()``."""
+            return f"std::move({name})"
+
+        return _format_cpp_ref_identifier_consumable
 
     @cached_property
     def _cpp_date_type(self) -> str:

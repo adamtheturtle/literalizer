@@ -685,6 +685,8 @@ class Rust(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -1405,6 +1407,17 @@ class Rust(metaclass=LanguageCls):
         allow call-argument ``$ref`` values that would otherwise be rejected.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Format a ``$ref`` the caller authorized as consumable.
+
+        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
+        this to opt into a consuming form (e.g. C++ ``std::move``).
+        """
+        return self.format_call_arg_ref_identifier
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 

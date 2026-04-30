@@ -4,13 +4,29 @@ Changelog
 Next
 ----
 
+2026.04.30.1
+------------
+
+
+- :func:`~literalizer.literalize_call` accepts a new ``consumable_refs``
+  parameter listing the ref identifiers the call may move from.  In C++,
+  only refs in this set -- and only when they appear in exactly one call
+  argument across the rendered calls -- are wrapped in ``std::move(...)``;
+  all other refs emit as the bare identifier so the variable remains
+  valid for any subsequent use (whether in a later per-element call
+  within the same ``literalize_call`` block, or elsewhere in the
+  surrounding source).  Mojo's ``^`` transfer operator is treated the
+  same way.  This is a breaking change: previously C++ unconditionally
+  wrapped every call-argument ref in ``std::move(...)``, which produced
+  use-after-move when the same variable was referenced by more than
+  one per-element call.  Pass ``consumable_refs={"my_var"}`` to
+  restore the previous behavior for ``my_var``.
 - :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call`
-  now accept a ``ref_key`` parameter (``str``, default ``"ref"``).  The
+  now accept a ``ref_key`` parameter (``str``, default ``"$ref"``).  The
   marker key used to identify variable-reference mappings in the input data
   is now user-configurable: a single-key dict whose key equals *ref_key*
   and whose value is a string is treated as a ref marker when *ref_case* is
-  set.  The previous hard-coded key ``"$ref"`` is no longer the default;
-  callers that relied on ``$ref`` must pass ``ref_key="$ref"`` explicitly.
+  set.
 - Every built-in language class now exposes a ``VersionFormats`` enum and a
   configurable ``language_version`` constructor parameter that selects which
   version of the target language the generated code is written for.  For

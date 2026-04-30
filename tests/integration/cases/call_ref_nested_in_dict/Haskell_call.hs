@@ -14,5 +14,5 @@ my_var :: Val
 my_var = 42
 main :: IO ()
 main = do
-    _ <- process(HMap [("key", my_var), ("count", 42)])
+    _ <- process(HMap [("key", HMap [("ref", HStr "my_var")]), ("count", 42)])
     pure ()

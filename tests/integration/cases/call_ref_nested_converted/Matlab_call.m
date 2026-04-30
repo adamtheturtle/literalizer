@@ -1,3 +1,3 @@
 process = @(varargin) [];
 myVar = 42;
-process({myVar, 42, "static"})
+process({struct('ref', "myVar"), 42, "static"})

@@ -1,3 +1,3 @@
 function process {}
 $MyVar = 42
-process(@($MyVar; 42; "static"))
+process(@(@{"ref" = "myVar"}; 42; "static"))

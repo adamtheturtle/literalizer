@@ -1,5 +1,5 @@
 module Fixture_call_ref_nested_in_list_Haskell_call where
-data Val = HInt Integer | HStr String | HList [Val]
+data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
     _ + _ = error "not implemented"
@@ -16,6 +16,6 @@ my_other :: Val
 my_other = 7
 main :: IO ()
 main = do
-    _ <- process(HList [my_var, 42, HStr "static"])
-    _ <- process(HList [my_other, 7, HStr "label"])
+    _ <- process(HList [HMap [("ref", HStr "my_var")], 42, HStr "static"])
+    _ <- process(HList [HMap [("ref", HStr "my_other")], 7, HStr "label"])
     pure ()

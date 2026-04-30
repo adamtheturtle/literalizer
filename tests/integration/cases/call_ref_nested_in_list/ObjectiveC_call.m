@@ -4,8 +4,8 @@ int main(void) {
 @autoreleasepool {
 id my_var = @42;
 id my_other = @7;
-process(@[my_var, @42, @"static"]);
-process(@[my_other, @7, @"label"]);
+process(@[@{@"ref": @"my_var"}, @42, @"static"]);
+process(@[@{@"ref": @"my_other"}, @7, @"label"]);
 }
     return 0;
 }

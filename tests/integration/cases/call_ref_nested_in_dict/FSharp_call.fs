@@ -7,4 +7,4 @@ type Val =
     | FMap of (string * Val) list
 let process (_data: obj) : obj = null
 let my_var: Val = FInt 42L
-process(FMap [("key", my_var); ("count", FInt 42L)])
+process(FMap [("key", FMap [("ref", FStr "my_var")]); ("count", FInt 42L)])

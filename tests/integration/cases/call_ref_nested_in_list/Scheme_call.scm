@@ -1,0 +1,5 @@
+(define process (lambda args (if #f #f)))
+(define my_var 42)
+(define my_other 7)
+(process (list (list "ref" "my_var") 42 "static"))
+(process (list (list "ref" "my_other") 7 "label"))

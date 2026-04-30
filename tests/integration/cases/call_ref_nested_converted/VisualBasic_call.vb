@@ -5,6 +5,6 @@ Module Check
     End Function
     Sub _calls()
         Dim MyVar = 42
-        process(New Object() {MyVar, 42, "static"})
+        process(New Object() {New Dictionary(Of String, Object) From {{"ref", "myVar"}}, 42, "static"})
     End Sub
 End Module

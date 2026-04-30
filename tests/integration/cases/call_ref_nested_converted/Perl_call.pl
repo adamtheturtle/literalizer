@@ -1,3 +1,3 @@
 sub process {}
 my $my_var = 42;
-process([$my_var, 42, "static"]);
+process([{"ref" => "myVar"}, 42, "static"]);

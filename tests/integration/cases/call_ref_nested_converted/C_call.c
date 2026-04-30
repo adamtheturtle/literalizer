@@ -17,6 +17,6 @@ struct CKV { const char *k; CVal v; };
 static void process(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal my_var = ((CVal){.i = 42});
-process(((CVal){.a = (CVal[]){my_var, ((CVal){.i = 42}), ((CVal){.s = "static"})}}));
+process(((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"ref", ((CVal){.s = "myVar"})}}}), ((CVal){.i = 42}), ((CVal){.s = "static"})}}));
     return 0;
 }

@@ -1,3 +1,3 @@
 : process ;
 : MY_VAR 42 ;
-MY_VAR 42 s\" static" process
+s\" ref" s\" myVar" 42 s\" static" process

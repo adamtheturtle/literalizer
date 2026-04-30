@@ -41,8 +41,6 @@ from literalizer.languages import (
     PureScript,
     Raku,
     Roc,
-    Sml,
-    SystemVerilog,
     Wren,
 )
 
@@ -141,6 +139,12 @@ class CallCaseConfig:
     # directly instead of wrapping manually with injected stubs.
     wrap_in_file: bool
     ref_case_per_language: bool
+    # Names from ``ref_declarations`` (in their original case) that
+    # ``literalize_call`` may treat as consumable.  Empty means no ref
+    # is consumed.
+    consumable_refs: frozenset[str]
+    requires_call_returns_expression: bool
+    requires_inline_multiline_dict_args: bool
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -162,6 +166,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -174,6 +181,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_comments",
@@ -186,6 +196,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_comments_dict_args",
@@ -198,6 +211,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=True,
     ),
     CallCaseConfig(
         case_dir_name="call_negative_int",
@@ -210,6 +226,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -222,6 +241,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -234,6 +256,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -246,6 +271,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_snake_dotted_method",
@@ -258,6 +286,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -270,6 +301,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_dotted_transform_stub",
@@ -282,6 +316,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -294,6 +331,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -306,6 +346,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -321,6 +364,43 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset({"my_var", "my_other"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        # Same ref reused across multiple per-element calls.  The
+        # caller declares both refs consumable; the renderer must still
+        # avoid the consuming form (e.g. C++ ``std::move``, Mojo ``^``)
+        # for the reused ref so the second call does not read a
+        # moved-from variable.  ``repeated_var`` is a scalar int so it
+        # is ``Copy`` in Rust and can be referenced twice; ``single_var``
+        # is a list so the consuming form rendered in C++ / Mojo
+        # operates on a non-trivial type and does not trigger
+        # trivial-type "no effect" lints.  Variable names avoid
+        # ``shared``, which is reserved in D, V, and VisualBasic.
+        case_dir_name="call_ref_args_reused",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        # ``single_var`` is declared first so its preamble (which sees
+        # both ``int`` and ``list``) wins ``_dedupe_preamble_blocks``
+        # against the ``int``-only preamble emitted for
+        # ``repeated_var``.  Without this ordering, languages that emit
+        # a header-keyed type union (e.g. Gleam's ``pub type GVal``)
+        # end up missing the ``GList`` constructor.
+        ref_declarations={
+            "single_var": "[4, 5, 6]",
+            "repeated_var": "1",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset({"repeated_var", "single_var"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted",
@@ -336,6 +416,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset({"my_var", "my_other"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted_whole",
@@ -350,6 +433,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset({"my_var"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted_nonsnake",
@@ -365,6 +451,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset({"myVar", "MyOther"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_in_list",
@@ -380,6 +469,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_in_dict",
@@ -394,6 +486,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_converted",
@@ -408,6 +503,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -420,6 +518,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=True,
     ),
     CallCaseConfig(
         # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
@@ -434,6 +535,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=True,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
     ),
     *[
         CallCaseConfig(
@@ -447,6 +551,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             ref_declarations={},
             wrap_in_file=False,
             ref_case_per_language=False,
+            consumable_refs=frozenset[str](),
+            requires_call_returns_expression=True,
+            requires_inline_multiline_dict_args=False,
         )
         for name, cls in CALL_STYLE_VARIANTS
     ],
@@ -457,23 +564,10 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # target_function "app.mgr.op" has "op" as the innermost name; "op"
-    # is a reserved word in SML and cannot be used as a fun or val
-    # identifier, so no valid stub can be produced.  COBOL cannot pass
-    # multi-line DATA DIVISION entries inline in a CALL statement.
-    "call_mixed_type_dicts": frozenset({Cobol, Sml}),
-    # Ada and Fortran do not allow function-call results to be silently
-    # discarded: a function call cannot appear as a statement.  The
-    # identity call_transform (lambda c: c) causes a VALUE stub but the
-    # call is used as a bare statement, which both compilers reject.
-    # SystemVerilog requires void'(...) to discard a function return value;
-    # a bare function call as a statement is non-standard.
-    "call_transform_no_wrapper": frozenset({Ada, Fortran, SystemVerilog}),
     # call_transform wraps output as "emit(inner)", which is invalid in
-    # Wren (no free-function call syntax) and COBOL (CALL statement
-    # produces no expression value that can be passed to another call).
-    "call_keyword_args": frozenset({Cobol, Wren}),
-    "call_deep_dotted_transformed": frozenset({Cobol, Wren}),
+    # Wren (no free-function call syntax).
+    "call_keyword_args": frozenset({Wren}),
+    "call_deep_dotted_transformed": frozenset({Wren}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
@@ -519,7 +613,6 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     ),
     "call_comments_dict_args": frozenset(
         {
-            Cobol,
             Dhall,
             Elm,
             Erlang,
@@ -544,6 +637,35 @@ class CallCase:
     lang_cls: literalizer.LanguageCls
 
 
+@beartype
+def _lang_satisfies_config_constraints(
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> bool:
+    """Return False if *lang_cls* does not satisfy *config*'s language
+    constraints.
+    """
+    innermost = config.target_function.split(sep=".")[-1]
+    if innermost in lang_cls.reserved_identifiers:
+        return False
+    _probe = "__probe__"
+    if (
+        config.call_transform is not None
+        and config.call_transform(_probe) == _probe
+        and not lang_cls.allows_bare_call_statement
+    ):
+        return False
+    if (
+        config.requires_call_returns_expression
+        and not lang_cls.call_returns_expression
+    ):
+        return False
+    return not (
+        config.requires_inline_multiline_dict_args
+        and not lang_cls.supports_inline_multiline_dict_args
+    )
+
+
 @functools.cache
 @beartype
 def discover_call_cases() -> list[CallCase]:
@@ -558,6 +680,10 @@ def discover_call_cases() -> list[CallCase]:
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
+            ):
+                continue
+            if not _lang_satisfies_config_constraints(
+                lang_cls=lang_cls, config=config
             ):
                 continue
             if config.call_style_type is not None:
@@ -686,6 +812,7 @@ def run_call_golden_case(
             call_transform=config.call_transform,
             per_element=config.per_element,
             ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
