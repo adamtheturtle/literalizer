@@ -76,8 +76,8 @@ def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
     first block's middle lines are kept as-is, and any additional middle
     lines from subsequent blocks that are not yet present are appended.
     Blocks that share only the header but differ in their footer (e.g.
-    two different structs decorated with the same attribute) are kept as
-    separate blocks.
+    two distinct type definitions sharing a common attribute decorator)
+    are kept as separate blocks.
     """
     key_to_middle: dict[tuple[str, str], list[str]] = {}
     order: list[tuple[str, str]] = []

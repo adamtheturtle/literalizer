@@ -713,22 +713,30 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Return the ref identifier unchanged.
+        """Append ``.clone()`` to the ref identifier.
 
-        V primitives do not have a ``.clone()`` method, and arrays are
-        reference-counted so passing them without cloning is valid.
+        V maps cannot be copied by direct assignment; the caller must
+        explicitly clone the value.  ``$ref`` markers appear in value
+        position (e.g. the RHS of an assignment emitted by
+        :func:`~literalizer.literalize`), so ``.clone()`` is required.
         """
-        return identity_call_ref_identifier
+
+        def _clone(name: str, /) -> str:
+            """Return *name* with ``.clone()`` appended."""
+            return f"{name}.clone()"
+
+        return _clone
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
+        """Return the ref identifier unchanged in a call-argument context.
 
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
+        When a ``$ref`` is passed as a function argument (directly or
+        nested inside a container argument via
+        :func:`~literalizer.literalize_call`), V does not require
+        ``.clone()``; the callee receives a reference automatically.
         """
-        return self.format_call_ref_identifier
+        return identity_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
