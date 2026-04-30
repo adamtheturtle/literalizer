@@ -3,15 +3,15 @@
 #include <map>
 #include <vector>
 int main() {
-auto val_x = std::map<std::string, std::string>{
+const auto val_x = std::map<std::string, std::string>{
     {"_", "_"},
 };
-auto val_y = std::map<std::string, std::string>{
+const auto val_y = std::map<std::string, std::string>{
     {"_", "_"},
 };
-auto my_data = std::vector<std::map<std::string, std::string>>{
-    std::move(val_x),
-    std::move(val_y),
+const auto my_data = std::vector<std::map<std::string, std::string>>{
+    val_x,
+    val_y,
 };
     (void)my_data;
     return 0;

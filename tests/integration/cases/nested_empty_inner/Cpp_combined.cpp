@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <variant>
 int main() {
-auto my_data = std::vector<std::vector<std::nullptr_t>>{
+const auto my_data = std::vector<std::vector<std::nullptr_t>>{
     std::vector<std::nullptr_t>{},
     std::vector<std::nullptr_t>{},
 };

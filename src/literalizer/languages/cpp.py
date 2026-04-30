@@ -68,6 +68,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
@@ -761,24 +762,26 @@ def _format_variable_declaration(
 ) -> str:
     """Format a C++ variable declaration.
 
-    * ``std::string`` — string literal (``"..."``).  Using a value type
-      instead of ``const auto*`` / ``const char*`` keeps the variable
-      move-eligible, which is required when a ``{$ref}`` identifier is
-      later passed via ``std::move()`` in a call expression.
-    * ``auto`` — typed expression
-      (e.g. ``std::vector<int>{...}``).
+    * ``const auto*`` — string literal (``"..."``), required by
+      ``readability-qualified-auto``.  Already ``const``, so
+      ``misc-const-correctness`` is always satisfied and ``std::move()``
+      is never needed at call sites.
+    * ``const auto`` — typed expression (e.g. ``std::vector<int>{...}``).
+      Declaring as ``const`` means ``misc-const-correctness`` is
+      satisfied without applying ``std::move()`` at call sites.
 
     When *modifiers* is non-empty, applicable modifier keywords
-    (``static``, ``const``) are prepended.  ``const`` is not prepended
-    for string literals because a ``const std::string`` cannot be moved.
+    (``static``, ``const``) are prepended.  ``const`` is not duplicated
+    against the built-in ``const auto*`` for string literals, and is
+    not duplicated against ``const auto`` for typed expressions.
     """
     match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
-            type_keyword = "std::string"
+            type_keyword = "const auto*"
             extra = modifiers - {_CppModifiers.CONST}
         case ValueKind.TYPED_EXPRESSION:
-            type_keyword = "auto"
-            extra = modifiers
+            type_keyword = "const auto"
+            extra = modifiers - {_CppModifiers.CONST}
         case _ as unreachable:
             assert_never(unreachable)  # pyrefly: ignore[bad-argument-type]
     prefix = _cpp_modifier_prefix(modifiers=extra)
@@ -1353,28 +1356,20 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
+        """Return the ``{"$ref": "name"}`` identifier unchanged.
 
-        A direct copy assignment (``auto my_data = my_var``) triggers
-        clang-tidy ``performance-unnecessary-copy-initialization`` when
-        the variable is never modified.  Using ``std::move`` avoids the
-        copy and satisfies the linter.
+        Ref variables are declared ``const`` (either ``const auto*`` for
+        string literals or ``const auto`` for typed expressions), so
+        ``std::move()`` cannot be applied without triggering clang-tidy's
+        ``performance-move-const-arg`` check.  Passing by value is safe:
+        ``const auto*`` is trivially copyable, and ``const auto`` values
+        passed to ``auto process(auto...)`` are copied efficiently.
         """
-
-        def _format_cpp_ref_identifier(name: str, /) -> str:
-            """Wrap the identifier in ``std::move()``."""
-            return f"std::move({name})"
-
-        return _format_cpp_ref_identifier
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
-
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
-        """
+        """Delegate to :attr:`format_call_ref_identifier`."""
         return self.format_call_ref_identifier
 
     @cached_property

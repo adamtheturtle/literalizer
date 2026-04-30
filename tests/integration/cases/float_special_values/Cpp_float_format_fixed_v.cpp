@@ -2,7 +2,7 @@
 #include <cmath>
 #include <vector>
 int main() {
-auto my_data = std::vector<double>{
+const auto my_data = std::vector<double>{
     static_cast<double>(INFINITY),
     -static_cast<double>(INFINITY),
     static_cast<double>(NAN),

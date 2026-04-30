@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 int main() {
-auto my_data = std::map<std::string, std::string>{
+const auto my_data = std::map<std::string, std::string>{
     {"description", "# not a comment\n"},
     {"name", "foo"},
 };

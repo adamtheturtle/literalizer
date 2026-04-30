@@ -4,7 +4,7 @@
 #include <map>
 #include <variant>
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, bool>>{
+const auto my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, bool>>{
     {"host", "localhost"},
     {"port", nullptr},  // not configured yet
     {"debug", true},

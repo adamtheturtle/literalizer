@@ -1,6 +1,6 @@
 #include <initializer_list>
 int main() {
-auto my_data = std::initializer_list<int>{
+const auto my_data = std::initializer_list<int>{
     1,
     2,
     3,

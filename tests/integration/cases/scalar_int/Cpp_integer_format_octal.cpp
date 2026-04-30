@@ -1,6 +1,6 @@
 #include <initializer_list>
 int main() {
-auto my_data = 052;
+const auto my_data = 052;
     (void)my_data;
     return 0;
 }

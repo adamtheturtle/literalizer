@@ -5,7 +5,7 @@
 #include <variant>
 auto process(auto...) { return 0; }
 int main() {
-std::string my_str = "a\"b";
-process(std::move(my_str));
+const auto* my_str = "a\"b";
+process(my_str);
     return 0;
 }

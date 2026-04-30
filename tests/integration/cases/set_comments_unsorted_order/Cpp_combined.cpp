@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 int main() {
-auto my_data = std::initializer_list<std::string>{
+const auto my_data = std::initializer_list<std::string>{
     // before apple
     "apple",
     "banana",  // banana inline

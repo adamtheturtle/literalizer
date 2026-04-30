@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 int main() {
-auto my_data = std::vector<std::string>{
+const auto my_data = std::vector<std::string>{
     "a",  // note a
     "b",  // note b
 };

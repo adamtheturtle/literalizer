@@ -3,7 +3,7 @@
 #include <map>
 #include <variant>
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, int, bool>>{
+const auto my_data = std::map<std::string, std::variant<std::string, int, bool>>{
     /* Server configuration */
     {"host", "localhost"},  /* default host */
     {"port", 8080},

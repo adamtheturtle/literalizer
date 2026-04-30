@@ -3,11 +3,11 @@
 #include <cstddef>
 auto process(auto...) { return 0; }
 int main() {
-auto my_var = std::vector<int>{
+const auto my_var = std::vector<int>{
     1,
     2,
     3,
 };
-process(std::move(my_var));
+process(my_var);
     return 0;
 }

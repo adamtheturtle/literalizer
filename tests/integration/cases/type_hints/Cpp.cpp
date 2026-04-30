@@ -5,7 +5,7 @@
 #include <map>
 #include <variant>
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point>>{
+const auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point>>{
     {"name", "Alice"},
     {"age", 30},
     {"active", true},

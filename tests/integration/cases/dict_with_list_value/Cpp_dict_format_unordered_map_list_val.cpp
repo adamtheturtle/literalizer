@@ -4,7 +4,7 @@
 #include <vector>
 #include <variant>
 int main() {
-auto my_data = std::unordered_map<std::string, std::variant<std::string, std::vector<int>>>{
+const auto my_data = std::unordered_map<std::string, std::variant<std::string, std::vector<int>>>{
     {"name", "Alice"},
     {"scores", std::vector<int>{10, 20, 30}},
 };

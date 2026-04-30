@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 int main() {
-std::string my_data = "hello";
+const auto* my_data = "hello";
 (void)my_data;
 my_data = "hello";
     (void)my_data;

@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <vector>
 int main() {
-auto my_data = std::vector<long>{
+const auto my_data = std::vector<long>{
     0L,
     1L,
     -1L,
