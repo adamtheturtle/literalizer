@@ -41,7 +41,6 @@ from literalizer.languages import (
     PureScript,
     Raku,
     Roc,
-    Sml,
 )
 
 from .check_golden import check_golden
@@ -488,11 +487,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # target_function "app.mgr.op" has "op" as the innermost name; "op"
-    # is a reserved word in SML and cannot be used as a fun or val
-    # identifier, so no valid stub can be produced.  COBOL cannot pass
-    # multi-line DATA DIVISION entries inline in a CALL statement.
-    "call_mixed_type_dicts": frozenset({Cobol, Sml}),
+    # COBOL cannot pass multi-line DATA DIVISION entries inline in a CALL
+    # statement.  SML is excluded via reserved_identifiers ("op").
+    "call_mixed_type_dicts": frozenset({Cobol}),
     # COBOL CALL statement produces no expression value that can be passed
     # to another call, so emit(inner) is invalid.
     "call_keyword_args": frozenset({Cobol}),
