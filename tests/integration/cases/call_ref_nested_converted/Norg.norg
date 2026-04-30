@@ -1,6 +1,0 @@
-* my_data
-@code json
-[
-    [[{"$ref": "myVar"}, 42, "static"]]
-]
-@end

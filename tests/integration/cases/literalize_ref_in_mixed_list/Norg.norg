@@ -1,8 +1,0 @@
-* my_data
-@code json
-[
-    {"$ref": "ref_x"},
-    1,
-    2
-]
-@end

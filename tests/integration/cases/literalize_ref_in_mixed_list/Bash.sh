@@ -1,5 +1,0 @@
-declare my_data=(
-    "([\"\$ref\"]=\"ref_x\")"
-    1
-    2
-)

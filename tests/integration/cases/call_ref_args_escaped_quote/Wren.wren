@@ -1,3 +1,0 @@
-var my_data = [
-    [{"$ref": "my_str"}],
-]

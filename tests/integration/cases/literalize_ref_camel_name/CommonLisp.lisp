@@ -1,3 +1,0 @@
-(list
-    (cons "$ref" "myVar")
-)

@@ -1,4 +1,0 @@
-declare my_data=(
-    "()"
-    "()"
-)

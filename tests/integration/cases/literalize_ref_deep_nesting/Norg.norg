@@ -1,6 +1,0 @@
-* my_data
-@code json
-{
-    "a": {"b": {"c": {"$ref": "deep"}}}
-}
-@end
