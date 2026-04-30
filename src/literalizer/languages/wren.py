@@ -346,7 +346,7 @@ class Wren(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        NEWLINE = "newline"
+        NEWLINE = enum.auto()
 
     line_endings = LineEndings
 

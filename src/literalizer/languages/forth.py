@@ -309,7 +309,7 @@ class Forth(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.auto()
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
@@ -368,7 +368,7 @@ class Forth(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        NONE = "none"
+        NONE = enum.auto()
 
     line_endings = LineEndings
 

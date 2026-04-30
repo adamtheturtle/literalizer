@@ -652,7 +652,7 @@ class Roc(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -688,7 +688,7 @@ class Roc(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        NONE = "none"
+        NONE = enum.auto()
 
     line_endings = LineEndings
 

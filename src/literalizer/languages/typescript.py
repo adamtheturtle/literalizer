@@ -345,7 +345,7 @@ class TypeScript(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
         NONE = "none"
 
         def wrap_formatter(
