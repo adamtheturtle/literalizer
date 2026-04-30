@@ -157,7 +157,7 @@ class Nix(metaclass=LanguageCls):
     """Nix language specification.
 
     Produces Nix values — attribute sets for mappings, and lists for
-    sequences and sets — following `Nix <https://nixos.org/manual/nix/stable/language/>`_
+    sequences and sets — following `Nix <https://nix.dev/manual/nix/stable/language/>`_
     syntax.
 
     Nix is a purely functional, lazy language used primarily for the Nix

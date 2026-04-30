@@ -61,6 +61,7 @@ htmlhelp_basename = "literalizerdoc"
 spelling_word_list_filename = "../../spelling_private_dict.txt"
 
 linkcheck_ignore = [
+    r"https://dhall-lang\.org/",
     r"https://json5\.org/",
 ]
 
