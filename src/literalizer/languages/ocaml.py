@@ -45,7 +45,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -56,6 +55,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -63,7 +63,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
-    identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -121,6 +120,44 @@ def _build_ocaml_entry_formatter(
 
 
 _format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
+
+
+@beartype
+def _ocaml_call_stub(
+    parts: Sequence[str],
+    _params: Sequence[str],
+    _stub_return: StubReturn,
+    /,
+) -> tuple[str, ...]:
+    """Return OCaml stub declarations for a call name.
+
+    For dotted names like ``app.client.fetch``, nested OCaml modules
+    are emitted so that ``App.Client.fetch arg`` is valid at the call
+    site.  The innermost name becomes a ``let`` declaration that accepts
+    any argument and returns unit.  Each module-path component has its
+    first character in uppercase, as OCaml requires module names to begin
+    with an uppercase letter.
+    """
+    method = parts[-1]
+    lines: list[str] = [f"let {method} _ = ()"]
+    for part in reversed(parts[:-1]):
+        cap = part[0].upper() + part[1:]
+        lines = [f"module {cap} = struct", *lines, "end"]
+    return tuple(lines)
+
+
+@beartype
+def _ocaml_call_target(parts: Sequence[str], /) -> str:
+    """Return the dotted OCaml call target for a sequence of name parts.
+
+    Module components (all but the last) have their first character
+    converted to uppercase because OCaml requires module names to begin
+    with an uppercase letter.
+    """
+    if len(parts) == 1:
+        return parts[0]
+    modules = [p[0].upper() + p[1:] for p in parts[:-1]]
+    return ".".join([*modules, parts[-1]])
 
 
 @beartype
@@ -432,12 +469,14 @@ class OCaml(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 
     class CallStyles(enum.Enum):
         """OCaml call style options."""
+
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -517,6 +556,7 @@ class OCaml(metaclass=LanguageCls):
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
     line_ending: LineEndings = LineEndings.SEMICOLON
+    call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -535,9 +575,6 @@ class OCaml(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -562,11 +599,16 @@ class OCaml(metaclass=LanguageCls):
         return no_type_hint_preamble
 
     @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
+
+    @cached_property
     def format_call_stub(
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return _ocaml_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -576,11 +618,16 @@ class OCaml(metaclass=LanguageCls):
         return no_call_stub
 
     @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Wrap a call expression as a let binding."""
+        return lambda statement: f"let _ = {statement}"
+
+    @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
         """
-        return identity_call_target
+        return _ocaml_call_target
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
@@ -588,6 +635,16 @@ class OCaml(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
 
     @cached_property
     def null_literal(self) -> str:

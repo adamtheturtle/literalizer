@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -221,16 +221,21 @@ def _build_sml_declaration(
     return _format
 
 
-def _format_sml_preamble_lines(lines: list[str]) -> tuple[str, ...]:
+def _format_sml_preamble_lines(
+    lines: list[str],
+    *,
+    indent: str,
+) -> tuple[str, ...]:
     """Format deduplicated preamble lines with SML ``datatype`` syntax.
 
     The first constructor is indented; subsequent constructors are
     prefixed with ``|``.
     """
+    pipe_prefix = " " * max(0, len(indent) - 2) + "| "
     return (
         lines[0],
-        "    " + lines[1],
-        *(f"  | {line}" for line in lines[2:]),
+        indent + lines[1],
+        *(f"{pipe_prefix}{line}" for line in lines[2:]),
     )
 
 
@@ -494,7 +499,7 @@ class Sml(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 
@@ -671,6 +676,16 @@ class Sml(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
 
     scalar_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
@@ -890,5 +905,8 @@ class Sml(metaclass=LanguageCls):
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
-            format_lines=_format_sml_preamble_lines,
+            format_lines=partial(
+                _format_sml_preamble_lines,
+                indent=self.indent,
+            ),
         )

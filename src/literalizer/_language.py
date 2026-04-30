@@ -1215,12 +1215,35 @@ class Language(Protocol):
         """Rewrite a ``{"$ref": "name"}`` identifier into the form
         required by this language's call expression syntax.
 
+        Used when a ``$ref`` appears as a value inside a data structure
+        (e.g. an element of a list passed to
+        :func:`~literalizer.literalize`).  Languages that cannot support
+        bare variable references in that context raise
+        :exc:`~literalizer.exceptions.CallArgNotSupportedError` here.
+
         Called after :func:`~literalizer.literalize_call`'s ``ref_case``
         normalization, so *name* is already in the requested identifier
         case.  Most languages emit ref identifiers bare and use
         :data:`identity_call_ref_identifier`.  Languages where variable
         references carry a sigil (e.g. PHP ``$name``, Perl ``$name``)
         override this to prepend the sigil.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier used as a direct
+        call argument (via :func:`~literalizer.literalize_call`).
+
+        In the call-argument context the referenced variable has already
+        been emitted at the same top-level scope, so some languages that
+        reject ``$ref`` in the value context (see
+        :attr:`format_call_ref_identifier`) can accept it here.
+
+        The default implementation (provided by every language class)
+        delegates to :attr:`format_call_ref_identifier`.  Override this
+        to allow call-argument ``$ref`` values that would otherwise be
+        rejected.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

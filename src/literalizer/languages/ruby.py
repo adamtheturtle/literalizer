@@ -66,6 +66,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
@@ -571,6 +572,18 @@ class Ruby(metaclass=LanguageCls):
             )
 
         return _raise_for_ruby_ref
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` call-argument identifier.
+
+        Unlike :attr:`format_call_ref_identifier`, this is used only when
+        the ``$ref`` appears as a direct call argument (via
+        :func:`~literalizer.literalize_call`).  In that context the
+        referenced variable has already been emitted at the same top-level
+        scope, so the reference is valid.
+        """
+        return identity_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

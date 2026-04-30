@@ -5,7 +5,7 @@ import datetime
 import enum
 import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
@@ -122,6 +122,8 @@ def _mojo_call_preamble_stub(
     _params: Sequence[str],
     _stub_return: StubReturn,
     /,
+    *,
+    indent: str,
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
@@ -131,15 +133,14 @@ def _mojo_call_preamble_stub(
     next inner type.
     """
     if len(parts) == 1:
-        return (f"fn {parts[0]}[*Ts: AnyType](*args: *Ts):\n    pass",)
+        return (f"fn {parts[0]}[*Ts: AnyType](*args: *Ts):\n{indent}pass",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    indent = "    "
     struct_header = "(Copyable, Movable)"
     method_stub = (
         f"{indent}fn {method}[*Ts: AnyType](self, *args: *Ts):\n"
-        f"{indent}    pass"
+        f"{indent}{indent}pass"
     )
     if not fields:
         type_name = f"_{root.capitalize()}Type"
@@ -549,7 +550,7 @@ class Mojo(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -584,7 +585,7 @@ class Mojo(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 
@@ -804,7 +805,7 @@ class Mojo(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return file-scope stubs for a call expression."""
-        return _mojo_call_preamble_stub
+        return partial(_mojo_call_preamble_stub, indent=self.indent)
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -827,6 +828,16 @@ class Mojo(metaclass=LanguageCls):
             return f"{name}^"
 
         return _format_mojo_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
 
     @cached_property
     def call_style_config(self) -> CallStyle:

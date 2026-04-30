@@ -5,7 +5,7 @@ import datetime
 import enum
 import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -164,6 +164,8 @@ def _vb_call_stub(
     params: Sequence[str],
     _stub_return: StubReturn,
     /,
+    *,
+    indent: str,
 ) -> tuple[str, ...]:
     """Return Visual Basic stub declarations for a call name.
 
@@ -181,13 +183,13 @@ def _vb_call_stub(
     param_list = ", ".join(f"{p} As Object" for p in params)
     method_block = (
         f"Public Function {{method}}({param_list}) As Object\n"
-        "    Return Nothing\n"
+        f"{indent}Return Nothing\n"
         "End Function"
     )
     if len(parts) == 1:
         return (
             f"Function {parts[0]}({param_list}) As Object\n"
-            "    Return Nothing\n"
+            f"{indent}Return Nothing\n"
             "End Function",
         )
     root = parts[0]
@@ -195,7 +197,7 @@ def _vb_call_stub(
     fields = parts[1:-1]
     method_body = textwrap.indent(
         text=method_block.format(method=method),
-        prefix="    ",
+        prefix=indent,
     )
     if not fields:
         type_name = _vb_unique_class_name(segment=root, position=0)
@@ -391,7 +393,7 @@ class VisualBasic(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = "decimal"
+        DECIMAL = enum.auto()
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
@@ -411,7 +413,7 @@ class VisualBasic(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -446,7 +448,7 @@ class VisualBasic(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 
@@ -659,7 +661,7 @@ class VisualBasic(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _vb_call_stub
+        return partial(_vb_call_stub, indent=self.indent)
 
     @cached_property
     def call_style_config(self) -> CallStyle:
@@ -687,6 +689,16 @@ class VisualBasic(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
 
     @cached_property
     def _element_to_type(

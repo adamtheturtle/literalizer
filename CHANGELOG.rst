@@ -14,6 +14,10 @@ Next
   ``language_version`` are part of the :class:`~literalizer.Language`
   protocol, so custom language implementations must also define them.
 
+2026.04.30
+----------
+
+
 2026.04.29
 ----------
 
