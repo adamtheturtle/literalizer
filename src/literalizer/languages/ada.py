@@ -475,17 +475,16 @@ class Ada(metaclass=LanguageCls):
             text="\n".join(body_preamble), prefix=self.indent
         )
         return "\n".join(
-            filter(
-                None,
-                [
-                    "with A_Stub; use A_Stub;",
-                    f"procedure {self.module_name} is",
-                    decl_section,
-                    "begin",
-                    calls_indented,
-                    f"end {self.module_name};",
-                ],
-            )
+            part
+            for part in [
+                "with A_Stub; use A_Stub;",
+                f"procedure {self.module_name} is",
+                decl_section,
+                "begin",
+                calls_indented,
+                f"end {self.module_name};",
+            ]
+            if part
         )
 
     def wrap_combined_in_file(
