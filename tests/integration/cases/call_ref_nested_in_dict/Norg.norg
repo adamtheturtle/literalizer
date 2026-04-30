@@ -1,0 +1,6 @@
+* my_data
+@code json
+[
+    [{"key": {"$ref": "my_var"}, "count": 42}]
+]
+@end

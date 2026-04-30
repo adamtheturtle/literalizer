@@ -1,0 +1,10 @@
+class Main {
+    public static void main() {
+var my_data = new String[][]{
+    new String[]{"a\"b"}
+};
+my_data = new String[][]{
+    new String[]{"a\"b"}
+};
+    }
+}

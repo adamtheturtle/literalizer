@@ -1,0 +1,10 @@
+
+fn main() {
+	mut my_data := [
+		"48656c6c6f",
+	]
+	my_data = [
+		"48656c6c6f",
+	]
+	_ = my_data
+}

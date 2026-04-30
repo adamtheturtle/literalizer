@@ -1,0 +1,3 @@
+my_data = {
+    {struct('key', struct('$ref', "my_var"), 'count', 42)}
+};

@@ -1,0 +1,7 @@
+* my_data
+@code json
+[
+    [[{"$ref": "my_var"}, 42, "static"]],
+    [[{"$ref": "my_other"}, 7, "label"]]
+]
+@end

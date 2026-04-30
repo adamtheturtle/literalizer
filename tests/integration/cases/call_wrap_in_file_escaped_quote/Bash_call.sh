@@ -1,0 +1,2 @@
+process() { :; }
+process "a\"b"
