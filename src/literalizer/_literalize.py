@@ -47,6 +47,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    RowCommentsNotYamlError,
     UnsupportedIdentifierCaseError,
 )
 
@@ -2409,6 +2410,7 @@ def literalize_call(
     ref_case: IdentifierCase | None = None,
     consumable_refs: frozenset[str] = frozenset(),
     ref_key: str = "$ref",
+    include_row_comments: bool = False,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -2467,6 +2469,15 @@ def literalize_call(
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as
             a ref marker.  Defaults to ``"$ref"``.
+        include_row_comments: If ``True``, YAML inline comments on each
+            top-level list element (e.g. ``- [1, 0, 3600]  # note``)
+            are preserved and emitted as trailing line comments in the
+            target language's comment syntax.  Defaults to ``False``
+            (comments are silently dropped).  Requires
+            ``input_format=InputFormat.YAML``; raises
+            :class:`~literalizer.exceptions.RowCommentsNotYamlError`
+            for any other format.  Only meaningful when
+            ``per_element=True``.
 
     .. note::
 
@@ -2484,6 +2495,10 @@ def literalize_call(
         emitting the file.  The "Composing declarations and calls"
         section of :doc:`/function-call-use-case` shows a worked example.
     """
+    if include_row_comments and input_format is not InputFormat.YAML:
+        raise RowCommentsNotYamlError(
+            input_format_name=input_format.name,
+        )
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
     match language.call_style_config:
@@ -2521,7 +2536,7 @@ def literalize_call(
             raise PerElementNotListError(msg)
         collection_comments: CollectionComments | None = None
         if (
-            input_format is InputFormat.YAML
+            include_row_comments
             and parsed.yaml_needs_comment_resolve
             and isinstance(parsed.raw_data, CommentedSeq)
         ):

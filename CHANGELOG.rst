@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` accepts a new ``include_row_comments``
+  parameter (default ``False``).  When set to ``True`` and
+  ``input_format=InputFormat.YAML``, YAML inline comments on each top-level
+  list element (e.g. ``- [1, 0, 3600]  # Jan 1 1970 00:00:00 - 01:00:00``)
+  are preserved and emitted as trailing line comments in the target language's
+  comment syntax.  Passing ``include_row_comments=True`` with any non-YAML
+  format raises
+  :class:`~literalizer.exceptions.RowCommentsNotYamlError`.
+
 2026.04.30.2
 ------------
 

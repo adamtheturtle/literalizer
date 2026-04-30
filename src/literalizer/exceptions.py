@@ -199,3 +199,21 @@ class WrapCombinedInFileNotSupportedError(Exception):
     language implementation still raises this typed exception as a
     safety net.
     """
+
+
+class RowCommentsNotYamlError(Exception):
+    """Raised when ``include_row_comments=True`` is used with a
+    non-YAML input format.
+
+    Row comments are sourced from YAML inline comments; JSON, JSON5,
+    and TOML have no equivalent per-element comment syntax that
+    ``literalizer`` can extract.
+    """
+
+    def __init__(self, *, input_format_name: str) -> None:
+        """Create a ``RowCommentsNotYamlError``."""
+        super().__init__(
+            f"include_row_comments=True requires YAML input, "
+            f"got {input_format_name}"
+        )
+        self.input_format_name = input_format_name

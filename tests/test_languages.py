@@ -34,6 +34,7 @@ from literalizer.exceptions import (
     NullInCollectionError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    RowCommentsNotYamlError,
     UnrepresentableSpecialFloatError,
     UnsupportedIdentifierCaseError,
     WrapCombinedInFileNotSupportedError,
@@ -731,6 +732,24 @@ def test_literalize_call_per_element_non_list_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             per_element=True,
+        )
+
+
+def test_literalize_call_include_row_comments_non_yaml_raises() -> None:
+    """Literalize_call raises RowCommentsNotYamlError for non-YAML
+    input.
+    """
+    with pytest.raises(
+        expected_exception=RowCommentsNotYamlError,
+        match=r"^include_row_comments=True requires YAML input, got JSON$",
+    ):
+        literalize_call(
+            source='["hello"]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            include_row_comments=True,
         )
 
 

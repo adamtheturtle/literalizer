@@ -1,0 +1,11 @@
+Imports System.Collections.Generic
+Module Check
+    Function process(ts As Object, start As Object, end As Object) As Object
+        Return Nothing
+    End Function
+    Sub _calls()
+        process(1, 0, 3600)  ' Jan 1 1970 00:00:00 - 01:00:00
+        process(5, 0, 3600)  ' Jan 1 1970 00:00:05 - 01:00:05
+        process(2, 0, 5400)  ' Jan 1 1970 00:00:02 - 01:30:02
+    End Sub
+End Module
