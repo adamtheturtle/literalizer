@@ -548,7 +548,9 @@ def discover_call_cases() -> list[CallCase]:
                 config.case_dir_name, frozenset()
             ):
                 continue
-            if not _lang_satisfies_config_constraints(lang_cls, config):
+            if not _lang_satisfies_config_constraints(
+                lang_cls=lang_cls, config=config
+            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
