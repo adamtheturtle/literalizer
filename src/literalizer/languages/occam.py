@@ -73,6 +73,8 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
     match original:
         case bool():
             return formatted
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            return f"MOBILE LIT(lit.int; {formatted})"
         case int():
             return f"MOBILE LIT(lit.int; {formatted})"
         case float():
