@@ -566,9 +566,6 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
-    innermost = config.target_function.split(sep=".")[-1]
-    if innermost in lang_cls.reserved_identifiers:
-        return False  # pragma: no cover
     _probe = "__probe__"
     if (
         config.call_transform is not None
