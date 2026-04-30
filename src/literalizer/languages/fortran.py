@@ -311,6 +311,7 @@ class Fortran(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    allows_bare_call_statement = False
 
     class DateFormats(enum.Enum):
         """Date format options for Fortran."""
