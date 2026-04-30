@@ -510,7 +510,7 @@ def _lang_satisfies_config_constraints(
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
 ) -> bool:
-    """Return False if *lang_cls* cannot fulfil *config*'s language
+    """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
     _probe = "__probe__"
