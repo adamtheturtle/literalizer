@@ -335,6 +335,36 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_no_params",
+        target_function="process",
+        parameter_names=[],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_no_params_transform",
+        target_function="process",
+        parameter_names=[],
+        call_transform=lambda c: f"emit({c})",
+        transform_stub_names=["emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_per_element_false",
         target_function="process",
         parameter_names=["data"],
@@ -599,6 +629,13 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # COBOL CALL statement produces no expression value that can be passed
     # to another call, so emit(inner) is invalid.
     "call_keyword_args": frozenset({Cobol}),
+    "call_no_params_transform": frozenset({Cobol, Elm}),
+    # COBOL CALL "PROCESS" USING. is invalid with no parameters (USING
+    # requires at least one).  Dhall zero-parameter stubs would need to
+    # be plain values rather than functions, which the stub generator does
+    # not support.  Elm zero-parameter "functions" are values, not callable
+    # expressions.
+    "call_no_params": frozenset({Cobol, Dhall, Elm}),
     "call_deep_dotted_transformed": frozenset({Cobol}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object

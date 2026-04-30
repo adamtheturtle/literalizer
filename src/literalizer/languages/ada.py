@@ -215,6 +215,7 @@ class Ada(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     allows_bare_call_statement = False
+    allows_empty_call_parens: ClassVar[bool] = False
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
@@ -469,21 +470,22 @@ class Ada(metaclass=LanguageCls):
                 f"procedure {self.module_name} is\n{indented}\n"
                 f"begin\n{self.indent}null;\nend {self.module_name};"
             )
-        decl_section = "\n".join(body_preamble)
-        decl_indented = (
-            textwrap.indent(text=decl_section, prefix=self.indent)
-            if decl_section
-            else ""
-        )
         calls_indented = textwrap.indent(text=content, prefix=self.indent)
-        parts = [
-            "with A_Stub; use A_Stub;",
-            f"procedure {self.module_name} is",
-        ]
-        if decl_indented:
-            parts.append(decl_indented)
-        parts.extend(["begin", calls_indented, f"end {self.module_name};"])
-        return "\n".join(parts)
+        decl_section = textwrap.indent(
+            text="\n".join(body_preamble), prefix=self.indent
+        )
+        return "\n".join(
+            part
+            for part in [
+                "with A_Stub; use A_Stub;",
+                f"procedure {self.module_name} is",
+                decl_section,
+                "begin",
+                calls_indented,
+                f"end {self.module_name};",
+            ]
+            if part
+        )
 
     def wrap_combined_in_file(
         self,

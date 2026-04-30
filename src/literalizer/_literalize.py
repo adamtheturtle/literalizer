@@ -2038,6 +2038,11 @@ def _format_call_args(
         for slot_index, arg_value in enumerate(iterable=values)
     ]
 
+    if not formatted and not getattr(
+        language, "allows_empty_call_parens", True
+    ):
+        return ""
+
     match style:
         case PositionalCallStyle():
             return f"({', '.join(formatted)})"

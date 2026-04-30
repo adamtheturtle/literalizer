@@ -214,7 +214,11 @@ def _dart_call_stub(
     # Named parameters can't start with '_' in Dart. When all names
     # start with '_' (e.g. transform stubs like ["_value"]), use required
     # positional syntax so callers can pass the value positionally.
-    if params and all(p.startswith("_") for p in params):
+    # An empty named-parameter block {} is invalid Dart, so use positional
+    # (empty) syntax when there are no parameters at all.
+    if not params:
+        param_list = ""
+    elif all(p.startswith("_") for p in params):
         param_list = ", ".join(f"dynamic {p}" for p in params)
     else:
         param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
