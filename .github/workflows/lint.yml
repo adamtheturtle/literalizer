@@ -272,7 +272,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Install npm-sourced linters
-        run: npm install -g json5 tree-sitter-cli typescript tsx elm-format elm
+        run: |
+          for i in 1 2 3; do
+            npm install -g json5 tree-sitter-cli typescript tsx elm-format elm && break
+            [ "$i" -lt 3 ] && echo "Retry $i..." && sleep 15
+          done
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
