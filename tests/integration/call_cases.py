@@ -487,7 +487,7 @@ def discover_call_cases() -> list[CallCase]:
                 config.case_dir_name, frozenset()
             ):
                 continue
-            innermost = config.target_function.split(".")[-1]
+            innermost = config.target_function.split(sep=".")[-1]
             if innermost in lang_cls.reserved_identifiers:
                 continue
             if config.call_style_type is not None:
