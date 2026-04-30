@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.04.30.1
+------------
+
+
 - :func:`~literalizer.literalize_call` accepts a new ``consumable_refs``
   parameter listing the ref identifiers the call may move from.  In C++,
   only refs in this set -- and only when they appear in exactly one call
