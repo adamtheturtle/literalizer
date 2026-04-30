@@ -655,8 +655,8 @@ def test_dhall_backtick_label_unescaping() -> None:
 
 
 def test_python_datetime_whole_hour_offset() -> None:
-    """Python datetime with a whole-hour UTC offset includes only hours in
-    timedelta.
+    """Python datetime with a whole-hour UTC offset includes only hours, no
+    minutes.
     """
     result = literalize(
         source="2024-01-15T12:00:00+01:00\n",
