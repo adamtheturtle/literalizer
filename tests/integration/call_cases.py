@@ -43,7 +43,6 @@ from literalizer.languages import (
     Roc,
     Sml,
     SystemVerilog,
-    Wren,
 )
 
 from .check_golden import check_golden
@@ -402,11 +401,10 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # SystemVerilog requires void'(...) to discard a function return value;
     # a bare function call as a statement is non-standard.
     "call_transform_no_wrapper": frozenset({Ada, Fortran, SystemVerilog}),
-    # call_transform wraps output as "emit(inner)", which is invalid in
-    # Wren (no free-function call syntax) and COBOL (CALL statement
-    # produces no expression value that can be passed to another call).
-    "call_keyword_args": frozenset({Cobol, Wren}),
-    "call_deep_dotted_transformed": frozenset({Cobol, Wren}),
+    # COBOL CALL statement produces no expression value that can be passed
+    # to another call, so emit(inner) is invalid.
+    "call_keyword_args": frozenset({Cobol}),
+    "call_deep_dotted_transformed": frozenset({Cobol}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
@@ -485,6 +483,10 @@ def discover_call_cases() -> list[CallCase]:
                 continue
             has_dotted_target = "." in config.target_function
             if has_dotted_target and not lang_cls.supports_dotted_calls:
+                continue
+            if not lang_cls.has_free_function_calls and any(
+                "." not in name for name in config.transform_stub_names
+            ):
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()

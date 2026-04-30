@@ -103,6 +103,7 @@ class Clojure(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = False
     supports_dotted_calls = True
+    has_free_function_calls = True
 
     class DateFormats(enum.Enum):
         """Date format options for Clojure."""
