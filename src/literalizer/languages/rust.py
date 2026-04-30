@@ -690,6 +690,7 @@ class Rust(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     allows_bare_call_statement = True
     allows_empty_call_parens = True
+    supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
     supports_module_name = False

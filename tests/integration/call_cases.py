@@ -23,23 +23,14 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
 )
 from literalizer.languages import (
-    Ada,
     Cobol,
     Dhall,
     Elm,
     Erlang,
-    Fortran,
-    Gleam,
     Haskell,
-    Hcl,
     Jsonnet,
     Mojo,
-    ObjectiveC,
-    OCaml,
-    Php,
-    PowerShell,
     PureScript,
-    Raku,
     Roc,
 )
 
@@ -637,31 +628,6 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # expressions.
     "call_no_params": frozenset({Cobol, Dhall, Elm}),
     "call_deep_dotted_transformed": frozenset({Cobol}),
-    # call_transform wraps output as "tracer.emit(inner)" — a dotted method
-    # call — and transform_stub_names=["tracer.emit"] requires a struct/object
-    # stub whose syntax is invalid or unsupported in several languages.
-    # OCaml module names must begin with an uppercase letter, so the stub
-    # is emitted as "module Tracer = struct" but the embedded call_transform
-    # produces the lowercase "tracer.emit(...)" which is unbound at the call
-    # site.
-    "call_dotted_transform_stub": frozenset(
-        {
-            Ada,
-            Cobol,
-            Elm,
-            Erlang,
-            Fortran,
-            Gleam,
-            Haskell,
-            Hcl,
-            OCaml,
-            ObjectiveC,
-            Php,
-            PowerShell,
-            Raku,
-            Roc,
-        }
-    ),
     # Languages whose default call wrappers prepend a token to each
     # statement (Elm, Haskell, and PureScript ``_ = ``/``_ <- ``, Roc
     # ``dbg(...)``) or whose comment syntax interacts with the
@@ -713,6 +679,11 @@ def _lang_supports_case(
 ) -> bool:
     """Return True if *lang_cls* can produce valid output for *config*."""
     if "." in config.target_function and not lang_cls.supports_dotted_calls:
+        return False
+    if (
+        any("." in name for name in config.transform_stub_names)
+        and not lang_cls.supports_dotted_call_stub
+    ):
         return False
     return lang_cls.has_free_function_calls or not any(
         "." not in name for name in config.transform_stub_names
