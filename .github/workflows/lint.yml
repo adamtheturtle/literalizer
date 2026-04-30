@@ -714,13 +714,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # Install before writing /tmp/files-to-lint because the action wipes /tmp.
-      # https://github.com/fabasoad/setup-cobol-action/issues/146
-      - name: Install GnuCOBOL
-        uses: fabasoad/setup-cobol-action@v1
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cob' -print0 > /tmp/files-to-lint
+      - name: Install GnuCOBOL
+        uses: fabasoad/setup-cobol-action@v1.6.2
       - name: Check COBOL syntax
         run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
       - name: Run COBOL files
