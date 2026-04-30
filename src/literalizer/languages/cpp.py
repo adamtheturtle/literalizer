@@ -761,18 +761,20 @@ def _format_variable_declaration(
 ) -> str:
     """Format a C++ variable declaration.
 
-    * ``const auto*`` — string literal (``"..."``), required by
-      ``readability-qualified-auto``.
+    * ``std::string`` — string literal (``"..."``).  Using a value type
+      instead of ``const auto*`` / ``const char*`` keeps the variable
+      move-eligible, which is required when a ``{$ref}`` identifier is
+      later passed via ``std::move()`` in a call expression.
     * ``auto`` — typed expression
       (e.g. ``std::vector<int>{...}``).
 
     When *modifiers* is non-empty, applicable modifier keywords
-    (``static``, ``const``) are prepended.  ``const`` is not duplicated
-    against the built-in ``const auto*`` for string literals.
+    (``static``, ``const``) are prepended.  ``const`` is not prepended
+    for string literals because a ``const std::string`` cannot be moved.
     """
     match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
-            type_keyword = "const auto*"
+            type_keyword = "std::string"
             extra = modifiers - {_CppModifiers.CONST}
         case ValueKind.TYPED_EXPRESSION:
             type_keyword = "auto"
