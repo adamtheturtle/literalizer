@@ -55,20 +55,24 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
 
 def _collect_ref_names(data: object) -> list[str]:
     """Recursively collect all ``$ref`` name values from parsed data."""
-    if isinstance(data, dict):
-        typed_data = cast("dict[object, object]", data)
-        if len(typed_data) == 1 and "$ref" in typed_data:
-            name = typed_data["$ref"]
-            return [name] if isinstance(name, str) else []
-        return [
-            n for v in typed_data.values() for n in _collect_ref_names(data=v)
-        ]
-    if isinstance(data, list):
-        typed_list = cast("list[object]", data)
-        return [
-            n for item in typed_list for n in _collect_ref_names(data=item)
-        ]
-    return []
+    match data:
+        case dict():
+            typed_data = cast("dict[object, object]", data)
+            if len(typed_data) == 1 and "$ref" in typed_data:
+                name = typed_data["$ref"]
+                return [name] if isinstance(name, str) else []
+            return [
+                n
+                for v in typed_data.values()
+                for n in _collect_ref_names(data=v)
+            ]
+        case list():
+            typed_list = cast("list[object]", data)
+            return [
+                n for item in typed_list for n in _collect_ref_names(data=item)
+            ]
+        case _:
+            return []
 
 
 _STUB_ASSIGN_LINE_RE = re.compile(pattern=r"^\w+\s*=(?!=)")

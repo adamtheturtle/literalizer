@@ -69,22 +69,24 @@ def has_non_printable_ascii_dict_keys(data: object) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
     """
-    if isinstance(data, dict):
-        for key in data:  # pyright: ignore[reportUnknownVariableType]
-            if isinstance(key, str) and (
-                not key or not key.isprintable() or not key.isascii()
-            ):
-                return True
-        return any(
-            has_non_printable_ascii_dict_keys(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            for v in data.values()  # pyright: ignore[reportUnknownVariableType]
-        )
-    if isinstance(data, list):
-        return any(
-            has_non_printable_ascii_dict_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
-            for item in data  # pyright: ignore[reportUnknownVariableType]
-        )
-    return False
+    match data:
+        case dict():
+            for key in data:  # pyright: ignore[reportUnknownVariableType]
+                if isinstance(key, str) and (
+                    not key or not key.isprintable() or not key.isascii()
+                ):
+                    return True
+            return any(
+                has_non_printable_ascii_dict_keys(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+            )
+        case list():
+            return any(
+                has_non_printable_ascii_dict_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
+                for item in data  # pyright: ignore[reportUnknownVariableType]
+            )
+        case _:
+            return False
 
 
 @functools.cache
@@ -111,19 +113,21 @@ def has_special_floats(data: object) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
     """
-    if isinstance(data, float):
-        return not math.isfinite(data)
-    if isinstance(data, dict):
-        return any(
-            has_special_floats(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            for v in data.values()  # pyright: ignore[reportUnknownVariableType]
-        )
-    if isinstance(data, list):
-        return any(
-            has_special_floats(data=item)  # pyright: ignore[reportUnknownArgumentType]
-            for item in data  # pyright: ignore[reportUnknownVariableType]
-        )
-    return False
+    match data:
+        case float():
+            return not math.isfinite(data)
+        case dict():
+            return any(
+                has_special_floats(data=v)  # pyright: ignore[reportUnknownArgumentType]
+                for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+            )
+        case list():
+            return any(
+                has_special_floats(data=item)  # pyright: ignore[reportUnknownArgumentType]
+                for item in data  # pyright: ignore[reportUnknownVariableType]
+            )
+        case _:
+            return False
 
 
 @functools.cache

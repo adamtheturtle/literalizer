@@ -105,7 +105,9 @@ def _make_v_i64_formatter(
     return _format
 
 
-def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
+def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
+    data: Value,
+) -> frozenset[int]:
     """Return container ids that need interface-type wrapping in V.
 
     Extends :func:`collect_heterogeneous_container_ids` with a
@@ -125,12 +127,13 @@ def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
         """Recursively mark *item* and its containers if wrapping
         needed.
         """
-        if isinstance(item, dict):
-            children: list[Value] = list(item.values())
-        elif isinstance(item, (list, set)):
-            children = list(item)
-        else:
-            return
+        match item:
+            case dict():
+                children: list[Value] = list(item.values())
+            case list() | set():
+                children = list(item)
+            case _:
+                return
         for child in children:
             _visit(item=child)
         if id(item) in wrap_ids:
@@ -558,6 +561,13 @@ class V(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for V."""
+
+        V0_4 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
@@ -621,6 +631,7 @@ class V(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.INTERFACE
     )
+    language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "\t"
     call_style: CallStyles = CallStyles.POSITIONAL
 

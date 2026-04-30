@@ -428,6 +428,20 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
     argvalues=_SORTED_LANGUAGES,
     ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
+def test_language_version_is_non_empty_string(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language's default ``language_version`` is an enum member."""
+    spec = language_cls()
+    assert isinstance(spec.language_version, enum.Enum)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
 def test_pygments_name_is_valid(
     *,
     language_cls: LanguageCls,
@@ -509,6 +523,8 @@ def test_format_enumeration_properties(
     assert issubclass(spec.line_endings, enum.Enum)
     assert len(spec.line_endings) >= 1
     assert issubclass(spec.call_styles, enum.Enum)
+    assert issubclass(spec.version_formats, enum.Enum)
+    assert len(spec.version_formats) >= 1
 
 
 def test_python_no_any_import_when_all_defaults_overridden() -> None:

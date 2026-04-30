@@ -742,6 +742,13 @@ class Dhall(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Dhall."""
+
+        V17 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
@@ -812,6 +819,7 @@ class Dhall(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_union_name: str = "Value"
+    language_version: VersionFormats = VersionFormats.V17
     indent: str = "  "
     call_style: CallStyles = CallStyles.POSITIONAL
 

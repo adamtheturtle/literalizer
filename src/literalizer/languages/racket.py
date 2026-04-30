@@ -304,6 +304,13 @@ class Racket(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class VersionFormats(enum.Enum):
+        """Version options for Racket."""
+
+        V8 = enum.auto()
+
+    version_formats = VersionFormats
+
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.KEBAB,
         IdentifierCase.SNAKE,
@@ -364,6 +371,7 @@ class Racket(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    language_version: VersionFormats = VersionFormats.V8
     indent: str = "    "
 
     null_literal: ClassVar[str] = "(void)"
