@@ -1,4 +1,4 @@
 function process {}
 function emit {}
-emit(process())
-emit(process())
+emit(process)
+emit(process)

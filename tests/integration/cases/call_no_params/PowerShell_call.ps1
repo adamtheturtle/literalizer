@@ -1,3 +1,3 @@
 function process {}
-process()
-process()
+process
+process
