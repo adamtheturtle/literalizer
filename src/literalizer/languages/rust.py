@@ -686,6 +686,8 @@ class Rust(metaclass=LanguageCls):
     supports_variable_names = True
     supports_dotted_calls = True
     has_free_function_calls = True
+    reserved_identifiers = frozenset()
+    allows_bare_call_statement = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
 
@@ -1211,6 +1213,7 @@ class Rust(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    modifier_combinations = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,

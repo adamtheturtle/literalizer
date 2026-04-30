@@ -486,7 +486,7 @@ class LanguageCls(type):
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
-    modifier_combinations: tuple[ModifierCombination, ...] = ()
+    modifier_combinations: tuple[ModifierCombination, ...]
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
@@ -500,8 +500,8 @@ class LanguageCls(type):
     supports_variable_names: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
-    reserved_identifiers: frozenset[str] = frozenset()
-    allows_bare_call_statement: bool = True
+    reserved_identifiers: frozenset[str]
+    allows_bare_call_statement: bool
     call_returns_expression: bool
     supports_inline_multiline_dict_args: bool
 
