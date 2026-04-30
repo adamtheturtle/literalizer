@@ -493,7 +493,7 @@ def discover_call_cases() -> list[CallCase]:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue
-            if not _lang_supports_case(config, lang_cls):
+            if not _lang_supports_case(config=config, lang_cls=lang_cls):
                 continue
             if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
                 config.case_dir_name, frozenset()
