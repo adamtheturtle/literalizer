@@ -42,6 +42,7 @@ from literalizer.languages import (
     Raku,
     Roc,
     Sml,
+    SystemVerilog,
     Wren,
 )
 
@@ -398,7 +399,9 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # discarded: a function call cannot appear as a statement.  The
     # identity call_transform (lambda c: c) causes a VALUE stub but the
     # call is used as a bare statement, which both compilers reject.
-    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
+    # SystemVerilog requires void'(...) to discard a function return value;
+    # a bare function call as a statement is non-standard.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran, SystemVerilog}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren (no free-function call syntax) and COBOL (CALL statement
     # produces no expression value that can be passed to another call).
