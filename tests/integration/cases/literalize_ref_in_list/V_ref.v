@@ -7,8 +7,8 @@ fn main() {
  	'_': '_',
  }
 	my_data := [
-		val_x.clone(),
-		val_y.clone(),
+		val_x,
+		val_y,
 	]
 	_ = my_data
 }

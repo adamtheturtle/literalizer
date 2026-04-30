@@ -412,11 +412,19 @@ def _format_dict_value(
         for k, v in dict_items.items()
     ]
     joined = spec.element_separator.join(pairs)
-    opener = (
-        open_override
-        if open_override is not None
-        else dict_cfg.dict_open(dict_items)
-    )
+    if open_override is not None:
+        opener = open_override
+    else:
+        open_items = (
+            {
+                k: v
+                for k, v in dict_items.items()
+                if _extract_call_arg_ref_name(value=v) is None
+            }
+            if expand_refs
+            else dict_items
+        )
+        opener = dict_cfg.dict_open(open_items or dict_items)
     return opener + joined + dict_cfg.close
 
 
@@ -870,11 +878,15 @@ def _format_list_value(
     # comma branch.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
-    opener = (
-        sequence_open_override
-        if sequence_open_override is not None
-        else spec.sequence_open(value)
-    )
+    if sequence_open_override is not None:
+        opener = sequence_open_override
+    else:
+        open_value = (
+            [v for v in value if _extract_call_arg_ref_name(value=v) is None]
+            if expand_refs
+            else value
+        )
+        opener = spec.sequence_open(open_value or value)
     return f"{opener}{joined}{sequence_cfg.close}"
 
 

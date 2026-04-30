@@ -1,5 +1,7 @@
 pub type GVal {
   GInt(Int)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
 }
 pub fn process(_data: a) -> Nil { Nil }
 

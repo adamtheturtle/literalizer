@@ -63,6 +63,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
@@ -138,7 +139,16 @@ def _v_collect_ids_needing_wrap(data: Value) -> frozenset[int]:
         if not children or any(v is None for v in children):
             wrap_ids.add(id(item))
             return
-        python_types = {type(v) for v in children if v is not None}
+        non_ref_children = [
+            v
+            for v in children
+            if not (
+                isinstance(v, dict)
+                and list(v.keys()) == ["$ref"]
+                and isinstance(v.get("$ref"), str)
+            )
+        ]
+        python_types = {type(v) for v in non_ref_children if v is not None}
         if len(python_types) > 1:
             wrap_ids.add(id(item))
             return
@@ -695,17 +705,12 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``.clone()`` to copy a V map value.
+        """Return the ref identifier unchanged.
 
-        V maps are not automatically copyable in direct assignment
-        context, so ``.clone()`` is required to produce a valid copy.
+        V primitives do not have a ``.clone()`` method, and arrays are
+        reference-counted so passing them without cloning is valid.
         """
-
-        def _format_v_ref_identifier(name: str, /) -> str:
-            """Append ``.clone()`` for V map copy semantics."""
-            return f"{name}.clone()"
-
-        return _format_v_ref_identifier
+        return identity_call_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
