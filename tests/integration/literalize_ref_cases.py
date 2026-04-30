@@ -53,7 +53,7 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     ]
 
 
-def _collect_ref_names(data: object, *, ref_key: str = "ref") -> list[str]:
+def _collect_ref_names(data: object, *, ref_key: str) -> list[str]:
     """Recursively collect all ref name values from parsed data."""
     match data:
         case dict():
@@ -311,6 +311,7 @@ def run_literalize_ref_golden_case(
             variable_form=wrap_variable_form(lang_cls=lang_cls),
             wrap_in_file=True,
             ref_case=ref_case,
+            ref_key=config.ref_key,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -329,7 +330,10 @@ def run_literalize_ref_golden_case(
             stream=yaml_string,
         )
         stub_entries: list[tuple[str, str]] = []
-        for raw_name in _collect_ref_names(data=raw_data):
+        for raw_name in _collect_ref_names(
+            data=raw_data,
+            ref_key=config.ref_key,
+        ):
             converted_name = ref_case.convert(name=raw_name)
             stub = literalizer.literalize(
                 source='{"_": "_"}',

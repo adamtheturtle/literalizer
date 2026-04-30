@@ -958,7 +958,7 @@ def test_literalize_call_arg_ref_all_refs() -> None:
     the empty non-ref list must not break wrap-id computation.
     """
     result = literalize_call(
-        source='[[{"ref": "a"}, {"ref": "b"}]]',
+        source='[[{"$ref": "a"}, {"$ref": "b"}]]',
         input_format=InputFormat.JSON,
         language=Go(),
         target_function="combine",
@@ -973,7 +973,7 @@ def test_literalize_call_arg_ref_top_level_element() -> None:
     call whose argument is the referenced identifier.
     """
     result = literalize_call(
-        source='[{"ref": "a"}, {"ref": "b"}]',
+        source='[{"$ref": "a"}, {"$ref": "b"}]',
         input_format=InputFormat.JSON,
         language=Go(),
         target_function="run",
@@ -987,7 +987,7 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
     as the single argument.
     """
     result = literalize_call(
-        source='{"ref": "payload"}',
+        source='{"$ref": "payload"}',
         input_format=InputFormat.JSON,
         language=Python(),
         target_function="publish",
@@ -1026,7 +1026,7 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
         match=r"^Expected 1 parameters but got 2 values$",
     ):
         literalize_call(
-            source='[[{"ref": "a"}, {"ref": "b"}]]',
+            source='[[{"$ref": "a"}, {"$ref": "b"}]]',
             input_format=InputFormat.JSON,
             language=Python(),
             target_function="f",
@@ -1041,7 +1041,7 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
         match=r"^Python does not support identifier case 'CAMEL'$",
     ):
         literalize_call(
-            source='[[{"ref": "user_obj"}, 42]]',
+            source='[[{"$ref": "user_obj"}, 42]]',
             input_format=InputFormat.JSON,
             language=Python(),
             target_function="process",

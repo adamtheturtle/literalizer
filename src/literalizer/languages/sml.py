@@ -298,6 +298,8 @@ class Sml(metaclass=LanguageCls):
     supports_variable_names = True
     supports_dotted_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset({"op"})
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
 
     class DateFormats(enum.Enum):
         """Date format options for Standard ML."""
