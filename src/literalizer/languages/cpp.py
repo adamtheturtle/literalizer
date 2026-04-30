@@ -68,6 +68,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
@@ -1367,13 +1368,34 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
+        """Emit a call-argument ``$ref`` as the bare identifier.
 
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
+        ``std::move`` would consume the variable, which is unsafe when
+        the caller may use it again in a later call (or after the
+        ``literalize_call`` block).  Callers opt in to consuming a
+        specific ref by listing it in ``literalize_call``'s
+        ``consumable_refs`` set; in that case
+        :attr:`format_call_arg_ref_identifier_consumable` is used
+        instead and emits ``std::move(name)``.
         """
-        return self.format_call_ref_identifier
+        return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Wrap a consumable call-argument ``$ref`` in ``std::move()``.
+
+        Used only for refs the caller declared as consumable on
+        :func:`~literalizer.literalize_call` and that appear in just
+        one call argument, so the move cannot strand a later use.
+        """
+
+        def _format_cpp_ref_identifier_consumable(name: str, /) -> str:
+            """Wrap the identifier in ``std::move()``."""
+            return f"std::move({name})"
+
+        return _format_cpp_ref_identifier_consumable
 
     @cached_property
     def _cpp_date_type(self) -> str:

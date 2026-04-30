@@ -116,6 +116,10 @@ class CallCaseConfig:
     # directly instead of wrapping manually with injected stubs.
     wrap_in_file: bool
     ref_case_per_language: bool
+    # Names from ``ref_declarations`` (in their original case) that
+    # ``literalize_call`` may treat as consumable.  Empty means no ref
+    # is consumed.
+    consumable_refs: frozenset[str]
     requires_call_returns_expression: bool
     requires_inline_multiline_dict_args: bool
 
@@ -139,6 +143,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
     ),
@@ -153,6 +158,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -167,6 +173,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -181,6 +188,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
     ),
@@ -195,6 +203,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -209,6 +218,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -223,6 +233,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -237,6 +248,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -251,6 +263,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -265,6 +278,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
     ),
@@ -279,6 +293,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
     ),
@@ -293,6 +308,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -307,6 +323,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -324,6 +341,41 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset({"my_var", "my_other"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        # Same ref reused across multiple per-element calls.  The
+        # caller declares both refs consumable; the renderer must still
+        # avoid the consuming form (e.g. C++ ``std::move``, Mojo ``^``)
+        # for the reused ref so the second call does not read a
+        # moved-from variable.  ``repeated_var`` is a scalar int so it
+        # is ``Copy`` in Rust and can be referenced twice; ``single_var``
+        # is a list so the consuming form rendered in C++ / Mojo
+        # operates on a non-trivial type and does not trigger
+        # trivial-type "no effect" lints.  Variable names avoid
+        # ``shared``, which is reserved in D, V, and VisualBasic.
+        case_dir_name="call_ref_args_reused",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        # ``single_var`` is declared first so its preamble (which sees
+        # both ``int`` and ``list``) wins ``_dedupe_preamble_blocks``
+        # against the ``int``-only preamble emitted for
+        # ``repeated_var``.  Without this ordering, languages that emit
+        # a header-keyed type union (e.g. Gleam's ``pub type GVal``)
+        # end up missing the ``GList`` constructor.
+        ref_declarations={
+            "single_var": "[4, 5, 6]",
+            "repeated_var": "1",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset({"repeated_var", "single_var"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -341,6 +393,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset({"my_var", "my_other"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -357,6 +410,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset({"my_var"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -374,6 +428,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         },
         wrap_in_file=False,
         ref_case_per_language=True,
+        consumable_refs=frozenset({"myVar", "MyOther"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -388,6 +443,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=False,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
     ),
@@ -404,6 +460,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={},
         wrap_in_file=True,
         ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -419,6 +476,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             ref_declarations={},
             wrap_in_file=False,
             ref_case_per_language=False,
+            consumable_refs=frozenset[str](),
             requires_call_returns_expression=True,
             requires_inline_multiline_dict_args=False,
         )
@@ -677,6 +735,7 @@ def run_call_golden_case(
             call_transform=config.call_transform,
             per_element=config.per_element,
             ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
