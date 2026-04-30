@@ -623,6 +623,29 @@ def build_language_version_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
+    """Build cross-product variants: PY38 x non-Any dict value type.
+
+    Exercises the False branch of the ``_any_types`` intersection check
+    in the PY38 type-hint preamble builder, where the dict value type is
+    not ``Any`` so ``from typing import Any`` is not emitted.
+    """
+    return [
+        Variant(
+            name="Python_version_py38_default_dict_value_type_int",
+            spec=make_spec(
+                lang_cls=Python,
+                language_version=Python.VersionFormats.PY38,
+                default_dict_value_type=DEFAULT_DICT_VALUE_TYPE_OVERRIDES[
+                    Python
+                ],
+            ),
+            lang_cls=Python,
+        )
+    ]
+
+
+@beartype
 def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-union-name variants for languages that
     generate a named union type for their heterogeneous strategy (e.g.
@@ -1147,6 +1170,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_heterogeneous_value_variant_name_variants
     ),
     "language_version": build_language_version_variants,
+    "language_version_cross_dict_type": (
+        build_language_version_cross_dict_type_variants
+    ),
 }
 
 
@@ -1372,6 +1398,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             for case_dir_name, _ in discover_cases(cases_dir=_CASES_DIR)
         )
     ),
+    "language_version_cross_dict_type": (_ci(case_dir_name="empty_dict"),),
 }
 
 
