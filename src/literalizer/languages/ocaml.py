@@ -458,7 +458,7 @@ class OCaml(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for OCaml."""
 
-        V5 = "5.0"
+        V5 = enum.auto()
 
     version_formats = VersionFormats
 

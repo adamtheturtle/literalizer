@@ -467,7 +467,7 @@ class Zig(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Zig."""
 
-        V0_12 = "0.12"
+        V0_12 = enum.auto()
 
     version_formats = VersionFormats
 

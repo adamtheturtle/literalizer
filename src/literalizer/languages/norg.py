@@ -282,7 +282,7 @@ class Norg(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Norg."""
 
-        V0_14 = "0.14"
+        V0_14 = enum.auto()
 
     version_formats = VersionFormats
 

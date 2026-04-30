@@ -641,7 +641,7 @@ class Mojo(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Mojo."""
 
-        V24_5 = "24.5"
+        V24_5 = enum.auto()
 
     version_formats = VersionFormats
 

@@ -384,7 +384,7 @@ class Bash(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Bash."""
 
-        V5_1 = "5.1"
+        V5_1 = enum.auto()
 
     version_formats = VersionFormats
 

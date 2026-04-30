@@ -719,7 +719,7 @@ class Roc(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Roc."""
 
-        V0 = "0.0.5"
+        V0 = enum.auto()
 
     version_formats = VersionFormats
 

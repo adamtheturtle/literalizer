@@ -290,7 +290,7 @@ class Yaml(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for YAML."""
 
-        V1_2 = "1.2"
+        V1_2 = enum.auto()
 
     version_formats = VersionFormats
 

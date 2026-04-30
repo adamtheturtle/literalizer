@@ -430,7 +430,7 @@ class Crystal(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Crystal."""
 
-        V1 = "1.0"
+        V1 = enum.auto()
 
     version_formats = VersionFormats
 

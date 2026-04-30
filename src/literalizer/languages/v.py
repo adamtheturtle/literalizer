@@ -555,7 +555,7 @@ class V(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for V."""
 
-        V0_4 = "0.4"
+        V0_4 = enum.auto()
 
     version_formats = VersionFormats
 

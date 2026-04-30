@@ -308,7 +308,7 @@ class Json5(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for JSON5."""
 
-        V1 = "1.0.0"
+        V1 = enum.auto()
 
     version_formats = VersionFormats
 

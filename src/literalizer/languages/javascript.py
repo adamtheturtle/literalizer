@@ -424,7 +424,7 @@ class JavaScript(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for JavaScript."""
 
-        ES2015 = "ES2015"
+        ES2015 = enum.auto()
 
     version_formats = VersionFormats
 

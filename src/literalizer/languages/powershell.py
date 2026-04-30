@@ -362,7 +362,7 @@ class PowerShell(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for PowerShell."""
 
-        V7 = "7.0"
+        V7 = enum.auto()
 
     version_formats = VersionFormats
 

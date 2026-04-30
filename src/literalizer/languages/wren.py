@@ -374,7 +374,7 @@ class Wren(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Wren."""
 
-        V0_4 = "0.4"
+        V0_4 = enum.auto()
 
     version_formats = VersionFormats
 

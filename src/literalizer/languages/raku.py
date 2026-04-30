@@ -428,7 +428,7 @@ class Raku(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Raku."""
 
-        V6D = "6.d"
+        V6D = enum.auto()
 
     version_formats = VersionFormats
 

@@ -511,7 +511,7 @@ class Fortran(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Fortran."""
 
-        V2003 = "2003"
+        V2003 = enum.auto()
 
     version_formats = VersionFormats
 

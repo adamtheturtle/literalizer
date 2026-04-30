@@ -361,7 +361,7 @@ class SystemVerilog(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for SystemVerilog."""
 
-        IEEE_1800_2017 = "IEEE 1800-2017"
+        IEEE_1800_2017 = enum.auto()
 
     version_formats = VersionFormats
 

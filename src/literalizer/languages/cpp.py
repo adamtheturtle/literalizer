@@ -1166,7 +1166,7 @@ class Cpp(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for C++."""
 
-        CPP20 = "C++20"
+        CPP20 = enum.auto()
 
     version_formats = VersionFormats
 

@@ -449,7 +449,7 @@ class Odin(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Odin."""
 
-        DEV_2024 = "dev-2024"
+        DEV_2024 = enum.auto()
 
     version_formats = VersionFormats
 

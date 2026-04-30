@@ -475,7 +475,7 @@ class VisualBasic(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Visual Basic."""
 
-        DOTNET_6 = ".NET 6"
+        DOTNET_6 = enum.auto()
 
     version_formats = VersionFormats
 

@@ -303,7 +303,7 @@ class Scheme(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Scheme."""
 
-        R7RS = "R7RS"
+        R7RS = enum.auto()
 
     version_formats = VersionFormats
 

@@ -450,7 +450,7 @@ class Elixir(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Elixir."""
 
-        V1_14 = "1.14"
+        V1_14 = enum.auto()
 
     version_formats = VersionFormats
 

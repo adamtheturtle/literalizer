@@ -701,7 +701,7 @@ class Elm(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Elm."""
 
-        V0_19 = "0.19"
+        V0_19 = enum.auto()
 
     version_formats = VersionFormats
 

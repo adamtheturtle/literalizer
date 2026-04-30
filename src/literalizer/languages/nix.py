@@ -377,7 +377,7 @@ class Nix(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Nix."""
 
-        V2 = "2.x"
+        V2 = enum.auto()
 
     version_formats = VersionFormats
 

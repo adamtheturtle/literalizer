@@ -394,7 +394,7 @@ class Perl(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Perl."""
 
-        V5_36 = "5.36"
+        V5_36 = enum.auto()
 
     version_formats = VersionFormats
 

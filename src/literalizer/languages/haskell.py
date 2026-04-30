@@ -1179,7 +1179,7 @@ class Haskell(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Haskell."""
 
-        HASKELL_2010 = "Haskell 2010"
+        HASKELL_2010 = enum.auto()
 
     version_formats = VersionFormats
 

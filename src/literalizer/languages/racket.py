@@ -307,7 +307,7 @@ class Racket(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Racket."""
 
-        V8 = "8.0"
+        V8 = enum.auto()
 
     version_formats = VersionFormats
 

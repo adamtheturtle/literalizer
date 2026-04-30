@@ -522,7 +522,7 @@ class Sml(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for SML."""
 
-        SML_97 = "SML '97"
+        SML_97 = enum.auto()
 
     version_formats = VersionFormats
 

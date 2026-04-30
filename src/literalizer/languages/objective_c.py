@@ -480,7 +480,7 @@ class ObjectiveC(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Objective-C."""
 
-        V2 = "2.0"
+        V2 = enum.auto()
 
     version_formats = VersionFormats
 

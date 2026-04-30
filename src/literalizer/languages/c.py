@@ -427,7 +427,7 @@ class C(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for C."""
 
-        C99 = "C99"
+        C99 = enum.auto()
 
     version_formats = VersionFormats
 

@@ -856,7 +856,7 @@ class PureScript(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for PureScript."""
 
-        V0_15 = "0.15"
+        V0_15 = enum.auto()
 
     version_formats = VersionFormats
 

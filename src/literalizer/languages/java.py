@@ -876,7 +876,7 @@ class Java(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Java."""
 
-        JDK_11 = "11"
+        JDK_11 = enum.auto()
 
     version_formats = VersionFormats
 

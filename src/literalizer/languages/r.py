@@ -396,7 +396,7 @@ class R(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for R."""
 
-        V4 = "4.0"
+        V4 = enum.auto()
 
     version_formats = VersionFormats
 

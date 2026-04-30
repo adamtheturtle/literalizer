@@ -401,7 +401,7 @@ class Php(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for PHP."""
 
-        V8_1 = "8.1"
+        V8_1 = enum.auto()
 
     version_formats = VersionFormats
 

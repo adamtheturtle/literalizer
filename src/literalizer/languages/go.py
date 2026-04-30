@@ -511,7 +511,7 @@ class Go(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Go."""
 
-        V1_18 = "1.18"
+        V1_18 = enum.auto()
 
     version_formats = VersionFormats
 

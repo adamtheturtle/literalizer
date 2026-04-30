@@ -396,7 +396,7 @@ class Forth(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Forth."""
 
-        ANS = "ANS Forth"
+        ANS = enum.auto()
 
     version_formats = VersionFormats
 

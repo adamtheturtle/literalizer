@@ -427,7 +427,7 @@ class Matlab(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for MATLAB."""
 
-        R2022A = "R2022a"
+        R2022A = enum.auto()
 
     version_formats = VersionFormats
 

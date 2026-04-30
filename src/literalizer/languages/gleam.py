@@ -792,7 +792,7 @@ class Gleam(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Gleam."""
 
-        V1 = "1.0"
+        V1 = enum.auto()
 
     version_formats = VersionFormats
 

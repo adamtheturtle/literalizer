@@ -319,7 +319,7 @@ class CommonLisp(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Common Lisp."""
 
-        ANSI = "ANSI CL"
+        ANSI = enum.auto()
 
     version_formats = VersionFormats
 

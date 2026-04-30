@@ -843,7 +843,7 @@ class Nim(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Nim."""
 
-        V2 = "2.0"
+        V2 = enum.auto()
 
     version_formats = VersionFormats
 

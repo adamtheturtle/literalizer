@@ -668,7 +668,7 @@ class Swift(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Swift."""
 
-        V5_9 = "5.9"
+        V5_9 = enum.auto()
 
     version_formats = VersionFormats
 

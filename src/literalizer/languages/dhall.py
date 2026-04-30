@@ -745,7 +745,7 @@ class Dhall(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Dhall."""
 
-        V17 = "17.0.0"
+        V17 = enum.auto()
 
     version_formats = VersionFormats
 

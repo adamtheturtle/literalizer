@@ -296,7 +296,7 @@ class Occam(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Occam."""
 
-        V2 = "2"
+        V2 = enum.auto()
 
     version_formats = VersionFormats
 

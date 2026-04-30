@@ -412,7 +412,7 @@ class Erlang(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Erlang."""
 
-        OTP_25 = "OTP 25"
+        OTP_25 = enum.auto()
 
     version_formats = VersionFormats
 

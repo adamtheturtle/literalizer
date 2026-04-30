@@ -603,7 +603,7 @@ class TypeScript(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for TypeScript."""
 
-        V5 = "5.0"
+        V5 = enum.auto()
 
     version_formats = VersionFormats
 

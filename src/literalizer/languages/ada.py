@@ -406,7 +406,7 @@ class Ada(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Ada."""
 
-        ADA_2022 = "Ada 2022"
+        ADA_2022 = enum.auto()
 
     version_formats = VersionFormats
 

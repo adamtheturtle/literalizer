@@ -516,7 +516,7 @@ class Scala(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Scala."""
 
-        V3 = "3.0"
+        V3 = enum.auto()
 
     version_formats = VersionFormats
 

@@ -340,7 +340,7 @@ class Hcl(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for HCL."""
 
-        V2 = "2"
+        V2 = enum.auto()
 
     version_formats = VersionFormats
 

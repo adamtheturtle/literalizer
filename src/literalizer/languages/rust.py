@@ -1204,7 +1204,7 @@ class Rust(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Rust."""
 
-        EDITION_2021 = "2021"
+        EDITION_2021 = enum.auto()
 
     version_formats = VersionFormats
 

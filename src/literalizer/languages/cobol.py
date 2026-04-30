@@ -472,7 +472,7 @@ class Cobol(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for COBOL."""
 
-        V2002 = "2002"
+        V2002 = enum.auto()
 
     version_formats = VersionFormats
 

@@ -897,7 +897,7 @@ class Python(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Python."""
 
-        PY_3_12 = "3.12"
+        PY_3_12 = enum.auto()
 
     version_formats = VersionFormats
 

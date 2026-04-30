@@ -351,7 +351,7 @@ class Lua(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Lua."""
 
-        V5_4 = "5.4"
+        V5_4 = enum.auto()
 
     version_formats = VersionFormats
 

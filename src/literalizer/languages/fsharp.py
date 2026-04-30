@@ -493,7 +493,7 @@ class FSharp(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for F#."""
 
-        V6 = "6.0"
+        V6 = enum.auto()
 
     version_formats = VersionFormats
 

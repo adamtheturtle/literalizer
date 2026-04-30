@@ -316,7 +316,7 @@ class Toml(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for TOML."""
 
-        V1 = "1.0"
+        V1 = enum.auto()
 
     version_formats = VersionFormats
 

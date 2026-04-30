@@ -346,7 +346,7 @@ class Tcl(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Tcl."""
 
-        V8_6 = "8.6"
+        V8_6 = enum.auto()
 
     version_formats = VersionFormats
 

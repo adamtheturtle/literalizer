@@ -623,7 +623,7 @@ class CSharp(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for C#."""
 
-        V10 = "10.0"
+        V10 = enum.auto()
 
     version_formats = VersionFormats
 

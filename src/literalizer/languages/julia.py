@@ -438,7 +438,7 @@ class Julia(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Julia."""
 
-        V1_9 = "1.9"
+        V1_9 = enum.auto()
 
     version_formats = VersionFormats
 

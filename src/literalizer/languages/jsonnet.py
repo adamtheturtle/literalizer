@@ -332,7 +332,7 @@ class Jsonnet(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Jsonnet."""
 
-        V0_20 = "0.20"
+        V0_20 = enum.auto()
 
     version_formats = VersionFormats
 

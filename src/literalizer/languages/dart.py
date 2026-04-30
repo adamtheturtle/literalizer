@@ -593,7 +593,7 @@ class Dart(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Dart."""
 
-        V3 = "3.0"
+        V3 = enum.auto()
 
     version_formats = VersionFormats
 

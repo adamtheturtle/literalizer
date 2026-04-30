@@ -302,7 +302,7 @@ class Clojure(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Clojure."""
 
-        V1_11 = "1.11"
+        V1_11 = enum.auto()
 
     version_formats = VersionFormats
 

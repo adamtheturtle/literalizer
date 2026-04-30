@@ -344,7 +344,7 @@ class Groovy(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Groovy."""
 
-        V4 = "4.0"
+        V4 = enum.auto()
 
     version_formats = VersionFormats
 

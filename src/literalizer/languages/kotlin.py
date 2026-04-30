@@ -796,7 +796,7 @@ class Kotlin(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Kotlin."""
 
-        V1_9 = "1.9"
+        V1_9 = enum.auto()
 
     version_formats = VersionFormats
 
