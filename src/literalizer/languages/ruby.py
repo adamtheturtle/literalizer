@@ -15,7 +15,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
-    datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_iso,
 )
@@ -122,6 +121,32 @@ def _ruby_call_stub(
 
 
 @beartype
+def _format_datetime_ruby(value: datetime.datetime) -> str:
+    """Format a datetime as a Ruby Time constructor call.
+
+    UTC-aware datetimes use ``Time.utc``. Datetimes with a non-UTC
+    offset use ``Time.new`` with the offset string. Naive datetimes use
+    ``Time.new`` without an offset.
+    """
+    args = (
+        f"{value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {value.second}"
+    )
+    offset = value.utcoffset()
+    if offset is None:
+        return f"Time.new({args})"
+    if not offset:
+        return f"Time.utc({args})"
+    total_seconds = int(offset.total_seconds())
+    sign = "+" if total_seconds >= 0 else "-"
+    abs_seconds = abs(total_seconds)
+    hours, remainder = divmod(abs_seconds, 3600)
+    minutes = remainder // 60
+    offset_str = f"{sign}{hours:02d}:{minutes:02d}"
+    return f'Time.new({args}, "{offset_str}")'
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Ruby(metaclass=LanguageCls):
     """Ruby language specification.
@@ -187,10 +212,7 @@ class Ruby(metaclass=LanguageCls):
         """Datetime format options for Ruby."""
 
         RUBY = DatetimeFormatConfig(
-            formatter=datetime_ymdhms_formatter(
-                template="Time.new({year}, {month}, {day}, "
-                "{hour}, {minute}, {second})",
-            ),
+            formatter=_format_datetime_ruby,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
