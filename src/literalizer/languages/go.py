@@ -704,12 +704,13 @@ class Go(metaclass=LanguageCls):
             datetime.datetime: "time.Time",
             str: "string",
         }
+        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
+        go_int_type = "int64" if suffix_is_auto else "int"
+        _type_names[int] = go_int_type
         date_type = _type_names.get(self.date_format.value.type_produced)
         datetime_type = _type_names.get(
             self.datetime_format.value.type_produced,
         )
-        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
-        go_int_type = "int64" if suffix_is_auto else "int"
         return make_element_to_type(
             str_type="string",
             bool_type="bool",

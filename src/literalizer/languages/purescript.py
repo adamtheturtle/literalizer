@@ -15,8 +15,8 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
-    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -113,6 +113,20 @@ def _build_purescript_datetime_iso(
         return _apply_purescript_datetime_iso(value=value, prefix=prefix)
 
     return _format
+
+
+def _build_purescript_datetime_epoch(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Int`` from
+    Unix epoch seconds.
+    """
+    return datetime_epoch_formatter(
+        format_integer=_build_purescript_integer_formatter(
+            prefix=prefix,
+            base=str,
+        ),
+    )
 
 
 @beartype
@@ -324,6 +338,9 @@ _format_purescript_integer_decimal = _build_purescript_integer_formatter(
     prefix="P",
     base=str,
 )
+_format_purescript_datetime_epoch = _build_purescript_datetime_epoch(
+    prefix="P",
+)
 _format_purescript_integer_hex = _build_purescript_integer_formatter(
     prefix="P",
     base=format_integer_hex,
@@ -345,10 +362,12 @@ _purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
 @beartype
-def _build_purescript_body_preamble(
+def _build_purescript_body_preamble(  # noqa: C901
     *,
     type_name: str,
     constructor_prefix: str,
+    date_type_produced: type,
+    datetime_type_produced: type,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for PureScript.
 
@@ -388,19 +407,24 @@ def _build_purescript_body_preamble(
         p = constructor_prefix
         needs_tuple = bool(types & {dict, ordereddict})
         has_large_int = int in types and _purescript_has_large_int(val=data)
+        int_types: set[type] = {int}
+        str_types: set[type] = {str, bytes}
+        if date_type_produced is int:
+            int_types.add(datetime.date)
+        elif date_type_produced is str:
+            str_types.add(datetime.date)
+        if datetime_type_produced is int:
+            int_types.add(datetime.datetime)
+        elif datetime_type_produced is str:
+            str_types.add(datetime.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
                 (frozenset({type(None)}), f"{p}Null"),
                 (frozenset({bool}), f"{p}Bool Boolean"),
-                (frozenset({int}), f"{p}Int Int"),
+                (frozenset(int_types), f"{p}Int Int"),
                 (frozenset({float}), f"{p}Float Number"),
-                (
-                    frozenset(
-                        {str, bytes, datetime.date, datetime.datetime},
-                    ),
-                    f"{p}Str String",
-                ),
+                (frozenset(str_types), f"{p}Str String"),
                 (frozenset({list}), f"{p}List (Array {type_name})"),
                 (
                     frozenset({dict, ordereddict}),
@@ -676,7 +700,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
         EPOCH = DatetimeFormatConfig(
-            formatter=format_datetime_epoch,
+            formatter=_format_purescript_datetime_epoch,
             type_produced=int,
         )
 
@@ -1160,6 +1184,10 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.datetime_format.name == "EPOCH":
+            return _build_purescript_datetime_epoch(
+                prefix=self.constructor_prefix,
+            )
         if self.constructor_prefix == "P":
             return self.datetime_format
         return _build_purescript_datetime_iso(prefix=self.constructor_prefix)
@@ -1269,4 +1297,6 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
+            date_type_produced=self.date_format.value.type_produced,
+            datetime_type_produced=self.datetime_format.value.type_produced,
         )

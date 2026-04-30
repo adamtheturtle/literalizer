@@ -962,9 +962,13 @@ class Swift(metaclass=LanguageCls):
                 else "Date"
             ),
             datetime_hint=(
-                "String"
-                if self.datetime_format.value.type_produced is str
-                else "Date"
+                "Int"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "String"
+                    if self.datetime_format.value.type_produced is str
+                    else "Date"
+                )
             ),
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,

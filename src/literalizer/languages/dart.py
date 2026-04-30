@@ -988,9 +988,13 @@ class Dart(metaclass=LanguageCls):
                 else "DateTime"
             ),
             datetime_hint=(
-                "String"
-                if self.datetime_format.value.type_produced is str
-                else "DateTime"
+                "int"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "String"
+                    if self.datetime_format.value.type_produced is str
+                    else "DateTime"
+                )
             ),
             default_set_element_type=self.default_set_element_type,
             default_dict_key_type=self.default_dict_key_type,

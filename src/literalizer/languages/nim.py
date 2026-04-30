@@ -1000,11 +1000,12 @@ class Nim(metaclass=LanguageCls):
         """Nim type used for :class:`datetime.datetime` variant
         payloads.
         """
-        return (
-            "string"
-            if self.datetime_format.value.type_produced is str
-            else "JsonNode"
-        )
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "string"
+        if produced is int:
+            return "int"
+        return "JsonNode"
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -1313,7 +1314,7 @@ class Nim(metaclass=LanguageCls):
             )
             datetime_preamble = (
                 ()
-                if self.datetime_format.value.type_produced is str
+                if self.datetime_format.value.type_produced in {str, int}
                 else json_import
             )
             return {

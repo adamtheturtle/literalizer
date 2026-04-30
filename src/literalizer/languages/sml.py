@@ -133,7 +133,7 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
-def _apply_sml_entry_formatter(
+def _apply_sml_entry_formatter(  # noqa: PLR0911
     original: Value, formatted: str, prefix: str
 ) -> str:
     """Wrap a formatted entry in the appropriate SML ``datatype``
@@ -158,6 +158,11 @@ def _apply_sml_entry_formatter(
             )
         case str() | bytes():
             return f"{prefix}Str {formatted}"
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            literal = (
+                f"~{formatted[1:]}" if formatted.startswith("-") else formatted
+            )
+            return f"{prefix}Int {literal}"
         case datetime.date() if formatted.startswith('"'):
             return f"{prefix}Str {formatted}"
         case _:
@@ -903,9 +908,13 @@ class Sml(metaclass=LanguageCls):
             else f"{p}Date of (int * int * int)"
         )
         _datetime_constructor = (
-            f"{p}Str of string"
-            if self.datetime_format.value.type_produced is str
-            else f"{p}Datetime of ((int * int * int) * (int * int * int))"
+            f"{p}Int of LargeInt.int"
+            if self.datetime_format.value.type_produced is int
+            else (
+                f"{p}Str of string"
+                if self.datetime_format.value.type_produced is str
+                else f"{p}Datetime of ((int * int * int) * (int * int * int))"
+            )
         )
         return {
             type(None): (_h, f"{p}Null"),

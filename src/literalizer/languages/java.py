@@ -1232,8 +1232,12 @@ class Java(metaclass=LanguageCls):
             date_type=cfg.type_name(
                 py_type=self.date_format.value.type_produced
             ),
-            datetime_type=cfg.type_name(
-                py_type=self.datetime_format.value.type_produced,
+            datetime_type=(
+                "long"
+                if self.datetime_format.value.type_produced is int
+                else cfg.type_name(
+                    py_type=self.datetime_format.value.type_produced,
+                )
             ),
             set_opener_template=None,
             narrow_dict_values=False,
@@ -1322,8 +1326,11 @@ class Java(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        if self.datetime_format.value.type_produced is str:
+        datetime_produced = self.datetime_format.value.type_produced
+        if datetime_produced is str:
             datetime_hint = "String"
+        elif datetime_produced is int:
+            datetime_hint = "long"
         elif self.datetime_format.name == "ZONED":
             datetime_hint = "ZonedDateTime"
         else:

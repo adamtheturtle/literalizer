@@ -455,6 +455,11 @@ def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
                 name="Bytes",
                 inner_type="&'static str",
             )
+        case datetime.datetime() if datetime_type in {"i32", "i64", "i128"}:
+            return _VariantSignature(
+                name=datetime_type.upper(),
+                inner_type=datetime_type,
+            )
         case datetime.datetime():
             return _VariantSignature(
                 name="DateTime",
@@ -1347,11 +1352,12 @@ class Rust(metaclass=LanguageCls):
         """Rust type used for :class:`datetime.datetime` variant
         payloads.
         """
-        return (
-            "&'static str"
-            if self.datetime_format.value.type_produced is str
-            else "NaiveDateTime"
-        )
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "&'static str"
+        if produced is int:
+            return "i64"
+        return "NaiveDateTime"
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -1569,9 +1575,13 @@ class Rust(metaclass=LanguageCls):
                 else "NaiveDate"
             ),
             datetime_type=(
-                "&str"
-                if self.datetime_format.value.type_produced is str
-                else "NaiveDateTime"
+                "i64"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "&str"
+                    if self.datetime_format.value.type_produced is str
+                    else "NaiveDateTime"
+                )
             ),
             sequence_format_type_annotation=(
                 self.sequence_format.format_type_annotation

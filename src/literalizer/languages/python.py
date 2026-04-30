@@ -472,8 +472,8 @@ class Python(metaclass=LanguageCls):
             * ``datetime_formats.PYTHON`` — ``datetime.datetime`` constructor
               call, e.g. ``datetime.datetime(year=2024, month=1,
               day=15, hour=12, minute=30, second=0)``.
-            * ``datetime_formats.EPOCH`` — Unix epoch float,
-              e.g. ``1705312200.0``.
+            * ``datetime_formats.EPOCH`` — integer Unix epoch seconds,
+              e.g. ``1705312200``.
 
         bytes_format: How to format :class:`bytes` values.
 

@@ -1117,9 +1117,13 @@ class CSharp(metaclass=LanguageCls):
             else "DateOnly"
         )
         datetime_hint = (
-            "string"
-            if self.datetime_format.value.type_produced is str
-            else "DateTime"
+            "long"
+            if self.datetime_format.value.type_produced is int
+            else (
+                "string"
+                if self.datetime_format.value.type_produced is str
+                else "DateTime"
+            )
         )
         dict_value_type = self.default_dict_value_type
 

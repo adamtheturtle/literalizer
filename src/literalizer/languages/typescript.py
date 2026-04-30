@@ -870,9 +870,13 @@ class TypeScript(metaclass=LanguageCls):
                 else "Date"
             ),
             datetime_hint=(
-                "string"
-                if self.datetime_format.value.type_produced is str
-                else "Date"
+                "number"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "string"
+                    if self.datetime_format.value.type_produced is str
+                    else "Date"
+                )
             ),
             dict_hint_template=(
                 "Map<string, {val}>"

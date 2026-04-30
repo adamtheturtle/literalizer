@@ -927,6 +927,8 @@ class Cpp(metaclass=LanguageCls):
             cfg: DatetimeFormatConfig = self.value
             if cfg.type_produced is str:
                 return "std::string"
+            if cfg.type_produced is int:
+                return "long long"
             return "std::chrono::system_clock::time_point"
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

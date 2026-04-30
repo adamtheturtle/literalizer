@@ -76,7 +76,9 @@ from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
 @beartype
-def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
+def _apply_ocaml_entry(  # noqa: PLR0911
+    original: Value, formatted: str, prefix: str
+) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
@@ -99,6 +101,13 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
             )
         case str() | bytes():
             return f"{prefix}Str {formatted}"
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            needs_parens = formatted.startswith("-")
+            return (
+                f"{prefix}Int ({formatted})"
+                if needs_parens
+                else f"{prefix}Int {formatted}"
+            )
         case datetime.date() if formatted.startswith('"'):
             return f"{prefix}Str {formatted}"
         case _:
@@ -869,9 +878,14 @@ class OCaml(metaclass=LanguageCls):
             else f"  | {p}Date of (int * int * int)"
         )
         _datetime_constructor = (
-            f"  | {p}Str of string"
-            if self.datetime_format.value.type_produced is str
-            else f"  | {p}Datetime of ((int * int * int) * (int * int * int))"
+            f"  | {p}Int of int"
+            if self.datetime_format.value.type_produced is int
+            else (
+                f"  | {p}Str of string"
+                if self.datetime_format.value.type_produced is str
+                else f"  | {p}Datetime of "
+                "((int * int * int) * (int * int * int))"
+            )
         )
         return {
             type(None): (_h, f"  | {p}Null"),

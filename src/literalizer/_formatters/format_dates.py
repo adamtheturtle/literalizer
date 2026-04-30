@@ -27,11 +27,33 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
-def format_datetime_epoch(value: datetime.datetime) -> str:
-    """Format a datetime as integer Unix epoch seconds."""
+def datetime_epoch_seconds(value: datetime.datetime) -> int:
+    """Return integer Unix epoch seconds for a datetime."""
     if value.tzinfo is None:
         value = value.replace(tzinfo=datetime.UTC)
-    return str(object=math.floor(value.timestamp()))
+    return math.floor(value.timestamp())
+
+
+@beartype
+def format_datetime_epoch(value: datetime.datetime) -> str:
+    """Format a datetime as integer Unix epoch seconds."""
+    return str(object=datetime_epoch_seconds(value=value))
+
+
+@beartype
+def datetime_epoch_formatter(
+    *,
+    format_integer: Callable[[int], str],
+) -> Callable[[datetime.datetime], str]:
+    """Return a datetime formatter that delegates epoch seconds to an
+    integer formatter.
+    """
+
+    def _format(value: datetime.datetime) -> str:
+        """Format using the supplied integer formatter."""
+        return format_integer(datetime_epoch_seconds(value=value))
+
+    return _format
 
 
 @beartype

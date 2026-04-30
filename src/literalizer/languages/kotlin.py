@@ -1141,9 +1141,13 @@ class Kotlin(metaclass=LanguageCls):
                 else "LocalDate"
             ),
             datetime_hint=(
-                "String"
-                if self.datetime_format.value.type_produced is str
-                else "LocalDateTime"
+                "Long"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "String"
+                    if self.datetime_format.value.type_produced is str
+                    else "LocalDateTime"
+                )
             ),
             default_set_element_type=self.default_set_element_type,
             default_dict_key_type=self.default_dict_key_type,
