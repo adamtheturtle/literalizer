@@ -39,7 +39,7 @@ from literalizer.languages import (
     VisualBasic,
 )
 
-from .case_discovery import cases_with_special_floats
+from .case_discovery import cases_with_special_floats, discover_cases
 from .language_specs import make_spec, sorted_languages
 
 _CASES_DIR = Path(__file__).parent / "cases"
@@ -594,6 +594,35 @@ def build_c_field_name_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_language_version_variants() -> Iterable[Variant]:
+    """Build version variants for all languages with multiple versions.
+
+    Any language whose ``VersionFormats`` enum has more than one member is
+    included automatically; no per-language registration is needed here.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        versions_cls = lang_cls.version_formats
+        if len(versions_cls) <= 1:
+            continue
+        spec = make_spec(lang_cls=lang_cls)
+        default_version: enum.Enum = spec.language_version
+        for version in versions_cls:
+            if version is default_version:
+                continue
+            variants.append(
+                Variant(
+                    name=f"{lang_cls.__name__}_version_{version.name.lower()}",
+                    spec=make_spec(
+                        lang_cls=lang_cls, language_version=version
+                    ),
+                    lang_cls=lang_cls,
+                )
+            )
+    return variants
+
+
+@beartype
 def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-union-name variants for languages that
     generate a named union type for their heterogeneous strategy (e.g.
@@ -1117,6 +1146,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "heterogeneous_value_variant_name": (
         build_heterogeneous_value_variant_name_variants
     ),
+    "language_version": build_language_version_variants,
 }
 
 
@@ -1335,6 +1365,13 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
+    "language_version": tuple(
+        _ci(case_dir_name=case_dir_name)
+        for case_dir_name in dict.fromkeys(
+            case_dir_name
+            for case_dir_name, _ in discover_cases(cases_dir=_CASES_DIR)
+        )
+    ),
 }
 
 

@@ -44,33 +44,57 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 
 
 @beartype
-def _walk_empty_collections(*, val: Value, result: set[type]) -> None:
-    """Walk *val* and add empty collection types to *result*."""
+def _needs_annotation(val: Value) -> bool:
+    """Return True if *val* requires a type annotation.
+
+    A collection needs annotation when it is empty (so type-checkers can
+    infer element types) or contains an element/value that itself needs
+    annotation.
+    """
+    match val:
+        case dict():
+            return not val or any(
+                _needs_annotation(v)
+                for v in val.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            )
+        case set():
+            return not val
+        case list():
+            return not val or any(_needs_annotation(v) for v in val)
+        case _:
+            return False
+
+
+@beartype
+def _walk_annotated_collections(*, val: Value, result: set[type]) -> None:
+    """Walk *val* and add collection types that appear in type annotations."""
     match val:
         case ordereddict() | dict():
-            if not val:
+            if _needs_annotation(val=val):
                 result.add(dict)
-            else:
                 for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                    _walk_empty_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
+                    _walk_annotated_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
         case set():
             if not val:
                 result.add(set)
         case list():
-            if not val:
+            if _needs_annotation(val=val):
                 result.add(list)
-            else:
                 for v in val:
-                    _walk_empty_collections(val=v, result=result)
+                    _walk_annotated_collections(val=v, result=result)
         case _:
             pass
 
 
 @beartype
-def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
-    """Return the set of collection types that have empty instances."""
+def _collect_annotated_collection_types(*, data: Value) -> frozenset[type]:
+    """Return the set of collection types that appear in type annotations.
+
+    This is a superset of empty collection types: it also includes
+    non-empty containers that wrap annotated children.
+    """
     result: set[type] = set()
-    _walk_empty_collections(val=data, result=result)
+    _walk_annotated_collections(val=data, result=result)
     return frozenset(result)
 
 
@@ -171,14 +195,16 @@ def compute_preamble(
         else ()
     )
     collection = _collection_preamble(types=types, language=language)
-    empty_collection_types: frozenset[type] = (
-        _collect_empty_collection_types(data=data)
+    annotated_collection_types: frozenset[type] = (
+        _collect_annotated_collection_types(data=data)
         if has_variable_declaration and types & {dict, list, set, ordereddict}
         else frozenset()
     )
     type_hint = (
-        language.type_hint_collection_preamble_lines(empty_collection_types)
-        if empty_collection_types
+        language.type_hint_collection_preamble_lines(
+            annotated_collection_types
+        )
+        if annotated_collection_types
         else ()
     )
     body = language.compute_body_preamble(types, data)
