@@ -4,6 +4,20 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` accepts a new ``consumable_refs``
+  parameter listing the ``{"$ref": "name"}`` identifiers the call may
+  move from.  In C++, only refs in this set -- and only when they
+  appear in exactly one call argument across the rendered calls -- are
+  wrapped in ``std::move(...)``; all other refs emit as the bare
+  identifier so the variable remains valid for any subsequent use
+  (whether in a later per-element call within the same
+  ``literalize_call`` block, or elsewhere in the surrounding source).
+  This is a breaking change: previously C++ unconditionally wrapped
+  every call-argument ``$ref`` in ``std::move(...)``, which produced
+  use-after-move when the same variable was referenced by more than
+  one per-element call.  Pass ``consumable_refs={"my_var"}`` to
+  restore the previous behavior for ``my_var``.
+
 2026.04.30
 ----------
 

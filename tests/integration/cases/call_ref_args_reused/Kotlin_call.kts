@@ -1,0 +1,6 @@
+fun process(data: Any? = null, count: Any? = null): Any? = null
+val shared = 1
+val other = 2
+process(data = shared, count = 1)
+process(data = other, count = 0)
+process(data = shared, count = 8)

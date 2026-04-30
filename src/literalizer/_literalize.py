@@ -1710,6 +1710,35 @@ def _extract_call_arg_ref_name(*, value: Value) -> str | None:
 
 
 @beartype
+def _compute_call_arg_ref_single_use_names(
+    *,
+    elements: list[Value],
+) -> frozenset[str]:
+    """Return ref identifiers that appear exactly once across the calls.
+
+    Names are returned in the original (pre-``ref_case``) form supplied
+    by the caller, so they can be compared against the user-supplied
+    ``consumable_refs`` set on
+    :func:`~literalizer.literalize_call` without further conversion.
+
+    Refs not in this set are unsafe to consume: they appear in more than
+    one per-element call (or more than once inside a single call's
+    argument list), so a language that moves consumable refs (notably
+    C++ ``std::move``) would render a use-after-move on the second
+    occurrence.
+    """
+    counts: dict[str, int] = {}
+    for element in elements:
+        arg_values = element if isinstance(element, list) else [element]
+        for value in arg_values:
+            ref_name = _extract_call_arg_ref_name(value=value)
+            if ref_name is None:
+                continue
+            counts[ref_name] = counts.get(ref_name, 0) + 1
+    return frozenset(name for name, count in counts.items() if count == 1)
+
+
+@beartype
 def _strip_call_arg_refs_for_preamble(
     *,
     data: Value,
@@ -1757,6 +1786,8 @@ def _format_single_call_arg(
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
     ref_case: IdentifierCase | None,
+    consumable_ref_names: frozenset[str],
+    single_use_ref_names: frozenset[str],
 ) -> str:
     """Format one argument value for a function call.
 
@@ -1765,11 +1796,32 @@ def _format_single_call_arg(
     variable already has the call's parameter type.  When *ref_case*
     is not ``None``, the ref name is converted to that case before
     being emitted.
+
+    *consumable_ref_names* is the caller's declaration of which refs
+    this call owns and may move from.  *single_use_ref_names* is the
+    set of refs that appear exactly once across this call's argument
+    lists.  Both sets use the original (pre-``ref_case``) name.  A ref
+    is rendered via the language's
+    ``format_call_arg_ref_identifier_consumable`` hook only when it is
+    in both sets; otherwise it goes through the regular
+    ``format_call_arg_ref_identifier`` hook.  This ensures that a ref
+    used in more than one call (or more than once in a single call's
+    arguments) is never consumed, even when the caller listed it as
+    consumable.
     """
-    ref_name = _extract_call_arg_ref_name(value=value)
-    if ref_name is not None:
-        if ref_case is not None:
-            ref_name = ref_case.convert(name=ref_name)
+    raw_ref_name = _extract_call_arg_ref_name(value=value)
+    if raw_ref_name is not None:
+        ref_name = (
+            ref_case.convert(name=raw_ref_name)
+            if ref_case is not None
+            else raw_ref_name
+        )
+        is_consumable = (
+            raw_ref_name in consumable_ref_names
+            and raw_ref_name in single_use_ref_names
+        )
+        if is_consumable:
+            return language.format_call_arg_ref_identifier_consumable(ref_name)
         return language.format_call_arg_ref_identifier(ref_name)
     return wrap_arg(
         value,
@@ -1819,6 +1871,8 @@ def _format_call_args(
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    consumable_ref_names: frozenset[str],
+    single_use_ref_names: frozenset[str],
 ) -> str:
     """Format argument values for a single function call.
 
@@ -1852,6 +1906,8 @@ def _format_call_args(
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
             ref_case=ref_case,
+            consumable_ref_names=consumable_ref_names,
+            single_use_ref_names=single_use_ref_names,
         )
         for slot_index, arg_value in enumerate(iterable=values)
     ]
@@ -2057,6 +2113,7 @@ def _render_call_per_element(
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
+    consumable_ref_names: frozenset[str],
     collection_comments: CollectionComments | None = None,
 ) -> str:
     """Render one call per top-level list element.
@@ -2088,6 +2145,9 @@ def _render_call_per_element(
         "format_call_statement",
         _identity_call_statement,
     )
+    single_use_ref_names = _compute_call_arg_ref_single_use_names(
+        elements=data,
+    )
     rendered_elements: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -2111,6 +2171,8 @@ def _render_call_per_element(
             style=style,
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
+            consumable_ref_names=consumable_ref_names,
+            single_use_ref_names=single_use_ref_names,
         )
         rendered_elements.append(
             format_call_statement(
@@ -2144,6 +2206,7 @@ def _render_call_whole(
     parameter_names: Sequence[str],
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
+    consumable_ref_names: frozenset[str],
 ) -> str:
     """Render a single call from the whole parsed value.
 
@@ -2175,6 +2238,10 @@ def _render_call_whole(
         style=style,
         dict_open_overrides=[None],
         ref_case=ref_case,
+        consumable_ref_names=consumable_ref_names,
+        single_use_ref_names=_compute_call_arg_ref_single_use_names(
+            elements=[[data]],
+        ),
     )
     return format_call_statement(
         _assemble_call(
@@ -2199,6 +2266,7 @@ def literalize_call(
     per_element: bool = True,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
+    consumable_refs: frozenset[str] = frozenset(),
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -2245,6 +2313,15 @@ def literalize_call(
             the requested case,
             :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
             is raised.
+        consumable_refs: Names of ``$ref`` identifiers this call owns
+            and may move from.  Refs in this set may be rendered with a
+            consuming form (e.g. C++ ``std::move``) when they appear in
+            exactly one call argument; refs used by more than one call
+            -- or omitted from this set -- are emitted as the bare
+            identifier so subsequent uses of the variable remain valid.
+            Names should match the identifiers used in *source* before
+            any *ref_case* conversion.  Defaults to an empty set (no
+            refs are consumed).
 
     .. note::
 
@@ -2313,6 +2390,7 @@ def literalize_call(
             parameter_names=parameter_names,
             call_transform=call_transform,
             ref_case=ref_case,
+            consumable_ref_names=consumable_refs,
             collection_comments=collection_comments,
         )
     else:
@@ -2324,6 +2402,7 @@ def literalize_call(
             parameter_names=parameter_names,
             call_transform=call_transform,
             ref_case=ref_case,
+            consumable_ref_names=consumable_refs,
         )
     computed = compute_preamble(
         data=data_for_preamble,

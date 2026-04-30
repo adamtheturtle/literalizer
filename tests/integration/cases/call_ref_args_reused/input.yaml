@@ -1,0 +1,7 @@
+---
+- - { $ref: shared }
+  - 1
+- - { $ref: other }
+  - 0
+- - { $ref: shared }
+  - 8

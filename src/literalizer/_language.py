@@ -1234,6 +1234,25 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` call-argument identifier the
+        caller authorized as consumable on
+        :func:`~literalizer.literalize_call`.
+
+        Used only for refs the caller listed in ``consumable_refs`` and
+        that appear in exactly one call argument across the rendered
+        calls, so the consuming form cannot strand a later use.
+
+        The default implementation (provided by every language class)
+        delegates to :attr:`format_call_arg_ref_identifier`.  Languages
+        whose call-argument ``$ref`` semantics consume the variable
+        (notably C++ ``std::move``) override this.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     def wrap_in_file(
         self,
         content: str,
