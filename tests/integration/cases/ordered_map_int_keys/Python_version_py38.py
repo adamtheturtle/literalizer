@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from typing import OrderedDict
 my_data = OrderedDict([
     ("1", "one"),
     ("2", "two"),

@@ -526,6 +526,8 @@ def _build_type_hint_preamble_py38(
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
+        if not imports:
+            return ()
         return (f"from typing import {', '.join(sorted(imports))}",)
 
     return _preamble
@@ -1233,10 +1235,14 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self.language_version is Python.VersionFormats.PY38:
+            ordered_dict_import = "from typing import OrderedDict"
+        else:
+            ordered_dict_import = "from collections import OrderedDict"
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="OrderedDict(["),
             close="])",
-            preamble_lines=("from collections import OrderedDict",),
+            preamble_lines=(ordered_dict_import,),
         )
 
     @cached_property
