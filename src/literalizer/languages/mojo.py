@@ -376,7 +376,7 @@ def _mojo_list_open(items: list[Value]) -> str:
     return "["
 
 
-def _mojo_list_format(default_type: str) -> SequenceFormatConfig:
+def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(
         sequence_open=_mojo_list_open,
