@@ -337,6 +337,30 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_ada.py
           < /tmp/files-ada
 
+      # KRoC (the only maintained Occam-pi compiler, last updated 2020) cannot
+      # compile these fixtures for several fundamental reasons:
+      #
+      # 1. MOBILE DATA TYPE ... IS CASE is in the occam-pi specification but
+      #    absent from KRoC's occ21 parser.  occ21's rspecification() handles
+      #    MOBILE by calling rspecifier(), which has no S_DATA case; and the
+      #    DATA TYPE parse path in rspecification() is entirely separate and
+      #    never reaches the MOBILE branch.  The two paths do not intersect, so
+      #    the construct parses as "expected specifier, found DATA".
+      #
+      # 2. KRoC identifiers may only contain alphanumerics and dots.
+      #    Underscores (ASCII 95) are illegal in standard mode, so names like
+      #    my_data are rejected as "illegal character (ASCII 95)".
+      #
+      # 3. KRoC uses * as its escape character, not \.  String literals in the
+      #    fixtures use \" (standard C/Python convention) but KRoC requires *"
+      #    for a literal double-quote and ** for a literal asterisk.
+      #
+      # 4. Recursive MOBILE DATA TYPE (a MOBILE RECORD containing MOBILE []LIT
+      #    children) is not supported.  The RECURSIVE keyword in KRoC only
+      #    applies to CHAN TYPE declarations (channel bundles), not DATA TYPE.
+      #
+      # Because the fixture format itself is structurally incompatible with
+      # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
         run: |-
           find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam
