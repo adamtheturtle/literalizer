@@ -134,18 +134,18 @@ def _strip_nix_stub_in_expr(stub_code: str) -> str:
     return stub_code
 
 
-def _find_first_occurrence(lines: list[str], lower_name: str) -> int | None:
+def _find_first_occurrence(lines: list[str], lower_name: str) -> int:
     """Return the index of the first line containing ``lower_name`` that
     is not immediately preceded by ``[``.
+
+    The caller guarantees ``lower_name`` appears in ``lines``.
     """
-    for i, line in enumerate(iterable=lines):
-        idx = line.lower().find(lower_name)
-        if idx == -1:
-            continue
-        if idx > 0 and line[idx - 1] == "[":
-            continue
-        return i
-    return None  # pragma: no cover
+    return next(
+        i
+        for i, line in enumerate(iterable=lines)
+        if (pos := line.lower().find(lower_name)) != -1
+        and not (pos > 0 and line[pos - 1] == "[")
+    )
 
 
 def _find_assignment_line(
@@ -237,8 +237,6 @@ def _inject_stubs_before_variable(
     lower_name = variable_name.lower()
 
     decl_idx = _find_first_occurrence(lines=lines, lower_name=lower_name)
-    if decl_idx is None:
-        return code  # pragma: no cover
 
     indent = len(lines[decl_idx]) - len(lines[decl_idx].lstrip())
     prefix = " " * indent
