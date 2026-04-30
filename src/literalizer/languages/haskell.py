@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -1484,6 +1485,11 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if (
+            self.datetime_format.name == "EPOCH"
+            and self.numeric_style.name == "EXPLICIT"
+        ):
+            return datetime_epoch_formatter(format_integer=self.format_integer)
         return self._date_fmts.format_datetime
 
     @cached_property

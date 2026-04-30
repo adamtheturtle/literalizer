@@ -159,10 +159,13 @@ def _apply_sml_entry_formatter(  # noqa: PLR0911
         case str() | bytes():
             return f"{prefix}Str {formatted}"
         case datetime.datetime() if formatted.lstrip("-").isdigit():
-            literal = (
-                f"~{formatted[1:]}" if formatted.startswith("-") else formatted
+            negative = formatted.startswith("-")
+            literal = f"~{formatted[1:]}" if negative else formatted
+            return (
+                f"{prefix}Int ({literal})"
+                if negative
+                else f"{prefix}Int {literal}"
             )
-            return f"{prefix}Int {literal}"
         case datetime.date() if formatted.startswith('"'):
             return f"{prefix}Str {formatted}"
         case _:
