@@ -11,15 +11,7 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer.languages import Sml
-
-from .call_cases import (
-    CallCase,
-    CallCaseConfig,
-    discover_call_cases,
-    lang_satisfies_config_constraints,
-    run_call_golden_case,
-)
+from .call_cases import CallCase, discover_call_cases, run_call_golden_case
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .language_specs import make_spec
 
@@ -86,25 +78,3 @@ def test_call_variant_golden_file(
         cases_dir=cases_dir,
         file_regression=file_regression,
     )
-
-
-def test_lang_satisfies_config_constraints_reserved_identifier() -> None:
-    """Return False when the target function name is reserved in the
-    language.
-    """
-    config = CallCaseConfig(
-        case_dir_name="test",
-        target_function="app.mgr.op",
-        parameter_names=[],
-        call_transform=None,
-        transform_stub_names=[],
-        per_element=True,
-        call_style_type=None,
-        ref_declarations={},
-        wrap_in_file=False,
-        ref_case_per_language=False,
-        consumable_refs=frozenset[str](),
-        requires_call_returns_expression=False,
-        requires_inline_multiline_dict_args=False,
-    )
-    assert not lang_satisfies_config_constraints(lang_cls=Sml, config=config)

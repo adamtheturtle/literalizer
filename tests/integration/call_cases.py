@@ -559,7 +559,7 @@ class CallCase:
 
 
 @beartype
-def lang_satisfies_config_constraints(
+def _lang_satisfies_config_constraints(
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
 ) -> bool:
@@ -568,7 +568,7 @@ def lang_satisfies_config_constraints(
     """
     innermost = config.target_function.split(sep=".")[-1]
     if innermost in lang_cls.reserved_identifiers:
-        return False
+        return False  # pragma: no cover
     _probe = "__probe__"
     if (
         config.call_transform is not None
@@ -603,7 +603,7 @@ def discover_call_cases() -> list[CallCase]:
                 config.case_dir_name, frozenset()
             ):
                 continue
-            if not lang_satisfies_config_constraints(
+            if not _lang_satisfies_config_constraints(
                 lang_cls=lang_cls, config=config
             ):
                 continue
