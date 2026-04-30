@@ -507,6 +507,8 @@ class Gleam(metaclass=LanguageCls):
     supports_special_floats = False
     supports_variable_names = True
     supports_dotted_calls = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
 
     class DateFormats(enum.Enum):
         """Date format options for Gleam."""
