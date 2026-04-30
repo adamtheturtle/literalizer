@@ -104,12 +104,9 @@ def _format_datetime_python(value: datetime.datetime) -> str:
             abs_seconds = abs(total_seconds)
             hours = sign * (abs_seconds // 3600)
             minutes = sign * ((abs_seconds % 3600) // 60)
-            seconds = sign * (abs_seconds % 60)
             td_parts = [f"hours={hours}"]
-            if minutes or seconds:
+            if minutes:
                 td_parts.append(f"minutes={minutes}")
-            if seconds:
-                td_parts.append(f"seconds={seconds}")
             td_args = ", ".join(td_parts)
             parts.append(
                 f"tzinfo=datetime.timezone(offset=datetime.timedelta({td_args}))"
