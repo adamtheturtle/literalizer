@@ -1,7 +1,7 @@
 ---
-- - { ref: shared }
+- - { ref: repeated_var }
   - 1
-- - { ref: other }
+- - { ref: single_var }
   - 0
-- - { ref: shared }
+- - { ref: repeated_var }
   - 8

@@ -11,13 +11,17 @@ process _ = ()
 main : Program () () Never
 main =
     let
-        shared : Val
-        shared = EInt 1
-        other : Val
-        other = EInt 2
-        _ = process(shared, EInt 1)
-        _ = process(other, EInt 0)
-        _ = process(shared, EInt 8)
+        repeated_var : Val
+        repeated_var = EInt 1
+        single_var : Val
+        single_var = EList [
+            EInt 4,
+            EInt 5,
+            EInt 6
+            ]
+        _ = process(repeated_var, EInt 1)
+        _ = process(single_var, EInt 0)
+        _ = process(repeated_var, EInt 8)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

@@ -7,12 +7,16 @@ Val : [
 process : a, b -> {}
 process = \_, _ -> {}
 
-shared : Val
-shared = RInt 1i128
-other : Val
-other = RInt 2i128
+repeated_var : Val
+repeated_var = RInt 1i128
+single_var : Val
+single_var = RList [
+    RInt 4i128,
+    RInt 5i128,
+    RInt 6i128,
+    ]
 main =
-    dbg (process shared (RInt 1i128))
-    dbg (process other (RInt 0i128))
-    dbg (process shared (RInt 8i128))
+    dbg (process repeated_var (RInt 1i128))
+    dbg (process single_var (RInt 0i128))
+    dbg (process repeated_var (RInt 8i128))
     {}

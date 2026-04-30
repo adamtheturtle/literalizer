@@ -2,9 +2,13 @@ interface ICallArg_ {}
 fn process(args ...ICallArg_) {}
 
 fn main() {
-	shared := 1
-	other := 2
-	process(shared.clone(), 1);
-	process(other.clone(), 0);
-	process(shared.clone(), 8);
+	repeated_var := 1
+	single_var := [
+		4,
+		5,
+		6,
+	]
+	process(repeated_var.clone(), 1);
+	process(single_var.clone(), 0);
+	process(repeated_var.clone(), 8);
 }

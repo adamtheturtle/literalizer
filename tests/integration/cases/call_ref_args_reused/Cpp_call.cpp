@@ -2,10 +2,14 @@
 #include <vector>
 auto process(auto...) { return 0; }
 int main() {
-auto shared = 1;
-auto other = 2;
-process(shared, 1);
-process(std::move(other), 0);
-process(shared, 8);
+auto repeated_var = 1;
+auto single_var = std::vector<int>{
+    4,
+    5,
+    6,
+};
+process(repeated_var, 1);
+process(std::move(single_var), 0);
+process(repeated_var, 8);
     return 0;
 }

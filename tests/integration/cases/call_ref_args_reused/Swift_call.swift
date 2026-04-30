@@ -1,6 +1,10 @@
 @discardableResult func process(data: Any = 0, count: Any = 0) -> Any { 0 }
-let shared: Any = 1
-let other: Any = 2
-process(data: shared, count: 1);
-process(data: other, count: 0);
-process(data: shared, count: 8);
+let repeated_var: Any = 1
+let single_var: Any = [
+    4,
+    5,
+    6,
+]
+process(data: repeated_var, count: 1);
+process(data: single_var, count: 0);
+process(data: repeated_var, count: 8);

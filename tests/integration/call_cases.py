@@ -317,13 +317,16 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"my_var", "my_other"}),
     ),
     CallCaseConfig(
-        # Same ``$ref`` reused across multiple per-element calls.  The
+        # Same ref reused across multiple per-element calls.  The
         # caller declares both refs consumable; the renderer must still
-        # avoid the consuming form (e.g. C++ ``std::move``) for the
-        # reused ref so the second call does not read a moved-from
-        # variable.  Scalar ints keep the rendered code valid in
-        # languages with move/own semantics (Rust, C++) regardless of
-        # which form the language picks for the ref.
+        # avoid the consuming form (e.g. C++ ``std::move``, Mojo ``^``)
+        # for the reused ref so the second call does not read a
+        # moved-from variable.  ``repeated_var`` is a scalar int so it
+        # is ``Copy`` in Rust and can be referenced twice; ``single_var``
+        # is a list so the consuming form rendered in C++ / Mojo
+        # operates on a non-trivial type and does not trigger
+        # trivial-type "no effect" lints.  Variable names avoid
+        # ``shared``, which is reserved in D, V, and VisualBasic.
         case_dir_name="call_ref_args_reused",
         target_function="process",
         parameter_names=["data", "count"],
@@ -332,12 +335,12 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         ref_declarations={
-            "shared": "1",
-            "other": "2",
+            "repeated_var": "1",
+            "single_var": "[4, 5, 6]",
         },
         wrap_in_file=False,
         ref_case_per_language=False,
-        consumable_refs=frozenset({"shared", "other"}),
+        consumable_refs=frozenset({"repeated_var", "single_var"}),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted",

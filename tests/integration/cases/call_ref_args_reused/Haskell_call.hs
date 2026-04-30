@@ -10,13 +10,17 @@ instance Num Val where
     negate _ = error "not implemented"
 process :: (Val, Val) -> IO ()
 process _ = return ()
-shared :: Val
-shared = 1
-other :: Val
-other = 2
+repeated_var :: Val
+repeated_var = 1
+single_var :: Val
+single_var = HList [
+    4,
+    5,
+    6
+    ]
 main :: IO ()
 main = do
-    _ <- process(shared, 1)
-    _ <- process(other, 0)
-    _ <- process(shared, 8)
+    _ <- process(repeated_var, 1)
+    _ <- process(single_var, 0)
+    _ <- process(repeated_var, 8)
     pure ()

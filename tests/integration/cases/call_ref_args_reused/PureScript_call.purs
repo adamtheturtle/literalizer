@@ -7,17 +7,21 @@ data Val
     | PList (Array Val)
 process :: Val -> Val -> Unit
 process _ _ = unit
-shared :: Val
-shared = PInt 1
-other :: Val
-other = PInt 2
+repeated_var :: Val
+repeated_var = PInt 1
+single_var :: Val
+single_var = PList [
+    PInt 4,
+    PInt 5,
+    PInt 6
+    ]
 
 
 main :: Unit
 main =
     let
-        _ = process shared (PInt 1)
-        _ = process other (PInt 0)
-        _ = process shared (PInt 8)
+        _ = process repeated_var (PInt 1)
+        _ = process single_var (PInt 0)
+        _ = process repeated_var (PInt 8)
     in
     unit

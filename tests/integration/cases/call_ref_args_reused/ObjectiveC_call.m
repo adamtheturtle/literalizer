@@ -2,11 +2,15 @@
 static void process(id _a0, id _a1) { (void)_a0; (void)_a1; }
 int main(void) {
 @autoreleasepool {
-id shared = @1;
-id other = @2;
-process(shared, @1);
-process(other, @0);
-process(shared, @8);
+id repeated_var = @1;
+id single_var = @[
+    @4,
+    @5,
+    @6,
+];
+process(repeated_var, @1);
+process(single_var, @0);
+process(repeated_var, @8);
 }
     return 0;
 }

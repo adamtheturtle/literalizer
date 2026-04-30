@@ -1,6 +1,10 @@
 process <- function(...) NULL
-shared <- 1
-other <- 2
-process(data = shared, count = 1)
-process(data = other, count = 0)
-process(data = shared, count = 8)
+repeated_var <- 1
+single_var <- list(
+    4,
+    5,
+    6
+)
+process(data = repeated_var, count = 1)
+process(data = single_var, count = 0)
+process(data = repeated_var, count = 8)

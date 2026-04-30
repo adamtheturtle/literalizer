@@ -1,6 +1,10 @@
 function process() {}
-const shared = 1;
-const other = 2;
-process({ data: shared, count: 1 });
-process({ data: other, count: 0 });
-process({ data: shared, count: 8 });
+const repeated_var = 1;
+const single_var = [
+  4,
+  5,
+  6,
+];
+process({ data: repeated_var, count: 1 });
+process({ data: single_var, count: 0 });
+process({ data: repeated_var, count: 8 });

@@ -2,8 +2,12 @@
 -export([x/0]).
 process(_, _) -> ok.
 x() ->
-    Shared = 1,
-    Other = 2,
-    process(Shared, 1),
-    process(Other, 0),
-    process(Shared, 8).
+    Repeated_var = 1,
+    Single_var = [
+        4,
+        5,
+        6
+    ],
+    process(Repeated_var, 1),
+    process(Single_var, 0),
+    process(Repeated_var, 8).

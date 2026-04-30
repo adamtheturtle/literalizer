@@ -1,8 +1,12 @@
 fn main() {
     fn process<A, B>(_data: A, _count: B) {}
-    let shared = 1;
-    let other = 2;
-    process(shared, 1);
-    process(other, 0);
-    process(shared, 8);
+    let repeated_var = 1;
+    let single_var = vec![
+        4,
+        5,
+        6,
+    ];
+    process(repeated_var, 1);
+    process(single_var, 0);
+    process(repeated_var, 8);
 }

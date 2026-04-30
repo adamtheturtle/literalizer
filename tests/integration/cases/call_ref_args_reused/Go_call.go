@@ -2,9 +2,13 @@ package main
 func process(args ...any) any { return nil }
 
 func main() {
-shared := 1
-other := 2
-process(shared, 1);
-process(other, 0);
-process(shared, 8);
+repeated_var := 1
+single_var := []int{
+	4,
+	5,
+	6,
+}
+process(repeated_var, 1);
+process(single_var, 0);
+process(repeated_var, 8);
 }

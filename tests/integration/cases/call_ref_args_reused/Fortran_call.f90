@@ -18,13 +18,17 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: shared
-    type(fval_t) :: other
-    shared = fint(1_int64)
-    other = fint(2_int64)
-    call process(shared, fint(1_int64))
-    call process(other, fint(0_int64))
-    call process(shared, fint(8_int64))
+    type(fval_t) :: repeated_var
+    type(fval_t) :: single_var
+    repeated_var = fint(1_int64)
+    single_var = flist([fval_t :: &
+        fint(4_int64), &
+        fint(5_int64), &
+        fint(6_int64) &
+    ])
+    call process(repeated_var, fint(1_int64))
+    call process(single_var, fint(0_int64))
+    call process(repeated_var, fint(8_int64))
 contains
     subroutine process(data, count)
         implicit none

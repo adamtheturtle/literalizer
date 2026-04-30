@@ -1,6 +1,10 @@
 process() { :; }
-declare shared=1
-declare other=2
-process shared 1
-process other 0
-process shared 8
+declare repeated_var=1
+declare single_var=(
+    4
+    5
+    6
+)
+process repeated_var 1
+process single_var 0
+process repeated_var 8

@@ -1,6 +1,10 @@
 proc process {args} {}
-set shared 1
-set other 2
-process shared 1
-process other 0
-process shared 8
+set repeated_var 1
+set single_var [list \
+    4 \
+    5 \
+    6 \
+]
+process repeated_var 1
+process single_var 0
+process repeated_var 8
