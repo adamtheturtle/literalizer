@@ -462,7 +462,7 @@ def _build_purescript_call_stub_lines(
     fields = parts[1:-1]
 
     if is_wrapper_stub:
-        func_type = enum.auto()
+        func_type = "forall a. a -> Unit"
         func_body = "\\_ -> unit"
     else:
         n = len(params)

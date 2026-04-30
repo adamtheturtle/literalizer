@@ -257,7 +257,7 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 case [single]:
                     val_type = single
                 case _:
-                    val_type = enum.auto()
+                    val_type = "Any?"
             outer = (
                 dict_outer
                 if not isinstance(data, (ordereddict, OrderedDict))

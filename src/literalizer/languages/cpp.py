@@ -772,7 +772,7 @@ def _format_variable_declaration(
     """
     match _infer_value_kind(value=value):
         case ValueKind.STRING_LITERAL:
-            type_keyword = enum.auto()
+            type_keyword = "const auto*"
             extra = modifiers - {_CppModifiers.CONST}
         case ValueKind.TYPED_EXPRESSION:
             type_keyword = "auto"

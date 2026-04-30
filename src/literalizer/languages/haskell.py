@@ -92,7 +92,7 @@ def _build_haskell_call_stub_lines(
     """Return Haskell stub declarations for a call name."""
     if stub_return is StubReturn.VALUE:
         ret = f"IO {type_name}"
-        body = enum.auto()
+        body = "return undefined"
     else:
         ret = "IO ()"
         body = "return ()"
