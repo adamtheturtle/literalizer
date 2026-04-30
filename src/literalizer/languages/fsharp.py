@@ -55,6 +55,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -503,7 +504,7 @@ class FSharp(metaclass=LanguageCls):
     version_formats = VersionFormats
 
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
-    modifier_combinations = ()
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
