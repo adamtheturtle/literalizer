@@ -421,7 +421,7 @@ class Bash(metaclass=LanguageCls):
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return the validator that rejects collection call arguments."""
+        """Return the callable that rejects collection call arguments."""
         return _bash_validate_call_arg
 
     @staticmethod
