@@ -59,6 +59,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -213,7 +214,11 @@ def _dart_call_stub(
     # Named parameters can't start with '_' in Dart. When all names
     # start with '_' (e.g. transform stubs like ["_value"]), use required
     # positional syntax so callers can pass the value positionally.
-    if params and all(p.startswith("_") for p in params):
+    # An empty named-parameter block {} is invalid Dart, so use positional
+    # (empty) syntax when there are no parameters at all.
+    if not params:
+        param_list = ""
+    elif all(p.startswith("_") for p in params):
         param_list = ", ".join(f"dynamic {p}" for p in params)
     else:
         param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
@@ -277,6 +282,13 @@ class Dart(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    allows_bare_call_statement = True
+    allows_empty_call_parens = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -597,6 +609,7 @@ class Dart(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -817,6 +830,17 @@ class Dart(metaclass=LanguageCls):
         allow call-argument ``$ref`` values that would otherwise be rejected.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Format a ``$ref`` the caller authorized as consumable.
+
+        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
+        this to opt into a consuming form (e.g. C++ ``std::move``).
+        """
+        return self.format_call_arg_ref_identifier
 
     @cached_property
     def _date_tp(self) -> type:

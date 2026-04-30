@@ -264,15 +264,21 @@ jobs:
           find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
 
-  # Fixture languages linted by tools fetched via `npm install -g`.
+  # Fixture languages linted by npm tools.
   lint-npm-installed:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
-        run: npm install -g json5 tree-sitter-cli typescript tsx elm-format elm
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -337,6 +343,30 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_ada.py
           < /tmp/files-ada
 
+      # KRoC (the only maintained Occam-pi compiler, last updated 2020) cannot
+      # compile these fixtures for several fundamental reasons:
+      #
+      # 1. MOBILE DATA TYPE ... IS CASE is in the occam-pi specification but
+      #    absent from KRoC's occ21 parser.  occ21's rspecification() handles
+      #    MOBILE by calling rspecifier(), which has no S_DATA case; and the
+      #    DATA TYPE parse path in rspecification() is entirely separate and
+      #    never reaches the MOBILE branch.  The two paths do not intersect, so
+      #    the construct parses as "expected specifier, found DATA".
+      #
+      # 2. KRoC identifiers may only contain alphanumerics and dots.
+      #    Underscores (ASCII 95) are illegal in standard mode, so names like
+      #    my_data are rejected as "illegal character (ASCII 95)".
+      #
+      # 3. KRoC uses * as its escape character, not \.  String literals in the
+      #    fixtures use \" (standard C/Python convention) but KRoC requires *"
+      #    for a literal double-quote and ** for a literal asterisk.
+      #
+      # 4. Recursive MOBILE DATA TYPE (a MOBILE RECORD containing MOBILE []LIT
+      #    children) is not supported.  The RECURSIVE keyword in KRoC only
+      #    applies to CHAN TYPE declarations (channel bundles), not DATA TYPE.
+      #
+      # Because the fixture format itself is structurally incompatible with
+      # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
         run: |-
           find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam
@@ -1344,7 +1374,14 @@ jobs:
           < /tmp/files-to-lint
       - name: Run V files
         run: |
-          grep -z -v 'heterogeneous_strategy_error' /tmp/files-to-lint > /tmp/files-to-run || true
+          # ``call_ref_args_reused`` declares a scalar ``int`` ref so
+          # the rendered Rust still compiles when the ref is reused;
+          # V's ``format_call_ref_identifier`` always appends
+          # ``.clone()``, and ``int.clone()`` is rejected by V.
+          # Tracked in https://github.com/adamtheturtle/literalizer/issues/1823.
+          grep -z -v -e 'heterogeneous_strategy_error' \
+            -e 'call_ref_args_reused' /tmp/files-to-lint \
+            > /tmp/files-to-run || true
           xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
 
   lint-objectivec:

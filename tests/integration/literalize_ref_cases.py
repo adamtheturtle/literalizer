@@ -53,23 +53,25 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     ]
 
 
-def _collect_ref_names(data: object) -> list[str]:
-    """Recursively collect all ``$ref`` name values from parsed data."""
+def _collect_ref_names(data: object, *, ref_key: str) -> list[str]:
+    """Recursively collect all ref name values from parsed data."""
     match data:
         case dict():
             typed_data = cast("dict[object, object]", data)
-            if len(typed_data) == 1 and "$ref" in typed_data:
-                name = typed_data["$ref"]
+            if len(typed_data) == 1 and ref_key in typed_data:
+                name = typed_data[ref_key]
                 return [name] if isinstance(name, str) else []
             return [
                 n
                 for v in typed_data.values()
-                for n in _collect_ref_names(data=v)
+                for n in _collect_ref_names(data=v, ref_key=ref_key)
             ]
         case list():
             typed_list = cast("list[object]", data)
             return [
-                n for item in typed_list for n in _collect_ref_names(data=item)
+                n
+                for item in typed_list
+                for n in _collect_ref_names(data=item, ref_key=ref_key)
             ]
         case _:
             return []
@@ -132,18 +134,18 @@ def _strip_nix_stub_in_expr(stub_code: str) -> str:
     return stub_code
 
 
-def _find_first_occurrence(lines: list[str], lower_name: str) -> int | None:
+def _find_first_occurrence(lines: list[str], lower_name: str) -> int:
     """Return the index of the first line containing ``lower_name`` that
     is not immediately preceded by ``[``.
+
+    The caller guarantees ``lower_name`` appears in ``lines``.
     """
-    for i, line in enumerate(iterable=lines):
-        idx = line.lower().find(lower_name)
-        if idx == -1:
-            continue
-        if idx > 0 and line[idx - 1] == "[":
-            continue
-        return i
-    return None
+    return next(
+        i
+        for i, line in enumerate(iterable=lines)
+        if (pos := line.lower().find(lower_name)) != -1
+        and not (pos > 0 and line[pos - 1] == "[")
+    )
 
 
 def _find_assignment_line(
@@ -198,7 +200,7 @@ def _stub_needs_global_split(stub_code: str, stub_var: str) -> bool:
     )
 
 
-def inject_stubs_before_variable(
+def _inject_stubs_before_variable(
     code: str,
     variable_name: str,
     stub_entries: list[tuple[str, str]],
@@ -235,8 +237,6 @@ def inject_stubs_before_variable(
     lower_name = variable_name.lower()
 
     decl_idx = _find_first_occurrence(lines=lines, lower_name=lower_name)
-    if decl_idx is None:
-        return code
 
     indent = len(lines[decl_idx]) - len(lines[decl_idx].lstrip())
     prefix = " " * indent
@@ -309,6 +309,7 @@ def run_literalize_ref_golden_case(
             variable_form=wrap_variable_form(lang_cls=lang_cls),
             wrap_in_file=True,
             ref_case=ref_case,
+            ref_key=config.ref_key,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -327,7 +328,10 @@ def run_literalize_ref_golden_case(
             stream=yaml_string,
         )
         stub_entries: list[tuple[str, str]] = []
-        for raw_name in _collect_ref_names(data=raw_data):
+        for raw_name in _collect_ref_names(
+            data=raw_data,
+            ref_key=config.ref_key,
+        ):
             converted_name = ref_case.convert(name=raw_name)
             stub = literalizer.literalize(
                 source='{"_": "_"}',
@@ -340,7 +344,7 @@ def run_literalize_ref_golden_case(
             )
             stub_entries.append((converted_name, stub.declaration_code))
         variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
-        final_code = inject_stubs_before_variable(
+        final_code = _inject_stubs_before_variable(
             code=result.code,
             variable_name=variable_form_obj.name if variable_form_obj else "",
             stub_entries=stub_entries,

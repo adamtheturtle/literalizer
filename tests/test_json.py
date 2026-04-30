@@ -429,7 +429,7 @@ def test_nix_control_char_key_error_json() -> None:
 def test_dhall_backtick_label_unescaping_json() -> None:
     """Dhall backtick labels contain raw content, not escape sequences."""
     result = literalize(
-        source=json.dumps(obj={"$ref": "value"}),
+        source=json.dumps(obj={"$other": "value"}),
         input_format=InputFormat.JSON,
         language=Dhall(),
         pre_indent_level=0,
@@ -439,7 +439,7 @@ def test_dhall_backtick_label_unescaping_json() -> None:
     expected = textwrap.dedent(
         text="""\
         let my_data = {
-          `$ref` = "value",
+          `$other` = "value",
         } in my_data"""
     )
     assert result.code == expected

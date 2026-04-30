@@ -12,6 +12,6 @@ fn main() {
 		5,
 		6,
 	]
-	process(my_var.clone(), 42);
-	process(my_other.clone(), 7);
+	process(my_var, 42);
+	process(my_other, 7);
 }

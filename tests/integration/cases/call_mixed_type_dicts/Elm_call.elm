@@ -6,15 +6,15 @@ type Val
     | EStr String
     | EList (List Val)
     | EDict (List ( String, Val ))
-appMgrOp : a -> ()
-appMgrOp _ = ()
+appMgrRun : a -> ()
+appMgrRun _ = ()
 
 
 main : Program () () Never
 main =
     let
-        _ = appMgrOp(EDict [("type", EStr "create"), ("pr_id", EStr "pr_1"), ("draft", EBool True)])
-        _ = appMgrOp(EDict [("type", EStr "create"), ("pr_id", EStr "pr_2")])
+        _ = appMgrRun(EDict [("type", EStr "create"), ("pr_id", EStr "pr_1"), ("draft", EBool True)])
+        _ = appMgrRun(EDict [("type", EStr "create"), ("pr_id", EStr "pr_2")])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

@@ -57,6 +57,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -75,6 +76,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import NullInCollectionError
 
 
 @beartype
@@ -141,10 +143,25 @@ def _resolve_sequence_open(
             datetime_type=datetime_type,
         )
     if fmt.typed_opener_fallback is not None:
-        return typed_collection_open(
+        _typed_open = typed_collection_open(
             type_to_opener=openers.seq,
             fallback=fmt.typed_opener_fallback,
         )
+
+        def _null_guarded(items: list[Value]) -> str:
+            """Raise if any item is null, else delegate to the typed
+            opener.
+            """
+            if any(item is None for item in items):
+                msg = (
+                    "Scala's Array cannot contain null elements without an "
+                    f"explicit type annotation (got {len(items)} items, "
+                    "including null)."
+                )
+                raise NullInCollectionError(msg)
+            return _typed_open(items)
+
+        return _null_guarded
     return fmt.sequence_open
 
 
@@ -207,6 +224,13 @@ class Scala(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    allows_bare_call_statement = True
+    allows_empty_call_parens = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
+    supports_module_name = True
     module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(
@@ -521,6 +545,7 @@ class Scala(metaclass=LanguageCls):
     version_formats = VersionFormats
 
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -673,6 +698,17 @@ class Scala(metaclass=LanguageCls):
         allow call-argument ``$ref`` values that would otherwise be rejected.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Format a ``$ref`` the caller authorized as consumable.
+
+        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
+        this to opt into a consuming form (e.g. C++ ``std::move``).
+        """
+        return self.format_call_arg_ref_identifier
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 

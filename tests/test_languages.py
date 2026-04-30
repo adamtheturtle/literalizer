@@ -475,6 +475,7 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_call_target)
     assert callable(spec.format_call_ref_identifier)
     assert callable(spec.format_call_arg_ref_identifier)
+    assert callable(spec.format_call_arg_ref_identifier_consumable)
     assert callable(spec.format_variable_declaration)
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)
@@ -1000,26 +1001,25 @@ def test_literalize_call_arg_ref_per_element_false() -> None:
 
 
 def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
-    """A dict without the exact ``{"$ref": str}`` shape renders as a
-    normal dict literal (e.g. two-key dicts, or non-string ``$ref``
-    values).
+    """A dict without the exact ``{ref_key: str}`` shape renders as a
+    normal dict literal (e.g. two-key dicts, or non-string ref values).
     """
     two_key = literalize_call(
-        source='[[{"$ref": "x", "extra": 1}]]',
+        source='[[{"ref": "x", "extra": 1}]]',
         input_format=InputFormat.JSON,
         language=Python(),
         target_function="process",
         parameter_names=["data"],
     )
-    assert two_key.code == 'process(data={"$ref": "x", "extra": 1})'
+    assert two_key.code == 'process(data={"ref": "x", "extra": 1})'
     non_string_ref = literalize_call(
-        source='[[{"$ref": 42}]]',
+        source='[[{"ref": 42}]]',
         input_format=InputFormat.JSON,
         language=Python(),
         target_function="process",
         parameter_names=["data"],
     )
-    assert non_string_ref.code == 'process(data={"$ref": 42})'
+    assert non_string_ref.code == 'process(data={"ref": 42})'
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
@@ -1050,6 +1050,20 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
             target_function="process",
             parameter_names=["data", "count"],
             ref_case=IdentifierCase.CAMEL,
+        )
+
+
+def test_literalize_ref_case_unsupported_raises() -> None:
+    """``ref_case`` outside the language's ``identifier_cases`` raises."""
+    with pytest.raises(
+        expected_exception=UnsupportedIdentifierCaseError,
+        match=r"^Python does not support identifier case 'KEBAB'$",
+    ):
+        literalize(
+            source='{"$ref": "my_var"}',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            ref_case=IdentifierCase.KEBAB,
         )
 
 

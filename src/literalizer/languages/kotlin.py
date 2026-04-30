@@ -68,6 +68,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -427,6 +428,13 @@ class Kotlin(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    allows_bare_call_statement = True
+    allows_empty_call_parens = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -800,6 +808,7 @@ class Kotlin(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
@@ -955,6 +964,17 @@ class Kotlin(metaclass=LanguageCls):
         allow call-argument ``$ref`` values that would otherwise be rejected.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Format a ``$ref`` the caller authorized as consumable.
+
+        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
+        this to opt into a consuming form (e.g. C++ ``std::move``).
+        """
+        return self.format_call_arg_ref_identifier
 
     @cached_property
     def _date_type_name(self) -> str | None:

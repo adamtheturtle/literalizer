@@ -47,6 +47,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -212,6 +213,13 @@ class Ada(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
+    allows_bare_call_statement = False
+    allows_empty_call_parens = False
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
+    supports_module_name = True
 
     class DateFormats(enum.Enum):
         """Date format options for Ada."""
@@ -411,6 +419,7 @@ class Ada(metaclass=LanguageCls):
     version_formats = VersionFormats
 
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -461,21 +470,22 @@ class Ada(metaclass=LanguageCls):
                 f"procedure {self.module_name} is\n{indented}\n"
                 f"begin\n{self.indent}null;\nend {self.module_name};"
             )
-        decl_section = "\n".join(body_preamble)
-        decl_indented = (
-            textwrap.indent(text=decl_section, prefix=self.indent)
-            if decl_section
-            else ""
-        )
         calls_indented = textwrap.indent(text=content, prefix=self.indent)
-        parts = [
-            "with A_Stub; use A_Stub;",
-            f"procedure {self.module_name} is",
-        ]
-        if decl_indented:
-            parts.append(decl_indented)
-        parts.extend(["begin", calls_indented, f"end {self.module_name};"])
-        return "\n".join(parts)
+        decl_section = textwrap.indent(
+            text="\n".join(body_preamble), prefix=self.indent
+        )
+        return "\n".join(
+            part
+            for part in [
+                "with A_Stub; use A_Stub;",
+                f"procedure {self.module_name} is",
+                decl_section,
+                "begin",
+                calls_indented,
+                f"end {self.module_name};",
+            ]
+            if part
+        )
 
     def wrap_combined_in_file(
         self,
@@ -637,6 +647,17 @@ class Ada(metaclass=LanguageCls):
         allow call-argument ``$ref`` values that would otherwise be rejected.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Format a ``$ref`` the caller authorized as consumable.
+
+        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
+        this to opt into a consuming form (e.g. C++ ``std::move``).
+        """
+        return self.format_call_arg_ref_identifier
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

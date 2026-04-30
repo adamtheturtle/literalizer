@@ -31,7 +31,6 @@ from literalizer._formatters.format_entries import (
 )
 from literalizer._formatters.format_factories import (
     dict_format_factory,
-    sequence_format_factory,
     set_format_factory,
 )
 from literalizer._formatters.format_floats import (
@@ -56,6 +55,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     LanguageCls,
+    ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -64,6 +64,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
+    identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
     no_type_hint_preamble,
@@ -71,6 +72,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
+from literalizer.exceptions import NullInCollectionError
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
@@ -362,6 +364,40 @@ def _build_variant_preamble(
 
 
 @beartype
+def _mojo_list_open(items: list[Value]) -> str:
+    """Return ``[`` after checking for null elements.
+
+    Mojo cannot infer a list type from null-only elements.
+    """
+    if any(item is None for item in items):
+        msg = (
+            f"Mojo's list literal cannot contain null elements "
+            f"(got {len(items)} items, including null)."
+        )
+        raise NullInCollectionError(msg)
+    return "["
+
+
+def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
+    """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
+    return SequenceFormatConfig(
+        sequence_open=_mojo_list_open,
+        close="]",
+        supports_heterogeneity=False,
+        single_element_trailing_comma=False,
+        supports_trailing_comma=True,
+        empty_sequence=f"List[{default_type}]()",
+        preamble_lines=(),
+        format_entry=passthrough_sequence_entry,
+        typed_opener_fallback=None,
+        uses_typed_literal_for_scalars=False,
+        requires_uniform_record_shapes=False,
+        declared_type=None,
+        narrowed_empty_form=None,
+    )
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
@@ -384,6 +420,13 @@ class Mojo(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
+    has_free_function_calls = True
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    allows_bare_call_statement = True
+    allows_empty_call_parens = True
+    call_returns_expression = True
+    supports_inline_multiline_dict_args = True
+    supports_module_name = False
 
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
@@ -419,19 +462,7 @@ class Mojo(metaclass=LanguageCls):
     class SequenceFormats(enum.Enum):
         """Sequence type options for Mojo."""
 
-        LIST = enum.member(
-            value=sequence_format_factory(
-                open_template="[",
-                close="]",
-                supports_heterogeneity=False,
-                single_element_trailing_comma=False,
-                supports_trailing_comma=True,
-                empty_template="List[{type}]()",
-                preamble_lines=(),
-                format_entry=passthrough_sequence_entry,
-                typed_opener_fallback_template=None,
-            )
-        )
+        LIST = enum.member(value=_mojo_list_format)
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
@@ -646,6 +677,7 @@ class Mojo(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
@@ -831,11 +863,27 @@ class Mojo(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
+        """Emit a call-argument ``$ref`` as the bare identifier.
 
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
+        The Mojo transfer operator ``^`` consumes the variable, which
+        is unsafe when the caller may use it again in a later call (or
+        after the ``literalize_call`` block).  Callers opt in to
+        transferring a specific ref by listing it in
+        ``literalize_call``'s ``consumable_refs`` set; in that case
+        :attr:`format_call_arg_ref_identifier_consumable` is used
+        instead and appends ``^``.
+        """
+        return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str], str]:
+        """Append ``^`` to a consumable call-argument ``$ref``.
+
+        Used only for refs the caller declared as consumable on
+        :func:`~literalizer.literalize_call` and that appear in just
+        one call argument, so the transfer cannot strand a later use.
         """
         return self.format_call_ref_identifier
 

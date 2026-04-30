@@ -1274,6 +1274,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="triple_sequence", suffix="_triple"),
         _ci(case_dir_name="simple_sequence", suffix="_varname"),
         _ci(case_dir_name="float_list", suffix="_float"),
+        _ci(case_dir_name="null_list", suffix="_null"),
+        _ci(case_dir_name="binary_list", suffix="_binary"),
     ),
     "set": (
         _ci(case_dir_name="set"),

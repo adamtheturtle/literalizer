@@ -479,12 +479,16 @@ ignore_names = [
     "UNORDERED_MAP",
     "VERBATIM",
     "ZONED",
+    # Used by downstream consumers
+    "supports_module_name",
     # Used in documentation code examples
     "custom",
     "result",
     # ruamel.yaml configuration attributes
     "default_flow_style",
     "sort_base_mapping_type_on_output",
+    # Used by _lang_satisfies_config_constraints once issue #1828 is resolved
+    "reserved_identifiers",
 ]
 # Duplicate some of .gitignore
 exclude = [
