@@ -13,5 +13,5 @@ const ZKV = struct { key: []const u8, val: ZVal };
 fn process(data: ZVal) void { _ = data; }
 pub fn main() void {
     const my_var: ZVal = .{ .int = 42 };
-    process(.{ .arr = &.{.{ .map = &.{.{ .key = "ref", .val = .{ .str = "myVar" } }}}, .{ .int = 42 }, .{ .str = "static" }}});
+    process(.{ .arr = &.{my_var, .{ .int = 42 }, .{ .str = "static" }}});
 }

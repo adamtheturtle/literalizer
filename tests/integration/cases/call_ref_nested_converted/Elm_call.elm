@@ -5,7 +5,6 @@ type Val
     = EInt Int
     | EStr String
     | EList (List Val)
-    | EDict (List ( String, Val ))
 process : a -> ()
 process _ = ()
 
@@ -15,7 +14,7 @@ main =
     let
         myVar : Val
         myVar = EInt 42
-        _ = process(EList [EDict [("ref", EStr "myVar")], EInt 42, EStr "static"])
+        _ = process(EList [myVar, EInt 42, EStr "static"])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

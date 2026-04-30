@@ -12,5 +12,5 @@ process = \_ -> {}
 my_var : Val
 my_var = RInt 42i128
 main =
-    dbg (process (RDict [("key", RDict [("ref", RStr "my_var")]), ("count", RInt 42i128)]))
+    dbg (process (RDict [("key", my_var), ("count", RInt 42i128)]))
     {}

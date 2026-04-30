@@ -20,7 +20,7 @@ program main
     implicit none
     type(fval_t) :: my_var
     my_var = fint(42_int64)
-    call process(flist([fval_t :: fmap([fval_t :: fentry('ref', fstr('myVar'))]), fint(42_int64), fstr('static')]))
+    call process(flist([fval_t :: my_var, fint(42_int64), fstr('static')]))
 contains
     subroutine process(data)
         implicit none

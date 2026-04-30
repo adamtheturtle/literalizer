@@ -6,7 +6,7 @@ Module Check
     Sub _calls()
         Dim my_var = 42
         Dim my_other = 7
-        process(New Object() {New Dictionary(Of String, Object) From {{"ref", "my_var"}}, 42, "static"})
-        process(New Object() {New Dictionary(Of String, Object) From {{"ref", "my_other"}}, 7, "label"})
+        process(New Object() {my_var, 42, "static"})
+        process(New Object() {my_other, 7, "label"})
     End Sub
 End Module

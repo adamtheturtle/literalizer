@@ -3,4 +3,4 @@
 process(_) -> ok.
 x() ->
     My_var = 42,
-    process([#{"ref" => "myVar"}, 42, "static"]).
+    process([My_var, 42, "static"]).

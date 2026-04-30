@@ -1,5 +1,0 @@
-(defun process (&rest args) (declare (ignore args)) nil)
-(defparameter *my_var* 42)
-(defparameter *my_other* 7)
-(process :data (list (list (cons "ref" "my_var")) 42 "static"))
-(process :data (list (list (cons "ref" "my_other")) 7 "label"))

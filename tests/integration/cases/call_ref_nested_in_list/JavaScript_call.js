@@ -1,5 +1,5 @@
 function process() {}
 const my_var = 42;
 const my_other = 7;
-process({ data: [{"ref": "my_var"}, 42, "static"] });
-process({ data: [{"ref": "my_other"}, 7, "label"] });
+process({ data: [my_var, 42, "static"] });
+process({ data: [my_other, 7, "label"] });

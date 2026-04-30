@@ -22,8 +22,8 @@ program main
     type(fval_t) :: my_other
     my_var = fint(42_int64)
     my_other = fint(7_int64)
-    call process(flist([fval_t :: fmap([fval_t :: fentry('ref', fstr('my_var'))]), fint(42_int64), fstr('static')]))
-    call process(flist([fval_t :: fmap([fval_t :: fentry('ref', fstr('my_other'))]), fint(7_int64), fstr('label')]))
+    call process(flist([fval_t :: my_var, fint(42_int64), fstr('static')]))
+    call process(flist([fval_t :: my_other, fint(7_int64), fstr('label')]))
 contains
     subroutine process(data)
         implicit none

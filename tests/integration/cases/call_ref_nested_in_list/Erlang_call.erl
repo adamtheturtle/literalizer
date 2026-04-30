@@ -4,5 +4,5 @@ process(_) -> ok.
 x() ->
     My_var = 42,
     My_other = 7,
-    process([#{"ref" => "my_var"}, 42, "static"]),
-    process([#{"ref" => "my_other"}, 7, "label"]).
+    process([My_var, 42, "static"]),
+    process([My_other, 7, "label"]).

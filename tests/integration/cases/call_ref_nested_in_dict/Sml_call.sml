@@ -5,4 +5,4 @@ datatype val_t =
   | SMap of (string * val_t) list
 fun process _ = ()
 val my_var : val_t = SInt 42
-val _ = process(SMap [("key", SMap [("ref", SStr "my_var")]), ("count", SInt 42)])
+val _ = process(SMap [("key", my_var), ("count", SInt 42)])

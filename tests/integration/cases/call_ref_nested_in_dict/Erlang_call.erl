@@ -3,4 +3,4 @@
 process(_) -> ok.
 x() ->
     My_var = 42,
-    process(#{"key" => #{"ref" => "my_var"}, "count" => 42}).
+    process(#{"key" => My_var, "count" => 42}).

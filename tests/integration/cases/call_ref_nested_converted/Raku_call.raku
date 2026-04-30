@@ -1,3 +1,3 @@
 sub process(*@a, *%kw) {}
 my $my_var = 42;
-process([{'ref' => 'myVar'}, 42, 'static']);
+process([$my_var, 42, 'static']);
