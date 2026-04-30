@@ -147,8 +147,8 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
             for v in children
             if not (
                 isinstance(v, dict)
-                and list(v.keys()) == ["$ref"]
-                and isinstance(v.get("$ref"), str)
+                and len(v) == 1
+                and isinstance(next(iter(v.values())), str)
             )
         ]
         python_types = {type(v) for v in non_ref_children if v is not None}
@@ -727,9 +727,9 @@ class V(metaclass=LanguageCls):
         """Append ``.clone()`` to the ref identifier.
 
         V maps cannot be copied by direct assignment; the caller must
-        explicitly clone the value.  ``$ref`` markers appear in value
-        position (e.g. the RHS of an assignment emitted by
-        :func:`~literalizer.literalize`), so ``.clone()`` is required.
+        explicitly clone the value.  ``$ref`` markers appear on the
+        right-hand side of an assignment emitted by
+        :func:`~literalizer.literalize`, so ``.clone()`` is required.
         """
 
         def _clone(name: str, /) -> str:
@@ -745,7 +745,7 @@ class V(metaclass=LanguageCls):
         When a ``$ref`` is passed as a function argument (directly or
         nested inside a container argument via
         :func:`~literalizer.literalize_call`), V does not require
-        ``.clone()``; the callee receives a reference automatically.
+        ``.clone()``; V passes the value automatically without copying.
         """
         return identity_call_ref_identifier
 
