@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -151,6 +152,7 @@ def _sv_call_stub(
     params: Sequence[str],
     stub_return: StubReturn,
     /,
+    indent: str,
 ) -> tuple[str, ...]:
     """Return SystemVerilog stub declarations for a call expression.
 
@@ -166,7 +168,7 @@ def _sv_call_stub(
             return (f"task {name}({param_str}); endtask",)
         return (
             f"function _VVal {name}({param_str});\n"
-            f"    {name} = {_SV_NULL};\n"
+            f"{indent}{name} = {_SV_NULL};\n"
             f"endfunction",
         )
 
@@ -175,12 +177,12 @@ def _sv_call_stub(
     fields = list(parts[1:-1])
 
     if stub_return is StubReturn.VOID:
-        method_decl = f"    task {method}({param_str}); endtask"
+        method_decl = f"{indent}task {method}({param_str}); endtask"
     else:
         method_decl = (
-            f"    function _VVal {method}({param_str});\n"
-            f"        {method} = {_SV_NULL};\n"
-            f"    endfunction"
+            f"{indent}function _VVal {method}({param_str});\n"
+            f"{indent}{indent}{method} = {_SV_NULL};\n"
+            f"{indent}endfunction"
         )
 
     if not fields:
@@ -198,13 +200,15 @@ def _sv_call_stub(
         curr_type = f"{fields[i].title()}Type_"
         lines.append(
             f"class {curr_type};\n"
-            f"    {prev_type} {fields[i + 1]} = new();\n"
+            f"{indent}{prev_type} {fields[i + 1]} = new();\n"
             f"endclass"
         )
         prev_type = curr_type
     root_type = f"{root.title()}Type_"
     lines.append(
-        f"class {root_type};\n    {prev_type} {fields[0]} = new();\nendclass"
+        f"class {root_type};\n"
+        f"{indent}{prev_type} {fields[0]} = new();\n"
+        f"endclass"
     )
     lines.append(f"{root_type} {root} = new();")
     return tuple(lines)
@@ -585,7 +589,8 @@ class SystemVerilog(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return _sv_call_stub
+        indent = self.indent
+        return functools.partial(_sv_call_stub, indent=indent)
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
