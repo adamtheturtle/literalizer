@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -35,7 +36,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -46,6 +46,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -140,6 +141,77 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
         return f"{name} = {value};"
     wrapped = _format_sv_entry(original=data, formatted=value)
     return f"{name} = {wrapped};"
+
+
+_SV_NULL = '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
+
+
+@beartype
+def _sv_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+    indent: str,
+) -> tuple[str, ...]:
+    """Return SystemVerilog stub declarations for a call expression.
+
+    VOID stubs emit a ``task``; VALUE stubs emit a ``function`` that
+    returns ``_VVal`` via the null literal.  Dotted names generate
+    nested class declarations with a module-level instance variable.
+    """
+    param_str = ", ".join(f"input _VVal {p}" for p in params)
+
+    if len(parts) == 1:
+        name = parts[0]
+        if stub_return is StubReturn.VOID:
+            return (f"task {name}({param_str}); endtask",)
+        return (
+            f"function _VVal {name}({param_str});\n"
+            f"{indent}{name} = {_SV_NULL};\n"
+            f"endfunction",
+        )
+
+    method = parts[-1]
+    root = parts[0]
+    fields = list(parts[1:-1])
+
+    if stub_return is StubReturn.VOID:
+        method_decl = f"{indent}task {method}({param_str}); endtask"
+    else:
+        method_decl = (
+            f"{indent}function _VVal {method}({param_str});\n"
+            f"{indent}{indent}{method} = {_SV_NULL};\n"
+            f"{indent}endfunction"
+        )
+
+    if not fields:
+        type_name = f"{root.title()}Type_"
+        return (
+            f"class {type_name};\n{method_decl}\nendclass",
+            f"{type_name} {root} = new();",
+        )
+
+    lines: list[str] = []
+    inner_type = f"{fields[-1].title()}Type_"
+    lines.append(f"class {inner_type};\n{method_decl}\nendclass")
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i].title()}Type_"
+        lines.append(
+            f"class {curr_type};\n"
+            f"{indent}{prev_type} {fields[i + 1]} = new();\n"
+            f"endclass"
+        )
+        prev_type = curr_type
+    root_type = f"{root.title()}Type_"
+    lines.append(
+        f"class {root_type};\n"
+        f"{indent}{prev_type} {fields[0]} = new();\n"
+        f"endclass"
+    )
+    lines.append(f"{root_type} {root} = new();")
+    return tuple(lines)
 
 
 @beartype
@@ -300,7 +372,7 @@ class SystemVerilog(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = "double"
+        DOUBLE = enum.auto()
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -335,12 +407,14 @@ class SystemVerilog(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 
     class CallStyles(enum.Enum):
         """SystemVerilog call style options."""
+
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -373,14 +447,24 @@ class SystemVerilog(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a SystemVerilog declaration in a module."""
-        del variable_name
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
-        )
+        """Wrap a SystemVerilog declaration in a module.
+
+        In call mode (``variable_name`` is empty), *body_preamble* holds
+        task/function stubs that go at module scope outside
+        ``initial begin``.  In declaration mode, *body_preamble* is
+        prepended inside ``initial begin`` as usual.
+        """
+        if variable_name:
+            content = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            stubs_block = ""
+        else:
+            stubs_block = "".join(f"{s}\n" for s in body_preamble)
         return (
             f"module {self.module_name};\n"
+            f"{stubs_block}"
             f"initial begin\n{content}\nend\nendmodule"
         )
 
@@ -421,6 +505,7 @@ class SystemVerilog(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    call_style: CallStyles = CallStyles.POSITIONAL
     indent: str = "    "
 
     null_literal: ClassVar[str] = (
@@ -440,23 +525,27 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = (
-        "typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;",
-        "typedef struct {",
-        "    _VTag tag;",
-        "    longint i;",
-        "    real r;",
-        "    string s;",
-        "} _VVal;",
-        "typedef struct {",
-        "    string k;",
-        "    _VVal v;",
-        "} _VKV;",
+        (
+            "typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;\n"
+            "typedef struct {\n"
+            "    _VTag tag;\n"
+            "    longint i;\n"
+            "    real r;\n"
+            "    string s;\n"
+            "} _VVal;\n"
+            "typedef struct {\n"
+            "    string k;\n"
+            "    _VVal v;\n"
+            "} _VKV;"
+        ),
     )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -500,7 +589,13 @@ class SystemVerilog(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        indent = self.indent
+        return functools.partial(_sv_call_stub, indent=indent)
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap each call argument in the ``_VVal`` struct literal."""
+        return _format_sv_entry
 
     @cached_property
     def format_call_preamble_stub(
@@ -522,6 +617,16 @@ class SystemVerilog(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
 
     scalar_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}

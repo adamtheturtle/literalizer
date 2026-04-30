@@ -50,6 +50,7 @@ from literalizer.languages import (
     JavaScript,
     Jsonnet,
     Matlab,
+    Nix,
     Python,
     Racket,
     Yaml,
@@ -459,6 +460,7 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_call_preamble_stub)
     assert callable(spec.format_call_target)
     assert callable(spec.format_call_ref_identifier)
+    assert callable(spec.format_call_arg_ref_identifier)
     assert callable(spec.format_variable_declaration)
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)
@@ -834,19 +836,19 @@ def test_literalize_call_language_without_calls_per_element_false() -> None:
 def test_literalize_call_tool_unsupported_language_raises() -> None:
     """Literalize_call raises CallsNotSupportedByToolError for a
     programming language whose calls literalizer has not yet
-    implemented (Cobol).
+    implemented (Nix).
     """
     with pytest.raises(
         expected_exception=CallsNotSupportedByToolError,
         match=(
             r"^literalizer does not support function call rendering "
-            r"for Cobol$"
+            r"for Nix$"
         ),
     ):
         literalize_call(
             source="[[1, 2]]",
             input_format=InputFormat.JSON,
-            language=COBOL,
+            language=Nix(),
             target_function="f",
             parameter_names=["a", "b"],
         )
@@ -860,13 +862,13 @@ def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
         expected_exception=CallsNotSupportedByToolError,
         match=(
             r"^literalizer does not support function call rendering "
-            r"for Cobol$"
+            r"for Nix$"
         ),
     ):
         literalize_call(
             source="[1, 2]",
             input_format=InputFormat.JSON,
-            language=COBOL,
+            language=Nix(),
             target_function="f",
             parameter_names=["data"],
             per_element=False,

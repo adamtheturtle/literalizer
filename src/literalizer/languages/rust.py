@@ -1152,7 +1152,7 @@ class Rust(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = "semicolon"
+        SEMICOLON = enum.auto()
 
     line_endings = LineEndings
 
@@ -1387,6 +1387,16 @@ class Rust(metaclass=LanguageCls):
         language's call expression syntax.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+
+        Delegates to :attr:`format_call_ref_identifier`.  Override this to
+        allow call-argument ``$ref`` values that would otherwise be rejected.
+        """
+        return self.format_call_ref_identifier
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 

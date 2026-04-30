@@ -4,6 +4,9 @@ Changelog
 Next
 ----
 
+2026.04.30
+----------
+
 - :func:`~literalizer.literalize_call` now expands ``{"$ref": "name"}``
   markers that appear nested inside list elements or dict values of an
   argument, in addition to the existing support for top-level argument

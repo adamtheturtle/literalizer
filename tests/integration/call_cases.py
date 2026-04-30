@@ -24,6 +24,7 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Ada,
+    Cobol,
     Dhall,
     Elm,
     Erlang,
@@ -41,6 +42,7 @@ from literalizer.languages import (
     Raku,
     Roc,
     Sml,
+    SystemVerilog,
     Wren,
 )
 
@@ -457,18 +459,21 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # target_function "app.mgr.op" has "op" as the innermost name; "op"
     # is a reserved word in SML and cannot be used as a fun or val
-    # identifier, so no valid stub can be produced.
-    "call_mixed_type_dicts": frozenset({Sml}),
+    # identifier, so no valid stub can be produced.  COBOL cannot pass
+    # multi-line DATA DIVISION entries inline in a CALL statement.
+    "call_mixed_type_dicts": frozenset({Cobol, Sml}),
     # Ada and Fortran do not allow function-call results to be silently
     # discarded: a function call cannot appear as a statement.  The
     # identity call_transform (lambda c: c) causes a VALUE stub but the
     # call is used as a bare statement, which both compilers reject.
-    "call_transform_no_wrapper": frozenset({Ada, Fortran}),
+    # SystemVerilog requires void'(...) to discard a function return value;
+    # a bare function call as a statement is non-standard.
+    "call_transform_no_wrapper": frozenset({Ada, Fortran, SystemVerilog}),
     # call_transform wraps output as "emit(inner)", which is invalid in
-    # Wren: Wren has no free-function call syntax, so a bare call like
-    # "name(value)" is a parse error at the top level.
-    "call_keyword_args": frozenset({Wren}),
-    "call_deep_dotted_transformed": frozenset({Wren}),
+    # Wren (no free-function call syntax) and COBOL (CALL statement
+    # produces no expression value that can be passed to another call).
+    "call_keyword_args": frozenset({Cobol, Wren}),
+    "call_deep_dotted_transformed": frozenset({Cobol, Wren}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object
     # stub whose syntax is invalid or unsupported in several languages.
@@ -479,6 +484,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     "call_dotted_transform_stub": frozenset(
         {
             Ada,
+            Cobol,
             Elm,
             Erlang,
             Fortran,
@@ -513,6 +519,7 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     ),
     "call_comments_dict_args": frozenset(
         {
+            Cobol,
             Dhall,
             Elm,
             Erlang,
