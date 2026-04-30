@@ -629,7 +629,13 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # COBOL CALL statement produces no expression value that can be passed
     # to another call, so emit(inner) is invalid.
     "call_keyword_args": frozenset({Cobol}),
-    "call_no_params_transform": frozenset({Cobol}),
+    "call_no_params_transform": frozenset({Cobol, Elm}),
+    # COBOL CALL "PROCESS" USING. is invalid with no arguments (USING
+    # requires at least one argument).  Dhall zero-arg stubs would need to
+    # be plain values rather than functions, which the stub generator does
+    # not support.  Elm zero-arg "functions" are values, not callable
+    # expressions.
+    "call_no_params": frozenset({Cobol, Dhall, Elm}),
     "call_deep_dotted_transformed": frozenset({Cobol}),
     # call_transform wraps output as "tracer.emit(inner)" — a dotted method
     # call — and transform_stub_names=["tracer.emit"] requires a struct/object

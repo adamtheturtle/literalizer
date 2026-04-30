@@ -2046,6 +2046,10 @@ def _format_call_args(
                 raise ParameterCountMismatchError(
                     expected=len(params), got=len(formatted)
                 )
+            if not formatted and not getattr(
+                language, "allows_empty_call_parens", True
+            ):
+                return ""
             inner = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
