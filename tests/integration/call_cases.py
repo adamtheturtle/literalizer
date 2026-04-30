@@ -41,7 +41,6 @@ from literalizer.languages import (
     PureScript,
     Raku,
     Roc,
-    Sml,
     Wren,
 )
 
@@ -489,10 +488,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # target_function "app.mgr.op" has "op" as the innermost name; "op"
-    # is a reserved word in SML and cannot be used as a fun or val
-    # identifier, so no valid stub can be produced.
-    "call_mixed_type_dicts": frozenset({Sml}),
     # call_transform wraps output as "emit(inner)", which is invalid in
     # Wren (no free-function call syntax).
     "call_keyword_args": frozenset({Wren}),
@@ -571,6 +566,9 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
+    innermost = config.target_function.split(sep=".")[-1]
+    if innermost in lang_cls.reserved_identifiers:
+        return False
     _probe = "__probe__"
     if (
         config.call_transform is not None
