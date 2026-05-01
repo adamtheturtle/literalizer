@@ -169,6 +169,7 @@ literalize
 literalized
 literalizer
 literalizer's
+literalizes
 localhost
 luac
 matlab
@@ -203,6 +204,7 @@ pyright
 pytest
 pytest's
 rakudo
+recomputation
 regen
 renderer
 repo

@@ -27,6 +27,18 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
     )
 ]
 
+_VARIABLE_NAME_UNSUPPORTED_REDEFINITION_LANGUAGES: list[LanguageCls] = [
+    cls
+    for cls in _SORTED_LANGUAGES
+    if (
+        not cls.supports_variable_names
+        and any(
+            style.value.supports_redefinition
+            for style in cls.DeclarationStyles
+        )
+    )
+]
+
 _OPTION_SUPPORT_ATTRS: tuple[tuple[str, str], ...] = (
     ("default_set_element_type", "supports_default_set_element_type"),
     (
@@ -221,3 +233,28 @@ def test_wrap_combined_in_file_unsupported_raises(
             variable_name="x",
             body_preamble=(),
         )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_VARIABLE_NAME_UNSUPPORTED_REDEFINITION_LANGUAGES,
+    ids=[
+        c.__name__ for c in _VARIABLE_NAME_UNSUPPORTED_REDEFINITION_LANGUAGES
+    ],
+)
+def test_wrap_combined_in_file_unreachable_when_variables_unsupported(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Check redefinition wrappers remain well-formed for direct
+    callers.
+    """
+    assert (
+        language_cls().wrap_combined_in_file(
+            declaration="x = 1",
+            assignment="x = 2",
+            variable_name="x",
+            body_preamble=(),
+        )
+        == "x = 1\nx = 2"
+    )

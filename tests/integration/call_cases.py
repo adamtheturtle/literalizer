@@ -769,6 +769,8 @@ def _lang_satisfies_call_shape_constraints(
         and not lang_cls.supports_inline_multiline_dict_args
     ):
         return False
+    if config.ref_declarations and not lang_cls.supports_variable_names:
+        return False
     if (
         case_uses_ref_inside_dict_literal(
             case_dir_name=config.case_dir_name,

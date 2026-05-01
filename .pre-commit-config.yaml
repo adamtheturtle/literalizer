@@ -81,6 +81,9 @@ repos:
         priority: 80
         stages: [pre-commit]
       - id: check-yaml
+        # Integration test fixtures include literalizer output that is not
+        # intended to be parsed as repository configuration.
+        exclude: ^tests/integration/cases/
         priority: 92
         stages: [pre-commit]
       - id: end-of-file-fixer

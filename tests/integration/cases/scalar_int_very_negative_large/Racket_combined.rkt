@@ -1,3 +1,0 @@
-#lang racket
-(define my_data -9223372036854775809)
-(set! my_data -9223372036854775809)

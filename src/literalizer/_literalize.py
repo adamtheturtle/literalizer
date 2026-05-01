@@ -2588,6 +2588,21 @@ def _render_call_whole(
 
 
 @beartype
+def _check_dotted_call_support(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Raise if the language cannot render a dotted call target."""
+    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
+        raise DottedCallsNotSupportedError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+        )
+
+
+@beartype
 def literalize_call(
     *,
     source: str,
@@ -2697,11 +2712,11 @@ def literalize_call(
             pass
 
     target_function_parts = tuple(target_function.split(sep="."))
-    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
-        raise DottedCallsNotSupportedError(
-            language_name=type(language).__name__,
-            target_function=target_function,
-        )
+    _check_dotted_call_support(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+    )
     if ref_case is not None and ref_case not in language.identifier_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,

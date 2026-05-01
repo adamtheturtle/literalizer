@@ -265,6 +265,8 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
         special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
             lang_name = lang_cls.__name__
+            if not lang_cls.supports_variable_names:
+                continue
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
                 lang_cls
             ):
