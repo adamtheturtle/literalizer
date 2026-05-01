@@ -232,9 +232,9 @@ References inside plain data structures
 is useful when you want to emit a data structure where some values are
 references to variables declared elsewhere rather than inline literals.
 
-Pass ``ref_case`` to :func:`~literalizer.literalize` to activate ref
-resolution; without it, ``{"$ref": ...}`` is treated as an ordinary
-literal dict, preserving backwards compatibility.
+By default, ref identifiers are emitted verbatim.  Pass ``ref_case`` to
+:func:`~literalizer.literalize` when the identifier should be converted
+before rendering.
 
 For example, suppose you have a configuration dict where ``timeout`` and
 ``host`` are already declared as named constants and you want to reference

@@ -41,8 +41,9 @@ Next
   now accept a ``ref_key`` parameter (``str``, default ``"$ref"``).  The
   marker key used to identify variable-reference mappings in the input data
   is now user-configurable: a single-key dict whose key equals *ref_key*
-  and whose value is a string is treated as a ref marker when *ref_case* is
-  set.
+  and whose value is a string is treated as a ref marker.  Pass
+  ``ref_case`` only when the identifier name should be converted before
+  rendering.
 - Every built-in language class now exposes a ``VersionFormats`` enum and a
   configurable ``language_version`` constructor parameter that selects which
   version of the target language the generated code is written for.  For
