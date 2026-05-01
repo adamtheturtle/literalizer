@@ -154,6 +154,7 @@ class Php(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True
+    supports_zero_parameter_calls = True
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
