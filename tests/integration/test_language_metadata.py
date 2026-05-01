@@ -2,6 +2,7 @@
 
 import dataclasses
 import enum
+from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
@@ -10,6 +11,11 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer._language import LanguageCls
 from literalizer.exceptions import (
+    UnsupportedDefaultDictKeyTypeError,
+    UnsupportedDefaultDictValueTypeError,
+    UnsupportedDefaultOrderedMapValueTypeError,
+    UnsupportedDefaultSequenceElementTypeError,
+    UnsupportedDefaultSetElementTypeError,
     UnsupportedLanguageOptionError,
     WrapCombinedInFileNotSupportedError,
 )
@@ -39,25 +45,63 @@ _VARIABLE_NAME_UNSUPPORTED_REDEFINITION_LANGUAGES: list[LanguageCls] = [
     )
 ]
 
-_OPTION_SUPPORT_ATTRS: tuple[tuple[str, str], ...] = (
-    ("default_set_element_type", "supports_default_set_element_type"),
-    (
-        "default_sequence_element_type",
-        "supports_default_sequence_element_type",
+
+@dataclasses.dataclass(frozen=True)
+class _DefaultTypeOptionCase:
+    """Constructor option metadata for default collection element
+    types.
+    """
+
+    option_name: str
+    is_supported: Callable[[LanguageCls], bool]
+    exception_type: type[UnsupportedLanguageOptionError]
+
+
+_DEFAULT_TYPE_OPTION_CASES: tuple[_DefaultTypeOptionCase, ...] = (
+    _DefaultTypeOptionCase(
+        option_name="default_set_element_type",
+        is_supported=lambda language_cls: (
+            language_cls.supports_default_set_element_type
+        ),
+        exception_type=UnsupportedDefaultSetElementTypeError,
     ),
-    ("default_dict_value_type", "supports_default_dict_value_type"),
-    ("default_dict_key_type", "supports_default_dict_key_type"),
-    (
-        "default_ordered_map_value_type",
-        "supports_default_ordered_map_value_type",
+    _DefaultTypeOptionCase(
+        option_name="default_sequence_element_type",
+        is_supported=lambda language_cls: (
+            language_cls.supports_default_sequence_element_type
+        ),
+        exception_type=UnsupportedDefaultSequenceElementTypeError,
+    ),
+    _DefaultTypeOptionCase(
+        option_name="default_dict_value_type",
+        is_supported=lambda language_cls: (
+            language_cls.supports_default_dict_value_type
+        ),
+        exception_type=UnsupportedDefaultDictValueTypeError,
+    ),
+    _DefaultTypeOptionCase(
+        option_name="default_dict_key_type",
+        is_supported=lambda language_cls: (
+            language_cls.supports_default_dict_key_type
+        ),
+        exception_type=UnsupportedDefaultDictKeyTypeError,
+    ),
+    _DefaultTypeOptionCase(
+        option_name="default_ordered_map_value_type",
+        is_supported=lambda language_cls: (
+            language_cls.supports_default_ordered_map_value_type
+        ),
+        exception_type=UnsupportedDefaultOrderedMapValueTypeError,
     ),
 )
 
-_UNSUPPORTED_LANGUAGE_OPTIONS: list[tuple[LanguageCls, str]] = [
-    (language_cls, option_name)
+_UNSUPPORTED_LANGUAGE_OPTIONS: list[
+    tuple[LanguageCls, _DefaultTypeOptionCase]
+] = [
+    (language_cls, option_case)
     for language_cls in _SORTED_LANGUAGES
-    for option_name, support_attr in _OPTION_SUPPORT_ATTRS
-    if not getattr(language_cls, support_attr)
+    for option_case in _DEFAULT_TYPE_OPTION_CASES
+    if not option_case.is_supported(language_cls)
 ]
 
 
@@ -119,56 +163,57 @@ def test_protocol_properties_accessible(
 
 
 @pytest.mark.parametrize(
-    argnames=("language_cls", "option_name"),
+    argnames=("language_cls", "option_case"),
     argvalues=[
-        (language_cls, option_name)
+        (language_cls, option_case)
         for language_cls in _SORTED_LANGUAGES
-        for option_name, _support_attr in _OPTION_SUPPORT_ATTRS
+        for option_case in _DEFAULT_TYPE_OPTION_CASES
     ],
     ids=[
-        f"{language_cls.__name__}-{option_name}"
+        f"{language_cls.__name__}-{option_case.option_name}"
         for language_cls in _SORTED_LANGUAGES
-        for option_name, _support_attr in _OPTION_SUPPORT_ATTRS
+        for option_case in _DEFAULT_TYPE_OPTION_CASES
     ],
 )
 def test_default_type_support_metadata_matches_constructor_fields(
     *,
     language_cls: LanguageCls,
-    option_name: str,
+    option_case: _DefaultTypeOptionCase,
 ) -> None:
     """Default-type support flags match dataclass constructor fields."""
-    support_attr = dict(_OPTION_SUPPORT_ATTRS)[option_name]
     field_names = {
         field.name
         for field in dataclasses.fields(
             class_or_instance=cast("Any", language_cls),
         )
     }
-    assert getattr(language_cls, support_attr) is (option_name in field_names)
+    assert option_case.is_supported(language_cls) is (
+        option_case.option_name in field_names
+    )
 
 
 @pytest.mark.parametrize(
-    argnames=("language_cls", "option_name"),
+    argnames=("language_cls", "option_case"),
     argvalues=_UNSUPPORTED_LANGUAGE_OPTIONS,
     ids=[
-        f"{language_cls.__name__}-{option_name}"
-        for language_cls, option_name in _UNSUPPORTED_LANGUAGE_OPTIONS
+        f"{language_cls.__name__}-{option_case.option_name}"
+        for language_cls, option_case in _UNSUPPORTED_LANGUAGE_OPTIONS
     ],
 )
 def test_unsupported_language_option_raises(
     *,
     language_cls: LanguageCls,
-    option_name: str,
+    option_case: _DefaultTypeOptionCase,
 ) -> None:
     """Unsupported default-type constructor options raise typed errors."""
     with pytest.raises(
-        expected_exception=UnsupportedLanguageOptionError,
+        expected_exception=option_case.exception_type,
         match=(
             rf"^{language_cls.__name__} does not support option "
-            rf"{option_name!r}$"
+            rf"{option_case.option_name!r}$"
         ),
     ):
-        language_cls(**{option_name: "String"})
+        language_cls(**{option_case.option_name: "String"})
 
 
 @pytest.mark.parametrize(

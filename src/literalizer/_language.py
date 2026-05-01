@@ -13,7 +13,13 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Value
-from literalizer.exceptions import UnsupportedLanguageOptionError
+from literalizer.exceptions import (
+    UnsupportedDefaultDictKeyTypeError,
+    UnsupportedDefaultDictValueTypeError,
+    UnsupportedDefaultOrderedMapValueTypeError,
+    UnsupportedDefaultSequenceElementTypeError,
+    UnsupportedDefaultSetElementTypeError,
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -563,29 +569,43 @@ class LanguageCls(type):
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
-        for option_name, support_attr in _OPTION_SUPPORT_ATTRS:
-            if option_name in kwargs and not getattr(cls, support_attr):
-                raise UnsupportedLanguageOptionError(
-                    language_name=cls.__name__,
-                    option_name=option_name,
-                )
+        if (
+            "default_set_element_type" in kwargs
+            and not cls.supports_default_set_element_type
+        ):
+            raise UnsupportedDefaultSetElementTypeError(
+                language_name=cls.__name__,
+            )
+        if (
+            "default_sequence_element_type" in kwargs
+            and not cls.supports_default_sequence_element_type
+        ):
+            raise UnsupportedDefaultSequenceElementTypeError(
+                language_name=cls.__name__,
+            )
+        if (
+            "default_dict_value_type" in kwargs
+            and not cls.supports_default_dict_value_type
+        ):
+            raise UnsupportedDefaultDictValueTypeError(
+                language_name=cls.__name__,
+            )
+        if (
+            "default_dict_key_type" in kwargs
+            and not cls.supports_default_dict_key_type
+        ):
+            raise UnsupportedDefaultDictKeyTypeError(
+                language_name=cls.__name__,
+            )
+        if (
+            "default_ordered_map_value_type" in kwargs
+            and not cls.supports_default_ordered_map_value_type
+        ):
+            raise UnsupportedDefaultOrderedMapValueTypeError(
+                language_name=cls.__name__,
+            )
         instance: Language = super().__call__(*args, **kwargs)
         return instance
-
-
-_OPTION_SUPPORT_ATTRS: tuple[tuple[str, str], ...] = (
-    ("default_set_element_type", "supports_default_set_element_type"),
-    (
-        "default_sequence_element_type",
-        "supports_default_sequence_element_type",
-    ),
-    ("default_dict_value_type", "supports_default_dict_value_type"),
-    ("default_dict_key_type", "supports_default_dict_key_type"),
-    (
-        "default_ordered_map_value_type",
-        "supports_default_ordered_map_value_type",
-    ),
-)
 
 
 @runtime_checkable

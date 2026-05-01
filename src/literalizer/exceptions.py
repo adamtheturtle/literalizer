@@ -204,6 +204,75 @@ class UnsupportedLanguageOptionError(Exception):
         self.option_name = option_name
 
 
+class UnsupportedDefaultSetElementTypeError(UnsupportedLanguageOptionError):
+    """Raised when ``default_set_element_type`` is passed to a language
+    that does not expose that constructor option.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedDefaultSetElementTypeError``."""
+        super().__init__(
+            language_name=language_name,
+            option_name="default_set_element_type",
+        )
+
+
+class UnsupportedDefaultSequenceElementTypeError(
+    UnsupportedLanguageOptionError,
+):
+    """Raised when ``default_sequence_element_type`` is passed to a
+    language that does not expose that constructor option.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedDefaultSequenceElementTypeError``."""
+        super().__init__(
+            language_name=language_name,
+            option_name="default_sequence_element_type",
+        )
+
+
+class UnsupportedDefaultDictValueTypeError(UnsupportedLanguageOptionError):
+    """Raised when ``default_dict_value_type`` is passed to a language
+    that does not expose that constructor option.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedDefaultDictValueTypeError``."""
+        super().__init__(
+            language_name=language_name,
+            option_name="default_dict_value_type",
+        )
+
+
+class UnsupportedDefaultDictKeyTypeError(UnsupportedLanguageOptionError):
+    """Raised when ``default_dict_key_type`` is passed to a language that
+    does not expose that constructor option.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedDefaultDictKeyTypeError``."""
+        super().__init__(
+            language_name=language_name,
+            option_name="default_dict_key_type",
+        )
+
+
+class UnsupportedDefaultOrderedMapValueTypeError(
+    UnsupportedLanguageOptionError,
+):
+    """Raised when ``default_ordered_map_value_type`` is passed to a
+    language that does not expose that constructor option.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``UnsupportedDefaultOrderedMapValueTypeError``."""
+        super().__init__(
+            language_name=language_name,
+            option_name="default_ordered_map_value_type",
+        )
+
+
 class VariableNamesNotSupportedError(Exception):
     """Raised when variable wrapping is requested for a language that
     cannot represent named variables.
