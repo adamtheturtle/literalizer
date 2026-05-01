@@ -734,21 +734,26 @@ def _lang_satisfies_config_constraints(
     ):
         return False
     if (
-        config.requires_inline_multiline_dict_args
-        and not lang_cls.supports_inline_multiline_dict_args
-    ):
-        return False
-    if (
-        case_uses_ref_inside_dict_literal(
-            case_dir_name=config.case_dir_name,
-            ref_key="$ref",
+        (
+            len(config.parameter_names) == 0
+            and not lang_cls.supports_zero_parameter_calls
         )
-        and not lang_cls.supports_call_refs_in_dict_literals
-    ):
-        return False
-    if (
-        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
-        and not lang_cls.supports_standalone_comments_in_wrapped_calls
+        or (
+            config.requires_inline_multiline_dict_args
+            and not lang_cls.supports_inline_multiline_dict_args
+        )
+        or (
+            case_uses_ref_inside_dict_literal(
+                case_dir_name=config.case_dir_name,
+                ref_key="$ref",
+            )
+            and not lang_cls.supports_call_refs_in_dict_literals
+        )
+        or (
+            config.case_dir_name
+            in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
+            and not lang_cls.supports_standalone_comments_in_wrapped_calls
+        )
     ):
         return False
     return not (

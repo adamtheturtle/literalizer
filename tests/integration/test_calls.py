@@ -11,7 +11,11 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from .call_cases import CallCase, discover_call_cases, run_call_golden_case
+from .call_cases import (
+    CallCase,
+    discover_call_cases,
+    run_call_golden_case,
+)
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .language_specs import make_spec
 
