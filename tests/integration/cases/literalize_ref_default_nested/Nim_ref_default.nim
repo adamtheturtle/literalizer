@@ -1,12 +1,7 @@
-* item_var
-@code json
-{
+import json
+var item_var = %* {
     "_": "_"
 }
-@end
-* my_data
-@code json
-{
+var my_data = %* {
     "items": [item_var, {"fallback": "value"}]
 }
-@end

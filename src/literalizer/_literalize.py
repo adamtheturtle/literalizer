@@ -54,6 +54,8 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
 )
 
+_DISABLED_REF_KEY = "\0literalizer_ref_disabled"
+
 
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
@@ -441,12 +443,22 @@ def _format_dict_value(
     joined = spec.element_separator.join(pairs)
     if open_override is not None:
         opener = open_override
+    elif ref_key == _DISABLED_REF_KEY:
+        opener = dict_cfg.dict_open(dict_items)
     else:
-        open_items = {
-            k: v
-            for k, v in dict_items.items()
-            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-        }
+        open_items = dict_items
+        if any(
+            isinstance(v, dict)
+            and _extract_call_arg_ref_name(value=v, ref_key=ref_key)
+            is not None
+            for v in dict_items.values()
+        ):
+            open_items = {
+                k: v
+                for k, v in dict_items.items()
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            }
         opener = dict_cfg.dict_open(open_items or dict_items)
     return opener + joined + dict_cfg.close
 
@@ -941,11 +953,14 @@ def _format_list_value(
         joined += spec.element_separator.strip()
     if sequence_open_override is not None:
         opener = sequence_open_override
+    elif ref_key == _DISABLED_REF_KEY:
+        opener = spec.sequence_open(value)
     else:
         open_value = [
             v
             for v in value
-            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            if not isinstance(v, dict)
+            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
         ]
         opener = spec.sequence_open(open_value or value)
     return f"{opener}{joined}{sequence_cfg.close}"
@@ -992,15 +1007,16 @@ def _format_value(
     When *ref_case* is set the identifier name is converted to that case
     first.
     """
-    ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-    if ref_name is not None:
-        if ref_case is not None:
-            ref_name = ref_case.convert(name=ref_name)
-        return (
-            spec.format_call_arg_ref_identifier(ref_name)
-            if expand_refs
-            else spec.format_call_ref_identifier(ref_name)
-        )
+    if ref_key != _DISABLED_REF_KEY and isinstance(value, dict):
+        ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+        if ref_name is not None:
+            if ref_case is not None:
+                ref_name = ref_case.convert(name=ref_name)
+            return (
+                spec.format_call_arg_ref_identifier(ref_name)
+                if expand_refs
+                else spec.format_call_ref_identifier(ref_name)
+            )
     if (
         collection_layout is CollectionLayout.MULTILINE
         and isinstance(value, (dict, list, set, ordereddict))
@@ -1119,29 +1135,38 @@ def _collection_open_for_multiline_value(
     del expand_refs
     if isinstance(data, dict):
         if is_ordered_map:
-            return spec.ordered_map_format_config.ordered_map_open(data)
-        if dict_open_override is not None:
-            return dict_open_override
-        dict_open_items = {
-            k: v
-            for k, v in data.items()
-            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-        }
-        return spec.dict_format_config.dict_open(dict_open_items or data)
-    if isinstance(data, set):
+            opener = spec.ordered_map_format_config.ordered_map_open(data)
+        elif dict_open_override is not None:
+            opener = dict_open_override
+        elif ref_key == _DISABLED_REF_KEY:
+            opener = spec.dict_format_config.dict_open(data)
+        else:
+            dict_open_items = {
+                k: v
+                for k, v in data.items()
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            }
+            opener = spec.dict_format_config.dict_open(dict_open_items or data)
+    elif isinstance(data, set):
         sorted_set: list[Value] = sorted(
             data,
             key=lambda v: (type(v).__name__, repr(v)),
         )
-        return spec.set_format_config.set_open(sorted_set)
-    if sequence_open_override is not None:
-        return sequence_open_override
-    sequence_open_items = [
-        v
-        for v in data
-        if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-    ]
-    return spec.sequence_open(sequence_open_items or data)
+        opener = spec.set_format_config.set_open(sorted_set)
+    elif sequence_open_override is not None:
+        opener = sequence_open_override
+    elif ref_key == _DISABLED_REF_KEY:
+        opener = spec.sequence_open(data)
+    else:
+        sequence_open_items = [
+            v
+            for v in data
+            if not isinstance(v, dict)
+            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+        ]
+        opener = spec.sequence_open(sequence_open_items or data)
+    return opener
 
 
 @beartype
@@ -1451,12 +1476,13 @@ def _literalize(
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
-    ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
-    if ref_name is not None:
-        if ref_case is not None:
-            ref_name = ref_case.convert(name=ref_name)
-        identifier = language.format_call_ref_identifier(ref_name)
-        return f"{line_prefix}{identifier}"
+    if ref_key != _DISABLED_REF_KEY and isinstance(data, dict):
+        ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
+        if ref_name is not None:
+            if ref_case is not None:
+                ref_name = ref_case.convert(name=ref_name)
+            identifier = language.format_call_ref_identifier(ref_name)
+            return f"{line_prefix}{identifier}"
 
     check_data(data=data, spec=language)
 
@@ -1631,6 +1657,15 @@ def _literalize_pre_form(
     line_prefix = language.indent * pre_indent_level
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
+    active_ref_key = (
+        ref_key
+        if ref_key in source
+        or (
+            "\\" in source
+            and _contains_ref_marker(value=data, ref_key=ref_key)
+        )
+        else _DISABLED_REF_KEY
+    )
 
     language.validate_spec_for_data(data=data)
 
@@ -1640,7 +1675,7 @@ def _literalize_pre_form(
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
-        ref_key=ref_key,
+        ref_key=active_ref_key,
         collection_layout=collection_layout,
     )
 
@@ -1976,7 +2011,6 @@ def _identity_call_statement(statement: str) -> str:
     return statement
 
 
-@beartype
 def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     """Return the identifier name for a ``{ref_key: "name"}`` marker.
 
@@ -1984,12 +2018,35 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     In :func:`literalize_call` such markers render as the bare
     identifier instead of being formatted as a literal value.
     """
-    if not isinstance(value, dict) or len(value) != 1:
+    if (
+        ref_key == _DISABLED_REF_KEY
+        or not isinstance(value, dict)
+        or len(value) != 1
+    ):
         return None
     ref_value = value.get(ref_key)
     if not isinstance(ref_value, str):
         return None
     return ref_value
+
+
+def _contains_ref_marker(*, value: Value, ref_key: str) -> bool:
+    """Return whether *value* contains a ``{ref_key: "name"}`` marker."""
+    if _extract_call_arg_ref_name(value=value, ref_key=ref_key) is not None:
+        return True
+    match value:
+        case dict():
+            return any(
+                _contains_ref_marker(value=v, ref_key=ref_key)
+                for v in value.values()
+            )
+        case list():
+            return any(
+                _contains_ref_marker(value=item, ref_key=ref_key)
+                for item in value
+            )
+        case _:
+            return False
 
 
 @beartype

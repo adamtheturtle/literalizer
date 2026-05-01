@@ -11,14 +11,10 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const my_var: ZVal = .{ .map = &.{
-        .{ .key = "_", .val = .{ .str = "_" } },
-    }};
     const item_var: ZVal = .{ .map = &.{
         .{ .key = "_", .val = .{ .str = "_" } },
     }};
     const my_data: ZVal = .{ .map = &.{
-        .{ .key = "key", .val = my_var },
         .{ .key = "items", .val = .{ .arr = &.{item_var, .{ .map = &.{.{ .key = "fallback", .val = .{ .str = "value" } }}}}} },
     }};
     _ = my_data;

@@ -15,14 +15,10 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal my_var = ((CVal){.m = (CKV[]){
-    {"_", ((CVal){.s = "_"})},
-}});
 CVal item_var = ((CVal){.m = (CKV[]){
     {"_", ((CVal){.s = "_"})},
 }});
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"key", my_var},
     {"items", ((CVal){.a = (CVal[]){item_var, ((CVal){.m = (CKV[]){{"fallback", ((CVal){.s = "value"})}}})}})},
 }});
     (void)my_data;
