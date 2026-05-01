@@ -5,7 +5,6 @@ import datetime
 import enum
 import json
 import re
-from functools import cached_property
 from typing import ClassVar
 
 import pytest
@@ -21,12 +20,9 @@ from literalizer import (
     literalize_call,
 )
 from literalizer._language import (
-    NO_HETEROGENEOUS_BEHAVIOR,
-    HeterogeneousBehavior,
     LanguageCls,
     StubReturn,
 )
-from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
@@ -77,12 +73,30 @@ FORTRAN = Fortran(
 FSHARP = FSharp(module_name="check")
 
 
-def test_no_heterogeneous_behavior_leaves_scalars_unwrapped() -> None:
-    """Shared no-op heterogeneous behavior returns unchanged scalars."""
-    assert NO_HETEROGENEOUS_BEHAVIOR.compute_wrap_ids("data") == frozenset()
-    assert NO_HETEROGENEOUS_BEHAVIOR.wrap_scalar("raw", "formatted") == (
-        "formatted"
+def test_literalize_leaves_python_heterogeneous_scalars_unwrapped() -> None:
+    """Python literalize renders heterogeneous scalar data directly."""
+    result = literalize(
+        source='{"a": 1, "b": "x"}',
+        input_format=InputFormat.JSON,
+        language=Python(),
     )
+
+    assert result.code == '{\n    "a": 1,\n    "b": "x",\n}'
+
+
+def test_literalize_call_keeps_python_heterogeneous_scalars() -> None:
+    """Python literalize_call renders heterogeneous scalar arguments
+    directly.
+    """
+    result = literalize_call(
+        source='[{"a": 1, "b": "x"}]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="send",
+        parameter_names=("value",),
+    )
+
+    assert result.code == 'send(value={"a": 1, "b": "x"})'
 
 
 def test_forth_call_transform_appends_postfix_wrapper() -> None:
@@ -334,56 +348,6 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
 
     assert "<String, int>" in result.code
     assert "<String, dynamic>" in result.code
-
-
-def _flag_top_dict(data: Value) -> frozenset[int]:
-    """Return a set containing *data*'s id.
-
-    The test input is always a top-level dict, so flagging it
-    guarantees :func:`~literalizer._literalize._maybe_wrap_child`
-    dispatches to the language's ``wrap_scalar``.
-    """
-    return frozenset({id(data)})
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _IdentityWrapPython(Python):
-    """Python subclass whose :attr:`heterogeneous_behavior` flags
-    every dict but reuses
-    :data:`~literalizer._language.NO_HETEROGENEOUS_BEHAVIOR`'s
-    identity ``wrap_scalar``.
-
-    Used to exercise the identity ``wrap_scalar`` path through a real
-    ``literalize`` call — a scenario no production language triggers.
-    """
-
-    @cached_property
-    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return an identity-wrap behavior that flags every dict."""
-        return dataclasses.replace(
-            NO_HETEROGENEOUS_BEHAVIOR,
-            compute_wrap_ids=_flag_top_dict,
-        )
-
-
-def test_identity_wrap_scalar_leaves_formatted_output_unchanged() -> None:
-    """A language that flags containers but keeps
-    :data:`~literalizer._language.NO_HETEROGENEOUS_BEHAVIOR`'s
-    identity ``wrap_scalar`` produces output identical to the same
-    language without any wrapping.
-    """
-    source = '{"a": 1, "b": "x"}'
-    base = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Python(),
-    )
-    wrapped = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=_IdentityWrapPython(),
-    )
-    assert wrapped.code == base.code
 
 
 def test_matlab_dict_key_with_quote() -> None:
