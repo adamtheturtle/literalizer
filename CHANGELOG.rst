@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- Add :func:`~literalizer.compose` for combining multiple
+  :class:`~literalizer.LiteralizeResult` values into one result.  It
+  concatenates declarations, merges preamble and body-preamble entries
+  in first-seen order, preserves pre-declaration comments, and can wrap
+  the merged output as a complete file.
+
 2026.05.01.1
 ------------
 

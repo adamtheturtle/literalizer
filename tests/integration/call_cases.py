@@ -8,7 +8,7 @@ driven through :func:`literalizer.literalize_call`.  The runner
 
 import dataclasses
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from pathlib import Path
 from typing import cast
 
@@ -27,62 +27,6 @@ from literalizer.exceptions import (
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
-
-
-@beartype
-def _prepend_preamble(
-    wrapped: str,
-    preamble: tuple[str, ...],
-) -> str:
-    """Prepend *preamble* lines before *wrapped*."""
-    if not preamble:
-        return wrapped
-    return "\n".join(preamble) + "\n" + wrapped
-
-
-@beartype
-def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
-    """Return preamble *blocks* with duplicates merged.
-
-    Some languages emit multi-line preamble blocks whose first line is a
-    stable header (for example, ``pub type GVal {`` in Gleam). When the
-    call-test harness combines declaration preambles with call
-    preambles, the same header can appear multiple times with different
-    bodies. Blocks sharing the same header *and* footer are merged: the
-    first block's middle lines are kept as-is, and any additional middle
-    lines from subsequent blocks that are not yet present are appended.
-    Blocks that share only the header but differ in their footer (e.g.
-    two distinct type definitions sharing a common attribute decorator)
-    are kept as separate blocks.
-    """
-    key_to_middle: dict[tuple[str, str], list[str]] = {}
-    order: list[tuple[str, str]] = []
-    for block in blocks:
-        lines = block.splitlines()
-        if not lines:  # pragma: no cover
-            continue
-        header = lines[0]
-        footer = lines[-1] if len(lines) > 1 else ""
-        key = (header, footer)
-        middle = lines[1:-1]
-        if key not in key_to_middle:
-            key_to_middle[key] = list(middle)
-            order.append(key)
-        else:
-            existing = set(key_to_middle[key])
-            for line in middle:
-                if line not in existing:
-                    key_to_middle[key].append(line)
-                    existing.add(line)
-    result: list[str] = []
-    for key in order:
-        header, footer = key
-        middle = key_to_middle[key]
-        parts: list[str] = [header, *middle]
-        if footer and footer != header:
-            parts.append(footer)
-        result.append("\n".join(parts))
-    return tuple(result)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -425,11 +369,8 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         per_element=True,
         call_style_type=None,
         # ``single_var`` is declared first so its preamble (which sees
-        # both ``int`` and ``list``) wins ``_dedupe_preamble_blocks``
-        # against the ``int``-only preamble emitted for
-        # ``repeated_var``.  Without this ordering, languages that emit
-        # a header-keyed type union (e.g. Gleam's ``pub type GVal``)
-        # end up missing the ``GList`` constructor.
+        # both ``int`` and ``list``) wins ordered composition against the
+        # ``int``-only preamble emitted for ``repeated_var``.
         ref_declarations={
             "single_var": "[4, 5, 6]",
             "repeated_var": "1",
@@ -982,38 +923,35 @@ def run_call_golden_case(
                 StubReturn.VOID,
             ),
         )
-    decl_preambles = tuple(line for d in decl_results for line in d.preamble)
-    # Recompute the body preamble across the union of types observed in
-    # every declaration *and* the call.  Concatenating each piece's
-    # already-rendered body preamble would emit overlapping
-    # type-definition strings (e.g. Haskell's ``data Val = ...`` with
-    # different constructor sets) that no string-level duplicate
-    # filter can reconcile.  Combine ``source_data`` from every piece
-    # so ``compute_body_preamble`` can inspect actual values when it
-    # needs to (e.g. Haskell's datetime microsecond-precision check).
-    empty_types: frozenset[type] = frozenset()
-    union_types = empty_types.union(
-        *(d.types_present for d in decl_results),
-        result.types_present,
+    composed = literalizer.compose(
+        results=(*decl_results, result),
+        language=spec,
     )
-    combined_source_data: list[Value] = [
-        *(d.source_data for d in decl_results),
-        result.source_data,
-    ]
+    # Some golden cases intentionally combine declarations whose generated
+    # type definitions have the same name but different variants. ``compose``
+    # exposes the combined metadata; the harness recomputes this preamble as
+    # the caller-owned conflict resolution step for those language specs.
     unified_body_preamble = spec.compute_body_preamble(
-        union_types, combined_source_data
+        composed.types_present,
+        composed.source_data,
     )
-    call_body_preamble = unified_body_preamble + tuple(body_stubs)
+    stub_result = literalizer.LiteralizeResult(
+        declaration_code="",
+        preamble=tuple(preamble_stubs),
+        body_preamble=tuple(body_stubs),
+    )
+    composed_with_stubs = literalizer.compose(
+        results=(composed, stub_result),
+        language=spec,
+    )
     declarations_bare_codes = tuple(d.bare_code for d in decl_results)
     wrapped = spec.wrap_calls_with_declarations(
         declarations=declarations_bare_codes,
         calls=result.bare_code,
-        body_preamble=call_body_preamble,
+        body_preamble=unified_body_preamble + tuple(body_stubs),
     )
-    all_preamble = _dedupe_preamble_blocks(
-        blocks=decl_preambles + result.preamble + tuple(preamble_stubs)
-    )
-    wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
+    if composed_with_stubs.preamble:
+        wrapped = "\n".join(composed_with_stubs.preamble) + "\n" + wrapped
     check_golden(
         file_regression=file_regression,
         contents=wrapped + "\n",

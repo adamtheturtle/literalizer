@@ -162,60 +162,51 @@ declarations; D rejects duplicate ``import`` lines) and a linter flags
 it (``ruff`` and ``pylint`` warn about repeated ``from typing import
 Any`` lines).
 
-Remove the duplicate preamble lines in first-seen order before
-emitting the file:
+Use :func:`~literalizer.compose` to remove duplicate preamble lines in
+first-seen order before emitting the file:
 
 .. code-block:: python
 
-   """Compose a declaration and a call into one Haskell source file."""
+   """Compose a declaration and a call into one Python source file."""
 
-   from literalizer import InputFormat, NewVariable, literalize, literalize_call
-   from literalizer.languages import Haskell
+   from literalizer import (
+       InputFormat,
+       NewVariable,
+       compose,
+       literalize,
+       literalize_call,
+   )
+   from literalizer.languages import Python
 
-   language = Haskell()
+   language = Python(date_format=Python.date_formats.PYTHON)
 
    declaration = literalize(
-       source="[1, 2, 3]",
-       input_format=InputFormat.JSON,
+       source="2026-01-01",
+       input_format=InputFormat.YAML,
        language=language,
-       variable_form=NewVariable(name="myList"),
+       variable_form=NewVariable(name="my_date"),
    )
    call = literalize_call(
-       source='[[{"$ref": "myList"}, 42]]',
-       input_format=InputFormat.JSON,
+       source='[[{"$ref": "my_date"}, 2026-01-02]]',
+       input_format=InputFormat.YAML,
        language=language,
        target_function="process",
-       parameter_names=["data", "count"],
+       parameter_names=["first", "second"],
    )
 
-   seen: set[str] = set()
-   merged_body_preamble: list[str] = []
-   for block in (*declaration.body_preamble, *call.body_preamble):
-       if block in seen:
-           continue
-       seen.add(block)
-       merged_body_preamble.append(block)
-
-   # ``declaration_code`` is the bare text without ``body_preamble``
-   # prepended; ``code`` includes the body_preamble, which would
-   # reintroduce duplicates.
-   composed = "\n".join(
-       [
-           *merged_body_preamble,
-           declaration.declaration_code,
-           call.declaration_code,
-       ],
+   composed = compose(
+       results=(declaration, call),
+       language=language,
+       wrap_in_file=True,
    )
 
-   assert composed.count("data Val = HInt Integer | HList [Val]") == 1
+   assert composed.code.count("import datetime") == 1
 
-The same pattern applies to :attr:`~literalizer.LiteralizeResult.preamble`
-when ``wrap_in_file=False`` and the caller is assembling the file
-manually: concatenate the preamble tuples from both results, drop
-duplicates while preserving order, and prepend the result.
-
-A first-class composition helper is tracked separately; until then,
-this duplicate-removal step is a required part of the workflow.
+Pass ``wrap_in_file=True`` to :func:`~literalizer.compose` when the
+language should assemble the merged result as a complete file.  Body
+preamble entries are deduplicated by exact string; if separate results
+emit different definitions for the same generated type name, resolve
+that name collision before composing.
 
 Snake case is the recommended authoring convention for ``$ref`` names:
 ``pyhumps`` converts ``snake_case`` to every other case without loss.

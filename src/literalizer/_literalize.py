@@ -1980,6 +1980,115 @@ def literalize(
 
 
 @beartype
+def _merge_preamble_entries(*, entries: tuple[str, ...]) -> tuple[str, ...]:
+    """Merge preamble entries preserving first-seen order.
+
+    Single-line entries are deduplicated by exact string. Multi-line blocks
+    that share the same first and last line are treated as variants of the
+    same generated declaration: the first block fixes the output position,
+    and middle lines from later variants are appended if they have not
+    appeared yet.
+    """
+    key_to_middle: dict[tuple[str, str], list[str]] = {}
+    order: list[tuple[str, str]] = []
+    for entry in entries:
+        lines = entry.splitlines()
+        if not lines:  # pragma: no cover
+            continue
+        header = lines[0]
+        footer = lines[-1] if len(lines) > 1 else ""
+        key = (header, footer)
+        middle = lines[1:-1]
+        if key not in key_to_middle:
+            key_to_middle[key] = list(middle)
+            order.append(key)
+            continue
+        existing = set(key_to_middle[key])
+        for line in middle:
+            if line in existing:
+                continue
+            key_to_middle[key].append(line)
+            existing.add(line)
+
+    result: list[str] = []
+    for header, footer in order:
+        middle = key_to_middle[(header, footer)]
+        parts = [header, *middle]
+        if footer and footer != header:
+            parts.append(footer)
+        result.append("\n".join(parts))
+    return tuple(result)
+
+
+@beartype
+def compose(
+    *,
+    results: Sequence[LiteralizeResult],
+    language: Language,
+    wrap_in_file: bool = False,
+) -> LiteralizeResult:
+    """Compose multiple literalization results into one result.
+
+    ``declaration_code`` is concatenated in input order. ``preamble`` and
+    ``body_preamble`` are merged in first-seen order. ``body_preamble``
+    entries are deduplicated by exact string; ``preamble`` entries also
+    merge multi-line blocks that share the same first and last line, so
+    generated type-union variants can contribute missing middle lines.
+    ``pre_declaration_comments`` are preserved in input order.
+
+    The helper trusts the caller to pass results generated for the same
+    language. :class:`LiteralizeResult` does not record the producing
+    language, so there is no reliable consistency check to perform here.
+    Divergent type-definition variants with different strings are also left
+    for callers to resolve before composing.
+    """
+    declaration_code = "\n".join(result.declaration_code for result in results)
+    preamble = _merge_preamble_entries(
+        entries=tuple(line for result in results for line in result.preamble),
+    )
+    body_preamble = deduplicate_preamble_entries(
+        entries=tuple(
+            line for result in results for line in result.body_preamble
+        ),
+    )
+    pre_declaration_comments = tuple(
+        line for result in results for line in result.pre_declaration_comments
+    )
+    types_present = frozenset[type]().union(
+        *(result.types_present for result in results),
+    )
+    source_data: list[Value] = [result.source_data for result in results]
+
+    if wrap_in_file:
+        content = declaration_code
+        if pre_declaration_comments:
+            content = "\n".join(pre_declaration_comments) + "\n" + content
+        wrapped = language.wrap_in_file(
+            content=content,
+            variable_name="",
+            body_preamble=body_preamble,
+        )
+        if preamble:
+            wrapped = "\n".join(preamble) + "\n" + wrapped
+        return LiteralizeResult(
+            declaration_code=wrapped,
+            preamble=(),
+            body_preamble=(),
+            types_present=types_present,
+            source_data=source_data,
+        )
+
+    return LiteralizeResult(
+        declaration_code=declaration_code,
+        preamble=preamble,
+        body_preamble=body_preamble,
+        pre_declaration_comments=pre_declaration_comments,
+        types_present=types_present,
+        source_data=source_data,
+    )
+
+
+@beartype
 def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     """Return the identifier name for a ``{ref_key: "name"}`` marker.
 
@@ -2663,16 +2772,10 @@ def literalize_call(
         When composing the output of this function with
         :func:`literalize` — for example, declaring a variable with
         :func:`literalize` and then referencing it via a ref marker in
-        the call — the two halves each
-        compute :attr:`~LiteralizeResult.preamble` and
-        :attr:`~LiteralizeResult.body_preamble` independently from the
-        data they see.  Concatenating the results into a single file
-        can produce duplicate import lines or duplicate type
-        declarations, which strict compilers (Haskell, D, …) reject
-        and a linter (``ruff``, ``pylint``, …) flags.  Remove the
-        duplicate preamble entries (preserving first-seen order) before
-        emitting the file.  The "Composing declarations and calls"
-        section of :doc:`/function-call-use-case` shows a worked example.
+        the call — use :func:`compose` so duplicate preamble entries are
+        removed in first-seen order.  The "Composing declarations and
+        calls" section of :doc:`/function-call-use-case` shows a worked
+        example.
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data

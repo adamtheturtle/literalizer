@@ -31,6 +31,7 @@ from literalizer._literalize import (
     LiteralizeResult,
     NewVariable,
     VariableForm,
+    compose,
     literalize,
     literalize_call,
 )
@@ -63,6 +64,7 @@ __all__ = [
     "SetFormatConfig",
     "TrailingCommaConfig",
     "VariableForm",
+    "compose",
     "fixed_open",
     "literalize",
     "literalize_call",
