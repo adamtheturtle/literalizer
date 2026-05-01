@@ -146,7 +146,6 @@ class OrderedMapFormatConfig:
     ordered_map_open: Callable[[dict[str, Value]], str]
     close: str
     preamble_lines: tuple[str, ...]
-    empty_ordered_map: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -491,7 +490,7 @@ class LanguageCls(type):
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
-    version_formats: type[enum.Enum]
+    VersionFormats: type[enum.Enum]
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
     supports_default_dict_value_type: bool
