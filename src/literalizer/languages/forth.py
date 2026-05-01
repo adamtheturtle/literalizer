@@ -158,6 +158,8 @@ def _format_forth_dict_entry(
 
     Example: ``s\" name" s\" Alice"``.
     """
+    if not formatted_value:
+        return key
     return f"{key} {formatted_value}"
 
 
