@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
 )
@@ -103,6 +104,17 @@ def _build_elm_datetime_iso(
         return _apply_elm_datetime_iso(value=value, prefix=prefix)
 
     return _format
+
+
+def _build_elm_datetime_epoch(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Int`` from
+    Unix epoch seconds.
+    """
+    return datetime_epoch_formatter(
+        format_integer=_build_elm_integer_formatter(prefix=prefix, base=str),
+    )
 
 
 @beartype
@@ -264,6 +276,7 @@ def _build_elm_dict_entry(
 # Backward-compatible module-level aliases used by the Enum members.
 _format_elm_date_iso = _build_elm_date_iso(prefix="E")
 _format_elm_datetime_iso = _build_elm_datetime_iso(prefix="E")
+_format_elm_datetime_epoch = _build_elm_datetime_epoch(prefix="E")
 _format_elm_bytes_hex = _build_elm_bytes_hex(prefix="E")
 _format_elm_bytes_base64 = _build_elm_bytes_base64(prefix="E")
 _format_elm_integer_decimal = _build_elm_integer_formatter(
@@ -295,6 +308,7 @@ def _build_elm_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
+    datetime_type_produced: type,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Elm.
 
@@ -307,19 +321,20 @@ def _build_elm_body_preamble(
         """Return body-preamble lines for the given *types*."""
         del data  # unused
         p = constructor_prefix
+        int_types: set[type] = {int}
+        str_types: set[type] = {str, bytes, datetime.date}
+        if datetime_type_produced is int:
+            int_types.add(datetime.datetime)
+        else:
+            str_types.add(datetime.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
                 (frozenset({type(None)}), f"{p}Null"),
                 (frozenset({bool}), f"{p}Bool Bool"),
-                (frozenset({int}), f"{p}Int Int"),
+                (frozenset(int_types), f"{p}Int Int"),
                 (frozenset({float}), f"{p}Float Float"),
-                (
-                    frozenset(
-                        {str, bytes, datetime.date, datetime.datetime},
-                    ),
-                    f"{p}Str String",
-                ),
+                (frozenset(str_types), f"{p}Str String"),
                 (frozenset({list}), f"{p}List (List {type_name})"),
                 (
                     frozenset({dict, ordereddict}),
@@ -520,6 +535,11 @@ class Elm(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_elm_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=_format_elm_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -1004,6 +1024,8 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.datetime_format.name == "EPOCH":
+            return _build_elm_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "E":
             return self.datetime_format
         return _build_elm_datetime_iso(prefix=self.constructor_prefix)
@@ -1127,4 +1149,5 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
+            datetime_type_produced=self.datetime_format.value.type_produced,
         )

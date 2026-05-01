@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -64,6 +65,12 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_fortran_datetime_epoch(value: datetime.datetime, /) -> str:
+    """Format a datetime as an int64 Fortran epoch literal."""
+    return f"{format_datetime_epoch(value=value)}_int64"
+
+
+@beartype
 def _apply_fortran_entry(
     *,
     original: Value,
@@ -76,6 +83,10 @@ def _apply_fortran_entry(
     match original:
         case bool():
             return formatted
+        case datetime.datetime() if (
+            formatted.removesuffix("_int64").lstrip("-").isdigit()
+        ):
+            return f"{int_name}({formatted})"
         case int():
             return f"{int_name}({formatted})"
         case float():
@@ -336,6 +347,11 @@ class Fortran(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=_format_fortran_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

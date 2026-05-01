@@ -13,6 +13,9 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
+from literalizer._formatters.format_dates import (
+    format_datetime_epoch,
+)
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
     passthrough_sequence_entry,
@@ -223,6 +226,11 @@ class Forth(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_datetime_forth,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

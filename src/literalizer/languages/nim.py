@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -576,6 +577,11 @@ class Nim(metaclass=LanguageCls):
             type_produced=str,
         )
 
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
+
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
             return self.value.formatter(dt_value)
@@ -994,11 +1000,12 @@ class Nim(metaclass=LanguageCls):
         """Nim type used for :class:`datetime.datetime` variant
         payloads.
         """
-        return (
-            "string"
-            if self.datetime_format.value.type_produced is str
-            else "JsonNode"
-        )
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "string"
+        if produced is int:
+            return "int"
+        return "JsonNode"
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -1307,7 +1314,7 @@ class Nim(metaclass=LanguageCls):
             )
             datetime_preamble = (
                 ()
-                if self.datetime_format.value.type_produced is str
+                if self.datetime_format.value.type_produced in {str, int}
                 else json_import
             )
             return {

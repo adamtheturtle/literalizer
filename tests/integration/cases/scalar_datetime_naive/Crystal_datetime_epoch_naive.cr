@@ -1,0 +1,4 @@
+module Fixture_scalar_datetime_naive_Crystal_datetime_epoch_naive
+extend self
+my_data = 1705321800
+end

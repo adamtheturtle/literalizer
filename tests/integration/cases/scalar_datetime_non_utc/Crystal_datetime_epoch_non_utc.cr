@@ -1,0 +1,4 @@
+module Fixture_scalar_datetime_non_utc_Crystal_datetime_epoch_non_utc
+extend self
+my_data = 1705321800
+end

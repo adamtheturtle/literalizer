@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -76,7 +77,9 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
+def _apply_fsharp_entry(  # noqa: PLR0911
+    original: Value, formatted: str, prefix: str
+) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
     """
@@ -105,6 +108,8 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
                 if negative
                 else f"{prefix}Float {formatted}"
             )
+        case datetime.datetime() if formatted.startswith(f"{prefix}Int"):
+            return formatted
         case str() | bytes() | datetime.date():
             if formatted.startswith("System."):
                 return f"{prefix}Str (string ({formatted}))"
@@ -128,6 +133,28 @@ def _build_fsharp_entry_formatter(
 
 
 _format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
+
+
+def _build_fsharp_datetime_epoch(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Int`` from
+    Unix epoch seconds.
+    """
+
+    def _format(value: datetime.datetime) -> str:
+        """Format epoch seconds with the F# integer constructor."""
+        formatted = format_datetime_epoch(value=value)
+        return _apply_fsharp_entry(
+            original=int(formatted),
+            formatted=formatted,
+            prefix=prefix,
+        )
+
+    return _format
+
+
+_format_fsharp_datetime_epoch = _build_fsharp_datetime_epoch(prefix="F")
 
 
 @beartype
@@ -289,6 +316,11 @@ class FSharp(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=_format_fsharp_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -752,6 +784,10 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.datetime_format.name == "EPOCH":
+            return _build_fsharp_datetime_epoch(
+                prefix=self.constructor_prefix,
+            )
         return self.datetime_format
 
     @cached_property
@@ -877,9 +913,13 @@ class FSharp(metaclass=LanguageCls):
                 f"    | {p}Date of System.DateTime",
             ),
             datetime.datetime: (
-                header,
-                f_str,
-                f"    | {p}Datetime of System.DateTime",
+                (header, f"    | {p}Int of int64")
+                if self.datetime_format.value.type_produced is int
+                else (
+                    header,
+                    f_str,
+                    f"    | {p}Datetime of System.DateTime",
+                )
             ),
         }
 

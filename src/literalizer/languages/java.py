@@ -21,6 +21,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -649,6 +650,11 @@ class Java(metaclass=LanguageCls):
             type_produced=str,
         )
 
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
+
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
             return self.value.formatter(dt_value)
@@ -1226,8 +1232,12 @@ class Java(metaclass=LanguageCls):
             date_type=cfg.type_name(
                 py_type=self.date_format.value.type_produced
             ),
-            datetime_type=cfg.type_name(
-                py_type=self.datetime_format.value.type_produced,
+            datetime_type=(
+                "long"
+                if self.datetime_format.value.type_produced is int
+                else cfg.type_name(
+                    py_type=self.datetime_format.value.type_produced,
+                )
             ),
             set_opener_template=None,
             narrow_dict_values=False,
@@ -1316,8 +1326,11 @@ class Java(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        if self.datetime_format.value.type_produced is str:
+        datetime_produced = self.datetime_format.value.type_produced
+        if datetime_produced is str:
             datetime_hint = "String"
+        elif datetime_produced is int:
+            datetime_hint = "long"
         elif self.datetime_format.name == "ZONED":
             datetime_hint = "ZonedDateTime"
         else:

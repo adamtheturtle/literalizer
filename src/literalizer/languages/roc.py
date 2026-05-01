@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
 )
@@ -134,6 +135,17 @@ def _build_roc_datetime_iso(
         return _apply_roc_str_wrapped_datetime(value=value, prefix=prefix)
 
     return _format
+
+
+def _build_roc_datetime_epoch(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Int`` from
+    Unix epoch seconds.
+    """
+    return datetime_epoch_formatter(
+        format_integer=_build_roc_integer_formatter(prefix=prefix, base=str),
+    )
 
 
 @beartype
@@ -289,6 +301,7 @@ def _build_roc_dict_entry(
 # Backward-compatible module-level aliases used by the Enum members.
 _format_roc_date_iso = _build_roc_date_iso(prefix="R")
 _format_roc_datetime_iso = _build_roc_datetime_iso(prefix="R")
+_format_roc_datetime_epoch = _build_roc_datetime_epoch(prefix="R")
 _format_roc_bytes_hex = _build_roc_bytes_hex(prefix="R")
 _format_roc_bytes_base64 = _build_roc_bytes_base64(prefix="R")
 _format_roc_string = _build_roc_str_formatter(prefix="R")
@@ -350,6 +363,7 @@ def _build_roc_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
+    datetime_type_produced: type,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Roc.
 
@@ -362,19 +376,20 @@ def _build_roc_body_preamble(
         """Return the tag-union type alias for *types*."""
         del data  # unused
         p = constructor_prefix
+        int_types: set[type] = {int}
+        str_types: set[type] = {str, bytes, datetime.date}
+        if datetime_type_produced is int:
+            int_types.add(datetime.datetime)
+        else:
+            str_types.add(datetime.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
                 (frozenset({type(None)}), f"{p}Null"),
                 (frozenset({bool}), f"{p}Bool Bool"),
-                (frozenset({int}), f"{p}Int I128"),
+                (frozenset(int_types), f"{p}Int I128"),
                 (frozenset({float}), f"{p}Float F64"),
-                (
-                    frozenset(
-                        {str, bytes, datetime.date, datetime.datetime},
-                    ),
-                    f"{p}Str Str",
-                ),
+                (frozenset(str_types), f"{p}Str Str"),
                 (frozenset({list}), f"{p}List (List {type_name})"),
                 (
                     frozenset({dict, ordereddict}),
@@ -536,6 +551,11 @@ class Roc(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_roc_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=_format_roc_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -1058,6 +1078,8 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.datetime_format.name == "EPOCH":
+            return _build_roc_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "R":
             return self.datetime_format
         return _build_roc_datetime_iso(prefix=self.constructor_prefix)
@@ -1173,4 +1195,5 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
+            datetime_type_produced=self.datetime_format.value.type_produced,
         )

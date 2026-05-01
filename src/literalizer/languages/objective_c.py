@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
     datetime_iso_formatter,
+    format_datetime_epoch,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -78,13 +79,22 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
     """Wrap a formatted entry for use inside an Objective-C collection.
 
     Only bare numeric values (``int`` / ``float``, but not ``bool``)
-    need ``@`` boxing; everything else is already a valid Objective-C
-    object expression.  The redundant ``@(...)`` parentheses are
-    dropped when the formatted value is a bare numeric literal so
-    that clang-tidy's ``readability-redundant-parentheses`` check
-    passes.
+    and epoch datetime values need ``@`` boxing; everything else is
+    already a valid Objective-C object expression.  The redundant
+    ``@(...)`` parentheses are dropped when the formatted value is a
+    bare numeric literal so that clang-tidy's
+    ``readability-redundant-parentheses`` check passes.
     """
-    if isinstance(original, bool) or not isinstance(original, (int, float)):
+    is_numeric_datetime = (
+        isinstance(
+            original,
+            datetime.datetime,
+        )
+        and formatted.lstrip("-").isdigit()
+    )
+    if isinstance(original, bool) or not (
+        isinstance(original, (int, float)) or is_numeric_datetime
+    ):
         return formatted
     if _OBJC_BARE_NUMERIC.fullmatch(string=formatted):
         return f"@{formatted}"
@@ -299,6 +309,11 @@ class ObjectiveC(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template='@"{iso}"'),
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

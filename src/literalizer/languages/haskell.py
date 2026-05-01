@@ -15,7 +15,9 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -279,6 +281,8 @@ def _build_date_formatters(
         fmt_datetime: Callable[[datetime.datetime], str] = (
             _build_haskell_datetime_formatter(prefix=constructor_prefix)
         )
+    elif datetime_format_name == "EPOCH":
+        fmt_datetime = datetime_formatter
     elif is_explicit:
         _str_pfx_dt = f"{constructor_prefix}Str "
 
@@ -524,7 +528,7 @@ def _datetime_import_items(
 
 
 @beartype
-def _build_scalar_body_preamble(
+def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
@@ -554,6 +558,7 @@ def _build_scalar_body_preamble(
     include_hdatetime = (
         datetime_format.value.type_produced is datetime.datetime
     )
+    datetime_produces_int = datetime_format.value.type_produced is int
     date_needs_is_string = bool(
         emit_is_string and date_format.value.preamble_lines
     )
@@ -562,9 +567,11 @@ def _build_scalar_body_preamble(
     )
     # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped strings,
     # so HStr String must appear in the data type.
-    date_needs_str_explicit = bool(not emit_is_string and not include_hdate)
+    date_needs_str_explicit = bool(
+        not emit_is_string and date_format.value.type_produced is str
+    )
     datetime_needs_str_explicit = bool(
-        not emit_is_string and not include_hdatetime
+        not emit_is_string and datetime_format.value.type_produced is str
     )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
@@ -602,6 +609,12 @@ def _build_scalar_body_preamble(
                     ),
                 ),
             )
+        if (
+            datetime_produces_int
+            and datetime.datetime in types
+            and f"{p}Int Integer" not in data_val_parts
+        ):
+            data_val_parts.append(f"{p}Int Integer")
 
         needs_is_string = emit_is_string and (
             bool(types & {str, bytes})
@@ -632,7 +645,9 @@ def _build_scalar_body_preamble(
             instances.append(is_string_instance)
 
         has_float = float in types
-        has_int = int in types
+        has_int = int in types or (
+            datetime_produces_int and datetime.datetime in types
+        )
         if emit_num and (has_float or has_int):
             # The numeric catch-all for ``negate`` is redundant when
             # ``Val`` has only numeric constructors, because the
@@ -968,6 +983,11 @@ class Haskell(metaclass=LanguageCls):
             formatter=format_datetime_iso,
             preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -1465,6 +1485,11 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if (
+            self.datetime_format.name == "EPOCH"
+            and self.numeric_style.name == "EXPLICIT"
+        ):
+            return datetime_epoch_formatter(format_integer=self.format_integer)
         return self._date_fmts.format_datetime
 
     @cached_property

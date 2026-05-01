@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -289,6 +290,11 @@ class VisualBasic(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -726,6 +732,11 @@ class VisualBasic(metaclass=LanguageCls):
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Shared element-to-type mapping used by collection openers."""
+        datetime_type = (
+            "Integer"
+            if self.datetime_format.value.type_produced is int
+            else "String"
+        )
         return make_element_to_type(
             str_type="String",
             bool_type="Boolean",
@@ -734,7 +745,7 @@ class VisualBasic(metaclass=LanguageCls):
             mixed_numeric_type="Double",
             bytes_type="String",
             date_type="String",
-            datetime_type="String",
+            datetime_type=datetime_type,
             list_template="{inner}()",
             dict_type_template=None,
             fallback_value_type=None,
