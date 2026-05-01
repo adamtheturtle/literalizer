@@ -40,7 +40,10 @@ from literalizer._language import (
     StubReturn,
 )
 from literalizer._parsing import InputFormat, parse_input
-from literalizer._preamble import compute_preamble
+from literalizer._preamble import (
+    compute_preamble,
+    deduplicate_preamble_entries,
+)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
@@ -137,25 +140,6 @@ class LiteralizeResult:
             + "\n"
             + self.declaration_code
         )
-
-
-@beartype
-def _deduplicate_preamble_entries(
-    *,
-    entries: tuple[str, ...],
-) -> tuple[str, ...]:
-    """Remove duplicate preamble entries preserving first-seen order.
-
-    An entry is usually one source line, but callers may also represent
-    a multi-line preamble block as one string.
-    """
-    seen: set[str] = set()
-    result: list[str] = []
-    for entry in entries:
-        if entry not in seen:
-            seen.add(entry)
-            result.append(entry)
-    return tuple(result)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1558,7 +1542,7 @@ def _literalize_apply_form(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
-    preamble = _deduplicate_preamble_entries(
+    preamble = deduplicate_preamble_entries(
         entries=(
             tuple(language.static_preamble)
             + computed.header
@@ -2588,7 +2572,7 @@ def literalize_call(
         "call_data_dependent_preamble",
         language.data_dependent_preamble,
     )
-    preamble = _deduplicate_preamble_entries(
+    preamble = deduplicate_preamble_entries(
         entries=(
             tuple(language.static_preamble)
             + computed.header
