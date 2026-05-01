@@ -7,8 +7,8 @@ from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
     build_heterogeneous_strategy_combined_cases,
-    build_line_ending_combined_cases,
     build_pre_indent_cases,
+    build_statement_terminator_combined_cases,
     discover_cases,
     discover_combined_cases,
 )
@@ -18,7 +18,8 @@ from .variant_cases import build_variant_cases
 
 
 def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
-    """Return expected paths for variant, line-ending, strategy, and
+    """Return expected paths for variant, statement-terminator, strategy,
+    and
     pre-indent golden files.
     """
     expected: set[Path] = set()
@@ -31,15 +32,15 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
             / (variant_case.variant_name + ext)
         )
 
-    for line_ending_case in build_line_ending_combined_cases():
-        line_ending_spec = make_spec(
-            lang_cls=line_ending_case.lang_cls,
-            line_ending=line_ending_case.line_ending,
+    for case in build_statement_terminator_combined_cases():
+        statement_terminator_style_spec = make_spec(
+            lang_cls=case.lang_cls,
+            statement_terminator_style=case.statement_terminator_style,
         )
         expected.add(
             cases_dir
-            / line_ending_case.case_dir_name
-            / (line_ending_case.name + line_ending_spec.extension)
+            / case.case_dir_name
+            / (case.name + statement_terminator_style_spec.extension)
         )
 
     for strategy_case in build_heterogeneous_strategy_combined_cases():

@@ -304,8 +304,8 @@ class Jsonnet(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
         SEMICOLON = enum.auto()
 
@@ -333,7 +333,7 @@ class Jsonnet(metaclass=LanguageCls):
     numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """Jsonnet call style options."""
@@ -449,7 +449,9 @@ class Jsonnet(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
     call_style: CallStyles = CallStyles.KEYWORD
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR

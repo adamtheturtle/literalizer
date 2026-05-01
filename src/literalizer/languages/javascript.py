@@ -236,8 +236,8 @@ class JavaScript(metaclass=LanguageCls):
             suffix=" */",
         )
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
         SEMICOLON = enum.auto()
         NONE = "none"
@@ -246,7 +246,9 @@ class JavaScript(metaclass=LanguageCls):
             self,
             formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-            """Wrap a formatter to match this line ending style."""
+            """Wrap a formatter to match this statement terminator
+            style.
+            """
             if self.value != "none":
                 return formatter
 
@@ -424,7 +426,7 @@ class JavaScript(metaclass=LanguageCls):
     numeric_literal_suffixes = NumericLiteralSuffixes
     string_formats = StringFormats
     trailing_commas = TrailingCommas
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """JavaScript call style options."""
@@ -512,7 +514,9 @@ class JavaScript(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
     call_style: CallStyles = CallStyles.OBJECT
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -694,7 +698,7 @@ class JavaScript(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.line_ending.wrap_formatter(
+        return self.statement_terminator_style.wrap_formatter(
             formatter=self.declaration_style.value.formatter,
         )
 
@@ -704,7 +708,7 @@ class JavaScript(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return assignment_formatter_from_declaration(
-            formatter=self.line_ending.wrap_formatter(
+            formatter=self.statement_terminator_style.wrap_formatter(
                 formatter=variable_declaration_formatter(
                     template="{name} = {value};"
                 ),

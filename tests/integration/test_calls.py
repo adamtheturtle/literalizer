@@ -70,7 +70,7 @@ def test_call_variant_golden_file(
     """Test ``literalize_call`` for a non-default language spec.
 
     Covers call inputs that need a non-default language option, such as
-    line endings or heterogeneous strategies.
+    statement terminators or heterogeneous strategies.
     """
     run_call_golden_case(
         config=call_variant_case.config,

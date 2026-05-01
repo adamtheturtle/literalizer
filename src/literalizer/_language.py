@@ -504,7 +504,7 @@ class LanguageCls(type):
     NumericStyles: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
-    LineEndings: type[enum.Enum]
+    StatementTerminatorStyles: type[enum.Enum]
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
@@ -685,8 +685,8 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def line_endings(self) -> type[enum.Enum]:
-        """Enum class whose members list the line ending options
+    def statement_terminator_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the statement terminator options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -1054,8 +1054,10 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def line_ending(self) -> enum.Enum:
-        """The line ending option chosen for this language instance."""
+    def statement_terminator_style(self) -> enum.Enum:
+        """The statement terminator option chosen for this language
+        instance.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property

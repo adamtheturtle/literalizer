@@ -76,7 +76,7 @@ The available enums vary by language, but the most common ones are:
      - Variable declaration keyword (``ASSIGN``, ``LET``, ``VAR``, ``CONST``).
    * - ``TrailingCommas``
      - Whether to emit a trailing comma in multi-line collections.
-   * - ``LineEndings``
+   * - ``StatementTerminatorStyles``
      - Statement terminator (``SEMICOLON``, ``NEWLINE``, ``NONE``).
 
 Access a language's enum members through the class itself, e.g.

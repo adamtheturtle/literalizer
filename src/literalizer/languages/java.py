@@ -991,12 +991,12 @@ class Java(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
         SEMICOLON = enum.auto()
 
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """Java call style options."""
@@ -1098,7 +1098,9 @@ class Java(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
     call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR

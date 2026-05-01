@@ -455,12 +455,12 @@ class Zig(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
         SEMICOLON = enum.auto()
 
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """Zig call style options."""
@@ -553,7 +553,9 @@ class Zig(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
