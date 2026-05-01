@@ -220,6 +220,8 @@ class Ada(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = True
 
     class DateFormats(enum.Enum):
