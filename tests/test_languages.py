@@ -168,7 +168,7 @@ def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
         variable_form=None,
     )
 
-    assert result.preamble == ()
+    assert not result.preamble
     assert result.code == (
         "data Val = HStr String | HMap [(String, Val)] | HInt Integer\n"
         "HMap [\n"
