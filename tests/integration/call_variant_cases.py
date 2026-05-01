@@ -2,7 +2,7 @@
 
 Covers call inputs that need a non-default language spec, such as
 inputs that a default heterogeneous strategy rejects or calls rendered
-with a non-default line ending.  Sibling to :mod:`call_cases`.
+with a non-default statement terminator.  Sibling to :mod:`call_cases`.
 """
 
 import dataclasses
@@ -36,32 +36,33 @@ class CallVariantCase:
 # default spec rejects, causing :func:`test_call_golden_file` to skip.
 @functools.cache
 @beartype
-def build_line_ending_call_variants() -> list[Variant]:
-    """Return variants for every non-default call line ending."""
+def build_statement_terminator_style_call_variants() -> list[Variant]:
+    """Return variants for every non-default call statement terminator."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         spec = make_spec(lang_cls=lang_cls)
-        default_line_ending = spec.line_ending
+        default_statement_terminator_style = spec.statement_terminator_style
         variants.extend(
             Variant(
                 name=(
-                    f"{lang_cls.__name__}_line_ending"
-                    f"_{line_ending.name.lower()}"
+                    f"{lang_cls.__name__}_statement_terminator_style"
+                    f"_{statement_terminator_style.name.lower()}"
                 ),
                 spec=make_spec(
                     lang_cls=lang_cls,
-                    line_ending=line_ending,
+                    statement_terminator_style=statement_terminator_style,
                 ),
                 lang_cls=lang_cls,
             )
-            for line_ending in spec.line_endings
-            if line_ending is not default_line_ending
+            for statement_terminator_style in spec.statement_terminator_styles
+            if statement_terminator_style
+            is not default_statement_terminator_style
         )
     return variants
 
 
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
-    ("call_scalar_args", build_line_ending_call_variants),
+    ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
 ]
 

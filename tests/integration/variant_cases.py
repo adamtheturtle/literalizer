@@ -391,23 +391,25 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
 
 
 @beartype
-def build_line_ending_decl_variants() -> Iterable[Variant]:
-    """Build line-ending + declaration-style cross-option variants.
+def build_statement_terminator_style_decl_variants() -> Iterable[Variant]:
+    """Build statement-terminator + declaration-style cross-option
+    variants.
 
-    For each language with multiple line endings *and* multiple
+    For each language with multiple statement terminators *and* multiple
     declaration styles, create a variant for every non-default
-    line ending paired with every non-default declaration style.
+    statement terminator paired with every non-default declaration style.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
-        default_line_ending = spec.line_ending
+        default_statement_terminator_style = spec.statement_terminator_style
         default_declaration_style = spec.declaration_style
-        non_default_line_endings = [
-            line_ending
-            for line_ending in spec.line_endings
-            if line_ending is not default_line_ending
+        non_default_statement_terminator_styles = [
+            statement_terminator_style
+            for statement_terminator_style in spec.statement_terminator_styles
+            if statement_terminator_style
+            is not default_statement_terminator_style
         ]
         non_default_declaration_styles = [
             declaration_style
@@ -417,17 +419,19 @@ def build_line_ending_decl_variants() -> Iterable[Variant]:
         variants.extend(
             Variant(
                 name=(
-                    f"{lang_name}_line_ending_{line_ending.name.lower()}"
+                    f"{lang_name}_statement_terminator_style_{statement_terminator_style.name.lower()}"
                     f"_decl_{declaration_style.name.lower()}"
                 ),
                 spec=make_spec(
                     lang_cls=lang_cls,
-                    line_ending=line_ending,
+                    statement_terminator_style=statement_terminator_style,
                     declaration_style=declaration_style,
                 ),
                 lang_cls=lang_cls,
             )
-            for line_ending in non_default_line_endings
+            for statement_terminator_style in (
+                non_default_statement_terminator_styles
+            )
             for declaration_style in non_default_declaration_styles
         )
     return variants
@@ -1044,11 +1048,11 @@ _SIMPLE_AXES: dict[str, _SimpleAxis] = {
         get_default=lambda s: s.trailing_comma,
         get_formats=lambda s: s.trailing_commas,
     ),
-    "line_ending": _SimpleAxis(
-        category="line_ending",
-        kwarg="line_ending",
-        get_default=lambda s: s.line_ending,
-        get_formats=lambda s: s.line_endings,
+    "statement_terminator_style": _SimpleAxis(
+        category="statement_terminator_style",
+        kwarg="statement_terminator_style",
+        get_default=lambda s: s.statement_terminator_style,
+        get_formats=lambda s: s.statement_terminator_styles,
     ),
     "heterogeneous_strategy": _SimpleAxis(
         category="heterogeneous_strategy",
@@ -1118,7 +1122,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "default_ordered_map_value_type": (
         build_default_ordered_map_value_type_variants
     ),
-    "line_ending_decl": build_line_ending_decl_variants,
+    "statement_terminator_style_decl": (
+        build_statement_terminator_style_decl_variants
+    ),
     "sequence_decl": build_sequence_decl_variants,
     "type_hints_cross": build_type_hints_cross_variants,
     "string_format_date_cross": lambda: build_string_format_cross_variants(
@@ -1341,9 +1347,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "bytes_format": (_ci(case_dir_name="binary"),),
     "trailing_comma": BASIC_COLLECTIONS,
-    "line_ending": BASIC_COLLECTIONS,
+    "statement_terminator_style": BASIC_COLLECTIONS,
     "collection_layout": (_ci(case_dir_name="dict_with_list_value"),),
-    "line_ending_decl": (_ci(case_dir_name="simple_sequence"),),
+    "statement_terminator_style_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
     "type_name": ADT_INPUTS,
     "constructor_prefix": ADT_INPUTS,
