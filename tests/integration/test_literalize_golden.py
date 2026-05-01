@@ -214,6 +214,7 @@ def test_format_variant_golden_file(
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,
                     wrap_in_file=True,
+                    collection_layout=variant.collection_layout,
                 )
             except NullInCollectionError:
                 pytest.skip("Format rejects null elements in this input")
