@@ -54,7 +54,7 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
 )
 
-_DISABLED_REF_KEY = "\0literalizer_ref_disabled"
+_DISABLED_REF_KEY = ""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -443,7 +443,7 @@ def _format_dict_value(
     joined = spec.element_separator.join(pairs)
     if open_override is not None:
         opener = open_override
-    elif ref_key == _DISABLED_REF_KEY:
+    elif not ref_key:
         opener = dict_cfg.dict_open(dict_items)
     else:
         open_items = dict_items
@@ -953,7 +953,7 @@ def _format_list_value(
         joined += spec.element_separator.strip()
     if sequence_open_override is not None:
         opener = sequence_open_override
-    elif ref_key == _DISABLED_REF_KEY:
+    elif not ref_key:
         opener = spec.sequence_open(value)
     else:
         open_value = [
@@ -1007,7 +1007,7 @@ def _format_value(
     When *ref_case* is set the identifier name is converted to that case
     first.
     """
-    if ref_key != _DISABLED_REF_KEY and isinstance(value, dict):
+    if ref_key and isinstance(value, dict):
         ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
         if ref_name is not None:
             if ref_case is not None:
@@ -1138,7 +1138,7 @@ def _collection_open_for_multiline_value(
             opener = spec.ordered_map_format_config.ordered_map_open(data)
         elif dict_open_override is not None:
             opener = dict_open_override
-        elif ref_key == _DISABLED_REF_KEY:
+        elif not ref_key:
             opener = spec.dict_format_config.dict_open(data)
         else:
             dict_open_items = {
@@ -1156,7 +1156,7 @@ def _collection_open_for_multiline_value(
         opener = spec.set_format_config.set_open(sorted_set)
     elif sequence_open_override is not None:
         opener = sequence_open_override
-    elif ref_key == _DISABLED_REF_KEY:
+    elif not ref_key:
         opener = spec.sequence_open(data)
     else:
         sequence_open_items = [
@@ -1476,7 +1476,7 @@ def _literalize(
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
-    if ref_key != _DISABLED_REF_KEY and isinstance(data, dict):
+    if ref_key and isinstance(data, dict):
         ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if ref_name is not None:
             if ref_case is not None:
@@ -1657,14 +1657,11 @@ def _literalize_pre_form(
     line_prefix = language.indent * pre_indent_level
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
-    active_ref_key = (
-        ref_key
-        if ref_key in source
-        or (
-            "\\" in source
-            and _contains_ref_marker(value=data, ref_key=ref_key)
-        )
-        else _DISABLED_REF_KEY
+    active_ref_key = _active_literalize_ref_key(
+        source=source,
+        input_format=input_format,
+        data=data,
+        ref_key=ref_key,
     )
 
     language.validate_spec_for_data(data=data)
@@ -2000,15 +1997,25 @@ def literalize(
     )
 
 
-@beartype
-def _identity_call_statement(statement: str) -> str:
-    """Return *statement* unchanged.
-
-    Default when a language does not define ``format_call_statement``.
-    Languages that require call expressions to be wrapped in a
-    statement form (e.g. SML's ``val _ = expr``) override this.
-    """
-    return statement
+def _active_literalize_ref_key(
+    *,
+    source: str,
+    input_format: InputFormat,
+    data: Value,
+    ref_key: str,
+) -> str:
+    """Return *ref_key* when literalize should check for ref markers."""
+    if (ref_key == "$ref" and "$" in source) or (
+        ref_key != "$ref" and ref_key in source
+    ):
+        return ref_key
+    if (
+        input_format is InputFormat.JSON
+        and "\\" in source
+        and _contains_ref_marker(value=data, ref_key=ref_key)
+    ):
+        return ref_key
+    return _DISABLED_REF_KEY
 
 
 def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
@@ -2018,11 +2025,7 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     In :func:`literalize_call` such markers render as the bare
     identifier instead of being formatted as a literal value.
     """
-    if (
-        ref_key == _DISABLED_REF_KEY
-        or not isinstance(value, dict)
-        or len(value) != 1
-    ):
+    if not ref_key or not isinstance(value, dict) or len(value) != 1:
         return None
     ref_value = value.get(ref_key)
     if not isinstance(ref_value, str):
@@ -2524,16 +2527,6 @@ def _render_call_per_element(
         spec=language,
         ref_key=ref_key,
     )
-    validate_call_arg: Callable[[Value], None] | None = getattr(
-        language,
-        "validate_call_arg",
-        None,
-    )
-    format_call_statement: Callable[[str], str] = getattr(
-        language,
-        "format_call_statement",
-        _identity_call_statement,
-    )
     single_use_ref_names = _compute_call_arg_ref_single_use_names(
         elements=data,
         ref_key=ref_key,
@@ -2551,8 +2544,7 @@ def _render_call_per_element(
                 value=value, ref_key=ref_key
             )
             check_data(data=stripped_value, spec=language)
-            if validate_call_arg is not None:
-                validate_call_arg(stripped_value)
+            language.validate_call_arg(stripped_value)
         call_wrap_ids = (
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
@@ -2570,7 +2562,7 @@ def _render_call_per_element(
             collection_layout=collection_layout,
         )
         rendered_elements.append(
-            format_call_statement(
+            language.format_call_statement(
                 _assemble_call(
                     target_function=target_function,
                     args_str=args_str,
@@ -2613,21 +2605,10 @@ def _render_call_whole(
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is None:
         stripped_data = _strip_refs_from_value(value=data, ref_key=ref_key)
         check_data(data=stripped_data, spec=language)
-        validate_call_arg: Callable[[Value], None] | None = getattr(
-            language,
-            "validate_call_arg",
-            None,
-        )
-        if validate_call_arg is not None:
-            validate_call_arg(stripped_data)
+        language.validate_call_arg(stripped_data)
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
     else:
         call_wrap_ids = frozenset[int]()
-    format_call_statement: Callable[[str], str] = getattr(
-        language,
-        "format_call_statement",
-        _identity_call_statement,
-    )
     args_str = _format_call_args(
         values=[data],
         params=parameter_names,
@@ -2644,7 +2625,7 @@ def _render_call_whole(
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
-    return format_call_statement(
+    return language.format_call_statement(
         _assemble_call(
             target_function=target_function,
             args_str=args_str,
@@ -2825,16 +2806,11 @@ def literalize_call(
         language=language,
         has_variable_declaration=False,
     )
-    _call_ddp: Callable[[Value], tuple[str, ...]] = getattr(
-        language,
-        "call_data_dependent_preamble",
-        language.data_dependent_preamble,
-    )
     preamble = deduplicate_preamble_entries(
         entries=(
             tuple(language.static_preamble)
             + computed.header
-            + _call_ddp(data_for_preamble)
+            + language.call_data_dependent_preamble(data_for_preamble)
         )
     )
 

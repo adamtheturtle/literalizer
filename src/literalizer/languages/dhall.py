@@ -62,6 +62,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_call_arg,
     no_validate_spec_for_data,
     wrap_in_file_noop,
 )
@@ -779,6 +780,11 @@ class Dhall(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
     @staticmethod
     def wrap_in_file(
         content: str,
@@ -909,6 +915,13 @@ class Dhall(metaclass=LanguageCls):
         return self.heterogeneous_strategy.value.build_behavior(
             self.heterogeneous_value_union_name,
         )
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(

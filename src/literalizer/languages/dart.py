@@ -70,10 +70,12 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
+    identity_call_statement,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_call_arg,
     value_contains,
     wrap_in_file_noop,
 )
@@ -725,6 +727,16 @@ class Dart(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Return call-statement formatting for this language."""
+        return identity_call_statement
+
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
 
@@ -798,6 +810,13 @@ class Dart(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(
