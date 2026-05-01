@@ -241,6 +241,23 @@ class CombinedCase:
     golden_file_name: str
 
 
+@beartype
+def _lang_supports_combined_case(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    non_trivial: bool,
+    special_float: bool,
+) -> bool:
+    """Return whether a language can render a combined golden case."""
+    if not lang_cls.supports_variable_names:
+        return False
+    if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
+        lang_cls
+    ):
+        return False
+    return not special_float or lang_cls.supports_special_floats
+
+
 @functools.cache
 @beartype
 def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
@@ -265,13 +282,11 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
         special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
             lang_name = lang_cls.__name__
-            if not lang_cls.supports_variable_names:
-                continue
-            if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
-                lang_cls
+            if not _lang_supports_combined_case(
+                lang_cls=lang_cls,
+                non_trivial=non_trivial,
+                special_float=special_float,
             ):
-                continue
-            if special_float and not lang_cls.supports_special_floats:
                 continue
             spec = make_spec(lang_cls=lang_cls)
             redef_styles = find_redefinition_styles(spec=spec)
