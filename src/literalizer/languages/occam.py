@@ -5,7 +5,7 @@ import datetime
 import enum
 import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -35,7 +35,6 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
-    CallSupport,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -47,13 +46,13 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
-    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
@@ -62,7 +61,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
-    prepend_body_preamble,
 )
 from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
@@ -86,6 +84,38 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
             return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
         case _:
             return formatted
+
+
+def _occam_stub_parameters(params: Sequence[str], /) -> str:
+    """Return an Occam parameter list for a generated call stub."""
+    if not params:
+        return "()"
+    formatted = ", ".join(f"VAL MOBILE LIT {param}" for param in params)
+    return f"({formatted})"
+
+
+def _occam_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    stub_return: StubReturn,
+    /,
+    *,
+    indent: str,
+) -> tuple[str, ...]:
+    """Return top-level Occam call stub declarations."""
+    name = ".".join(parts)
+    stub_params = _occam_stub_parameters(params)
+    if stub_return is StubReturn.VALUE:
+        return (
+            f"MOBILE LIT FUNCTION {name} {stub_params}",
+            f"{indent}RESULT MOBILE LIT(lit.null)",
+            ":",
+        )
+    return (
+        f"PROC {name} {stub_params}",
+        f"{indent}SKIP",
+        ":",
+    )
 
 
 @beartype
@@ -117,13 +147,6 @@ class Occam(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = True
     supports_call_refs_in_dict_literals = True
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Occam."""
@@ -308,6 +331,8 @@ class Occam(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Occam call style options."""
 
+        POSITIONAL = PositionalCallStyle()
+
     call_styles = CallStyles
 
     class Modifiers(enum.Enum):
@@ -360,13 +385,12 @@ class Occam(metaclass=LanguageCls):
     ) -> str:
         """Wrap an occam-pi VAL declaration in a PROC."""
         del variable_name
-        content = prepend_body_preamble(
-            content=content,
-            body_preamble=body_preamble,
+        top_level_preamble = (
+            "\n".join(body_preamble) + "\n" if body_preamble else ""
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
         return (
-            f"\nPROC {self.module_name} ()\n"
+            f"\n{top_level_preamble}PROC {self.module_name} ()\n"
             + indented
             + "\n"
             + f"{self.indent}SEQ\n"
@@ -441,9 +465,12 @@ class Occam(metaclass=LanguageCls):
     )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
-    call_style_config: ClassVar[CallStyle | CallSupport] = (
-        CallSupport.NOT_IMPLEMENTED_BY_TOOL
-    )
+    call_style: CallStyles = CallStyles.POSITIONAL
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        return self.call_style.value
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -458,6 +485,11 @@ class Occam(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
+        return _format_occam_entry
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap direct call arguments in ``MOBILE LIT`` constructors."""
         return _format_occam_entry
 
     @cached_property
@@ -499,7 +531,7 @@ class Occam(metaclass=LanguageCls):
         self,
     ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
         """Return stub declarations for a call expression."""
-        return no_call_stub
+        return partial(_occam_call_stub, indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(
