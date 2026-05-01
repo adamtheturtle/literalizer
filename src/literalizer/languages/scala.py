@@ -235,6 +235,7 @@ class Scala(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_call_refs_in_dict_literals = True
     module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(

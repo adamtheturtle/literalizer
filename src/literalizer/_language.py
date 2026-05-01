@@ -509,6 +509,7 @@ class LanguageCls(type):
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
+    supports_call_refs_in_dict_literals: bool
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
