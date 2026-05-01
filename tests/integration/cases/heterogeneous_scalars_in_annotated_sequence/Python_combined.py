@@ -6,7 +6,7 @@ my_data: tuple[bool | float | None | datetime.date | datetime.datetime | tuple[A
     1.5,
     None,
     datetime.date(year=2020, month=1, day=1),
-    datetime.datetime(year=2020, month=1, day=1, hour=0, minute=0, second=0),
+    datetime.datetime(year=2020, month=1, day=1, hour=0, minute=0, second=0, tzinfo=datetime.UTC),
     (),
 )
 my_data = (
@@ -14,6 +14,6 @@ my_data = (
     1.5,
     None,
     datetime.date(year=2020, month=1, day=1),
-    datetime.datetime(year=2020, month=1, day=1, hour=0, minute=0, second=0),
+    datetime.datetime(year=2020, month=1, day=1, hour=0, minute=0, second=0, tzinfo=datetime.UTC),
     (),
 )

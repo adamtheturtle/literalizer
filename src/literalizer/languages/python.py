@@ -96,6 +96,22 @@ def _format_datetime_python(value: datetime.datetime) -> str:
     ]
     if value.microsecond:
         parts.append(f"microsecond={value.microsecond}")
+    if value.tzinfo is not None and (offset := value.utcoffset()) is not None:
+        if offset == datetime.timedelta():
+            parts.append("tzinfo=datetime.UTC")
+        else:
+            total_seconds = int(offset.total_seconds())
+            sign = -1 if total_seconds < 0 else 1
+            abs_seconds = abs(total_seconds)
+            hours = sign * (abs_seconds // 3600)
+            minutes = sign * ((abs_seconds % 3600) // 60)
+            td_parts = [f"hours={hours}"]
+            if minutes:
+                td_parts.append(f"minutes={minutes}")
+            td_args = ", ".join(td_parts)
+            parts.append(
+                f"tzinfo=datetime.timezone(offset=datetime.timedelta({td_args}))"
+            )
     args = ", ".join(parts)
     return f"datetime.datetime({args})"
 
@@ -622,6 +638,7 @@ class Python(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     allows_bare_call_statement = True
     allows_empty_call_parens = True
+    supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
     supports_module_name = False

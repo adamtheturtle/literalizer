@@ -1,4 +1,4 @@
 (list
-    (list )
+    (list)
     (list)
 )

@@ -157,7 +157,7 @@ class Nix(metaclass=LanguageCls):
     """Nix language specification.
 
     Produces Nix values — attribute sets for mappings, and lists for
-    sequences and sets — following `Nix <https://nixos.org/manual/nix/stable/language/>`_
+    sequences and sets — following `Nix <https://nix.dev/manual/nix/stable/language/>`_
     syntax.
 
     Nix is a purely functional, lazy language used primarily for the Nix
@@ -189,6 +189,7 @@ class Nix(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     allows_bare_call_statement = True
     allows_empty_call_parens = True
+    supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
     supports_module_name = False

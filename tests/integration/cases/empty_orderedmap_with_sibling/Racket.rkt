@@ -1,5 +1,5 @@
 #lang racket
 (list
-    (hash )
+    (hash)
     (list)
 )

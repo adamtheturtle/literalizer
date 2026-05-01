@@ -216,6 +216,7 @@ class Ada(metaclass=LanguageCls):
     has_free_function_calls = True
     allows_bare_call_statement = False
     allows_empty_call_parens = False
+    supports_dotted_call_stub = False
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_inline_multiline_dict_args = True

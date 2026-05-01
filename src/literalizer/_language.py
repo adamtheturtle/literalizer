@@ -504,6 +504,7 @@ class LanguageCls(type):
     reserved_identifiers: frozenset[str]
     allows_bare_call_statement: bool
     allows_empty_call_parens: bool
+    supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_inline_multiline_dict_args: bool
     supports_module_name: bool

@@ -1,2 +1,2 @@
-my_data = Time.new(2024, 1, 15, 18, 0, 0)
-my_data = Time.new(2024, 1, 15, 18, 0, 0)
+my_data = Time.new(2024, 1, 15, 18, 0, 0, "+05:30")
+my_data = Time.new(2024, 1, 15, 18, 0, 0, "+05:30")
