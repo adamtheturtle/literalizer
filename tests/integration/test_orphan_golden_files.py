@@ -13,7 +13,10 @@ from .case_discovery import (
     discover_combined_cases,
 )
 from .language_specs import make_spec
-from .literalize_ref_cases import discover_literalize_ref_cases
+from .literalize_ref_cases import (
+    discover_literalize_default_ref_cases,
+    discover_literalize_ref_cases,
+)
 from .variant_cases import build_variant_cases
 
 
@@ -107,6 +110,15 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(
             cases_dir
             / literalize_ref_case.config.case_dir_name
+            / (golden_name + ext)
+        )
+
+    for default_ref_case in discover_literalize_default_ref_cases():
+        ext = default_ref_case.lang_cls.extension
+        golden_name = f"{default_ref_case.lang_cls.__name__}_ref_default"
+        expected.add(
+            cases_dir
+            / default_ref_case.config.case_dir_name
             / (golden_name + ext)
         )
 

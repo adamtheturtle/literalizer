@@ -54,6 +54,8 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
 )
 
+_DISABLED_REF_KEY = ""
+
 
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
@@ -441,16 +443,22 @@ def _format_dict_value(
     joined = spec.element_separator.join(pairs)
     if open_override is not None:
         opener = open_override
+    elif not ref_key:
+        opener = dict_cfg.dict_open(dict_items)
     else:
-        open_items = (
-            {
+        open_items = dict_items
+        if any(
+            isinstance(v, dict)
+            and _extract_call_arg_ref_name(value=v, ref_key=ref_key)
+            is not None
+            for v in dict_items.values()
+        ):
+            open_items = {
                 k: v
                 for k, v in dict_items.items()
-                if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
             }
-            if expand_refs
-            else dict_items
-        )
         opener = dict_cfg.dict_open(open_items or dict_items)
     return opener + joined + dict_cfg.close
 
@@ -945,16 +953,15 @@ def _format_list_value(
         joined += spec.element_separator.strip()
     if sequence_open_override is not None:
         opener = sequence_open_override
+    elif not ref_key:
+        opener = spec.sequence_open(value)
     else:
-        open_value = (
-            [
-                v
-                for v in value
-                if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-            ]
-            if expand_refs
-            else value
-        )
+        open_value = [
+            v
+            for v in value
+            if not isinstance(v, dict)
+            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+        ]
         opener = spec.sequence_open(open_value or value)
     return f"{opener}{joined}{sequence_cfg.close}"
 
@@ -992,15 +999,15 @@ def _format_value(
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
     hook.
 
-    When *ref_case* is set or *expand_refs* is ``True``,
     ``{"$ref": "name"}`` markers anywhere in the value tree are rendered
-    as bare identifiers via
-    :attr:`~literalizer._language.Language.format_call_ref_identifier`.
+    as bare identifiers.  ``literalize`` uses
+    :attr:`~literalizer._language.Language.format_call_ref_identifier`;
+    ``literalize_call`` sets *expand_refs* so nested argument refs use
+    :attr:`~literalizer._language.Language.format_call_arg_ref_identifier`.
     When *ref_case* is set the identifier name is converted to that case
-    first.  When both are absent, ref dicts are
-    formatted as ordinary literal dicts.
+    first.
     """
-    if ref_case is not None or expand_refs:
+    if ref_key and isinstance(value, dict):
         ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
         if ref_name is not None:
             if ref_case is not None:
@@ -1125,39 +1132,41 @@ def _collection_open_for_multiline_value(
 
     Used for a nested multiline collection.
     """
+    del expand_refs
     if isinstance(data, dict):
         if is_ordered_map:
-            return spec.ordered_map_format_config.ordered_map_open(data)
-        if dict_open_override is not None:
-            return dict_open_override
-        dict_open_items = (
-            {
+            opener = spec.ordered_map_format_config.ordered_map_open(data)
+        elif dict_open_override is not None:
+            opener = dict_open_override
+        elif not ref_key:
+            opener = spec.dict_format_config.dict_open(data)
+        else:
+            dict_open_items = {
                 k: v
                 for k, v in data.items()
-                if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
             }
-            if expand_refs
-            else data
-        )
-        return spec.dict_format_config.dict_open(dict_open_items or data)
-    if isinstance(data, set):
+            opener = spec.dict_format_config.dict_open(dict_open_items or data)
+    elif isinstance(data, set):
         sorted_set: list[Value] = sorted(
             data,
             key=lambda v: (type(v).__name__, repr(v)),
         )
-        return spec.set_format_config.set_open(sorted_set)
-    if sequence_open_override is not None:
-        return sequence_open_override
-    sequence_open_items = (
-        [
+        opener = spec.set_format_config.set_open(sorted_set)
+    elif sequence_open_override is not None:
+        opener = sequence_open_override
+    elif not ref_key:
+        opener = spec.sequence_open(data)
+    else:
+        sequence_open_items = [
             v
             for v in data
-            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            if not isinstance(v, dict)
+            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
         ]
-        if expand_refs
-        else data
-    )
-    return spec.sequence_open(sequence_open_items or data)
+        opener = spec.sequence_open(sequence_open_items or data)
+    return opener
 
 
 @beartype
@@ -1461,16 +1470,17 @@ def _literalize(
         include_delimiters: If True, include the collection delimiters
             (``[`` … ``]`` for arrays, ``{`` … ``}`` for dicts).
             Ignored for scalar values.
-        ref_case: When set, any ref mapping is rendered as a bare
-            identifier instead of a literal dict.
+        ref_case: When set, ref identifiers are converted to this case
+            before rendering.
         ref_key: The key used to identify ref markers in the input.
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
-    if ref_case is not None:
+    if ref_key and isinstance(data, dict):
         ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if ref_name is not None:
-            ref_name = ref_case.convert(name=ref_name)
+            if ref_case is not None:
+                ref_name = ref_case.convert(name=ref_name)
             identifier = language.format_call_ref_identifier(ref_name)
             return f"{line_prefix}{identifier}"
 
@@ -1647,6 +1657,12 @@ def _literalize_pre_form(
     line_prefix = language.indent * pre_indent_level
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
+    active_ref_key = _active_literalize_ref_key(
+        source=source,
+        input_format=input_format,
+        data=data,
+        ref_key=ref_key,
+    )
 
     language.validate_spec_for_data(data=data)
 
@@ -1656,7 +1672,7 @@ def _literalize_pre_form(
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
-        ref_key=ref_key,
+        ref_key=active_ref_key,
         collection_layout=collection_layout,
     )
 
@@ -1896,17 +1912,19 @@ def literalize(
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
-        ref_case: When set, ``{ref_key: "name"}`` markers anywhere in
-            the data are rendered as bare identifiers using the
+        ref_case: Optional :class:`IdentifierCase` controlling how ref
+            identifiers are cased in the rendered output.
+            ``{ref_key: "name"}`` markers anywhere in the data are
+            rendered as bare identifiers using the
             language's
             :attr:`~literalizer._language.Language.format_call_ref_identifier`
-            hook, with the identifier name first converted to
-            *ref_case*.  When ``None`` (default), such dicts are treated
-            as ordinary literal dicts with no special handling.
+            hook.  When ``None`` (default), ref names are emitted
+            verbatim.  When set, the identifier name is converted to
+            *ref_case* first.
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
-            ref marker when *ref_case* is set.  Defaults to ``"$ref"``.
+            ref marker.  Defaults to ``"$ref"``.
         collection_layout: Controls layout for collections nested
             inside other collections.  ``CollectionLayout.COMPACT``
             preserves the existing one-line nested rendering, while
@@ -1979,7 +1997,27 @@ def literalize(
     )
 
 
-@beartype
+def _active_literalize_ref_key(
+    *,
+    source: str,
+    input_format: InputFormat,
+    data: Value,
+    ref_key: str,
+) -> str:
+    """Return *ref_key* when literalize should check for ref markers."""
+    if (ref_key == "$ref" and "$" in source) or (
+        ref_key != "$ref" and ref_key in source
+    ):
+        return ref_key
+    if (
+        input_format is InputFormat.JSON
+        and "\\" in source
+        and _contains_ref_marker(value=data, ref_key=ref_key)
+    ):
+        return ref_key
+    return _DISABLED_REF_KEY
+
+
 def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     """Return the identifier name for a ``{ref_key: "name"}`` marker.
 
@@ -1987,12 +2025,31 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     In :func:`literalize_call` such markers render as the bare
     identifier instead of being formatted as a literal value.
     """
-    if not isinstance(value, dict) or len(value) != 1:
+    if not ref_key or not isinstance(value, dict) or len(value) != 1:
         return None
     ref_value = value.get(ref_key)
     if not isinstance(ref_value, str):
         return None
     return ref_value
+
+
+def _contains_ref_marker(*, value: Value, ref_key: str) -> bool:
+    """Return whether *value* contains a ``{ref_key: "name"}`` marker."""
+    if _extract_call_arg_ref_name(value=value, ref_key=ref_key) is not None:
+        return True
+    match value:
+        case dict():
+            return any(
+                _contains_ref_marker(value=v, ref_key=ref_key)
+                for v in value.values()
+            )
+        case list():
+            return any(
+                _contains_ref_marker(value=item, ref_key=ref_key)
+                for item in value
+            )
+        case _:
+            return False
 
 
 @beartype
