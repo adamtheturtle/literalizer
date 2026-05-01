@@ -1,0 +1,4 @@
+{
+    "key": my_var,
+    "items": [item_var, {"fallback": "value"}]
+}

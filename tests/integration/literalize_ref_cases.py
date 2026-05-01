@@ -26,6 +26,7 @@ from literalizer.exceptions import (
 )
 
 from .case_discovery import (
+    LITERALIZE_DEFAULT_REF_CASE_CONFIGS,
     LITERALIZE_REF_CASE_CONFIGS,
     LiteralizeRefCaseConfig,
 )
@@ -49,6 +50,17 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
         for config in LITERALIZE_REF_CASE_CONFIGS
+        for lang_cls in sorted_languages()
+    ]
+
+
+@functools.cache
+@beartype
+def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
+    """Return default literalize-ref test cases for all languages."""
+    return [
+        LiteralizeRefCase(config=config, lang_cls=lang_cls)
+        for config in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
         for lang_cls in sorted_languages()
     ]
 
@@ -288,19 +300,19 @@ def run_literalize_ref_golden_case(
     golden_name: str,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    ref_case: literalizer.IdentifierCase | None,
 ) -> None:
     """Run a literalize ``$ref`` golden-file case against *golden_name*.
 
-    Uses the language's first (default) identifier case so the ref
-    identifier is spelled idiomatically for each language.  A stub
-    declaration for each referenced identifier is injected before the
-    first use so the golden file is a complete unit that can be compiled.
+    When *ref_case* is set, the ref identifier is spelled idiomatically
+    for each language.  A stub declaration for each referenced identifier
+    is injected before the first use so the golden file is a complete
+    unit that can be compiled.
     """
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    ref_case = spec.identifier_cases[0]
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -332,7 +344,11 @@ def run_literalize_ref_golden_case(
             data=raw_data,
             ref_key=config.ref_key,
         ):
-            converted_name = ref_case.convert(name=raw_name)
+            converted_name = (
+                ref_case.convert(name=raw_name)
+                if ref_case is not None
+                else raw_name
+            )
             stub = literalizer.literalize(
                 source='{"_": "_"}',
                 input_format=literalizer.InputFormat.JSON,

@@ -1,0 +1,5 @@
+key:
+  $ref: my_var
+items:
+  - $ref: item_var
+  - fallback: value
