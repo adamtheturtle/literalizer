@@ -42,6 +42,7 @@ from literalizer.languages import (
     Bash,
     Cobol,
     Dart,
+    Dhall,
     Fortran,
     FSharp,
     Gleam,
@@ -138,6 +139,21 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
 
     assert "SInt (~" in result.code
     assert "SInt ~" not in result.code
+
+
+def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
+    """Dhall call argument wrapping is restricted to scalar values."""
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match="Dhall call stubs only support scalar arguments",
+    ):
+        literalize_call(
+            source="[[[]]]",
+            input_format=InputFormat.JSON,
+            language=Dhall(),
+            target_function="consume",
+            parameter_names=["value"],
+        )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
