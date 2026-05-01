@@ -1,9 +1,9 @@
 #lang racket
 (define my_data (list
-    (hash )
+    (hash)
     (list)
 ))
 (set! my_data (list
-    (hash )
+    (hash)
     (list)
 ))
