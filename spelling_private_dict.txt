@@ -116,6 +116,7 @@ YAMLError
 ZKV
 ZVal
 Zig
+accessor
 backtick
 backticks
 beartype
@@ -142,6 +143,7 @@ formatter
 formatters
 fromhex
 frozenset
+getter
 ghc
 gnatmake
 gofmt
@@ -194,6 +196,7 @@ postfix
 pragma
 pre
 prepended
+proc
 pyjson5
 pyrefly
 pyright
@@ -201,6 +204,7 @@ pytest
 pytest's
 rakudo
 regen
+renderer
 repo
 reportAttributeAccessIssue
 reportMissingTypeStubs

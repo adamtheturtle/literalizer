@@ -66,6 +66,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
+    identity_call_arg,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -193,6 +194,13 @@ class Raku(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = False
     supports_call_refs_in_dict_literals = True
+
+    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(
+            identity_call_arg,
+        )
+    )
+    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Raku."""

@@ -68,6 +68,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_wrap_calls_with_declarations,
+    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -236,6 +237,14 @@ class Scala(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = True
     supports_call_refs_in_dict_literals = True
+
+    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(
+            identity_call_arg,
+        )
+    )
+    """Callable that rewrites a formatted direct call argument."""
+
     module_name: str = "Check"
 
     _opener_config = TypedOpenerConfig(

@@ -56,6 +56,7 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    identity_call_arg,
     identity_call_ref_identifier,
     no_call_stub,
     no_data_preamble,
@@ -519,6 +520,13 @@ class Elm(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = False
     supports_call_refs_in_dict_literals = True
+
+    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(
+            identity_call_arg,
+        )
+    )
+    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Elm."""
