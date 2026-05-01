@@ -376,7 +376,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
-        requires_inline_multiline_dict_args=False,
+        requires_inline_multiline_dict_args=True,
     ),
     CallCaseConfig(
         case_dir_name="call_existing_ref_arg",
