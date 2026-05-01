@@ -29,6 +29,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     CallStyle,
     CallSupport,
+    CollectionLayout,
     CommandCallStyle,
     IdentifierCase,
     KeywordCallStyle,
@@ -291,6 +292,8 @@ def _format_ordered_map_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
 ) -> str:
     """Format an ordered map as a native language literal."""
     ordered_map_cfg = spec.ordered_map_format_config
@@ -328,6 +331,8 @@ def _format_ordered_map_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                collection_layout=CollectionLayout.COMPACT,
+                multiline_prefix=multiline_prefix,
             ),
             v,
             _maybe_wrap_child(
@@ -343,6 +348,8 @@ def _format_ordered_map_value(
                     ref_case=ref_case,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
+                    collection_layout=collection_layout,
+                    multiline_prefix=multiline_prefix,
                 ),
                 spec=spec,
             ),
@@ -364,6 +371,8 @@ def _format_dict_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
 ) -> str:
     """Format a dict as a native language literal."""
     dict_cfg = spec.dict_format_config
@@ -403,6 +412,8 @@ def _format_dict_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                collection_layout=CollectionLayout.COMPACT,
+                multiline_prefix=multiline_prefix,
             ),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
@@ -418,6 +429,8 @@ def _format_dict_value(
                     ref_case=ref_case,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
+                    collection_layout=collection_layout,
+                    multiline_prefix=multiline_prefix,
                 ),
                 spec=spec,
             ),
@@ -453,6 +466,8 @@ def _format_dict_entry_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -474,6 +489,8 @@ def _format_dict_entry_value(
             ref_case=ref_case,
             expand_refs=expand_refs,
             ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix=multiline_prefix,
         )
     return _format_value(
         value=value,
@@ -484,6 +501,8 @@ def _format_dict_entry_value(
         ref_case=ref_case,
         expand_refs=expand_refs,
         ref_key=ref_key,
+        collection_layout=collection_layout,
+        multiline_prefix=multiline_prefix,
     )
 
 
@@ -769,6 +788,8 @@ def _format_sequence_child(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -822,6 +843,8 @@ def _format_sequence_child(
         ref_case=ref_case,
         expand_refs=expand_refs,
         ref_key=ref_key,
+        collection_layout=collection_layout,
+        multiline_prefix=multiline_prefix,
     )
 
 
@@ -836,6 +859,8 @@ def _format_list_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
 ) -> str:
     """Format a list as a native language literal.
 
@@ -861,6 +886,17 @@ def _format_list_value(
         and (sequence_open_override is None or id(value) in wrap_ids)
     ):
         return sequence_cfg.empty_sequence
+    if collection_layout is CollectionLayout.MULTILINE and value:
+        return _format_multiline_collection_value(
+            value=value,
+            spec=spec,
+            line_prefix=multiline_prefix,
+            wrap_ids=wrap_ids,
+            ref_case=ref_case,
+            expand_refs=expand_refs,
+            ref_key=ref_key,
+            sequence_open_override=sequence_open_override,
+        )
     dict_open_override = _compute_sequence_dict_override(
         items=value,
         spec=spec,
@@ -886,6 +922,8 @@ def _format_list_value(
                     ref_case=ref_case,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
+                    collection_layout=collection_layout,
+                    multiline_prefix=multiline_prefix,
                 ),
                 spec=spec,
             ),
@@ -932,6 +970,8 @@ def _format_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -970,18 +1010,36 @@ def _format_value(
                 if expand_refs
                 else spec.format_call_ref_identifier(ref_name)
             )
+    if (
+        collection_layout is CollectionLayout.MULTILINE
+        and isinstance(value, (dict, list, set, ordereddict))
+        and value
+    ):
+        return _format_multiline_collection_value(
+            value=value,
+            spec=spec,
+            line_prefix=multiline_prefix,
+            wrap_ids=wrap_ids,
+            ref_case=ref_case,
+            expand_refs=expand_refs,
+            ref_key=ref_key,
+            dict_open_override=dict_open_override,
+            sequence_open_override=sequence_open_override,
+        )
     match value:
         case ordereddict():
-            return _format_ordered_map_value(
+            result = _format_ordered_map_value(
                 value=value,
                 spec=spec,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                collection_layout=collection_layout,
+                multiline_prefix=multiline_prefix,
             )
         case dict():
-            return _format_dict_value(
+            result = _format_dict_value(
                 value=value,
                 spec=spec,
                 open_override=dict_open_override,
@@ -989,11 +1047,17 @@ def _format_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                collection_layout=collection_layout,
+                multiline_prefix=multiline_prefix,
             )
         case set():
-            return _format_set_value(value=value, spec=spec, wrap_ids=wrap_ids)
-        case list():
-            return _format_list_value(
+            result = _format_set_value(
+                value=value,
+                spec=spec,
+                wrap_ids=wrap_ids,
+            )
+        case list():  # pragma: no branch
+            result = _format_list_value(
                 value=value,
                 spec=spec,
                 wrap_ids=wrap_ids,
@@ -1002,9 +1066,12 @@ def _format_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                collection_layout=collection_layout,
+                multiline_prefix=multiline_prefix,
             )
         case _:
-            return _format_scalar(value=value, spec=spec)
+            result = _format_scalar(value=value, spec=spec)
+    return result
 
 
 @beartype
@@ -1044,6 +1111,121 @@ def _wrap_body(
 
 
 @beartype
+def _collection_open_for_multiline_value(
+    *,
+    data: dict[str, Value] | set[Scalar] | list[Value],
+    spec: Language,
+    is_ordered_map: bool,
+    dict_open_override: str | None,
+    sequence_open_override: str | None,
+    expand_refs: bool,
+    ref_key: str,
+) -> str:
+    """Return an opener without a leading prefix.
+
+    Used for a nested multiline collection.
+    """
+    if isinstance(data, dict):
+        if is_ordered_map:
+            return spec.ordered_map_format_config.ordered_map_open(data)
+        if dict_open_override is not None:
+            return dict_open_override
+        dict_open_items = (
+            {
+                k: v
+                for k, v in data.items()
+                if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            }
+            if expand_refs
+            else data
+        )
+        return spec.dict_format_config.dict_open(dict_open_items or data)
+    if isinstance(data, set):
+        sorted_set: list[Value] = sorted(
+            data,
+            key=lambda v: (type(v).__name__, repr(v)),
+        )
+        return spec.set_format_config.set_open(sorted_set)
+    if sequence_open_override is not None:
+        return sequence_open_override
+    sequence_open_items = (
+        [
+            v
+            for v in data
+            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+        ]
+        if expand_refs
+        else data
+    )
+    return spec.sequence_open(sequence_open_items or data)
+
+
+@beartype
+def _format_multiline_collection_value(
+    *,
+    value: dict[str, Value] | set[Scalar] | list[Value],
+    spec: Language,
+    line_prefix: str,
+    wrap_ids: frozenset[int],
+    ref_case: IdentifierCase | None,
+    expand_refs: bool,
+    ref_key: str,
+    dict_open_override: str | None = None,
+    sequence_open_override: str | None = None,
+) -> str:
+    """Format a nested collection whose first delimiter has no leading
+    prefix.
+
+    The caller adds its own entry prefix to the first line. Continuation
+    lines and the closing delimiter are prefixed here so nested layouts align
+    under that entry.
+    """
+    is_ordered_map = isinstance(value, ordereddict)
+    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    body_prefix = line_prefix + spec.indent
+    lines = _format_collection_lines(
+        data=value,
+        spec=spec,
+        body_prefix=body_prefix,
+        trailing_comma=trailing_comma,
+        is_ordered_map=is_ordered_map,
+        wrap_ids=wrap_ids,
+        ref_case=ref_case,
+        expand_refs=expand_refs,
+        ref_key=ref_key,
+        collection_layout=CollectionLayout.MULTILINE,
+    )
+    body = "\n".join(lines)
+    opening = _collection_open_for_multiline_value(
+        data=value,
+        spec=spec,
+        is_ordered_map=is_ordered_map,
+        dict_open_override=dict_open_override,
+        sequence_open_override=sequence_open_override,
+        expand_refs=expand_refs,
+        ref_key=ref_key,
+    ).rstrip()
+    closing_indent = spec.indent if spec.indent_closing_delimiter else ""
+    close_prefix = line_prefix + closing_indent
+    match value:
+        case dict() if is_ordered_map:
+            close = spec.ordered_map_format_config.close
+        case dict():
+            close = spec.dict_format_config.close
+        case set():
+            close = spec.set_format_config.close
+        case _:
+            close = spec.sequence_format_config.close
+    return f"{opening}\n{body}\n{close_prefix}{close}"
+
+
+@beartype
+def _rstrip_lines(text: str) -> str:
+    """Remove trailing whitespace from each line."""
+    return "\n".join(line.rstrip() for line in text.split(sep="\n"))
+
+
+@beartype
 def _append_entries(
     *,
     formatted_entries: Sequence[str],
@@ -1057,7 +1239,7 @@ def _append_entries(
     for i, entry in enumerate(iterable=formatted_entries):
         add_sep = i < last_idx or trailing_comma
         sep = spec.element_separator.strip() if add_sep else ""
-        lines.append(f"{body_prefix}{entry}{sep}")
+        lines.append(f"{body_prefix}{_rstrip_lines(text=entry)}{sep}")
 
 
 @beartype
@@ -1070,7 +1252,9 @@ def _format_collection_lines(
     is_ordered_map: bool,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    expand_refs: bool,
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> list[str]:
     """Format collection elements as indented lines."""
     lines: list[str] = []
@@ -1104,6 +1288,8 @@ def _format_collection_lines(
                     ref_case=ref_case,
                     expand_refs=False,
                     ref_key=ref_key,
+                    collection_layout=CollectionLayout.COMPACT,
+                    multiline_prefix=body_prefix,
                 )
                 formatted_val = _maybe_wrap_child(
                     parent_id=parent_id,
@@ -1116,8 +1302,10 @@ def _format_collection_lines(
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ref_case=ref_case,
-                        expand_refs=False,
+                        expand_refs=expand_refs,
                         ref_key=ref_key,
+                        collection_layout=collection_layout,
+                        multiline_prefix=body_prefix,
                     ),
                     spec=spec,
                 )
@@ -1165,8 +1353,10 @@ def _format_collection_lines(
                             wrap_ids=wrap_ids,
                             sequence_open_override=None,
                             ref_case=ref_case,
-                            expand_refs=False,
+                            expand_refs=expand_refs,
                             ref_key=ref_key,
+                            collection_layout=collection_layout,
+                            multiline_prefix=body_prefix,
                         ),
                         spec=spec,
                     ),
@@ -1209,8 +1399,10 @@ def _format_collection_lines(
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
                             ref_case=ref_case,
-                            expand_refs=False,
+                            expand_refs=expand_refs,
                             ref_key=ref_key,
+                            collection_layout=collection_layout,
+                            multiline_prefix=body_prefix,
                         ),
                         spec=spec,
                     ),
@@ -1243,6 +1435,7 @@ def _literalize(
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -1271,6 +1464,8 @@ def _literalize(
         ref_case: When set, any ref mapping is rendered as a bare
             identifier instead of a literal dict.
         ref_key: The key used to identify ref markers in the input.
+        collection_layout: Controls layout for collections nested
+            inside other collections.
     """
     if ref_case is not None:
         ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
@@ -1311,6 +1506,8 @@ def _literalize(
             ref_case=ref_case,
             expand_refs=False,
             ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix=line_prefix,
         )
         return f"{line_prefix}{formatted}"
 
@@ -1335,6 +1532,8 @@ def _literalize(
             ref_case=ref_case,
             expand_refs=False,
             ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix=line_prefix,
         )
         return f"{line_prefix}{formatted}"
 
@@ -1352,7 +1551,9 @@ def _literalize(
         is_ordered_map=is_ordered_map,
         wrap_ids=wrap_ids,
         ref_case=ref_case,
+        expand_refs=False,
         ref_key=ref_key,
+        collection_layout=collection_layout,
     )
 
     body = "\n".join(lines)
@@ -1436,6 +1637,7 @@ def _literalize_pre_form(
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> _PreFormState:
     """Run the variable-form-independent phase of :func:`literalize`.
 
@@ -1455,6 +1657,7 @@ def _literalize_pre_form(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_key=ref_key,
+        collection_layout=collection_layout,
     )
 
     comment_line_prefix = (
@@ -1592,6 +1795,7 @@ def _literalize_both_forms(
     variable_form: BothVariableForms,
     ref_case: IdentifierCase | None,
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
     pre_form = _literalize_pre_form(
@@ -1602,6 +1806,7 @@ def _literalize_both_forms(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_key=ref_key,
+        collection_layout=collection_layout,
     )
     declaration = _literalize_apply_form(
         pre_form=pre_form,
@@ -1651,6 +1856,7 @@ def literalize(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     ref_key: str = "$ref",
+    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
@@ -1701,6 +1907,11 @@ def literalize(
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
             ref marker when *ref_case* is set.  Defaults to ``"$ref"``.
+        collection_layout: Controls layout for collections nested
+            inside other collections.  ``CollectionLayout.COMPACT``
+            preserves the existing one-line nested rendering, while
+            ``CollectionLayout.MULTILINE`` expands non-empty nested
+            collections with one element per line.
 
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
@@ -1747,6 +1958,7 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_key=ref_key,
+            collection_layout=collection_layout,
         )
 
     pre_form = _literalize_pre_form(
@@ -1757,6 +1969,7 @@ def literalize(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_key=ref_key,
+        collection_layout=collection_layout,
     )
     return _literalize_apply_form(
         pre_form=pre_form,
@@ -1921,6 +2134,7 @@ def _format_single_call_arg(
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> str:
     """Format one argument value for a function call.
 
@@ -1966,6 +2180,8 @@ def _format_single_call_arg(
             ref_case=ref_case,
             expand_refs=True,
             ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix="",
         ),
     )
 
@@ -2008,6 +2224,7 @@ def _format_call_args(
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> str:
     """Format argument values for a single function call.
 
@@ -2044,6 +2261,7 @@ def _format_call_args(
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
             ref_key=ref_key,
+            collection_layout=collection_layout,
         )
         for slot_index, arg_value in enumerate(iterable=values)
     ]
@@ -2255,6 +2473,7 @@ def _render_call_per_element(
     consumable_ref_names: frozenset[str],
     ref_key: str,
     collection_comments: CollectionComments | None = None,
+    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -2320,6 +2539,7 @@ def _render_call_per_element(
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
             ref_key=ref_key,
+            collection_layout=collection_layout,
         )
         rendered_elements.append(
             format_call_statement(
@@ -2355,6 +2575,7 @@ def _render_call_whole(
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     ref_key: str,
+    collection_layout: CollectionLayout,
 ) -> str:
     """Render a single call from the whole parsed value.
 
@@ -2393,6 +2614,7 @@ def _render_call_whole(
             ref_key=ref_key,
         ),
         ref_key=ref_key,
+        collection_layout=collection_layout,
     )
     return format_call_statement(
         _assemble_call(
@@ -2419,6 +2641,7 @@ def literalize_call(
     ref_case: IdentifierCase | None = None,
     consumable_refs: frozenset[str] = frozenset(),
     ref_key: str = "$ref",
+    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -2477,6 +2700,11 @@ def literalize_call(
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as
             a ref marker.  Defaults to ``"$ref"``.
+        collection_layout: Controls layout for collections nested
+            inside call arguments.  ``CollectionLayout.COMPACT``
+            preserves the existing one-line nested rendering, while
+            ``CollectionLayout.MULTILINE`` expands non-empty nested
+            collections with one element per line.
 
     .. note::
 
@@ -2549,6 +2777,7 @@ def literalize_call(
             consumable_ref_names=consumable_refs,
             ref_key=ref_key,
             collection_comments=collection_comments,
+            collection_layout=collection_layout,
         )
     else:
         result = _render_call_whole(
@@ -2561,6 +2790,7 @@ def literalize_call(
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
             ref_key=ref_key,
+            collection_layout=collection_layout,
         )
     computed = compute_preamble(
         data=data_for_preamble,

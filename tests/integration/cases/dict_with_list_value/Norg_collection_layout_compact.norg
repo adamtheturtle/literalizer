@@ -1,0 +1,7 @@
+* my_data
+@code json
+{
+    "name": "Alice",
+    "scores": [10, 20, 30]
+}
+@end
