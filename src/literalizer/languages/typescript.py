@@ -371,8 +371,8 @@ class TypeScript(metaclass=LanguageCls):
             suffix=" */",
         )
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
         SEMICOLON = enum.auto()
         NONE = "none"
@@ -381,7 +381,9 @@ class TypeScript(metaclass=LanguageCls):
             self,
             formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-            """Wrap a formatter to match this line ending style."""
+            """Wrap a formatter to match this statement terminator
+            style.
+            """
             if self.value != "none":
                 return formatter
 
@@ -605,7 +607,7 @@ class TypeScript(metaclass=LanguageCls):
     numeric_styles = NumericStyles
     string_formats = StringFormats
     trailing_commas = TrailingCommas
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """TypeScript call style options."""
@@ -704,7 +706,9 @@ class TypeScript(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
     call_style: CallStyles = CallStyles.OBJECT
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -917,7 +921,9 @@ class TypeScript(metaclass=LanguageCls):
             ),
             sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
         )
-        return self.line_ending.wrap_formatter(formatter=base_decl)
+        return self.statement_terminator_style.wrap_formatter(
+            formatter=base_decl
+        )
 
     @cached_property
     def format_variable_assignment(
@@ -925,7 +931,7 @@ class TypeScript(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return assignment_formatter_from_declaration(
-            formatter=self.line_ending.wrap_formatter(
+            formatter=self.statement_terminator_style.wrap_formatter(
                 formatter=variable_declaration_formatter(
                     template="{name} = {value};"
                 ),

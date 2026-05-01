@@ -118,8 +118,8 @@ def test_format_enumeration_properties(
     assert len(spec.string_formats) >= 1
     assert issubclass(spec.trailing_commas, enum.Enum)
     assert len(spec.trailing_commas) >= 1
-    assert issubclass(spec.line_endings, enum.Enum)
-    assert len(spec.line_endings) >= 1
+    assert issubclass(spec.statement_terminator_styles, enum.Enum)
+    assert len(spec.statement_terminator_styles) >= 1
     assert issubclass(spec.call_styles, enum.Enum)
     assert issubclass(spec.version_formats, enum.Enum)
     assert len(spec.version_formats) >= 1
