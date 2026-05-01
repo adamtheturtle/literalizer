@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import assert_never
 
 from beartype import BeartypeConf, beartype
@@ -2079,6 +2079,61 @@ def _strip_refs_from_value(*, value: Value, ref_key: str) -> Value:
     return value
 
 
+@dataclasses.dataclass(frozen=True)
+class _PreambleRefResolution:
+    """Ref-marker resolution result for preamble inference."""
+
+    include: bool
+    value: Value
+
+
+@beartype
+def _resolve_ref_for_preamble(
+    *,
+    value: Value,
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+) -> _PreambleRefResolution:
+    """Resolve ref markers for preamble inference.
+
+    Returns ``include=False`` when *value* is a ref marker whose source
+    value was not supplied.  Callers use that flag to drop the
+    marker, preserving the historical "strip refs" behavior for
+    unknown ref names.
+    """
+    ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+    if ref_name is not None:
+        if ref_name not in ref_values:
+            return _PreambleRefResolution(include=False, value=None)
+        return _PreambleRefResolution(
+            include=True,
+            value=ref_values[ref_name],
+        )
+    if isinstance(value, list):
+        resolved_list: list[Value] = []
+        for item in value:
+            resolved = _resolve_ref_for_preamble(
+                value=item,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+            if resolved.include:
+                resolved_list.append(resolved.value)
+        return _PreambleRefResolution(include=True, value=resolved_list)
+    if isinstance(value, dict):
+        resolved_dict: dict[str, Value] = {}
+        for key, item in value.items():
+            resolved = _resolve_ref_for_preamble(
+                value=item,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+            if resolved.include:
+                resolved_dict[key] = resolved.value
+        return _PreambleRefResolution(include=True, value=resolved_dict)
+    return _PreambleRefResolution(include=True, value=value)
+
+
 @beartype
 def _compute_call_arg_ref_single_use_names(
     *,
@@ -2115,14 +2170,20 @@ def _strip_call_arg_refs_for_preamble(
     data: Value,
     per_element: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
 ) -> Value:
-    """Return *data* with call-argument ref markers removed.
+    """Return *data* with call-argument ref markers resolved or removed.
 
     Ref markers represent a variable declared elsewhere, not real data,
     so they would pollute data-driven preamble inference (e.g. dragging
     in ``Data.Map`` imports for Haskell just because the marker happens
-    to be a ``{str: str}`` dict).  Drop them before computing the
-    preamble while leaving :func:`_format_call_args` to render them.
+    to be a ``{str: str}`` dict).  Drop refs whose values are unknown
+    before computing the preamble while leaving :func:`_format_call_args`
+    to render them.
+
+    When *ref_values* supplies the value behind a marker, substitute
+    that value into the preamble input so the referenced variable's
+    types participate in body-preamble computation.
 
     When *per_element* is ``True``, *data* is a list of argument lists
     and refs are stripped from each inner list.  Otherwise a
@@ -2130,6 +2191,13 @@ def _strip_call_arg_refs_for_preamble(
     Refs nested inside list or dict argument values are also stripped
     recursively.
     """
+    if ref_values:
+        resolved = _resolve_ref_for_preamble(
+            value=data,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        return resolved.value if resolved.include else []
     if per_element:
         if not isinstance(data, list):
             return data
@@ -2649,6 +2717,7 @@ def literalize_call(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     consumable_refs: frozenset[str] = frozenset(),
+    ref_values: Mapping[str, Value] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
@@ -2705,6 +2774,15 @@ def literalize_call(
             Names should match the identifiers used in *source* before
             any *ref_case* conversion.  Defaults to an empty set (no
             refs are consumed).
+        ref_values: Optional mapping from ref identifier to the source
+            value declared elsewhere.  When supplied, values for refs
+            used in *source* are included in data-driven preamble
+            inference, so languages with generated body types (for
+            example Haskell's ``data Val = ...``) declare constructors
+            for types reachable only through refs.  Missing ref names
+            keep the historical behavior: their markers are omitted
+            from preamble inference.  Keys should match the identifiers
+            used in *source* before any *ref_case* conversion.
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as
@@ -2757,6 +2835,7 @@ def literalize_call(
         data=data,
         per_element=per_element,
         ref_key=ref_key,
+        ref_values=ref_values or {},
     )
 
     if per_element:

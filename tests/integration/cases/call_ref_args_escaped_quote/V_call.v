@@ -1,4 +1,3 @@
-interface IVal {}
 interface ICallArg_ {}
 fn process(args ...ICallArg_) {}
 
