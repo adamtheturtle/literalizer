@@ -1,0 +1,3 @@
+def send(*_args: object, **_kwargs: object) -> object: ...
+existing = 42
+send(value=existing)
