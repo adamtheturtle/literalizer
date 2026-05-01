@@ -795,7 +795,7 @@ class VisualBasic(metaclass=LanguageCls):
         return SequenceFormatConfig(
             sequence_open=typed_collection_open(
                 type_to_opener=vb_type_to_opener,
-                fallback=f"New {self.default_sequence_element_type}() {{",
+                fallback="New Object() {",
             ),
             close="}",
             supports_heterogeneity=True,
