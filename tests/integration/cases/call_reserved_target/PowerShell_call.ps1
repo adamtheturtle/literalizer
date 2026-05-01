@@ -1,0 +1,2 @@
+function op {}
+op("hello")

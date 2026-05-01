@@ -808,7 +808,9 @@ def _cpp_call_stub(
         if stub_return is StubReturn.VOID:
             method_decl = f"void {method}(auto...) const {{}}"
         else:
-            method_decl = f"auto {method}(auto...) const {{ return 0; }}"
+            method_decl = (
+                f"[[nodiscard]] auto {method}(auto...) const {{ return 0; }}"
+            )
         return (
             f"struct {type_name} {{ {method_decl} }};",
             f"const {type_name} {root};",

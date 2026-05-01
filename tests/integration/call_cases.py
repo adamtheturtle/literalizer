@@ -224,6 +224,21 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_reserved_target",
+        target_function="op",  # Reserved in SML.
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_dotted_method",
         target_function="app.client.fetch",
         parameter_names=["payload"],
@@ -743,6 +758,9 @@ def _lang_satisfies_config_constraints(
         config.requires_call_returns_expression
         and not lang_cls.call_returns_expression
     ):
+        return False
+    innermost_target_function = config.target_function.split(sep=".")[-1]
+    if innermost_target_function in lang_cls.reserved_identifiers:
         return False
     return _lang_satisfies_call_shape_constraints(
         lang_cls=lang_cls,
