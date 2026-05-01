@@ -1,11 +1,16 @@
 """YAML and TOML comment extraction and formatting."""
 
 import dataclasses
-from collections.abc import Iterable
-from typing import Any, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Protocol, assert_never, runtime_checkable
 
 from beartype import beartype
-from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
+from ruamel.yaml.comments import (
+    CommentedBase,
+    CommentedMap,
+    CommentedSeq,
+    CommentedSet,
+)
 from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import Comment, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
@@ -108,6 +113,44 @@ class _CollectionTargets:
     keys: list[object]
 
 
+@runtime_checkable
+class _CommentAssociation(Protocol):
+    """Typed boundary for ruamel.yaml comment association metadata."""
+
+    comment: Sequence[Sequence[CommentToken] | None] | None
+    items: Mapping[object, Sequence[CommentToken | None]]
+
+
+@runtime_checkable
+class _CollectionValues(Protocol):
+    """Typed boundary for ruamel.yaml collection value lookup."""
+
+    def __getitem__(self, key: object, /) -> object:
+        """Return a collection value by key or index."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@beartype
+def _comment_association(
+    *,
+    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+) -> _CommentAssociation:
+    """Return ruamel.yaml comment association metadata when available."""
+    ca_descriptor: Any = CommentedBase.__dict__["ca"]
+    ca: _CommentAssociation = ca_descriptor.fget(ruamel_data)
+    return ca
+
+
+@beartype
+def _collection_value(
+    *,
+    values: _CollectionValues,
+    key: object,
+) -> object:
+    """Return a value through the typed collection lookup protocol."""
+    return values[key]
+
+
 @beartype
 def _collection_targets(
     *,
@@ -117,18 +160,20 @@ def _collection_targets(
     # Sequences and sets store after-element tokens at index 0,
     # mappings at index 2.
     match ruamel_data:
+        case CommentedSet():
+            return _CollectionTargets(token_idx=0, keys=list(ruamel_data))
+        case CommentedMap():
+            return _CollectionTargets(
+                token_idx=2,
+                keys=list(ruamel_data.keys()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            )
         case CommentedSeq():
             return _CollectionTargets(
                 token_idx=0,
                 keys=list(range(len(ruamel_data))),
             )
-        case CommentedSet():
-            return _CollectionTargets(token_idx=0, keys=list(ruamel_data))
-        case _:
-            return _CollectionTargets(
-                token_idx=2,
-                keys=list(ruamel_data.keys()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-            )
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -138,9 +183,13 @@ def _collection_element_value(
     key: object,
 ) -> object:
     """Return the collection element identified by *key*."""
-    if isinstance(ruamel_data, CommentedSet):
-        return key
-    return cast("object", ruamel_data[key])
+    match ruamel_data:
+        case CommentedSet():
+            return key
+        case CommentedMap() | CommentedSeq():
+            return _collection_value(values=ruamel_data, key=key)
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -167,32 +216,33 @@ def _nested_inline_comment(
 
 
 @beartype
-def _header_comment_lines(*, ca: object) -> list[str]:
+def _header_comment_lines(*, ca: _CommentAssociation) -> list[str]:
     """Extract comments that appear before the first YAML element."""
-    ca_obj = cast("Any", ca)
     lines: list[str] = []
-    if ca_obj.comment and len(ca_obj.comment) > 1 and ca_obj.comment[1]:
-        for header_token in ca_obj.comment[1]:
-            header_value: str = header_token.value
-            lines.extend(
-                _token_comment_lines(value=header_value),
-            )
+    if ca.comment is None or len(ca.comment) <= 1:
+        return lines
+
+    for header_token in ca.comment[1] or ():
+        header_value: str = header_token.value
+        lines.extend(
+            _token_comment_lines(value=header_value),
+        )
     return lines
 
 
 @beartype
 def _element_after_comments(
     *,
-    ca: object,
+    ca: _CommentAssociation,
     key: object,
     token_idx: int,
 ) -> _ParsedAfterToken:
     """Extract inline and before-next comments after one element."""
-    ca_obj = cast("Any", ca)
-    if key not in ca_obj.items:
+    if key not in ca.items:
         return _ParsedAfterToken(inline="", before_next=[])
 
-    item_token: CommentToken | None = ca_obj.items[key][token_idx]
+    item_tokens = ca.items[key]
+    item_token = item_tokens[token_idx]
     if item_token is None:
         return _ParsedAfterToken(inline="", before_next=[])
     return _parse_after_token(token=item_token)
@@ -213,10 +263,10 @@ def extract_yaml_comments(
     :func:`_extract_scalar_comments` for those.
     """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ca = cast("object", ruamel_data.ca)  # pyright: ignore[reportUnknownMemberType]
+    ca = _comment_association(ruamel_data=ruamel_data)
 
     # Header comments (before the first element).
-    pending_before: list[str] = _header_comment_lines(ca=ca)
+    pending_before = _header_comment_lines(ca=ca)
     targets = _collection_targets(ruamel_data=ruamel_data)
 
     # Iterate in insertion order so that pending_before propagation is
