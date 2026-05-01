@@ -1,4 +1,3 @@
-from __future__ import annotations
 import datetime
 my_data: dict[str, str | int | bool | None | datetime.date | datetime.datetime] = {
     "name": "Alice",

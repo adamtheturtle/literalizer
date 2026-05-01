@@ -1,4 +1,3 @@
-from __future__ import annotations
 val_x = {
     "_": "_",
 }
