@@ -33,6 +33,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -282,6 +285,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -332,6 +338,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -505,6 +514,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       # Populate a shared primed project once up front so each parallel
@@ -625,6 +637,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -681,6 +696,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
@@ -699,6 +717,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
@@ -1128,6 +1149,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
@@ -1365,6 +1389,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
+          # Pin uv because otherwise setup-uv looks up the latest
+          # version, and that lookup sometimes fails.
+          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax

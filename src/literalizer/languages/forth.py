@@ -158,7 +158,9 @@ def _format_forth_dict_entry(
 
     Example: ``s\" name" s\" Alice"``.
     """
-    return f"{key} {formatted_value}".rstrip()
+    if not formatted_value:
+        return key
+    return f"{key} {formatted_value}"
 
 
 def _forth_call_stub(
