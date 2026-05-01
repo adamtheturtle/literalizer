@@ -26,12 +26,7 @@ from literalizer.languages import (
     Cobol,
     Dhall,
     Elm,
-    Erlang,
-    Haskell,
-    Jsonnet,
     Mojo,
-    PureScript,
-    Roc,
 )
 
 from .check_golden import check_golden
@@ -628,40 +623,18 @@ CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
     # expressions.
     "call_no_params": frozenset({Cobol, Dhall, Elm}),
     "call_deep_dotted_transformed": frozenset({Cobol}),
-    # Languages whose default call wrappers prepend a token to each
-    # statement (Elm, Haskell, and PureScript ``_ = ``/``_ <- ``, Roc
-    # ``dbg(...)``) or whose comment syntax interacts with the
-    # statement separator (Erlang trailing ``.``, Jsonnet array
-    # comma being swallowed by ``//``). These cannot represent a
-    # standalone comment line in the wrapped self-contained file even
-    # though :func:`literalizer.literalize_call` itself produces
-    # syntactically valid per-call comments.
-    "call_comments": frozenset(
-        {
-            Elm,
-            Erlang,
-            Haskell,
-            Jsonnet,
-            PureScript,
-            Roc,
-        }
-    ),
-    "call_comments_dict_args": frozenset(
-        {
-            Dhall,
-            Elm,
-            Erlang,
-            Haskell,
-            Jsonnet,
-            Mojo,
-            PureScript,
-            Roc,
-        }
-    ),
     # Mojo rejects the transfer operator (^) on trivial register types such as
     # Int, so a $ref inside a dict literal (which requires ^) cannot compile.
     "call_ref_nested_in_dict": frozenset({Mojo}),
 }
+
+
+_CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS = frozenset(
+    {"call_comments", "call_comments_dict_args"}
+)
+_CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS = frozenset(
+    {"call_comments_dict_args"}
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -710,9 +683,19 @@ def _lang_satisfies_config_constraints(
         and not lang_cls.call_returns_expression
     ):
         return False
-    return not (
+    if (
         config.requires_inline_multiline_dict_args
         and not lang_cls.supports_inline_multiline_dict_args
+    ):
+        return False
+    if (
+        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
+        and not lang_cls.supports_standalone_comments_in_wrapped_calls
+    ):
+        return False
+    return not (
+        config.case_dir_name in _CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS
+        and not lang_cls.supports_commented_dict_call_args
     )
 
 

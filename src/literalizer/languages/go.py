@@ -19,6 +19,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -264,6 +265,8 @@ class Go(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -289,6 +292,11 @@ class Go(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -698,12 +706,13 @@ class Go(metaclass=LanguageCls):
             datetime.datetime: "time.Time",
             str: "string",
         }
+        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
+        go_int_type = "int64" if suffix_is_auto else "int"
+        _type_names[int] = go_int_type
         date_type = _type_names.get(self.date_format.value.type_produced)
         datetime_type = _type_names.get(
             self.datetime_format.value.type_produced,
         )
-        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
-        go_int_type = "int64" if suffix_is_auto else "int"
         return make_element_to_type(
             str_type="string",
             bool_type="bool",

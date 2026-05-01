@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
 )
@@ -135,6 +136,17 @@ def _build_gleam_datetime_iso(
         return _apply_gleam_str_wrapped_datetime(value=value, prefix=prefix)
 
     return _format
+
+
+def _build_gleam_datetime_epoch(
+    prefix: str,
+) -> Callable[[datetime.datetime], str]:
+    """Build a datetime formatter that produces ``{prefix}Int`` from
+    Unix epoch seconds.
+    """
+    return datetime_epoch_formatter(
+        format_integer=_build_gleam_integer_wrapper(prefix=prefix, base=str),
+    )
 
 
 @beartype
@@ -294,6 +306,7 @@ _format_gleam_integer_decimal = _build_gleam_integer_wrapper(
     prefix="G",
     base=str,
 )
+_format_gleam_datetime_epoch = _build_gleam_datetime_epoch(prefix="G")
 _gleam_integer_wrapper = _build_gleam_integer_wrapper
 _gleam_float_wrapper = _build_gleam_float_wrapper
 _gleam_dict_entry = _build_gleam_dict_entry(prefix="G")
@@ -415,6 +428,7 @@ def _build_gleam_data_dependent_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
+    datetime_type_produced: type,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a ``data_dependent_preamble`` callable for Gleam.
 
@@ -427,19 +441,20 @@ def _build_gleam_data_dependent_preamble(
         """Return the ``pub type`` declaration for *data*."""
         types = _collect_gleam_types(value=data)
         p = constructor_prefix
+        int_types: set[type] = {int}
+        str_types: set[type] = {str, bytes, datetime.date}
+        if datetime_type_produced is int:
+            int_types.add(datetime.datetime)
+        else:
+            str_types.add(datetime.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
                 (frozenset({type(None)}), f"{p}Null"),
                 (frozenset({bool}), f"{p}Bool(Bool)"),
-                (frozenset({int}), f"{p}Int(Int)"),
+                (frozenset(int_types), f"{p}Int(Int)"),
                 (frozenset({float}), f"{p}Float(Float)"),
-                (
-                    frozenset(
-                        {str, bytes, datetime.date, datetime.datetime},
-                    ),
-                    f"{p}Str(String)",
-                ),
+                (frozenset(str_types), f"{p}Str(String)"),
                 (frozenset({list}), f"{p}List(List({type_name}))"),
                 (
                     frozenset({dict, ordereddict}),
@@ -515,6 +530,8 @@ class Gleam(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -535,6 +552,11 @@ class Gleam(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_gleam_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=_format_gleam_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -906,6 +928,7 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_data_dependent_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
+            datetime_type_produced=self.datetime_format.value.type_produced,
         )
 
     @cached_property
@@ -1056,6 +1079,8 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.datetime_format.name == "EPOCH":
+            return _build_gleam_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "G":
             return self.datetime_format
         return _build_gleam_datetime_iso(prefix=self.constructor_prefix)

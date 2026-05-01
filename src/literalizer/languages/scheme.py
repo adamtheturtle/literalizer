@@ -14,6 +14,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -108,6 +109,8 @@ class Scheme(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -125,6 +128,11 @@ class Scheme(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

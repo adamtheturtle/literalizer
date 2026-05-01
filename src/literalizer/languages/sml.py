@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -132,7 +133,7 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
-def _apply_sml_entry_formatter(
+def _apply_sml_entry_formatter(  # noqa: PLR0911
     original: Value, formatted: str, prefix: str
 ) -> str:
     """Wrap a formatted entry in the appropriate SML ``datatype``
@@ -157,6 +158,14 @@ def _apply_sml_entry_formatter(
             )
         case str() | bytes():
             return f"{prefix}Str {formatted}"
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            negative = formatted.startswith("-")
+            literal = f"~{formatted[1:]}" if negative else formatted
+            return (
+                f"{prefix}Int ({literal})"
+                if negative
+                else f"{prefix}Int {literal}"
+            )
         case datetime.date() if formatted.startswith('"'):
             return f"{prefix}Str {formatted}"
         case _:
@@ -305,6 +314,8 @@ class Sml(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -333,6 +344,11 @@ class Sml(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -897,9 +913,13 @@ class Sml(metaclass=LanguageCls):
             else f"{p}Date of (int * int * int)"
         )
         _datetime_constructor = (
-            f"{p}Str of string"
-            if self.datetime_format.value.type_produced is str
-            else f"{p}Datetime of ((int * int * int) * (int * int * int))"
+            f"{p}Int of LargeInt.int"
+            if self.datetime_format.value.type_produced is int
+            else (
+                f"{p}Str of string"
+                if self.datetime_format.value.type_produced is str
+                else f"{p}Datetime of ((int * int * int) * (int * int * int))"
+            )
         )
         return {
             type(None): (_h, f"{p}Null"),

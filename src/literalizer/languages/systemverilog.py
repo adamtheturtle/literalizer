@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -99,9 +100,11 @@ def _escape_nested(text: str) -> str:
 
 
 @beartype
-def _format_sv_entry(original: Value, formatted: str) -> str:
+def _format_sv_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
     """Wrap a formatted entry in a named ``_VVal`` struct literal."""
     match original:
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            return f'_VVal\'{{tag: _VVAL_INT, i: {formatted}, r: 0.0, s: ""}}'
         case str() | bytes() | datetime.date():
             return f"_VVal'{{tag: _VVAL_STR, i: 0, r: 0.0, s: {formatted}}}"
         case bool():
@@ -239,6 +242,8 @@ class SystemVerilog(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = True
 
     class DateFormats(enum.Enum):
@@ -256,6 +261,11 @@ class SystemVerilog(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

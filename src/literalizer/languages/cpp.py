@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -875,6 +876,8 @@ class Cpp(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = True
 
     class DateFormats(enum.Enum):
@@ -915,12 +918,19 @@ class Cpp(metaclass=LanguageCls):
             type_produced=str,
         )
 
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
+
         @property
         def cpp_type(self) -> str:
             """Return the C++ type name for this datetime format."""
             cfg: DatetimeFormatConfig = self.value
             if cfg.type_produced is str:
                 return "std::string"
+            if cfg.type_produced is int:
+                return "long long"
             return "std::chrono::system_clock::time_point"
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

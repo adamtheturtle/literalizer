@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -69,7 +70,7 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_format_c_entry(
+def _apply_format_c_entry(  # noqa: PLR0911
     *,
     original: Value,
     formatted: str,
@@ -80,6 +81,8 @@ def _apply_format_c_entry(
 ) -> str:
     """Wrap a formatted entry in the appropriate union literal."""
     match original:
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            return f"((CVal){{.{int_field} = {formatted}}})"
         case str() | bytes() | datetime.date():
             return f"((CVal){{.{string_field} = {formatted}}})"
         case bool():
@@ -225,6 +228,8 @@ class C(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = True
 
     class DateFormats(enum.Enum):
@@ -242,6 +247,11 @@ class C(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

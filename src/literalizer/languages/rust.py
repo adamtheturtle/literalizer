@@ -14,6 +14,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -421,7 +422,7 @@ class _VariantSignature:
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
+def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex  # noqa: PLR0911
     *,
     value: Scalar,
     date_type: str,
@@ -453,6 +454,11 @@ def _heterogeneous_variant_for_scalar(  # noqa: PLR0911
             return _VariantSignature(
                 name="Bytes",
                 inner_type="&'static str",
+            )
+        case datetime.datetime() if datetime_type in {"i32", "i64", "i128"}:
+            return _VariantSignature(
+                name=datetime_type.upper(),
+                inner_type=datetime_type,
             )
         case datetime.datetime():
             return _VariantSignature(
@@ -693,6 +699,8 @@ class Rust(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -722,6 +730,11 @@ class Rust(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -1341,11 +1354,12 @@ class Rust(metaclass=LanguageCls):
         """Rust type used for :class:`datetime.datetime` variant
         payloads.
         """
-        return (
-            "&'static str"
-            if self.datetime_format.value.type_produced is str
-            else "NaiveDateTime"
-        )
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "&'static str"
+        if produced is int:
+            return "i64"
+        return "NaiveDateTime"
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -1563,9 +1577,13 @@ class Rust(metaclass=LanguageCls):
                 else "NaiveDate"
             ),
             datetime_type=(
-                "&str"
-                if self.datetime_format.value.type_produced is str
-                else "NaiveDateTime"
+                "i64"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "&str"
+                    if self.datetime_format.value.type_produced is str
+                    else "NaiveDateTime"
+                )
             ),
             sequence_format_type_annotation=(
                 self.sequence_format.format_type_annotation

@@ -46,6 +46,7 @@ from literalizer.languages import (
     FSharp,
     Gleam,
     Go,
+    Haskell,
     Java,
     JavaScript,
     Jsonnet,
@@ -53,6 +54,8 @@ from literalizer.languages import (
     Nix,
     Python,
     Racket,
+    Rust,
+    Sml,
     Yaml,
 )
 
@@ -70,6 +73,71 @@ FORTRAN = Fortran(
     module_name="check",
 )
 FSHARP = FSharp(module_name="check")
+
+
+def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
+    """Epoch datetimes use the integer variant in heterogeneous Rust
+    data.
+    """
+    result = literalize(
+        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
+        input_format=InputFormat.YAML,
+        language=Rust(
+            datetime_format=Rust.datetime_formats.EPOCH,
+            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+
+    assert result.preamble == (
+        "use std::collections::HashMap;",
+        "enum Value {",
+        "    I64(i64),",
+        "    Str(&'static str),",
+        "}",
+    )
+    assert result.code == textwrap.dedent(
+        text="""\
+        HashMap::from([
+            ("ts", Value::I64(1705321800)),
+            ("name", Value::Str("hi")),
+        ])"""
+    )
+
+
+def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
+    """Explicit Haskell epoch datetimes use the integer constructor."""
+    result = literalize(
+        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
+        input_format=InputFormat.YAML,
+        language=Haskell(
+            datetime_format=Haskell.datetime_formats.EPOCH,
+            numeric_style=Haskell.numeric_styles.EXPLICIT,
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+
+    assert "instance Num" not in "\n".join(result.preamble)
+    assert '("ts", HInt 1705321800)' in result.code
+
+
+def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
+    """Negative SML epoch datetimes wrap the converted integer."""
+    result = literalize(
+        source="1900-01-01T00:00:00+00:00",
+        input_format=InputFormat.YAML,
+        language=Sml(datetime_format=Sml.datetime_formats.EPOCH),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_data"),
+    )
+
+    assert "SInt (~" in result.code
+    assert "SInt ~" not in result.code
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -480,6 +548,8 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)
     assert isinstance(spec.scalar_body_preamble, dict)
+    assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
+    assert isinstance(spec.supports_commented_dict_call_args, bool)
 
 
 @pytest.mark.parametrize(

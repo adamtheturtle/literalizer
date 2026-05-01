@@ -19,6 +19,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     format_date_iso,
+    format_datetime_epoch,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -114,12 +115,6 @@ def _format_datetime_python(value: datetime.datetime) -> str:
             )
     args = ", ".join(parts)
     return f"datetime.datetime({args})"
-
-
-@beartype
-def _format_datetime_epoch(value: datetime.datetime) -> str:
-    """Format a datetime as seconds since the Unix epoch."""
-    return repr(value.timestamp())
 
 
 @beartype
@@ -568,8 +563,8 @@ class Python(metaclass=LanguageCls):
             * ``datetime_formats.PYTHON`` — ``datetime.datetime`` constructor
               call, e.g. ``datetime.datetime(year=2024, month=1,
               day=15, hour=12, minute=30, second=0)``.
-            * ``datetime_formats.EPOCH`` — Unix epoch float,
-              e.g. ``1705312200.0``.
+            * ``datetime_formats.EPOCH`` — integer Unix epoch seconds,
+              e.g. ``1705312200``.
 
         bytes_format: How to format :class:`bytes` values.
 
@@ -641,6 +636,8 @@ class Python(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -673,7 +670,10 @@ class Python(metaclass=LanguageCls):
             formatter=_format_datetime_python,
             preamble_lines=("import datetime",),
         )
-        EPOCH = DatetimeFormatConfig(formatter=_format_datetime_epoch)
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
@@ -684,7 +684,7 @@ class Python(metaclass=LanguageCls):
             """The Python type hint for this datetime format."""
             if self is type(self).PYTHON:
                 return "datetime.datetime"
-            return "float"
+            return "int"
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options for Python."""

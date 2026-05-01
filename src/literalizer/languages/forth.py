@@ -13,6 +13,9 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
+from literalizer._formatters.format_dates import (
+    format_datetime_epoch,
+)
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
     passthrough_sequence_entry,
@@ -203,6 +206,8 @@ class Forth(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -223,6 +228,11 @@ class Forth(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_datetime_forth,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

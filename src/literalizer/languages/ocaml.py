@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -75,7 +76,9 @@ from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
 @beartype
-def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
+def _apply_ocaml_entry(  # noqa: PLR0911
+    original: Value, formatted: str, prefix: str
+) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
@@ -98,6 +101,13 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
             )
         case str() | bytes():
             return f"{prefix}Str {formatted}"
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            needs_parens = formatted.startswith("-")
+            return (
+                f"{prefix}Int ({formatted})"
+                if needs_parens
+                else f"{prefix}Int {formatted}"
+            )
         case datetime.date() if formatted.startswith('"'):
             return f"{prefix}Str {formatted}"
         case _:
@@ -249,6 +259,8 @@ class OCaml(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -277,6 +289,11 @@ class OCaml(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+        )
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -863,9 +880,14 @@ class OCaml(metaclass=LanguageCls):
             else f"  | {p}Date of (int * int * int)"
         )
         _datetime_constructor = (
-            f"  | {p}Str of string"
-            if self.datetime_format.value.type_produced is str
-            else f"  | {p}Datetime of ((int * int * int) * (int * int * int))"
+            f"  | {p}Int of int"
+            if self.datetime_format.value.type_produced is int
+            else (
+                f"  | {p}Str of string"
+                if self.datetime_format.value.type_produced is str
+                else f"  | {p}Datetime of "
+                "((int * int * int) * (int * int * int))"
+            )
         )
         return {
             type(None): (_h, f"  | {p}Null"),

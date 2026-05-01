@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -208,6 +209,8 @@ class Elixir(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = True
     supports_module_name = False
 
     class DateFormats(enum.Enum):
@@ -230,6 +233,11 @@ class Elixir(metaclass=LanguageCls):
             type_produced=str,
         )
         ELIXIR = DatetimeFormatConfig(formatter=_format_datetime_elixir)
+
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""

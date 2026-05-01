@@ -1,2 +1,2 @@
 from __future__ import annotations
-my_data = 1705321800.0
+my_data = 1705321800
