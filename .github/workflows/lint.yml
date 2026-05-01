@@ -145,12 +145,33 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
-  # Split out from lint-fast because two odin invocations on the same
-  # runner deadlock regardless of filesystem isolation.  The matrix
-  # spreads shards across separate runners so no two odin processes
-  # ever share a kernel; each shard runs its files serially.
+  # Keep Odin isolated.  This fixture set is good at finding compiler
+  # instability because many generated files combine [dynamic]any,
+  # map[string]any, nested literals, and variadic proc(..any) stubs.
+  # There is not yet one exact upstream issue for our CI symptom, but
+  # these related Odin issues document the relevant failure modes:
+  #
+  # - Race-condition-like threaded compiler crash:
+  #   https://github.com/odin-lang/Odin/issues/5051
+  # - Open compiler crash involving any:
+  #   https://github.com/odin-lang/Odin/issues/3988
+  # - Older [dynamic]any miscompile/crash history:
+  #   https://github.com/odin-lang/Odin/issues/79
+  #
+  # In literalizer CI, Odin has failed in two ways:
+  # 1. Parallel odin invocations on one runner deadlocked, even when
+  #    each build used its own working directory.
+  # 2. A serial build segfaulted, then the retry spawned an odin process
+  #    that never exited; GitHub Actions later killed it as an orphan.
+  #
+  # The matrix puts each shard on a different runner so no two odin
+  # processes share a kernel.  Each shard then builds files serially.
   lint-odin:
     runs-on: ubuntu-latest
+    # Normal shards finish in seconds.  If the compiler, setup action, or
+    # cleanup hangs, stop this job promptly instead of leaving the
+    # completion gate blocked until the workflow-wide timeout.
+    timeout-minutes: 10
     strategy:
       matrix:
         shard: [0, 1, 2, 3]
@@ -172,10 +193,17 @@ jobs:
             wd=$(mktemp -d)
             trap 'rm -rf "$wd"' RETURN
             cp "$src" "$wd/main.odin"
-            ( cd "$wd" && odin build . -out:"$wd/prog" )
+            # Bound each compiler attempt.  A retry is useful for
+            # transient segfaults, but without this timeout the retry can
+            # hang forever and leave only "operation was canceled" plus
+            # an orphan odin process in the Actions log.
+            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin build . -out:"$wd/prog" )
           }
           for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
             src=$(realpath "${files[i]}")
+            # Print before building so a timeout log identifies the
+            # fixture to minimize for an upstream Odin bug report.
+            printf 'Building %s\n' "$src"
             build_odin "$src" || build_odin "$src" || exit 1
           done
 
