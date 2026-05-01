@@ -1,2 +1,2 @@
-def send(Map _args) { null }
-send(value: ["a": 1, "b": "x"])
+def process(Map _args) { null }
+process(value: ["a": 1, "b": "x"])

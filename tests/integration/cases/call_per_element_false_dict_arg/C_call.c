@@ -14,8 +14,8 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void send(CVal _a0) { (void)_a0; }
+static void process(CVal _a0) { (void)_a0; }
 int main(void) {
-send(((CVal){.m = (CKV[]){{"a", ((CVal){.i = 1})}, {"b", ((CVal){.s = "x"})}}}));
+process(((CVal){.m = (CKV[]){{"a", ((CVal){.i = 1})}, {"b", ((CVal){.s = "x"})}}}));
     return 0;
 }

@@ -1,3 +1,3 @@
-function send {}
+function process {}
 $existing = 42
-send($existing)
+process($existing)

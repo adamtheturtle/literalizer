@@ -1,3 +1,3 @@
-: send ;
+: process ;
 : existing 42 ;
-existing send
+existing process

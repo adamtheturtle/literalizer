@@ -1,7 +1,7 @@
-class Send_ {
+class Process_ {
     construct new() {}
     call(value) {}
 }
-var send = Send_.new()
+var process = Process_.new()
 var existing = 42
-send.call(existing)
+process.call(existing)

@@ -4,8 +4,8 @@ module Check exposing (..)
 type Val
     = EInt Int
     | EList (List Val)
-send : a -> ()
-send _ = ()
+process : a -> ()
+process _ = ()
 
 
 main : Program () () Never
@@ -13,7 +13,7 @@ main =
     let
         existing : Val
         existing = EInt 42
-        _ = send(existing)
+        _ = process(existing)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

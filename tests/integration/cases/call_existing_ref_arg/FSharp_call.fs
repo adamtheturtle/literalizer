@@ -3,6 +3,6 @@ module Main
 type Val =
     | FInt of int64
     | FList of Val list
-let send (_value: obj) : obj = null
+let process (_value: obj) : obj = null
 let existing: Val = FInt 42L
-send(existing)
+process(existing)

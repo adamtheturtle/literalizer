@@ -1,2 +1,2 @@
-send(args...; kwargs...) = nothing
-send(value=Dict("a" => 1, "b" => "x"))
+process(args...; kwargs...) = nothing
+process(value=Dict("a" => 1, "b" => "x"))

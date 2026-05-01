@@ -1,3 +1,3 @@
-function send(...) end
+function process(...) end
 local existing = 42
-send(existing)
+process(existing)

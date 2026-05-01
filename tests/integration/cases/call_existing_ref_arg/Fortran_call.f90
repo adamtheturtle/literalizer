@@ -20,10 +20,10 @@ program main
     implicit none
     type(fval_t) :: existing
     existing = fint(42_int64)
-    call send(existing)
+    call process(existing)
 contains
-    subroutine send(value)
+    subroutine process(value)
         implicit none
         type(fval_t), intent(in) :: value
-    end subroutine send
+    end subroutine process
 end program main

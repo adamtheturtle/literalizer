@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn send(value: ZVal) void { _ = value; }
+fn process(value: ZVal) void { _ = value; }
 pub fn main() void {
-    send(.{ .map = &.{.{ .key = "a", .val = .{ .int = 1 } }, .{ .key = "b", .val = .{ .str = "x" } }}});
+    process(.{ .map = &.{.{ .key = "a", .val = .{ .int = 1 } }, .{ .key = "b", .val = .{ .str = "x" } }}});
 }

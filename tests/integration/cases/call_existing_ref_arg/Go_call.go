@@ -1,7 +1,7 @@
 package main
-func send(args ...any) any { return nil }
+func process(args ...any) any { return nil }
 
 func main() {
 existing := 42
-send(existing)
+process(existing)
 }

@@ -1,4 +1,4 @@
 <?php
-function send($value) {}
+function process($value) {}
 $existing = 42;
-send(value: $existing);
+process(value: $existing);

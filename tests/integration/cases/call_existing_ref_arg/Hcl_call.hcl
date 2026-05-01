@@ -1,2 +1,2 @@
 existing = 42
-_0 = send(existing)
+_0 = process(existing)

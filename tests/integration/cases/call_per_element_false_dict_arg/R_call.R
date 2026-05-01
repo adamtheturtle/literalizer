@@ -1,2 +1,2 @@
-send <- function(...) NULL
-send(value = list("a" = 1, "b" = "x"))
+process <- function(...) NULL
+process(value = list("a" = 1, "b" = "x"))

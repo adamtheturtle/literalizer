@@ -1,3 +1,3 @@
-sub send(*@a, *%kw) {}
+sub process(*@a, *%kw) {}
 my $existing = 42;
-send($existing);
+process($existing);

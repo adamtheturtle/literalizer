@@ -1,3 +1,3 @@
-send() { :; }
+process() { :; }
 declare existing=42
-send existing
+process existing

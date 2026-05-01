@@ -1,2 +1,2 @@
-sub send {}
-send({"a" => 1, "b" => "x"});
+sub process {}
+process({"a" => 1, "b" => "x"});

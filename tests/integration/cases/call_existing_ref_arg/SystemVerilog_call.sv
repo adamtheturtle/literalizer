@@ -10,9 +10,9 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-task send(input _VVal value); endtask
+task process(input _VVal value); endtask
 initial begin
 static _VVal existing = _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""};
-send(existing);
+process(existing);
 end
 endmodule

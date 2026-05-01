@@ -1,9 +1,9 @@
 #include <initializer_list>
 #include <vector>
 #include <cstddef>
-auto send(auto...) { return 0; }
+auto process(auto...) { return 0; }
 int main() {
 auto existing = 42;
-send(existing);
+process(existing);
     return 0;
 }

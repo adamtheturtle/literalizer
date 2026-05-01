@@ -1,2 +1,2 @@
-(defun send (&rest args) (declare (ignore args)) nil)
-(send :value (list (cons "a" 1) (cons "b" "x")))
+(defun process (&rest args) (declare (ignore args)) nil)
+(process :value (list (cons "a" 1) (cons "b" "x")))

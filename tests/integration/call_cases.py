@@ -365,7 +365,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_per_element_false_dict_arg",
-        target_function="send",
+        target_function="process",
         parameter_names=["value"],
         call_transform=None,
         transform_stub_names=[],
@@ -380,7 +380,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         case_dir_name="call_existing_ref_arg",
-        target_function="send",
+        target_function="process",
         parameter_names=["value"],
         call_transform=None,
         transform_stub_names=[],

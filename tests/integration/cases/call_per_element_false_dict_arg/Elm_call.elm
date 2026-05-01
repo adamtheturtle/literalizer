@@ -5,14 +5,14 @@ type Val
     = EInt Int
     | EStr String
     | EDict (List ( String, Val ))
-send : a -> ()
-send _ = ()
+process : a -> ()
+process _ = ()
 
 
 main : Program () () Never
 main =
     let
-        _ = send(EDict [("a", EInt 1), ("b", EStr "x")])
+        _ = process(EDict [("a", EInt 1), ("b", EStr "x")])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

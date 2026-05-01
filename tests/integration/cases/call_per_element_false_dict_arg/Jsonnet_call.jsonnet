@@ -1,4 +1,4 @@
-local send(value) = null;
+local process(value) = null;
 [
-    send(value={a: 1, b: "x"}),
+    process(value={a: 1, b: "x"}),
 ]

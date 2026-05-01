@@ -1,3 +1,3 @@
-proc send {args} {}
+proc process {args} {}
 set existing 42
-send existing
+process existing

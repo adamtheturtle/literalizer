@@ -1,3 +1,3 @@
-function send() {}
+function process() {}
 const existing = 42;
-send({ value: existing });
+process({ value: existing });

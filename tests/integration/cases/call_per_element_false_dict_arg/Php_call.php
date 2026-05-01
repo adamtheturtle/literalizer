@@ -1,3 +1,3 @@
 <?php
-function send($value) {}
-send(value: ["a" => 1, "b" => "x"]);
+function process($value) {}
+process(value: ["a" => 1, "b" => "x"]);

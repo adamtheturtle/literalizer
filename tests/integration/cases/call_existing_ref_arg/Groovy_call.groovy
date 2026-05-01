@@ -1,3 +1,3 @@
-def send(Map _args) { null }
+def process(Map _args) { null }
 def existing = 42
-send(value: existing)
+process(value: existing)

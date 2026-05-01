@@ -1,2 +1,2 @@
-(define send (lambda args (if #f #f)))
-(send (list "a" 1 "b" "x"))
+(define process (lambda args (if #f #f)))
+(process (list "a" 1 "b" "x"))

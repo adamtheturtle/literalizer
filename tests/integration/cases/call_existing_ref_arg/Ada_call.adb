@@ -1,7 +1,7 @@
 with A_Stub; use A_Stub;
 procedure Main is
-    procedure Send (Value : A_Val) is begin null; end Send;
+    procedure Process (Value : A_Val) is begin null; end Process;
     existing : A_Val := AInt (42);
 begin
-    Send(value => existing);
+    Process(value => existing);
 end Main;

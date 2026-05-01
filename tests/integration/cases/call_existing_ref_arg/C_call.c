@@ -14,9 +14,9 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void send(CVal _a0) { (void)_a0; }
+static void process(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal existing = ((CVal){.i = 42});
-send(existing);
+process(existing);
     return 0;
 }

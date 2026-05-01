@@ -18,10 +18,10 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call send(fmap([fval_t :: fentry('a', fint(1_int64)), fentry('b', fstr('x'))]))
+    call process(fmap([fval_t :: fentry('a', fint(1_int64)), fentry('b', fstr('x'))]))
 contains
-    subroutine send(value)
+    subroutine process(value)
         implicit none
         type(fval_t), intent(in) :: value
-    end subroutine send
+    end subroutine process
 end program main

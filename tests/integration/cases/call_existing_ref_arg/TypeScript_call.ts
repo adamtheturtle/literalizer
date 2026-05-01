@@ -1,4 +1,4 @@
-const send: any = () => {};
+const process: any = () => {};
 const existing = 42;
-send({ value: existing });
+process({ value: existing });
 export {};

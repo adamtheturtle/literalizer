@@ -1,3 +1,3 @@
-def send(*a); end
+def process(*a); end
 existing = 42
-send(value: existing)
+process(value: existing)

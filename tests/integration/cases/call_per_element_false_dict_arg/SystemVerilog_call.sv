@@ -10,8 +10,8 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-task send(input _VVal value); endtask
+task process(input _VVal value); endtask
 initial begin
-send(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"a\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"b\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"x\"}}}"});
+process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"a\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"b\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"x\"}}}"});
 end
 endmodule

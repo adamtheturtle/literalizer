@@ -8,9 +8,9 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-send :: Val -> IO ()
-send _ = return ()
+process :: Val -> IO ()
+process _ = return ()
 main :: IO ()
 main = do
-    _ <- send(HMap [("a", 1), ("b", HStr "x")])
+    _ <- process(HMap [("a", 1), ("b", HStr "x")])
     pure ()

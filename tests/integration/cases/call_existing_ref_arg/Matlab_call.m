@@ -1,3 +1,3 @@
-send = @(varargin) [];
+process = @(varargin) [];
 existing = 42;
-send(existing)
+process(existing)

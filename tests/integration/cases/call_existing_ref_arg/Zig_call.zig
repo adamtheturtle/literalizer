@@ -10,8 +10,8 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn send(value: ZVal) void { _ = value; }
+fn process(value: ZVal) void { _ = value; }
 pub fn main() void {
     const existing: ZVal = .{ .int = 42 };
-    send(existing);
+    process(existing);
 }

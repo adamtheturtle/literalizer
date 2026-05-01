@@ -1,3 +1,3 @@
-send <- function(...) NULL
+process <- function(...) NULL
 existing <- 42
-send(value = existing)
+process(value = existing)

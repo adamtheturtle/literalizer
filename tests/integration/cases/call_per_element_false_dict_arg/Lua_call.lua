@@ -1,2 +1,2 @@
-function send(...) end
-send({["a"] = 1, ["b"] = "x"})
+function process(...) end
+process({["a"] = 1, ["b"] = "x"})
