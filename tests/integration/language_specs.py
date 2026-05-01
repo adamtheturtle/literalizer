@@ -160,10 +160,7 @@ def make_spec(
     ``module_name`` constructor argument; default it to ``"check"`` so
     fixture output matches the historic golden files.
     """
-    has_module_name = "module_name" in getattr(
-        lang_cls, "__dataclass_fields__", {}
-    )
-    if has_module_name and "module_name" not in kwargs:
+    if lang_cls.supports_module_name and "module_name" not in kwargs:
         kwargs["module_name"] = lang_cls.module_name_case.convert(name="main")
     return cached_spec(
         lang_cls=lang_cls,

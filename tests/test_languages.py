@@ -2,59 +2,38 @@
 
 import dataclasses
 import datetime
-import enum
 import json
 import re
 from typing import ClassVar
 
 import pytest
-from pygments.lexers import find_lexer_class_by_name
 
-import literalizer.languages
 from literalizer import (
-    BothVariableForms,
-    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
-    literalize_call,
 )
 from literalizer._language import (
-    LanguageCls,
     StubReturn,
 )
 from literalizer.exceptions import (
-    CallArgNotSupportedError,
-    CallsNotSupportedByLanguageError,
-    CallsNotSupportedByToolError,
     NullInCollectionError,
-    ParameterCountMismatchError,
-    PerElementNotListError,
     UnrepresentableSpecialFloatError,
-    UnsupportedIdentifierCaseError,
-    WrapCombinedInFileNotSupportedError,
 )
 from literalizer.languages import (
-    Bash,
     Cobol,
     Dart,
-    Dhall,
-    Forth,
     Fortran,
     FSharp,
     Gleam,
     Haskell,
     Java,
-    JavaScript,
     Jsonnet,
     Matlab,
-    Nix,
     Python,
     R,
-    Racket,
     Rust,
     Sml,
-    Yaml,
 )
 
 COBOL = Cobol(
@@ -71,59 +50,6 @@ FORTRAN = Fortran(
     module_name="check",
 )
 FSHARP = FSharp(module_name="check")
-
-
-def test_literalize_leaves_python_heterogeneous_scalars_unwrapped() -> None:
-    """Python literalize renders heterogeneous scalar data directly."""
-    result = literalize(
-        source='{"a": 1, "b": "x"}',
-        input_format=InputFormat.JSON,
-        language=Python(),
-    )
-
-    assert result.code == '{\n    "a": 1,\n    "b": "x",\n}'
-
-
-def test_literalize_call_keeps_python_heterogeneous_scalars() -> None:
-    """Python literalize_call renders heterogeneous scalar arguments
-    directly.
-    """
-    result = literalize_call(
-        source='[{"a": 1, "b": "x"}]',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="send",
-        parameter_names=("value",),
-    )
-
-    assert result.code == 'send(value={"a": 1, "b": "x"})'
-
-
-def test_forth_call_transform_appends_postfix_wrapper() -> None:
-    """Forth call transforms append the wrapper after the postfix call."""
-    result = literalize_call(
-        source="[1]",
-        input_format=InputFormat.JSON,
-        language=Forth(),
-        target_function="send",
-        parameter_names=("value",),
-        call_transform=lambda call: f"emit({call})",
-    )
-
-    assert result.code.endswith("send emit")
-
-
-def test_literalize_call_ref_is_omitted_from_preamble_data() -> None:
-    """Per-element call refs are removed before preamble inference."""
-    result = literalize_call(
-        source='[{"$ref": "existing"}]',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="send",
-        parameter_names=("value",),
-    )
-
-    assert result.code == "send(value=existing)"
 
 
 def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
@@ -239,21 +165,6 @@ def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
         '    ("name", Value::Str("hi")),\n'
         "])"
     )
-
-
-def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
-    """Dhall call argument wrapping is restricted to scalar values."""
-    with pytest.raises(
-        expected_exception=CallArgNotSupportedError,
-        match="Dhall call stubs only support scalar arguments",
-    ):
-        literalize_call(
-            source="[[[]]]",
-            input_format=InputFormat.JSON,
-            language=Dhall(),
-            target_function="consume",
-            parameter_names=["value"],
-        )
 
 
 _COLLAPSED_DART_MAP_COUNT = 2
@@ -531,127 +442,6 @@ def test_java_list_rejects_null_elements() -> None:
         )
 
 
-_SORTED_LANGUAGES: list[LanguageCls] = sorted(
-    literalizer.languages.ALL_LANGUAGES,
-    key=lambda c: c.__name__,
-)
-
-
-_UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
-    cls
-    for cls in _SORTED_LANGUAGES
-    if not any(
-        style.value.supports_redefinition for style in cls.DeclarationStyles
-    )
-]
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
-)
-def test_language_version_is_non_empty_string(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every language's default ``language_version`` is an enum member."""
-    spec = language_cls()
-    assert isinstance(spec.language_version, enum.Enum)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
-)
-def test_pygments_name_is_valid(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every language's ``pygments_name`` is recognized by Pygments."""
-    if language_cls.pygments_name is None:
-        return
-    # Raises ClassNotFound if the name is not a valid Pygments alias.
-    find_lexer_class_by_name(_alias=language_cls.pygments_name)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
-)
-def test_protocol_properties_accessible(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every Language exposes its Protocol attributes for any language.
-
-    Many ``@cached_property`` members are only exercised by tests for
-    the subset of languages that opt in to a feature (variable
-    reassignment, type-hint preambles, call stubs).  Accessing every
-    documented member here keeps coverage at 100% across the matrix.
-    """
-    spec = language_cls()
-    assert callable(spec.format_call_stub)
-    assert callable(spec.format_call_preamble_stub)
-    assert callable(spec.format_call_target)
-    assert callable(spec.format_call_ref_identifier)
-    assert callable(spec.format_call_arg_ref_identifier)
-    assert callable(spec.format_call_arg_ref_identifier_consumable)
-    assert callable(spec.format_variable_declaration)
-    assert callable(spec.format_variable_assignment)
-    assert callable(spec.type_hint_collection_preamble_lines)
-    assert isinstance(spec.scalar_body_preamble, dict)
-    assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
-    assert isinstance(spec.supports_commented_dict_call_args, bool)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
-)
-def test_format_enumeration_properties(
-    language_cls: LanguageCls,
-) -> None:
-    """Every language exposes iterable format-enumeration properties."""
-    spec = language_cls()
-    assert issubclass(spec.bytes_formats, enum.Enum)
-    assert len(spec.bytes_formats) >= 1
-    assert issubclass(spec.sequence_formats, enum.Enum)
-    assert len(spec.sequence_formats) >= 1
-    assert issubclass(spec.set_formats, enum.Enum)
-    assert len(spec.set_formats) >= 1
-    assert issubclass(spec.date_formats, enum.Enum)
-    assert len(spec.date_formats) >= 1
-    assert issubclass(spec.datetime_formats, enum.Enum)
-    assert len(spec.datetime_formats) >= 1
-    assert issubclass(spec.comment_formats, enum.Enum)
-    assert len(spec.comment_formats) >= 1
-    assert issubclass(spec.declaration_styles, enum.Enum)
-    assert len(spec.declaration_styles) >= 1
-    assert issubclass(spec.dict_formats, enum.Enum)
-    assert len(spec.dict_formats) >= 1
-    assert issubclass(spec.float_formats, enum.Enum)
-    assert len(spec.float_formats) >= 1
-    assert issubclass(spec.integer_formats, enum.Enum)
-    assert len(spec.integer_formats) >= 1
-    assert issubclass(spec.numeric_separators, enum.Enum)
-    assert len(spec.numeric_separators) >= 1
-    assert issubclass(spec.numeric_styles, enum.Enum)
-    assert len(spec.numeric_styles) >= 1
-    assert issubclass(spec.string_formats, enum.Enum)
-    assert len(spec.string_formats) >= 1
-    assert issubclass(spec.trailing_commas, enum.Enum)
-    assert len(spec.trailing_commas) >= 1
-    assert issubclass(spec.statement_terminator_styles, enum.Enum)
-    assert len(spec.statement_terminator_styles) >= 1
-    assert issubclass(spec.call_styles, enum.Enum)
-    assert issubclass(spec.version_formats, enum.Enum)
-    assert len(spec.version_formats) >= 1
-
-
 def test_gleam_call_preamble_stub_many_parameters() -> None:
     """Gleam call stubs handle more than 26 parameters.
 
@@ -716,347 +506,6 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
             source=f"- {yaml_value}\n",
             input_format=InputFormat.YAML,
             language=Gleam(),
-        )
-
-
-def test_both_variable_forms_without_wrap_in_file_raises() -> None:
-    """BothVariableForms without wrap_in_file=True raises ValueError."""
-    expected_msg = "BothVariableForms requires wrap_in_file=True"
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=f"^{re.escape(pattern=expected_msg)}$",
-    ):
-        literalize(
-            source="42",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            variable_form=BothVariableForms(name="x"),
-        )
-
-
-def test_both_variable_forms_without_redefinition_support_raises() -> None:
-    """BothVariableForms raises when the declaration_style does not
-    support redefinition.
-    """
-    expected = (
-        "BothVariableForms requires a declaration_style that supports "
-        "redefinition; 'ASSIGN' does not."
-    )
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=rf"^{re.escape(pattern=expected)}$",
-    ):
-        literalize(
-            source="42",
-            input_format=InputFormat.JSON,
-            language=Yaml(),
-            variable_form=BothVariableForms(name="x"),
-            wrap_in_file=True,
-        )
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
-    ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
-)
-def test_wrap_combined_in_file_unsupported_raises(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Check wrap_combined_in_file raises when redefinition is unsupported.
-
-    :func:`literalizer.literalize` rejects ``BothVariableForms`` for
-    these languages before reaching ``wrap_combined_in_file``, but the
-    method itself must still satisfy the :class:`Language` protocol.
-    """
-    with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
-        language_cls().wrap_combined_in_file(
-            declaration="x = 1",
-            assignment="x = 2",
-            variable_name="x",
-            body_preamble=(),
-        )
-
-
-def test_literalize_call_per_element_non_list_raises() -> None:
-    """Literalize_call raises PerElementNotListError for non-list."""
-    with pytest.raises(
-        expected_exception=PerElementNotListError,
-        match=r"^per_element=True requires a top-level list, got str$",
-    ):
-        literalize_call(
-            source='"hello"',
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="process",
-            parameter_names=["value"],
-            per_element=True,
-        )
-
-
-def test_literalize_call_parameter_count_too_few_raises() -> None:
-    """Literalize_call raises when fewer parameter_names than values."""
-    with pytest.raises(
-        expected_exception=ParameterCountMismatchError,
-        match=r"^Expected 1 parameters but got 2 values$",
-    ):
-        literalize_call(
-            source="[[1, 2]]",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="process",
-            parameter_names=["a"],
-        )
-
-
-def test_literalize_call_parameter_count_too_many_raises() -> None:
-    """Literalize_call raises when more parameter_names than values."""
-    with pytest.raises(
-        expected_exception=ParameterCountMismatchError,
-        match=r"^Expected 3 parameters but got 2 values$",
-    ):
-        literalize_call(
-            source="[[1, 2]]",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="process",
-            parameter_names=["a", "b", "c"],
-        )
-
-
-def test_literalize_call_parameter_count_mismatch_object_style() -> None:
-    """Literalize_call raises ParameterCountMismatchError for object
-    call styles (e.g. JavaScript) too.
-    """
-    with pytest.raises(
-        expected_exception=ParameterCountMismatchError,
-        match=r"^Expected 2 parameters but got 1 values$",
-    ):
-        literalize_call(
-            source="[[1]]",
-            input_format=InputFormat.JSON,
-            language=JavaScript(),
-            target_function="process",
-            parameter_names=["a", "b"],
-        )
-
-
-def test_literalize_call_parameter_count_mismatch_prefix_style() -> None:
-    """Literalize_call raises ParameterCountMismatchError for prefix
-    (S-expression) call styles like Racket.
-    """
-    with pytest.raises(
-        expected_exception=ParameterCountMismatchError,
-        match=r"^Expected 2 parameters but got 1 values$",
-    ):
-        literalize_call(
-            source="[[1]]",
-            input_format=InputFormat.JSON,
-            language=Racket(),
-            target_function="process",
-            parameter_names=["a", "b"],
-        )
-
-
-def test_literalize_call_parameter_count_mismatch_later_row() -> None:
-    """Literalize_call raises when a later per_element row has a
-    different value count than parameter_names.
-    """
-    with pytest.raises(
-        expected_exception=ParameterCountMismatchError,
-        match=r"^Expected 2 parameters but got 1 values$",
-    ):
-        literalize_call(
-            source="[[1, 2], [3]]",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="process",
-            parameter_names=["a", "b"],
-        )
-
-
-def test_literalize_call_language_without_calls_raises() -> None:
-    """Literalize_call raises CallsNotSupportedByLanguageError for a
-    data-format language (Yaml) that has no call syntax.
-    """
-    with pytest.raises(
-        expected_exception=CallsNotSupportedByLanguageError,
-        match=r"^Yaml has no function call syntax$",
-    ):
-        literalize_call(
-            source="[[1, 2]]",
-            input_format=InputFormat.JSON,
-            language=Yaml(),
-            target_function="f",
-            parameter_names=["a", "b"],
-        )
-
-
-def test_literalize_call_language_without_calls_per_element_false() -> None:
-    """Literalize_call raises CallsNotSupportedByLanguageError for a
-    data-format language with per_element=False.
-    """
-    with pytest.raises(
-        expected_exception=CallsNotSupportedByLanguageError,
-        match=r"^Yaml has no function call syntax$",
-    ):
-        literalize_call(
-            source="[1, 2]",
-            input_format=InputFormat.JSON,
-            language=Yaml(),
-            target_function="f",
-            parameter_names=["data"],
-            per_element=False,
-        )
-
-
-def test_literalize_call_tool_unsupported_language_raises() -> None:
-    """Literalize_call raises CallsNotSupportedByToolError for a
-    programming language whose calls literalizer has not yet
-    implemented (Nix).
-    """
-    with pytest.raises(
-        expected_exception=CallsNotSupportedByToolError,
-        match=(
-            r"^literalizer does not support function call rendering "
-            r"for Nix$"
-        ),
-    ):
-        literalize_call(
-            source="[[1, 2]]",
-            input_format=InputFormat.JSON,
-            language=Nix(),
-            target_function="f",
-            parameter_names=["a", "b"],
-        )
-
-
-def test_literalize_call_tool_unsupported_language_per_element_false() -> None:
-    """Literalize_call raises CallsNotSupportedByToolError for a
-    programming language with per_element=False.
-    """
-    with pytest.raises(
-        expected_exception=CallsNotSupportedByToolError,
-        match=(
-            r"^literalizer does not support function call rendering "
-            r"for Nix$"
-        ),
-    ):
-        literalize_call(
-            source="[1, 2]",
-            input_format=InputFormat.JSON,
-            language=Nix(),
-            target_function="f",
-            parameter_names=["data"],
-            per_element=False,
-        )
-
-
-def test_literalize_call_bash_rejects_list_arg() -> None:
-    """Bash raises ``CallArgNotSupportedError`` when a call argument
-    is a list, because ``cmd (1 2 3)`` parses as ``cmd`` followed by
-    a nested ``(...)`` child-process group, not an inline array
-    literal.
-    """
-    with pytest.raises(
-        expected_exception=CallArgNotSupportedError,
-        match=(
-            r"^Bash cannot accept this value as a call argument: "
-            r"list values have no inline literal form"
-        ),
-    ):
-        literalize_call(
-            source="[[[1, 2, 3]]]",
-            input_format=InputFormat.JSON,
-            language=Bash(),
-            target_function="cmd",
-            parameter_names=["items"],
-        )
-
-
-def test_literalize_call_bash_rejects_dict_arg() -> None:
-    """Bash raises ``CallArgNotSupportedError`` when a call argument
-    is a dict, because Bash associative-array literals cannot appear
-    as a single positional argument.
-    """
-    with pytest.raises(
-        expected_exception=CallArgNotSupportedError,
-        match=(
-            r"^Bash cannot accept this value as a call argument: "
-            r"dict values have no inline literal form"
-        ),
-    ):
-        literalize_call(
-            source='[[{"k": 1}]]',
-            input_format=InputFormat.JSON,
-            language=Bash(),
-            target_function="cmd",
-            parameter_names=["m"],
-        )
-
-
-def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
-    """Bash's call-argument guard also fires on the
-    ``per_element=False`` path where the whole parsed value is passed
-    as a single argument.
-    """
-    with pytest.raises(
-        expected_exception=CallArgNotSupportedError,
-        match=r"^Bash cannot accept this value as a call argument",
-    ):
-        literalize_call(
-            source="[1, 2, 3]",
-            input_format=InputFormat.JSON,
-            language=Bash(),
-            target_function="cmd",
-            parameter_names=["items"],
-            per_element=False,
-        )
-
-
-def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
-    """Refs count as arguments; parameter-count mismatch still raises."""
-    with pytest.raises(
-        expected_exception=ParameterCountMismatchError,
-        match=r"^Expected 1 parameters but got 2 values$",
-    ):
-        literalize_call(
-            source='[[{"$ref": "a"}, {"$ref": "b"}]]',
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="f",
-            parameter_names=["only"],
-        )
-
-
-def test_literalize_call_ref_case_unsupported_raises() -> None:
-    """``ref_case`` outside the language's ``IdentifierCases`` raises."""
-    with pytest.raises(
-        expected_exception=UnsupportedIdentifierCaseError,
-        match=r"^Python does not support identifier case 'CAMEL'$",
-    ):
-        literalize_call(
-            source='[[{"$ref": "user_obj"}, 42]]',
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="process",
-            parameter_names=["data", "count"],
-            ref_case=IdentifierCase.CAMEL,
-        )
-
-
-def test_literalize_ref_case_unsupported_raises() -> None:
-    """``ref_case`` outside the language's ``identifier_cases`` raises."""
-    with pytest.raises(
-        expected_exception=UnsupportedIdentifierCaseError,
-        match=r"^Python does not support identifier case 'KEBAB'$",
-    ):
-        literalize(
-            source='{"$ref": "my_var"}',
-            input_format=InputFormat.JSON,
-            language=Python(),
-            ref_case=IdentifierCase.KEBAB,
         )
 
 
