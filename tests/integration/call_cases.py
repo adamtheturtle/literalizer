@@ -10,27 +10,28 @@ import dataclasses
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import cast
 
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
+from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
 from literalizer.languages import (
-    Mojo,
+    Cobol,
+    Dhall,
+    Elm,
 )
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
-
-if TYPE_CHECKING:
-    from literalizer._types import Value
 
 
 @beartype
@@ -606,9 +607,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # Mojo rejects the transfer operator (^) on trivial register types such as
-    # Int, so a $ref inside a dict literal (which requires ^) cannot compile.
-    "call_ref_nested_in_dict": frozenset({Mojo}),
+    "call_no_params_transform": frozenset({Cobol, Elm}),
+    # COBOL CALL "PROCESS" USING. is invalid with no parameters (USING
+    # requires at least one).  Dhall zero-parameter stubs would need to
+    # be plain values rather than functions, which the stub generator does
+    # not support.  Elm zero-parameter "functions" are values, not callable
+    # expressions.
+    "call_no_params": frozenset({Cobol, Dhall, Elm}),
 }
 
 
@@ -626,6 +631,68 @@ class CallCase:
 
     config: CallCaseConfig
     lang_cls: literalizer.LanguageCls
+
+
+CALL_CASES_DIR = Path(__file__).parent / "cases"
+
+
+@beartype
+def _has_ref_inside_dict_literal(
+    *,
+    value: Value,
+    ref_key: str,
+    inside_dict_literal: bool,
+) -> bool:
+    """Return ``True`` if *value* contains a ref beneath a dict
+    literal.
+    """
+    match value:
+        case dict() if len(value) == 1 and isinstance(value.get(ref_key), str):
+            return inside_dict_literal
+        case dict():
+            return any(
+                _has_ref_inside_dict_literal(
+                    value=child,
+                    ref_key=ref_key,
+                    inside_dict_literal=True,
+                )
+                for child in value.values()
+            )
+        case list():
+            return any(
+                _has_ref_inside_dict_literal(
+                    value=child,
+                    ref_key=ref_key,
+                    inside_dict_literal=inside_dict_literal,
+                )
+                for child in value
+            )
+        case _:
+            return False
+
+
+@functools.cache
+@beartype
+def case_uses_ref_inside_dict_literal(
+    *,
+    case_dir_name: str,
+    ref_key: str,
+) -> bool:
+    """Return whether the call case input needs refs inside dict
+    literals.
+    """
+    yaml = YAML(typ="safe", pure=False)
+    loaded = cast(
+        "Value",
+        yaml.load(  # pyright: ignore[reportUnknownMemberType]
+            stream=(CALL_CASES_DIR / case_dir_name / "input.yaml").read_text(),
+        ),
+    )
+    return _has_ref_inside_dict_literal(
+        value=loaded,
+        ref_key=ref_key,
+        inside_dict_literal=False,
+    )
 
 
 @beartype
@@ -666,6 +733,21 @@ def _lang_satisfies_config_constraints(
         and not lang_cls.call_returns_expression
     ):
         return False
+    return _lang_satisfies_call_shape_constraints(
+        lang_cls=lang_cls,
+        config=config,
+    )
+
+
+@beartype
+def _lang_satisfies_call_shape_constraints(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> bool:
+    """Return False if *lang_cls* cannot represent *config*'s call
+    shape.
+    """
     if (
         len(config.parameter_names) == 0
         and not lang_cls.supports_zero_parameter_calls
@@ -674,6 +756,14 @@ def _lang_satisfies_config_constraints(
     if (
         config.requires_inline_multiline_dict_args
         and not lang_cls.supports_inline_multiline_dict_args
+    ):
+        return False
+    if (
+        case_uses_ref_inside_dict_literal(
+            case_dir_name=config.case_dir_name,
+            ref_key="$ref",
+        )
+        and not lang_cls.supports_call_refs_in_dict_literals
     ):
         return False
     if (

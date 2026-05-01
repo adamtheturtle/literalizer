@@ -246,6 +246,7 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_call_refs_in_dict_literals = True
 
     class DateFormats(enum.Enum):
         """Date format options for SystemVerilog."""
