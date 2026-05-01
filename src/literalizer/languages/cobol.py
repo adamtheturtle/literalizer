@@ -58,6 +58,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
@@ -554,6 +555,12 @@ class Cobol(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     _PROGRAM_PREFIX: ClassVar[str] = (
@@ -708,6 +715,13 @@ class Cobol(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(

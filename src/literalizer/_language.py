@@ -460,6 +460,27 @@ identity_call_arg: FormatCallArg = _identity_call_arg
 """Shared callable for languages that need no call-argument wrapping."""
 
 
+@beartype
+def _no_validate_call_arg(_value: Value, /) -> None:
+    """Accept every call argument."""
+
+
+no_validate_call_arg: Callable[[Value], None] = _no_validate_call_arg
+"""Shared callable for languages with no call-argument constraints."""
+
+
+@beartype
+def _identity_call_statement(statement: str, /) -> str:
+    """Return *statement* unchanged for languages with bare call
+    statements.
+    """
+    return statement
+
+
+identity_call_statement: Callable[[str], str] = _identity_call_statement
+"""Shared callable for languages whose calls need no statement wrapper."""
+
+
 @dataclasses.dataclass(frozen=True)
 class ModifierCombination:
     """A named combination of declaration modifiers for a language.
@@ -535,6 +556,9 @@ class LanguageCls(type):
     supports_module_name: bool
     supports_call_refs_in_dict_literals: bool
     format_call_arg: FormatCallArg
+    validate_call_arg: Callable[[Value], None]
+    format_call_statement: Callable[[str], str]
+    call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1132,6 +1156,18 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Data-dependent preamble lines used for call rendering.
+
+        Most languages set this to the same callable as
+        :attr:`data_dependent_preamble`.  Languages whose declaration
+        preamble does not apply to inline call arguments override it.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Describes how this language handles heterogeneous scalar
         collections.
@@ -1274,6 +1310,26 @@ class Language(Protocol):
         do not need wrapping set this to :data:`identity_call_arg`;
         languages such as C and Objective-C override this to wrap each
         argument in a canonical parameter type.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Validate a direct call argument after references are removed.
+
+        Languages that accept every supported literal set this to
+        :data:`no_validate_call_arg`; languages with additional call
+        argument restrictions override it.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Rewrite an assembled call expression into a valid statement.
+
+        Languages that allow bare call statements set this to
+        :data:`identity_call_statement`; languages that need a wrapper
+        such as ``let _ = ...`` override it.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

@@ -71,9 +71,11 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
+    identity_call_statement,
     identity_call_target,
     no_call_stub,
     no_type_hint_preamble,
+    no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
@@ -1215,6 +1217,17 @@ class Cpp(metaclass=LanguageCls):
         ),
     )
     validate_spec_for_data = no_validate_spec_for_data
+
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Return call-statement formatting for this language."""
+        return identity_call_statement
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):
@@ -1346,6 +1359,13 @@ class Cpp(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(

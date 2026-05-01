@@ -63,6 +63,9 @@ def test_protocol_properties_accessible(
 ) -> None:
     """Every Language exposes its Protocol attributes for any language."""
     spec = language_cls()
+    assert callable(spec.validate_call_arg)
+    assert callable(spec.format_call_statement)
+    assert callable(spec.call_data_dependent_preamble)
     assert callable(spec.format_call_stub)
     assert callable(spec.format_call_preamble_stub)
     assert callable(spec.format_call_target)
