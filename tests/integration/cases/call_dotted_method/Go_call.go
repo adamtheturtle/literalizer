@@ -5,7 +5,7 @@ type appType_ struct{ client clientType_ }
 var app appType_
 
 func main() {
-app.client.fetch("hello");
-app.client.fetch(42);
-app.client.fetch(true);
+app.client.fetch("hello")
+app.client.fetch(42)
+app.client.fetch(true)
 }

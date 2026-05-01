@@ -11,7 +11,11 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from .call_cases import CallCase, discover_call_cases, run_call_golden_case
+from .call_cases import (
+    CallCase,
+    discover_call_cases,
+    run_call_golden_case,
+)
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .language_specs import make_spec
 
@@ -65,11 +69,8 @@ def test_call_variant_golden_file(
 ) -> None:
     """Test ``literalize_call`` for a non-default language spec.
 
-    Covers call inputs that the language's default
-    :attr:`Language.heterogeneous_strategy` rejects, which
-    :func:`test_call_golden_file` skips — in particular the
-    sibling-widening behavior of Rust's ``TAGGED_ENUM`` across
-    per-element call arguments.
+    Covers call inputs that need a non-default language option, such as
+    line endings or heterogeneous strategies.
     """
     run_call_golden_case(
         config=call_variant_case.config,

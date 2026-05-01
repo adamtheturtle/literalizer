@@ -259,6 +259,9 @@ CallStyle = (
 )
 """Tagged union describing how a language passes call arguments."""
 
+type FormatCallArg = Callable[[Value, str], str]
+"""Callable that rewrites a formatted direct call argument."""
+
 
 class CallSupport(enum.Enum):
     """Sentinel describing why a language does not have a
@@ -391,6 +394,16 @@ def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
             assert_never(unreachable)
 
 
+class CollectionLayout(enum.Enum):
+    """Controls how nested collections are rendered."""
+
+    COMPACT = "compact"
+    """Render nested collections on one line."""
+
+    MULTILINE = "multiline"
+    """Render nested collections with one element per line."""
+
+
 @dataclasses.dataclass(frozen=True)
 class HeterogeneousBehavior:
     """Per-language hook describing how heterogeneous scalar
@@ -435,6 +448,16 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.
 """
+
+
+@beartype
+def _identity_call_arg(_value: Value, formatted: str, /) -> str:
+    """Return *formatted* unchanged for languages with no argument wrapper."""
+    return formatted
+
+
+identity_call_arg: FormatCallArg = _identity_call_arg
+"""Shared callable for languages that need no call-argument wrapping."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -505,10 +528,12 @@ class LanguageCls(type):
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
+    supports_zero_parameter_calls: bool
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
+    format_call_arg: FormatCallArg
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1236,6 +1261,18 @@ class Language(Protocol):
         Most languages accept dotted member-access as-is and use
         :data:`identity_call_target`.  PHP overrides this to produce
         ``$app->client->fetch``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_arg(self) -> FormatCallArg:
+        """Rewrite a formatted direct call argument.
+
+        Called as ``format_call_arg(value, formatted)`` after *value*
+        has been formatted as a literal or reference.  Languages that
+        do not need wrapping set this to :data:`identity_call_arg`;
+        languages such as C and Objective-C override this to wrap each
+        argument in a canonical parameter type.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

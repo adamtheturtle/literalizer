@@ -230,7 +230,7 @@ def _dhall_call_stub(
 
 
 @beartype
-def _dhall_format_call_arg(original: Scalar, formatted: str, /) -> str:
+def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
     """Wrap a formatted scalar in the appropriate ``DVal`` constructor.
 
     Booleans, integers, floats, and strings each get their own
@@ -246,8 +246,11 @@ def _dhall_format_call_arg(original: Scalar, formatted: str, /) -> str:
             return f"DVal.DDouble {formatted}"
         case str() | bytes() | datetime.datetime() | datetime.date() | None:
             return f"DVal.DText {formatted}"
-        case _ as unreachable:
-            assert_never(unreachable)
+        case _:
+            raise CallArgNotSupportedError(
+                language_name="Dhall",
+                reason="Dhall call stubs only support scalar arguments",
+            )
 
 
 @beartype
@@ -528,6 +531,7 @@ class Dhall(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
+    supports_zero_parameter_calls = False
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = False
@@ -934,7 +938,7 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_call_preamble_stub
 
     @cached_property
-    def format_call_arg(self) -> Callable[[Scalar, str], str]:
+    def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each scalar call argument in the ``DVal`` union tag."""
         return _dhall_format_call_arg
 

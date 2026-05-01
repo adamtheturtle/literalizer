@@ -16,6 +16,7 @@ from beartype import beartype
 import literalizer
 from literalizer.languages import (
     C,
+    Cobol,
     Crystal,
     CSharp,
     Dart,
@@ -213,6 +214,9 @@ class Variant:
     name: str
     spec: literalizer.Language
     lang_cls: literalizer.LanguageCls
+    collection_layout: literalizer.CollectionLayout = (
+        literalizer.CollectionLayout.COMPACT
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -425,6 +429,28 @@ def build_line_ending_decl_variants() -> Iterable[Variant]:
             )
             for line_ending in non_default_line_endings
             for declaration_style in non_default_declaration_styles
+        )
+    return variants
+
+
+@beartype
+def build_collection_layout_variants() -> Iterable[Variant]:
+    """Build variants for every collection-layout option."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        name_prefix = (
+            f"{lang_cls.__name__}_layout"
+            if lang_cls is Cobol
+            else f"{lang_cls.__name__}_collection_layout"
+        )
+        variants.extend(
+            Variant(
+                name=f"{name_prefix}_{layout.value}",
+                spec=make_spec(lang_cls=lang_cls),
+                lang_cls=lang_cls,
+                collection_layout=layout,
+            )
+            for layout in literalizer.CollectionLayout
         )
     return variants
 
@@ -1133,6 +1159,7 @@ def _build_declaration_style_variants() -> list[Variant]:
 
 
 _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
+    "collection_layout": build_collection_layout_variants,
     "declaration_style": _build_declaration_style_variants,
     "default_set_element_type": build_default_set_element_type_variants,
     "default_sequence_element_type": (
@@ -1371,6 +1398,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "bytes_format": (_ci(case_dir_name="binary"),),
     "trailing_comma": BASIC_COLLECTIONS,
     "line_ending": BASIC_COLLECTIONS,
+    "collection_layout": (_ci(case_dir_name="dict_with_list_value"),),
     "line_ending_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
     "type_name": ADT_INPUTS,

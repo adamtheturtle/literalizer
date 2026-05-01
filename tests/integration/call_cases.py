@@ -23,9 +23,6 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
 )
 from literalizer.languages import (
-    Cobol,
-    Dhall,
-    Elm,
     Mojo,
 )
 
@@ -609,20 +606,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 # names, or call_transform wrapper use syntax that is invalid in a given
 # language, making a valid lint-passing output impossible to generate.
 CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    # COBOL cannot pass multi-line DATA DIVISION entries inline in a CALL
-    # statement.  SML is excluded via reserved_identifiers ("op").
-    "call_mixed_type_dicts": frozenset({Cobol}),
-    # COBOL CALL statement produces no expression value that can be passed
-    # to another call, so emit(inner) is invalid.
-    "call_keyword_args": frozenset({Cobol}),
-    "call_no_params_transform": frozenset({Cobol, Elm}),
-    # COBOL CALL "PROCESS" USING. is invalid with no parameters (USING
-    # requires at least one).  Dhall zero-parameter stubs would need to
-    # be plain values rather than functions, which the stub generator does
-    # not support.  Elm zero-parameter "functions" are values, not callable
-    # expressions.
-    "call_no_params": frozenset({Cobol, Dhall, Elm}),
-    "call_deep_dotted_transformed": frozenset({Cobol}),
     # Mojo rejects the transfer operator (^) on trivial register types such as
     # Int, so a $ref inside a dict literal (which requires ^) cannot compile.
     "call_ref_nested_in_dict": frozenset({Mojo}),
@@ -681,6 +664,11 @@ def _lang_satisfies_config_constraints(
     if (
         config.requires_call_returns_expression
         and not lang_cls.call_returns_expression
+    ):
+        return False
+    if (
+        len(config.parameter_names) == 0
+        and not lang_cls.supports_zero_parameter_calls
     ):
         return False
     if (

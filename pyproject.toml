@@ -421,6 +421,8 @@ ignore_names = [
     "warning_is_error",
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
+    # Protocol and collection dunder methods used implicitly
+    "__getitem__",
     # Enum members accessed by consumers iterating format enums
     "ALLOW",
     "ARRAY",

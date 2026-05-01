@@ -62,6 +62,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     date_scalar_preamble,
+    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_target,
     no_data_preamble,
@@ -954,10 +955,18 @@ class Haskell(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True
+    supports_zero_parameter_calls = True
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
     supports_commented_dict_call_args = True
     supports_module_name = True
+
+    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(
+            identity_call_arg,
+        )
+    )
+    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""

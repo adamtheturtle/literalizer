@@ -68,6 +68,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_wrap_calls_with_declarations,
+    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_target,
     no_call_stub,
@@ -289,10 +290,18 @@ class Dart(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
+    supports_zero_parameter_calls = True
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
+
+    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(
+            identity_call_arg,
+        )
+    )
+    """Callable that rewrites a formatted direct call argument."""
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
