@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Sequence
-from typing import assert_never, cast
+from typing import assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedSeq
@@ -1998,7 +1998,7 @@ def _format_prefix_call_args(
 @beartype
 def _format_call_args(
     *,
-    values: list[Value],
+    values: Sequence[Value],
     params: Sequence[str],
     language: Language,
     wrap_ids: frozenset[int],
@@ -2310,7 +2310,7 @@ def _render_call_per_element(
             _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
         )
         args_str = _format_call_args(
-            values=cast("list[Value]", arg_values),
+            values=arg_values,
             params=parameter_names,
             language=language,
             wrap_ids=call_wrap_ids,
