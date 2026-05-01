@@ -40,7 +40,10 @@ from literalizer._language import (
     StubReturn,
 )
 from literalizer._parsing import InputFormat, parse_input
-from literalizer._preamble import compute_preamble
+from literalizer._preamble import (
+    compute_preamble,
+    deduplicate_preamble_entries,
+)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
@@ -1539,10 +1542,12 @@ def _literalize_apply_form(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
-    preamble = (
-        tuple(language.static_preamble)
-        + computed.header
-        + language.data_dependent_preamble(pre_form.data)
+    preamble = deduplicate_preamble_entries(
+        entries=(
+            tuple(language.static_preamble)
+            + computed.header
+            + language.data_dependent_preamble(pre_form.data)
+        )
     )
 
     pre_decl = resolved.pending_scalar_before if resolved is not None else ()
@@ -2485,7 +2490,7 @@ def literalize_call(
         can produce duplicate import lines or duplicate type
         declarations, which strict compilers (Haskell, D, …) reject
         and a linter (``ruff``, ``pylint``, …) flags.  Remove the
-        duplicate preamble lines (preserving first-seen order) before
+        duplicate preamble entries (preserving first-seen order) before
         emitting the file.  The "Composing declarations and calls"
         section of :doc:`/function-call-use-case` shows a worked example.
     """
@@ -2567,10 +2572,12 @@ def literalize_call(
         "call_data_dependent_preamble",
         language.data_dependent_preamble,
     )
-    preamble = (
-        tuple(language.static_preamble)
-        + computed.header
-        + _call_ddp(data_for_preamble)
+    preamble = deduplicate_preamble_entries(
+        entries=(
+            tuple(language.static_preamble)
+            + computed.header
+            + _call_ddp(data_for_preamble)
+        )
     )
 
     if wrap_in_file:

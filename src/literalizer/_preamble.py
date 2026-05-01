@@ -111,14 +111,21 @@ def _collection_preamble(
 
 
 @beartype
-def _deduplicate(*, lines: tuple[str, ...]) -> tuple[str, ...]:
-    """Remove duplicates from *lines* preserving insertion order."""
+def deduplicate_preamble_entries(
+    *,
+    entries: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Remove duplicate preamble entries preserving first-seen order.
+
+    An entry is usually one source line, but callers may also represent
+    a multi-line preamble block as one string.
+    """
     seen: set[str] = set()
     result: list[str] = []
-    for line in lines:
-        if line not in seen:
-            seen.add(line)
-            result.append(line)
+    for entry in entries:
+        if entry not in seen:
+            seen.add(entry)
+            result.append(entry)
     return tuple(result)
 
 
@@ -183,8 +190,8 @@ def compute_preamble(
     )
     body = language.compute_body_preamble(types, data)
     return _PreambleResult(
-        header=_deduplicate(
-            lines=scalar + special_float + collection + type_hint,
+        header=deduplicate_preamble_entries(
+            entries=scalar + special_float + collection + type_hint,
         )
         + tuple(language.static_body_preamble),
         body=body,
