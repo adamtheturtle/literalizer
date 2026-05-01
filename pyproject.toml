@@ -329,6 +329,7 @@ search_path = [ ".", "src", ".github/scripts" ]
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
+    "literalizer-*",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
