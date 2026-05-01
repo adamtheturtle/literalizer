@@ -2,7 +2,7 @@
 
 import dataclasses
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, cast
 
 from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -101,6 +101,29 @@ class CollectionComments:
 
 
 @beartype
+def _nested_inline_comment(
+    *,
+    value: object,
+) -> str:
+    """Return the last inline comment found inside a nested collection.
+
+    Some YAML shapes attach the meaningful comment to a scalar inside
+    a nested collection even though the literalizer renders that whole
+    nested collection as one parent element line.  In that layout there
+    is no target line for the nested scalar itself, so bubble one inline
+    comment up to the rendered parent element instead of dropping it.
+    """
+    if not isinstance(value, CommentedSeq | CommentedMap | CommentedSet):
+        return ""
+
+    comments = extract_yaml_comments(ruamel_data=value)
+    for element_comment in reversed(comments.elements):
+        if element_comment.inline:
+            return element_comment.inline
+    return ""
+
+
+@beartype
 def extract_yaml_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
@@ -147,6 +170,11 @@ def extract_yaml_comments(
         before = list(pending_before)
         inline = ""
         pending_before = []
+        element_value = (
+            key
+            if isinstance(ruamel_data, CommentedSet)
+            else cast("object", ruamel_data[key])
+        )
 
         if key in ca.items:  # pyright: ignore[reportUnknownMemberType]
             item_token: CommentToken | None = ca.items[key][token_idx]  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
@@ -154,6 +182,8 @@ def extract_yaml_comments(
                 parsed = _parse_after_token(token=item_token)  # pyright: ignore[reportUnknownArgumentType]
                 inline = parsed.inline
                 pending_before = parsed.before_next
+        if not inline:
+            inline = _nested_inline_comment(value=element_value)
 
         element_map[key] = ElementComments(
             before=tuple(before),
