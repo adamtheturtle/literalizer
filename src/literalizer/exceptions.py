@@ -190,6 +190,46 @@ class UnsupportedIdentifierCaseError(Exception):
         self.case_name = case_name
 
 
+class UnsupportedLanguageOptionError(Exception):
+    """Raised when a language constructor receives an unsupported
+    option.
+    """
+
+    def __init__(self, *, language_name: str, option_name: str) -> None:
+        """Create an ``UnsupportedLanguageOptionError``."""
+        super().__init__(
+            f"{language_name} does not support option {option_name!r}"
+        )
+        self.language_name = language_name
+        self.option_name = option_name
+
+
+class VariableNamesNotSupportedError(Exception):
+    """Raised when variable wrapping is requested for a language that
+    cannot represent named variables.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``VariableNamesNotSupportedError``."""
+        super().__init__(f"{language_name} does not support variable names")
+        self.language_name = language_name
+
+
+class DottedCallsNotSupportedError(Exception):
+    """Raised when a dotted call target is requested for a language that
+    cannot represent it.
+    """
+
+    def __init__(self, *, language_name: str, target_function: str) -> None:
+        """Create a ``DottedCallsNotSupportedError``."""
+        super().__init__(
+            f"{language_name} does not support dotted call target "
+            f"{target_function!r}"
+        )
+        self.language_name = language_name
+        self.target_function = target_function
+
+
 class WrapCombinedInFileNotSupportedError(Exception):
     """Raised when a language does not support ``wrap_combined_in_file``.
 

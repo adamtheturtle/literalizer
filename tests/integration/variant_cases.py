@@ -98,6 +98,7 @@ DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
     CSharp: "string",
     Mojo: "Int",
     Python: "int",
+    VisualBasic: "Object",
 }
 
 DEFAULT_DICT_VALUE_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {

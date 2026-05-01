@@ -15,13 +15,17 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallsNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
+    VariableNamesNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
+    Dart,
     Dhall,
+    Hcl,
     JavaScript,
     Nix,
     Python,
@@ -305,6 +309,40 @@ def test_literalize_ref_case_unsupported_raises() -> None:
         )
 
 
+def test_literalize_variable_name_unsupported_raises() -> None:
+    """Variable forms are rejected for languages without variable
+    names.
+    """
+    with pytest.raises(
+        expected_exception=VariableNamesNotSupportedError,
+        match=r"^Yaml does not support variable names$",
+    ):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Yaml(),
+            variable_form=BothVariableForms(name="x"),
+            wrap_in_file=True,
+        )
+
+
+def test_literalize_call_dotted_target_unsupported_raises() -> None:
+    """Dotted call targets are rejected for languages that cannot render
+    them.
+    """
+    with pytest.raises(
+        expected_exception=DottedCallsNotSupportedError,
+        match=r"^Hcl does not support dotted call target 'client.fetch'$",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Hcl(),
+            target_function="client.fetch",
+            parameter_names=["value"],
+        )
+
+
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
     expected_msg = "BothVariableForms requires wrap_in_file=True"
@@ -324,7 +362,7 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
     """BothVariableForms raises when declaration_style cannot redefine."""
     expected = (
         "BothVariableForms requires a declaration_style that supports "
-        "redefinition; 'ASSIGN' does not."
+        "redefinition; 'FINAL' does not."
     )
     with pytest.raises(
         expected_exception=ValueError,
@@ -333,7 +371,7 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
         literalize(
             source="42",
             input_format=InputFormat.JSON,
-            language=Yaml(),
+            language=Dart(),
             variable_form=BothVariableForms(name="x"),
             wrap_in_file=True,
         )

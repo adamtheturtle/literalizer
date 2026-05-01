@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Value
+from literalizer.exceptions import UnsupportedLanguageOptionError
 
 
 @dataclasses.dataclass(frozen=True)
@@ -562,8 +563,29 @@ class LanguageCls(type):
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
+        for option_name, support_attr in _OPTION_SUPPORT_ATTRS:
+            if option_name in kwargs and not getattr(cls, support_attr):
+                raise UnsupportedLanguageOptionError(
+                    language_name=cls.__name__,
+                    option_name=option_name,
+                )
         instance: Language = super().__call__(*args, **kwargs)
         return instance
+
+
+_OPTION_SUPPORT_ATTRS: tuple[tuple[str, str], ...] = (
+    ("default_set_element_type", "supports_default_set_element_type"),
+    (
+        "default_sequence_element_type",
+        "supports_default_sequence_element_type",
+    ),
+    ("default_dict_value_type", "supports_default_dict_value_type"),
+    ("default_dict_key_type", "supports_default_dict_key_type"),
+    (
+        "default_ordered_map_value_type",
+        "supports_default_ordered_map_value_type",
+    ),
+)
 
 
 @runtime_checkable
@@ -766,6 +788,16 @@ class Language(Protocol):
 
     extension: str
     """The file extension for this language, including the leading dot."""
+
+    supports_variable_names: bool
+    """Whether the language can render variable declarations or
+    assignments.
+    """
+
+    supports_dotted_calls: bool
+    """Whether the language can render dotted call targets such as
+    ``client.fetch``.
+    """
 
     @property
     def language_version(self) -> enum.Enum:

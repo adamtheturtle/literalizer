@@ -1,13 +1,18 @@
 """Language-wide metadata and protocol checks."""
 
+import dataclasses
 import enum
+from typing import Any, cast
 
 import pytest
 from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
 from literalizer._language import LanguageCls
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnsupportedLanguageOptionError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
@@ -20,6 +25,27 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
     if not any(
         style.value.supports_redefinition for style in cls.DeclarationStyles
     )
+]
+
+_OPTION_SUPPORT_ATTRS: tuple[tuple[str, str], ...] = (
+    ("default_set_element_type", "supports_default_set_element_type"),
+    (
+        "default_sequence_element_type",
+        "supports_default_sequence_element_type",
+    ),
+    ("default_dict_value_type", "supports_default_dict_value_type"),
+    ("default_dict_key_type", "supports_default_dict_key_type"),
+    (
+        "default_ordered_map_value_type",
+        "supports_default_ordered_map_value_type",
+    ),
+)
+
+_UNSUPPORTED_LANGUAGE_OPTIONS: list[tuple[LanguageCls, str]] = [
+    (language_cls, option_name)
+    for language_cls in _SORTED_LANGUAGES
+    for option_name, support_attr in _OPTION_SUPPORT_ATTRS
+    if not getattr(language_cls, support_attr)
 ]
 
 
@@ -78,6 +104,59 @@ def test_protocol_properties_accessible(
     assert isinstance(spec.scalar_body_preamble, dict)
     assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
     assert isinstance(spec.supports_commented_dict_call_args, bool)
+
+
+@pytest.mark.parametrize(
+    argnames=("language_cls", "option_name"),
+    argvalues=[
+        (language_cls, option_name)
+        for language_cls in _SORTED_LANGUAGES
+        for option_name, _support_attr in _OPTION_SUPPORT_ATTRS
+    ],
+    ids=[
+        f"{language_cls.__name__}-{option_name}"
+        for language_cls in _SORTED_LANGUAGES
+        for option_name, _support_attr in _OPTION_SUPPORT_ATTRS
+    ],
+)
+def test_default_type_support_metadata_matches_constructor_fields(
+    *,
+    language_cls: LanguageCls,
+    option_name: str,
+) -> None:
+    """Default-type support flags match dataclass constructor fields."""
+    support_attr = dict(_OPTION_SUPPORT_ATTRS)[option_name]
+    field_names = {
+        field.name
+        for field in dataclasses.fields(
+            class_or_instance=cast("Any", language_cls),
+        )
+    }
+    assert getattr(language_cls, support_attr) is (option_name in field_names)
+
+
+@pytest.mark.parametrize(
+    argnames=("language_cls", "option_name"),
+    argvalues=_UNSUPPORTED_LANGUAGE_OPTIONS,
+    ids=[
+        f"{language_cls.__name__}-{option_name}"
+        for language_cls, option_name in _UNSUPPORTED_LANGUAGE_OPTIONS
+    ],
+)
+def test_unsupported_language_option_raises(
+    *,
+    language_cls: LanguageCls,
+    option_name: str,
+) -> None:
+    """Unsupported default-type constructor options raise typed errors."""
+    with pytest.raises(
+        expected_exception=UnsupportedLanguageOptionError,
+        match=(
+            rf"^{language_cls.__name__} does not support option "
+            rf"{option_name!r}$"
+        ),
+    ):
+        language_cls(**{option_name: "String"})
 
 
 @pytest.mark.parametrize(
