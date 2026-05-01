@@ -391,6 +391,16 @@ def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
             assert_never(unreachable)
 
 
+class CollectionLayout(enum.Enum):
+    """Controls how nested collections are rendered."""
+
+    COMPACT = "compact"
+    """Render nested collections on one line."""
+
+    MULTILINE = "multiline"
+    """Render nested collections with one element per line."""
+
+
 @dataclasses.dataclass(frozen=True)
 class HeterogeneousBehavior:
     """Per-language hook describing how heterogeneous scalar
