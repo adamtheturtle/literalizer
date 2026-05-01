@@ -140,14 +140,21 @@ class LiteralizeResult:
 
 
 @beartype
-def _deduplicate_lines(*, lines: tuple[str, ...]) -> tuple[str, ...]:
-    """Remove duplicate lines while preserving first-seen order."""
+def _deduplicate_preamble_entries(
+    *,
+    entries: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Remove duplicate preamble entries preserving first-seen order.
+
+    An entry is usually one source line, but callers may also represent
+    a multi-line preamble block as one string.
+    """
     seen: set[str] = set()
     result: list[str] = []
-    for line in lines:
-        if line not in seen:
-            seen.add(line)
-            result.append(line)
+    for entry in entries:
+        if entry not in seen:
+            seen.add(entry)
+            result.append(entry)
     return tuple(result)
 
 
@@ -1551,8 +1558,8 @@ def _literalize_apply_form(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
-    preamble = _deduplicate_lines(
-        lines=(
+    preamble = _deduplicate_preamble_entries(
+        entries=(
             tuple(language.static_preamble)
             + computed.header
             + language.data_dependent_preamble(pre_form.data)
@@ -2499,7 +2506,7 @@ def literalize_call(
         can produce duplicate import lines or duplicate type
         declarations, which strict compilers (Haskell, D, …) reject
         and a linter (``ruff``, ``pylint``, …) flags.  Remove the
-        duplicate preamble lines (preserving first-seen order) before
+        duplicate preamble entries (preserving first-seen order) before
         emitting the file.  The "Composing declarations and calls"
         section of :doc:`/function-call-use-case` shows a worked example.
     """
@@ -2581,8 +2588,8 @@ def literalize_call(
         "call_data_dependent_preamble",
         language.data_dependent_preamble,
     )
-    preamble = _deduplicate_lines(
-        lines=(
+    preamble = _deduplicate_preamble_entries(
+        entries=(
             tuple(language.static_preamble)
             + computed.header
             + _call_ddp(data_for_preamble)
