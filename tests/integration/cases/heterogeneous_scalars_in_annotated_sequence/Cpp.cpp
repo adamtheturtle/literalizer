@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <chrono>
 #include <vector>
-#include <cstddef>
 #include <variant>
 int main() {
 auto my_data = std::vector<std::variant<bool, double, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point, std::vector<std::nullptr_t>>>{
@@ -10,7 +9,7 @@ auto my_data = std::vector<std::variant<bool, double, std::nullptr_t, std::chron
     1.5,
     nullptr,
     std::chrono::year_month_day{std::chrono::year{2020}, std::chrono::month{1}, std::chrono::day{1}},
-    std::chrono::sys_days{std::chrono::year_month_day{std::chrono::year{2020}, std::chrono::month{1}, std::chrono::day{1}}},
+    std::chrono::system_clock::time_point{std::chrono::sys_days{std::chrono::year_month_day{std::chrono::year{2020}, std::chrono::month{1}, std::chrono::day{1}}}},
     std::vector<std::nullptr_t>{},
 };
     (void)my_data;
