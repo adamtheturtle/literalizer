@@ -529,6 +529,8 @@ class Dhall(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_commented_dict_call_args = False
     supports_module_name = False
 
     class DateFormats(enum.Enum):
