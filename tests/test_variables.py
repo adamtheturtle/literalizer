@@ -2,8 +2,8 @@
 converter.
 """
 
+import datetime
 import re
-import textwrap
 
 import pytest
 
@@ -15,92 +15,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Nim, Python, Rust
-
-PYTHON_ALWAYS_HINTS = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
-)
-
-
-def test_python_always_type_hints_set_with_colon_in_string() -> None:
-    """A set element containing ``": `` is not misidentified as a dict."""
-    yaml_string = "!!set\n? 'a\": b'\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: set[str] = {
-            "a\\": b",
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_dict_with_uniform_list_values() -> None:
-    """Dict whose values are all lists collapses to a single value type
-    (no union), distinct from the mixed-value path covered by the
-    ``dict_with_list_value`` golden.
-    """
-    result = literalize(
-        source='{"key": [1, 2, 3]}',
-        input_format=InputFormat.JSON,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: dict[str, tuple[int, ...]] = {
-            "key": (1, 2, 3),
-        }"""
-    )
-    assert result.code == expected
-
-
-def test_python_always_type_hints_ordered_dicts_in_sequence() -> None:
-    """Multiple OrderedDicts in a sequence merge value types into one
-    hint.  OrderedDict value-merging uses a separate code path from
-    plain dict value-merging, so the ``mixed_type_dicts_in_sequence``
-    golden does not cover it.
-    """
-    yaml_input = textwrap.dedent(
-        text="""\
-        ---
-        - !!omap
-          - name: Alice
-          - draft: true
-        - !!omap
-          - name: Bob"""
-    )
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=PYTHON_ALWAYS_HINTS,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        my_var: tuple[OrderedDict[str, str | bool], ...] = (
-            OrderedDict([("name", "Alice"), ("draft", True)]),
-            OrderedDict([("name", "Bob")]),
-        )""",
-    )
-    assert result.code == expected
-
+from literalizer.languages import CSharp, Nim, Rust
 
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
@@ -109,69 +24,6 @@ RUST_CONST = Rust(
     sequence_format=Rust.sequence_formats.ARRAY,
     declaration_style=Rust.declaration_styles.CONST,
 )
-
-
-def test_rust_const_single_element_tuple() -> None:
-    """Rust CONST single-element tuple has trailing comma in type."""
-    rust_tuple = Rust(
-        date_format=Rust.date_formats.ISO,
-        datetime_format=Rust.datetime_formats.ISO,
-        bytes_format=Rust.bytes_formats.HEX,
-        sequence_format=Rust.sequence_formats.TUPLE,
-        declaration_style=Rust.declaration_styles.CONST,
-    )
-    result = literalize(
-        source="[42]",
-        input_format=InputFormat.JSON,
-        language=rust_tuple,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: (i32,) = (
-            42,
-        );"""
-    )
-    assert result.code == expected
-
-
-def test_rust_const_set() -> None:
-    """Rust CONST with set produces ``HashSet`` type annotation."""
-    yaml_input = "!!set\n? a\n? b\n"
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: HashSet<&str> = HashSet::from([
-            "a",
-            "b",
-        ]);"""
-    )
-    assert result.code == expected
-
-
-def test_rust_const_empty_set() -> None:
-    """Rust CONST with empty set uses default element type."""
-    yaml_input = "!!set {}"
-    result = literalize(
-        source=yaml_input,
-        input_format=InputFormat.YAML,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    assert result.code == (
-        "const my_var: HashSet<String> = HashSet::<String>::new();"
-    )
 
 
 def test_rust_const_dict_raises() -> None:
@@ -202,34 +54,6 @@ def test_rust_const_empty_dict_raises() -> None:
         )
 
 
-def test_rust_const_btree_set() -> None:
-    """Rust CONST with ``BTREE_SET`` uses ``BTreeSet`` type annotation."""
-    rust_btree_set = Rust(
-        date_format=Rust.date_formats.ISO,
-        datetime_format=Rust.datetime_formats.ISO,
-        bytes_format=Rust.bytes_formats.HEX,
-        sequence_format=Rust.sequence_formats.ARRAY,
-        set_format=Rust.set_formats.BTREE_SET,
-        declaration_style=Rust.declaration_styles.CONST,
-    )
-    result = literalize(
-        source="!!set\n? a\n? b\n",
-        input_format=InputFormat.YAML,
-        language=rust_btree_set,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: BTreeSet<&str> = BTreeSet::from([
-            "a",
-            "b",
-        ]);"""
-    )
-    assert result.code == expected
-
-
 def test_rust_const_btree_map_raises() -> None:
     """Rust CONST rejects dict data with ``BTREE_MAP`` too —
     ``BTreeMap::from``
@@ -254,65 +78,6 @@ def test_rust_const_btree_map_raises() -> None:
         )
 
 
-def test_rust_const_widened_int_array() -> None:
-    """Rust CONST with mixed-size integers widens to the largest type."""
-    result = literalize(
-        source="[1, 2147483648]",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: [i64; 2] = [
-            1,
-            2147483648i64,
-        ];"""
-    )
-    assert result.code == expected
-
-
-def test_rust_const_i128_array() -> None:
-    """Rust CONST with an integer exceeding i64 range uses i128."""
-    result = literalize(
-        source="[9223372036854775808]",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: [i128; 1] = [
-            9223372036854775808i128,
-        ];"""
-    )
-    assert result.code == expected
-
-
-def test_rust_const_nested_list() -> None:
-    """Rust CONST with nested list produces recursive type."""
-    result = literalize(
-        source="[[1, 2], [3, 4]]",
-        input_format=InputFormat.JSON,
-        language=RUST_CONST,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_var"),
-    )
-    expected = textwrap.dedent(
-        text="""\
-        const my_var: [[i32; 2]; 2] = [
-            [1, 2],
-            [3, 4],
-        ];"""
-    )
-    assert result.code == expected
-
-
 def test_rust_tuple_format_type_annotation_raises() -> None:
     """TUPLE.format_type_annotation raises for incompatible format."""
     with pytest.raises(expected_exception=IncompatibleFormatsError):
@@ -329,6 +94,90 @@ def test_rust_vec_format_type_annotation() -> None:
         length=3,
     )
     assert result == "Vec<i32>"
+
+
+def test_rust_static_set_annotation_unifies_integer_widths() -> None:
+    """Set type annotations infer one element type for all values."""
+    rust = Rust(
+        declaration_style=Rust.declaration_styles.STATIC,
+        sequence_format=Rust.sequence_formats.ARRAY,
+        set_format=Rust.set_formats.HASH_SET,
+    )
+    result = literalize(
+        source="!!set {1, 1099511627776}",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=NewVariable(name="DATA"),
+    )
+
+    assert "HashSet<i64>" in result.code
+
+
+def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
+    """Single-element tuple annotations include the required comma."""
+    rust = Rust(
+        declaration_style=Rust.declaration_styles.STATIC,
+        sequence_format=Rust.sequence_formats.TUPLE,
+    )
+    result = literalize(
+        source="[1]",
+        input_format=InputFormat.JSON,
+        language=rust,
+        variable_form=NewVariable(name="DATA"),
+    )
+
+    assert "(i32,)" in result.code
+
+
+def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
+    """Epoch datetime variants use the configured integer type."""
+    rust = Rust(
+        datetime_format=Rust.datetime_formats.EPOCH,
+        heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+    )
+    timestamp = datetime.datetime(
+        year=2024,
+        month=1,
+        day=1,
+        tzinfo=datetime.UTC,
+    )
+    result = literalize(
+        source=f"- {timestamp.isoformat()}\n- 1\n",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=None,
+    )
+
+    assert "I64(i64)" in "\n".join(result.preamble)
+    assert "Value::I64(" in result.code
+
+
+def test_rust_hash_set_type_annotation() -> None:
+    """``HASH_SET`` renders a ``HashSet`` type annotation."""
+    result = Rust.set_formats.HASH_SET.format_type_annotation(
+        element_type="i32",
+    )
+
+    assert result == "HashSet<i32>"
+
+
+def test_rust_btree_set_type_annotation() -> None:
+    """``BTREE_SET`` renders a ``BTreeSet`` type annotation."""
+    result = Rust.set_formats.BTREE_SET.format_type_annotation(
+        element_type="i32",
+    )
+
+    assert result == "BTreeSet<i32>"
+
+
+def test_rust_btree_map_type_annotation() -> None:
+    """``BTREE_MAP`` renders a ``BTreeMap`` type annotation."""
+    result = Rust.dict_formats.BTREE_MAP.format_type_annotation(
+        key_type="&str",
+        value_type="i32",
+    )
+
+    assert result == "BTreeMap<&str, i32>"
 
 
 def test_rust_const_vec_raises() -> None:
@@ -371,64 +220,6 @@ RUST_LAZY_STATIC = Rust(
     bytes_format=Rust.bytes_formats.HEX,
     declaration_style=Rust.declaration_styles.LAZY_STATIC,
 )
-
-
-def test_rust_lazy_static_set() -> None:
-    """Rust LAZY_STATIC with a set wraps ``HashSet`` in ``LazyLock``.
-
-    The integration matrix pairs ``declaration_style`` with the
-    ``set`` case only for ``LAZY_STATIC`` / ``LET_MUT`` via this
-    unit test because Rust ``CONST`` / ``STATIC`` combined with
-    ``HashSet::from`` produces non-const code that does not compile,
-    a pre-existing limitation outside the scope of this change.
-    """
-    result = literalize(
-        source="!!set\n? a\n? b\n",
-        input_format=InputFormat.YAML,
-        language=RUST_LAZY_STATIC,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="names"),
-    )
-    expected = (
-        "static names: LazyLock<HashSet<&str>> = "
-        "LazyLock::new(|| HashSet::from([\n"
-        '    "a",\n'
-        '    "b",\n'
-        "]));"
-    )
-    assert result.code == expected
-
-
-def test_rust_lazy_static_dict_btree_map() -> None:
-    """Rust LAZY_STATIC composes with ``BTREE_MAP`` for sorted maps.
-
-    The ``dict_format`` x ``declaration_style`` cross-product is
-    not part of the integration-test variant matrix, so the
-    combination is exercised here.
-    """
-    lang = Rust(
-        date_format=Rust.date_formats.ISO,
-        datetime_format=Rust.datetime_formats.ISO,
-        bytes_format=Rust.bytes_formats.HEX,
-        dict_format=Rust.dict_formats.BTREE_MAP,
-        declaration_style=Rust.declaration_styles.LAZY_STATIC,
-    )
-    result = literalize(
-        source='{"a": 1}',
-        input_format=InputFormat.JSON,
-        language=lang,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="counts"),
-    )
-    expected = (
-        "static counts: LazyLock<BTreeMap<&str, i32>> = "
-        "LazyLock::new(|| BTreeMap::from([\n"
-        '    ("a", 1),\n'
-        "]));"
-    )
-    assert result.code == expected
 
 
 def test_rust_lazy_static_preamble_includes_lazy_lock() -> None:

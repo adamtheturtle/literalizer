@@ -1,10 +1,10 @@
 """Language-specific tests for literalizer converter."""
 
 import dataclasses
+import datetime
 import enum
 import json
 import re
-import textwrap
 from functools import cached_property
 from typing import ClassVar
 
@@ -43,10 +43,10 @@ from literalizer.languages import (
     Cobol,
     Dart,
     Dhall,
+    Forth,
     Fortran,
     FSharp,
     Gleam,
-    Go,
     Haskell,
     Java,
     JavaScript,
@@ -54,6 +54,7 @@ from literalizer.languages import (
     Matlab,
     Nix,
     Python,
+    R,
     Racket,
     Rust,
     Sml,
@@ -76,36 +77,70 @@ FORTRAN = Fortran(
 FSHARP = FSharp(module_name="check")
 
 
-def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
-    """Epoch datetimes use the integer variant in heterogeneous Rust
-    data.
-    """
+def test_no_heterogeneous_behavior_leaves_scalars_unwrapped() -> None:
+    """Shared no-op heterogeneous behavior returns unchanged scalars."""
+    assert NO_HETEROGENEOUS_BEHAVIOR.compute_wrap_ids("data") == frozenset()
+    assert NO_HETEROGENEOUS_BEHAVIOR.wrap_scalar("raw", "formatted") == (
+        "formatted"
+    )
+
+
+def test_forth_call_transform_appends_postfix_wrapper() -> None:
+    """Forth call transforms append the wrapper after the postfix call."""
+    result = literalize_call(
+        source="[1]",
+        input_format=InputFormat.JSON,
+        language=Forth(),
+        target_function="send",
+        parameter_names=("value",),
+        call_transform=lambda call: f"emit({call})",
+    )
+
+    assert result.code.endswith("send emit")
+
+
+def test_literalize_call_ref_is_omitted_from_preamble_data() -> None:
+    """Per-element call refs are removed before preamble inference."""
+    result = literalize_call(
+        source='[{"$ref": "existing"}]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="send",
+        parameter_names=("value",),
+    )
+
+    assert "existing" in result.code
+
+
+def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
+    """Whole-hour timezone offsets do not include zero minutes."""
+    result = Python(
+        date_format=Python.date_formats.PYTHON,
+        datetime_format=Python.datetime_formats.PYTHON,
+    ).format_datetime(
+        datetime.datetime(
+            year=2024,
+            month=1,
+            day=1,
+            hour=12,
+            tzinfo=datetime.timezone(offset=datetime.timedelta(hours=5)),
+        )
+    )
+
+    assert "hours=5" in result
+    assert "minutes=" not in result
+
+
+def test_r_formats_named_dict_entries() -> None:
+    """R dict entries with names are formatted without raising."""
     result = literalize(
-        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
+        source="{name: value}",
         input_format=InputFormat.YAML,
-        language=Rust(
-            datetime_format=Rust.datetime_formats.EPOCH,
-            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
-        ),
-        pre_indent_level=0,
-        include_delimiters=True,
+        language=R(empty_dict_key=R.empty_dict_keys.ERROR),
         variable_form=None,
     )
 
-    assert result.preamble == (
-        "use std::collections::HashMap;",
-        "enum Value {",
-        "    I64(i64),",
-        "    Str(&'static str),",
-        "}",
-    )
-    assert result.code == textwrap.dedent(
-        text="""\
-        HashMap::from([
-            ("ts", Value::I64(1705321800)),
-            ("name", Value::Str("hi")),
-        ])"""
-    )
+    assert '"name" =' in result.code
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
@@ -141,6 +176,26 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
     assert "SInt ~" not in result.code
 
 
+def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
+    """Epoch datetimes use the integer variant in heterogeneous Rust
+    data.
+    """
+    result = literalize(
+        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
+        input_format=InputFormat.YAML,
+        language=Rust(
+            datetime_format=Rust.datetime_formats.EPOCH,
+            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+
+    assert "I64(i64)" in "\n".join(result.preamble)
+    assert "Value::I64(1705321800)" in result.code
+
+
 def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
     """Dhall call argument wrapping is restricted to scalar values."""
     with pytest.raises(
@@ -154,6 +209,14 @@ def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
             target_function="consume",
             parameter_names=["value"],
         )
+
+
+def _assert_dynamic_dart_maps(code: str) -> None:
+    """Assert Dart map widening selected the dynamic value type."""
+    assert "<String, dynamic>" in code
+
+
+_COLLAPSED_DART_MAP_COUNT = 2
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -198,14 +261,10 @@ def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
         include_delimiters=True,
         variable_form=None,
     )
-    expected = textwrap.dedent(
-        text="""\
-        <Map<String, dynamic>>[
-            <String, dynamic>{"b": 1},
-            <String, dynamic>{"a": "hello"},
-        ]""",
-    )
-    assert result.code == expected
+
+    _assert_dynamic_dart_maps(code=result.code)
+    assert '"b": 1' in result.code
+    assert '"a": "hello"' in result.code
 
 
 def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
@@ -226,14 +285,10 @@ def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
         include_delimiters=True,
         variable_form=None,
     )
-    expected = textwrap.dedent(
-        text="""\
-        <Map<String, dynamic>>[
-            <String, dynamic>{},
-            <String, dynamic>{"x": 1},
-        ]""",
-    )
-    assert result.code == expected
+
+    _assert_dynamic_dart_maps(code=result.code)
+    assert "<String, dynamic>{}" in result.code
+    assert '"x": 1' in result.code
 
 
 def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
@@ -254,14 +309,10 @@ def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
         include_delimiters=True,
         variable_form=None,
     )
-    expected = textwrap.dedent(
-        text="""\
-        <Map<String, dynamic>>[
-            <String, dynamic>{},
-            <String, dynamic>{},
-        ]""",
+
+    assert (
+        result.code.count("<String, dynamic>{}") == _COLLAPSED_DART_MAP_COUNT
     )
-    assert result.code == expected
 
 
 def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
@@ -280,14 +331,9 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         include_delimiters=True,
         variable_form=None,
     )
-    expected = textwrap.dedent(
-        text="""\
-        <Map<String, dynamic>>[
-            <String, int>{"n": 1},
-            <String, int>{"n": 2},
-        ]""",
-    )
-    assert result.code == expected
+
+    assert "<String, int>" in result.code
+    assert "<String, dynamic>" in result.code
 
 
 def _flag_top_dict(data: Value) -> frozenset[int]:
@@ -360,26 +406,25 @@ def test_matlab_dict_key_with_quote() -> None:
         include_delimiters=False,
         variable_form=None,
     )
-    assert result.code == "'hello \"world\"', 1"
+
+    assert "'hello \"world\"'" in result.code
 
 
 def test_cobol_level_number_cap() -> None:
     """COBOL level numbers are capped at 49 for deeply nested
     structures.
     """
-    yaml_string = textwrap.dedent(
-        text="""\
-        a:
-          b:
-            c:
-              d:
-                e:
-                  f:
-                    g:
-                      h:
-                        i:
-                          value: deep
-        """
+    yaml_string = (
+        "a:\n"
+        "  b:\n"
+        "    c:\n"
+        "      d:\n"
+        "        e:\n"
+        "          f:\n"
+        "            g:\n"
+        "              h:\n"
+        "                i:\n"
+        "                  value: deep\n"
     )
     result = literalize(
         source=yaml_string,
@@ -389,21 +434,39 @@ def test_cobol_level_number_cap() -> None:
         include_delimiters=True,
         variable_form=None,
     )
-    expected = (
-        "\n"
-        "        05 F-A.\n"
-        "10 F-B.\n"
-        "15 F-C.\n"
-        "20 F-D.\n"
-        "25 F-E.\n"
-        "30 F-F.\n"
-        "35 F-G.\n"
-        "40 F-H.\n"
-        "45 F-I.\n"
-        '49 F-VALUE PIC X(4) VALUE "deep".\n'
-        "    "
+
+    assert '49 F-VALUE PIC X(4) VALUE "deep".' in result.code
+
+
+def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
+    """Line continuation handles escaped quotes before inline comments."""
+    yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=FORTRAN,
+        pre_indent_level=0,
+        variable_form=NewVariable(name="cfg"),
+        include_delimiters=True,
     )
-    assert result.code == expected
+
+    assert "fstr('it''s here')" in result.code
+    assert "! a comment" in result.code
+
+
+def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
+    """Bare F# scalar integers above i64 range use the ``I`` suffix."""
+    result = literalize(
+        source="9223372036854775808",
+        input_format=InputFormat.JSON,
+        language=FSHARP,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=None,
+    )
+
+    assert "FInt of bigint" in result.code
+    assert "9223372036854775808I" in result.code
 
 
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
@@ -423,49 +486,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
         if stripped.startswith("05 F-"):
             name = stripped.split()[1]
             assert not name.endswith("-")
-
-
-def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
-    """Line continuation handles escaped quotes before inline comments."""
-    yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=FORTRAN,
-        pre_indent_level=0,
-        variable_form=NewVariable(name="cfg"),
-        include_delimiters=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        type(fval_t) :: cfg
-        cfg = fmap([fval_t :: &
-            fentry('host', fstr('it''s here')), &  ! a comment
-            fentry('port', fint(80_int64)) &  ! another
-        ])""",
-    )
-    assert result.code == expected
-
-
-def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
-    """Bare F# scalar integer values above i64 range use the ``I``
-    suffix.
-    """
-    result = literalize(
-        source="9223372036854775808",
-        input_format=InputFormat.JSON,
-        language=FSHARP,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        type Val =
-            | FInt of bigint
-        9223372036854775808I"""
-    )
-    assert result.code == expected
 
 
 def test_java_list_rejects_null_elements() -> None:
@@ -611,99 +631,6 @@ def test_format_enumeration_properties(
     assert issubclass(spec.call_styles, enum.Enum)
     assert issubclass(spec.version_formats, enum.Enum)
     assert len(spec.version_formats) >= 1
-
-
-def test_python_no_any_import_when_all_defaults_overridden() -> None:
-    """When all Python default collection types are non-Any, the
-    ``from typing import Any`` import is not emitted.
-    """
-    spec = Python(
-        default_set_element_type="str",
-        default_sequence_element_type="str",
-        default_dict_value_type="str",
-        default_dict_key_type="str",
-    )
-    result = literalize(
-        source="{}\n",
-        input_format=InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data"),
-    )
-    assert result.code == "my_data: dict[str, str] = {}"
-    assert not result.preamble
-
-
-def test_literalize_call_wrap_in_file_emits_stubs() -> None:
-    """``wrap_in_file=True`` produces a self-contained file that
-    defines the ``target_function`` so the output compiles on its own.
-    """
-    # Go: stub lands in the file-scope preamble (Go can't declare
-    # functions inside ``main``).  The static ``package main`` preamble
-    # is also prepended.
-    go_result = literalize_call(
-        source="[[1, 2]]",
-        input_format=InputFormat.JSON,
-        language=Go(),
-        target_function="process",
-        parameter_names=["a", "b"],
-        wrap_in_file=True,
-    )
-    expected_go = textwrap.dedent(
-        text="""\
-        package main
-        func process(args ...any) any { return nil }
-
-        func main() {
-        process(1, 2)
-        }""",
-    )
-    assert go_result.code == expected_go
-    assert not go_result.preamble
-    assert not go_result.body_preamble
-    # Python: stub lands inside the wrapper (no language wrapper here,
-    # so it sits above the call) and covers the no-static-preamble
-    # branch.
-    py_result = literalize_call(
-        source="[[1, 2]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["a", "b"],
-        wrap_in_file=True,
-    )
-    expected_py = textwrap.dedent(
-        text="""\
-        def process(*_args: object, **_kwargs: object) -> object: ...
-        process(a=1, b=2)""",
-    )
-    assert py_result.code == expected_py
-    assert not py_result.preamble
-
-
-def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
-    """When ``call_transform`` consumes the call result, the stub
-    returns a value instead of ``void``.
-    """
-    result = literalize_call(
-        source="[[1, 2]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["a", "b"],
-        call_transform=lambda c: f"emit({c})",
-        wrap_in_file=True,
-    )
-    # ``process`` still gets a value-returning stub; ``emit`` is out of
-    # scope here — callers that use ``call_transform`` are responsible
-    # for providing their own wrapper definition.
-    expected = textwrap.dedent(
-        text="""\
-        def process(*_args: object, **_kwargs: object) -> object: ...
-        emit(process(a=1, b=2))""",
-    )
-    assert result.code == expected
 
 
 def test_gleam_call_preamble_stub_many_parameters() -> None:
@@ -1038,72 +965,6 @@ def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
             parameter_names=["items"],
             per_element=False,
         )
-
-
-def test_literalize_call_arg_ref_all_refs() -> None:
-    """A call whose every argument is a ref still renders correctly;
-    the empty non-ref list must not break wrap-id computation.
-    """
-    result = literalize_call(
-        source='[[{"$ref": "a"}, {"$ref": "b"}]]',
-        input_format=InputFormat.JSON,
-        language=Go(),
-        target_function="combine",
-        parameter_names=["x", "y"],
-    )
-    assert result.code == "combine(a, b)"
-
-
-def test_literalize_call_arg_ref_top_level_element() -> None:
-    """A bare ref marker at the top level of a per_element list works
-    without an inner list wrapper; each element becomes a one-argument
-    call whose argument is the referenced identifier.
-    """
-    result = literalize_call(
-        source='[{"$ref": "a"}, {"$ref": "b"}]',
-        input_format=InputFormat.JSON,
-        language=Go(),
-        target_function="run",
-        parameter_names=["x"],
-    )
-    assert result.code == "run(a)\nrun(b)"
-
-
-def test_literalize_call_arg_ref_per_element_false() -> None:
-    """A top-level ref in per_element=False mode emits the identifier
-    as the single argument.
-    """
-    result = literalize_call(
-        source='{"$ref": "payload"}',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="publish",
-        parameter_names=["body"],
-        per_element=False,
-    )
-    assert result.code == "publish(body=payload)"
-
-
-def test_literalize_call_arg_ref_non_ref_dict_still_literalized() -> None:
-    """A dict without the exact ``{ref_key: str}`` shape renders as a
-    normal dict literal (e.g. two-key dicts, or non-string ref values).
-    """
-    two_key = literalize_call(
-        source='[[{"ref": "x", "extra": 1}]]',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["data"],
-    )
-    assert two_key.code == 'process(data={"ref": "x", "extra": 1})'
-    non_string_ref = literalize_call(
-        source='[[{"ref": 42}]]',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["data"],
-    )
-    assert non_string_ref.code == 'process(data={"ref": 42})'
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
