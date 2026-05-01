@@ -2,12 +2,11 @@
 
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-from elm_common import ELM_JSON
+from elm_common import ELM_JSON, run_elm_make
 
 
 def _check_fixture(
@@ -29,16 +28,13 @@ def _check_fixture(
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
-        result = subprocess.run(
+        result = run_elm_make(
             args=[
                 elm_path,
                 "make",
                 "src/Check.elm",
                 "--output=/dev/null",
             ],
-            capture_output=True,
-            text=True,
-            check=False,
             cwd=tmpdir,
             env=env,
         )

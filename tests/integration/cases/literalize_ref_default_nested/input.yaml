@@ -1,0 +1,3 @@
+items:
+  - $ref: item_var
+  - fallback: value

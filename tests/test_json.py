@@ -158,6 +158,30 @@ def test_dhall_control_char_key_error_json() -> None:
         )
 
 
+def test_dhall_quoted_dict_key_json() -> None:
+    """Dhall backtick-label validation decodes simple escapes."""
+    result = literalize(
+        source=json.dumps(obj={'a"b': 1}),
+        input_format=InputFormat.JSON,
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+    )
+
+    assert result.code == '{\n  `a"b` = +1,\n}'
+
+
+def test_json_escaped_ref_key_literalizes_as_ref() -> None:
+    """JSON escapes in ref marker keys are decoded before detection."""
+    result = literalize(
+        source='{"\\u0024ref": "my_var"}',
+        input_format=InputFormat.JSON,
+        language=PYTHON,
+    )
+
+    assert result.code == "my_var"
+
+
 def test_nix_control_char_key_error_json() -> None:
     """Nix rejects control characters in dict keys."""
     expected_msg = re.escape(

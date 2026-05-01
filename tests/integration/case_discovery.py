@@ -66,6 +66,17 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     ),
 ]
 
+LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_default_nested",
+        ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_default_whole",
+        ref_key="$ref",
+    ),
+]
+
 
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
@@ -184,6 +195,9 @@ def discover_cases(
     ref_case_dirs = frozenset(
         cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
     )
+    default_ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
@@ -193,6 +207,8 @@ def discover_cases(
         if case_dir.name in call_case_dirs:
             continue
         if case_dir.name in ref_case_dirs:
+            continue
+        if case_dir.name in default_ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
@@ -268,6 +284,9 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     ref_case_dirs = frozenset(
         cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
     )
+    default_ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
@@ -277,6 +296,8 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
         if case_dir.name in call_case_dirs:
             continue
         if case_dir.name in ref_case_dirs:
+            continue
+        if case_dir.name in default_ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
