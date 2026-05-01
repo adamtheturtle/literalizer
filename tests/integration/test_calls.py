@@ -65,11 +65,8 @@ def test_call_variant_golden_file(
 ) -> None:
     """Test ``literalize_call`` for a non-default language spec.
 
-    Covers call inputs that the language's default
-    :attr:`Language.heterogeneous_strategy` rejects, which
-    :func:`test_call_golden_file` skips — in particular the
-    sibling-widening behavior of Rust's ``TAGGED_ENUM`` across
-    per-element call arguments.
+    Covers call inputs that need a non-default language option, such as
+    line endings or heterogeneous strategies.
     """
     run_call_golden_case(
         config=call_variant_case.config,

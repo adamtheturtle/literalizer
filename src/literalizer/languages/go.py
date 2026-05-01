@@ -500,7 +500,50 @@ class Go(metaclass=LanguageCls):
     class LineEndings(enum.Enum):
         """Line ending options."""
 
-        SEMICOLON = enum.auto()
+        SEMICOLON = ";"
+        NONE = ""
+
+        @property
+        def statement_terminator(self) -> str:
+            """Terminator appended to complete call statements."""
+            return self.value
+
+        def wrap_declaration_formatter(
+            self,
+            formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+            """Wrap a declaration formatter with this line ending."""
+            if not self.value:
+                return formatter
+
+            def with_semicolon(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Format with a trailing semicolon."""
+                return formatter(name, value, data, modifiers) + self.value
+
+            return with_semicolon
+
+        def wrap_assignment_formatter(
+            self,
+            formatter: Callable[[str, str, Value], str],
+        ) -> Callable[[str, str, Value], str]:
+            """Wrap an assignment formatter with this line ending."""
+            if not self.value:
+                return formatter
+
+            def with_semicolon(
+                name: str,
+                value: str,
+                data: Value,
+            ) -> str:
+                """Format with a trailing semicolon."""
+                return formatter(name, value, data) + self.value
+
+            return with_semicolon
 
     line_endings = LineEndings
 
@@ -593,7 +636,7 @@ class Go(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    line_ending: LineEndings = LineEndings.NONE
     call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -610,7 +653,6 @@ class Go(metaclass=LanguageCls):
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
-    statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = ("package main",)
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ('import "math"',)
@@ -846,12 +888,19 @@ class Go(metaclass=LanguageCls):
         return braced_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    def statement_terminator(self) -> str:
+        """String appended to each call expression."""
+        return self.line_ending.statement_terminator
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return _nil_safe_declaration(
-            base_formatter=self.declaration_style.value.formatter,
+        return self.line_ending.wrap_declaration_formatter(
+            formatter=_nil_safe_declaration(
+                base_formatter=self.declaration_style.value.formatter,
+            ),
         )
 
     @cached_property
@@ -859,7 +908,9 @@ class Go(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
-        return variable_formatter(template="{name} = {value}")
+        return self.line_ending.wrap_assignment_formatter(
+            formatter=variable_formatter(template="{name} = {value}"),
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

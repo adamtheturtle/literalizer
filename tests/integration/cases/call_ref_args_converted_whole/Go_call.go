@@ -7,5 +7,5 @@ MyVar := []int{
 	2,
 	3,
 }
-process(MyVar);
+process(MyVar)
 }
