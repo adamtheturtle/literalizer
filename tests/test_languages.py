@@ -109,7 +109,7 @@ def test_literalize_call_ref_is_omitted_from_preamble_data() -> None:
         parameter_names=("value",),
     )
 
-    assert "existing" in result.code
+    assert result.code == "send(value=existing)"
 
 
 def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
@@ -127,8 +127,19 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
         )
     )
 
-    assert "hours=5" in result
-    assert "minutes=" not in result
+    assert result == (
+        "datetime.datetime("
+        "year=2024, "
+        "month=1, "
+        "day=1, "
+        "hour=12, "
+        "minute=0, "
+        "second=0, "
+        "tzinfo=datetime.timezone("
+        "offset=datetime.timedelta(hours=5)"
+        ")"
+        ")"
+    )
 
 
 def test_r_formats_named_dict_entries() -> None:
@@ -140,7 +151,7 @@ def test_r_formats_named_dict_entries() -> None:
         variable_form=None,
     )
 
-    assert '"name" =' in result.code
+    assert result.code == 'list(\n    "name" = "value"\n)'
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
@@ -157,8 +168,14 @@ def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
         variable_form=None,
     )
 
-    assert "instance Num" not in "\n".join(result.preamble)
-    assert '("ts", HInt 1705321800)' in result.code
+    assert result.preamble == ()
+    assert result.code == (
+        "data Val = HStr String | HMap [(String, Val)] | HInt Integer\n"
+        "HMap [\n"
+        '    ("ts", HInt 1705321800),\n'
+        '    ("name", HStr "hi")\n'
+        "    ]"
+    )
 
 
 def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
@@ -172,8 +189,11 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
         variable_form=NewVariable(name="my_data"),
     )
 
-    assert "SInt (~" in result.code
-    assert "SInt ~" not in result.code
+    assert result.code == (
+        "datatype val_t =\n"
+        "    SInt of LargeInt.int\n"
+        "val my_data : val_t = SInt (~2208988800)"
+    )
 
 
 def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
@@ -192,8 +212,19 @@ def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
         variable_form=None,
     )
 
-    assert "I64(i64)" in "\n".join(result.preamble)
-    assert "Value::I64(1705321800)" in result.code
+    assert result.preamble == (
+        "use std::collections::HashMap;",
+        "enum Value {",
+        "    I64(i64),",
+        "    Str(&'static str),",
+        "}",
+    )
+    assert result.code == (
+        "HashMap::from([\n"
+        '    ("ts", Value::I64(1705321800)),\n'
+        '    ("name", Value::Str("hi")),\n'
+        "])"
+    )
 
 
 def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
@@ -209,11 +240,6 @@ def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
             target_function="consume",
             parameter_names=["value"],
         )
-
-
-def _assert_dynamic_dart_maps(code: str) -> None:
-    """Assert Dart map widening selected the dynamic value type."""
-    assert "<String, dynamic>" in code
 
 
 _COLLAPSED_DART_MAP_COUNT = 2
@@ -262,9 +288,12 @@ def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
         variable_form=None,
     )
 
-    _assert_dynamic_dart_maps(code=result.code)
-    assert '"b": 1' in result.code
-    assert '"a": "hello"' in result.code
+    assert result.code == (
+        "<Map<String, dynamic>>[\n"
+        '    <String, dynamic>{"b": 1},\n'
+        '    <String, dynamic>{"a": "hello"},\n'
+        "]"
+    )
 
 
 def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
@@ -286,9 +315,12 @@ def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
         variable_form=None,
     )
 
-    _assert_dynamic_dart_maps(code=result.code)
-    assert "<String, dynamic>{}" in result.code
-    assert '"x": 1' in result.code
+    assert result.code == (
+        "<Map<String, dynamic>>[\n"
+        "    <String, dynamic>{},\n"
+        '    <String, dynamic>{"x": 1},\n'
+        "]"
+    )
 
 
 def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
@@ -332,8 +364,12 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         variable_form=None,
     )
 
-    assert "<String, int>" in result.code
-    assert "<String, dynamic>" in result.code
+    assert result.code == (
+        "<Map<String, dynamic>>[\n"
+        '    <String, int>{"n": 1},\n'
+        '    <String, int>{"n": 2},\n'
+        "]"
+    )
 
 
 def _flag_top_dict(data: Value) -> frozenset[int]:
@@ -407,7 +443,7 @@ def test_matlab_dict_key_with_quote() -> None:
         variable_form=None,
     )
 
-    assert "'hello \"world\"'" in result.code
+    assert result.code == "'hello \"world\"', 1"
 
 
 def test_cobol_level_number_cap() -> None:
@@ -435,7 +471,20 @@ def test_cobol_level_number_cap() -> None:
         variable_form=None,
     )
 
-    assert '49 F-VALUE PIC X(4) VALUE "deep".' in result.code
+    assert result.code == (
+        "\n"
+        "        05 F-A.\n"
+        "10 F-B.\n"
+        "15 F-C.\n"
+        "20 F-D.\n"
+        "25 F-E.\n"
+        "30 F-F.\n"
+        "35 F-G.\n"
+        "40 F-H.\n"
+        "45 F-I.\n"
+        '49 F-VALUE PIC X(4) VALUE "deep".\n'
+        "    "
+    )
 
 
 def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
@@ -450,8 +499,13 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         include_delimiters=True,
     )
 
-    assert "fstr('it''s here')" in result.code
-    assert "! a comment" in result.code
+    assert result.code == (
+        "type(fval_t) :: cfg\n"
+        "cfg = fmap([fval_t :: &\n"
+        "    fentry('host', fstr('it''s here')), &  ! a comment\n"
+        "    fentry('port', fint(80_int64)) &  ! another\n"
+        "])"
+    )
 
 
 def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
@@ -465,8 +519,9 @@ def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
         variable_form=None,
     )
 
-    assert "FInt of bigint" in result.code
-    assert "9223372036854775808I" in result.code
+    assert result.code == (
+        "type Val =\n    | FInt of bigint\n9223372036854775808I"
+    )
 
 
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
@@ -646,8 +701,37 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
         params,
         StubReturn.VOID,
     )
-    assert "_p25: z" in line
-    assert "_p26: a1" in line
+    assert line == (
+        "pub fn target("
+        "_p0: a, "
+        "_p1: b, "
+        "_p2: c, "
+        "_p3: d, "
+        "_p4: e, "
+        "_p5: f, "
+        "_p6: g, "
+        "_p7: h, "
+        "_p8: i, "
+        "_p9: j, "
+        "_p10: k, "
+        "_p11: l, "
+        "_p12: m, "
+        "_p13: n, "
+        "_p14: o, "
+        "_p15: p, "
+        "_p16: q, "
+        "_p17: r, "
+        "_p18: s, "
+        "_p19: t, "
+        "_p20: u, "
+        "_p21: v, "
+        "_p22: w, "
+        "_p23: x, "
+        "_p24: y, "
+        "_p25: z, "
+        "_p26: a1"
+        ") -> Nil { Nil }"
+    )
 
 
 @pytest.mark.parametrize(
