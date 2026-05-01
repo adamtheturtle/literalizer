@@ -733,27 +733,42 @@ def _lang_satisfies_config_constraints(
         and not lang_cls.call_returns_expression
     ):
         return False
+    return _lang_satisfies_call_shape_constraints(
+        lang_cls=lang_cls,
+        config=config,
+    )
+
+
+@beartype
+def _lang_satisfies_call_shape_constraints(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> bool:
+    """Return False if *lang_cls* cannot represent *config*'s call
+    shape.
+    """
     if (
-        (
-            len(config.parameter_names) == 0
-            and not lang_cls.supports_zero_parameter_calls
+        len(config.parameter_names) == 0
+        and not lang_cls.supports_zero_parameter_calls
+    ):
+        return False
+    if (
+        config.requires_inline_multiline_dict_args
+        and not lang_cls.supports_inline_multiline_dict_args
+    ):
+        return False
+    if (
+        case_uses_ref_inside_dict_literal(
+            case_dir_name=config.case_dir_name,
+            ref_key="$ref",
         )
-        or (
-            config.requires_inline_multiline_dict_args
-            and not lang_cls.supports_inline_multiline_dict_args
-        )
-        or (
-            case_uses_ref_inside_dict_literal(
-                case_dir_name=config.case_dir_name,
-                ref_key="$ref",
-            )
-            and not lang_cls.supports_call_refs_in_dict_literals
-        )
-        or (
-            config.case_dir_name
-            in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
-            and not lang_cls.supports_standalone_comments_in_wrapped_calls
-        )
+        and not lang_cls.supports_call_refs_in_dict_literals
+    ):
+        return False
+    if (
+        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
+        and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
         return False
     return not (
