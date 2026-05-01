@@ -1,5 +1,6 @@
 """Language-specific tests for literalizer converter."""
 
+import datetime
 import enum
 import json
 import re
@@ -17,6 +18,7 @@ from literalizer import (
     literalize_call,
 )
 from literalizer._language import (
+    NO_HETEROGENEOUS_BEHAVIOR,
     LanguageCls,
     StubReturn,
 )
@@ -34,6 +36,7 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Bash,
     Cobol,
+    Forth,
     Gleam,
     Haskell,
     Java,
@@ -41,6 +44,7 @@ from literalizer.languages import (
     Jsonnet,
     Nix,
     Python,
+    R,
     Racket,
     Sml,
     Yaml,
@@ -52,6 +56,72 @@ COBOL = Cobol(
     bytes_format=Cobol.bytes_formats.HEX,
     sequence_format=Cobol.sequence_formats.SEQUENCE,
 )
+
+
+def test_no_heterogeneous_behavior_leaves_scalars_unwrapped() -> None:
+    """Shared no-op heterogeneous behavior returns unchanged scalars."""
+    assert NO_HETEROGENEOUS_BEHAVIOR.compute_wrap_ids("data") == frozenset()
+    assert NO_HETEROGENEOUS_BEHAVIOR.wrap_scalar("raw", "formatted") == (
+        "formatted"
+    )
+
+
+def test_forth_call_transform_appends_postfix_wrapper() -> None:
+    """Forth call transforms append the wrapper after the postfix call."""
+    result = literalize_call(
+        source="[1]",
+        input_format=InputFormat.JSON,
+        language=Forth(),
+        target_function="send",
+        parameter_names=("value",),
+        call_transform=lambda call: f"emit({call})",
+    )
+
+    assert result.code.endswith("send emit")
+
+
+def test_literalize_call_ref_is_omitted_from_preamble_data() -> None:
+    """Per-element call refs are removed before preamble inference."""
+    result = literalize_call(
+        source='[{"$ref": "existing"}]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="send",
+        parameter_names=("value",),
+    )
+
+    assert "existing" in result.code
+
+
+def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
+    """Whole-hour timezone offsets do not include zero minutes."""
+    result = Python(
+        date_format=Python.date_formats.PYTHON,
+        datetime_format=Python.datetime_formats.PYTHON,
+    ).format_datetime(
+        datetime.datetime(
+            year=2024,
+            month=1,
+            day=1,
+            hour=12,
+            tzinfo=datetime.timezone(offset=datetime.timedelta(hours=5)),
+        )
+    )
+
+    assert "hours=5" in result
+    assert "minutes=" not in result
+
+
+def test_r_formats_named_dict_entries() -> None:
+    """R dict entries with names are formatted without raising."""
+    result = literalize(
+        source="{name: value}",
+        input_format=InputFormat.YAML,
+        language=R(empty_dict_key=R.empty_dict_keys.ERROR),
+        variable_form=None,
+    )
+
+    assert '"name" =' in result.code
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:

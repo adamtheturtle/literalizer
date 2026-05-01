@@ -4,11 +4,13 @@ import re
 import textwrap
 
 import pytest
+from ruamel.yaml import YAML
 
 from literalizer import (
     InputFormat,
     literalize,
 )
+from literalizer._comments import literalize_yaml_scalar
 from literalizer.exceptions import (
     HeterogeneousCollectionError,
     InvalidDictKeyError,
@@ -63,6 +65,46 @@ def test_literalize_yaml_invalid_is_parse_error() -> None:
             include_delimiters=False,
             variable_form=None,
         )
+
+
+def test_literalize_yaml_scalar_without_comments_returns_base() -> None:
+    """Scalar YAML comment preservation is a no-op without comments."""
+    tokens = YAML().scan(  # pyright: ignore[reportUnknownMemberType]
+        stream="plain\n",
+    )
+    result = literalize_yaml_scalar(
+        tokens=tokens,
+        base='"plain"',
+        comment_prefix="#",
+        comment_suffix="",
+        line_prefix="",
+        supports_scalar_before_comments=True,
+        supports_scalar_inline_comments=True,
+    )
+
+    assert result.result == '"plain"'
+    assert result.pending_before == ()
+
+
+def test_literalize_yaml_scalar_preserves_before_and_inline_comments() -> None:
+    """Scalar YAML comments are embedded when the language supports
+    them.
+    """
+    tokens = YAML().scan(  # pyright: ignore[reportUnknownMemberType]
+        stream="# before\nplain # inline\n",
+    )
+    result = literalize_yaml_scalar(
+        tokens=tokens,
+        base='"plain"',
+        comment_prefix="#",
+        comment_suffix="",
+        line_prefix="",
+        supports_scalar_before_comments=True,
+        supports_scalar_inline_comments=True,
+    )
+
+    assert result.result == '# before\n"plain"  # inline'
+    assert result.pending_before == ()
 
 
 def test_parse_yaml_invalid_roundtrip_path_raises() -> None:

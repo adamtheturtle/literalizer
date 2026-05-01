@@ -2,6 +2,7 @@
 converter.
 """
 
+import datetime
 import re
 
 import pytest
@@ -93,6 +94,90 @@ def test_rust_vec_format_type_annotation() -> None:
         length=3,
     )
     assert result == "Vec<i32>"
+
+
+def test_rust_static_set_annotation_unifies_integer_widths() -> None:
+    """Set type annotations infer one element type for all values."""
+    rust = Rust(
+        declaration_style=Rust.declaration_styles.STATIC,
+        sequence_format=Rust.sequence_formats.ARRAY,
+        set_format=Rust.set_formats.HASH_SET,
+    )
+    result = literalize(
+        source="!!set {1, 1099511627776}",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=NewVariable(name="DATA"),
+    )
+
+    assert "HashSet<i64>" in result.code
+
+
+def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
+    """Single-element tuple annotations include the required comma."""
+    rust = Rust(
+        declaration_style=Rust.declaration_styles.STATIC,
+        sequence_format=Rust.sequence_formats.TUPLE,
+    )
+    result = literalize(
+        source="[1]",
+        input_format=InputFormat.JSON,
+        language=rust,
+        variable_form=NewVariable(name="DATA"),
+    )
+
+    assert "(i32,)" in result.code
+
+
+def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
+    """Epoch datetime variants use the configured integer type."""
+    rust = Rust(
+        datetime_format=Rust.datetime_formats.EPOCH,
+        heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+    )
+    timestamp = datetime.datetime(
+        year=2024,
+        month=1,
+        day=1,
+        tzinfo=datetime.UTC,
+    )
+    result = literalize(
+        source=f"- {timestamp.isoformat()}\n- 1\n",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=None,
+    )
+
+    assert "I64(i64)" in "\n".join(result.preamble)
+    assert "Value::I64(" in result.code
+
+
+def test_rust_hash_set_type_annotation() -> None:
+    """``HASH_SET`` renders a ``HashSet`` type annotation."""
+    result = Rust.set_formats.HASH_SET.format_type_annotation(
+        element_type="i32",
+    )
+
+    assert result == "HashSet<i32>"
+
+
+def test_rust_btree_set_type_annotation() -> None:
+    """``BTREE_SET`` renders a ``BTreeSet`` type annotation."""
+    result = Rust.set_formats.BTREE_SET.format_type_annotation(
+        element_type="i32",
+    )
+
+    assert result == "BTreeSet<i32>"
+
+
+def test_rust_btree_map_type_annotation() -> None:
+    """``BTREE_MAP`` renders a ``BTreeMap`` type annotation."""
+    result = Rust.dict_formats.BTREE_MAP.format_type_annotation(
+        key_type="&str",
+        value_type="i32",
+    )
+
+    assert result == "BTreeMap<&str, i32>"
 
 
 def test_rust_const_vec_raises() -> None:

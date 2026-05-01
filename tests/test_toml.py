@@ -1,6 +1,9 @@
 """Tests for literalizer TOML conversion."""
 
+import datetime
+
 import pytest
+import tomlkit
 
 from literalizer import (
     InputFormat,
@@ -54,3 +57,44 @@ def test_extract_toml_comments_non_document() -> None:
     result = extract_toml_comments(toml_doc={"not": "a document"})
     assert not result.elements
     assert not result.trailing
+
+
+def test_extract_toml_comments_from_document() -> None:
+    """``extract_toml_comments`` keeps standalone and inline comments."""
+    toml_doc = tomlkit.parse(
+        string="# before\n\nanswer = 42 # inline\nplain = 'ok'\n# trailing\n",
+    )
+    result = extract_toml_comments(toml_doc=toml_doc)
+    first, second = result.elements
+
+    assert first.before == ("before",)
+    assert first.inline == "inline"
+    assert second.before == ()
+    assert second.inline == ""
+    assert result.trailing == ("trailing",)
+
+
+def test_extract_toml_comments_includes_table_entries() -> None:
+    """TOML tables are included without inline comment metadata."""
+    toml_doc = tomlkit.parse(
+        string="[section]\nvalue = 1\n",
+    )
+    result = extract_toml_comments(toml_doc=toml_doc)
+
+    assert len(result.elements) == 1
+    assert result.elements[0].before == ()
+    assert result.elements[0].inline == ""
+
+
+def test_toml_time_values_literalize() -> None:
+    """TOML ``time`` values are converted before formatting."""
+    source = f"starts_at = {datetime.time(hour=9, minute=30).isoformat()}\n"
+    result = literalize(
+        source=source,
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=False,
+    )
+
+    assert "starts_at" in result.code
