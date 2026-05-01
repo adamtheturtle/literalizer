@@ -24,11 +24,6 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
 )
-from literalizer.languages import (
-    Cobol,
-    Dhall,
-    Elm,
-)
 
 from .check_golden import check_golden
 from .language_specs import sorted_languages, with_per_fixture_module_name
@@ -603,20 +598,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
-# Per-case language exclusions: cases whose target function, parameter
-# names, or call_transform wrapper use syntax that is invalid in a given
-# language, making a valid lint-passing output impossible to generate.
-CASE_LANGUAGE_INCOMPATIBLE: dict[str, frozenset[literalizer.LanguageCls]] = {
-    "call_no_params_transform": frozenset({Cobol, Elm}),
-    # COBOL CALL "PROCESS" USING. is invalid with no parameters (USING
-    # requires at least one).  Dhall zero-parameter stubs would need to
-    # be plain values rather than functions, which the stub generator does
-    # not support.  Elm zero-parameter "functions" are values, not callable
-    # expressions.
-    "call_no_params": frozenset({Cobol, Dhall, Elm}),
-}
-
-
 _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS = frozenset(
     {"call_comments", "call_comments_dict_args"}
 )
@@ -787,10 +768,6 @@ def discover_call_cases() -> list[CallCase]:
             if len(lang_cls.CallStyles) == 0:
                 continue
             if not _lang_supports_case(config=config, lang_cls=lang_cls):
-                continue
-            if lang_cls in CASE_LANGUAGE_INCOMPATIBLE.get(
-                config.case_dir_name, frozenset()
-            ):
                 continue
             if not _lang_satisfies_config_constraints(
                 lang_cls=lang_cls, config=config
