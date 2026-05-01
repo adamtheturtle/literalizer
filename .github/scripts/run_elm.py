@@ -9,7 +9,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from elm_common import ELM_JSON
+from elm_common import ELM_JSON, run_elm_make
 
 # Wrap ``Check.my_data`` in a ``Platform.worker`` so loading the compiled
 # JavaScript evaluates the fixture's top-level value, surfacing runtime
@@ -89,16 +89,13 @@ def _run_fixture(
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
-        compile_result = subprocess.run(
+        compile_result = run_elm_make(
             args=[
                 elm_path,
                 "make",
                 "src/Main.elm",
                 f"--output={output_js}",
             ],
-            capture_output=True,
-            text=True,
-            check=False,
             cwd=tmpdir,
             env=env,
         )
