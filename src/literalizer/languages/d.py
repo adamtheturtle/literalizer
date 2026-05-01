@@ -469,6 +469,13 @@ class D(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
+    @property
+    def supports_wrap_combined_in_file(self) -> bool:
+        """Whether ``wrap_combined_in_file`` supports the selected
+        style.
+        """
+        return bool(self.declaration_style.value.supports_redefinition)
+
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX

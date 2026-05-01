@@ -1239,6 +1239,13 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def supports_wrap_combined_in_file(self) -> bool:
+        """Whether ``wrap_combined_in_file`` supports the selected
+        declaration style.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def statement_terminator(self) -> str:
         """String appended to each call expression to form a complete
         statement.

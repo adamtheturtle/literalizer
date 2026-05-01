@@ -1927,8 +1927,9 @@ def literalize(
             (e.g. heterogeneous scalar types in a language that requires
             homogeneous collections).
         ValueError: If *variable_form* is :class:`BothVariableForms`
-            and *wrap_in_file* is ``False``, or if the language's
-            ``declaration_style`` does not support redefinition.
+            and *wrap_in_file* is ``False``, or if the language does not
+            support ``wrap_combined_in_file`` for its selected
+            ``declaration_style``.
         UnsupportedIdentifierCaseError: If *ref_case* is not in
             :attr:`~literalizer._language.Language.identifier_cases`
             for the target language.
@@ -1942,11 +1943,11 @@ def literalize(
         if not wrap_in_file:
             msg = "BothVariableForms requires wrap_in_file=True"
             raise ValueError(msg)
-        if not language.declaration_style.value.supports_redefinition:
+        if not language.supports_wrap_combined_in_file:
             msg = (
-                "BothVariableForms requires a declaration_style that "
-                "supports redefinition; "
-                f"{language.declaration_style.name!r} does not."
+                "BothVariableForms requires supports_wrap_combined_in_file; "
+                f"{type(language).__name__} with declaration_style "
+                f"{language.declaration_style.name!r} does not support it."
             )
             raise ValueError(msg)
         return _literalize_both_forms(

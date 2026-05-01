@@ -8,6 +8,7 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer._language import LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.languages import Dhall, Norg
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
@@ -78,6 +79,7 @@ def test_protocol_properties_accessible(
     assert isinstance(spec.scalar_body_preamble, dict)
     assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
     assert isinstance(spec.supports_commented_dict_call_args, bool)
+    assert isinstance(spec.supports_wrap_combined_in_file, bool)
 
 
 @pytest.mark.parametrize(
@@ -127,6 +129,25 @@ def test_format_enumeration_properties(
 
 @pytest.mark.parametrize(
     argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_wrap_combined_in_file_capability_matches_declaration_style(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Check the declared wrap capability for the default declaration
+    style.
+    """
+    spec = language_cls()
+    assert (
+        spec.supports_wrap_combined_in_file
+        is spec.declaration_style.value.supports_redefinition
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
     argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
     ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
 )
@@ -135,6 +156,27 @@ def test_wrap_combined_in_file_unsupported_raises(
     language_cls: LanguageCls,
 ) -> None:
     """Check wrap_combined_in_file raises when redefinition is unsupported."""
+    with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
+        language_cls().wrap_combined_in_file(
+            declaration="x = 1",
+            assignment="x = 2",
+            variable_name="x",
+            body_preamble=(),
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[Norg, Dhall],
+    ids=["Norg", "Dhall"],
+)
+def test_issue_1776_wrap_combined_in_file_raises_typed_error(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Check issue #1776 languages do not raise bare
+    NotImplementedError.
+    """
     with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
         language_cls().wrap_combined_in_file(
             declaration="x = 1",

@@ -580,6 +580,13 @@ class OCaml(metaclass=LanguageCls):
         del declaration, assignment, variable_name, body_preamble
         raise WrapCombinedInFileNotSupportedError
 
+    @property
+    def supports_wrap_combined_in_file(self) -> bool:
+        """Whether ``wrap_combined_in_file`` supports the selected
+        style.
+        """
+        return bool(self.declaration_style.value.supports_redefinition)
+
     date_format: DateFormats = DateFormats.OCAML
     datetime_format: DatetimeFormats = DatetimeFormats.OCAML
     bytes_format: BytesFormats = BytesFormats.HEX

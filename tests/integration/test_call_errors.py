@@ -321,10 +321,10 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
 
 
 def test_both_variable_forms_without_redefinition_support_raises() -> None:
-    """BothVariableForms raises when declaration_style cannot redefine."""
+    """BothVariableForms raises when combined file wrapping is unsupported."""
     expected = (
-        "BothVariableForms requires a declaration_style that supports "
-        "redefinition; 'ASSIGN' does not."
+        "BothVariableForms requires supports_wrap_combined_in_file; "
+        "Yaml with declaration_style 'ASSIGN' does not support it."
     )
     with pytest.raises(
         expected_exception=ValueError,
