@@ -1121,7 +1121,10 @@ def _collection_open_for_multiline_value(
     expand_refs: bool,
     ref_key: str,
 ) -> str:
-    """Return an unprefixed opener for a nested multiline collection."""
+    """Return an opener without a leading prefix.
+
+    Used for a nested multiline collection.
+    """
     match data:
         case dict() if is_ordered_map:
             return spec.ordered_map_format_config.ordered_map_open(data)
@@ -1175,9 +1178,10 @@ def _format_multiline_collection_value(
     dict_open_override: str | None = None,
     sequence_open_override: str | None = None,
 ) -> str:
-    """Format a nested collection with an unindented first delimiter.
+    """Format a nested collection whose first delimiter has no leading
+    prefix.
 
-    The caller prepends its own entry prefix to the first line. Continuation
+    The caller adds its own entry prefix to the first line. Continuation
     lines and the closing delimiter are prefixed here so nested layouts align
     under that entry.
     """
@@ -1221,6 +1225,12 @@ def _format_multiline_collection_value(
 
 
 @beartype
+def _rstrip_lines(text: str) -> str:
+    """Remove trailing whitespace from each line."""
+    return "\n".join(line.rstrip() for line in text.split(sep="\n"))
+
+
+@beartype
 def _append_entries(
     *,
     formatted_entries: Sequence[str],
@@ -1234,7 +1244,7 @@ def _append_entries(
     for i, entry in enumerate(iterable=formatted_entries):
         add_sep = i < last_idx or trailing_comma
         sep = spec.element_separator.strip() if add_sep else ""
-        lines.append(f"{body_prefix}{entry}{sep}")
+        lines.append(f"{body_prefix}{_rstrip_lines(text=entry)}{sep}")
 
 
 @beartype
