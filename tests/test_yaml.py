@@ -83,7 +83,7 @@ def test_literalize_yaml_scalar_without_comments_returns_base() -> None:
     )
 
     assert result.result == '"plain"'
-    assert result.pending_before == ()
+    assert not result.pending_before
 
 
 def test_literalize_yaml_scalar_preserves_before_and_inline_comments() -> None:
@@ -104,7 +104,7 @@ def test_literalize_yaml_scalar_preserves_before_and_inline_comments() -> None:
     )
 
     assert result.result == '# before\n"plain"  # inline'
-    assert result.pending_before == ()
+    assert not result.pending_before
 
 
 def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
