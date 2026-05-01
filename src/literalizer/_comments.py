@@ -100,6 +100,49 @@ class CollectionComments:
     trailing: tuple[str, ...]
 
 
+@dataclasses.dataclass(frozen=True)
+class _CollectionTargets:
+    """Iteration details for extracting collection comments."""
+
+    token_idx: int
+    keys: list[object]
+
+
+@beartype
+def _collection_targets(
+    *,
+    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+) -> _CollectionTargets:
+    """Return comment-token index and iteration keys for a collection."""
+    # Sequences and sets store after-element tokens at index 0,
+    # mappings at index 2.
+    match ruamel_data:
+        case CommentedSeq():
+            return _CollectionTargets(
+                token_idx=0,
+                keys=list(range(len(ruamel_data))),
+            )
+        case CommentedSet():
+            return _CollectionTargets(token_idx=0, keys=list(ruamel_data))
+        case _:
+            return _CollectionTargets(
+                token_idx=2,
+                keys=list(ruamel_data.keys()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            )
+
+
+@beartype
+def _collection_element_value(
+    *,
+    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+    key: object,
+) -> object:
+    """Return the collection element identified by *key*."""
+    if isinstance(ruamel_data, CommentedSet):
+        return key
+    return cast("object", ruamel_data[key])
+
+
 @beartype
 def _nested_inline_comment(
     *,
@@ -124,6 +167,38 @@ def _nested_inline_comment(
 
 
 @beartype
+def _header_comment_lines(*, ca: object) -> list[str]:
+    """Extract comments that appear before the first YAML element."""
+    ca_obj = cast("Any", ca)
+    lines: list[str] = []
+    if ca_obj.comment and len(ca_obj.comment) > 1 and ca_obj.comment[1]:
+        for header_token in ca_obj.comment[1]:
+            header_value: str = header_token.value
+            lines.extend(
+                _token_comment_lines(value=header_value),
+            )
+    return lines
+
+
+@beartype
+def _element_after_comments(
+    *,
+    ca: object,
+    key: object,
+    token_idx: int,
+) -> _ParsedAfterToken:
+    """Extract inline and before-next comments after one element."""
+    ca_obj = cast("Any", ca)
+    if key not in ca_obj.items:
+        return _ParsedAfterToken(inline="", before_next=[])
+
+    item_token: CommentToken | None = ca_obj.items[key][token_idx]
+    if item_token is None:
+        return _ParsedAfterToken(inline="", before_next=[])
+    return _parse_after_token(token=item_token)
+
+
+@beartype
 def extract_yaml_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
@@ -138,52 +213,32 @@ def extract_yaml_comments(
     :func:`_extract_scalar_comments` for those.
     """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
-    ca = ruamel_data.ca  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+    ca = cast("object", ruamel_data.ca)  # pyright: ignore[reportUnknownMemberType]
 
     # Header comments (before the first element).
-    pending_before: list[str] = []
-    if ca.comment and len(ca.comment) > 1 and ca.comment[1]:  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        for header_token in ca.comment[1]:  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            header_value: str = header_token.value  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            pending_before.extend(
-                _token_comment_lines(value=header_value),  # pyright: ignore[reportUnknownArgumentType]
-            )
-
-    # Sequences and sets store after-element tokens at index 0,
-    # mappings at index 2.
-    match ruamel_data:
-        case CommentedSeq():
-            token_idx = 0
-            keys: list[object] = list(range(len(ruamel_data)))
-        case CommentedSet():
-            token_idx = 0
-            keys = list(ruamel_data)
-        case _:
-            token_idx = 2
-            keys = list(ruamel_data.keys())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+    pending_before: list[str] = _header_comment_lines(ca=ca)
+    targets = _collection_targets(ruamel_data=ruamel_data)
 
     # Iterate in insertion order so that pending_before propagation is
     # correct (a "before element N" comment is stored in the after-token
     # of element N-1 in insertion order).
     element_map: dict[object, ElementComments] = {}
-    for key in keys:
+    for key in targets.keys:
         before = list(pending_before)
-        inline = ""
-        pending_before = []
-        element_value = (
-            key
-            if isinstance(ruamel_data, CommentedSet)
-            else cast("object", ruamel_data[key])
+        parsed = _element_after_comments(
+            ca=ca,
+            key=key,
+            token_idx=targets.token_idx,
         )
-
-        if key in ca.items:  # pyright: ignore[reportUnknownMemberType]
-            item_token: CommentToken | None = ca.items[key][token_idx]  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            if item_token is not None:
-                parsed = _parse_after_token(token=item_token)  # pyright: ignore[reportUnknownArgumentType]
-                inline = parsed.inline
-                pending_before = parsed.before_next
+        inline = parsed.inline
         if not inline:
-            inline = _nested_inline_comment(value=element_value)
+            inline = _nested_inline_comment(
+                value=_collection_element_value(
+                    ruamel_data=ruamel_data,
+                    key=key,
+                ),
+            )
+        pending_before = parsed.before_next
 
         element_map[key] = ElementComments(
             before=tuple(before),
@@ -194,11 +249,11 @@ def extract_yaml_comments(
     # so reorder to match that sort key to keep comments aligned.
     if isinstance(ruamel_data, CommentedSet):
         output_keys: list[object] = sorted(
-            keys,
+            targets.keys,
             key=lambda v: (type(v).__name__, repr(v)),
         )
     else:
-        output_keys = keys
+        output_keys = targets.keys
 
     return CollectionComments(
         elements=tuple(element_map[k] for k in output_keys),
