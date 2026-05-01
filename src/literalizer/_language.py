@@ -259,6 +259,9 @@ CallStyle = (
 )
 """Tagged union describing how a language passes call arguments."""
 
+type FormatCallArg = Callable[[Value, str], str]
+"""Callable that rewrites a formatted direct call argument."""
+
 
 class CallSupport(enum.Enum):
     """Sentinel describing why a language does not have a
@@ -447,6 +450,16 @@ values.
 """
 
 
+@beartype
+def _identity_call_arg(_value: Value, formatted: str, /) -> str:
+    """Return *formatted* unchanged for languages with no argument wrapper."""
+    return formatted
+
+
+identity_call_arg: FormatCallArg = _identity_call_arg
+"""Shared callable for languages that need no call-argument wrapping."""
+
+
 @dataclasses.dataclass(frozen=True)
 class ModifierCombination:
     """A named combination of declaration modifiers for a language.
@@ -519,6 +532,7 @@ class LanguageCls(type):
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
+    format_call_arg: FormatCallArg
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1246,6 +1260,18 @@ class Language(Protocol):
         Most languages accept dotted member-access as-is and use
         :data:`identity_call_target`.  PHP overrides this to produce
         ``$app->client->fetch``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_arg(self) -> FormatCallArg:
+        """Rewrite a formatted direct call argument.
+
+        Called as ``format_call_arg(value, formatted)`` after *value*
+        has been formatted as a literal or reference.  Languages that
+        do not need wrapping set this to :data:`identity_call_arg`;
+        languages such as C and Objective-C override this to wrap each
+        argument in a canonical parameter type.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

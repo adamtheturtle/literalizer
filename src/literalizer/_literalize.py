@@ -1980,17 +1980,6 @@ def literalize(
 
 
 @beartype
-def _identity_call_arg(_value: Value, formatted: str) -> str:
-    """Return *formatted* unchanged.
-
-    Default for :func:`_format_call_args` when a language does not
-    define ``format_call_arg``.  C and Objective-C override this to
-    wrap each argument in their canonical parameter type.
-    """
-    return formatted
-
-
-@beartype
 def _identity_call_statement(statement: str) -> str:
     """Return *statement* unchanged.
 
@@ -2245,11 +2234,7 @@ def _format_call_args(
     *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
     identifier to that :class:`IdentifierCase` before emitting it.
     """
-    wrap_arg: Callable[[Value, str], str] = getattr(
-        language,
-        "format_call_arg",
-        _identity_call_arg,
-    )
+    wrap_arg = language.format_call_arg
     formatted = [
         _format_single_call_arg(
             value=arg_value,
