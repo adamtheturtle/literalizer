@@ -1056,7 +1056,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
             )
-        case list():
+        case list():  # pragma: no branch
             result = _format_list_value(
                 value=value,
                 spec=spec,
@@ -1125,44 +1125,39 @@ def _collection_open_for_multiline_value(
 
     Used for a nested multiline collection.
     """
-    match data:
-        case dict() if is_ordered_map:
+    if isinstance(data, dict):
+        if is_ordered_map:
             return spec.ordered_map_format_config.ordered_map_open(data)
-        case dict():
-            if dict_open_override is not None:
-                return dict_open_override
-            dict_open_items = (
-                {
-                    k: v
-                    for k, v in data.items()
-                    if _extract_call_arg_ref_name(value=v, ref_key=ref_key)
-                    is None
-                }
-                if expand_refs
-                else data
-            )
-            return spec.dict_format_config.dict_open(dict_open_items or data)
-        case set():
-            sorted_set: list[Value] = sorted(
-                data,
-                key=lambda v: (type(v).__name__, repr(v)),
-            )
-            return spec.set_format_config.set_open(sorted_set)
-        case list():
-            list_data = data
-            if sequence_open_override is not None:
-                return sequence_open_override
-            sequence_open_items = (
-                [
-                    v
-                    for v in list_data
-                    if _extract_call_arg_ref_name(value=v, ref_key=ref_key)
-                    is None
-                ]
-                if expand_refs
-                else list_data
-            )
-            return spec.sequence_open(sequence_open_items or list_data)
+        if dict_open_override is not None:
+            return dict_open_override
+        dict_open_items = (
+            {
+                k: v
+                for k, v in data.items()
+                if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            }
+            if expand_refs
+            else data
+        )
+        return spec.dict_format_config.dict_open(dict_open_items or data)
+    if isinstance(data, set):
+        sorted_set: list[Value] = sorted(
+            data,
+            key=lambda v: (type(v).__name__, repr(v)),
+        )
+        return spec.set_format_config.set_open(sorted_set)
+    if sequence_open_override is not None:
+        return sequence_open_override
+    sequence_open_items = (
+        [
+            v
+            for v in data
+            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+        ]
+        if expand_refs
+        else data
+    )
+    return spec.sequence_open(sequence_open_items or data)
 
 
 @beartype

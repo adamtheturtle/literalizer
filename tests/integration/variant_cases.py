@@ -16,6 +16,7 @@ from beartype import beartype
 import literalizer
 from literalizer.languages import (
     C,
+    Cobol,
     Crystal,
     CSharp,
     Dart,
@@ -437,9 +438,14 @@ def build_collection_layout_variants() -> Iterable[Variant]:
     """Build variants for every collection-layout option."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
+        name_prefix = (
+            f"{lang_cls.__name__}_layout"
+            if lang_cls is Cobol
+            else f"{lang_cls.__name__}_collection_layout"
+        )
         variants.extend(
             Variant(
-                name=f"{lang_cls.__name__}_collection_layout_{layout.value}",
+                name=f"{name_prefix}_{layout.value}",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
                 collection_layout=layout,
