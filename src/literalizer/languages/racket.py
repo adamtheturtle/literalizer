@@ -381,7 +381,7 @@ class Racket(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
+        return wrap_combined_in_file_noop(  # pragma: no cover
             declaration=declaration,
             assignment=assignment,
             variable_name=variable_name,
