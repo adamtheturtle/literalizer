@@ -1,8 +1,8 @@
 """``literalize_call`` golden-file cases driven by language variants.
 
-Covers call inputs that the language's default heterogeneous strategy
-rejects, but which a non-default variant (e.g. Rust's ``TAGGED_ENUM``)
-can represent.  Sibling to :mod:`call_cases`.
+Covers call inputs that need a non-default language spec, such as
+inputs that a default heterogeneous strategy rejects or calls rendered
+with a non-default line ending.  Sibling to :mod:`call_cases`.
 """
 
 import dataclasses
@@ -12,6 +12,7 @@ from collections.abc import Callable, Iterable
 from beartype import beartype
 
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
+from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
     build_heterogeneous_value_name_variants,
@@ -33,7 +34,34 @@ class CallVariantCase:
 # directory and pairs it with the variant builders that produce a spec
 # capable of representing that case's heterogeneous input — which the
 # default spec rejects, causing :func:`test_call_golden_file` to skip.
+@functools.cache
+@beartype
+def build_line_ending_call_variants() -> list[Variant]:
+    """Return variants for every non-default call line ending."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        default_line_ending = spec.line_ending
+        variants.extend(
+            Variant(
+                name=(
+                    f"{lang_cls.__name__}_line_ending"
+                    f"_{line_ending.name.lower()}"
+                ),
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    line_ending=line_ending,
+                ),
+                lang_cls=lang_cls,
+            )
+            for line_ending in spec.line_endings
+            if line_ending is not default_line_ending
+        )
+    return variants
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
+    ("call_scalar_args", build_line_ending_call_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
 ]
 

@@ -640,7 +640,7 @@ def test_literalize_call_wrap_in_file_emits_stubs() -> None:
         func process(args ...any) any { return nil }
 
         func main() {
-        process(1, 2);
+        process(1, 2)
         }""",
     )
     assert go_result.code == expected_go
@@ -1035,7 +1035,7 @@ def test_literalize_call_arg_ref_all_refs() -> None:
         target_function="combine",
         parameter_names=["x", "y"],
     )
-    assert result.code == "combine(a, b);"
+    assert result.code == "combine(a, b)"
 
 
 def test_literalize_call_arg_ref_top_level_element() -> None:
@@ -1050,7 +1050,7 @@ def test_literalize_call_arg_ref_top_level_element() -> None:
         target_function="run",
         parameter_names=["x"],
     )
-    assert result.code == "run(a);\nrun(b);"
+    assert result.code == "run(a)\nrun(b)"
 
 
 def test_literalize_call_arg_ref_per_element_false() -> None:
