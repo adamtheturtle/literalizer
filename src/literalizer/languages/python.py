@@ -78,6 +78,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._preamble import HeterogeneousElements
 from literalizer._types import Value
 
 
@@ -156,10 +157,12 @@ def _format_variable_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    dict_hint: str,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Format a Python variable declaration.
 
@@ -177,10 +180,12 @@ def _format_variable_declaration(
             datetime_hint=datetime_hint,
             sequence_hint=sequence_hint,
             set_hint=set_hint,
+            dict_hint=dict_hint,
             default_set_element_type=default_set_element_type,
             default_sequence_element_type=default_sequence_element_type,
             default_dict_value_type=default_dict_value_type,
             default_dict_key_type=default_dict_key_type,
+            join_union=join_union,
         )
     return f"{name} = {value}"
 
@@ -197,10 +202,12 @@ def _format_inline_type_hint_declaration(
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    dict_hint: str,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Format a Python variable declaration with an inline type hint."""
     hint = _python_type_hint(
@@ -210,23 +217,37 @@ def _format_inline_type_hint_declaration(
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        dict_hint=dict_hint,
         default_set_element_type=default_set_element_type,
         default_sequence_element_type=default_sequence_element_type,
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
+        join_union=join_union,
     )
     return f"{name}: {hint} = {value}"
 
 
+def _join_union_pipe(types: list[str]) -> str:
+    """Join *types* with ``|`` (Python 3.10+ union syntax)."""
+    return " | ".join(types)
+
+
+def _join_union_typing(types: list[str]) -> str:
+    """Join *types* as ``Union[...]`` (Python 3.8-compatible)."""
+    return f"Union[{', '.join(types)}]"
+
+
 @beartype
-def _element_union(*, types: list[str]) -> str:
+def _element_union(
+    *, types: list[str], join_union: Callable[[list[str]], str]
+) -> str:
     """Remove duplicate *types* and join them into a union."""
     unique: list[str] = list(dict.fromkeys(types))
     match unique:
         case [only]:
             return only
         case _:
-            return " | ".join(unique)
+            return join_union(unique)
 
 
 @beartype
@@ -237,6 +258,7 @@ def _collection_element_union(
     sort: bool,
     merge_dicts: bool,
     default_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Return the element union for a collection, or *default_type* if
     empty.
@@ -253,7 +275,7 @@ def _collection_element_union(
     types = [recurse(data=e) for e in elements]
     if sort:
         types.sort()
-    return _element_union(types=types)
+    return _element_union(types=types, join_union=join_union)
 
 
 @beartype
@@ -297,10 +319,12 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
     datetime_hint: str,
     sequence_hint: str,
     set_hint: str,
+    dict_hint: str,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
+    join_union: Callable[[list[str]], str],
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
@@ -312,10 +336,12 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         datetime_hint=datetime_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
+        dict_hint=dict_hint,
         default_set_element_type=default_set_element_type,
         default_sequence_element_type=default_sequence_element_type,
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
+        join_union=join_union,
     )
 
     # Order matters: datetime before date (datetime is a date subclass),
@@ -341,7 +367,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
             outer = (
                 "OrderedDict"
                 if isinstance(data, (ordereddict, OrderedDict))
-                else "dict"
+                else dict_hint
             )
             key_hint = default_dict_key_type if not data else "str"
             val_union = _collection_element_union(
@@ -350,6 +376,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 sort=False,
                 merge_dicts=False,
                 default_type=default_dict_value_type,
+                join_union=join_union,
             )
             return f"{outer}[{key_hint}, {val_union}]"
         case set():
@@ -359,6 +386,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 sort=True,
                 merge_dicts=False,
                 default_type=default_set_element_type,
+                join_union=join_union,
             )
             return f"{set_hint}[{elem_union}]"
         case list():
@@ -368,8 +396,9 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 sort=False,
                 merge_dicts=True,
                 default_type=default_sequence_element_type,
+                join_union=join_union,
             )
-            if sequence_hint == "tuple":
+            if sequence_hint.casefold() == "tuple":
                 return f"{sequence_hint}[{elem_union}, ...]"
             return f"{sequence_hint}[{elem_union}]"
         case _ as unreachable:
@@ -399,6 +428,11 @@ def _build_type_hint_preamble(
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
+            (
+                ordereddict,
+                default_dict_value_type == "Any"
+                or default_dict_key_type == "Any",
+            ),
             (set, default_set_element_type == "Any"),
             (list, default_sequence_element_type == "Any"),
         )
@@ -406,11 +440,11 @@ def _build_type_hint_preamble(
     )
 
     def _preamble(
-        empty_collection_types: frozenset[type],
+        annotated_collection_types: frozenset[type],
         /,
     ) -> tuple[str, ...]:
         """Return ``from typing import Any`` if needed."""
-        if _any_types.intersection(empty_collection_types):
+        if _any_types.intersection(annotated_collection_types):
             return ("from typing import Any",)
         return ()
 
@@ -452,6 +486,63 @@ def _python_call_stub(
     lines.append(f"    {fields[0]} = {prev_cls}()")
     lines.append(f"{root} = {root_cls}()")
     return tuple(lines)
+
+
+@beartype
+def _build_type_hint_preamble_py38(
+    *,
+    sequence_typing_name: str,
+    set_typing_name: str,
+    default_set_element_type: str,
+    default_sequence_element_type: str,
+    default_dict_value_type: str,
+    default_dict_key_type: str,
+) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    """Build the ``type_hint_collection_preamble_lines`` callable for PY38.
+
+    PY38 requires ``from typing import List`` etc. instead of relying on
+    built-in generic aliases (PEP 585, available from Python 3.9).
+    """
+    _any_types: frozenset[type] = frozenset(
+        t
+        for t, needs in (
+            (
+                dict,
+                default_dict_value_type == "Any"
+                or default_dict_key_type == "Any",
+            ),
+            (
+                ordereddict,
+                default_dict_value_type == "Any"
+                or default_dict_key_type == "Any",
+            ),
+            (set, default_set_element_type == "Any"),
+            (list, default_sequence_element_type == "Any"),
+        )
+        if needs
+    )
+
+    def _preamble(
+        annotated_collection_types: frozenset[type],
+        /,
+    ) -> tuple[str, ...]:
+        """Return ``from typing import ...`` for PY38."""
+        imports: set[str] = set()
+        if list in annotated_collection_types:
+            imports.add(sequence_typing_name)
+        if set in annotated_collection_types:
+            imports.add(set_typing_name)
+        if dict in annotated_collection_types:
+            imports.add("Dict")
+        if HeterogeneousElements in annotated_collection_types:
+            imports.add("Union")
+        if _any_types.intersection(annotated_collection_types):
+            imports.add("Any")
+        if not imports:
+            return ()  # pragma: no cover
+        return (f"from typing import {', '.join(sorted(imports))}",)
+
+    return _preamble
 
 
 @beartype
@@ -519,6 +610,13 @@ class Python(metaclass=LanguageCls):
             * ``VariableTypeHints.ALWAYS`` — every declaration has
               a type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
+
+        language_version: The minimum Python version to target.
+
+            * ``VersionFormats.PY38`` — use ``typing.List``, ``typing.Dict``,
+              etc. for generic collection type hints (PEP 484 style).
+            * ``VersionFormats.PY39`` — use built-in ``list``, ``dict``, etc.
+              directly as generic aliases (PEP 585, default).
     """
 
     extension = ".py"
@@ -686,10 +784,12 @@ class Python(metaclass=LanguageCls):
             datetime_hint: str,
             sequence_hint: str,
             set_hint: str,
+            dict_hint: str,
             default_set_element_type: str,
             default_sequence_element_type: str,
             default_dict_value_type: str,
             default_dict_key_type: str,
+            join_union: Callable[[list[str]], str],
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -715,12 +815,14 @@ class Python(metaclass=LanguageCls):
                         datetime_hint=datetime_hint,
                         sequence_hint=sequence_hint,
                         set_hint=set_hint,
+                        dict_hint=dict_hint,
                         default_set_element_type=default_set_element_type,
                         default_sequence_element_type=(
                             default_sequence_element_type
                         ),
                         default_dict_value_type=default_dict_value_type,
                         default_dict_key_type=default_dict_key_type,
+                        join_union=join_union,
                     )
 
                 return _always_formatter
@@ -744,12 +846,14 @@ class Python(metaclass=LanguageCls):
                     datetime_hint=datetime_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
+                    dict_hint=dict_hint,
                     default_set_element_type=default_set_element_type,
                     default_sequence_element_type=(
                         default_sequence_element_type
                     ),
                     default_dict_value_type=default_dict_value_type,
                     default_dict_key_type=default_dict_key_type,
+                    join_union=join_union,
                 )
 
             return _auto_formatter
@@ -920,9 +1024,16 @@ class Python(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class VersionFormats(enum.Enum):
-        """Version options for Python."""
+        """Python version to target.
 
-        PY_3_12 = enum.auto()
+        * ``VersionFormats.PY38`` — target Python 3.8; uses ``typing.List``,
+          ``typing.Dict``, etc. for generic type hints.
+        * ``VersionFormats.PY39`` — target Python 3.9+; uses built-in generic
+          aliases ``list``, ``dict``, etc. (PEP 585).
+        """
+
+        PY38 = enum.auto()
+        PY39 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -992,7 +1103,7 @@ class Python(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    language_version: VersionFormats = VersionFormats.PY_3_12
+    language_version: VersionFormats = VersionFormats.PY39
     indent: str = "    "
 
     null_literal: ClassVar[str] = "None"
@@ -1005,7 +1116,6 @@ class Python(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
@@ -1159,6 +1269,13 @@ class Python(metaclass=LanguageCls):
         return self.comment_format.value
 
     @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Return PEP 563 future import so annotations are never evaluated
+        at runtime, keeping generated files executable on Python 3.8+.
+        """
+        return ("from __future__ import annotations",)
+
+    @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1173,20 +1290,52 @@ class Python(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    def _py38_names(self) -> dict[str, str]:
+        """Map from PEP 585 built-in generic names to typing-module
+        names.
+        """
+        return {
+            "list": "List",
+            "tuple": "Tuple",
+            "set": "Set",
+            "frozenset": "FrozenSet",
+            "dict": "Dict",
+        }
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self.language_version is Python.VersionFormats.PY38:
+            mapping = self._py38_names
+            sequence_hint = mapping.get(
+                self.sequence_format.type_hint,
+                self.sequence_format.type_hint,
+            )
+            set_hint = mapping.get(
+                self.set_format.type_hint,
+                self.set_format.type_hint,
+            )
+            dict_hint = mapping["dict"]
+            join_union: Callable[[list[str]], str] = _join_union_typing
+        else:
+            sequence_hint = self.sequence_format.type_hint
+            set_hint = self.set_format.type_hint
+            dict_hint = "dict"
+            join_union = _join_union_pipe
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,
             datetime_hint=self.datetime_format.type_hint,
-            sequence_hint=self.sequence_format.type_hint,
-            set_hint=self.set_format.type_hint,
+            sequence_hint=sequence_hint,
+            set_hint=set_hint,
+            dict_hint=dict_hint,
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
             default_dict_key_type=self.default_dict_key_type,
+            join_union=join_union,
         )
 
     @cached_property
@@ -1214,6 +1363,22 @@ class Python(metaclass=LanguageCls):
         """Type-hint preamble computed from the configured default
         types.
         """
+        if self.language_version is Python.VersionFormats.PY38:
+            mapping = self._py38_names
+            return _build_type_hint_preamble_py38(
+                sequence_typing_name=mapping.get(
+                    self.sequence_format.type_hint,
+                    self.sequence_format.type_hint,
+                ),
+                set_typing_name=mapping.get(
+                    self.set_format.type_hint,
+                    self.set_format.type_hint,
+                ),
+                default_set_element_type=self.default_set_element_type,
+                default_sequence_element_type=self.default_sequence_element_type,
+                default_dict_value_type=self.default_dict_value_type,
+                default_dict_key_type=self.default_dict_key_type,
+            )
         return _build_type_hint_preamble(
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,

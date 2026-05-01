@@ -1,3 +1,4 @@
+from __future__ import annotations
 class _ClientType:
     def fetch(self, *_args: object, **_kwargs: object) -> object: ...
 class _AppType:

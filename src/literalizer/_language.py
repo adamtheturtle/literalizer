@@ -491,7 +491,7 @@ class LanguageCls(type):
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
-    VersionFormats: type[enum.Enum]
+    version_formats: type[enum.Enum]
     supports_default_set_element_type: bool
     supports_default_sequence_element_type: bool
     supports_default_dict_value_type: bool

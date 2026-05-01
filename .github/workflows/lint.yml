@@ -1285,6 +1285,30 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-nim.sh < /tmp/files-to-lint
 
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Find Python 3.8 golden files
+        shell: bash
+        run: find tests/integration/cases -name 'Python_version_py38.py' -print0 >
+          /tmp/files-python38
+      - name: Run Python 3.8 golden files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.8 --no-project python <
+          /tmp/files-python38
+      - name: Find default Python golden files
+        shell: bash
+        run: find tests/integration/cases -name 'Python.py' -print0 > /tmp/files-python
+      - name: Run default Python golden files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python < /tmp/files-python
+
   lint-racket:
     runs-on: ubuntu-latest
     steps:
@@ -1505,6 +1529,7 @@ jobs:
       - lint-crystal
       - lint-mojo
       - lint-nim
+      - lint-python
       - lint-racket
       - lint-raku
       - lint-roc
