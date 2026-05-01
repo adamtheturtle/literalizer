@@ -146,6 +146,7 @@ class OrderedMapFormatConfig:
     ordered_map_open: Callable[[dict[str, Value]], str]
     close: str
     preamble_lines: tuple[str, ...]
+    empty_ordered_map: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)

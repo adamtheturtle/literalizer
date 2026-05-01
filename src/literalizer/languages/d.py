@@ -650,6 +650,7 @@ class D(metaclass=LanguageCls):
             ordered_map_open=fixed_open(open_str="JSONValue(["),
             close="])",
             preamble_lines=(),
+            empty_ordered_map='parseJSON("{}")',
         )
 
     @cached_property

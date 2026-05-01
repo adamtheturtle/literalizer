@@ -688,6 +688,10 @@ class Crystal(metaclass=LanguageCls):
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
+            empty_ordered_map=(
+                f"{{}} of {self.default_dict_key_type}"
+                f" => {self.default_dict_value_type}"
+            ),
         )
 
     @cached_property

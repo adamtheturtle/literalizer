@@ -302,6 +302,8 @@ def _format_ordered_map_value(
         for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
         if not (spec.skip_null_dict_values and v is None)
     ]
+    if not ordered_map_items and ordered_map_cfg.empty_ordered_map is not None:
+        return ordered_map_cfg.empty_ordered_map
     parent_id = id(value)
     sibling_list_values: list[list[Value]] = [
         v for _, v in ordered_map_items if isinstance(v, list)
