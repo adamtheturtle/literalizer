@@ -85,7 +85,7 @@ def test_literalize_leaves_python_heterogeneous_scalars_unwrapped() -> None:
 
 
 def test_literalize_call_keeps_python_heterogeneous_scalars() -> None:
-    """Python literalize_call renders heterogeneous scalar args
+    """Python literalize_call renders heterogeneous scalar arguments
     directly.
     """
     result = literalize_call(

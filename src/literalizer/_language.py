@@ -437,7 +437,7 @@ def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
 
 def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
     """Return *formatted* unchanged — used by non-wrapping languages."""
-    return formatted
+    return formatted  # pragma: no cover
 
 
 NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
