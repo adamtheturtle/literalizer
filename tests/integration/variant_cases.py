@@ -123,6 +123,21 @@ DEFAULT_DICT_KEY_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
     VisualBasic: "Object",
 }
 
+
+@beartype
+def _enum_member_by_name(
+    *,
+    enum_cls: type[enum.Enum],
+    name: str,
+) -> enum.Enum:
+    """Return the enum member in *enum_cls* whose ``.name`` matches."""
+    for member in enum_cls:
+        if member.name == name:
+            return member
+    msg = f"{enum_cls.__name__} has no member named {name!r}"
+    raise ValueError(msg)
+
+
 DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES: dict[
     literalizer.LanguageCls, str
 ] = {Go: "interface{}"}
@@ -661,7 +676,10 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
             name="Python_version_py38_default_dict_value_type_int",
             spec=make_spec(
                 lang_cls=Python,
-                language_version=Python.VersionFormats.PY38,
+                language_version=_enum_member_by_name(
+                    enum_cls=Python.version_formats,
+                    name="PY38",
+                ),
                 default_dict_value_type=DEFAULT_DICT_VALUE_TYPE_OVERRIDES[
                     Python
                 ],
