@@ -262,7 +262,7 @@ class VisualBasic(metaclass=LanguageCls):
     extension = ".vb"
     pygments_name = "vb.net"
     supports_default_set_element_type = True
-    supports_default_sequence_element_type = False
+    supports_default_sequence_element_type = True
     supports_default_dict_value_type = True
     supports_default_dict_key_type = True
     supports_default_ordered_map_value_type = False
@@ -795,7 +795,7 @@ class VisualBasic(metaclass=LanguageCls):
         return SequenceFormatConfig(
             sequence_open=typed_collection_open(
                 type_to_opener=vb_type_to_opener,
-                fallback=f"New {self.default_sequence_element_type}() {{",
+                fallback="New Object() {",
             ),
             close="}",
             supports_heterogeneity=True,

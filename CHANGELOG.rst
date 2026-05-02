@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` accepts a new ``ref_values``
+  mapping from ``{"$ref": "name"}`` identifiers to the source values
+  declared elsewhere.  Supplied ref values now participate in
+  data-driven preamble inference, so generated body declarations such
+  as Haskell's ``data Val = ...`` include types reachable only through
+  refs while the rendered call still emits the bare identifier.
+
 2026.05.01.1
 ------------
 
@@ -41,8 +48,9 @@ Next
   now accept a ``ref_key`` parameter (``str``, default ``"$ref"``).  The
   marker key used to identify variable-reference mappings in the input data
   is now user-configurable: a single-key dict whose key equals *ref_key*
-  and whose value is a string is treated as a ref marker when *ref_case* is
-  set.
+  and whose value is a string is treated as a ref marker.  Pass
+  ``ref_case`` only when the identifier name should be converted before
+  rendering.
 - Every built-in language class now exposes a ``VersionFormats`` enum and a
   configurable ``language_version`` constructor parameter that selects which
   version of the target language the generated code is written for.  For

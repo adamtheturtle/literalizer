@@ -1,6 +1,7 @@
 """Negative-path checks for ``literalize_call``."""
 
 import re
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -22,12 +23,16 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Bash,
     Dhall,
+    Haskell,
     JavaScript,
     Nix,
     Python,
     Racket,
     Yaml,
 )
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
@@ -303,6 +308,98 @@ def test_literalize_ref_case_unsupported_raises() -> None:
             language=Python(),
             ref_case=IdentifierCase.KEBAB,
         )
+
+
+def test_literalize_call_unknown_ref_values_keep_strip_behavior() -> None:
+    """Unknown refs still do not contribute marker dict types."""
+    result = literalize_call(
+        source='[[{"$ref": "myList"}]]',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        ref_values={},
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_literalize_call_unknown_ref_values_strip_top_level_ref() -> None:
+    """Unknown refs are stripped even when other ref values are
+    supplied.
+    """
+    result = literalize_call(
+        source='{"$ref": "myList"}',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        per_element=False,
+        ref_values={"other": 1},
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_literalize_call_unknown_refs_strip_from_nested_preamble() -> None:
+    """Unknown nested refs do not shape preamble type inference."""
+    known_value: list[Value] = [1, 2]
+    ref_values: dict[str, Value] = {"known": known_value}
+    result = literalize_call(
+        source=(
+            '[[{"$ref": "known"}, {"$ref": "missing"}, '
+            '{"inner": {"$ref": "missing"}}]]'
+        ),
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["a", "b", "c"],
+        ref_values=ref_values,
+    )
+
+    assert result.body_preamble == (
+        "data Val = HInt Integer | HStr String | HList [Val] | HMap "
+        "[(String, Val)]",
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    _ + _ = error "not implemented"\n'
+        '    _ * _ = error "not implemented"\n'
+        '    abs _ = error "not implemented"\n'
+        '    signum _ = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        '    negate _ = error "not implemented"',
+    )
+
+
+def test_literalize_call_without_ref_values_strips_top_level_ref() -> None:
+    """The historical top-level ref strip behavior is retained."""
+    result = literalize_call(
+        source='{"$ref": "myList"}',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        per_element=False,
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_literalize_call_without_ref_values_strips_per_element_ref() -> None:
+    """Per-element preamble inference skips ref marker elements."""
+    result = literalize_call(
+        source='[{"$ref": "myList"}]',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
 
 
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:

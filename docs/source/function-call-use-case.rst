@@ -117,6 +117,39 @@ This composes with
 by :func:`~literalizer.literalize_call`, without repeating the literal
 value at the call site.
 
+When the referenced value contains types that affect generated
+declarations or imports, pass those source values via ``ref_values``.
+The call still renders only the identifier, but the referenced value
+participates in preamble inference:
+
+.. code-block:: python
+
+   """Render a call whose ref contributes to preamble inference."""
+
+   from literalizer import InputFormat, NewVariable, literalize, literalize_call
+   from literalizer.languages import Haskell
+
+   language = Haskell()
+   declaration = literalize(
+       source="[1, 2, 3]",
+       input_format=InputFormat.JSON,
+       language=language,
+       variable_form=NewVariable(name="myList"),
+   )
+   call = literalize_call(
+       source='[[{"$ref": "myList"}, 42]]',
+       input_format=InputFormat.JSON,
+       language=language,
+       target_function="process",
+       parameter_names=["data", "count"],
+       ref_values={"myList": declaration.source_data},
+   )
+   assert call.declaration_code == "process(myList, 42)"
+
+If a ref name is omitted from ``ref_values``, its marker is ignored for
+preamble inference as before.  ``ref_values`` keys are the names from
+the input data before any ``ref_case`` conversion.
+
 By default the identifier is emitted verbatim.  Pass ``ref_case`` to
 :func:`~literalizer.literalize_call` to convert the name to the target
 language's idiomatic case.
@@ -186,6 +219,7 @@ emitting the file:
        language=language,
        target_function="process",
        parameter_names=["data", "count"],
+       ref_values={"myList": declaration.source_data},
    )
 
    seen: set[str] = set()
@@ -232,9 +266,9 @@ References inside plain data structures
 is useful when you want to emit a data structure where some values are
 references to variables declared elsewhere rather than inline literals.
 
-Pass ``ref_case`` to :func:`~literalizer.literalize` to activate ref
-resolution; without it, ``{"$ref": ...}`` is treated as an ordinary
-literal dict, preserving backwards compatibility.
+By default, ref identifiers are emitted verbatim.  Pass ``ref_case`` to
+:func:`~literalizer.literalize` when the identifier should be converted
+before rendering.
 
 For example, suppose you have a configuration dict where ``timeout`` and
 ``host`` are already declared as named constants and you want to reference
