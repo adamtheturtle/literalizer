@@ -2,7 +2,7 @@
 
 Each test exercises a different axis of the public API — single
 declaration form, combined declaration + assignment, format-variant
-kwargs, line-ending option, heterogeneous-scalar strategy,
+kwargs, statement-terminator option, heterogeneous-scalar strategy,
 ``pre_indent_level`` — but all share the same shape: render YAML to a
 language and compare against a checked-in golden file.
 """
@@ -22,11 +22,11 @@ from literalizer.exceptions import (
 
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
-    LineEndingCombinedCase,
     PreIndentCase,
+    StatementTerminatorCombinedCase,
     build_heterogeneous_strategy_combined_cases,
-    build_line_ending_combined_cases,
     build_pre_indent_cases,
+    build_statement_terminator_combined_cases,
     group_cases_by_language,
     group_combined_cases_by_language,
 )
@@ -235,16 +235,16 @@ def test_format_variant_golden_file(
 
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=build_line_ending_combined_cases(),
-    ids=[c.name for c in build_line_ending_combined_cases()],
+    argvalues=build_statement_terminator_combined_cases(),
+    ids=[c.name for c in build_statement_terminator_combined_cases()],
 )
-def test_line_ending_combined_variable_forms(
-    case: LineEndingCombinedCase,
+def test_statement_terminator_style_combined_variable_forms(
+    case: StatementTerminatorCombinedCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test that combined (declaration + assignment) output with a
-    non-default line ending matches the golden file.
+    non-default statement terminator matches the golden file.
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
@@ -253,7 +253,7 @@ def test_line_ending_combined_variable_forms(
     assert redef_styles
     spec = make_spec(
         lang_cls=case.lang_cls,
-        line_ending=case.line_ending,
+        statement_terminator_style=case.statement_terminator_style,
         declaration_style=redef_styles[0],
     )
     result = literalizer.literalize(

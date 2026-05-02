@@ -40,4 +40,5 @@ def test_literalize_ref_golden_file(
         golden_name=f"{lang_cls.__name__}_ref",
         cases_dir=cases_dir,
         file_regression=file_regression,
+        ref_case=spec.identifier_cases[0],
     )

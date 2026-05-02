@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC obj.api.client.post (VAL MOBILE LIT data)
+    SKIP
+:
+PROC main ()
+    obj.api.client.post(MOBILE LIT(lit.str; MOBILE []BYTE "hello"))
+    obj.api.client.post(MOBILE LIT(lit.int; 42))
+    obj.api.client.post(MOBILE LIT(lit.bool; TRUE))
+    SEQ
+        SKIP
+:

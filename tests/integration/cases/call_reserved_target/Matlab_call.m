@@ -1,0 +1,2 @@
+op = @(varargin) [];
+op("hello")

@@ -1,0 +1,2 @@
+sub op {}
+op("hello");

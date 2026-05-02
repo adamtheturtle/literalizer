@@ -1,0 +1,12 @@
+* item_var
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+{
+    "items": [item_var, {"fallback": "value"}]
+}
+@end

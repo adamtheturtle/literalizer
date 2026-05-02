@@ -72,10 +72,12 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
+    identity_call_statement,
     identity_call_target,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
@@ -270,6 +272,7 @@ class Go(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -506,10 +509,9 @@ class Go(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
-        SEMICOLON = ";"
         NONE = ""
 
         @property
@@ -517,44 +519,7 @@ class Go(metaclass=LanguageCls):
             """Terminator appended to complete call statements."""
             return self.value
 
-        def wrap_declaration_formatter(
-            self,
-            formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
-        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-            """Wrap a declaration formatter with this line ending."""
-            if not self.value:
-                return formatter
-
-            def with_semicolon(
-                name: str,
-                value: str,
-                data: Value,
-                modifiers: frozenset[enum.Enum],
-            ) -> str:
-                """Format with a trailing semicolon."""
-                return formatter(name, value, data, modifiers) + self.value
-
-            return with_semicolon
-
-        def wrap_assignment_formatter(
-            self,
-            formatter: Callable[[str, str, Value], str],
-        ) -> Callable[[str, str, Value], str]:
-            """Wrap an assignment formatter with this line ending."""
-            if not self.value:
-                return formatter
-
-            def with_semicolon(
-                name: str,
-                value: str,
-                data: Value,
-            ) -> str:
-                """Format with a trailing semicolon."""
-                return formatter(name, value, data) + self.value
-
-            return with_semicolon
-
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """Go call style options."""
@@ -591,6 +556,17 @@ class Go(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Return call-statement formatting for this language."""
+        return identity_call_statement
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
@@ -645,7 +621,9 @@ class Go(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.YES
-    line_ending: LineEndings = LineEndings.NONE
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.NONE
+    )
     call_style: CallStyles = CallStyles.POSITIONAL
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
@@ -690,6 +668,13 @@ class Go(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -899,17 +884,15 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def statement_terminator(self) -> str:
         """String appended to each call expression."""
-        return self.line_ending.statement_terminator
+        return self.statement_terminator_style.statement_terminator
 
     @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.line_ending.wrap_declaration_formatter(
-            formatter=_nil_safe_declaration(
-                base_formatter=self.declaration_style.value.formatter,
-            ),
+        return _nil_safe_declaration(
+            base_formatter=self.declaration_style.value.formatter,
         )
 
     @cached_property
@@ -917,9 +900,7 @@ class Go(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
-        return self.line_ending.wrap_assignment_formatter(
-            formatter=variable_formatter(template="{name} = {value}"),
-        )
+        return variable_formatter(template="{name} = {value}")
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

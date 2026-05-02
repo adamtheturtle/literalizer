@@ -1,0 +1,7 @@
+#+feature dynamic-literals
+package main
+process :: proc(args: ..any) -> any { return nil }
+
+main :: proc() {
+process(map[string]any{"a" = 1, "b" = "x"});
+}

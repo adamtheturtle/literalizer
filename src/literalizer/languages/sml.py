@@ -69,6 +69,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
+    no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
@@ -319,6 +320,7 @@ class Sml(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -530,12 +532,12 @@ class Sml(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
-    class LineEndings(enum.Enum):
-        """Line ending options."""
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
 
         SEMICOLON = enum.auto()
 
-    line_endings = LineEndings
+    statement_terminator_styles = StatementTerminatorStyles
 
     class CallStyles(enum.Enum):
         """Sml call style options."""
@@ -573,6 +575,12 @@ class Sml(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
@@ -621,7 +629,9 @@ class Sml(metaclass=LanguageCls):
     numeric_style: NumericStyles = NumericStyles.OVERLOADED
     string_format: StringFormats = StringFormats.DOUBLE
     trailing_comma: TrailingCommas = TrailingCommas.NO
-    line_ending: LineEndings = LineEndings.SEMICOLON
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -664,6 +674,13 @@ class Sml(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
 
     @cached_property
     def type_hint_collection_preamble_lines(

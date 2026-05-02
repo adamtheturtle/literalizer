@@ -110,7 +110,12 @@ def test_rust_static_set_annotation_unifies_integer_widths() -> None:
         variable_form=NewVariable(name="DATA"),
     )
 
-    assert "HashSet<i64>" in result.code
+    assert result.code == (
+        "static DATA: HashSet<i64> = HashSet::from([\n"
+        "    1,\n"
+        "    1099511627776i64,\n"
+        "]);"
+    )
 
 
 def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
@@ -126,7 +131,7 @@ def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
         variable_form=NewVariable(name="DATA"),
     )
 
-    assert "(i32,)" in result.code
+    assert result.code == ("static DATA: (i32,) = (\n    1,\n);")
 
 
 def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
@@ -148,8 +153,15 @@ def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
         variable_form=None,
     )
 
-    assert "I64(i64)" in "\n".join(result.preamble)
-    assert "Value::I64(" in result.code
+    assert result.preamble == (
+        "enum Value {",
+        "    I64(i64),",
+        "    I32(i32),",
+        "}",
+    )
+    assert result.code == (
+        "vec![\n    Value::I64(1704067200),\n    Value::I32(1),\n]"
+    )
 
 
 def test_rust_hash_set_type_annotation() -> None:

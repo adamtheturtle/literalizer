@@ -437,7 +437,7 @@ def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
 
 def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
     """Return *formatted* unchanged — used by non-wrapping languages."""
-    return formatted
+    return formatted  # pragma: no cover
 
 
 NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
@@ -458,6 +458,27 @@ def _identity_call_arg(_value: Value, formatted: str, /) -> str:
 
 identity_call_arg: FormatCallArg = _identity_call_arg
 """Shared callable for languages that need no call-argument wrapping."""
+
+
+@beartype
+def _no_validate_call_arg(_value: Value, /) -> None:
+    """Accept every call argument."""
+
+
+no_validate_call_arg: Callable[[Value], None] = _no_validate_call_arg
+"""Shared callable for languages with no call-argument constraints."""
+
+
+@beartype
+def _identity_call_statement(statement: str, /) -> str:
+    """Return *statement* unchanged for languages with bare call
+    statements.
+    """
+    return statement
+
+
+identity_call_statement: Callable[[str], str] = _identity_call_statement
+"""Shared callable for languages whose calls need no statement wrapper."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -504,7 +525,7 @@ class LanguageCls(type):
     NumericStyles: type[enum.Enum]
     StringFormats: type[enum.Enum]
     TrailingCommas: type[enum.Enum]
-    LineEndings: type[enum.Enum]
+    StatementTerminatorStyles: type[enum.Enum]
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
@@ -534,7 +555,11 @@ class LanguageCls(type):
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
+    supports_call_refs_in_dict_literals: bool
     format_call_arg: FormatCallArg
+    validate_call_arg: Callable[[Value], None]
+    format_call_statement: Callable[[str], str]
+    call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -685,8 +710,8 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def line_endings(self) -> type[enum.Enum]:
-        """Enum class whose members list the line ending options
+    def statement_terminator_styles(self) -> type[enum.Enum]:
+        """Enum class whose members list the statement terminator options
         this language supports.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -1054,8 +1079,10 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def line_ending(self) -> enum.Enum:
-        """The line ending option chosen for this language instance."""
+    def statement_terminator_style(self) -> enum.Enum:
+        """The statement terminator option chosen for this language
+        instance.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
@@ -1128,6 +1155,18 @@ class Language(Protocol):
         Most languages use :func:`no_data_preamble` (returns ``()``);
         C++ uses this to conditionally emit its ``Any`` helper struct
         only when the data contains heterogeneous collections.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Data-dependent preamble lines used for call rendering.
+
+        Most languages set this to the same callable as
+        :attr:`data_dependent_preamble`.  Languages whose declaration
+        preamble does not apply to inline call arguments override it.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -1274,6 +1313,26 @@ class Language(Protocol):
         do not need wrapping set this to :data:`identity_call_arg`;
         languages such as C and Objective-C override this to wrap each
         argument in a canonical parameter type.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Validate a direct call argument after references are removed.
+
+        Languages that accept every supported literal set this to
+        :data:`no_validate_call_arg`; languages with additional call
+        argument restrictions override it.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Rewrite an assembled call expression into a valid statement.
+
+        Languages that allow bare call statements set this to
+        :data:`identity_call_statement`; languages that need a wrapper
+        such as ``let _ = ...`` override it.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

@@ -66,6 +66,17 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     ),
 ]
 
+LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_default_nested",
+        ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_default_whole",
+        ref_key="$ref",
+    ),
+]
+
 
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
@@ -184,6 +195,9 @@ def discover_cases(
     ref_case_dirs = frozenset(
         cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
     )
+    default_ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
@@ -193,6 +207,8 @@ def discover_cases(
         if case_dir.name in call_case_dirs:
             continue
         if case_dir.name in ref_case_dirs:
+            continue
+        if case_dir.name in default_ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
@@ -251,6 +267,9 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
     ref_case_dirs = frozenset(
         cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
     )
+    default_ref_case_dirs = frozenset(
+        cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
+    )
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
@@ -260,6 +279,8 @@ def discover_combined_cases(cases_dir: Path) -> list[CombinedCase]:
         if case_dir.name in call_case_dirs:
             continue
         if case_dir.name in ref_case_dirs:
+            continue
+        if case_dir.name in default_ref_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
@@ -316,43 +337,48 @@ def group_combined_cases_by_language(
 
 
 @dataclasses.dataclass(frozen=True)
-class LineEndingCombinedCase:
+class StatementTerminatorCombinedCase:
     """A combined-variable-forms test case with a non-default line
     ending.
     """
 
     name: str
     lang_cls: literalizer.LanguageCls
-    line_ending: enum.Enum
+    statement_terminator_style: enum.Enum
     case_dir_name: str
 
 
 @functools.cache
 @beartype
-def build_line_ending_combined_cases() -> list[LineEndingCombinedCase]:
+def build_statement_terminator_combined_cases() -> list[
+    StatementTerminatorCombinedCase
+]:
     """Collect combined (declaration + assignment) test cases for
-    non-default line endings.
+    non-default statement terminators.
     """
-    cases: list[LineEndingCombinedCase] = []
+    cases: list[StatementTerminatorCombinedCase] = []
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
         if not find_redefinition_styles(spec=spec):
             continue
-        default_line_ending = spec.line_ending
-        for line_ending in spec.line_endings:
-            if line_ending is default_line_ending:
+        default_statement_terminator_style = spec.statement_terminator_style
+        for statement_terminator_style in spec.statement_terminator_styles:
+            if (
+                statement_terminator_style
+                is default_statement_terminator_style
+            ):
                 continue
             for case_dir_name in ("simple_sequence", "simple_dict"):
                 name = (
-                    f"{lang_name}_line_ending"
-                    f"_{line_ending.name.lower()}_{case_dir_name}"
+                    f"{lang_name}_statement_terminator_style"
+                    f"_{statement_terminator_style.name.lower()}_{case_dir_name}"
                 )
                 cases.append(
-                    LineEndingCombinedCase(
+                    StatementTerminatorCombinedCase(
                         name=name,
                         lang_cls=lang_cls,
-                        line_ending=line_ending,
+                        statement_terminator_style=statement_terminator_style,
                         case_dir_name=case_dir_name,
                     )
                 )

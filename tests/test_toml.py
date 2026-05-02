@@ -97,4 +97,4 @@ def test_toml_time_values_literalize() -> None:
         include_delimiters=False,
     )
 
-    assert "starts_at" in result.code
+    assert result.code == '"starts_at": "09:30:00",'

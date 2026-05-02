@@ -1,0 +1,2 @@
+: op ;
+s\" hello" op
