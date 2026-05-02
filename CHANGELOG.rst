@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` accepts a new ``ref_values``
+  mapping from ``{"$ref": "name"}`` identifiers to the source values
+  declared elsewhere.  Supplied ref values now participate in
+  data-driven preamble inference, so generated body declarations such
+  as Haskell's ``data Val = ...`` include types reachable only through
+  refs while the rendered call still emits the bare identifier.
+
 2026.05.01.1
 ------------
 

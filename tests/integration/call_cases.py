@@ -879,6 +879,30 @@ def _run_wrap_in_file_case(
 
 
 @beartype
+def _check_call_result_includes_ref_declaration_types(
+    *,
+    result: literalizer.LiteralizeResult,
+    decl_results: list[literalizer.LiteralizeResult],
+) -> None:
+    """Check refs supplied via ``ref_values`` feed call type
+    collection.
+    """
+    if not decl_results:
+        return
+    empty_types: frozenset[type] = frozenset()
+    declaration_types = empty_types.union(
+        *(d.types_present for d in decl_results),
+    )
+    missing_types = declaration_types - result.types_present
+    if missing_types == empty_types:
+        return
+    pytest.fail(  # pragma: no cover
+        "literalize_call result types do not include ref declaration "
+        f"types: missing {missing_types!r}",
+    )
+
+
+@beartype
 def run_call_golden_case(
     *,
     config: CallCaseConfig,
@@ -906,13 +930,15 @@ def run_call_golden_case(
         # ref-site and declaration-site spellings agree.
         default_case = spec.identifier_cases[0]
         effective_ref_case = default_case
-        declarations = {
-            default_case.convert(name=ref_name): ref_source
-            for ref_name, ref_source in config.ref_declarations.items()
+        declaration_names = {
+            ref_name: default_case.convert(name=ref_name)
+            for ref_name in config.ref_declarations
         }
     else:
         effective_ref_case = None
-        declarations = config.ref_declarations
+        declaration_names = {
+            ref_name: ref_name for ref_name in config.ref_declarations
+        }
     if config.wrap_in_file:
         _run_wrap_in_file_case(
             config=config,
@@ -929,15 +955,22 @@ def run_call_golden_case(
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
         # golden file can lint cleanly.
-        decl_results: list[literalizer.LiteralizeResult] = [
-            literalizer.literalize(
+        decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
+            ref_name: literalizer.literalize(
                 source=ref_source,
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
-                variable_form=literalizer.NewVariable(name=ref_name),
+                variable_form=literalizer.NewVariable(
+                    name=declaration_names[ref_name],
+                ),
             )
-            for ref_name, ref_source in declarations.items()
-        ]
+            for ref_name, ref_source in config.ref_declarations.items()
+        }
+        decl_results = list(decl_results_by_ref_name.values())
+        ref_values = {
+            ref_name: declaration.source_data
+            for ref_name, declaration in decl_results_by_ref_name.items()
+        }
         result = literalizer.literalize_call(
             source=yaml_string,
             input_format=literalizer.InputFormat.YAML,
@@ -948,6 +981,7 @@ def run_call_golden_case(
             per_element=config.per_element,
             ref_case=effective_ref_case,
             consumable_refs=config.consumable_refs,
+            ref_values=ref_values or None,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -959,6 +993,10 @@ def run_call_golden_case(
         pytest.skip(
             f"{lang_cls.__name__} rejected call arg: {exc.reason}",
         )
+    _check_call_result_includes_ref_declaration_types(
+        result=result,
+        decl_results=decl_results,
+    )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
