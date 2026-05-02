@@ -10,6 +10,7 @@ language's default identifier case.  The runner
 
 import dataclasses
 import functools
+import json
 import re
 from pathlib import Path
 from typing import cast
@@ -20,6 +21,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
 import literalizer
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
@@ -31,7 +33,10 @@ from .case_discovery import (
     LiteralizeRefCaseConfig,
 )
 from .check_golden import check_golden
-from .language_specs import sorted_languages, with_per_fixture_module_name
+from .language_specs import (
+    sorted_languages,
+    with_per_fixture_module_name,
+)
 from .variant_cases import wrap_variable_form
 
 
@@ -292,6 +297,12 @@ def _inject_stubs_before_variable(
 
 
 @beartype
+def _parse_ref_stub_source(source: str) -> Value:
+    """Parse a ref stub JSON source into the represented value."""
+    return cast("Value", json.loads(s=source))
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: LiteralizeRefCaseConfig,
@@ -313,6 +324,19 @@ def run_literalize_ref_golden_case(
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    ruamel_yaml = _YAML()
+    raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        stream=yaml_string,
+    )
+    ref_names = _collect_ref_names(data=raw_data, ref_key=config.ref_key)
+    converted_ref_names = [
+        ref_case.convert(name=raw_name) if ref_case is not None else raw_name
+        for raw_name in ref_names
+    ]
+    ref_values = {
+        name: _parse_ref_stub_source(source=config.ref_stub_source)
+        for name in ref_names
+    }
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -322,6 +346,7 @@ def run_literalize_ref_golden_case(
             wrap_in_file=True,
             ref_case=ref_case,
             ref_key=config.ref_key,
+            ref_values=ref_values,
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -335,22 +360,10 @@ def run_literalize_ref_golden_case(
         )
     final_code = result.code
     if wrap_variable_form(lang_cls=lang_cls) is not None:
-        ruamel_yaml = _YAML()
-        raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=yaml_string,
-        )
         stub_entries: list[tuple[str, str]] = []
-        for raw_name in _collect_ref_names(
-            data=raw_data,
-            ref_key=config.ref_key,
-        ):
-            converted_name = (
-                ref_case.convert(name=raw_name)
-                if ref_case is not None
-                else raw_name
-            )
+        for converted_name in converted_ref_names:
             stub = literalizer.literalize(
-                source='{"_": "_"}',
+                source=config.ref_stub_source,
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
                 variable_form=literalizer.NewVariable(

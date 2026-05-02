@@ -33,6 +33,7 @@ class LiteralizeRefCaseConfig:
 
     case_dir_name: str
     ref_key: str
+    ref_stub_source: str = '{"_": "_"}'
 
 
 LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
@@ -74,6 +75,11 @@ LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_default_whole",
         ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_default_scalar",
+        ref_key="$ref",
+        ref_stub_source="1",
     ),
 ]
 

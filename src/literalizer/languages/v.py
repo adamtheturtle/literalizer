@@ -111,6 +111,19 @@ def _make_v_i64_formatter(
     return _format
 
 
+def _v_ref_value_needs_clone(value: Value, spec: "V", /) -> bool:
+    """Return whether a V ref to *value* needs ``.clone()``."""
+    match value:
+        case str() | bytes() | list() | dict() | set():
+            return True
+        case datetime.datetime():
+            return spec.datetime_format.value.type_produced is str
+        case datetime.date():
+            return spec.date_format.value.type_produced is str
+        case _:
+            return False
+
+
 def _is_ref_value(v: Value) -> bool:
     """Return True if *v* looks like a ``{ref_key: name}`` ref marker."""
     return (
@@ -784,19 +797,36 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``.clone()`` to the ref identifier.
+        """Format a ref identifier for a direct assignment context.
 
-        V maps cannot be copied by direct assignment; the caller must
-        explicitly clone the value.  ``$ref`` markers appear on the
-        right-hand side of an assignment emitted by
-        :func:`~literalizer.literalize`, so ``.clone()`` is required.
+        V maps, arrays, sets, and strings require an explicit clone on
+        direct assignment, so unknown refs use the conservative form.
         """
 
-        def _clone(name: str, /) -> str:
-            """Return *name* with ``.clone()`` appended."""
+        def _format(name: str, /) -> str:
+            """Return *name* with ``.clone()``."""
             return f"{name}.clone()"
 
-        return _clone
+        return _format
+
+    @cached_property
+    def format_call_ref_identifier_for_value(
+        self,
+    ) -> Callable[[str, Value], str]:
+        """Format a ref identifier when the referenced value is known.
+
+        Primitive scalar refs must stay bare because V rejects e.g.
+        ``int.clone()``; values with reference-like assignment semantics
+        keep the defensive clone.
+        """
+
+        def _format(name: str, value: Value, /) -> str:
+            """Return *name* with ``.clone()`` only when required."""
+            if _v_ref_value_needs_clone(value, self):
+                return f"{name}.clone()"
+            return name
+
+        return _format
 
     @cached_property
     def format_call_arg_ref_identifier(self) -> Callable[[str], str]:

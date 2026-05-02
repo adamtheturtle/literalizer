@@ -1,0 +1,8 @@
+* my_var
+@code json
+1
+@end
+* my_data
+@code json
+my_var
+@end

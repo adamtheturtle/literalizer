@@ -431,7 +431,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # is a list so the consuming form rendered in C++ / Mojo
         # operates on a non-trivial type and does not trigger
         # trivial-type "no effect" lints.  Variable names avoid
-        # ``shared``, which is reserved in D, V, and VisualBasic.
+        # ``shared``, which is reserved in some target languages.
         case_dir_name="call_ref_args_reused",
         target_function="process",
         parameter_names=["data", "count"],

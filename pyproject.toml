@@ -483,6 +483,8 @@ ignore_names = [
     "ZONED",
     # Used by downstream consumers
     "supports_module_name",
+    # Optional language hook used dynamically by literalize
+    "format_call_ref_identifier_for_value",
     # Used in documentation code examples
     "custom",
     "result",

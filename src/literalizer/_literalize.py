@@ -3,8 +3,9 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
-from typing import assert_never
+from collections.abc import Callable, Mapping, Sequence
+from types import MappingProxyType
+from typing import assert_never, cast
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedSeq
@@ -55,6 +56,8 @@ from literalizer.exceptions import (
 )
 
 _DISABLED_REF_KEY = ""
+_NO_REF_VALUES: Mapping[str, Value] = MappingProxyType(mapping={})
+_VALUE_AWARE_REF_FORMATTER_ATTR = "format_call_ref_identifier_for_value"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -253,6 +256,37 @@ def _build_dict_entry(
 
 
 @beartype
+def _format_literalize_ref_identifier(
+    *,
+    spec: Language,
+    raw_ref_name: str,
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value],
+) -> str:
+    """Format a literalize ref, using its value when the language opts
+    in.
+    """
+    ref_name = (
+        ref_case.convert(name=raw_ref_name)
+        if ref_case is not None
+        else raw_ref_name
+    )
+    if raw_ref_name in ref_values and hasattr(
+        spec,
+        _VALUE_AWARE_REF_FORMATTER_ATTR,
+    ):
+        formatter = cast(
+            "Callable[[str, Value], str]",
+            getattr(spec, _VALUE_AWARE_REF_FORMATTER_ATTR),
+        )
+        return formatter(
+            ref_name,
+            ref_values[raw_ref_name],
+        )
+    return spec.format_call_ref_identifier(ref_name)
+
+
+@beartype
 def _format_set_value(
     *,
     value: set[Scalar],
@@ -294,6 +328,7 @@ def _format_ordered_map_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
@@ -333,6 +368,7 @@ def _format_ordered_map_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                ref_values=ref_values,
                 collection_layout=CollectionLayout.COMPACT,
                 multiline_prefix=multiline_prefix,
             ),
@@ -350,6 +386,7 @@ def _format_ordered_map_value(
                     ref_case=ref_case,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
+                    ref_values=ref_values,
                     collection_layout=collection_layout,
                     multiline_prefix=multiline_prefix,
                 ),
@@ -373,6 +410,7 @@ def _format_dict_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
@@ -414,6 +452,7 @@ def _format_dict_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                ref_values=ref_values,
                 collection_layout=CollectionLayout.COMPACT,
                 multiline_prefix=multiline_prefix,
             ),
@@ -431,6 +470,7 @@ def _format_dict_value(
                     ref_case=ref_case,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
+                    ref_values=ref_values,
                     collection_layout=collection_layout,
                     multiline_prefix=multiline_prefix,
                 ),
@@ -474,6 +514,7 @@ def _format_dict_entry_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
@@ -497,6 +538,7 @@ def _format_dict_entry_value(
             ref_case=ref_case,
             expand_refs=expand_refs,
             ref_key=ref_key,
+            ref_values=ref_values,
             collection_layout=collection_layout,
             multiline_prefix=multiline_prefix,
         )
@@ -509,6 +551,7 @@ def _format_dict_entry_value(
         ref_case=ref_case,
         expand_refs=expand_refs,
         ref_key=ref_key,
+        ref_values=ref_values,
         collection_layout=collection_layout,
         multiline_prefix=multiline_prefix,
     )
@@ -796,6 +839,7 @@ def _format_sequence_child(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
@@ -851,6 +895,7 @@ def _format_sequence_child(
         ref_case=ref_case,
         expand_refs=expand_refs,
         ref_key=ref_key,
+        ref_values=ref_values,
         collection_layout=collection_layout,
         multiline_prefix=multiline_prefix,
     )
@@ -867,6 +912,7 @@ def _format_list_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
@@ -903,6 +949,7 @@ def _format_list_value(
             ref_case=ref_case,
             expand_refs=expand_refs,
             ref_key=ref_key,
+            ref_values=ref_values,
             sequence_open_override=sequence_open_override,
         )
     dict_open_override = _compute_sequence_dict_override(
@@ -930,6 +977,7 @@ def _format_list_value(
                     ref_case=ref_case,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
+                    ref_values=ref_values,
                     collection_layout=collection_layout,
                     multiline_prefix=multiline_prefix,
                 ),
@@ -977,6 +1025,7 @@ def _format_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
@@ -1008,14 +1057,24 @@ def _format_value(
     first.
     """
     if ref_key and isinstance(value, dict):
-        ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-        if ref_name is not None:
-            if ref_case is not None:
-                ref_name = ref_case.convert(name=ref_name)
+        raw_ref_name = _extract_call_arg_ref_name(
+            value=value,
+            ref_key=ref_key,
+        )
+        if raw_ref_name is not None:
             return (
-                spec.format_call_arg_ref_identifier(ref_name)
+                spec.format_call_arg_ref_identifier(
+                    ref_case.convert(name=raw_ref_name)
+                    if ref_case is not None
+                    else raw_ref_name
+                )
                 if expand_refs
-                else spec.format_call_ref_identifier(ref_name)
+                else _format_literalize_ref_identifier(
+                    spec=spec,
+                    raw_ref_name=raw_ref_name,
+                    ref_case=ref_case,
+                    ref_values=ref_values,
+                )
             )
     if (
         collection_layout is CollectionLayout.MULTILINE
@@ -1030,6 +1089,7 @@ def _format_value(
             ref_case=ref_case,
             expand_refs=expand_refs,
             ref_key=ref_key,
+            ref_values=ref_values,
             dict_open_override=dict_open_override,
             sequence_open_override=sequence_open_override,
         )
@@ -1042,6 +1102,7 @@ def _format_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                ref_values=ref_values,
                 collection_layout=collection_layout,
                 multiline_prefix=multiline_prefix,
             )
@@ -1054,6 +1115,7 @@ def _format_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                ref_values=ref_values,
                 collection_layout=collection_layout,
                 multiline_prefix=multiline_prefix,
             )
@@ -1073,6 +1135,7 @@ def _format_value(
                 ref_case=ref_case,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
+                ref_values=ref_values,
                 collection_layout=collection_layout,
                 multiline_prefix=multiline_prefix,
             )
@@ -1179,6 +1242,7 @@ def _format_multiline_collection_value(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     dict_open_override: str | None = None,
     sequence_open_override: str | None = None,
 ) -> str:
@@ -1202,6 +1266,7 @@ def _format_multiline_collection_value(
         ref_case=ref_case,
         expand_refs=expand_refs,
         ref_key=ref_key,
+        ref_values=ref_values,
         collection_layout=CollectionLayout.MULTILINE,
     )
     body = "\n".join(lines)
@@ -1263,6 +1328,7 @@ def _format_collection_lines(
     ref_case: IdentifierCase | None,
     expand_refs: bool,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
 ) -> list[str]:
     """Format collection elements as indented lines."""
@@ -1297,6 +1363,7 @@ def _format_collection_lines(
                     ref_case=ref_case,
                     expand_refs=False,
                     ref_key=ref_key,
+                    ref_values=ref_values,
                     collection_layout=CollectionLayout.COMPACT,
                     multiline_prefix=body_prefix,
                 )
@@ -1313,6 +1380,7 @@ def _format_collection_lines(
                         ref_case=ref_case,
                         expand_refs=expand_refs,
                         ref_key=ref_key,
+                        ref_values=ref_values,
                         collection_layout=collection_layout,
                         multiline_prefix=body_prefix,
                     ),
@@ -1364,6 +1432,7 @@ def _format_collection_lines(
                             ref_case=ref_case,
                             expand_refs=expand_refs,
                             ref_key=ref_key,
+                            ref_values=ref_values,
                             collection_layout=collection_layout,
                             multiline_prefix=body_prefix,
                         ),
@@ -1410,6 +1479,7 @@ def _format_collection_lines(
                             ref_case=ref_case,
                             expand_refs=expand_refs,
                             ref_key=ref_key,
+                            ref_values=ref_values,
                             collection_layout=collection_layout,
                             multiline_prefix=body_prefix,
                         ),
@@ -1444,6 +1514,7 @@ def _literalize(
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
 ) -> str:
     r"""Convert data to native language literal text.
@@ -1473,15 +1544,20 @@ def _literalize(
         ref_case: When set, ref identifiers are converted to this case
             before rendering.
         ref_key: The key used to identify ref markers in the input.
+        ref_values: Known values for source ref names before any
+            *ref_case* conversion.
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
     if ref_key and isinstance(data, dict):
         ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if ref_name is not None:
-            if ref_case is not None:
-                ref_name = ref_case.convert(name=ref_name)
-            identifier = language.format_call_ref_identifier(ref_name)
+            identifier = _format_literalize_ref_identifier(
+                spec=language,
+                raw_ref_name=ref_name,
+                ref_case=ref_case,
+                ref_values=ref_values,
+            )
             return f"{line_prefix}{identifier}"
 
     check_data(data=data, spec=language)
@@ -1516,6 +1592,7 @@ def _literalize(
             ref_case=ref_case,
             expand_refs=False,
             ref_key=ref_key,
+            ref_values=ref_values,
             collection_layout=collection_layout,
             multiline_prefix=line_prefix,
         )
@@ -1542,6 +1619,7 @@ def _literalize(
             ref_case=ref_case,
             expand_refs=False,
             ref_key=ref_key,
+            ref_values=ref_values,
             collection_layout=collection_layout,
             multiline_prefix=line_prefix,
         )
@@ -1563,6 +1641,7 @@ def _literalize(
         ref_case=ref_case,
         expand_refs=False,
         ref_key=ref_key,
+        ref_values=ref_values,
         collection_layout=collection_layout,
     )
 
@@ -1647,6 +1726,7 @@ def _literalize_pre_form(
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
 ) -> _PreFormState:
     """Run the variable-form-independent phase of :func:`literalize`.
@@ -1673,6 +1753,7 @@ def _literalize_pre_form(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_key=active_ref_key,
+        ref_values=ref_values,
         collection_layout=collection_layout,
     )
 
@@ -1811,6 +1892,7 @@ def _literalize_both_forms(
     variable_form: BothVariableForms,
     ref_case: IdentifierCase | None,
     ref_key: str,
+    ref_values: Mapping[str, Value],
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
@@ -1822,6 +1904,7 @@ def _literalize_both_forms(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_key=ref_key,
+        ref_values=ref_values,
         collection_layout=collection_layout,
     )
     declaration = _literalize_apply_form(
@@ -1872,6 +1955,7 @@ def literalize(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     ref_key: str = "$ref",
+    ref_values: Mapping[str, Value] = _NO_REF_VALUES,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
@@ -1925,6 +2009,11 @@ def literalize(
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
             ref marker.  Defaults to ``"$ref"``.
+        ref_values: Optional mapping from source ref names to the
+            referenced values.  Languages whose value-context ref syntax
+            depends on the value can use this to choose the correct
+            identifier form.  Keys use the names from the input before
+            any *ref_case* conversion.
         collection_layout: Controls layout for collections nested
             inside other collections.  ``CollectionLayout.COMPACT``
             preserves the existing one-line nested rendering, while
@@ -1976,6 +2065,7 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_key=ref_key,
+            ref_values=ref_values,
             collection_layout=collection_layout,
         )
 
@@ -1987,6 +2077,7 @@ def literalize(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_key=ref_key,
+        ref_values=ref_values,
         collection_layout=collection_layout,
     )
     return _literalize_apply_form(
@@ -2215,6 +2306,7 @@ def _format_single_call_arg(
             ref_case=ref_case,
             expand_refs=True,
             ref_key=ref_key,
+            ref_values=_NO_REF_VALUES,
             collection_layout=collection_layout,
             multiline_prefix="",
         ),
