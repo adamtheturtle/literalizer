@@ -1,2 +1,3 @@
+from __future__ import annotations
 def op(*_args: object, **_kwargs: object) -> object: ...
 op(value="hello")

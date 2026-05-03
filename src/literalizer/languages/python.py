@@ -86,7 +86,12 @@ from literalizer._types import Value
 
 
 @beartype
-def _format_datetime_python(value: datetime.datetime) -> str:
+def _format_datetime_python(
+    value: datetime.datetime,
+    /,
+    *,
+    utc_tzinfo_expr: str = "datetime.UTC",
+) -> str:
     """Format a datetime as a Python ``datetime.datetime(...)`` constructor
     call.
     """
@@ -102,7 +107,7 @@ def _format_datetime_python(value: datetime.datetime) -> str:
         parts.append(f"microsecond={value.microsecond}")
     if value.tzinfo is not None and (offset := value.utcoffset()) is not None:
         if offset == datetime.timedelta():
-            parts.append("tzinfo=datetime.UTC")
+            parts.append(f"tzinfo={utc_tzinfo_expr}")
         else:
             total_seconds = int(offset.total_seconds())
             sign = -1 if total_seconds < 0 else 1
@@ -1269,6 +1274,14 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if (
+            self.datetime_format is self.datetime_formats.PYTHON
+            and self.language_version is PYTHON_VERSION_PY38
+        ):
+            return functools.partial(
+                _format_datetime_python,
+                utc_tzinfo_expr="datetime.timezone.utc",
+            )
         return self.datetime_format
 
     @cached_property

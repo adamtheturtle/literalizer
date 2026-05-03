@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+from literalizer.languages import Python
+
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
@@ -17,7 +19,7 @@ from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
 )
-from .variant_cases import build_variant_cases
+from .variant_cases import build_language_version_variants, build_variant_cases
 
 
 def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
@@ -120,6 +122,15 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
             cases_dir
             / default_ref_case.config.case_dir_name
             / (golden_name + ext)
+        )
+
+    for variant in build_language_version_variants():
+        if variant.lang_cls is not Python:
+            continue
+        expected.add(
+            cases_dir
+            / "literalize_ref_default_whole"
+            / (variant.name + variant.spec.extension)
         )
 
     return expected
