@@ -60,6 +60,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    LanguageValidator,
     ModifierCombination,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
@@ -76,6 +77,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
+    run_language_validators,
     value_contains,
     wrap_in_file_noop,
 )
@@ -298,6 +300,17 @@ class Dart(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = False
     supports_call_refs_in_dict_literals = True
+
+    validators: tuple[LanguageValidator, ...] = dataclasses.field(
+        default=(),
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        """Run constructor validators."""
+        run_language_validators(language=self)
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
