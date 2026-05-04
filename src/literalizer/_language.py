@@ -535,11 +535,6 @@ class LanguageCls(type):
     extension: str
     pygments_name: str | None
     VersionFormats: type[enum.Enum]
-    supports_default_set_element_type: bool
-    supports_default_sequence_element_type: bool
-    supports_default_dict_value_type: bool
-    supports_default_dict_key_type: bool
-    supports_default_ordered_map_value_type: bool
     supports_special_floats: bool
     supports_variable_names: bool
     supports_dotted_calls: bool

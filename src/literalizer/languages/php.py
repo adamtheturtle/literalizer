@@ -143,11 +143,6 @@ class Php(metaclass=LanguageCls):
 
     extension = ".php"
     pygments_name = "php"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True
