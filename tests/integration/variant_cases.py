@@ -103,7 +103,7 @@ DEFAULT_SEQUENCE_ELEMENT_TYPES: dict[literalizer.LanguageCls, str] = {
     Go: "interface{}",
     Mojo: "Int",
     Python: "int",
-    Rust: "String",
+    Rust: "i32",
     Swift: "String",
     VisualBasic: "String",
 }
@@ -127,7 +127,7 @@ DEFAULT_DICT_KEY_TYPES: dict[literalizer.LanguageCls, str] = {
     Dart: "Object",
     Go: "any",
     Kotlin: "Any",
-    Mojo: "String",
+    Mojo: "Int",
     Python: "int",
     Rust: "&str",
     Swift: "AnyHashable",
@@ -155,6 +155,26 @@ class _DefaultTypeTableMismatchError(RuntimeError):
         super().__init__(
             f"{field_name} override table is out of sync: "
             f"missing={sorted(missing)} extra={sorted(extra)}"
+        )
+
+
+class _DefaultTypeOverrideIsNoOpError(RuntimeError):
+    """Raised when an override value equals the language's own default
+    for that field, producing a no-op variant.
+    """
+
+    def __init__(
+        self,
+        *,
+        field_name: str,
+        language_name: str,
+        value: str,
+    ) -> None:
+        """Build the no-op-override error with a diagnostic message."""
+        super().__init__(
+            f"{language_name}.{field_name} override {value!r} matches "
+            f"the language's own default; the resulting variant is a "
+            f"no-op."
         )
 
 
@@ -190,6 +210,16 @@ for _field_name, _table in _DEFAULT_TYPE_TABLES:
             missing={cls.__name__ for cls in _expected - _actual},
             extra={cls.__name__ for cls in _actual - _expected},
         )
+    for _lang_cls, _override in _table.items():
+        _fields: dict[str, dataclasses.Field[object]] = getattr(
+            _lang_cls, "__dataclass_fields__", {}
+        )
+        if _override == _fields[_field_name].default:
+            raise _DefaultTypeOverrideIsNoOpError(
+                field_name=_field_name,
+                language_name=_lang_cls.__name__,
+                value=_override,
+            )
 
 # Languages that expose ``type_name`` / ``constructor_prefix`` kwargs for
 # the ADT they emit; the value is the test override to apply.
