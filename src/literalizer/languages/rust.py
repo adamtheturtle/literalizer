@@ -62,6 +62,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     LanguageCls,
+    LanguageValidator,
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -81,6 +82,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
+    run_language_validators,
     value_contains,
 )
 from literalizer._types import Scalar, Value
@@ -642,6 +644,25 @@ def _rust_call_stub(
     construction = f"{root_type} {{ {fields[0]}: {construction} }}"
     lines.append(f"let {root} = {construction};")
     return tuple(lines)
+
+
+def validate_rust_constructor_formats(*, language: object) -> None:
+    """Validate that incompatible Rust formats are not combined."""
+    language = cast("Rust", language)
+    _decl_cls = type(language.declaration_style)
+    _seq_cls = type(language.sequence_format)
+    if (
+        language.declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
+        and language.sequence_format is _seq_cls.VEC
+    ):
+        msg = (
+            f"Rust {language.declaration_style.name} requires a "
+            f"constant-expression initializer, but the "
+            f"VEC sequence format produces vec![…] which "
+            f"is not a constant expression. "
+            f"Use ARRAY or TUPLE instead."
+        )
+        raise IncompatibleFormatsError(msg)
 
 
 @beartype
@@ -1464,22 +1485,16 @@ class Rust(metaclass=LanguageCls):
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
+    validators: tuple[LanguageValidator, ...] = dataclasses.field(
+        default=(validate_rust_constructor_formats,),
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
     def __post_init__(self) -> None:
-        """Validate that incompatible formats are not combined."""
-        _decl_cls = type(self.declaration_style)
-        _seq_cls = type(self.sequence_format)
-        if (
-            self.declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
-            and self.sequence_format is _seq_cls.VEC
-        ):
-            msg = (
-                f"Rust {self.declaration_style.name} requires a "
-                f"constant-expression initializer, but the "
-                f"VEC sequence format produces vec![…] which "
-                f"is not a constant expression. "
-                f"Use ARRAY or TUPLE instead."
-            )
-            raise IncompatibleFormatsError(msg)
+        """Run constructor validators."""
+        run_language_validators(language=self)
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 

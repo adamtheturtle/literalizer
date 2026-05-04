@@ -13,6 +13,9 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Value
+from literalizer.exceptions import DefaultSetElementTypeNotSupportedError
+
+type LanguageValidator = Callable[..., None]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -559,6 +562,7 @@ class LanguageCls(type):
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
     call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
+    validators: tuple[LanguageValidator, ...]
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1007,6 +1011,11 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def default_set_element_type(self) -> str | None:
+        """The default element type used for empty set output."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def comment_format(self) -> enum.Enum:
         """The comment format chosen for this language instance."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -1442,6 +1451,58 @@ class Language(Protocol):
         :func:`no_validate_spec_for_data` as a no-op.
         """
         ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class DefaultSetElementTypeSupport(Protocol):
+    """Protocol for language options used by default set type
+    validation.
+    """
+
+    @property
+    def default_set_element_type(self) -> str | None:
+        """The default element type used for empty set output."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_default_set_element_type(self) -> bool:
+        """Whether this language supports a default set element type."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class LanguageValidationTarget(Protocol):
+    """Protocol for language instances with constructor validators."""
+
+    @property
+    def validators(self) -> tuple[LanguageValidator, ...]:
+        """Constructor validators to run after initialization."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@beartype
+def run_language_validators(
+    *,
+    language: LanguageValidationTarget,
+) -> None:
+    """Run constructor validators for *language*."""
+    for validator in language.validators:
+        validator(language=language)
+
+
+@beartype
+def validate_default_set_element_type_support(
+    *,
+    language: DefaultSetElementTypeSupport,
+) -> None:
+    """Raise if *language* cannot support its default set element type."""
+    if (
+        language.default_set_element_type is not None
+        and not language.supports_default_set_element_type
+    ):
+        raise DefaultSetElementTypeNotSupportedError(
+            language_name=type(language).__name__,
+        )
 
 
 def _no_call_stub(
