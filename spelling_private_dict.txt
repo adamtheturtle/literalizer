@@ -237,6 +237,5 @@ unicode
 unterminated
 uv
 val_t
-validators
 whitespace
 yaml

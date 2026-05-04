@@ -58,7 +58,6 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     LanguageCls,
-    LanguageValidator,
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -77,8 +76,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
-    run_language_validators,
-    validate_default_set_element_type_support,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -504,24 +501,6 @@ def _nim_call_stub(
     root_type = f"{root.title()}Type"
     lines.append(f"var {root}: {root_type}")
     return tuple(lines)
-
-
-def validate_nim_constructor_formats(*, language: object) -> None:
-    """Validate that incompatible Nim formats are not combined."""
-    language = cast("Nim", language)
-    _decl_cls = type(language.declaration_style)
-    _strategy_cls = type(language.heterogeneous_strategy)
-    if (
-        language.declaration_style is _decl_cls.CONST
-        and language.heterogeneous_strategy is _strategy_cls.OBJECT_VARIANT
-    ):
-        msg = (
-            "Nim CONST requires a constant-expression initializer, "
-            "but OBJECT_VARIANT produces runtime .toTable / @[] "
-            "calls which are not constant expressions. "
-            "Use VAR or LET instead."
-        )
-        raise IncompatibleFormatsError(msg)
 
 
 @beartype
@@ -953,7 +932,6 @@ class Nim(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.SEQ
     set_format: SetFormats = SetFormats.SET
-    default_set_element_type: str | None = None
     variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
@@ -979,19 +957,27 @@ class Nim(metaclass=LanguageCls):
     language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
-    validators: tuple[LanguageValidator, ...] = dataclasses.field(
-        default=(
-            validate_default_set_element_type_support,
-            validate_nim_constructor_formats,
-        ),
-        init=False,
-        repr=False,
-        compare=False,
-    )
-
     def __post_init__(self) -> None:
-        """Run constructor validators."""
-        run_language_validators(language=self)
+        """Validate that incompatible formats are not combined.
+
+        ``OBJECT_VARIANT`` replaces the JSON-based rendering for Nim
+        with runtime ``.toTable`` / ``@[]`` constructors, so ``CONST``
+        (which requires a compile-time-expressible initializer)
+        cannot be combined with it.
+        """
+        _decl_cls = type(self.declaration_style)
+        _strategy_cls = type(self.heterogeneous_strategy)
+        if (
+            self.declaration_style is _decl_cls.CONST
+            and self.heterogeneous_strategy is _strategy_cls.OBJECT_VARIANT
+        ):
+            msg = (
+                "Nim CONST requires a constant-expression initializer, "
+                "but OBJECT_VARIANT produces runtime .toTable / @[] "
+                "calls which are not constant expressions. "
+                "Use VAR or LET instead."
+            )
+            raise IncompatibleFormatsError(msg)
 
     null_literal: ClassVar[str] = "nil"
     true_literal: ClassVar[str] = "true"
