@@ -14,7 +14,6 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
-from literalizer.exceptions import DefaultSetElementTypeNotSupportedError
 from literalizer.languages import (
     C,
     Cobol,
@@ -268,25 +267,21 @@ def build_non_default_variants(
 
 @beartype
 def build_default_set_element_type_variants() -> Iterable[Variant]:
-    """Build default-set-type variants, using the typed unsupported
-    signal for languages that reject the option.
-    """
+    """Build default-set-type variants for languages that support it."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
+        if not lang_cls.supports_default_set_element_type:
+            continue
         type_name = DEFAULT_SET_ELEMENT_TYPE_OVERRIDES.get(
             lang_cls,
             DEFAULT_TYPE_OVERRIDE_FALLBACK,
         )
-        try:
-            spec = make_spec(
-                lang_cls=lang_cls, default_set_element_type=type_name
-            )
-        except DefaultSetElementTypeNotSupportedError:
-            continue
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_default_set_element_type_string",
-                spec=spec,
+                spec=make_spec(
+                    lang_cls=lang_cls, default_set_element_type=type_name
+                ),
                 lang_cls=lang_cls,
             )
         )

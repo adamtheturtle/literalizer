@@ -69,7 +69,6 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
-    LanguageValidator,
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -88,7 +87,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
-    run_language_validators,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -446,17 +444,6 @@ class Kotlin(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = False
     supports_call_refs_in_dict_literals = True
-
-    validators: tuple[LanguageValidator, ...] = dataclasses.field(
-        default=(),
-        init=False,
-        repr=False,
-        compare=False,
-    )
-
-    def __post_init__(self) -> None:
-        """Run constructor validators."""
-        run_language_validators(language=self)
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(

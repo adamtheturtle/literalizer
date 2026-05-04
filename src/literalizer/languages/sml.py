@@ -54,7 +54,6 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     LanguageCls,
-    LanguageValidator,
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -73,8 +72,6 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
-    run_language_validators,
-    validate_default_set_element_type_support,
 )
 from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
@@ -324,17 +321,6 @@ class Sml(metaclass=LanguageCls):
     supports_commented_dict_call_args = True
     supports_module_name = False
     supports_call_refs_in_dict_literals = True
-
-    validators: tuple[LanguageValidator, ...] = dataclasses.field(
-        default=(validate_default_set_element_type_support,),
-        init=False,
-        repr=False,
-        compare=False,
-    )
-
-    def __post_init__(self) -> None:
-        """Run constructor validators."""
-        run_language_validators(language=self)
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -629,7 +615,6 @@ class Sml(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
     set_format: SetFormats = SetFormats.SET
-    default_set_element_type: str | None = None
     variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
     comment_format: CommentFormats = CommentFormats.PAREN_STAR
     declaration_style: DeclarationStyles = DeclarationStyles.VAL

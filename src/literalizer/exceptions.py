@@ -154,17 +154,6 @@ class IncompatibleFormatsError(Exception):
     """
 
 
-class DefaultSetElementTypeNotSupportedError(Exception):
-    """Raised when ``default_set_element_type`` is not supported."""
-
-    def __init__(self, *, language_name: str) -> None:
-        """Create a ``DefaultSetElementTypeNotSupportedError``."""
-        super().__init__(
-            f"{language_name} does not support default_set_element_type"
-        )
-        self.language_name = language_name
-
-
 class UnrepresentableIntegerError(Exception):
     """Raised when an integer value exceeds the range the target
     language can represent natively.
