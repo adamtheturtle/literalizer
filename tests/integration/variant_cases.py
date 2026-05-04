@@ -81,7 +81,7 @@ def wrap_variable_form(
 # Alternative type names passed to the various ``default_*_type`` kwargs.
 # Each value must differ from the language's own default *and* be a valid
 # type name for that language's linter / compiler.  Each mapping enumerates
-# every language whose dataclass exposes the corresponding kwarg.
+# every language whose dataclass exposes the corresponding kwargs entry.
 DEFAULT_SET_ELEMENT_TYPES: dict[literalizer.LanguageCls, str] = {
     CSharp: "string",
     Crystal: "Int32",
