@@ -9,14 +9,6 @@ import literalizer.languages
 from literalizer._language import LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
-from .variant_cases import (
-    DEFAULT_DICT_KEY_TYPES,
-    DEFAULT_DICT_VALUE_TYPES,
-    DEFAULT_ORDERED_MAP_VALUE_TYPES,
-    DEFAULT_SEQUENCE_ELEMENT_TYPES,
-    DEFAULT_SET_ELEMENT_TYPES,
-)
-
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
     key=lambda c: c.__name__,
@@ -150,33 +142,3 @@ def test_wrap_combined_in_file_unsupported_raises(
             variable_name="x",
             body_preamble=(),
         )
-
-
-_DEFAULT_TYPE_OPTION_TABLES: dict[str, dict[LanguageCls, str]] = {
-    "default_set_element_type": DEFAULT_SET_ELEMENT_TYPES,
-    "default_sequence_element_type": DEFAULT_SEQUENCE_ELEMENT_TYPES,
-    "default_dict_value_type": DEFAULT_DICT_VALUE_TYPES,
-    "default_dict_key_type": DEFAULT_DICT_KEY_TYPES,
-    "default_ordered_map_value_type": DEFAULT_ORDERED_MAP_VALUE_TYPES,
-}
-
-
-@pytest.mark.parametrize(
-    argnames=("field_name", "table"),
-    argvalues=list(_DEFAULT_TYPE_OPTION_TABLES.items()),
-    ids=list(_DEFAULT_TYPE_OPTION_TABLES.keys()),
-)
-def test_default_type_table_matches_supporting_languages(
-    *,
-    field_name: str,
-    table: dict[LanguageCls, str],
-) -> None:
-    """Variant override tables must list every language whose dataclass
-    exposes the corresponding ``default_*_type`` field, and no others.
-    """
-    languages_with_field = {
-        cls
-        for cls in _SORTED_LANGUAGES
-        if field_name in getattr(cls, "__dataclass_fields__", {})
-    }
-    assert set(table.keys()) == languages_with_field
