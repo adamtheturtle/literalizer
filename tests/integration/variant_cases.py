@@ -139,87 +139,52 @@ DEFAULT_ORDERED_MAP_VALUE_TYPES: dict[literalizer.LanguageCls, str] = {
 }
 
 
-class _DefaultTypeTableMismatchError(RuntimeError):
-    """Raised when a ``DEFAULT_*_TYPES`` table drifts from the set of
-    languages whose dataclass exposes the corresponding field.
+def _check_default_type_tables() -> None:
+    """Validate the ``DEFAULT_*_TYPES`` tables at import time.
+
+    Each table must list exactly the languages whose dataclass exposes
+    the corresponding ``default_*_type`` field, and every override
+    value must differ from that field's own default; either kind of
+    drift would silently break variant coverage.
     """
-
-    def __init__(
-        self,
-        *,
-        field_name: str,
-        missing: set[str],
-        extra: set[str],
-    ) -> None:
-        """Build the mismatch error with a diagnostic message."""
-        super().__init__(
-            f"{field_name} override table is out of sync: "
-            f"missing={sorted(missing)} extra={sorted(extra)}"
-        )
-
-
-class _DefaultTypeOverrideIsNoOpError(RuntimeError):
-    """Raised when an override value equals the language's own default
-    for that field, producing a no-op variant.
-    """
-
-    def __init__(
-        self,
-        *,
-        field_name: str,
-        language_name: str,
-        value: str,
-    ) -> None:
-        """Build the no-op-override error with a diagnostic message."""
-        super().__init__(
-            f"{language_name}.{field_name} override {value!r} matches "
-            f"the language's own default; the resulting variant is a "
-            f"no-op."
-        )
-
-
-def _languages_with_field(*, field_name: str) -> set[literalizer.LanguageCls]:
-    """Return the language classes whose dataclass declares
-    *field_name*.
-    """
-    result: set[literalizer.LanguageCls] = set()
-    for cls in ALL_LANGUAGES:
-        fields_attr: dict[str, object] = getattr(
-            cls, "__dataclass_fields__", {}
-        )
-        if field_name in fields_attr:
-            result.add(cls)
-    return result
-
-
-_DEFAULT_TYPE_TABLES: tuple[
-    tuple[str, dict[literalizer.LanguageCls, str]], ...
-] = (
-    ("default_set_element_type", DEFAULT_SET_ELEMENT_TYPES),
-    ("default_sequence_element_type", DEFAULT_SEQUENCE_ELEMENT_TYPES),
-    ("default_dict_value_type", DEFAULT_DICT_VALUE_TYPES),
-    ("default_dict_key_type", DEFAULT_DICT_KEY_TYPES),
-    ("default_ordered_map_value_type", DEFAULT_ORDERED_MAP_VALUE_TYPES),
-)
-for _field_name, _table in _DEFAULT_TYPE_TABLES:
-    _expected = _languages_with_field(field_name=_field_name)
-    _actual = set(_table.keys())
-    if _actual != _expected:
-        raise _DefaultTypeTableMismatchError(
-            field_name=_field_name,
-            missing={cls.__name__ for cls in _expected - _actual},
-            extra={cls.__name__ for cls in _actual - _expected},
-        )
-    for _lang_cls, _override in _table.items():
-        _fields: dict[str, dataclasses.Field[object]] = getattr(
-            _lang_cls, "__dataclass_fields__", {}
-        )
-        if _override == _fields[_field_name].default:
-            raise _DefaultTypeOverrideIsNoOpError(
-                field_name=_field_name,
-                language_name=_lang_cls.__name__,
-                value=_override,
+    tables: tuple[tuple[str, dict[literalizer.LanguageCls, str]], ...] = (
+        ("default_set_element_type", DEFAULT_SET_ELEMENT_TYPES),
+        ("default_sequence_element_type", DEFAULT_SEQUENCE_ELEMENT_TYPES),
+        ("default_dict_value_type", DEFAULT_DICT_VALUE_TYPES),
+        ("default_dict_key_type", DEFAULT_DICT_KEY_TYPES),
+        ("default_ordered_map_value_type", DEFAULT_ORDERED_MAP_VALUE_TYPES),
+    )
+    for field_name, table in tables:
+        expected: set[literalizer.LanguageCls] = set()
+        for cls in ALL_LANGUAGES:
+            cls_fields: dict[str, object] = getattr(
+                cls, "__dataclass_fields__", {}
             )
+            if field_name in cls_fields:
+                expected.add(cls)
+        actual = set(table.keys())
+        if actual != expected:  # pragma: no cover
+            missing = sorted(cls.__name__ for cls in expected - actual)
+            extra = sorted(cls.__name__ for cls in actual - expected)
+            msg = (
+                f"{field_name} override table is out of sync: "
+                f"missing={missing} extra={extra}"
+            )
+            raise RuntimeError(msg)
+        for lang_cls, override in table.items():
+            fields_attr: dict[str, dataclasses.Field[object]] = getattr(
+                lang_cls, "__dataclass_fields__", {}
+            )
+            if override == fields_attr[field_name].default:  # pragma: no cover
+                msg = (
+                    f"{lang_cls.__name__}.{field_name} override "
+                    f"{override!r} matches the language's own "
+                    f"default; the resulting variant is a no-op."
+                )
+                raise RuntimeError(msg)
+
+
+_check_default_type_tables()
 
 # Languages that expose ``type_name`` / ``constructor_prefix`` kwargs for
 # the ADT they emit; the value is the test override to apply.
