@@ -162,26 +162,14 @@ def _check_default_type_tables() -> None:
             )
             if field_name in cls_fields:
                 expected.add(cls)
-        actual = set(table.keys())
-        if actual != expected:  # pragma: no cover
-            missing = sorted(cls.__name__ for cls in expected - actual)
-            extra = sorted(cls.__name__ for cls in actual - expected)
-            msg = (
-                f"{field_name} override table is out of sync: "
-                f"missing={missing} extra={extra}"
-            )
-            raise RuntimeError(msg)
+        assert set(table.keys()) == expected, field_name  # noqa: S101
         for lang_cls, override in table.items():
             fields_attr: dict[str, dataclasses.Field[object]] = getattr(
                 lang_cls, "__dataclass_fields__", {}
             )
-            if override == fields_attr[field_name].default:  # pragma: no cover
-                msg = (
-                    f"{lang_cls.__name__}.{field_name} override "
-                    f"{override!r} matches the language's own "
-                    f"default; the resulting variant is a no-op."
-                )
-                raise RuntimeError(msg)
+            assert override != fields_attr[field_name].default, (  # noqa: S101
+                f"{lang_cls.__name__}.{field_name}={override!r}"
+            )
 
 
 _check_default_type_tables()
