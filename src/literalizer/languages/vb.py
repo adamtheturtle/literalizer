@@ -261,11 +261,6 @@ class VisualBasic(metaclass=LanguageCls):
 
     extension = ".vb"
     pygments_name = "vb.net"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = True
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
     supports_dotted_calls = True

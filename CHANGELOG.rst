@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- Removed the redundant ``supports_default_set_element_type``,
+  ``supports_default_sequence_element_type``,
+  ``supports_default_dict_value_type``, ``supports_default_dict_key_type``,
+  and ``supports_default_ordered_map_value_type`` class attributes from
+  ``LanguageCls`` and all language implementations.  Direct constructor
+  calls already surface unsupported ``default_*_type`` keyword arguments
+  through type checking, making these probe flags unnecessary.
+
 - :func:`~literalizer.literalize_call` accepts a new ``ref_values``
   mapping from ``{"$ref": "name"}`` identifiers to the source values
   declared elsewhere.  Supplied ref values now participate in
