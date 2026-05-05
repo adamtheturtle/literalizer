@@ -1,1 +1,1 @@
-42
+(defparameter *my_data* 42)

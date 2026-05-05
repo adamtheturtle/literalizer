@@ -1,1 +1,1 @@
-3.14
+(defparameter *my_data* 3.14)

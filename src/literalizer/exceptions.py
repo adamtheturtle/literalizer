@@ -208,6 +208,21 @@ class DottedCallTargetNotSupportedError(Exception):
         self.target_function = target_function
 
 
+class VariableNamesNotSupportedError(Exception):
+    """Raised when ``literalize`` is given a ``variable_form`` but the
+    target language does not support variable-name wrapping.
+    """
+
+    def __init__(self, *, language_name: str, variable_name: str) -> None:
+        """Create a ``VariableNamesNotSupportedError``."""
+        super().__init__(
+            f"{language_name} does not support variable names: "
+            f"{variable_name!r}"
+        )
+        self.language_name = language_name
+        self.variable_name = variable_name
+
+
 class WrapCombinedInFileNotSupportedError(Exception):
     """Raised when a language does not support ``wrap_combined_in_file``.
 

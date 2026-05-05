@@ -1,1 +1,1 @@
-"hello"
+(def my_data "hello")

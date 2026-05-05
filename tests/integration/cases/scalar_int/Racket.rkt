@@ -1,2 +1,2 @@
 #lang racket
-42
+(define my_data 42)

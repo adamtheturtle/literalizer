@@ -1,1 +1,1 @@
-t
+(defparameter *my_data* t)

@@ -1,5 +1,5 @@
 require 'set'
-Set.new([
+my_data = Set.new([
   true,
   42,
   "apple",

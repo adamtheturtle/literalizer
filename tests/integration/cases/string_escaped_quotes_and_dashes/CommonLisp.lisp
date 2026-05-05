@@ -1,1 +1,1 @@
-"hello \"world\" -- not a comment"
+(defparameter *my_data* "hello \"world\" -- not a comment")

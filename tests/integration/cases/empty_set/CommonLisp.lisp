@@ -1,1 +1,1 @@
-nil
+(defparameter *my_data* nil)

@@ -809,6 +809,16 @@ class Language(Protocol):
     :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
     """
 
+    supports_variable_names: bool
+    """Whether the language supports wrapping output in a named variable
+    via the ``variable_form`` argument to
+    :func:`~literalizer.literalize`.  When ``False``, passing any
+    :class:`~literalizer.NewVariable`,
+    :class:`~literalizer.ExistingVariable`,
+    or :class:`~literalizer.BothVariableForms` is rejected with
+    :class:`~literalizer.exceptions.VariableNamesNotSupportedError`.
+    """
+
     @property
     def language_version(self) -> enum.Enum:
         """The selected version of the target language."""

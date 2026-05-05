@@ -1,5 +1,5 @@
 using Dates
-[
+my_data = [
     true,
     1.5,
     nothing,

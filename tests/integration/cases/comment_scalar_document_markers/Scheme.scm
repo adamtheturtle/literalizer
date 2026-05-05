@@ -1,2 +1,2 @@
-; note
-42
+(define my_data ; note
+42)

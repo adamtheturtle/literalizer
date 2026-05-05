@@ -1,5 +1,5 @@
 require 'date'
-[
+my_data = [
   true,
   1.5,
   nil,

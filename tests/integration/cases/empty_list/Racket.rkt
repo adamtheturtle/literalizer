@@ -1,2 +1,2 @@
 #lang racket
-(list)
+(define my_data (list))

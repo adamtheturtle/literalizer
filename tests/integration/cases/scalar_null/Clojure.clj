@@ -1,1 +1,1 @@
-nil
+(def my_data nil)

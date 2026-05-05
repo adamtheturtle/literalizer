@@ -903,6 +903,28 @@ def _check_call_result_includes_ref_declaration_types(
 
 
 @beartype
+def _skip_if_ref_declarations_unsupported(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    golden_path: Path,
+) -> None:
+    """Skip the test when the language cannot wrap ref declarations in
+    a named variable.
+    """
+    if not config.ref_declarations:
+        return
+    lang_cls = cast("literalizer.LanguageCls", type(spec))
+    if lang_cls.supports_variable_names:
+        return
+    golden_path.unlink(missing_ok=True)
+    pytest.skip(
+        f"{lang_cls.__name__} does not support variable-name wrapping "
+        f"for ref declarations",
+    )
+
+
+@beartype
 def run_call_golden_case(
     *,
     config: CallCaseConfig,
@@ -951,6 +973,9 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
         return
+    _skip_if_ref_declarations_unsupported(
+        config=config, spec=spec, golden_path=golden_path
+    )
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the

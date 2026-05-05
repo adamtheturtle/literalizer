@@ -1,5 +1,5 @@
-(list
+(define my_data (list
     ; comment
     "name" "Alice"
     "score" '()
-)
+))

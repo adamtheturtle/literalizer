@@ -1,2 +1,2 @@
 #lang racket
-#t
+(define my_data #t)
