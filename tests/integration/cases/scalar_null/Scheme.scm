@@ -1,1 +1,1 @@
-'()
+(define my_data '())

@@ -1,4 +1,4 @@
-(list
+(define my_data (list
     (list)
     (list)
-)
+))

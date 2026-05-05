@@ -20,10 +20,12 @@ from literalizer.exceptions import (
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
+    VariableNamesNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
     Dhall,
+    Elm,
     Haskell,
     Hcl,
     JavaScript,
@@ -465,6 +467,23 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
     with pytest.raises(
         expected_exception=ValueError,
         match=rf"^{re.escape(pattern=expected)}$",
+    ):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Elm(),
+            variable_form=BothVariableForms(name="x"),
+            wrap_in_file=True,
+        )
+
+
+def test_literalize_variable_names_not_supported_raises() -> None:
+    """``variable_form`` raises for languages without variable-name
+    support.
+    """
+    with pytest.raises(
+        expected_exception=VariableNamesNotSupportedError,
+        match=r"^Yaml does not support variable names: 'x'$",
     ):
         literalize(
             source="42",

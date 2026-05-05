@@ -4,6 +4,19 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize` now raises a typed
+  :class:`~literalizer.exceptions.VariableNamesNotSupportedError`
+  when ``variable_form`` is supplied but the target language sets
+  ``supports_variable_names = False`` (currently ``Json5``,
+  ``Jsonnet``, and ``Yaml``).  The capability flag is now enforced
+  rather than declarative.
+
+- ``supports_variable_names`` is now ``True`` on ``Clojure``,
+  ``CommonLisp``, ``Julia``, ``Racket``, ``Ruby``, and ``Scheme``,
+  reflecting that these languages do support named variable wrapping
+  via ``literalize``'s ``variable_form`` argument (and have golden
+  files exercising that behaviour).
+
 - :func:`~literalizer.literalize_call` now raises a typed
   :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`
   when ``target_function`` contains a dot but the target language sets

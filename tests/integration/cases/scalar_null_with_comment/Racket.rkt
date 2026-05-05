@@ -1,3 +1,3 @@
 #lang racket
 ; note
-(void)
+(define my_data (void))

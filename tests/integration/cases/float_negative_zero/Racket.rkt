@@ -1,5 +1,5 @@
 #lang racket
-(list
+(define my_data (list
     -0.0
     1.5
-)
+))

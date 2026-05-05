@@ -1,7 +1,7 @@
 #lang racket
-(list
+(define my_data (list
     1
     "hello"
     #t
     (void)
-)
+))

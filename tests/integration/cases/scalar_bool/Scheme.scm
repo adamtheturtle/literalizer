@@ -1,1 +1,1 @@
-#t
+(define my_data #t)

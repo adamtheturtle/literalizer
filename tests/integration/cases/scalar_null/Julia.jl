@@ -1,1 +1,1 @@
-nothing
+my_data = nothing

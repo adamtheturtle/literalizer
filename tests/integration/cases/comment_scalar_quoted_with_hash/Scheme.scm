@@ -1,2 +1,2 @@
 ; note
-"hello # world"
+(define my_data "hello # world")

@@ -1,1 +1,1 @@
-nil
+my_data = nil

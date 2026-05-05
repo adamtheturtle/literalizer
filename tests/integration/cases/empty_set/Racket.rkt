@@ -1,2 +1,2 @@
 #lang racket
-(set)
+(define my_data (set))

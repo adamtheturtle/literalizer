@@ -1,2 +1,2 @@
 #lang racket
-3.14
+(define my_data 3.14)

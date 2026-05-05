@@ -1,7 +1,7 @@
 #lang racket
-(hash
+(define my_data (hash
     "name" "Alice"
     "age" 30
     "active" #t
     "score" (void)
-)
+))

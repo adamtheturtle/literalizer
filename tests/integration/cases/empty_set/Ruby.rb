@@ -1,2 +1,2 @@
 require 'set'
-Set.new
+my_data = Set.new

@@ -53,6 +53,7 @@ from literalizer.exceptions import (
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
+    VariableNamesNotSupportedError,
 )
 
 _DISABLED_REF_KEY = ""
@@ -1956,6 +1957,11 @@ def literalize(
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
+        )
+    if variable_form is not None and not language.supports_variable_names:
+        raise VariableNamesNotSupportedError(
+            language_name=type(language).__name__,
+            variable_name=variable_form.name,
         )
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
