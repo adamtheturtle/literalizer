@@ -762,6 +762,14 @@ class Language(Protocol):
     extension: str
     """The file extension for this language, including the leading dot."""
 
+    supports_dotted_calls: bool
+    """Whether the language accepts dotted ``target_function`` values
+    (e.g. ``"module.fn"``) in
+    :func:`~literalizer.literalize_call`.  When ``False``, dotted
+    targets are rejected with
+    :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
+    """
+
     @property
     def language_version(self) -> enum.Enum:
         """The selected version of the target language."""

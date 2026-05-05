@@ -49,6 +49,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
@@ -2824,6 +2825,11 @@ def literalize_call(
             pass
 
     target_function_parts = tuple(target_function.split(sep="."))
+    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
+        raise DottedCallTargetNotSupportedError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+        )
     if ref_case is not None and ref_case not in language.identifier_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,

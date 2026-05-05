@@ -16,6 +16,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
@@ -24,6 +25,7 @@ from literalizer.languages import (
     Bash,
     Dhall,
     Haskell,
+    Hcl,
     JavaScript,
     Nix,
     Python,
@@ -261,6 +263,43 @@ def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
             language=Bash(),
             target_function="cmd",
             parameter_names=["items"],
+            per_element=False,
+        )
+
+
+def test_literalize_call_dotted_target_unsupported_raises() -> None:
+    """Dotted ``target_function`` raises for languages without support."""
+    with pytest.raises(
+        expected_exception=DottedCallTargetNotSupportedError,
+        match=(
+            r"^Hcl does not support dotted call targets: "
+            r"'module\.fn'$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Hcl(),
+            target_function="module.fn",
+            parameter_names=["a"],
+        )
+
+
+def test_literalize_call_dotted_target_unsupported_per_element_false() -> None:
+    """Dotted ``target_function`` raises on the per_element=False path."""
+    with pytest.raises(
+        expected_exception=DottedCallTargetNotSupportedError,
+        match=(
+            r"^Hcl does not support dotted call targets: "
+            r"'module\.fn'$"
+        ),
+    ):
+        literalize_call(
+            source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=Hcl(),
+            target_function="module.fn",
+            parameter_names=["data"],
             per_element=False,
         )
 
