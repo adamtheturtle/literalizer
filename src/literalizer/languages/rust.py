@@ -52,6 +52,7 @@ from literalizer._heterogeneous import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -1243,6 +1244,9 @@ class Rust(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.UPPER_SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     def wrap_in_file(
         self,
@@ -1306,6 +1310,8 @@ class Rust(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_enum_name: str = "Value"
+    # Keep in sync with the ``--edition`` flag in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
     indent: str = "    "
 

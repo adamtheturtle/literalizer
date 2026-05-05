@@ -49,6 +49,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -1204,6 +1205,9 @@ class Cpp(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
@@ -1322,6 +1326,8 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``-std=`` flag passed to clang++ in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
