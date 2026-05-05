@@ -307,6 +307,20 @@ def test_literalize_call_dotted_target_unsupported_per_element_false() -> None:
         )
 
 
+def test_literalize_call_dotted_target_supported_language() -> None:
+    """Dotted ``target_function`` succeeds when the language supports
+    it.
+    """
+    result = literalize_call(
+        source="[[1]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="module.fn",
+        parameter_names=["a"],
+    )
+    assert "module.fn(a=1)" in result.code
+
+
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
     """Refs count as arguments; parameter-count mismatch still raises."""
     with pytest.raises(
