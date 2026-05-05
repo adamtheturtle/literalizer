@@ -868,9 +868,6 @@ def _run_wrap_in_file_case(
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
-    except DottedCallNotSupportedError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} does not support dotted call targets")
     check_golden(
         file_regression=file_regression,
         contents=wrap_result.code + "\n",
