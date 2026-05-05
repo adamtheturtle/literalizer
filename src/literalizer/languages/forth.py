@@ -23,6 +23,7 @@ from literalizer._formatters.format_entries import (
 from literalizer._formatters.format_floats import format_float_scientific
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -432,6 +433,9 @@ class Forth(metaclass=LanguageCls):
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.SNAKE,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     validate_spec_for_data = no_validate_spec_for_data

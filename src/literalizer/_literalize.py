@@ -1949,10 +1949,10 @@ def literalize(
             and *wrap_in_file* is ``False``, or if the language's
             ``declaration_style`` does not support redefinition.
         UnsupportedIdentifierCaseError: If *ref_case* is not in
-            :attr:`~literalizer._language.Language.identifier_cases`
+            :attr:`~literalizer._language.Language.supported_ref_cases`
             for the target language.
     """
-    if ref_case is not None and ref_case not in language.identifier_cases:
+    if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
@@ -2719,7 +2719,7 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             target_function=target_function,
         )
-    if ref_case is not None and ref_case not in language.identifier_cases:
+    if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
@@ -2783,7 +2783,7 @@ def literalize_call(
             set, each ref identifier is normalized to ``snake_case``
             and then converted to the requested case via ``pyhumps``,
             so the same source can drive idiomatic identifiers across
-            multiple languages.  When *language*'s ``identifier_cases``
+            multiple languages.  When *language*'s ``supported_ref_cases``
             does not expose the requested case,
             :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
             is raised.

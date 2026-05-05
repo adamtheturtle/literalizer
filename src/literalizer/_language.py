@@ -367,6 +367,28 @@ class IdentifierCase(enum.Enum):
         return _convert_identifier_case(case=self, name=name)
 
 
+ALL_REF_CASES: frozenset[IdentifierCase] = frozenset(IdentifierCase)
+"""Every :class:`IdentifierCase` member.
+
+Use as :attr:`Language.supported_ref_cases` for languages whose
+identifier grammar admits every case in :class:`IdentifierCase`,
+including ``KEBAB`` (e.g. Lisp-family languages where ``my-var`` is a
+single legal symbol).
+"""
+
+
+NON_KEBAB_REF_CASES: frozenset[IdentifierCase] = ALL_REF_CASES - {
+    IdentifierCase.KEBAB,
+}
+"""Every :class:`IdentifierCase` member except ``KEBAB``.
+
+Use as :attr:`Language.supported_ref_cases` for languages whose
+identifier grammar rejects ``-`` in identifiers (the common C-family
+case, where ``my-var`` would parse as subtraction or fail outright)
+while still accepting the four non-kebab cases as legal identifiers.
+"""
+
+
 def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
     """Convert *name* to *case* with snake_case normalization.
 
@@ -530,6 +552,7 @@ class LanguageCls(type):
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
+    supported_ref_cases: frozenset[IdentifierCase]
     modifier_combinations: tuple[ModifierCombination, ...]
     module_name_case: IdentifierCase
     extension: str
@@ -747,15 +770,31 @@ class Language(Protocol):
 
     @property
     def identifier_cases(self) -> tuple[IdentifierCase, ...]:
-        """Identifier case conventions this language supports for
-        ``$ref`` conversion.
+        """Identifier case conventions idiomatic for this language.
 
-        Ordered by idiomatic preference — the first element is the
-        language's default case.  Passing a :class:`IdentifierCase`
-        to :func:`~literalizer.literalize_call` via ``ref_case`` is
+        Ordered by stylistic preference -- the first element is the
+        language's default/idiomatic case for generated defaults and
+        golden fixtures.  This list is *not* used to validate user
+        ``ref_case`` choices; that role belongs to
+        :attr:`supported_ref_cases`.  A language may prefer only
+        ``SNAKE`` while still syntactically supporting ``CAMEL``,
+        ``PASCAL``, and ``UPPER_SNAKE``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supported_ref_cases(self) -> frozenset[IdentifierCase]:
+        """Identifier cases that produce a syntactically legal
+        identifier in this language.
+
+        Used solely for correctness validation: passing a
+        :class:`IdentifierCase` not in this set to
+        :func:`~literalizer.literalize` or
+        :func:`~literalizer.literalize_call` via ``ref_case`` is
         rejected with
-        :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
-        unless it is in this tuple.
+        :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
+        Independent of :attr:`identifier_cases`, which records
+        stylistic preference rather than syntactic validity.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

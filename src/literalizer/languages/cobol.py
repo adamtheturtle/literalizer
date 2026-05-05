@@ -35,6 +35,7 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._language import (
+    ALL_REF_CASES,
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommandCallStyle,
@@ -548,6 +549,7 @@ class Cobol(metaclass=LanguageCls):
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.UPPER_SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
     validate_spec_for_data = no_validate_spec_for_data
 

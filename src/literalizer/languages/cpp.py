@@ -49,6 +49,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -1203,6 +1204,9 @@ class Cpp(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (

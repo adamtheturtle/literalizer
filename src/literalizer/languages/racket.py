@@ -33,6 +33,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    ALL_REF_CASES,
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
@@ -340,6 +341,7 @@ class Racket(metaclass=LanguageCls):
         IdentifierCase.KEBAB,
         IdentifierCase.SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
     validate_spec_for_data = no_validate_spec_for_data
 
