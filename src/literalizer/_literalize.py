@@ -2706,6 +2706,27 @@ def _render_call_whole(
 
 
 @beartype
+def _validate_call_preconditions(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+    ref_case: IdentifierCase | None,
+) -> None:
+    """Raise typed errors for unsupported ``literalize_call`` inputs."""
+    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
+        raise DottedCallTargetNotSupportedError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+        )
+    if ref_case is not None and ref_case not in language.identifier_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
+
+
+@beartype
 def literalize_call(
     *,
     source: str,
@@ -2825,16 +2846,12 @@ def literalize_call(
             pass
 
     target_function_parts = tuple(target_function.split(sep="."))
-    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
-        raise DottedCallTargetNotSupportedError(
-            language_name=type(language).__name__,
-            target_function=target_function,
-        )
-    if ref_case is not None and ref_case not in language.identifier_cases:
-        raise UnsupportedIdentifierCaseError(
-            language_name=type(language).__name__,
-            case_name=ref_case.name,
-        )
+    _validate_call_preconditions(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+        ref_case=ref_case,
+    )
     target_function = language.format_call_target(target_function_parts)
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
