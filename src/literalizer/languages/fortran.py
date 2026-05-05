@@ -665,6 +665,8 @@ class Fortran(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``-std=`` flag passed to gfortran in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.V2003
     indent: str = "    "
     null_name: str = "fnull"

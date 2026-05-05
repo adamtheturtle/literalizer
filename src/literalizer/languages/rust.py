@@ -1306,6 +1306,8 @@ class Rust(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_enum_name: str = "Value"
+    # Keep in sync with the ``--edition`` flag passed to rustc in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
     indent: str = "    "
 

@@ -123,16 +123,18 @@ jobs:
       # current file. Compile each file from inside a private tmpdir so
       # the stale .mod is not on the module search path and parallel
       # runs cannot clobber each other's output.
+      # ``-std=f2003`` matches ``Fortran.language_version`` in
+      # ``src/literalizer/languages/fortran.py``; keep them in sync.
       - name: Lint Fortran
         run: |-
           find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran
-          xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran
+          xargs -0 gfortran -std=f2003 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           src=$(realpath "$1")
           cd "$tmpdir" || exit 1
-          gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+          gfortran -std=f2003 -ffree-line-length-none "$src" -o run || exit 1
           ./run || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-fortran
@@ -731,10 +733,12 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``-std=c99`` matches ``C.language_version`` in
+      # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c11 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   lint-cpp-tidy:
     runs-on: ubuntu-latest
@@ -752,6 +756,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``-std=c++20`` matches ``Cpp.language_version`` in
+      # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Run clang-tidy on C++ files
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
@@ -792,12 +798,14 @@ jobs:
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
+      # ``-std=c99`` matches ``C.language_version`` in
+      # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run C files
         run: |-
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c11 "$1" -o "$tmpdir/run" || exit 1
+          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
@@ -816,6 +824,8 @@ jobs:
       # covering every header any fixture includes, then preload it in
       # each compile invocation so the parsed AST is reused instead of
       # re-parsed per file.
+      # ``-std=c++20`` matches ``Cpp.language_version`` in
+      # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Build precompiled header
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
@@ -1067,6 +1077,8 @@ jobs:
           cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
           deps="$tmpdir/chrono-check/target/debug/deps"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          # ``--edition 2021`` matches ``Rust.language_version`` in
+          # ``src/literalizer/languages/rust.py``; keep them in sync.
           while IFS= read -r -d '' f; do
             rustc --edition 2021 \
               -L "dependency=$deps" \
