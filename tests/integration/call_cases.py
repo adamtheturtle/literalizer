@@ -903,12 +903,17 @@ def _check_call_result_includes_ref_declaration_types(
 
 
 @beartype
-def _skip_if_no_variable_name_support(
-    *, spec: literalizer.Language, golden_path: Path
+def _skip_if_ref_declarations_unsupported(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    golden_path: Path,
 ) -> None:
-    """Skip ref-declaration call tests for languages without variable
-    names.
+    """Skip the test when the language cannot wrap ref declarations in
+    a named variable.
     """
+    if not config.ref_declarations:
+        return
     lang_cls = cast("literalizer.LanguageCls", type(spec))
     if lang_cls.supports_variable_names:
         return
@@ -968,7 +973,9 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
         return
-    _skip_if_no_variable_name_support(spec=spec, golden_path=golden_path)
+    _skip_if_ref_declarations_unsupported(
+        config=config, spec=spec, golden_path=golden_path
+    )
     try:
         # Literalize each ``{"$ref": "name"}`` target into a variable
         # declaration so the generated file is self-contained and the
