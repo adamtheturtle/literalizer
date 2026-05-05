@@ -15,7 +15,7 @@ Next
   ``CommonLisp``, ``Julia``, ``Racket``, ``Ruby``, and ``Scheme``,
   reflecting that these languages do support named variable wrapping
   via ``literalize``'s ``variable_form`` argument (and have golden
-  files exercising that behaviour).
+  files exercising that behavior).
 
 - :func:`~literalizer.literalize_call` now raises a typed
   :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`
