@@ -123,18 +123,20 @@ jobs:
       # current file. Compile each file from inside a private tmpdir so
       # the stale .mod is not on the module search path and parallel
       # runs cannot clobber each other's output.
-      # ``-std=f2003`` matches ``Fortran.language_version`` in
-      # ``src/literalizer/languages/fortran.py``; keep them in sync.
+      # The Fortran generator emits Fortran 2008 features (e.g. ``int64``
+      # from ``iso_fortran_env``) even though ``Fortran.language_version``
+      # in ``src/literalizer/languages/fortran.py`` is ``V2003``; tracked
+      # in https://github.com/adamtheturtle/literalizer/issues/1919.
       - name: Lint Fortran
         run: |-
           find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran
-          xargs -0 gfortran -std=f2003 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran
+          xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           src=$(realpath "$1")
           cd "$tmpdir" || exit 1
-          gfortran -std=f2003 -ffree-line-length-none "$src" -o run || exit 1
+          gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
           ./run || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-fortran
