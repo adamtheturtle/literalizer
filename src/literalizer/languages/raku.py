@@ -44,6 +44,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single_minimal,
 )
 from literalizer._language import (
+    ALL_REF_CASES,
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommentConfig,
@@ -461,6 +462,7 @@ class Raku(metaclass=LanguageCls):
         IdentifierCase.SNAKE,
         IdentifierCase.KEBAB,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
     validate_spec_for_data = no_validate_spec_for_data
 

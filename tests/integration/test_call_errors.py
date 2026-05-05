@@ -30,6 +30,7 @@ from literalizer.languages import (
     Nix,
     Python,
     Racket,
+    Raku,
     Yaml,
 )
 
@@ -320,10 +321,12 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
 
 
 def test_literalize_call_ref_case_unsupported_raises() -> None:
-    """``ref_case`` outside the language's ``IdentifierCases`` raises."""
+    """``ref_case`` outside the language's ``supported_ref_cases``
+    raises.
+    """
     with pytest.raises(
         expected_exception=UnsupportedIdentifierCaseError,
-        match=r"^Python does not support identifier case 'CAMEL'$",
+        match=r"^Python does not support identifier case 'KEBAB'$",
     ):
         literalize_call(
             source='[[{"$ref": "user_obj"}, 42]]',
@@ -331,12 +334,14 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["data", "count"],
-            ref_case=IdentifierCase.CAMEL,
+            ref_case=IdentifierCase.KEBAB,
         )
 
 
 def test_literalize_ref_case_unsupported_raises() -> None:
-    """``ref_case`` outside the language's ``identifier_cases`` raises."""
+    """``ref_case`` outside the language's ``supported_ref_cases``
+    raises.
+    """
     with pytest.raises(
         expected_exception=UnsupportedIdentifierCaseError,
         match=r"^Python does not support identifier case 'KEBAB'$",
@@ -347,6 +352,59 @@ def test_literalize_ref_case_unsupported_raises() -> None:
             language=Python(),
             ref_case=IdentifierCase.KEBAB,
         )
+
+
+def test_literalize_accepts_syntactic_non_idiomatic_ref_case() -> None:
+    """Cases legal in the language but absent from the idiomatic
+    preference list are accepted and rendered.
+
+    Python's ``identifier_cases`` lists only ``SNAKE``, ``UPPER_SNAKE``,
+    and ``PASCAL``; ``CAMEL`` is non-idiomatic but still a syntactically
+    legal Python identifier.  Validation uses ``supported_ref_cases``,
+    which exposes ``CAMEL``.
+    """
+    assert IdentifierCase.CAMEL not in Python().identifier_cases
+    assert IdentifierCase.CAMEL in Python().supported_ref_cases
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_case=IdentifierCase.CAMEL,
+    )
+
+    assert "userObj" in result.declaration_code
+
+
+def test_literalize_kebab_friendly_language_accepts_kebab_ref_case() -> None:
+    """Kebab-friendly languages render kebab-form refs as legal
+    symbols.
+    """
+    assert IdentifierCase.KEBAB in Raku().supported_ref_cases
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Raku(),
+        ref_case=IdentifierCase.KEBAB,
+    )
+
+    assert "user-obj" in result.declaration_code
+
+
+def test_supported_ref_cases_independent_of_identifier_cases() -> None:
+    """``supported_ref_cases`` is not derived from ``identifier_cases``.
+
+    The two attributes answer different questions -- syntactic validity
+    vs. stylistic preference -- and one is not a function of the other.
+    """
+    python = Python()
+    assert frozenset(python.identifier_cases) != python.supported_ref_cases
+    assert frozenset(python.identifier_cases) <= python.supported_ref_cases
+
+    raku = Raku()
+    assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
+    assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases
 
 
 def test_literalize_call_unknown_ref_values_keep_strip_behavior() -> None:

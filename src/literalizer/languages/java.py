@@ -49,6 +49,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -908,6 +909,9 @@ class Java(metaclass=LanguageCls):
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
         IdentifierCase.UPPER_SNAKE,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (

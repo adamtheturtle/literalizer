@@ -4,6 +4,19 @@ Changelog
 Next
 ----
 
+- Separated syntactic ``ref_case`` validity from stylistic preference.
+  :class:`~literalizer.Language` now exposes
+  :attr:`~literalizer.Language.supported_ref_cases` -- a frozenset of
+  cases that produce a syntactically legal identifier -- alongside the
+  existing :attr:`~literalizer.Language.identifier_cases`, which now
+  documents stylistic preference only.  ``literalize`` and
+  ``literalize_call`` validate ``ref_case`` against
+  ``supported_ref_cases``, so cases that are syntactically legal but
+  non-idiomatic (e.g. ``IdentifierCase.CAMEL`` in Python) are now
+  accepted.  Two shared constants,
+  :data:`~literalizer.NON_KEBAB_REF_CASES` and
+  :data:`~literalizer.ALL_REF_CASES`, cover the common settings.
+
 - :func:`~literalizer.literalize_call` now raises a typed
   :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`
   when ``target_function`` contains a dot but the target language sets

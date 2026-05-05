@@ -57,6 +57,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -654,6 +655,9 @@ class CSharp(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
         IdentifierCase.UPPER_SNAKE,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (

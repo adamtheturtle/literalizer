@@ -38,6 +38,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CallSupport,
     CommentConfig,
@@ -321,6 +322,9 @@ class Yaml(metaclass=LanguageCls):
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     validate_spec_for_data = no_validate_spec_for_data

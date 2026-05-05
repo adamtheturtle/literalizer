@@ -159,10 +159,22 @@ Case conversion
 
 The ``ref_case`` parameter accepts a :class:`~literalizer.IdentifierCase`
 value (``SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or ``KEBAB``).
-Each :class:`Language` exposes the subset it understands via its nested
-``IdentifierCases`` enum; passing a case that the language does not
-expose raises
-:class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
+Each :class:`Language` exposes two related but independent attributes:
+
+* :attr:`~literalizer.Language.supported_ref_cases` -- the cases that
+  produce a syntactically legal identifier in the target language.
+  Passing a case outside this set raises
+  :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
+  Most C-family languages set this to
+  :data:`~literalizer.NON_KEBAB_REF_CASES`, since ``my-var`` is not a
+  legal identifier; Lisp-family languages and other kebab-friendly
+  grammars use :data:`~literalizer.ALL_REF_CASES`.
+* :attr:`~literalizer.Language.identifier_cases` -- the cases that are
+  *idiomatic* for the language, ordered by stylistic preference (the
+  first element is the default).  This list is documentation of style
+  only; it is not used to reject explicit ``ref_case`` choices.  A
+  language may prefer only ``SNAKE`` while still syntactically
+  supporting ``CAMEL``, ``PASCAL``, and ``UPPER_SNAKE``.
 
 The same YAML source can drive idiomatic identifiers across multiple
 languages.  For example, the JSON source ``[[{"$ref": "user_obj"}, 42]]``

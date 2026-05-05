@@ -177,8 +177,10 @@ class UnrepresentableSpecialFloatError(Exception):
 
 
 class UnsupportedIdentifierCaseError(Exception):
-    """Raised when ``literalize_call`` is passed a ``ref_case`` that the
-    target language's ``IdentifierCases`` enum does not expose.
+    """Raised when ``literalize`` or ``literalize_call`` is passed a
+    ``ref_case`` that is not in the target language's
+    ``supported_ref_cases`` -- i.e. one that would not produce a
+    syntactically legal identifier in the target language.
     """
 
     def __init__(self, *, language_name: str, case_name: str) -> None:

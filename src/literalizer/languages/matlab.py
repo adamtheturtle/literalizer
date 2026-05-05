@@ -35,6 +35,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -460,6 +461,9 @@ class Matlab(metaclass=LanguageCls):
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
         IdentifierCase.SNAKE,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     validate_spec_for_data = no_validate_spec_for_data
