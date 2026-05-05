@@ -22,7 +22,7 @@ from literalizer._language import StubReturn
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
-    DottedCallNotSupportedError,
+    DottedCallTargetNotSupportedError,
     HeterogeneousCollectionError,
 )
 
@@ -979,7 +979,7 @@ def _run_call_with_declarations(
         pytest.skip(
             f"{lang_name} cannot represent this heterogeneous input",
         )
-    except DottedCallNotSupportedError:
+    except DottedCallTargetNotSupportedError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} does not support dotted call targets")
     except CallArgNotSupportedError as exc:

@@ -16,7 +16,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
-    DottedCallNotSupportedError,
+    DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
@@ -273,7 +273,7 @@ def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
 def test_literalize_call_dotted_target_unsupported_raises() -> None:
     """Dotted ``target_function`` raises for languages without support."""
     with pytest.raises(
-        expected_exception=DottedCallNotSupportedError,
+        expected_exception=DottedCallTargetNotSupportedError,
         match=(
             r"^Hcl does not support dotted call targets: "
             r"'module\.fn'$"
@@ -291,7 +291,7 @@ def test_literalize_call_dotted_target_unsupported_raises() -> None:
 def test_literalize_call_dotted_target_unsupported_per_element_false() -> None:
     """Dotted ``target_function`` raises on the per_element=False path."""
     with pytest.raises(
-        expected_exception=DottedCallNotSupportedError,
+        expected_exception=DottedCallTargetNotSupportedError,
         match=(
             r"^Hcl does not support dotted call targets: "
             r"'module\.fn'$"
