@@ -1322,6 +1322,8 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``-std=`` flag passed to clang++ in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 

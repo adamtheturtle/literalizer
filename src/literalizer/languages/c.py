@@ -533,6 +533,8 @@ class C(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``-std=`` flag passed to clang and clang-tidy
+    # in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.C99
     indent: str = "    "
     bool_field: str = "b"
