@@ -192,14 +192,14 @@ class UnsupportedIdentifierCaseError(Exception):
         self.case_name = case_name
 
 
-class DottedCallTargetNotSupportedError(Exception):
+class DottedCallNotSupportedError(Exception):
     """Raised when ``literalize_call`` is given a dotted
     ``target_function``
     but the target language does not support dotted call expressions.
     """
 
     def __init__(self, *, language_name: str, target_function: str) -> None:
-        """Create a ``DottedCallTargetNotSupportedError``."""
+        """Create a ``DottedCallNotSupportedError``."""
         super().__init__(
             f"{language_name} does not support dotted call targets: "
             f"{target_function!r}"

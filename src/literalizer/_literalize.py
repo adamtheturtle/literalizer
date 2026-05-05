@@ -49,7 +49,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
-    DottedCallTargetNotSupportedError,
+    DottedCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
@@ -2725,7 +2725,7 @@ def _validate_call_preconditions(
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
-        raise DottedCallTargetNotSupportedError(
+        raise DottedCallNotSupportedError(
             language_name=type(language).__name__,
             target_function=target_function,
         )

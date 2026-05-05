@@ -806,7 +806,7 @@ class Language(Protocol):
     (e.g. ``"module.fn"``) in
     :func:`~literalizer.literalize_call`.  When ``False``, dotted
     targets are rejected with
-    :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
+    :class:`~literalizer.exceptions.DottedCallNotSupportedError`.
     """
 
     supports_variable_names: bool

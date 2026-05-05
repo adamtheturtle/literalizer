@@ -22,6 +22,7 @@ from literalizer._language import StubReturn
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    DottedCallNotSupportedError,
     HeterogeneousCollectionError,
 )
 
@@ -727,8 +728,6 @@ def _lang_supports_case(
     lang_cls: literalizer.LanguageCls,
 ) -> bool:
     """Return True if *lang_cls* can produce valid output for *config*."""
-    if "." in config.target_function and not lang_cls.supports_dotted_calls:
-        return False
     if (
         any("." in name for name in config.transform_stub_names)
         and not lang_cls.supports_dotted_call_stub
@@ -869,6 +868,9 @@ def _run_wrap_in_file_case(
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
+    except DottedCallNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} does not support dotted call targets")
     check_golden(
         file_regression=file_regression,
         contents=wrap_result.code + "\n",
@@ -924,6 +926,71 @@ def _skip_if_ref_declarations_unsupported(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class _CallWithDeclarations:
+    """Result of literalizing ref declarations and a call together."""
+
+    decl_results: list[literalizer.LiteralizeResult]
+    result: literalizer.LiteralizeResult
+
+
+@beartype
+def _run_call_with_declarations(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    yaml_string: str,
+    declaration_names: dict[str, str],
+    effective_ref_case: literalizer.IdentifierCase | None,
+    lang_name: str,
+    golden_path: Path,
+) -> _CallWithDeclarations:
+    """Run ref declarations and the call, skipping on typed unsupported
+    signals.
+    """
+    try:
+        decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
+            ref_name: literalizer.literalize(
+                source=ref_source,
+                input_format=literalizer.InputFormat.JSON,
+                language=spec,
+                variable_form=literalizer.NewVariable(
+                    name=declaration_names[ref_name],
+                ),
+            )
+            for ref_name, ref_source in config.ref_declarations.items()
+        }
+        decl_results = list(decl_results_by_ref_name.values())
+        ref_values = {
+            ref_name: declaration.source_data
+            for ref_name, declaration in decl_results_by_ref_name.items()
+        }
+        result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+            ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
+            ref_values=ref_values or None,
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} cannot represent this heterogeneous input",
+        )
+    except DottedCallNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} does not support dotted call targets")
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
+    return _CallWithDeclarations(decl_results=decl_results, result=result)
+
+
 @beartype
 def run_call_golden_case(
     *,
@@ -976,48 +1043,17 @@ def run_call_golden_case(
     _skip_if_ref_declarations_unsupported(
         config=config, spec=spec, golden_path=golden_path
     )
-    try:
-        # Literalize each ``{"$ref": "name"}`` target into a variable
-        # declaration so the generated file is self-contained and the
-        # golden file can lint cleanly.
-        decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
-            ref_name: literalizer.literalize(
-                source=ref_source,
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=literalizer.NewVariable(
-                    name=declaration_names[ref_name],
-                ),
-            )
-            for ref_name, ref_source in config.ref_declarations.items()
-        }
-        decl_results = list(decl_results_by_ref_name.values())
-        ref_values = {
-            ref_name: declaration.source_data
-            for ref_name, declaration in decl_results_by_ref_name.items()
-        }
-        result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            per_element=config.per_element,
-            ref_case=effective_ref_case,
-            consumable_refs=config.consumable_refs,
-            ref_values=ref_values or None,
-        )
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous input",
-        )
-    except CallArgNotSupportedError as exc:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} rejected call arg: {exc.reason}",
-        )
+    call_outcome = _run_call_with_declarations(
+        config=config,
+        spec=spec,
+        yaml_string=yaml_string,
+        declaration_names=declaration_names,
+        effective_ref_case=effective_ref_case,
+        lang_name=lang_cls.__name__,
+        golden_path=golden_path,
+    )
+    decl_results = call_outcome.decl_results
+    result = call_outcome.result
     _check_call_result_includes_ref_declaration_types(
         result=result,
         decl_results=decl_results,
