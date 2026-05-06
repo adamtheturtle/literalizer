@@ -18,6 +18,7 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     NullInCollectionError,
     UnrepresentableIntegerError,
+    VariableNameNotSupportedError,
 )
 
 from .case_discovery import (
@@ -75,7 +76,17 @@ def test_golden_file(
                     language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
-                    variable_form=wrap_variable_form(lang_cls=lang_cls),
+                    variable_form=wrap_variable_form(),
+                    wrap_in_file=True,
+                )
+            except VariableNameNotSupportedError:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=None,
                     wrap_in_file=True,
                 )
             except UnrepresentableIntegerError:
@@ -213,6 +224,17 @@ def test_format_variant_golden_file(
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,
+                    wrap_in_file=True,
+                    collection_layout=variant.collection_layout,
+                )
+            except VariableNameNotSupportedError:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=None,
                     wrap_in_file=True,
                     collection_layout=variant.collection_layout,
                 )
