@@ -49,22 +49,16 @@ _CASES_DIR = Path(__file__).parent / "cases"
 
 
 @beartype
-def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
-    """Return the wrap variable name for a language class."""
-    return "my_data" if lang_cls.supports_variable_names else None
+def wrap_variable_form() -> literalizer.NewVariable:
+    """Return the canonical :class:`NewVariable` form used by the
+    variable-form integration tests.
 
-
-@beartype
-def wrap_variable_form(
-    lang_cls: literalizer.LanguageCls,
-) -> literalizer.NewVariable | None:
-    """Return a :class:`NewVariable` form for a language class, or
-    None.
+    Callers that pass the result to ``literalize`` should treat
+    :class:`~literalizer.exceptions.VariableNameNotSupportedError` as
+    the signal that the language cannot wrap output in a named
+    variable, rather than pre-filtering on ``supports_variable_names``.
     """
-    name = _wrap_variable_name(lang_cls=lang_cls)
-    if name is None:
-        return None
-    return literalizer.NewVariable(name=name)
+    return literalizer.NewVariable(name="my_data")
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +267,7 @@ class VariantCase:
     variant_name: str
     variant: Variant
     case_dir_name: str
-    variable_form: literalizer.NewVariable | None
+    variable_form: literalizer.NewVariable
 
 
 @beartype
@@ -1406,9 +1400,7 @@ def build_variant_cases() -> list[VariantCase]:
                     variant_name=f"{variant.name}{ci.suffix}",
                     variant=variant,
                     case_dir_name=ci.case_dir_name,
-                    variable_form=wrap_variable_form(
-                        lang_cls=variant.lang_cls
-                    ),
+                    variable_form=wrap_variable_form(),
                 )
                 for ci in inputs
                 if not (

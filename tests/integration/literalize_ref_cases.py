@@ -23,6 +23,7 @@ import literalizer
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
+    VariableNameNotSupportedError,
 )
 
 from .case_discovery import (
@@ -313,12 +314,23 @@ def run_literalize_ref_golden_case(
     yaml_string = input_path.read_text()
     golden_path = input_path.parent / (golden_name + lang_cls.extension)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
+    try:
+        literalizer.literalize(
+            source='{"_": "_"}',
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            variable_form=variable_form_obj,
+            wrap_in_file=True,
+        )
+    except VariableNameNotSupportedError:
+        variable_form_obj = None
     try:
         result = literalizer.literalize(
             source=yaml_string,
             input_format=literalizer.InputFormat.YAML,
             language=spec,
-            variable_form=wrap_variable_form(lang_cls=lang_cls),
+            variable_form=variable_form_obj,
             wrap_in_file=True,
             ref_case=ref_case,
             ref_key=config.ref_key,
@@ -334,7 +346,7 @@ def run_literalize_ref_golden_case(
             f"{lang_cls.__name__} rejected ref identifier: {exc.reason}"
         )
     final_code = result.code
-    if wrap_variable_form(lang_cls=lang_cls) is not None:
+    if variable_form_obj is not None:
         ruamel_yaml = _YAML()
         raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=yaml_string,
@@ -359,10 +371,9 @@ def run_literalize_ref_golden_case(
                 wrap_in_file=False,
             )
             stub_entries.append((converted_name, stub.declaration_code))
-        variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
         final_code = _inject_stubs_before_variable(
             code=result.code,
-            variable_name=variable_form_obj.name if variable_form_obj else "",
+            variable_name=variable_form_obj.name,
             stub_entries=stub_entries,
         )
     check_golden(

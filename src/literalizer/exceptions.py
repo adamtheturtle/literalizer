@@ -250,13 +250,13 @@ class FreeFunctionCallNotSupportedError(Exception):
         self.transform_stub_name = transform_stub_name
 
 
-class VariableNamesNotSupportedError(Exception):
+class VariableNameNotSupportedError(Exception):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.
     """
 
     def __init__(self, *, language_name: str, variable_name: str) -> None:
-        """Create a ``VariableNamesNotSupportedError``."""
+        """Create a ``VariableNameNotSupportedError``."""
         super().__init__(
             f"{language_name} does not support variable names: "
             f"{variable_name!r}"

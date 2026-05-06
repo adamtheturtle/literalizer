@@ -5,7 +5,7 @@ Next
 ----
 
 - :func:`~literalizer.literalize` now raises a typed
-  :class:`~literalizer.exceptions.VariableNamesNotSupportedError`
+  :class:`~literalizer.exceptions.VariableNameNotSupportedError`
   when ``variable_form`` is supplied but the target language sets
   ``supports_variable_names = False`` (currently ``Json5``,
   ``Jsonnet``, and ``Yaml``).  The capability flag is now enforced

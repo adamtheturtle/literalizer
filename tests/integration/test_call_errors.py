@@ -22,7 +22,7 @@ from literalizer.exceptions import (
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
-    VariableNamesNotSupportedError,
+    VariableNameNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
@@ -599,7 +599,7 @@ def test_literalize_variable_names_not_supported_raises() -> None:
     support.
     """
     with pytest.raises(
-        expected_exception=VariableNamesNotSupportedError,
+        expected_exception=VariableNameNotSupportedError,
         match=r"^Yaml does not support variable names: 'x'$",
     ):
         literalize(
@@ -609,3 +609,17 @@ def test_literalize_variable_names_not_supported_raises() -> None:
             variable_form=BothVariableForms(name="x"),
             wrap_in_file=True,
         )
+
+
+def test_literalize_variable_names_supported_renders() -> None:
+    """``variable_form`` succeeds for languages with variable-name
+    support.
+    """
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=BothVariableForms(name="x"),
+        wrap_in_file=True,
+    )
+    assert "x = 42" in result.code

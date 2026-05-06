@@ -832,7 +832,7 @@ class Language(Protocol):
     :class:`~literalizer.NewVariable`,
     :class:`~literalizer.ExistingVariable`,
     or :class:`~literalizer.BothVariableForms` is rejected with
-    :class:`~literalizer.exceptions.VariableNamesNotSupportedError`.
+    :class:`~literalizer.exceptions.VariableNameNotSupportedError`.
     """
 
     @property
