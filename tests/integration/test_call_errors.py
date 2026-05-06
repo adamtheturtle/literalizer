@@ -16,6 +16,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -319,6 +320,27 @@ def test_literalize_call_dotted_target_supported_language() -> None:
         parameter_names=["a"],
     )
     assert "module.fn(a=1)" in result.code
+
+
+def test_literalize_call_dotted_stub_unsupported_raises() -> None:
+    """Dotted ``call_transform`` wrapper raises for languages without
+    support.
+    """
+    with pytest.raises(
+        expected_exception=DottedCallStubNotSupportedError,
+        match=(
+            r"^Haskell does not support dotted call stubs: "
+            r"'tracer\.emit'$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Haskell(),
+            target_function="process",
+            parameter_names=["value"],
+            call_transform=lambda c: f"tracer.emit({c})",
+        )
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:

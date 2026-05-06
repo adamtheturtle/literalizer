@@ -208,6 +208,27 @@ class DottedCallTargetNotSupportedError(Exception):
         self.target_function = target_function
 
 
+class DottedCallStubNotSupportedError(Exception):
+    """Raised when ``literalize_call`` is given a ``call_transform``
+    whose wrapper is dotted (e.g. ``tracer.emit``) but the target
+    language does not support dotted call stub names.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        transform_stub_name: str,
+    ) -> None:
+        """Create a ``DottedCallStubNotSupportedError``."""
+        super().__init__(
+            f"{language_name} does not support dotted call stubs: "
+            f"{transform_stub_name!r}"
+        )
+        self.language_name = language_name
+        self.transform_stub_name = transform_stub_name
+
+
 class VariableNamesNotSupportedError(Exception):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.

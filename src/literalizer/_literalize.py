@@ -49,6 +49,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -2722,6 +2723,7 @@ def _validate_call_preconditions(
     target_function: str,
     target_function_parts: tuple[str, ...],
     ref_case: IdentifierCase | None,
+    call_transform: Callable[[str], str] | None,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
@@ -2729,6 +2731,15 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             target_function=target_function,
         )
+    if call_transform is not None and not language.supports_dotted_call_stub:
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if "." in wrapper:
+            raise DottedCallStubNotSupportedError(
+                language_name=type(language).__name__,
+                transform_stub_name=wrapper,
+            )
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
@@ -2861,6 +2872,7 @@ def literalize_call(
         target_function=target_function,
         target_function_parts=target_function_parts,
         ref_case=ref_case,
+        call_transform=call_transform,
     )
     target_function = language.format_call_target(target_function_parts)
 

@@ -809,6 +809,14 @@ class Language(Protocol):
     :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
     """
 
+    supports_dotted_call_stub: bool
+    """Whether the language can declare a stub for a dotted call wrapper
+    name (e.g. ``tracer.emit``) produced by ``call_transform``.  When
+    ``False``, a dotted ``call_transform`` wrapper is rejected by
+    :func:`~literalizer.literalize_call` with
+    :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`.
+    """
+
     supports_variable_names: bool
     """Whether the language supports wrapping output in a named variable
     via the ``variable_form`` argument to

@@ -22,6 +22,7 @@ from literalizer._language import StubReturn
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
     HeterogeneousCollectionError,
 )
@@ -728,11 +729,6 @@ def _lang_supports_case(
     lang_cls: literalizer.LanguageCls,
 ) -> bool:
     """Return True if *lang_cls* can produce valid output for *config*."""
-    if (
-        any("." in name for name in config.transform_stub_names)
-        and not lang_cls.supports_dotted_call_stub
-    ):
-        return False
     return lang_cls.has_free_function_calls or not any(
         "." not in name for name in config.transform_stub_names
     )
@@ -982,6 +978,9 @@ def _run_call_with_declarations(
     except DottedCallTargetNotSupportedError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} does not support dotted call targets")
+    except DottedCallStubNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} does not support dotted call stubs")
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
