@@ -817,6 +817,14 @@ class Language(Protocol):
     :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`.
     """
 
+    has_free_function_calls: bool
+    """Whether the language has a free function call syntax (i.e. the
+    ability to call a function by a bare name with no dot).  When
+    ``False``, a ``call_transform`` whose wrapper is a bare name with
+    no dot is rejected by :func:`~literalizer.literalize_call` with
+    :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
+    """
+
     supports_variable_names: bool
     """Whether the language supports wrapping output in a named variable
     via the ``variable_form`` argument to

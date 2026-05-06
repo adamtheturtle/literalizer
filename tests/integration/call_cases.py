@@ -24,6 +24,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
+    FreeFunctionCallNotSupportedError,
     HeterogeneousCollectionError,
 )
 
@@ -724,17 +725,6 @@ def case_uses_ref_inside_dict_literal(
 
 
 @beartype
-def _lang_supports_case(
-    config: CallCaseConfig,
-    lang_cls: literalizer.LanguageCls,
-) -> bool:
-    """Return True if *lang_cls* can produce valid output for *config*."""
-    return lang_cls.has_free_function_calls or not any(
-        "." not in name for name in config.transform_stub_names
-    )
-
-
-@beartype
 def _lang_satisfies_config_constraints(
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
@@ -809,8 +799,6 @@ def discover_call_cases() -> list[CallCase]:
     for config in CALL_CASE_CONFIGS:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
-                continue
-            if not _lang_supports_case(config=config, lang_cls=lang_cls):
                 continue
             if not _lang_satisfies_config_constraints(
                 lang_cls=lang_cls, config=config
@@ -981,6 +969,9 @@ def _run_call_with_declarations(
     except DottedCallStubNotSupportedError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} does not support dotted call stubs")
+    except FreeFunctionCallNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} has no free function call syntax")
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
