@@ -51,6 +51,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
+    FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
@@ -2731,12 +2732,24 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             target_function=target_function,
         )
-    if call_transform is not None and not language.supports_dotted_call_stub:
+    if call_transform is not None and (
+        not language.supports_dotted_call_stub
+        or not language.has_free_function_calls
+    ):
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if "." in wrapper:
+        if "." in wrapper and not language.supports_dotted_call_stub:
             raise DottedCallStubNotSupportedError(
+                language_name=type(language).__name__,
+                transform_stub_name=wrapper,
+            )
+        if (
+            wrapper
+            and "." not in wrapper
+            and not language.has_free_function_calls
+        ):
+            raise FreeFunctionCallNotSupportedError(
                 language_name=type(language).__name__,
                 transform_stub_name=wrapper,
             )

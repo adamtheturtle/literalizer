@@ -43,6 +43,13 @@ Next
   ``supports_dotted_call_stub = False``.  The capability flag is now
   enforced rather than declarative.
 
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`
+  when ``call_transform`` produces an undotted wrapper name (e.g.
+  ``emit``) but the target language sets
+  ``has_free_function_calls = False`` (currently only ``Wren``).  The
+  capability flag is now enforced rather than declarative.
+
 - Removed the redundant ``supports_default_set_element_type``,
   ``supports_default_sequence_element_type``,
   ``supports_default_dict_value_type``, ``supports_default_dict_key_type``,

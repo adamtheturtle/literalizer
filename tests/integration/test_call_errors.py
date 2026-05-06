@@ -18,6 +18,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
+    FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedIdentifierCaseError,
@@ -34,6 +35,7 @@ from literalizer.languages import (
     Python,
     Racket,
     Raku,
+    Wren,
     Yaml,
 )
 
@@ -340,6 +342,27 @@ def test_literalize_call_dotted_stub_unsupported_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             call_transform=lambda c: f"tracer.emit({c})",
+        )
+
+
+def test_literalize_call_free_function_unsupported_raises() -> None:
+    """Undotted ``call_transform`` wrapper raises for languages without
+    free function call syntax.
+    """
+    with pytest.raises(
+        expected_exception=FreeFunctionCallNotSupportedError,
+        match=(
+            r"^Wren has no free function call syntax for call stub: "
+            r"'emit'$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Wren(),
+            target_function="Throttler.process",
+            parameter_names=["value"],
+            call_transform=lambda c: f"emit({c})",
         )
 
 

@@ -229,6 +229,27 @@ class DottedCallStubNotSupportedError(Exception):
         self.transform_stub_name = transform_stub_name
 
 
+class FreeFunctionCallNotSupportedError(Exception):
+    """Raised when ``literalize_call`` is given a ``call_transform``
+    whose wrapper is an undotted name (e.g. ``emit``) but the target
+    language has no free function call syntax.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        transform_stub_name: str,
+    ) -> None:
+        """Create a ``FreeFunctionCallNotSupportedError``."""
+        super().__init__(
+            f"{language_name} has no free function call syntax for "
+            f"call stub: {transform_stub_name!r}"
+        )
+        self.language_name = language_name
+        self.transform_stub_name = transform_stub_name
+
+
 class VariableNamesNotSupportedError(Exception):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.
