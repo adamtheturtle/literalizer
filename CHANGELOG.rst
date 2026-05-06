@@ -45,8 +45,8 @@ Next
 
 - :func:`~literalizer.literalize_call` now raises a typed
   :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`
-  when ``call_transform`` produces an undotted wrapper name (e.g.
-  ``emit``) but the target language sets
+  when ``call_transform`` produces a bare wrapper name with no dot
+  (e.g. ``emit``) but the target language sets
   ``has_free_function_calls = False`` (currently only ``Wren``).  The
   capability flag is now enforced rather than declarative.
 

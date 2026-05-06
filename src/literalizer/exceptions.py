@@ -231,8 +231,8 @@ class DottedCallStubNotSupportedError(Exception):
 
 class FreeFunctionCallNotSupportedError(Exception):
     """Raised when ``literalize_call`` is given a ``call_transform``
-    whose wrapper is an undotted name (e.g. ``emit``) but the target
-    language has no free function call syntax.
+    whose wrapper is a bare name with no dot (e.g. ``emit``) but the
+    target language has no free function call syntax.
     """
 
     def __init__(

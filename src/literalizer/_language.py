@@ -819,9 +819,9 @@ class Language(Protocol):
 
     has_free_function_calls: bool
     """Whether the language has a free function call syntax (i.e. the
-    ability to call a function by an undotted name).  When ``False``,
-    a ``call_transform`` whose wrapper is an undotted name is rejected
-    by :func:`~literalizer.literalize_call` with
+    ability to call a function by a bare name with no dot).  When
+    ``False``, a ``call_transform`` whose wrapper is a bare name with
+    no dot is rejected by :func:`~literalizer.literalize_call` with
     :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
     """
 

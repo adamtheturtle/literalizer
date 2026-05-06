@@ -346,8 +346,8 @@ def test_literalize_call_dotted_stub_unsupported_raises() -> None:
 
 
 def test_literalize_call_free_function_unsupported_raises() -> None:
-    """Undotted ``call_transform`` wrapper raises for languages without
-    free function call syntax.
+    """A bare ``call_transform`` wrapper name with no dot raises for
+    languages without free function call syntax.
     """
     with pytest.raises(
         expected_exception=FreeFunctionCallNotSupportedError,
