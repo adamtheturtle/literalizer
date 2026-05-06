@@ -36,6 +36,13 @@ Next
   ``supports_dotted_calls = False`` (currently only ``Hcl``).  The
   capability flag is now enforced rather than declarative.
 
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`
+  when ``call_transform`` produces a dotted wrapper name (e.g.
+  ``tracer.emit``) but the target language sets
+  ``supports_dotted_call_stub = False``.  The capability flag is now
+  enforced rather than declarative.
+
 - Removed the redundant ``supports_default_set_element_type``,
   ``supports_default_sequence_element_type``,
   ``supports_default_dict_value_type``, ``supports_default_dict_key_type``,
