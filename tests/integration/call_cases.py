@@ -26,6 +26,7 @@ from literalizer.exceptions import (
     DottedCallTargetNotSupportedError,
     FreeFunctionCallNotSupportedError,
     HeterogeneousCollectionError,
+    VariableNameNotSupportedError,
 )
 
 from .check_golden import check_golden
@@ -885,28 +886,6 @@ def _check_call_result_includes_ref_declaration_types(
     )
 
 
-@beartype
-def _skip_if_ref_declarations_unsupported(
-    *,
-    config: CallCaseConfig,
-    spec: literalizer.Language,
-    golden_path: Path,
-) -> None:
-    """Skip the test when the language cannot wrap ref declarations in
-    a named variable.
-    """
-    if not config.ref_declarations:
-        return
-    lang_cls = cast("literalizer.LanguageCls", type(spec))
-    if lang_cls.supports_variable_names:
-        return
-    golden_path.unlink(missing_ok=True)
-    pytest.skip(
-        f"{lang_cls.__name__} does not support variable-name wrapping "
-        f"for ref declarations",
-    )
-
-
 @dataclasses.dataclass(frozen=True)
 class _CallWithDeclarations:
     """Result of literalizing ref declarations and a call together."""
@@ -957,6 +936,12 @@ def _run_call_with_declarations(
             ref_case=effective_ref_case,
             consumable_refs=config.consumable_refs,
             ref_values=ref_values or None,
+        )
+    except VariableNameNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} does not support variable-name wrapping "
+            f"for ref declarations",
         )
     except HeterogeneousCollectionError:
         golden_path.unlink(missing_ok=True)
@@ -1027,9 +1012,6 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
         return
-    _skip_if_ref_declarations_unsupported(
-        config=config, spec=spec, golden_path=golden_path
-    )
     call_outcome = _run_call_with_declarations(
         config=config,
         spec=spec,
