@@ -8,7 +8,7 @@ driven through :func:`literalizer.literalize_call`.  The runner
 
 import dataclasses
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from pathlib import Path
 from typing import cast
 
@@ -19,6 +19,7 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
+from literalizer._preamble import deduplicate_preamble_entries
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -41,51 +42,6 @@ def _prepend_preamble(
     if not preamble:
         return wrapped
     return "\n".join(preamble) + "\n" + wrapped
-
-
-@beartype
-def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
-    """Return preamble *blocks* with duplicates merged.
-
-    Some languages emit multi-line preamble blocks whose first line is a
-    stable header (for example, ``pub type GVal {`` in Gleam). When the
-    call-test harness combines declaration preambles with call
-    preambles, the same header can appear multiple times with different
-    bodies. Blocks sharing the same header *and* footer are merged: the
-    first block's middle lines are kept as-is, and any additional middle
-    lines from subsequent blocks that are not yet present are appended.
-    Blocks that share only the header but differ in their footer (e.g.
-    two distinct type definitions sharing a common attribute decorator)
-    are kept as separate blocks.
-    """
-    key_to_middle: dict[tuple[str, str], list[str]] = {}
-    order: list[tuple[str, str]] = []
-    for block in blocks:
-        lines = block.splitlines()
-        if not lines:  # pragma: no cover
-            continue
-        header = lines[0]
-        footer = lines[-1] if len(lines) > 1 else ""
-        key = (header, footer)
-        middle = lines[1:-1]
-        if key not in key_to_middle:
-            key_to_middle[key] = list(middle)
-            order.append(key)
-        else:
-            existing = set(key_to_middle[key])
-            for line in middle:
-                if line not in existing:
-                    key_to_middle[key].append(line)
-                    existing.add(line)
-    result: list[str] = []
-    for key in order:
-        header, footer = key
-        middle = key_to_middle[key]
-        parts: list[str] = [header, *middle]
-        if footer and footer != header:
-            parts.append(footer)
-        result.append("\n".join(parts))
-    return tuple(result)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -442,12 +398,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_names=[],
         per_element=True,
         call_style_type=None,
-        # ``single_var`` is declared first so its preamble (which sees
-        # both ``int`` and ``list``) wins ``_dedupe_preamble_blocks``
-        # against the ``int``-only preamble emitted for
-        # ``repeated_var``.  Without this ordering, languages that emit
-        # a header-keyed type union (e.g. Gleam's ``pub type GVal``)
-        # end up missing the ``GList`` constructor.
         ref_declarations={
             "single_var": "[4, 5, 6]",
             "repeated_var": "1",
@@ -1086,7 +1036,6 @@ def run_call_golden_case(
                 StubReturn.VOID,
             ),
         )
-    decl_preambles = tuple(line for d in decl_results for line in d.preamble)
     # Recompute the body preamble across the union of types observed in
     # every declaration *and* the call.  Concatenating each piece's
     # already-rendered body preamble would emit overlapping
@@ -1114,8 +1063,25 @@ def run_call_golden_case(
         calls=result.bare_code,
         body_preamble=call_body_preamble,
     )
-    all_preamble = _dedupe_preamble_blocks(
-        blocks=decl_preambles + result.preamble + tuple(preamble_stubs)
+    # ``literalize_call`` substitutes ``ref_values`` into the data fed
+    # to its preamble computation, so ``result.preamble`` already
+    # contains the union version of any multi-line data-dependent block
+    # (e.g. Gleam's ``pub type GVal {...}``) covering every type
+    # observed across the declarations *and* the call.  Each
+    # declaration's own multi-line block, by contrast, was computed
+    # from that declaration's data alone and would conflict with the
+    # union version under string-level deduplication.  Drop the
+    # multi-line entries from declaration preambles and keep their
+    # single-line entries (e.g. Nim's ``import json``); line-level
+    # deduplication handles the rest.
+    decl_preamble_lines = tuple(
+        entry
+        for d in decl_results
+        for entry in d.preamble
+        if "\n" not in entry
+    )
+    all_preamble = deduplicate_preamble_entries(
+        entries=decl_preamble_lines + result.preamble + tuple(preamble_stubs),
     )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     check_golden(
