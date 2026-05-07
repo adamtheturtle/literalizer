@@ -158,6 +158,7 @@ def _sv_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
     indent: str,
 ) -> tuple[str, ...]:
@@ -638,7 +639,10 @@ class SystemVerilog(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         indent = self.indent
         return functools.partial(_sv_call_stub, indent=indent)
@@ -651,7 +655,10 @@ class SystemVerilog(metaclass=LanguageCls):
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 

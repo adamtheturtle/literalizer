@@ -81,6 +81,7 @@ def _haskell_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Emit ``OverloadedRecordDot`` when the call target contains dots."""
@@ -161,7 +162,10 @@ def _build_haskell_call_stub_lines(
 
 def _build_haskell_call_stub(
     type_name: str,
-) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
     """Build a call stub function that uses *type_name* for field
     types.
     """
@@ -170,6 +174,7 @@ def _build_haskell_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
+        _args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
@@ -1625,14 +1630,20 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Callable that returns Haskell stub declarations for a call."""
         return _build_haskell_call_stub(type_name=self.type_name)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Callable that returns preamble stub declarations."""
         return _haskell_call_preamble_stub
 

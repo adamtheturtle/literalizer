@@ -506,7 +506,10 @@ def _build_purescript_call_stub_lines(
 
 def _build_purescript_call_stub(
     type_name: str,
-) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
     """Build a call stub factory that uses *type_name* for parameter types."""
 
     @beartype
@@ -514,6 +517,7 @@ def _build_purescript_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
+        _args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
@@ -1058,7 +1062,10 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _build_purescript_call_stub(type_name=self.type_name)
 
@@ -1070,7 +1077,10 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 

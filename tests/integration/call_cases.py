@@ -8,7 +8,7 @@ driven through :func:`literalizer.literalize_call`.  The runner
 
 import dataclasses
 import functools
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import cast
 
@@ -1011,12 +1011,22 @@ def run_call_golden_case(
         else StubReturn.VOID
     )
     target_function_parts = tuple(config.target_function.split(sep="."))
+    # Mirror ``_literalize.py``'s ``arg_values`` shape: a list of args
+    # rows for per-element calls; a single-entry list wrapping the
+    # whole data otherwise.
+    call_arg_values: Sequence[Value]
+    if config.per_element:
+        assert isinstance(result.source_data, list)  # noqa: S101
+        call_arg_values = result.source_data
+    else:
+        call_arg_values = [result.source_data]
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(
             target_function_parts,
             config.parameter_names,
             stub_return,
+            call_arg_values,
         ),
     )
     preamble_stubs.extend(
@@ -1024,6 +1034,7 @@ def run_call_golden_case(
             target_function_parts,
             config.parameter_names,
             stub_return,
+            call_arg_values,
         ),
     )
     # Stubs for transform function names (single argument).
@@ -1034,6 +1045,7 @@ def run_call_golden_case(
                 wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
+                (),
             ),
         )
         preamble_stubs.extend(
@@ -1041,6 +1053,7 @@ def run_call_golden_case(
                 wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
+                (),
             ),
         )
     # Recompute the body preamble across the union of types observed in
