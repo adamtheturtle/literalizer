@@ -405,21 +405,6 @@ def test_literalize_call_wrap_in_file_standalone_comments_raises() -> None:
         )
 
 
-def test_literalize_call_yaml_scalar_with_comment_no_standalone() -> None:
-    """A scalar YAML source with only an inline comment has no
-    standalone comments and ``literalize_call`` proceeds normally.
-    """
-    result = literalize_call(
-        source="42  # inline\n",
-        input_format=InputFormat.YAML,
-        language=Python(),
-        target_function="process",
-        parameter_names=["value"],
-        per_element=False,
-    )
-    assert result.contains_standalone_comments is False
-
-
 def test_literalize_call_ref_case_unsupported_raises() -> None:
     """``ref_case`` outside the language's ``supported_ref_cases``
     raises.

@@ -2755,19 +2755,16 @@ def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
 
 
 @beartype
-def _yaml_has_standalone_comments(
-    *,
-    raw_data: object,
-    yaml_needs_comment_resolve: bool,
-) -> bool:
+def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
     """Return ``True`` when the YAML source carries standalone comments.
 
     Standalone comments are comments that appear on their own line —
     either before a top-level element or after the last element.  Inline
     comments (those that follow a value on the same line) do not count.
+    Returns ``False`` for non-YAML input or for YAML that parses to a
+    scalar; ``ruamel.yaml`` only attaches collection-comment metadata
+    to :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`.
     """
-    if not yaml_needs_comment_resolve:
-        return False
     if not isinstance(raw_data, CommentedSeq | CommentedMap | CommentedSet):
         return False
     collection_comments = extract_yaml_comments(ruamel_data=raw_data)
@@ -2978,7 +2975,6 @@ def literalize_call(
     data = parsed.data
     contains_standalone_comments = _yaml_has_standalone_comments(
         raw_data=parsed.raw_data,
-        yaml_needs_comment_resolve=parsed.yaml_needs_comment_resolve,
     )
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
