@@ -1357,12 +1357,12 @@ class Language(Protocol):
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
         wrapper), :attr:`StubReturn.VOID` otherwise.
-        *args* is the parsed call argument data: one entry per
-        rendered call, where each entry is the args row (a single
-        value for one-parameter calls, a list of values for
-        multi-parameter calls).  Languages whose stubs need to be
-        typed (e.g. Mojo) infer parameter types from this; languages
-        whose stubs are untyped ignore it.
+        The fourth argument is the parsed call argument data: one
+        entry per rendered call, where each entry is the arguments
+        row for that call (a single value for one-parameter calls, a
+        list of values for multi-parameter calls).  Languages whose
+        stubs need to be typed (e.g. Mojo) infer parameter types from
+        this; other languages ignore it.
 
         Stub lines are placed **inside** the language wrapper (e.g.
         inside ``func main()`` for Go, inside ``class Check`` for

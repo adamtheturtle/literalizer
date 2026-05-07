@@ -944,19 +944,16 @@ def _arg_values_for_stub(
     source_data: Value,
     per_element: bool,
 ) -> Sequence[Value]:
-    """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of args
-    rows for per-element calls; a single-entry list wrapping the
-    whole data otherwise.
+    """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of
+    arguments rows for per-element calls; a single-entry list
+    wrapping the whole data otherwise.
+
+    A per-element call always yields a list ``source_data``; the
+    ``isinstance`` check narrows the type for the static checker.
     """
-    if not per_element:
-        return [source_data]
-    if not isinstance(source_data, list):
-        msg = (
-            f"per_element call must yield list source_data; got "
-            f"{type(source_data).__name__}"
-        )
-        raise TypeError(msg)
-    return source_data
+    if per_element and isinstance(source_data, list):
+        return source_data
+    return [source_data]
 
 
 @beartype
