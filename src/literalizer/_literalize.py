@@ -3084,10 +3084,10 @@ def literalize_call(
             StubReturn.VALUE if call_transform is not None else StubReturn.VOID
         )
         body_stubs = language.format_call_stub(
-            target_function_parts, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return, arg_values
         )
         preamble_stubs = language.format_call_preamble_stub(
-            target_function_parts, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return, arg_values
         )
         wrapped = language.wrap_in_file(
             content=result,
