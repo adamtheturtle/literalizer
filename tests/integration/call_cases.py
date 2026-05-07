@@ -1070,10 +1070,10 @@ def run_call_golden_case(
     # observed across the declarations *and* the call.  Each
     # declaration's own multi-line block, by contrast, was computed
     # from that declaration's data alone and would conflict with the
-    # union version under string-level deduplication.  Drop the
+    # union version under string-level duplicate filtering.  Drop the
     # multi-line entries from declaration preambles and keep their
-    # single-line entries (e.g. Nim's ``import json``); line-level
-    # deduplication handles the rest.
+    # single-line entries (e.g. the Nim ``import json`` line);
+    # filtering duplicate lines handles the rest.
     decl_preamble_lines = tuple(
         entry
         for d in decl_results
