@@ -27,6 +27,7 @@ from literalizer.exceptions import (
     DottedCallTargetNotSupportedError,
     FreeFunctionCallNotSupportedError,
     HeterogeneousCollectionError,
+    UnsupportedCallShapeError,
     VariableNameNotSupportedError,
 )
 
@@ -611,6 +612,24 @@ class CallCase:
 
     config: CallCaseConfig
     lang_cls: literalizer.LanguageCls
+    expected_exception: type[Exception] | None = None
+
+
+@beartype
+def _expected_call_shape_exception(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> type[Exception] | None:
+    """Return the exception ``literalize_call`` is expected to raise for
+    this (lang, config) pair, or ``None`` if it should produce output.
+    """
+    if (
+        len(config.parameter_names) == 0
+        and not lang_cls.supports_zero_parameter_calls
+    ):
+        return UnsupportedCallShapeError
+    return None
 
 
 CALL_CASES_DIR = Path(__file__).parent / "cases"
@@ -714,11 +733,6 @@ def _lang_satisfies_call_shape_constraints(
     shape.
     """
     if (
-        len(config.parameter_names) == 0
-        and not lang_cls.supports_zero_parameter_calls
-    ):
-        return False
-    if (
         config.requires_inline_multiline_dict_args
         and not lang_cls.supports_inline_multiline_dict_args
     ):
@@ -769,7 +783,17 @@ def discover_call_cases() -> list[CallCase]:
                 default_style = styles[0]
                 if isinstance(default_style.value, config.call_style_type):
                     continue
-            cases.append(CallCase(config=config, lang_cls=lang_cls))
+            expected_exception = _expected_call_shape_exception(
+                lang_cls=lang_cls,
+                config=config,
+            )
+            cases.append(
+                CallCase(
+                    config=config,
+                    lang_cls=lang_cls,
+                    expected_exception=expected_exception,
+                )
+            )
     return cases
 
 

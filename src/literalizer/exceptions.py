@@ -265,6 +265,25 @@ class VariableNameNotSupportedError(Exception):
         self.variable_name = variable_name
 
 
+class UnsupportedCallShapeError(Exception):
+    """Raised when ``literalize_call`` is given a call shape the target
+    language cannot represent.
+
+    Distinct from :class:`CallArgNotSupportedError` (which concerns
+    individual argument values): this covers structural properties of
+    the call itself, e.g. zero-parameter calls in languages whose
+    syntax requires at least one operand.
+    """
+
+    def __init__(self, *, language_name: str, reason: str) -> None:
+        """Create an ``UnsupportedCallShapeError``."""
+        super().__init__(
+            f"{language_name} cannot represent this call shape: {reason}"
+        )
+        self.language_name = language_name
+        self.reason = reason
+
+
 class WrapCombinedInFileNotSupportedError(Exception):
     """Raised when a language does not support ``wrap_combined_in_file``.
 

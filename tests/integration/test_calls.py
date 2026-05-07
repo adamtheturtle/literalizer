@@ -45,6 +45,16 @@ def test_call_golden_file(
         )
         kwargs["call_style"] = style
     spec = make_spec(lang_cls=lang_cls, **kwargs)
+    if call_case.expected_exception is not None:
+        with pytest.raises(expected_exception=call_case.expected_exception):
+            run_call_golden_case(
+                config=config,
+                spec=spec,
+                golden_name=f"{lang_cls.__name__}_call",
+                cases_dir=cases_dir,
+                file_regression=file_regression,
+            )
+        return
     run_call_golden_case(
         config=config,
         spec=spec,
