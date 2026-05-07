@@ -1,4 +1,4 @@
-fn process[*Ts: AnyType](*args: *Ts):
+fn process(value: String):
     pass
 def main():
     # Test cases

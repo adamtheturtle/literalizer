@@ -80,6 +80,45 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
 
+def _mojo_typed_param_list(
+    params: Sequence[str],
+    arg_values: Sequence[Value],
+) -> tuple[str, ...] | None:
+    """Return ``("name: Type", ...)`` for a typed Mojo signature.
+
+    Returns ``None`` to signal the caller should fall back to the
+    generic ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when the
+    parameter list is empty, when any per-call value at a parameter
+    slot is non-scalar (a ref-marker dict, a collection, ``None``,
+    etc.), when any slot has no values (e.g. transform-stub callers
+    pass an empty ``arg_values``), or when scalar Python types
+    disagree across calls at the same slot.
+    """
+    python_to_mojo_scalar: dict[type, str] = {
+        str: "String",
+        int: "Int",
+    }
+    if not params:
+        return None
+    slots: list[list[Value]] = []
+    for element in arg_values:
+        per_arg = element if isinstance(element, list) else [element]
+        for slot_index, arg_value in enumerate(iterable=per_arg):
+            if slot_index >= len(slots):
+                slots.append([])
+            slots[slot_index].append(arg_value)
+    if len(slots) != len(params):
+        return None
+    typed: list[str] = []
+    for name, slot_values in zip(params, slots, strict=True):
+        types = {python_to_mojo_scalar.get(type(v)) for v in slot_values}
+        if None in types or len(types) != 1:
+            return None
+        (mojo_type,) = types
+        typed.append(f"{name}: {mojo_type}")
+    return tuple(typed)
+
+
 def _mojo_init_expr(parts: Sequence[str]) -> str:
     """Return the constructor expression for a multi-part call target.
 
@@ -127,21 +166,31 @@ def _mojo_call_stub(
 @beartype
 def _mojo_call_preamble_stub(
     parts: Sequence[str],
-    _params: Sequence[str],
+    params: Sequence[str],
     _stub_return: StubReturn,
-    _args: Sequence[Value],
+    args: Sequence[Value],
     /,
     *,
     indent: str,
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
-    1-part names become a module-level generic ``fn``.  Multi-part
-    names become ``@fieldwise_init`` struct types: the innermost type
-    holds the method, and each enclosing type holds a field of the
-    next inner type.
+    1-part names become a module-level ``fn``: typed per-parameter
+    when every call's argument values at each slot share a scalar
+    Python type that maps to a Mojo scalar, and the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form otherwise.  Multi-part names
+    become ``@fieldwise_init`` struct types: the innermost type holds
+    the method, and each enclosing type holds a field of the next
+    inner type.
     """
     if len(parts) == 1:
+        typed_params = _mojo_typed_param_list(
+            params=params,
+            arg_values=args,
+        )
+        if typed_params is not None:
+            param_list = ", ".join(typed_params)
+            return (f"fn {parts[0]}({param_list}):\n{indent}pass",)
         return (f"fn {parts[0]}[*Ts: AnyType](*args: *Ts):\n{indent}pass",)
     root = parts[0]
     method = parts[-1]
