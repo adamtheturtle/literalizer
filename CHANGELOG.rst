@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`
+  when ``wrap_in_file=True`` and the YAML source carries standalone
+  comments but the target language sets
+  ``supports_standalone_comments_in_wrapped_calls = False`` (currently
+  ``Elm``, ``Erlang``, ``Haskell``, ``Jsonnet``, ``PureScript``, and
+  ``Roc``).  :class:`~literalizer.LiteralizeResult` now exposes
+  :attr:`~literalizer.LiteralizeResult.contains_standalone_comments`
+  so callers that wrap manually via
+  :meth:`~literalizer.Language.wrap_calls_with_declarations` can apply
+  the same guard.
+
 - :func:`~literalizer.literalize` now raises a typed
   :class:`~literalizer.exceptions.VariableNameNotSupportedError`
   when ``variable_form`` is supplied but the target language sets
