@@ -82,7 +82,7 @@ def _common_lisp_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Common Lisp stub definitions for a call name.

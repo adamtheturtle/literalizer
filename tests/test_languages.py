@@ -454,7 +454,7 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
         ("target",),
         params,
         StubReturn.VOID,
-        (),
+        [],
     )
     assert line == (
         "pub fn target("

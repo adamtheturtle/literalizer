@@ -103,7 +103,7 @@ def _go_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Go stub declarations for a call name."""

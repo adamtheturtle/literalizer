@@ -107,7 +107,7 @@ def _mojo_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Mojo body stub declarations for a call name.
@@ -129,7 +129,7 @@ def _mojo_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
     *,
     indent: str,

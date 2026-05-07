@@ -157,7 +157,7 @@ def _bash_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return a Bash function stub that accepts any arguments."""

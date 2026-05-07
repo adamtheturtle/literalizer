@@ -267,7 +267,7 @@ def _fortran_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
     *,
     indent: str,

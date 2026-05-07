@@ -81,7 +81,7 @@ def _haskell_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Emit ``OverloadedRecordDot`` when the call target contains dots."""
@@ -174,7 +174,7 @@ def _build_haskell_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
-        _call_args_data: Sequence[Value],
+        _args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""

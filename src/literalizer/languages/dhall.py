@@ -197,7 +197,7 @@ def _dhall_call_preamble_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return the ``DVal`` union-type definition for Dhall call stubs."""
@@ -209,7 +209,7 @@ def _dhall_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     r"""Return Dhall let-binding stub declarations for a call target.

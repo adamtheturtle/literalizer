@@ -109,7 +109,7 @@ def _elixir_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return an Elixir body-level stub for call name *parts*.
@@ -131,7 +131,7 @@ def _elixir_call_preamble_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return file-scope Elixir module stubs for dotted call *parts*.

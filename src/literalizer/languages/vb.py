@@ -169,7 +169,7 @@ def _vb_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
     *,
     indent: str,

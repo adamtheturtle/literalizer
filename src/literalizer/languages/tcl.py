@@ -107,7 +107,7 @@ def _tcl_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return a Tcl proc stub that accepts any arguments."""

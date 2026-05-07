@@ -134,7 +134,7 @@ def _odin_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return file-scope Odin stub declarations for a call name.
@@ -174,7 +174,7 @@ def _odin_call_body_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return body-scope Odin variable initialisation for a dotted call.

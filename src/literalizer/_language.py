@@ -1357,12 +1357,12 @@ class Language(Protocol):
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
         wrapper), :attr:`StubReturn.VOID` otherwise.
-        *call_args_data* exposes the post-ref-substitution argument
-        values for each rendered call -- one entry per call, in the
-        same order calls will be emitted -- so languages whose stubs
-        depend on the actual argument types (e.g. Mojo, which cannot
-        rely on generic ``[*Ts: AnyType]`` for dict-literal args) can
-        infer types from real data.
+        The fourth argument is the parsed call argument data: one
+        entry per rendered call, where each entry is the arguments
+        row for that call (a single value for one-parameter calls, a
+        list of values for multi-parameter calls).  Languages whose
+        stubs need to be typed (e.g. Mojo) infer parameter types from
+        this; other languages ignore it.
 
         Stub lines are placed **inside** the language wrapper (e.g.
         inside ``func main()`` for Go, inside ``class Check`` for
@@ -1548,7 +1548,7 @@ def _no_call_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return no stub lines."""

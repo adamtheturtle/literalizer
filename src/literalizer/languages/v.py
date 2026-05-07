@@ -233,7 +233,7 @@ def _v_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
     *,
     indent: str,
@@ -300,7 +300,7 @@ def _v_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
-    _call_args_data: Sequence[Value],
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return V body-level variable stubs for a call name.
