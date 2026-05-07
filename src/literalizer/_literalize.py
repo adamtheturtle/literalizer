@@ -54,6 +54,7 @@ from literalizer.exceptions import (
     FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
 )
@@ -2723,10 +2724,21 @@ def _validate_call_preconditions(
     language: Language,
     target_function: str,
     target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
     ref_case: IdentifierCase | None,
     call_transform: Callable[[str], str] | None,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
+    if (
+        len(parameter_names) == 0
+        and not language.supports_zero_parameter_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "zero-parameter calls have no representation in this language"
+            ),
+        )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
         raise DottedCallTargetNotSupportedError(
             language_name=type(language).__name__,
@@ -2884,6 +2896,7 @@ def literalize_call(
         language=language,
         target_function=target_function,
         target_function_parts=target_function_parts,
+        parameter_names=parameter_names,
         ref_case=ref_case,
         call_transform=call_transform,
     )

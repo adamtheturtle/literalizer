@@ -1293,6 +1293,16 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def supports_zero_parameter_calls(self) -> bool:
+        """Whether the language can render a function call with no
+        parameters.  When ``False``,
+        :func:`~literalizer.literalize_call` rejects empty
+        ``parameter_names`` with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def supports_standalone_comments_in_wrapped_calls(self) -> bool:
         """Whether manually wrapped call output can contain standalone
         comment lines between call statements.
