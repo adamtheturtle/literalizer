@@ -939,6 +939,27 @@ def _run_call_with_declarations(
 
 
 @beartype
+def _arg_values_for_stub(
+    *,
+    source_data: Value,
+    per_element: bool,
+) -> Sequence[Value]:
+    """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of args
+    rows for per-element calls; a single-entry list wrapping the
+    whole data otherwise.
+    """
+    if not per_element:
+        return [source_data]
+    if not isinstance(source_data, list):
+        msg = (
+            f"per_element call must yield list source_data; got "
+            f"{type(source_data).__name__}"
+        )
+        raise TypeError(msg)
+    return source_data
+
+
+@beartype
 def run_call_golden_case(
     *,
     config: CallCaseConfig,
@@ -1011,15 +1032,10 @@ def run_call_golden_case(
         else StubReturn.VOID
     )
     target_function_parts = tuple(config.target_function.split(sep="."))
-    # Mirror ``_literalize.py``'s ``arg_values`` shape: a list of args
-    # rows for per-element calls; a single-entry list wrapping the
-    # whole data otherwise.
-    call_arg_values: Sequence[Value]
-    if config.per_element:
-        assert isinstance(result.source_data, list)  # noqa: S101
-        call_arg_values = result.source_data
-    else:
-        call_arg_values = [result.source_data]
+    call_arg_values = _arg_values_for_stub(
+        source_data=result.source_data,
+        per_element=config.per_element,
+    )
     # Stubs for the call function (with full parameter names).
     body_stubs.extend(
         spec.format_call_stub(
