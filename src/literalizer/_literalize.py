@@ -3083,11 +3083,26 @@ def literalize_call(
         stub_return = (
             StubReturn.VALUE if call_transform is not None else StubReturn.VOID
         )
+        # One entry per emitted call so stub generators that need the
+        # actual argument types (e.g. Mojo) can see post-ref-substitution
+        # data without re-doing the per-element split.
+        if per_element_data is not None and isinstance(
+            data_for_preamble, list
+        ):
+            call_args_data: tuple[Value, ...] = tuple(data_for_preamble)
+        else:
+            call_args_data = (data_for_preamble,)
         body_stubs = language.format_call_stub(
-            target_function_parts, parameter_names, stub_return
+            target_function_parts,
+            parameter_names,
+            stub_return,
+            call_args_data,
         )
         preamble_stubs = language.format_call_preamble_stub(
-            target_function_parts, parameter_names, stub_return
+            target_function_parts,
+            parameter_names,
+            stub_return,
+            call_args_data,
         )
         wrapped = language.wrap_in_file(
             content=result,

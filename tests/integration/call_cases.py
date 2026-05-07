@@ -1017,6 +1017,7 @@ def run_call_golden_case(
             target_function_parts,
             config.parameter_names,
             stub_return,
+            (),
         ),
     )
     preamble_stubs.extend(
@@ -1024,6 +1025,7 @@ def run_call_golden_case(
             target_function_parts,
             config.parameter_names,
             stub_return,
+            (),
         ),
     )
     # Stubs for transform function names (single argument).
@@ -1034,6 +1036,7 @@ def run_call_golden_case(
                 wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
+                (),
             ),
         )
         preamble_stubs.extend(
@@ -1041,6 +1044,7 @@ def run_call_golden_case(
                 wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
+                (),
             ),
         )
     # Recompute the body preamble across the union of types observed in

@@ -197,6 +197,7 @@ def _dhall_call_preamble_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _call_args_data: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return the ``DVal`` union-type definition for Dhall call stubs."""
@@ -208,6 +209,7 @@ def _dhall_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
+    _call_args_data: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     r"""Return Dhall let-binding stub declarations for a call target.
@@ -939,14 +941,20 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _dhall_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return the ``DVal`` union-type preamble for a call
         expression.
         """

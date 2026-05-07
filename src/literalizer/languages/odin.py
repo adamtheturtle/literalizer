@@ -134,6 +134,7 @@ def _odin_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _call_args_data: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return file-scope Odin stub declarations for a call name.
@@ -173,6 +174,7 @@ def _odin_call_body_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _call_args_data: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return body-scope Odin variable initialisation for a dotted call.
@@ -628,14 +630,20 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _odin_call_body_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return _odin_call_preamble_stub
 

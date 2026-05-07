@@ -13,7 +13,7 @@ def test_no_param_void_stub() -> None:
     declarations but keeps the empty argument list.
     """
     fortran = Fortran()
-    result = fortran.format_call_stub(["process"], [], StubReturn.VOID)
+    result = fortran.format_call_stub(["process"], [], StubReturn.VOID, ())
     assert result == (
         "subroutine process()\n    implicit none\nend subroutine process",
     )
@@ -24,7 +24,7 @@ def test_no_param_value_stub() -> None:
     declarations but keeps the empty argument list.
     """
     fortran = Fortran()
-    result = fortran.format_call_stub(["fetch"], [], StubReturn.VALUE)
+    result = fortran.format_call_stub(["fetch"], [], StubReturn.VALUE, ())
     assert result == (
         "function fetch() result(r)\n"
         "    implicit none\n"

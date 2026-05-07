@@ -1340,7 +1340,10 @@ class Language(Protocol):
     @property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declaration lines for a name used in a call
         expression.
 
@@ -1354,6 +1357,12 @@ class Language(Protocol):
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
         wrapper), :attr:`StubReturn.VOID` otherwise.
+        *call_args_data* exposes the post-ref-substitution argument
+        values for each rendered call -- one entry per call, in the
+        same order calls will be emitted -- so languages whose stubs
+        depend on the actual argument types (e.g. Mojo, which cannot
+        rely on generic ``[*Ts: AnyType]`` for dict-literal args) can
+        infer types from real data.
 
         Stub lines are placed **inside** the language wrapper (e.g.
         inside ``func main()`` for Go, inside ``class Check`` for
@@ -1369,7 +1378,10 @@ class Language(Protocol):
     @property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Like :attr:`format_call_stub` but the lines are placed
         **before** the language wrapper — at file, package, or module
         scope.
@@ -1536,6 +1548,7 @@ def _no_call_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _call_args_data: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return no stub lines."""
@@ -1543,7 +1556,8 @@ def _no_call_stub(
 
 
 no_call_stub: Callable[
-    [Sequence[str], Sequence[str], StubReturn], tuple[str, ...]
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
 ] = _no_call_stub
 """Shared callable for languages that need no call stubs."""
 
