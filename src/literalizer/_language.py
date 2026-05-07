@@ -1303,6 +1303,16 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def supports_inline_multiline_dict_args(self) -> bool:
+        """Whether the language can render a call argument as an inline
+        dict literal that spans multiple lines.  When ``False``,
+        :func:`~literalizer.literalize_call` rejects inputs that would
+        produce a multi-key dict argument with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def supports_standalone_comments_in_wrapped_calls(self) -> bool:
         """Whether manually wrapped call output can contain standalone
         comment lines between call statements.

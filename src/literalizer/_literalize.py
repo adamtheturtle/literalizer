@@ -2182,7 +2182,7 @@ def _compute_call_arg_ref_single_use_names(
 def _strip_call_arg_refs_for_preamble(
     *,
     data: Value,
-    per_element: bool,
+    per_element_data: list[Value] | None,
     ref_key: str,
     ref_values: Mapping[str, Value],
 ) -> Value:
@@ -2212,11 +2212,9 @@ def _strip_call_arg_refs_for_preamble(
             ref_key=ref_key,
         )
         return resolved.value if resolved.include else []
-    if per_element:
-        if not isinstance(data, list):
-            return data
+    if per_element_data is not None:
         result: list[Value] = []
-        for element in data:
+        for element in per_element_data:
             if isinstance(element, list):
                 result.append(
                     [
@@ -2719,12 +2717,41 @@ def _render_call_whole(
 
 
 @beartype
+def _has_inline_multiline_dict_arg(
+    *,
+    arg_values: Sequence[Value],
+    ref_key: str,
+) -> bool:
+    """Return ``True`` when *arg_values* contains a dict with two or
+    more entries that is not a ``$ref`` marker.
+    """
+    return any(
+        _value_is_multikey_non_ref_dict(value=value, ref_key=ref_key)
+        for value in arg_values
+    )
+
+
+@beartype
+def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
+    """Return ``True`` if *value* is a dict with multiple keys that is
+    not a single-key ``$ref`` marker.
+    """
+    if not isinstance(value, dict):
+        return False
+    if len(value) == 1 and isinstance(value.get(ref_key), str):
+        return False
+    return len(value) > 1
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
     target_function: str,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
+    arg_values: Sequence[Value],
+    ref_key: str,
     ref_case: IdentifierCase | None,
     call_transform: Callable[[str], str] | None,
 ) -> None:
@@ -2737,6 +2764,19 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             reason=(
                 "zero-parameter calls have no representation in this language"
+            ),
+        )
+    if (
+        not language.supports_inline_multiline_dict_args
+        and _has_inline_multiline_dict_arg(
+            arg_values=arg_values, ref_key=ref_key
+        )
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "multi-key dict call arguments have no inline multiline "
+                "representation in this language"
             ),
         )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
@@ -2891,24 +2931,7 @@ def literalize_call(
         case _ as style:
             pass
 
-    target_function_parts = tuple(target_function.split(sep="."))
-    _validate_call_preconditions(
-        language=language,
-        target_function=target_function,
-        target_function_parts=target_function_parts,
-        parameter_names=parameter_names,
-        ref_case=ref_case,
-        call_transform=call_transform,
-    )
-    target_function = language.format_call_target(target_function_parts)
-
-    data_for_preamble = _strip_call_arg_refs_for_preamble(
-        data=data,
-        per_element=per_element,
-        ref_key=ref_key,
-        ref_values=ref_values or {},
-    )
-
+    per_element_data: list[Value] | None = None
     if per_element:
         if not isinstance(data, list):
             msg = (
@@ -2916,6 +2939,32 @@ def literalize_call(
                 f"got {type(data).__name__}"
             )
             raise PerElementNotListError(msg)
+        per_element_data = data
+    arg_values: Sequence[Value] = (
+        per_element_data if per_element_data is not None else [data]
+    )
+
+    target_function_parts = tuple(target_function.split(sep="."))
+    _validate_call_preconditions(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+        parameter_names=parameter_names,
+        arg_values=arg_values,
+        ref_key=ref_key,
+        ref_case=ref_case,
+        call_transform=call_transform,
+    )
+    target_function = language.format_call_target(target_function_parts)
+
+    data_for_preamble = _strip_call_arg_refs_for_preamble(
+        data=data,
+        per_element_data=per_element_data,
+        ref_key=ref_key,
+        ref_values=ref_values or {},
+    )
+
+    if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
             input_format is InputFormat.YAML
@@ -2926,7 +2975,7 @@ def literalize_call(
                 ruamel_data=parsed.raw_data,
             )
         result = _render_call_per_element(
-            data=data,
+            data=per_element_data,
             language=language,
             style=style,
             target_function=target_function,
