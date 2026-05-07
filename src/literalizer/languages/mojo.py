@@ -79,11 +79,6 @@ from literalizer._language import (
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
-_PYTHON_TO_MOJO_SCALAR: dict[type, str] = {
-    str: "String",
-    int: "Int",
-}
-
 
 def _mojo_typed_param_list(
     params: Sequence[str],
@@ -99,6 +94,10 @@ def _mojo_typed_param_list(
     pass an empty ``arg_values``), or when scalar Python types
     disagree across calls at the same slot.
     """
+    python_to_mojo_scalar: dict[type, str] = {
+        str: "String",
+        int: "Int",
+    }
     if not params:
         return None
     slots: list[list[Value]] = []
@@ -112,7 +111,7 @@ def _mojo_typed_param_list(
         return None
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
-        types = {_PYTHON_TO_MOJO_SCALAR.get(type(v)) for v in slot_values}
+        types = {python_to_mojo_scalar.get(type(v)) for v in slot_values}
         if None in types or len(types) != 1:
             return None
         (mojo_type,) = types
