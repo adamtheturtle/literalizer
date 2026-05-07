@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import assert_never
 
 from beartype import BeartypeConf, beartype
-from ruamel.yaml.comments import CommentedSeq
+from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._checks import check_data
@@ -106,6 +106,17 @@ class LiteralizeResult:
     these and re-invoke :attr:`Language.compute_body_preamble` to
     derive a single body preamble that covers every type referenced
     across the combined output.
+    """
+
+    contains_standalone_comments: bool = False
+    """Whether the rendered source carried standalone comments (lines
+    whose only content is a comment, distinct from inline trailing
+    comments).  Set when ``literalize_call`` parses YAML input that
+    contains top-level before-element or trailing comments.  Callers
+    that wrap the result via :meth:`Language.wrap_calls_with_declarations`
+    can consult this together with
+    :attr:`Language.supports_standalone_comments_in_wrapped_calls`
+    to decide whether wrapping is safe.
     """
 
     source_data: Value = None
@@ -2744,6 +2755,49 @@ def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
 
 
 @beartype
+def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
+    """Return ``True`` when the YAML source carries standalone comments.
+
+    Standalone comments are comments that appear on their own line —
+    either before a top-level element or after the last element.  Inline
+    comments (those that follow a value on the same line) do not count.
+    Returns ``False`` for non-YAML input or for YAML that parses to a
+    scalar; ``ruamel.yaml`` only attaches collection-comment metadata
+    to :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`.
+    """
+    if not isinstance(raw_data, CommentedSeq | CommentedMap | CommentedSet):
+        return False
+    collection_comments = extract_yaml_comments(ruamel_data=raw_data)
+    if collection_comments.trailing:
+        return True
+    return any(element.before for element in collection_comments.elements)
+
+
+@beartype
+def _validate_wrap_in_file_supports_standalone_comments(
+    *,
+    language: Language,
+    wrap_in_file: bool,
+    contains_standalone_comments: bool,
+) -> None:
+    """Raise when wrapping calls would drop required standalone
+    comments.
+    """
+    if (
+        wrap_in_file
+        and contains_standalone_comments
+        and not language.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "standalone comments cannot be preserved when wrapping "
+                "calls in this language"
+            ),
+        )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -2919,6 +2973,9 @@ def literalize_call(
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
+    contains_standalone_comments = _yaml_has_standalone_comments(
+        raw_data=parsed.raw_data,
+    )
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
             raise CallsNotSupportedByLanguageError(
@@ -2954,6 +3011,11 @@ def literalize_call(
         ref_key=ref_key,
         ref_case=ref_case,
         call_transform=call_transform,
+    )
+    _validate_wrap_in_file_supports_standalone_comments(
+        language=language,
+        wrap_in_file=wrap_in_file,
+        contains_standalone_comments=contains_standalone_comments,
     )
     target_function = language.format_call_target(target_function_parts)
 
@@ -3042,6 +3104,7 @@ def literalize_call(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
+            contains_standalone_comments=contains_standalone_comments,
             source_data=data_for_preamble,
         )
 
@@ -3050,5 +3113,6 @@ def literalize_call(
         preamble=preamble,
         body_preamble=computed.body,
         types_present=computed.types_present,
+        contains_standalone_comments=contains_standalone_comments,
         source_data=data_for_preamble,
     )

@@ -21,6 +21,7 @@ from literalizer.exceptions import (
     FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
 )
@@ -378,6 +379,29 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
             language=Python(),
             target_function="f",
             parameter_names=["only"],
+        )
+
+
+def test_literalize_call_wrap_in_file_standalone_comments_raises() -> None:
+    """``wrap_in_file=True`` rejects standalone comments when the target
+    language cannot represent them in wrapped output.
+    """
+    source = "# header\n- 1\n- 2\n"
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"^Haskell cannot represent this call shape: standalone "
+            r"comments cannot be preserved when wrapping calls in this "
+            r"language$"
+        ),
+    ):
+        literalize_call(
+            source=source,
+            input_format=InputFormat.YAML,
+            language=Haskell(),
+            target_function="process",
+            parameter_names=["value"],
+            wrap_in_file=True,
         )
 
 

@@ -634,6 +634,11 @@ def _expected_call_shape_exception(
         and not lang_cls.supports_inline_multiline_dict_args
     ):
         return UnsupportedCallShapeError
+    if (
+        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
+        and not lang_cls.supports_standalone_comments_in_wrapped_calls
+    ):
+        return UnsupportedCallShapeError
     return None
 
 
@@ -743,11 +748,6 @@ def _lang_satisfies_call_shape_constraints(
             ref_key="$ref",
         )
         and not lang_cls.supports_call_refs_in_dict_literals
-    ):
-        return False
-    if (
-        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
-        and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
         return False
     return not (
@@ -1064,6 +1064,17 @@ def run_call_golden_case(
         union_types, combined_source_data
     )
     call_body_preamble = unified_body_preamble + tuple(body_stubs)
+    if (
+        result.contains_standalone_comments
+        and not spec.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=lang_cls.__name__,
+            reason=(
+                "standalone comments cannot be preserved when wrapping "
+                "calls in this language"
+            ),
+        )
     declarations_bare_codes = tuple(d.bare_code for d in decl_results)
     wrapped = spec.wrap_calls_with_declarations(
         declarations=declarations_bare_codes,
