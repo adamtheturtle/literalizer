@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- ``Mojo`` typed call stubs now cover ``bool``, ``float``, ``bytes``,
+  ``date``, and ``datetime`` argument values (mapped to ``Bool``,
+  ``Float64``, and ``String`` respectively), and apply to dotted-method
+  stubs as well as free-function stubs.  The generic
+  ``[*Ts: AnyType](*args: *Ts)`` form is still emitted when scalar
+  types disagree across calls or any argument is non-scalar.
+
 - :func:`~literalizer.literalize_call` now raises a typed
   :class:`~literalizer.exceptions.UnsupportedCallShapeError`
   when ``wrap_in_file=True`` and the YAML source carries standalone
