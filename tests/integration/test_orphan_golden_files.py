@@ -89,6 +89,8 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
 
     for call_case in discover_call_cases():
+        if call_case.expected_exception is not None:
+            continue
         ext = call_case.lang_cls.extension
         golden_name = f"{call_case.lang_cls.__name__}_call"
         expected.add(
