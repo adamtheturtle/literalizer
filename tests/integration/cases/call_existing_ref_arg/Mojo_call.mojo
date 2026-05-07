@@ -1,4 +1,4 @@
-fn process[*Ts: AnyType](*args: *Ts):
+fn process(value: Int):
     pass
 def main():
     var existing = 42

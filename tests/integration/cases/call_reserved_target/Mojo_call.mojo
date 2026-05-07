@@ -1,4 +1,4 @@
-fn op[*Ts: AnyType](*args: *Ts):
+fn op(value: String):
     pass
 def main():
     op("hello")
