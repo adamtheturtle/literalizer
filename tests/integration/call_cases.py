@@ -629,6 +629,11 @@ def _expected_call_shape_exception(
         and not lang_cls.supports_zero_parameter_calls
     ):
         return UnsupportedCallShapeError
+    if (
+        config.requires_inline_multiline_dict_args
+        and not lang_cls.supports_inline_multiline_dict_args
+    ):
+        return UnsupportedCallShapeError
     return None
 
 
@@ -733,11 +738,6 @@ def _lang_satisfies_call_shape_constraints(
     shape.
     """
     if (
-        config.requires_inline_multiline_dict_args
-        and not lang_cls.supports_inline_multiline_dict_args
-    ):
-        return False
-    if (
         case_uses_ref_inside_dict_literal(
             case_dir_name=config.case_dir_name,
             ref_key="$ref",
@@ -752,6 +752,7 @@ def _lang_satisfies_call_shape_constraints(
         return False
     return not (
         config.case_dir_name in _CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS
+        and lang_cls.supports_inline_multiline_dict_args
         and not lang_cls.supports_commented_dict_call_args
     )
 

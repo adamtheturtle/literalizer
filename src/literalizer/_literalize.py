@@ -2719,12 +2719,47 @@ def _render_call_whole(
 
 
 @beartype
+def _has_inline_multiline_dict_arg(
+    *,
+    data: Value,
+    per_element: bool,
+    ref_key: str,
+) -> bool:
+    """Return ``True`` when *data* would render at least one call
+    argument as a dict literal with two or more entries.
+    """
+    if per_element:
+        if not isinstance(data, list):
+            return False
+        return any(
+            _value_is_multikey_non_ref_dict(value=element, ref_key=ref_key)
+            for element in data
+        )
+    return _value_is_multikey_non_ref_dict(value=data, ref_key=ref_key)
+
+
+@beartype
+def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
+    """Return ``True`` if *value* is a dict with multiple keys that is
+    not a single-key ``$ref`` marker.
+    """
+    if not isinstance(value, dict):
+        return False
+    if len(value) == 1 and isinstance(value.get(ref_key), str):
+        return False
+    return len(value) > 1
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
     target_function: str,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
+    data: Value,
+    per_element: bool,
+    ref_key: str,
     ref_case: IdentifierCase | None,
     call_transform: Callable[[str], str] | None,
 ) -> None:
@@ -2737,6 +2772,19 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             reason=(
                 "zero-parameter calls have no representation in this language"
+            ),
+        )
+    if (
+        not language.supports_inline_multiline_dict_args
+        and _has_inline_multiline_dict_arg(
+            data=data, per_element=per_element, ref_key=ref_key
+        )
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "multi-key dict call arguments have no inline multiline "
+                "representation in this language"
             ),
         )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
@@ -2897,6 +2945,9 @@ def literalize_call(
         target_function=target_function,
         target_function_parts=target_function_parts,
         parameter_names=parameter_names,
+        data=data,
+        per_element=per_element,
+        ref_key=ref_key,
         ref_case=ref_case,
         call_transform=call_transform,
     )
