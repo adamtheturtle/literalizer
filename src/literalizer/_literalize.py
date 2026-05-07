@@ -2777,6 +2777,30 @@ def _yaml_has_standalone_comments(
 
 
 @beartype
+def _validate_wrap_in_file_supports_standalone_comments(
+    *,
+    language: Language,
+    wrap_in_file: bool,
+    contains_standalone_comments: bool,
+) -> None:
+    """Raise when wrapping calls would drop required standalone
+    comments.
+    """
+    if (
+        wrap_in_file
+        and contains_standalone_comments
+        and not language.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "standalone comments cannot be preserved when wrapping "
+                "calls in this language"
+            ),
+        )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -2992,18 +3016,11 @@ def literalize_call(
         ref_case=ref_case,
         call_transform=call_transform,
     )
-    if (
-        wrap_in_file
-        and contains_standalone_comments
-        and not language.supports_standalone_comments_in_wrapped_calls
-    ):
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                "standalone comments cannot be preserved when wrapping "
-                "calls in this language"
-            ),
-        )
+    _validate_wrap_in_file_supports_standalone_comments(
+        language=language,
+        wrap_in_file=wrap_in_file,
+        contains_standalone_comments=contains_standalone_comments,
+    )
     target_function = language.format_call_target(target_function_parts)
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
