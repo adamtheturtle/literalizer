@@ -1,4 +1,4 @@
-fn process[*Ts: AnyType](*args: *Ts):
+fn process():
     pass
 fn emit[*Ts: AnyType](*args: *Ts):
     pass
