@@ -101,13 +101,15 @@ def _mojo_typed_param_list(
     """
     if not params:
         return None
-    slots: list[list[Value]] = [[] for _ in params]
+    slots: list[list[Value]] = []
     for element in arg_values:
-        if len(params) == 1:
-            slots[0].append(element)
-        else:
-            for index in range(len(params)):
-                slots[index].append(cast("Sequence[Value]", element)[index])
+        per_arg = element if isinstance(element, list) else [element]
+        for slot_index, arg_value in enumerate(iterable=per_arg):
+            if slot_index >= len(slots):
+                slots.append([])
+            slots[slot_index].append(arg_value)
+    if len(slots) != len(params):
+        return None
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
         types = {_PYTHON_TO_MOJO_SCALAR.get(type(v)) for v in slot_values}
