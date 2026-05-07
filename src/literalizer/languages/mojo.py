@@ -79,6 +79,20 @@ from literalizer._language import (
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
+_mojo_element_to_type = make_element_to_type(
+    str_type="String",
+    bool_type="Bool",
+    int_type="Int",
+    float_type="Float64",
+    mixed_numeric_type="String",
+    bytes_type="String",
+    date_type="String",
+    datetime_type="String",
+    list_template="List[{inner}]",
+    dict_type_template="Dict[String, {inner}]",
+    fallback_value_type="String",
+)
+
 
 def _mojo_typed_param_list(
     params: Sequence[str],
@@ -94,10 +108,6 @@ def _mojo_typed_param_list(
     pass an empty ``arg_values``), or when scalar Python types
     disagree across calls at the same slot.
     """
-    python_to_mojo_scalar: dict[type, str] = {
-        str: "String",
-        int: "Int",
-    }
     if not params:
         return None
     slots: list[list[Value]] = []
@@ -111,7 +121,7 @@ def _mojo_typed_param_list(
         return None
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
-        types = {python_to_mojo_scalar.get(type(v)) for v in slot_values}
+        types = {_mojo_element_to_type(type(v)) for v in slot_values}
         if None in types or len(types) != 1:
             return None
         (mojo_type,) = types
@@ -175,19 +185,18 @@ def _mojo_call_preamble_stub(
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
-    1-part names become a module-level ``fn``: typed per-parameter
-    when every call's argument values at each slot share a scalar
-    Python type that maps to a Mojo scalar, and the generic
-    ``[*Ts: AnyType](*args: *Ts)`` form otherwise.  Multi-part names
-    become ``@fieldwise_init`` struct types: the innermost type holds
-    the method, and each enclosing type holds a field of the next
-    inner type.
+    1-part names become a module-level ``fn``; multi-part names become
+    ``@fieldwise_init`` struct types whose innermost type holds the
+    method.  Both stub kinds emit typed per-parameter signatures when
+    every call's argument values at each slot share a scalar Python
+    type that maps to a Mojo scalar, and the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form otherwise.
     """
+    typed_params = _mojo_typed_param_list(
+        params=params,
+        arg_values=args,
+    )
     if len(parts) == 1:
-        typed_params = _mojo_typed_param_list(
-            params=params,
-            arg_values=args,
-        )
         if typed_params is not None:
             param_list = ", ".join(typed_params)
             return (f"fn {parts[0]}({param_list}):\n{indent}pass",)
@@ -196,10 +205,16 @@ def _mojo_call_preamble_stub(
     method = parts[-1]
     fields = parts[1:-1]
     struct_header = "(Copyable, Movable)"
-    method_stub = (
-        f"{indent}fn {method}[*Ts: AnyType](self, *args: *Ts):\n"
-        f"{indent}{indent}pass"
-    )
+    if typed_params is not None:
+        method_param_list = ", ".join(("self", *typed_params))
+        method_stub = (
+            f"{indent}fn {method}({method_param_list}):\n{indent}{indent}pass"
+        )
+    else:
+        method_stub = (
+            f"{indent}fn {method}[*Ts: AnyType](self, *args: *Ts):\n"
+            f"{indent}{indent}pass"
+        )
     if not fields:
         type_name = f"_{root.capitalize()}Type"
         return (
@@ -232,19 +247,7 @@ def _mojo_call_preamble_stub(
 
 
 _mojo_narrowed_empty_form = make_narrowed_empty_form(
-    element_to_type=make_element_to_type(
-        str_type="String",
-        bool_type="Bool",
-        int_type="Int",
-        float_type="Float64",
-        mixed_numeric_type="String",
-        bytes_type="String",
-        date_type="String",
-        datetime_type="String",
-        list_template="List[{inner}]",
-        dict_type_template="Dict[String, {inner}]",
-        fallback_value_type="String",
-    ),
+    element_to_type=_mojo_element_to_type,
     template="List[{type}]()",
     fallback_type="String",
 )
