@@ -115,6 +115,7 @@ _mojo_call_arg_element_to_type = make_element_to_type(
 )
 
 
+@beartype
 def _value_to_mojo_type(value: Value, /) -> str | None:
     """Map one call-argument value to its Mojo type string.
 
@@ -132,15 +133,17 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
     directly so only the scalar Mojo mappings are typed and any other
     shape (ordered maps, etc.) falls back to the same generic form.
     """
-    if isinstance(value, list):
-        return _mojo_call_arg_element_to_type(
-            infer_element_type(items=[value]) or list,
-        )
-    if isinstance(value, dict):
-        return _mojo_call_arg_element_to_type(
-            infer_element_type(items=[value]) or dict,
-        )
-    return _mojo_call_arg_element_to_type(type(value))
+    match value:
+        case list():
+            return _mojo_call_arg_element_to_type(
+                infer_element_type(items=[value]) or list,
+            )
+        case dict():
+            return _mojo_call_arg_element_to_type(
+                infer_element_type(items=[value]) or dict,
+            )
+        case _:
+            return _mojo_call_arg_element_to_type(type(value))
 
 
 def _mojo_typed_param_list(
