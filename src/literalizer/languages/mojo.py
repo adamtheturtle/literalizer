@@ -40,6 +40,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -94,6 +95,25 @@ _mojo_element_to_type = make_element_to_type(
 )
 
 
+def _value_to_mojo_type(value: Value, /) -> str | None:
+    """Map one call-argument value to its Mojo type string.
+
+    Routes list values through :func:`infer_element_type` so a list
+    slot resolves to a recursive ``List[...]`` type (e.g.
+    ``[1, 2, 3]`` -> ``List[Int]``).  Non-list values, including
+    dicts (ref-marker dicts on the ``wrap_in_file=True`` production
+    path that bypasses ref substitution, ordered maps, real dicts),
+    look up their Python ``type`` directly so only the scalar Mojo
+    mappings are typed and any other shape falls back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form.  An empty or inhomogeneous
+    list short-circuits via ``or list`` to the bare ``list`` type,
+    which has no Mojo mapping and so also triggers the fallback.
+    """
+    if isinstance(value, list):
+        return _mojo_element_to_type(infer_element_type(items=[value]) or list)
+    return _mojo_element_to_type(type(value))
+
+
 def _mojo_typed_param_list(
     params: Sequence[str],
     arg_values: Sequence[Value],
@@ -102,12 +122,13 @@ def _mojo_typed_param_list(
 
     Returns ``None`` to signal the caller should fall back to the
     generic ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any
-    per-call value at a parameter slot is non-scalar (a ref-marker
-    dict, a collection, ``None``, etc.), when any slot has no values
-    (e.g. transform-stub callers pass an empty ``arg_values``), or
-    when scalar Python types disagree across calls at the same slot.
-    A zero-parameter call returns ``()`` (typed, empty) so the caller
-    emits a bare ``fn name():`` form rather than the generic stub.
+    per-call value at a parameter slot has no Mojo type (a ref-marker
+    dict, ``None``, an inhomogeneous list, etc.), when any slot has
+    no values (e.g. transform-stub callers pass an empty
+    ``arg_values``), or when types disagree across calls at the same
+    slot.  A zero-parameter call returns ``()`` (typed, empty) so the
+    caller emits a bare ``fn name():`` form rather than the generic
+    stub.
     """
     if not params:
         return ()
@@ -122,7 +143,7 @@ def _mojo_typed_param_list(
         return None
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
-        types = {_mojo_element_to_type(type(v)) for v in slot_values}
+        types = {_value_to_mojo_type(v) for v in slot_values}
         if None in types or len(types) != 1:
             return None
         (mojo_type,) = types
