@@ -98,19 +98,17 @@ _mojo_element_to_type = make_element_to_type(
 def _value_to_mojo_type(value: Value, /) -> str | None:
     """Map one call-argument value to its Mojo type string.
 
-    Homogeneous list values (e.g. ``[1, 2, 3]``) resolve via
-    :func:`infer_element_type` to a recursive ``List[...]`` type so a
-    typed stub can declare ``data: List[Int]`` for a list-typed slot.
-    Any value whose Python type does not appear in the scalar map (or
-    whose list inference fails) returns ``None`` so the caller falls
-    back to the generic ``[*Ts: AnyType](*args: *Ts)`` form.
+    Routes every value through :func:`infer_element_type` so a list
+    slot resolves to a recursive ``List[...]`` type (e.g.
+    ``[1, 2, 3]`` -> ``List[Int]``) and scalar slots resolve via the
+    same Python-type lookup that the collection-opener machinery
+    uses.  Returns ``None`` when inference fails (empty or
+    inhomogeneous list) or when the resulting Python type has no
+    Mojo mapping, so the caller falls back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form.
     """
-    if isinstance(value, list):
-        inferred = infer_element_type(items=[value])
-        if inferred is None:
-            return None
-        return _mojo_element_to_type(inferred)
-    return _mojo_element_to_type(type(value))
+    inferred = infer_element_type(items=[value])
+    return None if inferred is None else _mojo_element_to_type(inferred)
 
 
 def _mojo_typed_param_list(
