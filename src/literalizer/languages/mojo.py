@@ -40,7 +40,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
-from literalizer._formatters.type_inference import DictType, infer_element_type
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -102,21 +102,19 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
     slot resolves to a recursive ``List[...]`` type (e.g.
     ``[1, 2, 3]`` -> ``List[Int]``).  Dicts route the same way so a
     homogeneous-value dict slot resolves to ``Dict[String, ...]``
-    (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``); ordered maps, empty
-    dicts, and dicts with heterogeneous values return ``None`` so the
-    slot falls back to the generic ``[*Ts: AnyType](*args: *Ts)`` form
-    rather than lying about the value type via the dict resolver's
-    fallback.  Other values look up their Python ``type`` directly so
-    only the scalar Mojo mappings are typed and any other shape also
-    triggers the fallback.
+    (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``); the dict-value
+    resolver's ``String`` fallback covers empty dicts, and dicts with
+    heterogeneous values cannot reach this point because
+    :func:`check_data` rejects them upstream as
+    :exc:`HeterogeneousScalarCollectionError`.  Other values look up
+    their Python ``type`` directly so only the scalar Mojo mappings
+    are typed and any other shape (ordered maps, etc.) falls back to
+    the generic ``[*Ts: AnyType](*args: *Ts)`` form.
     """
     if isinstance(value, list):
         return _mojo_element_to_type(infer_element_type(items=[value]) or list)
     if isinstance(value, dict):
-        inferred = infer_element_type(items=[value])
-        if isinstance(inferred, DictType) and inferred.value_type is not None:
-            return _mojo_element_to_type(inferred)
-        return None
+        return _mojo_element_to_type(infer_element_type(items=[value]) or dict)
     return _mojo_element_to_type(type(value))
 
 
