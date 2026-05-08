@@ -11,6 +11,8 @@ from collections.abc import Callable, Iterable
 
 from beartype import beartype
 
+from literalizer._language import no_data_preamble
+
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
@@ -62,12 +64,35 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
     return variants
 
 
+@functools.cache
+@beartype
+def _build_call_arg_heterogeneous_value_variant_name_variants() -> list[
+    Variant
+]:
+    """Variant-name variants whose call rendering declares the variant
+    type.
+
+    Filters
+    :func:`build_heterogeneous_value_variant_name_variants` to languages
+    whose ``call_data_dependent_preamble`` actually emits the wrapping
+    type's declaration in the call context.  Languages that share the
+    no-op default produce a call golden referring to an undefined
+    variant type, so they are excluded until their call path emits the
+    declaration.
+    """
+    return [
+        variant
+        for variant in build_heterogeneous_value_variant_name_variants()
+        if variant.spec.call_data_dependent_preamble is not no_data_preamble
+    ]
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
     (
         "call_mixed_type_dicts",
-        build_heterogeneous_value_variant_name_variants,
+        _build_call_arg_heterogeneous_value_variant_name_variants,
     ),
 ]
 

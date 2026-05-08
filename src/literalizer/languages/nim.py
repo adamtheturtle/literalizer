@@ -1128,18 +1128,13 @@ class Nim(metaclass=LanguageCls):
     def call_data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
-        """Return the data-dependent preamble for a call context.
+        """No data-dependent preamble for call context.
 
-        Under ``ERROR`` the ``data_dependent_preamble`` adds
-        ``import json`` for variable declarations that use ``%*``; call
-        arguments are formatted as inline literals and never use
-        ``%*``, so the call context skips that preamble.  Under
-        ``OBJECT_VARIANT`` the preamble defines the ``JsonValue``
-        ``type`` block whose constructors the wrapped scalars
-        reference, so the call context emits it.
+        The ``data_dependent_preamble`` method of Nim adds
+        ``import json`` for variable declarations that use ``%*``.
+        Call arguments are formatted as inline literals and never use
+        ``%*``, so ``import json`` is never needed in a call context.
         """
-        if self._uses_object_variant:
-            return self.data_dependent_preamble
         return no_data_preamble
 
     @cached_property
