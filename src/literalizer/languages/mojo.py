@@ -198,6 +198,7 @@ def _mojo_call_stub(
     return (f"var {root} = {init_expr}",)
 
 
+@beartype
 def _args_contain_dict(args: Sequence[Value]) -> bool:
     """Return ``True`` if any per-call slot value is a plain dict.
 
@@ -209,11 +210,15 @@ def _args_contain_dict(args: Sequence[Value]) -> bool:
     for element in args:
         per_arg = element if isinstance(element, list) else [element]
         for slot_value in per_arg:
-            if isinstance(slot_value, dict) and not (
-                len(slot_value) == 1
-                and isinstance(slot_value.get("$ref"), str)
-            ):
-                return True
+            match slot_value:
+                case dict() as d if len(d) == 1 and isinstance(
+                    d.get("$ref"), str
+                ):
+                    continue
+                case dict():
+                    return True
+                case _:
+                    continue
     return False
 
 
