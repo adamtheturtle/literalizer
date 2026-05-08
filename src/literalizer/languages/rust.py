@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never, cast
@@ -1239,6 +1239,18 @@ class Rust(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    _LINT_STD_FLAGS: ClassVar[Mapping[VersionFormats, str]] = {
+        VersionFormats.EDITION_2021: "--edition=2021",
+    }
+
+    def lint_std_flag(self) -> str:
+        """Compiler flag for this spec's :attr:`language_version`.
+
+        Read by ``.github/workflows/lint.yml`` so the flag passed to
+        ``rustc`` cannot drift from the dataclass default.
+        """
+        return self._LINT_STD_FLAGS[self.language_version]
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -1311,8 +1323,6 @@ class Rust(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_enum_name: str = "Value"
-    # Keep in sync with the ``--edition`` flag in
-    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
     indent: str = "    "
 

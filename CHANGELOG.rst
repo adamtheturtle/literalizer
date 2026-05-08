@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``C``, ``Cpp``, and ``Rust`` now expose a ``lint_std_flag()`` method
+  that returns the toolchain version flag (e.g. ``-std=c99``) for the
+  spec's ``language_version``.  ``.github/workflows/lint.yml`` reads
+  these methods rather than hardcoding the flags, making the language
+  module the single source of truth.
+
 - ``Mojo`` typed call stubs now cover ``bool``, ``float``, ``bytes``,
   ``date``, and ``datetime`` argument values (mapped to ``Bool``,
   ``Float64``, and ``String`` respectively), and apply to dotted-method

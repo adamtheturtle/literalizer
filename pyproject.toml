@@ -433,6 +433,8 @@ ignore_names = [
     "BTREE_SET",
     "call_styles",
     "heterogeneous_strategies",
+    # Called from .github/workflows/lint.yml via ``python -c``
+    "lint_std_flag",
     "OBJECT_VARIANT",
     "TAGGED_ENUM",
     "UNION_TYPE",

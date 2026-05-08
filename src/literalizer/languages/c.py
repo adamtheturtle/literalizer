@@ -4,7 +4,7 @@ import collections.abc
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import ClassVar
 
@@ -451,6 +451,19 @@ class C(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    _LINT_STD_FLAGS: ClassVar[Mapping[VersionFormats, str]] = {
+        VersionFormats.C99: "-std=c99",
+    }
+
+    def lint_std_flag(self) -> str:
+        """Compiler flag for this spec's :attr:`language_version`.
+
+        Read by ``.github/workflows/lint.yml`` so the flag passed to
+        ``clang`` and ``clang-tidy`` cannot drift from the dataclass
+        default.
+        """
+        return self._LINT_STD_FLAGS[self.language_version]
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
@@ -538,8 +551,6 @@ class C(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the ``-std=`` flag passed to clang and clang-tidy
-    # in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.C99
     indent: str = "    "
     bool_field: str = "b"

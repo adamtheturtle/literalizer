@@ -717,12 +717,17 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
-      # ``-std=c99`` matches ``C.language_version`` in
-      # ``src/literalizer/languages/c.py``; keep them in sync.
+      - name: Resolve C language-version flag
+        id: c_std
+        run: |-
+          flag=$(uv run python -c "from literalizer.languages.c import C; print(C().lint_std_flag())")
+          echo "flag=$flag" >> "$GITHUB_OUTPUT"
       - name: Run clang-tidy on C files
+        env:
+          STD_FLAG: ${{ steps.c_std.outputs.flag }}
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- "$STD_FLAG" < /tmp/files-c-tidy
 
   lint-cpp-tidy:
     runs-on: ubuntu-latest
@@ -737,12 +742,17 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
-      # ``-std=c++20`` matches ``Cpp.language_version`` in
-      # ``src/literalizer/languages/cpp.py``; keep them in sync.
+      - name: Resolve C++ language-version flag
+        id: cpp_std
+        run: |-
+          flag=$(uv run python -c "from literalizer.languages.cpp import Cpp; print(Cpp().lint_std_flag())")
+          echo "flag=$flag" >> "$GITHUB_OUTPUT"
       - name: Run clang-tidy on C++ files
+        env:
+          STD_FLAG: ${{ steps.cpp_std.outputs.flag }}
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c++20 < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- "$STD_FLAG" < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest
@@ -773,21 +783,31 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Resolve C language-version flag
+        id: c_std
+        run: |-
+          flag=$(uv run python -c "from literalizer.languages.c import C; print(C().lint_std_flag())")
+          echo "flag=$flag" >> "$GITHUB_OUTPUT"
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
-      # ``-std=c99`` matches ``C.language_version`` in
-      # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run C files
+        env:
+          STD_FLAG: ${{ steps.c_std.outputs.flag }}
         run: |-
-          cat > /tmp/run-c.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
-          "$tmpdir/run" || exit 1
+          cat > /tmp/run-c.sh <<SCRIPT
+          tmpdir=\$(mktemp -d)
+          trap 'rm -rf "\$tmpdir"' EXIT
+          clang "$STD_FLAG" "\$1" -o "\$tmpdir/run" || exit 1
+          "\$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
 
@@ -797,6 +817,16 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Resolve C++ language-version flag
+        id: cpp_std
+        run: |-
+          flag=$(uv run python -c "from literalizer.languages.cpp import Cpp; print(Cpp().lint_std_flag())")
+          echo "flag=$flag" >> "$GITHUB_OUTPUT"
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
@@ -805,22 +835,24 @@ jobs:
       # covering every header any fixture includes, then preload it in
       # each compile invocation so the parsed AST is reused instead of
       # re-parsed per file.
-      # ``-std=c++20`` matches ``Cpp.language_version`` in
-      # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Build precompiled header
-        run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
+        env:
+          STD_FLAG: ${{ steps.cpp_std.outputs.flag }}
+        run: clang++ "$STD_FLAG" -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
       - name: Run C++ files
+        env:
+          STD_FLAG: ${{ steps.cpp_std.outputs.flag }}
         run: |-
-          cat > /tmp/run-cpp.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          clang++ -std=c++20 -include-pch /tmp/pch.hpp.pch "$1" \
-            -o "$tmpdir/run" || exit 1
-          "$tmpdir/run" || exit 1
+          cat > /tmp/run-cpp.sh <<SCRIPT
+          tmpdir=\$(mktemp -d)
+          trap 'rm -rf "\$tmpdir"' EXIT
+          clang++ "$STD_FLAG" -include-pch /tmp/pch.hpp.pch "\$1" \\
+            -o "\$tmpdir/run" || exit 1
+          "\$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
 
@@ -1046,10 +1078,22 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Resolve Rust language-version flag
+        id: rust_std
+        run: |-
+          flag=$(uv run python -c "from literalizer.languages.rust import Rust; print(Rust().lint_std_flag())")
+          echo "flag=$flag" >> "$GITHUB_OUTPUT"
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
       - name: Check Rust syntax and run binaries
+        env:
+          STD_FLAG: ${{ steps.rust_std.outputs.flag }}
         run: |-
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -1058,10 +1102,8 @@ jobs:
           cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
           deps="$tmpdir/chrono-check/target/debug/deps"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
-          # ``--edition 2021`` matches ``Rust.language_version`` in
-          # ``src/literalizer/languages/rust.py``; keep them in sync.
           while IFS= read -r -d '' f; do
-            rustc --edition 2021 \
+            rustc "$STD_FLAG" \
               -L "dependency=$deps" \
               --extern "chrono=$chrono_rlib" \
               "$f" -o "$tmpdir/out" 2>&1 || exit 1

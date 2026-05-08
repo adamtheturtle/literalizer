@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
@@ -1202,6 +1202,18 @@ class Cpp(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    _LINT_STD_FLAGS: ClassVar[Mapping[VersionFormats, str]] = {
+        VersionFormats.CPP20: "-std=c++20",
+    }
+
+    def lint_std_flag(self) -> str:
+        """Compiler flag for this spec's :attr:`language_version`.
+
+        Read by ``.github/workflows/lint.yml`` so the flag passed to
+        ``clang++`` cannot drift from the dataclass default.
+        """
+        return self._LINT_STD_FLAGS[self.language_version]
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -1330,8 +1342,6 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the ``-std=`` flag passed to clang++ in
-    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
