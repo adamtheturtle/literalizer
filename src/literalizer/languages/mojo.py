@@ -40,7 +40,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
-from literalizer._formatters.type_inference import infer_element_type
+from literalizer._formatters.type_inference import DictType, infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -78,10 +78,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import (
-    CallArgNotSupportedError,
-    NullInCollectionError,
-)
+from literalizer.exceptions import NullInCollectionError
 
 _mojo_element_to_type = make_element_to_type(
     str_type="String",
@@ -103,17 +100,23 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
 
     Routes list values through :func:`infer_element_type` so a list
     slot resolves to a recursive ``List[...]`` type (e.g.
-    ``[1, 2, 3]`` -> ``List[Int]``).  Non-list values, including
-    dicts (ref-marker dicts on the ``wrap_in_file=True`` production
-    path that bypasses ref substitution, ordered maps, real dicts),
-    look up their Python ``type`` directly so only the scalar Mojo
-    mappings are typed and any other shape falls back to the generic
-    ``[*Ts: AnyType](*args: *Ts)`` form.  An empty or inhomogeneous
-    list short-circuits via ``or list`` to the bare ``list`` type,
-    which has no Mojo mapping and so also triggers the fallback.
+    ``[1, 2, 3]`` -> ``List[Int]``).  Dicts route the same way so a
+    homogeneous-value dict slot resolves to ``Dict[String, ...]``
+    (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``); ordered maps, empty
+    dicts, and dicts with heterogeneous values return ``None`` so the
+    slot falls back to the generic ``[*Ts: AnyType](*args: *Ts)`` form
+    rather than lying about the value type via the dict resolver's
+    fallback.  Other values look up their Python ``type`` directly so
+    only the scalar Mojo mappings are typed and any other shape also
+    triggers the fallback.
     """
     if isinstance(value, list):
         return _mojo_element_to_type(infer_element_type(items=[value]) or list)
+    if isinstance(value, dict):
+        inferred = infer_element_type(items=[value])
+        if isinstance(inferred, DictType) and inferred.value_type is not None:
+            return _mojo_element_to_type(inferred)
+        return None
     return _mojo_element_to_type(type(value))
 
 
@@ -199,24 +202,6 @@ def _mojo_call_stub(
 
 
 @beartype
-def _args_contain_dict(args: Sequence[Value]) -> bool:
-    """Return ``True`` if any per-call slot value is a plain dict.
-
-    Ref-marker dicts are stripped before this point, so any ``dict``
-    seen here is a real dict-literal argument.
-    """
-    for element in args:
-        per_arg = element if isinstance(element, list) else [element]
-        for slot_value in per_arg:
-            match slot_value:
-                case dict():
-                    return True
-                case _:
-                    continue
-    return False
-
-
-@beartype
 def _mojo_call_preamble_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -231,24 +216,15 @@ def _mojo_call_preamble_stub(
     1-part names become a module-level ``fn``; multi-part names become
     ``@fieldwise_init`` struct types whose innermost type holds the
     method.  Both stub kinds emit typed per-parameter signatures when
-    every call's argument values at each slot share a scalar Python
-    type that maps to a Mojo scalar, and the generic
+    every call's argument values at each slot resolve to the same
+    Mojo type (a scalar, a recursive ``List[...]``, or a homogeneous
+    ``Dict[String, ...]``), and the generic
     ``[*Ts: AnyType](*args: *Ts)`` form otherwise.
     """
     typed_params = _mojo_typed_param_list(
         params=params,
         arg_values=args,
     )
-    if typed_params is None and _args_contain_dict(args=args):
-        raise CallArgNotSupportedError(
-            language_name="Mojo",
-            reason=(
-                "Mojo's generic ``[*Ts: AnyType](*args: *Ts)`` stub "
-                "cannot infer the type of a dict literal argument; "
-                "typed dict-value call stubs are not yet implemented "
-                "(see #1966)"
-            ),
-        )
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)
