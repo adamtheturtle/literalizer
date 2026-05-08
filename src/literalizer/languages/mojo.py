@@ -101,15 +101,16 @@ def _mojo_typed_param_list(
     """Return ``("name: Type", ...)`` for a typed Mojo signature.
 
     Returns ``None`` to signal the caller should fall back to the
-    generic ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when the
-    parameter list is empty, when any per-call value at a parameter
-    slot is non-scalar (a ref-marker dict, a collection, ``None``,
-    etc.), when any slot has no values (e.g. transform-stub callers
-    pass an empty ``arg_values``), or when scalar Python types
-    disagree across calls at the same slot.
+    generic ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any
+    per-call value at a parameter slot is non-scalar (a ref-marker
+    dict, a collection, ``None``, etc.), when any slot has no values
+    (e.g. transform-stub callers pass an empty ``arg_values``), or
+    when scalar Python types disagree across calls at the same slot.
+    A zero-parameter call returns ``()`` (typed, empty) so the caller
+    emits a bare ``fn name():`` form rather than the generic stub.
     """
     if not params:
-        return None
+        return ()
     slots: list[list[Value]] = []
     for element in arg_values:
         per_arg = element if isinstance(element, list) else [element]
