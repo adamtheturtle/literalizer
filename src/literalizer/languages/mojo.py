@@ -202,19 +202,13 @@ def _mojo_call_stub(
 def _args_contain_dict(args: Sequence[Value]) -> bool:
     """Return ``True`` if any per-call slot value is a plain dict.
 
-    Ref-marker dicts are substituted before this point on the
-    non-``wrap_in_file`` path; on the ``wrap_in_file`` path they have
-    a single ``$ref`` key and stand for a typed identifier, so they
-    are not flagged here.
+    Ref-marker dicts are stripped before this point, so any ``dict``
+    seen here is a real dict-literal argument.
     """
     for element in args:
         per_arg = element if isinstance(element, list) else [element]
         for slot_value in per_arg:
             match slot_value:
-                case dict() as d if len(d) == 1 and isinstance(
-                    d.get("$ref"), str
-                ):
-                    continue
                 case dict():
                     return True
                 case _:
