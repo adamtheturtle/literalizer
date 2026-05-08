@@ -123,7 +123,7 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
     ``[1, 2, 3]`` -> ``List[Int]``).  Dicts route the same way so a
     homogeneous-value dict slot resolves to ``Dict[String, ...]``
     (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``).  Uses the strict
-    call-arg resolver so a dict whose values cannot be unified to a
+    resolver so a dict whose values cannot be unified to a
     concrete Mojo type (an empty dict, or a nested heterogeneous dict
     that survives upstream checks under the ``VARIANT`` strategy)
     returns ``None`` and the slot falls back to the generic
