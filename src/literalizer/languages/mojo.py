@@ -94,6 +94,26 @@ _mojo_element_to_type = make_element_to_type(
     fallback_value_type="String",
 )
 
+# Strict resolver for call-argument typing: omits ``fallback_value_type``
+# so an unresolvable dict-value type (e.g. a nested
+# ``DictType(value_type=None)`` produced when the ``VARIANT``
+# heterogeneous strategy lets a mixed-value dict reach the typed-stub
+# helper) returns ``None`` instead of silently lying with
+# ``Dict[String, String]``.
+_mojo_call_arg_element_to_type = make_element_to_type(
+    str_type="String",
+    bool_type="Bool",
+    int_type="Int",
+    float_type="Float64",
+    mixed_numeric_type="String",
+    bytes_type="String",
+    date_type="String",
+    datetime_type="String",
+    list_template="List[{inner}]",
+    dict_type_template="Dict[String, {inner}]",
+    fallback_value_type=None,
+)
+
 
 def _value_to_mojo_type(value: Value, /) -> str | None:
     """Map one call-argument value to its Mojo type string.
@@ -102,20 +122,25 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
     slot resolves to a recursive ``List[...]`` type (e.g.
     ``[1, 2, 3]`` -> ``List[Int]``).  Dicts route the same way so a
     homogeneous-value dict slot resolves to ``Dict[String, ...]``
-    (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``); the dict-value
-    resolver's ``String`` fallback covers empty dicts, and dicts with
-    heterogeneous values cannot reach this point because
-    :func:`check_data` rejects them upstream as
-    :exc:`HeterogeneousScalarCollectionError`.  Other values look up
-    their Python ``type`` directly so only the scalar Mojo mappings
-    are typed and any other shape (ordered maps, etc.) falls back to
-    the generic ``[*Ts: AnyType](*args: *Ts)`` form.
+    (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``).  Uses the strict
+    call-arg resolver so a dict whose values cannot be unified to a
+    concrete Mojo type (an empty dict, or a nested heterogeneous dict
+    that survives upstream checks under the ``VARIANT`` strategy)
+    returns ``None`` and the slot falls back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form rather than fabricating a
+    ``String`` value type.  Other values look up their Python ``type``
+    directly so only the scalar Mojo mappings are typed and any other
+    shape (ordered maps, etc.) falls back to the same generic form.
     """
     if isinstance(value, list):
-        return _mojo_element_to_type(infer_element_type(items=[value]) or list)
+        return _mojo_call_arg_element_to_type(
+            infer_element_type(items=[value]) or list,
+        )
     if isinstance(value, dict):
-        return _mojo_element_to_type(infer_element_type(items=[value]) or dict)
-    return _mojo_element_to_type(type(value))
+        return _mojo_call_arg_element_to_type(
+            infer_element_type(items=[value]) or dict,
+        )
+    return _mojo_call_arg_element_to_type(type(value))
 
 
 def _mojo_typed_param_list(
