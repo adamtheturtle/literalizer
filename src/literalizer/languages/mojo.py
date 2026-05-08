@@ -78,7 +78,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    NullInCollectionError,
+)
 
 _mojo_element_to_type = make_element_to_type(
     str_type="String",
@@ -195,6 +198,25 @@ def _mojo_call_stub(
     return (f"var {root} = {init_expr}",)
 
 
+def _args_contain_dict(args: Sequence[Value]) -> bool:
+    """Return ``True`` if any per-call slot value is a plain dict.
+
+    Ref-marker dicts are substituted before this point on the
+    non-``wrap_in_file`` path; on the ``wrap_in_file`` path they have
+    a single ``$ref`` key and stand for a typed identifier, so they
+    are not flagged here.
+    """
+    for element in args:
+        per_arg = element if isinstance(element, list) else [element]
+        for slot_value in per_arg:
+            if isinstance(slot_value, dict) and not (
+                len(slot_value) == 1
+                and isinstance(slot_value.get("$ref"), str)
+            ):
+                return True
+    return False
+
+
 @beartype
 def _mojo_call_preamble_stub(
     parts: Sequence[str],
@@ -218,6 +240,15 @@ def _mojo_call_preamble_stub(
         params=params,
         arg_values=args,
     )
+    if typed_params is None and _args_contain_dict(args=args):
+        raise CallArgNotSupportedError(
+            language_name="Mojo",
+            reason=(
+                "Mojo's generic ``[*Ts: AnyType](*args: *Ts)`` stub "
+                "cannot infer the type of a dict literal argument; "
+                "typed dict-value call stubs are not yet implemented"
+            ),
+        )
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)
