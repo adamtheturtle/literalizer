@@ -251,7 +251,8 @@ def _mojo_call_preamble_stub(
             reason=(
                 "Mojo's generic ``[*Ts: AnyType](*args: *Ts)`` stub "
                 "cannot infer the type of a dict literal argument; "
-                "typed dict-value call stubs are not yet implemented"
+                "typed dict-value call stubs are not yet implemented "
+                "(see #1966)"
             ),
         )
     if len(parts) == 1:
