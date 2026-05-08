@@ -11,8 +11,6 @@ from collections.abc import Callable, Iterable
 
 from beartype import beartype
 
-from literalizer.languages.mojo import Mojo
-
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
@@ -64,31 +62,12 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
     return variants
 
 
-@functools.cache
-@beartype
-def _build_mojo_heterogeneous_value_variant_name_variants() -> list[Variant]:
-    """Return Mojo-only ``VARIANT`` variants for dict-call arg coverage.
-
-    Filters
-    :func:`build_heterogeneous_value_variant_name_variants` to the Mojo
-    entry so the Mojo dict-call ``VARIANT`` golden is generated without
-    introducing a broken Nim golden whose ``OBJECT_VARIANT`` strategy
-    does not yet plumb its type-definition preamble through the call
-    rendering path.
-    """
-    return [
-        variant
-        for variant in build_heterogeneous_value_variant_name_variants()
-        if variant.lang_cls is Mojo
-    ]
-
-
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
     (
         "call_mixed_type_dicts",
-        _build_mojo_heterogeneous_value_variant_name_variants,
+        build_heterogeneous_value_variant_name_variants,
     ),
 ]
 
