@@ -464,6 +464,29 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        # Slot 0 holds lists whose Mojo element type disagrees across
+        # calls (``List[Int]`` vs ``List[String]``), forcing
+        # ``_mojo_typed_param_list`` to fall back to the generic
+        # ``[*Ts: AnyType](*args: *Ts)`` stub so the typed list-slot
+        # path stays the only producer of ``data: List[T]`` signatures.
+        case_dir_name="call_ref_args_heterogeneous_list",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_ints": "[1, 2, 3]",
+            "my_strings": '["a", "b"]',
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset({"my_ints", "my_strings"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_ref_args_escaped_quote",
         target_function="process",
         parameter_names=["v"],

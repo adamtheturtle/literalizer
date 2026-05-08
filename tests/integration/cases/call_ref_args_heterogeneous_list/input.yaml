@@ -1,0 +1,4 @@
+- - { $ref: my_ints }
+  - 42
+- - { $ref: my_strings }
+  - 7
