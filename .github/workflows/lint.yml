@@ -296,7 +296,9 @@ jobs:
           find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
 
-  # Fixture languages linted by npm tools.
+  # Json5 + Norg + TypeScript syntax check. The Run-TypeScript and Elm
+  # passes are split into sibling jobs (`lint-typescript-run`, `lint-elm`)
+  # so each long-running per-fixture loop fans out instead of serializing.
   lint-npm-installed:
     runs-on: ubuntu-latest
     steps:
@@ -311,11 +313,6 @@ jobs:
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Build tree-sitter-norg parser
         run: |-
@@ -340,8 +337,52 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-ts
+
+  # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
+  # so the per-fixture tsx startups run in parallel with the tsc syntax
+  # check instead of after it.
+  lint-typescript-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
+      - name: Install npm-sourced linters
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Run TypeScript files
-        run: xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+        run: |-
+          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
+          xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+
+  # Elm format + syntax check + run. Split from `lint-npm-installed` so
+  # this 1.5-min sequential chain runs in parallel with the TypeScript
+  # passes instead of after them.
+  lint-elm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
+      - name: Install npm-sourced linters
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Elm
         run: |-
@@ -520,46 +561,21 @@ jobs:
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
           xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
 
-  # Erlang + Elixir + Gleam all share the BEAM runtime via setup-beam,
-  # so one install serves all three.
+  # Erlang + Elixir share the BEAM runtime via setup-beam. Gleam's two
+  # passes (parse-check and run) are split into sibling jobs
+  # (`lint-gleam`, `lint-gleam-run`) because together they dominate the
+  # whole Lint workflow's wall-clock.
   lint-beam:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Erlang, Elixir and Gleam
+      - name: Install Erlang and Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
-          gleam-version: v1.16.0
           otp-version: '27'
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      # Populate a shared primed project once up front so each parallel
-      # `.github/scripts/check_gleam_syntax.py` worker can copy from it instead of
-      # running its own `gleam deps download`. 168 parallel downloads
-      # otherwise hammer hex.pm and trip transient network failures.
-      - name: Prime Gleam project
-        run: |-
-          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
-          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
-          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
-
-      - name: Lint Gleam
-        env:
-          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: |-
-          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
-      - name: Run Gleam files
-        env:
-          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: |-
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
       # `elixir` compiles the module but never invokes it. The script
@@ -608,6 +624,72 @@ jobs:
             end,
             Results = [Run(M) || M <- [$modules]],
             case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
+
+  # Gleam parse-check. Split from `lint-gleam-run` so the two passes
+  # (each ~150-230s of per-fixture work over 168 fixtures) run in
+  # parallel instead of serializing.
+  lint-gleam:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Gleam
+        uses: erlef/setup-beam@v1
+        with:
+          gleam-version: v1.16.0
+          otp-version: '27'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Populate a shared primed project once up front so each parallel
+      # `.github/scripts/check_gleam_syntax.py` worker can copy from it instead of
+      # running its own `gleam deps download`. 168 parallel downloads
+      # otherwise hammer hex.pm and trip transient network failures.
+      - name: Prime Gleam project
+        run: |-
+          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
+          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
+
+      - name: Lint Gleam
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
+        run: |-
+          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
+
+  # Gleam run pass. Sibling of `lint-gleam`; see comment there.
+  lint-gleam-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Gleam
+        uses: erlef/setup-beam@v1
+        with:
+          gleam-version: v1.16.0
+          otp-version: '27'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      - name: Prime Gleam project
+        run: |-
+          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
+          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
+
+      - name: Run Gleam files
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
+        run: |-
+          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
@@ -1468,10 +1550,14 @@ jobs:
       - lint-apt-basics
       - lint-go-installed
       - lint-npm-installed
+      - lint-typescript-run
+      - lint-elm
       - lint-uv-scripts
       - lint-dotnet
       - lint-curl-tarballs
       - lint-beam
+      - lint-gleam
+      - lint-gleam-run
       - lint-jvm-mini
       - lint-haskell-family
       - lint-c-tidy
