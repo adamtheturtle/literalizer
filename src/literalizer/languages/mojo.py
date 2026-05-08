@@ -78,7 +78,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    NullInCollectionError,
+)
 
 _mojo_element_to_type = make_element_to_type(
     str_type="String",
@@ -196,6 +199,24 @@ def _mojo_call_stub(
 
 
 @beartype
+def _args_contain_dict(args: Sequence[Value]) -> bool:
+    """Return ``True`` if any per-call slot value is a plain dict.
+
+    Ref-marker dicts are stripped before this point, so any ``dict``
+    seen here is a real dict-literal argument.
+    """
+    for element in args:
+        per_arg = element if isinstance(element, list) else [element]
+        for slot_value in per_arg:
+            match slot_value:
+                case dict():
+                    return True
+                case _:
+                    continue
+    return False
+
+
+@beartype
 def _mojo_call_preamble_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -218,6 +239,16 @@ def _mojo_call_preamble_stub(
         params=params,
         arg_values=args,
     )
+    if typed_params is None and _args_contain_dict(args=args):
+        raise CallArgNotSupportedError(
+            language_name="Mojo",
+            reason=(
+                "Mojo's generic ``[*Ts: AnyType](*args: *Ts)`` stub "
+                "cannot infer the type of a dict literal argument; "
+                "typed dict-value call stubs are not yet implemented "
+                "(see #1966)"
+            ),
+        )
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)

@@ -350,6 +350,21 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=True,
     ),
     CallCaseConfig(
+        case_dir_name="call_homogeneous_value_dict_arg",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=True,
+    ),
+    CallCaseConfig(
         case_dir_name="call_existing_ref_arg",
         target_function="process",
         parameter_names=["value"],
@@ -1056,23 +1071,26 @@ def run_call_golden_case(
         source_data=result.source_data,
         per_element=config.per_element,
     )
-    # Stubs for the call function (with full parameter names).
-    body_stubs.extend(
-        spec.format_call_stub(
-            target_function_parts,
-            config.parameter_names,
-            stub_return,
-            call_arg_values,
-        ),
-    )
-    preamble_stubs.extend(
-        spec.format_call_preamble_stub(
-            target_function_parts,
-            config.parameter_names,
-            stub_return,
-            call_arg_values,
-        ),
-    )
+    try:
+        body_stubs.extend(
+            spec.format_call_stub(
+                target_function_parts,
+                config.parameter_names,
+                stub_return,
+                call_arg_values,
+            ),
+        )
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(
+                target_function_parts,
+                config.parameter_names,
+                stub_return,
+                call_arg_values,
+            ),
+        )
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_cls.__name__} rejected call stub: {exc.reason}")
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))
