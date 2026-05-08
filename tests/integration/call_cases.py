@@ -1071,26 +1071,22 @@ def run_call_golden_case(
         source_data=result.source_data,
         per_element=config.per_element,
     )
-    try:
-        body_stubs.extend(
-            spec.format_call_stub(
-                target_function_parts,
-                config.parameter_names,
-                stub_return,
-                call_arg_values,
-            ),
-        )
-        preamble_stubs.extend(
-            spec.format_call_preamble_stub(
-                target_function_parts,
-                config.parameter_names,
-                stub_return,
-                call_arg_values,
-            ),
-        )
-    except CallArgNotSupportedError as exc:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_cls.__name__} rejected call stub: {exc.reason}")
+    body_stubs.extend(
+        spec.format_call_stub(
+            target_function_parts,
+            config.parameter_names,
+            stub_return,
+            call_arg_values,
+        ),
+    )
+    preamble_stubs.extend(
+        spec.format_call_preamble_stub(
+            target_function_parts,
+            config.parameter_names,
+            stub_return,
+            call_arg_values,
+        ),
+    )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))
