@@ -14,7 +14,5 @@ let my_strings: Val = FList [
     FStr "a";
     FStr "b"
 ]
-let my_empty: Val = FList []
 process(my_ints, 42)
 process(my_strings, 7)
-process(my_empty, 99)

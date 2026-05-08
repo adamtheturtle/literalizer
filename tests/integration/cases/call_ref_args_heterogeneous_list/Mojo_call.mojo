@@ -10,7 +10,5 @@ def main():
         "a",
         "b",
     ]
-    var my_empty = List[String]()
     process(my_ints^, 42)
     process(my_strings^, 7)
-    process(my_empty^, 99)

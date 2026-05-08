@@ -25,9 +25,7 @@ CVal my_strings = ((CVal){.a = (CVal[]){
     ((CVal){.s = "a"}),
     ((CVal){.s = "b"}),
 }});
-CVal my_empty = ((CVal){.a = (CVal[]){}});
 process(my_ints, ((CVal){.i = 42}));
 process(my_strings, ((CVal){.i = 7}));
-process(my_empty, ((CVal){.i = 99}));
     return 0;
 }

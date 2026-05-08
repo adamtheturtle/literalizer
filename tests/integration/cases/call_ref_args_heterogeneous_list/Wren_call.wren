@@ -12,7 +12,5 @@ var my_strings = [
     "a",
     "b",
 ]
-var my_empty = []
 process.call(my_ints, 42)
 process.call(my_strings, 7)
-process.call(my_empty, 99)

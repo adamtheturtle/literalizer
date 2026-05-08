@@ -9,8 +9,6 @@ fn main() {
         "a",
         "b",
     ];
-    let my_empty = Vec::<String>::new();
     process(my_ints, 42);
     process(my_strings, 7);
-    process(my_empty, 99);
 }

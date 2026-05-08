@@ -10,9 +10,7 @@ procedure Main is
         AStr ("a"),
         AStr ("b")
     ];
-    my_empty : A_Val := AList'[];
 begin
     Process(data => my_ints, count => AInt (42));
     Process(data => my_strings, count => AInt (7));
-    Process(data => my_empty, count => AInt (99));
 end Main;

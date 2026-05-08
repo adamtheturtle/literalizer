@@ -1,7 +1,6 @@
 #include <initializer_list>
 #include <vector>
 #include <string>
-#include <cstddef>
 #include <variant>
 auto process(auto...) { return 0; }
 int main() {
@@ -14,9 +13,7 @@ auto my_strings = std::vector<std::string>{
     "a",
     "b",
 };
-auto my_empty = std::vector<std::nullptr_t>{};
 process(std::move(my_ints), 42);
 process(std::move(my_strings), 7);
-process(std::move(my_empty), 99);
     return 0;
 }

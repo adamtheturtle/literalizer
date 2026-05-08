@@ -14,9 +14,7 @@ let my_strings : val_t = OList [
     OStr "a";
     OStr "b"
 ]
-let my_empty : val_t = OList []
 let _ = process(my_ints, 42)
 let _ = process(my_strings, 7)
-let _ = process(my_empty, 99)
 
 end

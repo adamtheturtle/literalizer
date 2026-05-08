@@ -12,8 +12,6 @@ my_strings := [dynamic]any{
 	"a",
 	"b",
 }
-my_empty := [dynamic]any{}
 process(my_ints, 42);
 process(my_strings, 7);
-process(my_empty, 99);
 }

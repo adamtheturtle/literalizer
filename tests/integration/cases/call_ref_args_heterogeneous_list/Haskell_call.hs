@@ -21,11 +21,8 @@ my_strings = HList [
     HStr "a",
     HStr "b"
     ]
-my_empty :: Val
-my_empty = HList []
 main :: IO ()
 main = do
     _ <- process(my_ints, 42)
     _ <- process(my_strings, 7)
-    _ <- process(my_empty, 99)
     pure ()

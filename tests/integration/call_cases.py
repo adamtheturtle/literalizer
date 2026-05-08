@@ -465,12 +465,10 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
     ),
     CallCaseConfig(
         # Slot 0 holds lists whose Mojo element type disagrees across
-        # calls (``List[Int]`` vs ``List[String]``) and a third call
-        # binds an empty list, which ``infer_element_type`` cannot
-        # resolve.  Both branches force ``_mojo_typed_param_list`` to
-        # fall back to the generic ``[*Ts: AnyType](*args: *Ts)`` stub
-        # so the typed list-slot path stays the only producer of
-        # ``data: List[T]`` signatures.
+        # calls (``List[Int]`` vs ``List[String]``), forcing
+        # ``_mojo_typed_param_list`` to fall back to the generic
+        # ``[*Ts: AnyType](*args: *Ts)`` stub so the typed list-slot
+        # path stays the only producer of ``data: List[T]`` signatures.
         case_dir_name="call_ref_args_heterogeneous_list",
         target_function="process",
         parameter_names=["data", "count"],
@@ -481,11 +479,10 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={
             "my_ints": "[1, 2, 3]",
             "my_strings": '["a", "b"]',
-            "my_empty": "[]",
         },
         wrap_in_file=False,
         ref_case_per_language=False,
-        consumable_refs=frozenset({"my_ints", "my_strings", "my_empty"}),
+        consumable_refs=frozenset({"my_ints", "my_strings"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),

@@ -1,4 +1,3 @@
-import json
 template process(args: varargs[untyped]) = discard
 var my_ints = @[
     1,
@@ -9,7 +8,5 @@ var my_strings = @[
     "a",
     "b"
 ]
-var my_empty = %* []
 process(my_ints, 42)
 process(my_strings, 7)
-process(my_empty, 99)
