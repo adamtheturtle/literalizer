@@ -1128,13 +1128,41 @@ class Nim(metaclass=LanguageCls):
     def call_data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
-        """No data-dependent preamble for call context.
+        """Return data-dependent preamble lines for a call context.
 
-        The ``data_dependent_preamble`` method of Nim adds
-        ``import json`` for variable declarations that use ``%*``.
-        Call arguments are formatted as inline literals and never use
+        For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits the Nim
+        ``type`` block declaring the object variant used to wrap
+        heterogeneous scalars; the call rendering references that type
+        by name, so the declaration must be present.  For other
+        strategies, call arguments are inline literals that never use
         ``%*``, so ``import json`` is never needed in a call context.
         """
+        if self._uses_object_variant:
+            strategy_preamble = (
+                self.heterogeneous_strategy.value.build_preamble(
+                    self.heterogeneous_value_variant_name,
+                    self._heterogeneous_variant_date_type,
+                    self._heterogeneous_variant_datetime_type,
+                    self.indent,
+                )
+            )
+
+            def _preamble(data: Value, /) -> tuple[str, ...]:
+                """Suppress UnusedImport for ``tables`` and emit the
+                object-variant type block.
+
+                The ``import tables`` line is contributed by
+                :attr:`dict_format_config` so that ``{...}.toTable``
+                renders correctly, but the call stub uses
+                ``varargs[untyped]`` and never evaluates its arguments,
+                so the Nim compiler treats the import as unused.
+                """
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    *strategy_preamble(data),
+                )
+
+            return _preamble
         return no_data_preamble
 
     @cached_property
