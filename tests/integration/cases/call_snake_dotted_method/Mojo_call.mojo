@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _Http_clientType(Copyable, Movable):
-    fn fetch[*Ts: AnyType](self, *args: *Ts):
+    def fetch[*Ts: AnyType](self, *args: *Ts):
         pass
 @fieldwise_init
 struct _My_appType(Copyable, Movable):

@@ -1,4 +1,4 @@
-fn process():
+def process():
     pass
 def main():
     process()

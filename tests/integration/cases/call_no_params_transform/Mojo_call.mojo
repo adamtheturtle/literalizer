@@ -1,6 +1,6 @@
-fn process():
+def process():
     pass
-fn emit[*Ts: AnyType](*args: *Ts):
+def emit[*Ts: AnyType](*args: *Ts):
     pass
 def main():
     emit(process())

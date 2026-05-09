@@ -1255,7 +1255,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
-        run: uv tool install mojo-compiler
+        run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax
         run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
 

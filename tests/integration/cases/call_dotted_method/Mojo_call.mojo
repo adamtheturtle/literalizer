@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    fn fetch[*Ts: AnyType](self, *args: *Ts):
+    def fetch[*Ts: AnyType](self, *args: *Ts):
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):

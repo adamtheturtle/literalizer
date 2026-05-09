@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    fn post[*Ts: AnyType](self, *args: *Ts):
+    def post[*Ts: AnyType](self, *args: *Ts):
         pass
 @fieldwise_init
 struct _ApiType(Copyable, Movable):

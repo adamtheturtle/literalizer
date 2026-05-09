@@ -1,11 +1,11 @@
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    fn fetch[*Ts: AnyType](self, *args: *Ts):
+    def fetch[*Ts: AnyType](self, *args: *Ts):
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):
     var client: _ClientType
-fn emit[*Ts: AnyType](*args: *Ts):
+def emit[*Ts: AnyType](*args: *Ts):
     pass
 def main():
     var app = _AppType(_ClientType())
