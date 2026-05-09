@@ -361,9 +361,11 @@ jobs:
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
 
-  # Elm format + syntax check + run. Split from `lint-npm-installed` so
-  # this 1.5-min sequential chain runs in parallel with the TypeScript
-  # passes instead of after them.
+  # Elm format + syntax check. Split from `lint-elm-run` so the two
+  # `elm make`-based passes (compile-only vs. compile + Node execute)
+  # fan out instead of running back-to-back; recent main runs show the
+  # combined step taking 1:30-3:50, so the parallel split saves
+  # meaningful wall-clock for ~10-15s of extra setup.
   lint-elm:
     runs-on: ubuntu-latest
     steps:
@@ -391,6 +393,32 @@ jobs:
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
           xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
+
+  # Elm runtime check. Sibling to `lint-elm` so the compile + Node
+  # execute pass runs in parallel with the format + compile-only pass.
+  lint-elm-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
+      - name: Install npm-sourced linters
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Run Elm
+        run: |-
+          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm
           xargs -0 uv run --no-project python .github/scripts/run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
@@ -1552,6 +1580,7 @@ jobs:
       - lint-npm-installed
       - lint-typescript-run
       - lint-elm
+      - lint-elm-run
       - lint-uv-scripts
       - lint-dotnet
       - lint-curl-tarballs
