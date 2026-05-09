@@ -1128,13 +1128,22 @@ class Nim(metaclass=LanguageCls):
     def call_data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
-        """No data-dependent preamble for call context.
+        """Return data-dependent preamble lines for a call context.
 
-        The ``data_dependent_preamble`` method of Nim adds
-        ``import json`` for variable declarations that use ``%*``.
-        Call arguments are formatted as inline literals and never use
+        For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits the Nim
+        ``type`` block declaring the object variant used to wrap
+        heterogeneous scalars; the call rendering references that type
+        by name, so the declaration must be present.  For other
+        strategies, call arguments are inline literals that never use
         ``%*``, so ``import json`` is never needed in a call context.
         """
+        if self._uses_object_variant:
+            return self.heterogeneous_strategy.value.build_preamble(
+                self.heterogeneous_value_variant_name,
+                self._heterogeneous_variant_date_type,
+                self._heterogeneous_variant_datetime_type,
+                self.indent,
+            )
         return no_data_preamble
 
     @cached_property

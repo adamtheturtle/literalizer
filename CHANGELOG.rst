@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``Nim`` :func:`~literalizer.literalize_call` now emits the
+  object-variant ``type`` declaration when the ``OBJECT_VARIANT``
+  heterogeneous strategy is active, so the rendered call references a
+  defined wrapping type.
+
 - ``Mojo`` typed call stubs now cover ``bool``, ``float``, ``bytes``,
   ``date``, and ``datetime`` argument values (mapped to ``Bool``,
   ``Float64``, and ``String`` respectively), and apply to dotted-method
