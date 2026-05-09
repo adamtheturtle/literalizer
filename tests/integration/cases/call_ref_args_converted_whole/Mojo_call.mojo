@@ -1,4 +1,4 @@
-fn process[*Ts: AnyType](*args: *Ts):
+def process[*Ts: AnyType](*args: *Ts):
     pass
 def main():
     var my_var = [

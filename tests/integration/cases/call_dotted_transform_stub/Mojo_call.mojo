@@ -1,8 +1,8 @@
-fn process[*Ts: AnyType](*args: *Ts):
+def process[*Ts: AnyType](*args: *Ts):
     pass
 @fieldwise_init
 struct _TracerType(Copyable, Movable):
-    fn emit[*Ts: AnyType](self, *args: *Ts):
+    def emit[*Ts: AnyType](self, *args: *Ts):
         pass
 def main():
     var tracer = _TracerType()

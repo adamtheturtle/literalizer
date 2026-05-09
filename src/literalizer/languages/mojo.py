@@ -159,7 +159,7 @@ def _mojo_typed_param_list(
     no values (e.g. transform-stub callers pass an empty
     ``arg_values``), or when types disagree across calls at the same
     slot.  A zero-parameter call returns ``()`` (typed, empty) so the
-    caller emits a bare ``fn name():`` form rather than the generic
+    caller emits a bare ``def name():`` form rather than the generic
     stub.
     """
     if not params:
@@ -239,7 +239,7 @@ def _mojo_call_preamble_stub(
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
-    1-part names become a module-level ``fn``; multi-part names become
+    1-part names become a module-level ``def``; multi-part names become
     ``@fieldwise_init`` struct types whose innermost type holds the
     method.  Both stub kinds emit typed per-parameter signatures when
     every call's argument values at each slot resolve to the same
@@ -254,8 +254,8 @@ def _mojo_call_preamble_stub(
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)
-            return (f"fn {parts[0]}({param_list}):\n{indent}pass",)
-        return (f"fn {parts[0]}[*Ts: AnyType](*args: *Ts):\n{indent}pass",)
+            return (f"def {parts[0]}({param_list}):\n{indent}pass",)
+        return (f"def {parts[0]}[*Ts: AnyType](*args: *Ts):\n{indent}pass",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -263,11 +263,11 @@ def _mojo_call_preamble_stub(
     if typed_params is not None:
         method_param_list = ", ".join(("self", *typed_params))
         method_stub = (
-            f"{indent}fn {method}({method_param_list}):\n{indent}{indent}pass"
+            f"{indent}def {method}({method_param_list}):\n{indent}{indent}pass"
         )
     else:
         method_stub = (
-            f"{indent}fn {method}[*Ts: AnyType](self, *args: *Ts):\n"
+            f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts):\n"
             f"{indent}{indent}pass"
         )
     if not fields:

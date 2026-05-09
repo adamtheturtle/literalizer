@@ -1,4 +1,4 @@
-fn process(value: String):
+def process(value: String):
     pass
 def main():
     # Test cases
