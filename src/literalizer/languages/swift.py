@@ -601,6 +601,7 @@ class Swift(metaclass=LanguageCls):
 
         AUTO = enum.auto()
         ALWAYS = enum.auto()
+        SAFE = enum.auto()
 
         def formatter(
             self,
@@ -617,7 +618,7 @@ class Swift(metaclass=LanguageCls):
             sequence_is_tuple: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self is type(self).AUTO:
+            if self.name in {"AUTO", "SAFE"}:
                 return _optional_nil_declaration(
                     base_formatter=auto_formatter,
                     keyword=keyword,

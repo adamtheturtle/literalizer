@@ -686,6 +686,7 @@ class Python(metaclass=LanguageCls):
 
         AUTO = enum.auto()
         ALWAYS = enum.auto()
+        SAFE = enum.auto()
 
         def formatter(
             self,
