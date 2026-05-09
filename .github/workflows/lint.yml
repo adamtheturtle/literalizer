@@ -1234,14 +1234,8 @@ jobs:
           done < /tmp/files-to-lint
           crystal run "$driver"
 
-  # Mojo reserves ~3.6 GB of virtual address space per invocation
-  # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
-  # crashes in libKGENCompilerRTShared.so before producing any output —
-  # and even with overcommit + swap workarounds it could only run
-  # serially. Ubicloud's 16 GB runner comfortably fits `$(nproc)`
-  # parallel invocations without the workarounds.
   lint-mojo:
-    runs-on: ubicloud-standard-4
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
