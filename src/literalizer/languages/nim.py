@@ -1155,7 +1155,7 @@ class Nim(metaclass=LanguageCls):
                 :attr:`dict_format_config` so that ``{...}.toTable``
                 renders correctly, but the call stub uses
                 ``varargs[untyped]`` and never evaluates its arguments,
-                leaving the import "unused" from Nim's point of view.
+                so the Nim compiler treats the import as unused.
                 """
                 return (
                     "{.warning[UnusedImport]:off.}",
