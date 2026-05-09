@@ -1258,11 +1258,11 @@ jobs:
         run: |-
           mapfile -d '' -t files < <(find tests/integration/cases -name '*.mojo' -print0 | sort -z)
           n=${#files[@]}
+          : > /tmp/shard-files
           for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
-            src="${files[i]}"
-            printf 'Checking %s\n' "$src"
-            mojo run --Werror "$src"
+            printf '%s\0' "${files[i]}" >> /tmp/shard-files
           done
+          xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/shard-files
 
   lint-nim:
     runs-on: ubuntu-latest
