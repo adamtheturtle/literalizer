@@ -1138,12 +1138,31 @@ class Nim(metaclass=LanguageCls):
         ``%*``, so ``import json`` is never needed in a call context.
         """
         if self._uses_object_variant:
-            return self.heterogeneous_strategy.value.build_preamble(
-                self.heterogeneous_value_variant_name,
-                self._heterogeneous_variant_date_type,
-                self._heterogeneous_variant_datetime_type,
-                self.indent,
+            strategy_preamble = (
+                self.heterogeneous_strategy.value.build_preamble(
+                    self.heterogeneous_value_variant_name,
+                    self._heterogeneous_variant_date_type,
+                    self._heterogeneous_variant_datetime_type,
+                    self.indent,
+                )
             )
+
+            def _preamble(data: Value, /) -> tuple[str, ...]:
+                """Suppress UnusedImport for ``tables`` and emit the
+                object-variant type block.
+
+                The ``import tables`` line is contributed by
+                :attr:`dict_format_config` so that ``{...}.toTable``
+                renders correctly, but the call stub uses
+                ``varargs[untyped]`` and never evaluates its arguments,
+                leaving the import "unused" from Nim's point of view.
+                """
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    *strategy_preamble(data),
+                )
+
+            return _preamble
         return no_data_preamble
 
     @cached_property

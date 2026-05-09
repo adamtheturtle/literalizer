@@ -1,4 +1,5 @@
 import tables
+{.warning[UnusedImport]:off.}
 type
   JsonValueKind = enum
     vkStr, vkBool
