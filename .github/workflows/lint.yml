@@ -1234,15 +1234,19 @@ jobs:
           done < /tmp/files-to-lint
           crystal run "$driver"
 
+  # Mojo reserves ~3.6 GB of virtual address space per invocation
+  # (upstream: modular/modular#6433), so parallel invocations on
+  # ubuntu-latest's 7 GB runner crash in libKGENCompilerRTShared.so.
+  # Shard across runners and build serially within each shard.
   lint-mojo:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1251,7 +1255,14 @@ jobs:
       - name: Install Mojo
         run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax
-        run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
+        run: |-
+          mapfile -d '' -t files < <(find tests/integration/cases -name '*.mojo' -print0 | sort -z)
+          n=${#files[@]}
+          for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
+            src="${files[i]}"
+            printf 'Checking %s\n' "$src"
+            mojo run --Werror "$src"
+          done
 
   lint-nim:
     runs-on: ubuntu-latest
