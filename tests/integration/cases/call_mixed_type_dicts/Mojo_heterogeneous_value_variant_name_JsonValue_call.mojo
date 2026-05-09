@@ -2,7 +2,7 @@ from std.utils.variant import Variant
 comptime JsonValue = Variant[String, Bool]
 @fieldwise_init
 struct _MgrType(Copyable, Movable):
-    fn run(self, operation: Dict[String, JsonValue]):
+    def run(self, operation: Dict[String, JsonValue]):
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):
