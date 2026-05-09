@@ -116,7 +116,13 @@ _mojo_call_arg_element_to_type = make_element_to_type(
 
 
 @beartype
-def _value_to_mojo_type(value: Value, /) -> str | None:
+def _value_to_mojo_type(
+    value: Value,
+    /,
+    *,
+    heterogeneous_value_type: str | None,
+    wrap_ids: frozenset[int],
+) -> str | None:
     """Map one call-argument value to its Mojo type string.
 
     Routes list values through :func:`infer_element_type` so a list
@@ -129,9 +135,13 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
     that survives upstream checks under the ``VARIANT`` strategy)
     returns ``None`` and the slot falls back to the generic
     ``[*Ts: AnyType](*args: *Ts)`` form rather than fabricating a
-    ``String`` value type.  Other values look up their Python ``type``
-    directly so only the scalar Mojo mappings are typed and any other
-    shape (ordered maps, etc.) falls back to the same generic form.
+    ``String`` value type.  When *heterogeneous_value_type* is given
+    (the ``VARIANT`` strategy supplies the configured Variant alias
+    name) a heterogeneous-value dict slot resolves to
+    ``Dict[String, {alias}]`` instead of falling back.  Other values
+    look up their Python ``type`` directly so only the scalar Mojo
+    mappings are typed and any other shape (ordered maps, etc.) falls
+    back to the same generic form.
     """
     match value:
         case list():
@@ -139,6 +149,8 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
                 infer_element_type(items=[value]) or list,
             )
         case dict():
+            if heterogeneous_value_type is not None and id(value) in wrap_ids:
+                return f"Dict[String, {heterogeneous_value_type}]"
             return _mojo_call_arg_element_to_type(
                 infer_element_type(items=[value]) or dict,
             )
@@ -149,6 +161,8 @@ def _value_to_mojo_type(value: Value, /) -> str | None:
 def _mojo_typed_param_list(
     params: Sequence[str],
     arg_values: Sequence[Value],
+    *,
+    heterogeneous_value_type: str | None,
 ) -> tuple[str, ...] | None:
     """Return ``("name: Type", ...)`` for a typed Mojo signature.
 
@@ -173,9 +187,26 @@ def _mojo_typed_param_list(
             slots[slot_index].append(arg_value)
     if len(slots) != len(params):
         return None
+    wrap_ids = (
+        frozenset[int]().union(
+            *(
+                collect_heterogeneous_container_ids(data=slot_values)
+                for slot_values in slots
+            )
+        )
+        if heterogeneous_value_type is not None
+        else frozenset[int]()
+    )
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
-        types = {_value_to_mojo_type(v) for v in slot_values}
+        types = {
+            _value_to_mojo_type(
+                v,
+                heterogeneous_value_type=heterogeneous_value_type,
+                wrap_ids=wrap_ids,
+            )
+            for v in slot_values
+        }
         if None in types or len(types) != 1:
             return None
         (mojo_type,) = types
@@ -236,6 +267,7 @@ def _mojo_call_preamble_stub(
     /,
     *,
     indent: str,
+    heterogeneous_value_type: str | None,
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
@@ -250,6 +282,7 @@ def _mojo_call_preamble_stub(
     typed_params = _mojo_typed_param_list(
         params=params,
         arg_values=args,
+        heterogeneous_value_type=heterogeneous_value_type,
     )
     if len(parts) == 1:
         if typed_params is not None:
@@ -992,7 +1025,17 @@ class Mojo(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return file-scope stubs for a call expression."""
-        return partial(_mojo_call_preamble_stub, indent=self.indent)
+        cls = type(self.heterogeneous_strategy)
+        heterogeneous_value_type = (
+            self.heterogeneous_value_variant_name
+            if self.heterogeneous_strategy is cls.VARIANT
+            else None
+        )
+        return partial(
+            _mojo_call_preamble_stub,
+            indent=self.indent,
+            heterogeneous_value_type=heterogeneous_value_type,
+        )
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
