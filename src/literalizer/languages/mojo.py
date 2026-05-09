@@ -178,11 +178,6 @@ def _mojo_typed_param_list(
     """
     if not params:
         return ()
-    wrap_ids = (
-        collect_heterogeneous_container_ids(data=list(arg_values))
-        if heterogeneous_value_type is not None
-        else frozenset[int]()
-    )
     slots: list[list[Value]] = []
     for element in arg_values:
         per_arg = element if isinstance(element, list) else [element]
@@ -192,6 +187,16 @@ def _mojo_typed_param_list(
             slots[slot_index].append(arg_value)
     if len(slots) != len(params):
         return None
+    wrap_ids = (
+        frozenset[int]().union(
+            *(
+                collect_heterogeneous_container_ids(data=slot_values)
+                for slot_values in slots
+            )
+        )
+        if heterogeneous_value_type is not None
+        else frozenset[int]()
+    )
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
         types = {
