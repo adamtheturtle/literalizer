@@ -2,14 +2,22 @@
 runtime errors that survive the compile-only check.
 """
 
+import functools
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-from elm_common import ELM_JSON, run_elm_make
+from elm_common import (
+    ELM_JSON,
+    init_worker_elm_home,
+    prime_elm_home,
+    run_elm_make,
+    worker_elm_home,
+)
 
 # Wrap ``Check.my_data`` in a ``Platform.worker`` so loading the compiled
 # JavaScript evaluates the fixture's top-level value, surfacing runtime
@@ -63,11 +71,10 @@ _SKIP_SUFFIXES = (
 
 
 def _run_fixture(
-    *,
     filename: str,
+    *,
     elm_path: str,
     node_path: str,
-    elm_home: Path,
 ) -> bool:
     """Compile and run one fixture.  Return True on failure."""
     with tempfile.TemporaryDirectory() as tmpdir_str:
@@ -76,7 +83,7 @@ def _run_fixture(
         src_dir.mkdir()
         (tmpdir / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
         main_path = src_dir / "Main.elm"
-        env = {**os.environ, "ELM_HOME": str(object=elm_home)}
+        env = {**os.environ, "ELM_HOME": str(object=worker_elm_home())}
         check_path = src_dir / "Check.elm"
         output_js = tmpdir / "main.js"
         src = Path(filename)
@@ -120,23 +127,27 @@ def _run_fixture(
 
 def main() -> None:
     """Run each Elm golden file end-to-end."""
-    filenames = sys.argv[1:]
+    filenames = [
+        f
+        for f in sys.argv[1:]
+        if not any(f.endswith(suffix) for suffix in _SKIP_SUFFIXES)
+    ]
     elm_path = shutil.which(cmd="elm") or "elm"
     node_path = shutil.which(cmd="node") or "node"
-    failed = False
-    with tempfile.TemporaryDirectory() as elm_home_str:
-        elm_home = Path(elm_home_str)
-        for filename in filenames:
-            if any(filename.endswith(suffix) for suffix in _SKIP_SUFFIXES):
-                continue
-            if _run_fixture(
-                filename=filename,
-                elm_path=elm_path,
-                node_path=node_path,
-                elm_home=elm_home,
-            ):
-                failed = True
-    if failed:
+    with tempfile.TemporaryDirectory() as primed_str:
+        primed = Path(primed_str)
+        prime_elm_home(elm_path=elm_path, elm_home=primed)
+        worker = functools.partial(
+            _run_fixture,
+            elm_path=elm_path,
+            node_path=node_path,
+        )
+        with ProcessPoolExecutor(
+            initializer=init_worker_elm_home,
+            initargs=(str(object=primed),),
+        ) as pool:
+            results = list(pool.map(worker, filenames))
+    if any(results):
         sys.exit(1)
 
 

@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- ``lint-elm`` in ``.github/workflows/lint.yml`` now runs Elm fixtures
+  in parallel via a ``ProcessPoolExecutor`` inside
+  ``check_elm_syntax.py`` and ``run_elm.py``.  Each worker keeps its
+  own ELM_HOME, copied from a primed shared cache, because ``elm make``
+  cannot share an ELM_HOME concurrently.
+
 - ``Nim`` :func:`~literalizer.literalize_call` now emits the
   object-variant ``type`` declaration when the ``OBJECT_VARIANT``
   heterogeneous strategy is active, so the rendered call references a
