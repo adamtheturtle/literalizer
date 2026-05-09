@@ -23,16 +23,22 @@ ELM_JSON = json.dumps(
     },
 )
 
-_ELM_FILE_LOCK_MARKERS = (
-    "openBinaryFile",
-    "resource busy (file is locked)",
-)
+_ELM_FILE_LOCK_BINARY_FILE_MARKERS = ("openBinaryFile", "withBinaryFile")
+_ELM_FILE_LOCK_BUSY_MARKER = "resource busy (file is locked)"
+_ELM_CORRUPT_CACHE_MARKER = "CORRUPT CACHE"
 
 
-def _is_elm_file_lock_error(result: subprocess.CompletedProcess[str]) -> bool:
-    """Return True if Elm failed with its transient cache lock error."""
+def _is_elm_transient_error(result: subprocess.CompletedProcess[str]) -> bool:
+    """Return True if Elm failed with a transient cache-related error
+    that has been observed only under heavy parallel load: either the
+    file-lock error or a corrupt-cache report.
+    """
     output = result.stderr + result.stdout
-    return all(marker in output for marker in _ELM_FILE_LOCK_MARKERS)
+    if _ELM_CORRUPT_CACHE_MARKER in output:
+        return True
+    if _ELM_FILE_LOCK_BUSY_MARKER not in output:
+        return False
+    return any(m in output for m in _ELM_FILE_LOCK_BINARY_FILE_MARKERS)
 
 
 _PRIME_CHECK_ELM = """\
@@ -119,7 +125,7 @@ def run_elm_make(
             cwd=cwd,
             env=dict(env),
         )
-        if result.returncode == 0 or not _is_elm_file_lock_error(result):
+        if result.returncode == 0 or not _is_elm_transient_error(result):
             return result
         if attempt + 1 < attempts:
             time.sleep(0.2 * (attempt + 1))
