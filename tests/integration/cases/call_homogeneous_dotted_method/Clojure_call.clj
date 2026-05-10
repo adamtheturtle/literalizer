@@ -1,0 +1,5 @@
+(defn app [& _args] nil)
+(defn app.client [& _args] nil)
+(defn app.client.fetch [& _args] nil)
+(app.client.fetch :value "hello")
+(app.client.fetch :value "world")
