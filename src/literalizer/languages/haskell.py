@@ -286,26 +286,27 @@ def _build_date_formatters(
     else:
         fmt_date = date_formatter
 
-    if datetime_format_name == "HASKELL":
-        fmt_datetime: Callable[[datetime.datetime], str] = (
-            _build_haskell_datetime_formatter(prefix=constructor_prefix)
-        )
-    elif datetime_format_name == "EPOCH":
-        fmt_datetime = datetime_formatter
-    elif is_explicit:
-        _str_pfx_dt = f"{constructor_prefix}Str "
-
-        def _explicit_datetime(value: datetime.datetime) -> str:
-            """Delegate to module-level implementation."""
-            return _wrap_with_str_constructor_datetime(
-                value=value,
-                str_prefix=_str_pfx_dt,
-                formatter=datetime_formatter,
+    match datetime_format_name:
+        case "HASKELL":
+            fmt_datetime: Callable[[datetime.datetime], str] = (
+                _build_haskell_datetime_formatter(prefix=constructor_prefix)
             )
+        case "EPOCH":
+            fmt_datetime = datetime_formatter
+        case _ if is_explicit:
+            _str_pfx_dt = f"{constructor_prefix}Str "
 
-        fmt_datetime = _explicit_datetime
-    else:
-        fmt_datetime = datetime_formatter
+            def _explicit_datetime(value: datetime.datetime) -> str:
+                """Delegate to module-level implementation."""
+                return _wrap_with_str_constructor_datetime(
+                    value=value,
+                    str_prefix=_str_pfx_dt,
+                    formatter=datetime_formatter,
+                )
+
+            fmt_datetime = _explicit_datetime
+        case _:
+            fmt_datetime = datetime_formatter
 
     return _DateTimeFormatters(
         format_date=fmt_date,
