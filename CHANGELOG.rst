@@ -16,6 +16,16 @@ Next
   ``[*Ts: AnyType](*args: *Ts)`` form is still emitted when scalar
   types disagree across calls or any argument is non-scalar.
 
+- ``Mojo`` :meth:`~literalizer.Language.format_call_preamble_stub` now
+  raises
+  :class:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
+  under the default ``ERROR`` ``heterogeneous_strategy`` when concrete
+  Mojo argument types diverge across calls at one parameter slot
+  (including divergent shapes such as scalar in one call and list in
+  another).  ``VARIANT`` callers continue to fall back to the generic
+  ``[*Ts: AnyType](*args: *Ts)`` form for cross-call divergence pending
+  follow-up wrap machinery.
+
 - :func:`~literalizer.literalize_call` now raises a typed
   :class:`~literalizer.exceptions.UnsupportedCallShapeError`
   when ``wrap_in_file=True`` and the YAML source carries standalone
