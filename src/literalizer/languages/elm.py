@@ -389,31 +389,40 @@ def _elm_call_stub(
     flat_name = _elm_flatten_dotted(parts=parts)
     n = len(params)
     _max_elm_tuple_size = len(("a", "b", "c"))
-    if n == 0:  # pragma: no cover
-        type_sig = f"{flat_name} : ()"
-        impl = f"{flat_name} = ()"
-    elif n == 1:
-        type_sig = f"{flat_name} : a -> ()"
-        impl = f"{flat_name} _ = ()"
-    elif n <= _max_elm_tuple_size:
-        _alphabet_size = len(string.ascii_lowercase)
-        type_vars = ", ".join(
-            chr(ord("a") + (i % _alphabet_size))
-            + (str(object=i // _alphabet_size) if i >= _alphabet_size else "")
-            for i in range(n)
-        )
-        type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
-        impl = f"{flat_name} _ = ()"
-    else:  # pragma: no cover
-        _alphabet_size = len(string.ascii_lowercase)
-        type_vars = " -> ".join(
-            chr(ord("a") + (i % _alphabet_size))
-            + (str(object=i // _alphabet_size) if i >= _alphabet_size else "")
-            for i in range(n)
-        )
-        wildcards = " ".join("_" for _ in range(n))
-        type_sig = f"{flat_name} : {type_vars} -> ()"
-        impl = f"{flat_name} {wildcards} = ()"
+    match n:
+        case 0:  # pragma: no cover
+            type_sig = f"{flat_name} : ()"
+            impl = f"{flat_name} = ()"
+        case 1:
+            type_sig = f"{flat_name} : a -> ()"
+            impl = f"{flat_name} _ = ()"
+        case _ if n <= _max_elm_tuple_size:
+            _alphabet_size = len(string.ascii_lowercase)
+            type_vars = ", ".join(
+                chr(ord("a") + (i % _alphabet_size))
+                + (
+                    str(object=i // _alphabet_size)
+                    if i >= _alphabet_size
+                    else ""
+                )
+                for i in range(n)
+            )
+            type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
+            impl = f"{flat_name} _ = ()"
+        case _:  # pragma: no cover
+            _alphabet_size = len(string.ascii_lowercase)
+            type_vars = " -> ".join(
+                chr(ord("a") + (i % _alphabet_size))
+                + (
+                    str(object=i // _alphabet_size)
+                    if i >= _alphabet_size
+                    else ""
+                )
+                for i in range(n)
+            )
+            wildcards = " ".join("_" for _ in range(n))
+            type_sig = f"{flat_name} : {type_vars} -> ()"
+            impl = f"{flat_name} {wildcards} = ()"
     return (type_sig, impl)
 
 
@@ -696,6 +705,7 @@ class Elm(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles

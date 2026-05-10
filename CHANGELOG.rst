@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- Every language's ``VariableTypeHints`` enum now exposes a third value,
+  ``SAFE``, alongside ``AUTO`` and ``ALWAYS``.  ``SAFE`` annotates only
+  when the language's own inference would widen the variable to a
+  permissive type (e.g. ``unknown[]`` for an empty TypeScript array,
+  ``Object[]`` for an empty Java array), making downstream consumption
+  safer than ``AUTO`` without the noise of ``ALWAYS``.  The predicate is
+  per-language: ``TypeScript`` and ``Java`` annotate empty list / set /
+  dict literals; for every other language ``SAFE`` currently produces
+  the same output as ``AUTO`` while leaving room for a future
+  per-language predicate.
+
 - ``Nim`` :func:`~literalizer.literalize_call` now emits the
   object-variant ``type`` declaration when the ``OBJECT_VARIANT``
   heterogeneous strategy is active, so the rendered call references a

@@ -12,9 +12,7 @@ from literalizer import (
     InputFormat,
     NewVariable,
     literalize,
-)
-from literalizer._language import (
-    StubReturn,
+    literalize_call,
 )
 from literalizer.exceptions import (
     NullInCollectionError,
@@ -442,51 +440,33 @@ def test_java_list_rejects_null_elements() -> None:
         )
 
 
-def test_gleam_call_preamble_stub_many_parameters() -> None:
-    """Gleam call stubs handle more than 26 parameters.
+def test_gleam_call_stub_more_than_26_parameters() -> None:
+    """Gleam type-var generation falls back to numeric suffixes past
+    the 26-letter alphabet.
 
-    ``_gleam_type_var`` falls back to numeric suffixes past the 26-letter
-    alphabet, so a 27-parameter call must emit a ``z`` for the last
-    single-letter slot and an ``a1`` for the next one.
+    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
+    suffix branch, emitting ``z`` for the last single-letter slot and
+    ``a1`` for the next one in the generated stub signature.
     """
-    params = [f"p{i}" for i in range(27)]
-    (line,) = Gleam().format_call_preamble_stub(
-        ("target",),
-        params,
-        StubReturn.VOID,
-        [],
+    parameter_names = [f"p{i}" for i in range(27)]
+    yaml_row = "\n".join(f"  - {i}" for i in range(27))
+    source = f"---\n-\n{yaml_row}\n"
+    result = literalize_call(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=Gleam(),
+        target_function="process",
+        parameter_names=parameter_names,
+        wrap_in_file=True,
     )
-    assert line == (
-        "pub fn target("
-        "_p0: a, "
-        "_p1: b, "
-        "_p2: c, "
-        "_p3: d, "
-        "_p4: e, "
-        "_p5: f, "
-        "_p6: g, "
-        "_p7: h, "
-        "_p8: i, "
-        "_p9: j, "
-        "_p10: k, "
-        "_p11: l, "
-        "_p12: m, "
-        "_p13: n, "
-        "_p14: o, "
-        "_p15: p, "
-        "_p16: q, "
-        "_p17: r, "
-        "_p18: s, "
-        "_p19: t, "
-        "_p20: u, "
-        "_p21: v, "
-        "_p22: w, "
-        "_p23: x, "
-        "_p24: y, "
-        "_p25: z, "
-        "_p26: a1"
-        ") -> Nil { Nil }"
-    )
+    assert (
+        "pub fn process("
+        "_p0: a, _p1: b, _p2: c, _p3: d, _p4: e, _p5: f, _p6: g, "
+        "_p7: h, _p8: i, _p9: j, _p10: k, _p11: l, _p12: m, _p13: n, "
+        "_p14: o, _p15: p, _p16: q, _p17: r, _p18: s, _p19: t, "
+        "_p20: u, _p21: v, _p22: w, _p23: x, _p24: y, _p25: z, "
+        "_p26: a1) -> Nil { Nil }"
+    ) in result.code
 
 
 @pytest.mark.parametrize(
