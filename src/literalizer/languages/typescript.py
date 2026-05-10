@@ -567,7 +567,7 @@ class TypeScript(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         ALWAYS = enum.auto()
         SAFE = enum.auto()
 
@@ -584,7 +584,7 @@ class TypeScript(metaclass=LanguageCls):
             sequence_is_tuple: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self is type(self).AUTO:
+            if self is type(self).NEVER:
                 return auto_formatter
 
             def _typed_formatter(
@@ -732,7 +732,7 @@ class TypeScript(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.CONST
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

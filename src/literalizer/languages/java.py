@@ -960,7 +960,7 @@ class Java(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         ALWAYS = enum.auto()
         SAFE = enum.auto()
 
@@ -1001,7 +1001,7 @@ class Java(metaclass=LanguageCls):
                     set_outer=set_outer,
                 )
 
-            if self is type(self).AUTO:
+            if self is type(self).NEVER:
                 return _object_nil_declaration(
                     base_formatter=auto_formatter,
                     typed_formatter=typed,
@@ -1139,7 +1139,7 @@ class Java(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

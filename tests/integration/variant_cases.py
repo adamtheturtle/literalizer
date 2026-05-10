@@ -52,7 +52,7 @@ _CASES_DIR = Path(__file__).parent / "cases"
 
 
 # Languages where ``variable_type_hints=SAFE`` defines a custom predicate
-# that can produce different output from ``AUTO``.  For other languages
+# that can produce different output from ``NEVER``.  For other languages
 # ``SAFE`` is a documented no-op alias, so the variant builders below
 # skip it to avoid generating duplicate golden files.
 _LANGUAGES_WITH_SAFE_PREDICATE: frozenset[literalizer.LanguageCls] = frozenset(
@@ -1412,19 +1412,21 @@ def _variants_for_axis(axis_key: str) -> list[Variant]:
 
 
 @beartype
-def _safe_variant_matches_auto(
+def _safe_variant_matches_never(
     *, variant: Variant, case_dir_name: str
 ) -> bool:
     """Return True if a ``variable_type_hints=SAFE`` variant produces the
-    same output as the corresponding ``AUTO`` variant for *case_dir_name*.
+    same output as the corresponding ``NEVER`` variant for *case_dir_name*.
 
-    Used to skip SAFE golden files that only duplicate the AUTO golden;
+    Used to skip SAFE golden files that only duplicate the NEVER golden;
     SAFE only differs when the predicate fires (empty collection at top
     level), so non-triggering case/variant pairings are pure noise.
     """
     yaml_string = (_CASES_DIR / case_dir_name / "input.yaml").read_text()
-    auto_member = next(
-        m for m in variant.spec.variable_type_hints_formats if m.name == "AUTO"
+    never_member = next(
+        m
+        for m in variant.spec.variable_type_hints_formats
+        if m.name == "NEVER"
     )
     spec_as_dataclass = cast("Any", variant.spec)
     spec_kwargs: dict[str, object] = {
@@ -1432,8 +1434,8 @@ def _safe_variant_matches_auto(
         for f in dataclasses.fields(class_or_instance=spec_as_dataclass)
         if f.name != "variable_type_hints"
     }
-    auto_spec: literalizer.Language = variant.lang_cls(
-        variable_type_hints=auto_member, **spec_kwargs
+    never_spec: literalizer.Language = variant.lang_cls(
+        variable_type_hints=never_member, **spec_kwargs
     )
     safe_out = literalizer.literalize(
         source=yaml_string,
@@ -1441,13 +1443,13 @@ def _safe_variant_matches_auto(
         language=variant.spec,
         variable_form=wrap_variable_form(),
     )
-    auto_out = literalizer.literalize(
+    never_out = literalizer.literalize(
         source=yaml_string,
         input_format=literalizer.InputFormat.YAML,
-        language=auto_spec,
+        language=never_spec,
         variable_form=wrap_variable_form(),
     )
-    return safe_out.code == auto_out.code
+    return safe_out.code == never_out.code
 
 
 @beartype
@@ -1457,7 +1459,7 @@ def _keep_variant_case(*, variant: Variant, case_dir_name: str) -> bool:
         variant.lang_cls in _LANGUAGES_WITH_SAFE_PREDICATE
         and "_type_hints_safe" in variant.name
     ):
-        return not _safe_variant_matches_auto(
+        return not _safe_variant_matches_never(
             variant=variant, case_dir_name=case_dir_name
         )
     return True

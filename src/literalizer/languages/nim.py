@@ -791,7 +791,7 @@ class Nim(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
@@ -933,7 +933,7 @@ class Nim(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.SEQ
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
