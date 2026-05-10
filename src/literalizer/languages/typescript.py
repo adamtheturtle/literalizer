@@ -188,6 +188,23 @@ def _ts_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C90
 
 
 @beartype
+def _ts_inference_widens_unsafely(*, data: Value) -> bool:
+    """Return True if TypeScript inference for *data* would widen to a
+    permissive type (e.g. ``unknown[]`` for ``[]``) where downstream
+    consumption can no longer rely on a concrete element type.
+
+    Empty collection literals are the canonical trigger: the inferred
+    element type cannot be pinned down, so :func:`_ts_type_hint`
+    falls back to ``unknown``.
+    """
+    match data:
+        case list() | set() | dict():
+            return not data
+        case _:
+            return False
+
+
+@beartype
 def _format_ts_typed_declaration(
     *,
     name: str,
@@ -552,6 +569,7 @@ class TypeScript(metaclass=LanguageCls):
 
         AUTO = enum.auto()
         ALWAYS = enum.auto()
+        SAFE = enum.auto()
 
         def formatter(
             self,
@@ -589,6 +607,28 @@ class TypeScript(metaclass=LanguageCls):
                     dict_hint_template=dict_hint_template,
                     sequence_is_tuple=sequence_is_tuple,
                 )
+
+            if self.name == "SAFE":
+
+                def _safe_formatter(
+                    name: str,
+                    value: str,
+                    data: Value,
+                    modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Annotate only when inference would widen
+                    unsafely.
+                    """
+                    if _ts_inference_widens_unsafely(data=data):
+                        return _typed_formatter(
+                            name=name,
+                            value=value,
+                            data=data,
+                            modifiers=modifiers,
+                        )
+                    return auto_formatter(name, value, data, modifiers)
+
+                return _safe_formatter
 
             return _typed_formatter
 

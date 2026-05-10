@@ -285,6 +285,7 @@ class Racket(metaclass=LanguageCls):
         """Variable type hint options."""
 
         AUTO = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
