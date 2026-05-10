@@ -58,13 +58,16 @@ def main() -> None:
     """Check syntax of the given Elm golden files."""
     filenames = sys.argv[1:]
     elm_path = shutil.which(cmd="elm") or "elm"
-    with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str:
+    with (
+        tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str,
+        tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as worker_homes_str,
+    ):
         primed = Path(primed_str)
         prime_elm_home(elm_path=elm_path, elm_home=primed)
         worker = functools.partial(_check_fixture, elm_path=elm_path)
         with ProcessPoolExecutor(
             initializer=init_worker_elm_home,
-            initargs=(str(object=primed),),
+            initargs=(str(object=primed), worker_homes_str),
         ) as pool:
             results = list(pool.map(worker, filenames))
     if any(results):

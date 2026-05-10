@@ -1,6 +1,5 @@
 """Shared helpers for the Elm lint scripts."""
 
-import atexit
 import json
 import os
 import shutil
@@ -78,15 +77,25 @@ def prime_elm_home(*, elm_path: str, elm_home: Path) -> None:
 
 
 _primed_elm_home: Path | None = None
+_worker_homes_root: Path | None = None
 _worker_elm_home_dir: Path | None = None
 
 
-def init_worker_elm_home(primed_elm_home: str) -> None:
+def init_worker_elm_home(primed_elm_home: str, worker_homes_root: str) -> None:
     """``ProcessPoolExecutor`` initializer that records the primed
-    ELM_HOME path for later lazy copying by ``worker_elm_home``.
+    ELM_HOME and the parent directory under which each worker's
+    private ELM_HOME copy is created by ``worker_elm_home``.
+
+    Workers create their copies under ``worker_homes_root`` so the
+    parent process can clean every copy up by removing that single
+    directory after the pool shuts down.  ``atexit`` is unreliable
+    here: ``ProcessPoolExecutor`` workers terminate via
+    ``os._exit`` (CPython's ``multiprocessing._bootstrap``), which
+    skips registered ``atexit`` callbacks on Python <= 3.14.
     """
-    global _primed_elm_home  # noqa: PLW0603
+    global _primed_elm_home, _worker_homes_root  # noqa: PLW0603
     _primed_elm_home = Path(primed_elm_home)
+    _worker_homes_root = Path(worker_homes_root)
 
 
 def worker_elm_home() -> Path:
@@ -100,14 +109,17 @@ def worker_elm_home() -> Path:
     global _worker_elm_home_dir  # noqa: PLW0603
     if _worker_elm_home_dir is not None:
         return _worker_elm_home_dir
-    if _primed_elm_home is None:
+    if _primed_elm_home is None or _worker_homes_root is None:
         msg = "init_worker_elm_home was not called"
         raise RuntimeError(msg)
     worker_dir = Path(
-        tempfile.mkdtemp(prefix="elm-home-worker-", suffix=NOINDEX_SUFFIX),
+        tempfile.mkdtemp(
+            prefix="elm-home-worker-",
+            suffix=NOINDEX_SUFFIX,
+            dir=_worker_homes_root,
+        ),
     )
     shutil.copytree(src=_primed_elm_home, dst=worker_dir, dirs_exist_ok=True)
-    atexit.register(shutil.rmtree, str(object=worker_dir), ignore_errors=True)
     _worker_elm_home_dir = worker_dir
     return _worker_elm_home_dir
 

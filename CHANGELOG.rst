@@ -4,12 +4,6 @@ Changelog
 Next
 ----
 
-- ``lint-elm`` in ``.github/workflows/lint.yml`` now runs Elm fixtures
-  in parallel via a ``ProcessPoolExecutor`` inside
-  ``check_elm_syntax.py`` and ``run_elm.py``.  Each worker keeps its
-  own ELM_HOME, copied from a primed shared cache, because ``elm make``
-  cannot share an ELM_HOME concurrently.
-
 - Every language's ``VariableTypeHints`` enum now exposes a third value,
   ``SAFE``, alongside ``AUTO`` and ``ALWAYS``.  ``SAFE`` annotates only
   when the language's own inference would widen the variable to a
