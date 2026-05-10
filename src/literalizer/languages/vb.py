@@ -456,7 +456,7 @@ class VisualBasic(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
@@ -614,7 +614,7 @@ class VisualBasic(metaclass=LanguageCls):
     default_sequence_element_type: str = "Object"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "Object"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.APOSTROPHE
     declaration_style: DeclarationStyles = DeclarationStyles.DIM
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

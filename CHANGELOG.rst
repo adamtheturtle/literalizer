@@ -4,15 +4,20 @@ Changelog
 Next
 ----
 
+- Renamed ``VariableTypeHints.AUTO`` to ``VariableTypeHints.NEVER`` for
+  every language.  The behavior is unchanged; the new name describes
+  the option (no annotation, defer to the language's inference) rather
+  than implying intent, and pairs symmetrically with ``ALWAYS``.
+
 - Every language's ``VariableTypeHints`` enum now exposes a third value,
-  ``SAFE``, alongside ``AUTO`` and ``ALWAYS``.  ``SAFE`` annotates only
+  ``SAFE``, alongside ``NEVER`` and ``ALWAYS``.  ``SAFE`` annotates only
   when the language's own inference would widen the variable to a
   permissive type (e.g. ``unknown[]`` for an empty TypeScript array,
   ``Object[]`` for an empty Java array), making downstream consumption
-  safer than ``AUTO`` without the noise of ``ALWAYS``.  The predicate is
+  safer than ``NEVER`` without the noise of ``ALWAYS``.  The predicate is
   per-language: ``TypeScript`` and ``Java`` annotate empty list / set /
   dict literals; for every other language ``SAFE`` currently produces
-  the same output as ``AUTO`` while leaving room for a future
+  the same output as ``NEVER`` while leaving room for a future
   per-language predicate.
 
 - ``Nim`` :func:`~literalizer.literalize_call` now emits the

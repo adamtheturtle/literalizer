@@ -727,7 +727,7 @@ class Kotlin(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         ALWAYS = enum.auto()
         SAFE = enum.auto()
 
@@ -748,7 +748,7 @@ class Kotlin(metaclass=LanguageCls):
             sequence_format_name: str,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self.name in {"AUTO", "SAFE"}:
+            if self.name in {"NEVER", "SAFE"}:
                 return auto_formatter
 
             def _typed_formatter(
@@ -887,7 +887,7 @@ class Kotlin(metaclass=LanguageCls):
     default_set_element_type: str = "Any?"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "Any?"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAL
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

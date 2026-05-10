@@ -654,13 +654,13 @@ class Language(Protocol):
         """Enum class whose members list the variable type hint options
         this language supports.
 
-        Every language exposes ``AUTO`` (no annotations, let the language
-        infer), ``ALWAYS`` (annotate every variable), and ``SAFE``.
-        ``SAFE`` annotates only when the language's own inference would
-        widen the variable to a permissive type (e.g. ``unknown[]`` for
-        an empty TypeScript array, ``Object[]`` for an empty Java
-        array); for languages without a custom predicate it produces the
-        same output as ``AUTO``.
+        Every language exposes ``NEVER`` (no annotations, let the
+        language infer), ``ALWAYS`` (annotate every variable), and
+        ``SAFE``.  ``SAFE`` annotates only when the language's own
+        inference would widen the variable to a permissive type (e.g.
+        ``unknown[]`` for an empty TypeScript array, ``Object[]`` for an
+        empty Java array); for languages without a custom predicate it
+        produces the same output as ``NEVER``.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

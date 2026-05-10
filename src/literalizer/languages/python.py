@@ -516,7 +516,7 @@ class Python(metaclass=LanguageCls):
         variable_type_hints: Whether to add inline type hints to
             variable declarations.
 
-            * ``VariableTypeHints.AUTO`` — bare assignment,
+            * ``VariableTypeHints.NEVER`` — bare assignment,
               e.g. ``my_var = {...}``.  Empty collections still
               receive a type annotation so that type-checkers can
               infer the element types,
@@ -684,7 +684,7 @@ class Python(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         ALWAYS = enum.auto()
         SAFE = enum.auto()
 
@@ -997,7 +997,7 @@ class Python(metaclass=LanguageCls):
     default_sequence_element_type: str = "Any"
     default_dict_key_type: str = "str"
     default_dict_value_type: str = "Any"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
