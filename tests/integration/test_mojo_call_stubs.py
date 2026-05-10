@@ -1,9 +1,9 @@
 """Targeted Mojo call-stub tests.
 
 Covers branches in ``_mojo_typed_param_list`` and
-``_mojo_call_preamble_stub`` that the integration goldens no longer
-exercise once cross-call type divergence skips under the default
-``ERROR`` heterogeneous_strategy.
+``_mojo_call_preamble_stub`` that the integration golden files no
+longer exercise once cross-call type divergence skips under the
+default ``ERROR`` heterogeneous_strategy.
 """
 
 from typing import TYPE_CHECKING, cast
@@ -21,9 +21,9 @@ if TYPE_CHECKING:
 
 
 def test_typed_stub_falls_back_for_null_value() -> None:
-    """A ``None`` slot value is unmappable, so the stub falls back to
-    the generic ``[*Ts: AnyType](*args: *Ts)`` form regardless of the
-    heterogeneous strategy.
+    """A ``None`` slot value has no Mojo type, so the stub falls back
+    to the generic ``[*Ts: AnyType](*args: *Ts)`` form regardless of
+    the heterogeneous strategy.
     """
     mojo = Mojo()
     result = mojo.format_call_preamble_stub(
@@ -39,8 +39,8 @@ def test_typed_stub_raises_on_scalar_divergence_under_error() -> None:
     """Cross-call scalar-type divergence raises under ``ERROR``.
 
     ``arg_values`` carries one per-call slot list per element; passing
-    ``[["hello"], [42]]`` represents two single-arg calls whose slot-0
-    types disagree.
+    ``[["hello"], [42]]`` represents two single-argument calls whose
+    slot-0 types disagree.
     """
     mojo = Mojo()
     scalar_divergence = cast("Sequence[Value]", [["hello"], [42]])
@@ -106,10 +106,10 @@ def test_typed_stub_falls_back_under_variant_for_divergence() -> None:
     assert result == ("def process[*Ts: AnyType](*args: *Ts):\n    pass",)
 
 
-def test_dotted_method_generic_stub_for_unmappable_value() -> None:
+def test_dotted_method_generic_stub_for_untypable_value() -> None:
     """A dotted-method stub falls back to the generic form when the
-    slot has an unmappable value, exercising the multi-part generic
-    branches of ``_mojo_call_preamble_stub``.
+    slot has a value with no Mojo type, exercising the multi-part
+    generic branches of ``_mojo_call_preamble_stub``.
     """
     mojo = Mojo()
     result = mojo.format_call_preamble_stub(
@@ -128,7 +128,7 @@ def test_dotted_method_generic_stub_for_unmappable_value() -> None:
     assert result == expected
 
 
-def test_deep_dotted_method_generic_stub_for_unmappable_value() -> None:
+def test_deep_dotted_method_generic_stub_for_untypable_value() -> None:
     """A 4-part dotted-method stub exercises the inner-fields loop in
     ``_mojo_call_preamble_stub`` (the path between the innermost type
     and the root type).
