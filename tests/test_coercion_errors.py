@@ -77,7 +77,7 @@ def _to_source(
                 if isinstance(data, dict)
                 else {"_": data}
             )
-            return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
+            return tomlkit.dumps(data=toml_data)
         case _ as unreachable:
             assert_never(unreachable)
 

@@ -468,6 +468,7 @@ ignore_names = [
     "PRIVATE",
     "PROTECTED",
     "ROCKET",
+    "SAFE",
     "SEQ",
     "SCIENTIFIC",
     "SINGLE",

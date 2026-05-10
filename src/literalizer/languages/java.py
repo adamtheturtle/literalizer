@@ -452,6 +452,22 @@ def _format_java_assignment(
 
 
 @beartype
+def _java_inference_widens_unsafely(*, data: Value) -> bool:
+    """Return True if Java ``var`` inference for *data* would widen to a
+    permissive type (e.g. ``Object[]`` for ``new Object[]{}``).
+
+    Empty collection literals trigger this fallback in
+    :func:`_java_common_element_type`, so they are the canonical case
+    for which a ``SAFE`` annotation is preferable to inference.
+    """
+    match data:
+        case list() | set() | dict():
+            return not data
+        case _:
+            return False
+
+
+@beartype
 def _format_java_typed_declaration(
     *,
     name: str,
@@ -946,6 +962,7 @@ class Java(metaclass=LanguageCls):
 
         AUTO = enum.auto()
         ALWAYS = enum.auto()
+        SAFE = enum.auto()
 
         def formatter(
             self,
@@ -989,6 +1006,31 @@ class Java(metaclass=LanguageCls):
                     base_formatter=auto_formatter,
                     typed_formatter=typed,
                 )
+            if self.name == "SAFE":
+                auto_with_nil = _object_nil_declaration(
+                    base_formatter=auto_formatter,
+                    typed_formatter=typed,
+                )
+
+                def _safe_formatter(
+                    name: str,
+                    value: str,
+                    data: Value,
+                    modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Annotate when inference would widen unsafely
+                    (empty collection).
+                    """
+                    if _java_inference_widens_unsafely(data=data):
+                        return typed(
+                            name=name,
+                            value=value,
+                            data=data,
+                            modifiers=modifiers,
+                        )
+                    return auto_with_nil(name, value, data, modifiers)
+
+                return _safe_formatter
             return typed
 
     variable_type_hints_formats = VariableTypeHints
