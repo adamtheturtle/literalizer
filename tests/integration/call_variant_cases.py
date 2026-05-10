@@ -11,6 +11,8 @@ from collections.abc import Callable, Iterable
 
 from beartype import beartype
 
+from literalizer.languages import Mojo
+
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
@@ -62,6 +64,33 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
     return variants
 
 
+@functools.cache
+@beartype
+def build_mojo_variant_call_variants() -> list[Variant]:
+    """Return a single Mojo ``VARIANT`` strategy variant.
+
+    Used to exercise the Mojo typed-call-stub fallback under
+    ``VARIANT`` for inputs whose slot types diverge across calls.  The
+    typed-stub helper currently returns ``None`` for cross-call
+    divergence under ``VARIANT`` (a follow-up slice will emit a typed
+    ``Variant[...]`` signature instead), so the rendered call still
+    uses the generic ``[*Ts: AnyType](*args: *Ts)`` form.
+    """
+    variant_strategy = next(
+        s for s in Mojo().heterogeneous_strategies if s.name == "VARIANT"
+    )
+    return [
+        Variant(
+            name="Mojo_heterogeneous_strategy_variant",
+            spec=make_spec(
+                lang_cls=Mojo,
+                heterogeneous_strategy=variant_strategy,
+            ),
+            lang_cls=Mojo,
+        ),
+    ]
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
@@ -69,6 +98,12 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
         "call_mixed_type_dicts",
         build_heterogeneous_value_variant_name_variants,
     ),
+    # Mojo ``VARIANT`` falls back to the generic stub for cross-call
+    # divergence, exercising both the free-function and dotted-method
+    # generic-stub paths in ``_mojo_call_preamble_stub``.
+    ("call_scalar_args", build_mojo_variant_call_variants),
+    ("call_dotted_method", build_mojo_variant_call_variants),
+    ("call_deep_dotted_method", build_mojo_variant_call_variants),
 ]
 
 

@@ -217,19 +217,21 @@ def _mojo_typed_param_list(
             )
             for v in slot_values
         }
-        if not types or None in types:
+        if (
+            not types
+            or None in types
+            or (len(types) > 1 and heterogeneous_value_type is not None)
+        ):
             return None
         if len(types) > 1:
-            if heterogeneous_value_type is None:
-                msg = (
-                    "Mojo call argument types diverge across calls at "
-                    f"parameter '{name}' "
-                    f"(got {sorted(cast('set[str]', types))}); "
-                    "the default ERROR heterogeneous_strategy cannot "
-                    "represent this input."
-                )
-                raise HeterogeneousScalarCollectionError(msg)
-            return None
+            msg = (
+                "Mojo call argument types diverge across calls at "
+                f"parameter '{name}' "
+                f"(got {sorted(cast('set[str]', types))}); "
+                "the default ERROR heterogeneous_strategy cannot "
+                "represent this input."
+            )
+            raise HeterogeneousScalarCollectionError(msg)
         (mojo_type,) = types
         typed.append(f"{name}: {mojo_type}")
     return tuple(typed)
