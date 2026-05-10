@@ -54,7 +54,7 @@ _CASES_DIR = Path(__file__).parent / "cases"
 # Languages where ``variable_type_hints=SAFE`` defines a custom predicate
 # that can produce different output from ``AUTO``.  For other languages
 # ``SAFE`` is a documented no-op alias, so the variant builders below
-# skip it to avoid generating duplicate goldens.
+# skip it to avoid generating duplicate golden files.
 _LANGUAGES_WITH_SAFE_PREDICATE: frozenset[literalizer.LanguageCls] = frozenset(
     {TypeScript, Java},
 )
@@ -1418,7 +1418,7 @@ def _safe_variant_matches_auto(
     """Return True if a ``variable_type_hints=SAFE`` variant produces the
     same output as the corresponding ``AUTO`` variant for *case_dir_name*.
 
-    Used to skip SAFE goldens that would only duplicate the AUTO golden;
+    Used to skip SAFE golden files that only duplicate the AUTO golden;
     SAFE only differs when the predicate fires (empty collection at top
     level), so non-triggering case/variant pairings are pure noise.
     """
@@ -1435,21 +1435,18 @@ def _safe_variant_matches_auto(
     auto_spec: literalizer.Language = variant.lang_cls(
         variable_type_hints=auto_member, **spec_kwargs
     )
-    try:
-        safe_out = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=variant.spec,
-            variable_form=wrap_variable_form(),
-        )
-        auto_out = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=auto_spec,
-            variable_form=wrap_variable_form(),
-        )
-    except Exception:  # pylint: disable=broad-except  # noqa: BLE001
-        return False
+    safe_out = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=variant.spec,
+        variable_form=wrap_variable_form(),
+    )
+    auto_out = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=auto_spec,
+        variable_form=wrap_variable_form(),
+    )
     return safe_out.code == auto_out.code
 
 
