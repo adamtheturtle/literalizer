@@ -430,7 +430,7 @@ class Odin(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
@@ -538,7 +538,7 @@ class Odin(metaclass=LanguageCls):
     sequence_format: SequenceFormats = SequenceFormats.DYNAMIC_ARRAY
     set_format: SetFormats = SetFormats.SET
     default_set_element_type: str = "string"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.SHORT
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

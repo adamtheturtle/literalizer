@@ -41,7 +41,7 @@ parameters (``user_id`` and ``ts``) and wrap each call in ``print()``:
            bytes_format=Python.bytes_formats.HEX,
            sequence_format=Python.sequence_formats.TUPLE,
            set_format=Python.set_formats.SET,
-           variable_type_hints=Python.variable_type_hints_formats.AUTO,
+           variable_type_hints=Python.variable_type_hints_formats.NEVER,
        ),
        target_function="throttler.check",
        parameter_names=["user_id", "ts"],

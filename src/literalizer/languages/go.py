@@ -494,7 +494,7 @@ class Go(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
@@ -611,7 +611,7 @@ class Go(metaclass=LanguageCls):
     default_dict_key_type: str = "string"
     default_dict_value_type: str = "any"
     default_ordered_map_value_type: str = "any"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.SHORT
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

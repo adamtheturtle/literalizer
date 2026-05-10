@@ -1165,7 +1165,7 @@ class Rust(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
@@ -1290,7 +1290,7 @@ class Rust(metaclass=LanguageCls):
     default_set_element_type: str = "String"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "String"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.LET
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT

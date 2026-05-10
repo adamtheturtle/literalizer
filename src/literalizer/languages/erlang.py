@@ -392,7 +392,7 @@ class Erlang(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
@@ -523,7 +523,7 @@ class Erlang(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.BINARY
     sequence_format: SequenceFormats = SequenceFormats.LIST
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.PERCENT
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
