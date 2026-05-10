@@ -5,7 +5,7 @@ Next
 ----
 
 - Renamed ``VariableTypeHints.AUTO`` to ``VariableTypeHints.NEVER`` for
-  every language.  The behaviour is unchanged; the new name describes
+  every language.  The behavior is unchanged; the new name describes
   the option (no annotation, defer to the language's inference) rather
   than implying intent, and pairs symmetrically with ``ALWAYS``.
 
