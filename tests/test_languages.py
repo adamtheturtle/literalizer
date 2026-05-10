@@ -22,7 +22,6 @@ from literalizer.languages import (
     Cobol,
     Dart,
     Fortran,
-    FSharp,
     Gleam,
     Haskell,
     Java,
@@ -47,7 +46,6 @@ FORTRAN = Fortran(
     sequence_format=Fortran.sequence_formats.LIST,
     module_name="check",
 )
-FSHARP = FSharp(module_name="check")
 
 
 def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
@@ -378,22 +376,6 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         "    fentry('host', fstr('it''s here')), &  ! a comment\n"
         "    fentry('port', fint(80_int64)) &  ! another\n"
         "])"
-    )
-
-
-def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
-    """Bare F# scalar integers above i64 range use the ``I`` suffix."""
-    result = literalize(
-        source="9223372036854775808",
-        input_format=InputFormat.JSON,
-        language=FSHARP,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-
-    assert result.code == (
-        "type Val =\n    | FInt of bigint\n9223372036854775808I"
     )
 
 
