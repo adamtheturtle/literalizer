@@ -13,6 +13,7 @@ from pathlib import Path
 
 from elm_common import (
     ELM_JSON,
+    NOINDEX_SUFFIX,
     init_worker_elm_home,
     prime_elm_home,
     run_elm_make,
@@ -77,7 +78,7 @@ def _run_fixture(
     node_path: str,
 ) -> bool:
     """Compile and run one fixture.  Return True on failure."""
-    with tempfile.TemporaryDirectory() as tmpdir_str:
+    with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as tmpdir_str:
         tmpdir = Path(tmpdir_str)
         src_dir = tmpdir / "src"
         src_dir.mkdir()
@@ -134,7 +135,7 @@ def main() -> None:
     ]
     elm_path = shutil.which(cmd="elm") or "elm"
     node_path = shutil.which(cmd="node") or "node"
-    with tempfile.TemporaryDirectory() as primed_str:
+    with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str:
         primed = Path(primed_str)
         prime_elm_home(elm_path=elm_path, elm_home=primed)
         worker = functools.partial(

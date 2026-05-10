@@ -10,6 +10,7 @@ from pathlib import Path
 
 from elm_common import (
     ELM_JSON,
+    NOINDEX_SUFFIX,
     init_worker_elm_home,
     prime_elm_home,
     run_elm_make,
@@ -23,7 +24,7 @@ def _check_fixture(
     elm_path: str,
 ) -> bool:
     """Check one fixture. Return True on failure."""
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as tmpdir:
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir()
         elm_json_path = Path(tmpdir) / "elm.json"
@@ -57,7 +58,7 @@ def main() -> None:
     """Check syntax of the given Elm golden files."""
     filenames = sys.argv[1:]
     elm_path = shutil.which(cmd="elm") or "elm"
-    with tempfile.TemporaryDirectory() as primed_str:
+    with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str:
         primed = Path(primed_str)
         prime_elm_home(elm_path=elm_path, elm_home=primed)
         worker = functools.partial(_check_fixture, elm_path=elm_path)
