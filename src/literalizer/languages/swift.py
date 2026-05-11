@@ -119,7 +119,8 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
-def _swift_param(name: str, *, accepts_nil: bool) -> str:
+@beartype
+def _swift_param(*, name: str, accepts_nil: bool) -> str:
     """Format a single Swift parameter for a stub signature.
 
     When *accepts_nil* is ``True`` the parameter type is ``Any?`` with
@@ -132,21 +133,23 @@ def _swift_param(name: str, *, accepts_nil: bool) -> str:
     return f"{name}: {type_and_default}"
 
 
-def _swift_args_contain_nil(args: Sequence[Value]) -> bool:
+@beartype
+def _swift_args_contain_nil(*, args: Sequence[Value]) -> bool:
     """Return ``True`` when any top-level or per-element call arg is
     ``None``.
 
     *args* may be the flat per-call argument list or a list of
-    per-element call argument lists; both shapes are flattened by one
-    level so a ``None`` at any call's slot is detected.
+    per-element call argument lists; both shapes are inspected so a
+    ``None`` at any call's slot is detected.
     """
-    flattened: list[Value] = []
+    inner: list[Value] = []
     for arg in args:
-        if isinstance(arg, list):
-            flattened.extend(arg)
-        else:
-            flattened.append(arg)
-    return any(v is None for v in flattened)
+        match arg:
+            case list():
+                inner.extend(arg)
+            case _:
+                inner.append(arg)
+    return any(v is None for v in inner)
 
 
 def _swift_call_stub(
