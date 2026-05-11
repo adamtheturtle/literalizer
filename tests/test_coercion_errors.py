@@ -9,9 +9,8 @@ remain in :mod:`tests.test_yaml`.
 
 import json
 import re
-from collections.abc import Mapping, Sequence
 from io import StringIO
-from typing import assert_never, cast
+from typing import TYPE_CHECKING, assert_never
 
 import pytest
 import tomlkit
@@ -28,9 +27,12 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import Dhall, Mojo, Python
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
 type _SourceData = (
-    Mapping[str, _SourceData]
-    | Sequence[_SourceData]
+    dict[str, _SourceData]
+    | list[_SourceData]
     | str
     | int
     | float
@@ -82,10 +84,8 @@ def _to_source(
             yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
             return stream.getvalue()
         case InputFormat.TOML:
-            toml_data: Mapping[str, object] = (
-                cast("Mapping[str, object]", data)
-                if isinstance(data, dict)
-                else {"_": data}
+            toml_data: Mapping[str, _SourceData] = (
+                data if isinstance(data, dict) else {"_": data}
             )
             return tomlkit.dumps(data=toml_data)
         case _ as unreachable:
