@@ -4,18 +4,22 @@ Changelog
 Next
 ----
 
-- ``Mojo`` :func:`~literalizer.literalize_call` no longer appends the
-  ``^`` transfer operator to a consumable ``$ref`` whose underlying
-  value is a register-trivial scalar (``Int``, ``Bool``, ``Float64``).
-  Mojo 0.26.1.0+ rejects ``^`` on those types under ``--Werror``
-  ("transfer from a value of trivial register type ... has no effect
-  and can be removed"); the ref is now emitted bare instead.
-  Non-trivial refs (e.g. ``List[Int]``, ``Dict[...]``) keep the ``^``
-  consume form.  ``Language`` exposes a new
+- ``Mojo`` and ``C++`` :func:`~literalizer.literalize_call` no longer
+  wrap a consumable ``$ref`` in the language's consume form when the
+  underlying value's type would make the wrapping a hard error or a
+  ``clang-tidy`` lint failure.  In Mojo, ``^`` is dropped for
+  register-trivial scalars (``Int``, ``Bool``, ``Float64``) because
+  Mojo 0.26.1.0+ rejects "transfer from a value of trivial register
+  type" under ``--Werror``.  In C++, ``std::move`` is dropped for
+  trivially-copyable types (``bool``, integer, ``double``,
+  ``std::chrono::year_month_day``,
+  ``std::chrono::system_clock::time_point``) which
+  ``performance-move-const-arg`` / ``hicpp-move-const-arg`` reject.
+  Non-trivial refs (e.g. ``List[...]``, ``Dict[...]``, strings, bytes)
+  keep their consume form.  ``Language`` exposes a new
   :attr:`~literalizer._language.Language.consumable_ref_value_inhibits_consuming_form`
-  predicate that languages can override to opt into the same
-  per-value routing; the default
-  (:data:`~literalizer._language.never_inhibits_consuming_form`)
+  predicate that languages override to opt into per-value routing; the
+  default (:data:`~literalizer._language.never_inhibits_consuming_form`)
   preserves the existing behavior.
 
 - Renamed ``VariableTypeHints.AUTO`` to ``VariableTypeHints.NEVER`` for

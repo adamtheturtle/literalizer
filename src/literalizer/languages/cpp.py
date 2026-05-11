@@ -74,7 +74,6 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
-    never_inhibits_consuming_form,
     no_call_stub,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -235,6 +234,24 @@ def _make_cpp_element_to_type(
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
     )
+
+
+@beartype
+def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
+    """Return ``True`` when ``std::move`` is unhelpful for *value*'s C++
+    type.
+
+    The literalize-generated C++ maps Python ``bool`` / ``int`` /
+    ``float`` to ``bool`` / a narrow integer / ``double``, all of which
+    are trivially copyable.  ``date`` and ``datetime`` map to
+    ``std::chrono::year_month_day`` and
+    ``std::chrono::system_clock::time_point``, both also trivially
+    copyable.  Strings, bytes, lists, and dicts allocate or own heap
+    storage, so ``std::move`` continues to deliver value for those.
+    """
+    if isinstance(value, (list, dict, set)):
+        return False
+    return isinstance(value, (bool, int, float, datetime.date))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1463,13 +1480,17 @@ class Cpp(metaclass=LanguageCls):
     def consumable_ref_value_inhibits_consuming_form(
         self,
     ) -> Callable[[Value], bool]:
-        """Predicate deciding whether a ref's underlying value type
-        inhibits the consume form.
+        """Return ``True`` for ref values whose C++ type is trivially
+        copyable.
 
-        Delegates to :data:`never_inhibits_consuming_form`.  ``std::move``
-        is valid for every value type in this codebase.
+        ``clang-tidy``'s ``performance-move-const-arg`` rule (and the
+        equivalent ``hicpp-move-const-arg``) reports ``std::move`` on a
+        trivially-copyable value as an error: the move has no effect and
+        the wrapping is wasteful.  The call site routes these refs
+        through the non-consuming formatter so the emitted C++ compiles
+        cleanly under ``--warnings-as-errors``.
         """
-        return never_inhibits_consuming_form
+        return _cpp_value_inhibits_consuming_form
 
     @cached_property
     def _cpp_date_type(self) -> str:

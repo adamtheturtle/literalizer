@@ -11,9 +11,9 @@ auto my_list = std::vector<int>{
     2,
     3,
 };
-process(std::move(my_int), 42);
-process(std::move(my_bool), 7);
-process(std::move(my_float), 9);
+process(my_int, 42);
+process(my_bool, 7);
+process(my_float, 9);
 process(std::move(my_list), 1);
     return 0;
 }
