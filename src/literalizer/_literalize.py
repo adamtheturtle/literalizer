@@ -1175,14 +1175,14 @@ def _collection_open_for_multiline_value(
     Used for a nested multiline collection.
     """
     del expand_refs
-    if isinstance(data, dict):
-        if is_ordered_map:
+    match data:
+        case dict() if is_ordered_map:
             opener = spec.ordered_map_format_config.ordered_map_open(data)
-        elif dict_open_override is not None:
+        case dict() if dict_open_override is not None:
             opener = dict_open_override
-        elif not ref_key:
+        case dict() if not ref_key:
             opener = spec.dict_format_config.dict_open(data)
-        else:
+        case dict():
             dict_open_items = {
                 k: v
                 for k, v in data.items()
@@ -1190,24 +1190,24 @@ def _collection_open_for_multiline_value(
                 or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
             }
             opener = spec.dict_format_config.dict_open(dict_open_items or data)
-    elif isinstance(data, set):
-        sorted_set: list[Value] = sorted(
-            data,
-            key=lambda v: (type(v).__name__, repr(v)),
-        )
-        opener = spec.set_format_config.set_open(sorted_set)
-    elif sequence_open_override is not None:
-        opener = sequence_open_override
-    elif not ref_key:
-        opener = spec.sequence_open(data)
-    else:
-        sequence_open_items = [
-            v
-            for v in data
-            if not isinstance(v, dict)
-            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-        ]
-        opener = spec.sequence_open(sequence_open_items or data)
+        case set():
+            sorted_set: list[Value] = sorted(
+                data,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            opener = spec.set_format_config.set_open(sorted_set)
+        case _ if sequence_open_override is not None:
+            opener = sequence_open_override
+        case _ if not ref_key:
+            opener = spec.sequence_open(data)
+        case _:
+            sequence_open_items = [
+                v
+                for v in data
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            ]
+            opener = spec.sequence_open(sequence_open_items or data)
     return opener
 
 

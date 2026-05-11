@@ -29,8 +29,8 @@ from literalizer.exceptions import (
 
 type YamlCoercible = (
     Scalar
-    | list[object]
-    | dict[object, object]
+    | list[YamlCoercible]
+    | dict[object, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
 )
@@ -111,7 +111,7 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
 
 
 @beartype
-def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
+def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
     """Recursively convert non-string dict keys to their string form.
 
     YAML allows non-string mapping keys (e.g. integers); ``Value``
@@ -143,26 +143,23 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
             )
             return cast("Value", omap)
         case dict():
-            return {
-                f"{k}": _coerce_yaml_keys(data=cast("YamlCoercible", v))
-                for k, v in data.items()
-            }
+            return {f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()}
         case list():
-            return [
-                _coerce_yaml_keys(data=cast("YamlCoercible", item))
-                for item in data
-            ]
+            return [_coerce_yaml_keys(data=item) for item in data]
         case CommentedSet():
             members = cast("set[Scalar]", set(data))
             return {_unwrap_yaml_scalar(value=item) for item in members}
-        case bool() | int() | float() | str() | datetime.datetime():
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-        case datetime.date():
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-        case bytes():
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-        case None:
-            return cast("Value", _unwrap_yaml_scalar(value=data))
+        case (
+            bool()
+            | int()
+            | float()
+            | str()
+            | datetime.datetime()
+            | datetime.date()
+            | bytes()
+            | None
+        ):
+            return _unwrap_yaml_scalar(value=data)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -200,6 +197,7 @@ def _parse_json5(*, source: str) -> _ParsedInput:
 
 
 @functools.cache
+@beartype
 def get_yaml() -> YAML:
     """Return the cached round-trip ``YAML`` instance.
 
@@ -214,6 +212,7 @@ def get_yaml() -> YAML:
 
 
 @functools.cache
+@beartype
 def _get_safe_yaml() -> YAML:
     """Return the cached safe (C-backed when available) ``YAML`` instance.
 
@@ -227,7 +226,8 @@ def _get_safe_yaml() -> YAML:
     return YAML(typ="safe", pure=False)
 
 
-def _yaml_needs_roundtrip(source: str) -> bool:
+@beartype
+def _yaml_needs_roundtrip(*, source: str) -> bool:
     """Return True when *source* needs the comment-preserving loader.
 
     The fast path is only safe when the source has none of the
@@ -296,7 +296,8 @@ def _parse_toml(*, source: str) -> _ParsedInput:
     except TOMLKitError as exc:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
-    toml_data = _coerce_toml_values(data=toml_doc.unwrap())
+    unwrapped: _TomlData = toml_doc.unwrap()
+    toml_data = _coerce_toml_values(data=unwrapped)
     return _ParsedInput(
         data=toml_data,
         raw_data=toml_doc,
@@ -320,8 +321,13 @@ def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             assert_never(unreachable)
 
 
+type _TomlData = (
+    dict[str, _TomlData] | list[_TomlData] | datetime.time | Scalar
+)
+
+
 @beartype
-def _coerce_toml_values(*, data: object) -> Value:
+def _coerce_toml_values(*, data: _TomlData) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
     ``tomlkit`` produces ``datetime.time`` values which cannot be
@@ -330,16 +336,10 @@ def _coerce_toml_values(*, data: object) -> Value:
     """
     match data:
         case dict():
-            return {
-                k: _coerce_toml_values(data=v)
-                for k, v in cast("dict[str, object]", data).items()
-            }
+            return {k: _coerce_toml_values(data=v) for k, v in data.items()}
         case list():
-            return [
-                _coerce_toml_values(data=item)
-                for item in cast("list[object]", data)
-            ]
+            return [_coerce_toml_values(data=item) for item in data]
         case datetime.time():
             return data.isoformat()
         case _:
-            return cast("Value", data)
+            return data
