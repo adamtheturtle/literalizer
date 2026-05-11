@@ -96,7 +96,7 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
         build_heterogeneous_value_variant_name_variants,
     ),
     # Non-default heterogeneous strategies on the cross-call divergent
-    # fixtures — covers Mojo's ``VARIANT`` typed-stub fallback (and
+    # fixtures — covers the Mojo ``VARIANT`` typed-stub fallback (and
     # exercises the corresponding paths in any other language whose
     # non-default strategy can represent these inputs).
     ("call_scalar_args", build_heterogeneous_strategy_call_variants),
