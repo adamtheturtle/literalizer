@@ -29,8 +29,8 @@ from literalizer.exceptions import (
 
 type YamlCoercible = (
     Scalar
-    | list[object]
-    | dict[object, object]
+    | list[YamlCoercible]
+    | dict[object, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
 )
@@ -111,7 +111,7 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
 
 
 @beartype
-def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
+def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
     """Recursively convert non-string dict keys to their string form.
 
     YAML allows non-string mapping keys (e.g. integers); ``Value``
@@ -143,26 +143,23 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
             )
             return cast("Value", omap)
         case dict():
-            return {
-                f"{k}": _coerce_yaml_keys(data=cast("YamlCoercible", v))
-                for k, v in data.items()
-            }
+            return {f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()}
         case list():
-            return [
-                _coerce_yaml_keys(data=cast("YamlCoercible", item))
-                for item in data
-            ]
+            return [_coerce_yaml_keys(data=item) for item in data]
         case CommentedSet():
             members = cast("set[Scalar]", set(data))
             return {_unwrap_yaml_scalar(value=item) for item in members}
-        case bool() | int() | float() | str() | datetime.datetime():
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-        case datetime.date():
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-        case bytes():
-            return cast("Value", _unwrap_yaml_scalar(value=data))
-        case None:
-            return cast("Value", _unwrap_yaml_scalar(value=data))
+        case (
+            bool()
+            | int()
+            | float()
+            | str()
+            | datetime.datetime()
+            | datetime.date()
+            | bytes()
+            | None
+        ):
+            return _unwrap_yaml_scalar(value=data)
         case _ as unreachable:
             assert_never(unreachable)
 
