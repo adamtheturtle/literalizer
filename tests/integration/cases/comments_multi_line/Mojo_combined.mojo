@@ -1,5 +1,5 @@
 def main():
-    var my_data = [
+    var my_data: List[String] = [
         # line 1
         # line 2
         "a",
