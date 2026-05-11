@@ -12,7 +12,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -458,7 +458,7 @@ class HeterogeneousBehavior:
 
     skip_scalar_checks: bool
     compute_wrap_ids: Callable[[Value], frozenset[int]]
-    wrap_scalar: Callable[[Value, str], str]
+    wrap_scalar: Callable[[Scalar, str], str]
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
 
 
@@ -467,7 +467,7 @@ def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     return frozenset()
 
 
-def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
+def _no_wrap_scalar(_raw: Scalar, formatted: str, /) -> str:
     """Return *formatted* unchanged — used by non-wrapping languages."""
     return formatted  # pragma: no cover
 
