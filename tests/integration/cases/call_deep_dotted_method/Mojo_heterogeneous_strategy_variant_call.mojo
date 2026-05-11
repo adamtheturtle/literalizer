@@ -1,3 +1,5 @@
+from std.utils.variant import Variant
+comptime Value = Variant[String, Int, Bool]
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
     def post[*Ts: AnyType](self, *args: *Ts):

@@ -1094,14 +1094,21 @@ def run_call_golden_case(
             call_arg_values,
         ),
     )
-    preamble_stubs.extend(
-        spec.format_call_preamble_stub(
-            target_function_parts,
-            config.parameter_names,
-            stub_return,
-            call_arg_values,
-        ),
-    )
+    try:
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(
+                target_function_parts,
+                config.parameter_names,
+                stub_return,
+                call_arg_values,
+            ),
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous "
+            "input in its typed call stub",
+        )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))

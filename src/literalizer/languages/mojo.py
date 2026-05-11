@@ -78,7 +78,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    HeterogeneousScalarCollectionError,
+    NullInCollectionError,
+)
 
 _mojo_element_to_type = make_element_to_type(
     str_type="String",
@@ -169,12 +172,19 @@ def _mojo_typed_param_list(
     Returns ``None`` to signal the caller should fall back to the
     generic ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any
     per-call value at a parameter slot has no Mojo type (a ref-marker
-    dict, ``None``, an inhomogeneous list, etc.), when any slot has
+    dict, ``None``, an inhomogeneous list, etc.) or when any slot has
     no values (e.g. transform-stub callers pass an empty
-    ``arg_values``), or when types disagree across calls at the same
-    slot.  A zero-parameter call returns ``()`` (typed, empty) so the
-    caller emits a bare ``def name():`` form rather than the generic
-    stub.
+    ``arg_values``).  A zero-parameter call returns ``()`` (typed,
+    empty) so the caller emits a bare ``def name():`` form rather than
+    the generic stub.
+
+    When concrete Mojo types are known at every per-call value but
+    diverge across calls at one slot, the behavior depends on the
+    heterogeneous strategy: ``ERROR`` raises
+    :exc:`HeterogeneousScalarCollectionError` so the call-stub path
+    refuses input it cannot represent; ``VARIANT`` (signaled by a
+    non-``None`` ``heterogeneous_value_type``) falls back to ``None``
+    pending the cross-call wrap machinery in a follow-up slice.
     """
     if not params:
         return ()
@@ -199,17 +209,31 @@ def _mojo_typed_param_list(
     )
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
-        types = {
+        slot_types = [
             _value_to_mojo_type(
                 v,
                 heterogeneous_value_type=heterogeneous_value_type,
                 wrap_ids=wrap_ids,
             )
             for v in slot_values
-        }
-        if None in types or len(types) != 1:
+        ]
+        known_types: set[str] = {t for t in slot_types if t is not None}
+        if (
+            not slot_types
+            or None in slot_types
+            or (len(known_types) > 1 and heterogeneous_value_type is not None)
+        ):
             return None
-        (mojo_type,) = types
+        if len(known_types) > 1:
+            msg = (
+                "Mojo call argument types diverge across calls at "
+                f"parameter '{name}' "
+                f"(got {sorted(known_types)}); "
+                "the default ERROR heterogeneous_strategy cannot "
+                "represent this input."
+            )
+            raise HeterogeneousScalarCollectionError(msg)
+        (mojo_type,) = known_types
         typed.append(f"{name}: {mojo_type}")
     return tuple(typed)
 
