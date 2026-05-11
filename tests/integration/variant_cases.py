@@ -10,7 +10,7 @@ import enum
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Protocol, cast, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -1479,7 +1479,7 @@ def _safe_variant_matches_never(
         for m in variant.spec.variable_type_hints_formats
         if m.name == "NEVER"
     )
-    spec_as_dataclass = cast("Any", variant.spec)
+    spec_as_dataclass: Any = variant.spec
     spec_kwargs: dict[str, object] = {
         f.name: getattr(variant.spec, f.name)
         for f in dataclasses.fields(class_or_instance=spec_as_dataclass)
