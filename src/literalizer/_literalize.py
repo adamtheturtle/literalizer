@@ -1104,7 +1104,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
             )
-        case list():  # pragma: no branch
+        case list():
             result = _format_list_value(
                 value=value,
                 spec=spec,
