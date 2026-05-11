@@ -448,7 +448,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # Mix of register-trivial (Int / Bool / Float64) and non-trivial
         # (List) consumable refs.  Each ref is single-use, so without
         # the consume-suppression hook every ref would be eligible for
-        # the consuming form.  Mojo's ``^`` is a hard error under
+        # the consuming form.  the Mojo ``^`` is a hard error under
         # ``--Werror`` for register-trivial scalars, so the trivial refs
         # must emit as bare identifiers while ``my_list`` keeps ``^``.
         # Other languages that move consumable refs (notably C++) still

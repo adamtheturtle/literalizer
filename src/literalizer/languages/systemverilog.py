@@ -708,7 +708,7 @@ class SystemVerilog(metaclass=LanguageCls):
 
         Delegates to :data:`never_inhibits_consuming_form`.  Languages
         whose consume operator rejects certain value types (notably
-        Mojo's ``^`` on register-trivial scalars) override this.
+        the Mojo ``^`` on register-trivial scalars) override this.
         """
         return never_inhibits_consuming_form
 

@@ -2227,7 +2227,7 @@ def _compute_call_arg_ref_consume_inhibited_names(
     language's consume form.
 
     Languages whose consume operator rejects certain value types (notably
-    Mojo's ``^`` on register-trivial scalars) expose
+    the Mojo ``^`` on register-trivial scalars) expose
     :attr:`~literalizer._language.Language.consumable_ref_value_inhibits_consuming_form`
     so the call site can route those refs through the non-consuming
     formatter instead.  Names are returned in the original (pre-``ref_case``)
@@ -2343,7 +2343,7 @@ def _format_single_call_arg(
     set of refs that appear exactly once across this call's argument
     lists.  *consume_inhibited_ref_names* is the set of refs whose
     underlying value type inhibits the language's consume form (e.g.
-    Mojo's ``^`` on register-trivial scalars).  All three sets use the
+    the Mojo ``^`` on register-trivial scalars).  All three sets use the
     original (pre-``ref_case``) name.  A ref is rendered via the
     language's ``format_call_arg_ref_identifier_consumable`` hook only
     when it is in *consumable_ref_names* and *single_use_ref_names* and

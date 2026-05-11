@@ -1655,7 +1655,7 @@ never_inhibits_consuming_form: Callable[[Value], bool] = (
 )
 """Shared callable for languages whose consume form (e.g. C++
 ``std::move``) is valid for every value type.  Languages whose consume
-operator rejects certain value types (notably Mojo's ``^``, which is a
+operator rejects certain value types (notably the Mojo ``^``, which is a
 hard error on register-trivial scalars under ``--Werror``) override
 :attr:`Language.consumable_ref_value_inhibits_consuming_form` to a
 predicate that returns ``True`` for those values.
