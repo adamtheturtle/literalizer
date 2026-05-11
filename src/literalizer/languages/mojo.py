@@ -161,13 +161,19 @@ def _value_to_mojo_type(
             return _mojo_call_arg_element_to_type(type(value))
 
 
+@beartype
 def _gather_mojo_call_slots(
+    *,
     arg_values: Sequence[Value],
 ) -> list[list[Value]]:
     """Group per-call argument values by positional slot."""
     slots: list[list[Value]] = []
     for element in arg_values:
-        per_arg = element if isinstance(element, list) else [element]
+        match element:
+            case list():
+                per_arg: Sequence[Value] = element
+            case _:
+                per_arg = [element]
         for slot_index, arg_value in enumerate(iterable=per_arg):
             if slot_index >= len(slots):
                 slots.append([])
@@ -175,7 +181,8 @@ def _gather_mojo_call_slots(
     return slots
 
 
-def _slot_is_all_scalars(slot_values: Sequence[Value]) -> bool:
+@beartype
+def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
     """Return ``True`` when every value at this slot is a scalar."""
     return all(not isinstance(v, list | dict) for v in slot_values)
 
