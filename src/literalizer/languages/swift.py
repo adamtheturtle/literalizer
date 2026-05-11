@@ -119,22 +119,48 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
     return entry
 
 
-def _swift_param(name: str, /) -> str:
-    """Format a single Swift parameter for a stub signature."""
+def _swift_param(name: str, *, accepts_nil: bool) -> str:
+    """Format a single Swift parameter for a stub signature.
+
+    When *accepts_nil* is ``True`` the parameter type is ``Any?`` with
+    a ``nil`` default so a caller may pass ``nil``; otherwise it is
+    ``Any`` with a ``0`` default.
+    """
+    type_and_default = "Any? = nil" if accepts_nil else "Any = 0"
     if name.startswith("_"):
-        return f"_ {name}: Any = 0"
-    return f"{name}: Any = 0"
+        return f"_ {name}: {type_and_default}"
+    return f"{name}: {type_and_default}"
+
+
+def _swift_args_contain_nil(args: Sequence[Value]) -> bool:
+    """Return ``True`` when any top-level or per-element call arg is
+    ``None``.
+
+    *args* may be the flat per-call argument list or a list of
+    per-element call argument lists; both shapes are flattened by one
+    level so a ``None`` at any call's slot is detected.
+    """
+    flattened: list[Value] = []
+    for arg in args:
+        if isinstance(arg, list):
+            flattened.extend(arg)
+        else:
+            flattened.append(arg)
+    return any(v is None for v in flattened)
 
 
 def _swift_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
-    _args: Sequence[Value],
+    args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
-    param_list = ", ".join(_swift_param(p) for p in params)
+    accepts_nil = _swift_args_contain_nil(args=args)
+    param_list = ", ".join(
+        _swift_param(name=p, accepts_nil=accepts_nil) for p in params
+    )
     if len(parts) == 1:
         return (
             f"@discardableResult func {parts[0]}({param_list}) -> Any {{ 0 }}",
