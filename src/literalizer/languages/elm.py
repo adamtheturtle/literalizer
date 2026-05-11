@@ -383,9 +383,9 @@ def _elm_call_stub(
     the first is upper-cased).  For a single parameter the stub is
     polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
     tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
-    tuple that ``PositionalCallStyle`` emits at the call site.  For
-    4 or more parameters Elm does not support tuples, so curried type
-    signatures are used instead (``a -> b -> c -> d -> ()``).
+    tuple that ``PositionalCallStyle`` emits at the call site.  Elm
+    tuples cap at 3 elements, so 4+ parameters cannot produce
+    compilable Elm; the curried fallback exists for completeness only.
     """
     flat_name = _elm_flatten_dotted(parts=parts)
     n = len(params)
@@ -407,7 +407,13 @@ def _elm_call_stub(
             )
             type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
             impl = f"{flat_name} _ = ()"
-        case _:
+        case _:  # pragma: no cover
+            # Elm tuples cap at 3 elements, and PositionalCallStyle
+            # emits a tuple at the call site, so n > 3 cannot produce
+            # compilable Elm.  A curried stub is emitted as a best
+            # effort, but the call site will still be rejected by
+            # ``elm make``; no integration case exercises this branch
+            # for that reason.
             _alphabet_size = len(string.ascii_lowercase)
             type_vars = " -> ".join(
                 chr(ord("a") + (i % _alphabet_size))
