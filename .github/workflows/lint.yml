@@ -539,8 +539,7 @@ jobs:
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
             dotnet fsi --nologo --exec "$driver"
 
-  # Fixture languages whose toolchain is a tarball download.
-  lint-curl-tarballs:
+  lint-sml:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -550,16 +549,6 @@ jobs:
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
-      - name: Install Dhall
-        run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
-          echo "$PWD/bin" >> "$GITHUB_PATH"
-      - name: Install Wren CLI
-        run: |
-          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
-          unzip -o /tmp/wren.zip -d /tmp/wren
-          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
       # Every fixture defines its own entry point at top level, so compile
       # and run each file directly. Each invocation gets a private tmpdir
@@ -576,6 +565,18 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
 
+  lint-dhall:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Dhall
+        run: |-
+          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
+            | tar -xj
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
       - name: Lint Dhall
         run: |-
           find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall
@@ -583,6 +584,18 @@ jobs:
           dhall < "$1" > /dev/null
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
+
+  lint-wren:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Wren CLI
+        run: |
+          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+          unzip -o /tmp/wren.zip -d /tmp/wren
+          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
       - name: Lint Wren
         run: |-
@@ -1570,7 +1583,9 @@ jobs:
       - lint-elm-run
       - lint-uv-scripts
       - lint-dotnet
-      - lint-curl-tarballs
+      - lint-sml
+      - lint-dhall
+      - lint-wren
       - lint-elixir
       - lint-erlang
       - lint-gleam
