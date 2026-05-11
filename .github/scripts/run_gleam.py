@@ -15,8 +15,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-_MAIN_DECL = re.compile(pattern=r"\bpub fn main\(")
-
 
 def main() -> None:
     """Run every Gleam golden file passed on stdin."""
@@ -37,16 +35,8 @@ def main() -> None:
         for index, fixture in enumerate(fixtures):
             module_name = f"f{index}"
             module_to_fixture[module_name] = fixture
-            text = fixture.read_text(encoding="utf-8")
-            # Rename `main` so the runner can call it without colliding
-            # with its own `main`. There is exactly one per fixture.
-            rewritten = _MAIN_DECL.sub(
-                repl="pub fn run(",
-                string=text,
-                count=1,
-            )
             (src_dir / f"{module_name}.gleam").write_text(
-                data=rewritten,
+                data=fixture.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
             runner_imports.append(f"import {module_name}")
@@ -54,7 +44,7 @@ def main() -> None:
             # runtime crash points at the culprit (the BEAM aborts with
             # no Gleam-level traceback we can post-process reliably).
             runner_calls.append(f'  io.println("RUN: {fixture}")')
-            runner_calls.append(f"  {module_name}.run()")
+            runner_calls.append(f"  {module_name}.main()")
 
         runner_src = (
             "import gleam/io\n"
