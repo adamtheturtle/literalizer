@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -336,10 +336,10 @@ def _build_object_variant_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}(kind: ..., ...Val: ...)``."""
         signature = _nim_variant_for_scalar(
-            value=cast("Scalar", raw_value),
+            value=raw_value,
             date_type=date_type,
             datetime_type=datetime_type,
         )

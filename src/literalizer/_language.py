@@ -12,7 +12,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -461,7 +461,7 @@ class HeterogeneousBehavior:
 
     skip_scalar_checks: bool
     compute_wrap_ids: Callable[[Value], frozenset[int]]
-    wrap_scalar: Callable[[Value, str], str] | None
+    wrap_scalar: Callable[[Scalar, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
 
 
