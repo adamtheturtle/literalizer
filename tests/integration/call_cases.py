@@ -188,6 +188,21 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_four_args",
+        target_function="process",
+        parameter_names=["a", "b", "c", "d"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_reserved_target",
         target_function="op",  # Reserved in SML.
         parameter_names=["value"],

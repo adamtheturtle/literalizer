@@ -391,9 +391,6 @@ def _elm_call_stub(
     n = len(params)
     _max_elm_tuple_size = len(("a", "b", "c"))
     match n:
-        case 0:  # pragma: no cover
-            type_sig = f"{flat_name} : ()"
-            impl = f"{flat_name} = ()"
         case 1:
             type_sig = f"{flat_name} : a -> ()"
             impl = f"{flat_name} _ = ()"
@@ -410,7 +407,7 @@ def _elm_call_stub(
             )
             type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
             impl = f"{flat_name} _ = ()"
-        case _:  # pragma: no cover
+        case _:
             _alphabet_size = len(string.ascii_lowercase)
             type_vars = " -> ".join(
                 chr(ord("a") + (i % _alphabet_size))
@@ -791,14 +788,9 @@ class Elm(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         if not variable_name:
-            let_lines: list[str] = []
-            for line in content.split(sep="\n"):
-                if not line:  # pragma: no cover
-                    let_lines.append("")
-                elif not line[0].isspace():
-                    let_lines.append(f"        _ = {line}")
-                else:  # pragma: no cover
-                    let_lines.append(f"        {line}")
+            let_lines = [
+                f"        _ = {line}" for line in content.split(sep="\n")
+            ]
             return _elm_call_module(preamble=preamble, let_lines=let_lines)
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
@@ -819,18 +811,12 @@ class Elm(metaclass=LanguageCls):
         preamble = "\n".join(body_preamble)
         let_lines: list[str] = []
         for decl in declarations:
-            for line in decl.split(sep="\n"):
-                if not line:  # pragma: no cover
-                    let_lines.append("")
-                else:
-                    let_lines.append(f"        {line}")
-        for line in calls.split(sep="\n"):
-            if not line:  # pragma: no cover
-                let_lines.append("")
-            elif not line[0].isspace():
-                let_lines.append(f"        _ = {line}")
-            else:  # pragma: no cover
-                let_lines.append(f"        {line}")
+            let_lines.extend(
+                f"        {line}" for line in decl.split(sep="\n")
+            )
+        let_lines.extend(
+            f"        _ = {line}" for line in calls.split(sep="\n")
+        )
         return _elm_call_module(preamble=preamble, let_lines=let_lines)
 
     @staticmethod
