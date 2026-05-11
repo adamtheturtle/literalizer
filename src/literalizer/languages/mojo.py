@@ -498,6 +498,29 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
             assert_never(unreachable)
 
 
+_REGISTER_TRIVIAL_VARIANT_TYPE_NAMES: frozenset[str] = frozenset(
+    {"Bool", "Int", "Float64"},
+)
+"""Mojo ``Variant`` type-name buckets that map to register-trivial
+scalars.  Applying the ``^`` transfer operator to one of these is a
+hard error under ``--Werror`` in Mojo 0.26.1.0+.
+"""
+
+
+@beartype
+def _mojo_value_inhibits_consuming_form(value: Value, /) -> bool:
+    """Return ``True`` when ``^`` is illegal for *value*'s Mojo type.
+
+    Non-scalar values (lists, dicts, sets) and scalars that map to
+    non-trivial Mojo types (``String``, ``NoneType``) keep the existing
+    consuming-form behavior.
+    """
+    if isinstance(value, (list, dict, set)):
+        return False
+    signature = _mojo_variant_for_scalar(value)
+    return signature.type_name in _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES
+
+
 @dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Mojo heterogeneous-values strategy.
@@ -1164,8 +1187,28 @@ class Mojo(metaclass=LanguageCls):
         Used only for refs the caller declared as consumable on
         :func:`~literalizer.literalize_call` and that appear in just
         one call argument, so the transfer cannot strand a later use.
+        Refs whose underlying value is a register-trivial scalar
+        (``Int``, ``Bool``, ``Float64``) are routed away from this
+        formatter at the call site (see
+        :attr:`consumable_ref_value_inhibits_consuming_form`), because
+        applying ``^`` to such a value is a hard error under ``--Werror``.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Return ``True`` for ref values whose Mojo type is register-
+        trivial.
+
+        Mojo 0.26.1.0+ rejects ``^`` on ``Int``, ``Bool``, and
+        ``Float64`` values under ``--Werror`` because the transfer has
+        no effect.  The trivial-register set is derived from
+        :func:`_mojo_variant_for_scalar` so the formatter layer avoids
+        hard-coded Mojo type-name strings.
+        """
+        return _mojo_value_inhibits_consuming_form
 
     @cached_property
     def call_style_config(self) -> CallStyle:

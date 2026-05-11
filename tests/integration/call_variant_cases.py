@@ -125,6 +125,10 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
         "call_ref_args_reused",
         build_heterogeneous_strategy_call_variants,
     ),
+    (
+        "call_ref_args_trivial_register",
+        build_heterogeneous_strategy_call_variants,
+    ),
 ]
 
 

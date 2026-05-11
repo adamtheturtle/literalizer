@@ -56,6 +56,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     identity_call_ref_identifier,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -798,6 +799,19 @@ class Fortran(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     def wrap_calls_with_declarations(
         self,

@@ -445,6 +445,36 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        # Mix of register-trivial (Int / Bool / Float64) and non-trivial
+        # (List) consumable refs.  Each ref is single-use, so without
+        # the consume-suppression hook every ref would be eligible for
+        # the consuming form.  the Mojo ``^`` is a hard error under
+        # ``--Werror`` for register-trivial scalars, so the trivial refs
+        # must emit as bare identifiers while ``my_list`` keeps ``^``.
+        # Other languages that move consumable refs (notably C++) still
+        # render the consuming form for every ref.
+        case_dir_name="call_ref_args_trivial_register",
+        target_function="process",
+        parameter_names=["value", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_int": "1",
+            "my_bool": "true",
+            "my_float": "3.14",
+            "my_list": "[1, 2, 3]",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset(
+            {"my_int", "my_bool", "my_float", "my_list"},
+        ),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_ref_args_converted",
         target_function="process",
         parameter_names=["data", "count"],

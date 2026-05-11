@@ -236,6 +236,24 @@ def _make_cpp_element_to_type(
     )
 
 
+@beartype
+def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
+    """Return ``True`` when ``std::move`` is unhelpful for *value*'s C++
+    type.
+
+    The literalize-generated C++ maps Python ``bool`` / ``int`` /
+    ``float`` to ``bool`` / a narrow integer / ``double``, all of which
+    are register-trivial.  ``date`` and ``datetime`` map to
+    ``std::chrono::year_month_day`` and
+    ``std::chrono::system_clock::time_point``, both also
+    register-trivial.  Strings, bytes, lists, and dicts allocate or own
+    heap storage, so ``std::move`` continues to deliver value for those.
+    """
+    if isinstance(value, (list, dict, set)):
+        return False
+    return isinstance(value, (bool, int, float, datetime.date))
+
+
 @dataclasses.dataclass(frozen=True)
 class _CppTypeCtx:
     """Context for C++ type resolution with value-driven int narrowing.
@@ -1457,6 +1475,22 @@ class Cpp(metaclass=LanguageCls):
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier_consumable
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Return ``True`` for ref values whose C++ type is register-
+        trivial.
+
+        ``clang-tidy``'s ``performance-move-const-arg`` rule (and the
+        equivalent ``hicpp-move-const-arg``) reports ``std::move`` on a
+        register-trivial value as an error: the move has no effect and
+        the wrapping is wasteful.  The call site routes these refs
+        through the non-consuming formatter so the emitted C++ compiles
+        cleanly under ``--warnings-as-errors``.
+        """
+        return _cpp_value_inhibits_consuming_form
 
     @cached_property
     def _cpp_date_type(self) -> str:

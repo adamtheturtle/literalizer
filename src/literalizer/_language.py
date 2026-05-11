@@ -1528,6 +1528,25 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        makes the language's consume form illegal.
+
+        Returns ``True`` when the consume operator (e.g. Mojo ``^``)
+        would be rejected for *value*, in which case the call site
+        routes the ref through :attr:`format_call_arg_ref_identifier`
+        instead of :attr:`format_call_arg_ref_identifier_consumable`.
+
+        Most languages set this to :data:`never_inhibits_consuming_form`.
+        Mojo overrides it: applying ``^`` to a register-trivial scalar
+        (``Int``, ``Bool``, ``Float64``) is a hard error under
+        ``--Werror``, so those value types inhibit the consume form.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     def wrap_in_file(
         self,
         content: str,
@@ -1620,6 +1639,26 @@ identity_call_ref_identifier: Callable[[str], str] = (
 rewriting.  Languages that decorate ref identifiers (e.g. PHP's
 ``$name`` or Perl's ``$name``) override
 :attr:`Language.format_call_ref_identifier` instead.
+"""
+
+
+@beartype
+def _never_inhibits_consuming_form(_value: Value, /) -> bool:
+    """Return ``False`` — the language's consuming form accepts every
+    value type.
+    """
+    return False
+
+
+never_inhibits_consuming_form: Callable[[Value], bool] = (
+    _never_inhibits_consuming_form
+)
+"""Shared callable for languages whose consume form (e.g. C++
+``std::move``) is valid for every value type.  Languages whose consume
+operator rejects certain value types (notably the Mojo ``^``, which is a
+hard error on register-trivial scalars under ``--Werror``) override
+:attr:`Language.consumable_ref_value_inhibits_consuming_form` to a
+predicate that returns ``True`` for those values.
 """
 
 
