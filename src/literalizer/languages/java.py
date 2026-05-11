@@ -1115,9 +1115,9 @@ class Java(metaclass=LanguageCls):
         return (
             f"class {self.module_name} {{\n"
             f"{class_block}"
-            f"    public static void {method_name}() {{\n"
+            f"{self.indent}public static void {method_name}() {{\n"
             f"{content}\n"
-            "    }\n"
+            f"{self.indent}}}\n"
             "}"
         )
 

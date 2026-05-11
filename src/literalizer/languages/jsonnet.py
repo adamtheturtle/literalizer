@@ -388,8 +388,8 @@ class Jsonnet(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -407,7 +407,7 @@ class Jsonnet(metaclass=LanguageCls):
             )
         preamble_str = "\n".join(body_preamble) + "\n"
         lines = content.split(sep="\n")
-        elements = [f"    {line}," for line in lines if line]
+        elements = [f"{self.indent}{line}," for line in lines if line]
         return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 
     @staticmethod
