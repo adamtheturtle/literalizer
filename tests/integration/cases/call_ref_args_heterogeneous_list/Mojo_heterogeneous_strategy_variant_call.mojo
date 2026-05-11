@@ -6,7 +6,7 @@ def main():
         2,
         3,
     ]
-    var my_strings = [
+    var my_strings: List[String] = [
         "a",
         "b",
     ]
