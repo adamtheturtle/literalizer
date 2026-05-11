@@ -233,14 +233,15 @@ jobs:
   # Grouped so the apt-get cost is paid once for the whole group.
   lint-apt-basics:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Install apt packages and Perl deps
         run: |-
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq gforth tcl guile-3.0 octave cpanminus
+          sudo apt-get update
+          sudo apt-get install -y gforth tcl guile-3.0 octave cpanminus
           sudo cpanm --notest DateTime
 
       - name: Lint Forth
