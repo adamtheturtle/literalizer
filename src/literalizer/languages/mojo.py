@@ -1205,8 +1205,8 @@ class Mojo(metaclass=LanguageCls):
         Mojo 0.26.1.0+ rejects ``^`` on ``Int``, ``Bool``, and
         ``Float64`` values under ``--Werror`` because the transfer has
         no effect.  The trivial-register set is derived from
-        :func:`_mojo_variant_for_scalar` so the formatter layer does not
-        hardcode Mojo type-name strings.
+        :func:`_mojo_variant_for_scalar` so the formatter layer avoids
+        hard-coded Mojo type-name strings.
         """
         return _mojo_value_inhibits_consuming_form
 

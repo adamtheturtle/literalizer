@@ -11,7 +11,7 @@ Next
   register-trivial scalars (``Int``, ``Bool``, ``Float64``) because
   Mojo 0.26.1.0+ rejects "transfer from a value of trivial register
   type" under ``--Werror``.  In C++, ``std::move`` is dropped for
-  trivially-copyable types (``bool``, integer, ``double``,
+  register-trivial types (``bool``, integer, ``double``,
   ``std::chrono::year_month_day``,
   ``std::chrono::system_clock::time_point``) which
   ``performance-move-const-arg`` / ``hicpp-move-const-arg`` reject.
