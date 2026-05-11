@@ -186,22 +186,58 @@ def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
     return all(not isinstance(v, list | dict) for v in slot_values)
 
 
-def _mojo_typed_param_list(
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _MojoSlotSignature:
+    """Per-slot resolved type info for a Mojo typed param list.
+
+    ``known_types`` is the frozenset of concrete Mojo type strings
+    resolved at this slot across calls; ``None`` entries (unresolvable
+    values) are dropped, so a slot whose only values are unresolvable
+    has an empty ``known_types``.  ``all_scalars`` is ``True`` when
+    every per-call value at this slot is a scalar (not a list or dict).
+    """
+
+    name: str
+    known_types: frozenset[str]
+    all_scalars: bool
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _MojoSlotInfo:
+    """Aggregate result of computing Mojo per-slot signatures.
+
+    ``typed_params`` is the formatted ``("name: Type", ...)`` tuple
+    consumed by the call-stub typed-param emitter, or ``None`` when the
+    caller must fall back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form.  ``slots`` carries per-slot
+    metadata: aligned with ``params`` when ``typed_params`` is a tuple,
+    a prefix up to and including the slot that triggered fallback when
+    fallback happened mid-analysis, and empty when the input slot count
+    does not match ``params``.
+    """
+
+    typed_params: tuple[str, ...] | None
+    slots: tuple[_MojoSlotSignature, ...]
+
+
+@beartype
+def _mojo_compute_slot_signatures(
+    *,
     params: Sequence[str],
     arg_values: Sequence[Value],
-    *,
     heterogeneous_value_type: str | None,
-) -> tuple[str, ...] | None:
-    """Return ``("name: Type", ...)`` for a typed Mojo signature.
+) -> _MojoSlotInfo:
+    """Compute Mojo slot signatures and the typed-param list.
 
-    Returns ``None`` to signal the caller should fall back to the
-    generic ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any
-    per-call value at a parameter slot has no Mojo type (a ref-marker
-    dict, ``None``, an inhomogeneous list, etc.) or when any slot has
-    no values (e.g. transform-stub callers pass an empty
-    ``arg_values``).  A zero-parameter call returns ``()`` (typed,
-    empty) so the caller emits a bare ``def name():`` form rather than
-    the generic stub.
+    Returns a :class:`_MojoSlotInfo` whose ``typed_params`` mirrors the
+    behavior previously implemented by ``_mojo_typed_param_list``: it
+    is ``None`` to signal the caller should fall back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any per-call
+    value at a parameter slot has no Mojo type (a ref-marker dict,
+    ``None``, an inhomogeneous list, etc.) or when any slot has no
+    values (e.g. transform-stub callers pass an empty ``arg_values``).
+    A zero-parameter call returns ``()`` (typed, empty) so the caller
+    emits a bare ``def name():`` form rather than the generic stub.
 
     When concrete Mojo types are known at every per-call value but
     diverge across calls at one slot, the behavior depends on the
@@ -212,12 +248,17 @@ def _mojo_typed_param_list(
     Variant alias as the slot type when every per-call value at the
     divergent slot is a scalar, and falls back to the generic stub
     when the slot mixes lists, dicts, or other shapes.
+
+    The ``slots`` field exposes the per-slot ``known_types`` set and
+    ``all_scalars`` flag so future callers (e.g. a body-preamble
+    builder that unions per-slot Variant alternatives with data-driven
+    alternatives) can reuse this analysis without recomputing it.
     """
     if not params:
-        return ()
+        return _MojoSlotInfo(typed_params=(), slots=())
     slots = _gather_mojo_call_slots(arg_values=arg_values)
     if len(slots) != len(params):
-        return None
+        return _MojoSlotInfo(typed_params=None, slots=())
     wrap_ids = (
         frozenset[int]().union(
             *(
@@ -229,6 +270,7 @@ def _mojo_typed_param_list(
         else frozenset[int]()
     )
     typed: list[str] = []
+    slot_signatures: list[_MojoSlotSignature] = []
     for name, slot_values in zip(params, slots, strict=True):
         slot_types = [
             _value_to_mojo_type(
@@ -238,11 +280,21 @@ def _mojo_typed_param_list(
             )
             for v in slot_values
         ]
-        known_types: set[str] = {t for t in slot_types if t is not None}
+        known_types: frozenset[str] = frozenset(
+            t for t in slot_types if t is not None
+        )
+        all_scalars = _slot_is_all_scalars(slot_values=slot_values)
+        slot_signatures.append(
+            _MojoSlotSignature(
+                name=name,
+                known_types=known_types,
+                all_scalars=all_scalars,
+            ),
+        )
         if (
             len(known_types) > 1
             and heterogeneous_value_type is not None
-            and _slot_is_all_scalars(slot_values=slot_values)
+            and all_scalars
         ):
             typed.append(f"{name}: {heterogeneous_value_type}")
             continue
@@ -251,7 +303,10 @@ def _mojo_typed_param_list(
             or None in slot_types
             or (len(known_types) > 1 and heterogeneous_value_type is not None)
         ):
-            return None
+            return _MojoSlotInfo(
+                typed_params=None,
+                slots=tuple(slot_signatures),
+            )
         if len(known_types) > 1:
             msg = (
                 "Mojo call argument types diverge across calls at "
@@ -263,7 +318,32 @@ def _mojo_typed_param_list(
             raise HeterogeneousScalarCollectionError(msg)
         (mojo_type,) = known_types
         typed.append(f"{name}: {mojo_type}")
-    return tuple(typed)
+    return _MojoSlotInfo(
+        typed_params=tuple(typed),
+        slots=tuple(slot_signatures),
+    )
+
+
+@beartype
+def _mojo_typed_param_list(
+    *,
+    params: Sequence[str],
+    arg_values: Sequence[Value],
+    heterogeneous_value_type: str | None,
+) -> tuple[str, ...] | None:
+    """Return ``("name: Type", ...)`` for a typed Mojo signature.
+
+    Thin wrapper over :func:`_mojo_compute_slot_signatures` that
+    surfaces only the ``typed_params`` field.  See that function for
+    the full contract (fallback conditions, divergent-slot handling
+    under each heterogeneous strategy, zero-parameter behavior).
+    """
+    info = _mojo_compute_slot_signatures(
+        params=params,
+        arg_values=arg_values,
+        heterogeneous_value_type=heterogeneous_value_type,
+    )
+    return info.typed_params
 
 
 def _mojo_cross_call_scalar_wrap_ids(
