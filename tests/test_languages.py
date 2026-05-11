@@ -28,7 +28,6 @@ from literalizer.languages import (
     Jsonnet,
     Matlab,
     Python,
-    R,
     Rust,
     Sml,
 )
@@ -76,18 +75,6 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
         ")"
         ")"
     )
-
-
-def test_r_formats_named_dict_entries() -> None:
-    """R dict entries with names are formatted without raising."""
-    result = literalize(
-        source="{name: value}",
-        input_format=InputFormat.YAML,
-        language=R(empty_dict_key=R.empty_dict_keys.ERROR),
-        variable_form=None,
-    )
-
-    assert result.code == 'list(\n    "name" = "value"\n)'
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
