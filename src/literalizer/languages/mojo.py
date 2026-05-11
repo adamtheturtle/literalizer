@@ -663,6 +663,48 @@ def _build_variant_behavior(
     )
 
 
+@beartype
+def _collect_variant_alternatives_from_data(data: Value, /) -> tuple[str, ...]:
+    """Return Mojo ``Variant`` alternative type names found in *data*.
+
+    The result is order-preserving and deduplicated.  Returns an empty
+    tuple when *data* contains no heterogeneous containers.
+    """
+    wrap_ids = collect_heterogeneous_container_ids(data=data)
+    if not wrap_ids:
+        return ()
+    scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+    type_names: list[str] = []
+    seen: set[str] = set()
+    for scalar in scalars:
+        signature = _mojo_variant_for_scalar(scalar)
+        if signature.type_name in seen:
+            continue
+        seen.add(signature.type_name)
+        type_names.append(signature.type_name)
+    return tuple(type_names)
+
+
+@beartype
+def _render_variant_preamble(
+    alternatives: Sequence[str],
+    /,
+    *,
+    variant_name: str,
+) -> tuple[str, ...]:
+    """Render the ``Variant`` import + ``comptime`` declaration lines.
+
+    Returns ``()`` when *alternatives* is empty.
+    """
+    if not alternatives:
+        return ()
+    joined = ", ".join(alternatives)
+    return (
+        _VARIANT_IMPORT_LINE,
+        f"comptime {variant_name} = Variant[{joined}]",
+    )
+
+
 def _build_variant_preamble(
     variant_name: str,
     /,
@@ -673,22 +715,9 @@ def _build_variant_preamble(
         """Build the ``Variant`` import + ``comptime`` declaration for
         *data*.
         """
-        wrap_ids = collect_heterogeneous_container_ids(data=data)
-        if not wrap_ids:
-            return ()
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        type_names: list[str] = []
-        seen: set[str] = set()
-        for scalar in scalars:
-            signature = _mojo_variant_for_scalar(scalar)
-            if signature.type_name in seen:
-                continue
-            seen.add(signature.type_name)
-            type_names.append(signature.type_name)
-        joined = ", ".join(type_names)
-        return (
-            _VARIANT_IMPORT_LINE,
-            f"comptime {variant_name} = Variant[{joined}]",
+        return _render_variant_preamble(
+            _collect_variant_alternatives_from_data(data),
+            variant_name=variant_name,
         )
 
     return _preamble
