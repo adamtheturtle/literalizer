@@ -589,10 +589,10 @@ jobs:
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
           xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
 
-  # Erlang + Elixir share the BEAM runtime via setup-beam. Gleam's two
-  # passes (parse-check and run) are split into sibling jobs
-  # (`lint-gleam`, `lint-gleam-run`) because together they dominate the
-  # whole Lint workflow's wall-clock.
+  # Erlang + Elixir share the BEAM runtime via setup-beam. Gleam runs in
+  # its own sibling jobs (`lint-gleam`, `lint-gleam-run`) so that its
+  # check and run passes can fail independently and be retried in
+  # isolation.
   lint-beam:
     runs-on: ubuntu-latest
     steps:
@@ -654,8 +654,8 @@ jobs:
             case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
 
   # Gleam parse-check. Split from `lint-gleam-run` so the two passes
-  # (each ~150-230s of per-fixture work over 168 fixtures) run in
-  # parallel instead of serializing.
+  # have independent statuses (a failure in one does not mask the
+  # other's result).
   lint-gleam:
     runs-on: ubuntu-latest
     steps:
@@ -672,22 +672,25 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # Populate a shared primed project once up front so each parallel
-      # `.github/scripts/check_gleam_syntax.py` worker can copy from it instead of
-      # running its own `gleam deps download`. 168 parallel downloads
-      # otherwise hammer hex.pm and trip transient network failures.
+      # Prime a project with downloaded dependencies once up front. The
+      # check script copies this primed dir and drops every fixture into
+      # it as a separate module, so it never pays `gleam deps download`.
       - name: Prime Gleam project
         run: |-
           mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
           cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
           (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
 
+      # All ~350 fixtures are checked in a single `gleam check` invocation
+      # because each Gleam invocation boots the BEAM VM (~1s) and that
+      # startup cost -- not the per-fixture compile work -- dominated the
+      # old per-file parallel approach.
       - name: Lint Gleam
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
+          find tests/integration/cases -name '*.gleam' \
+            | uv run --no-project python .github/scripts/check_gleam_syntax.py
 
   # Gleam run pass. Sibling of `lint-gleam`; see comment there.
   lint-gleam-run:
@@ -706,18 +709,22 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # See the matching step in `lint-gleam` for the rationale.
       - name: Prime Gleam project
         run: |-
           mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
           cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
           (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
 
+      # All ~350 fixtures are run in a single `gleam run` invocation; the
+      # script generates a runner module that calls each fixture's `main`
+      # in sequence. See `lint-gleam` for the BEAM-startup rationale.
       - name: Run Gleam files
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
+          find tests/integration/cases -name '*.gleam' \
+            | uv run --no-project python .github/scripts/run_gleam.py
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:

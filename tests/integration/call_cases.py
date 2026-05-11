@@ -32,7 +32,11 @@ from literalizer.exceptions import (
 )
 
 from .check_golden import check_golden
-from .language_specs import sorted_languages, with_per_fixture_module_name
+from .language_specs import (
+    make_golden_path,
+    sorted_languages,
+    with_per_fixture_module_name,
+)
 
 
 @beartype
@@ -1025,10 +1029,15 @@ def run_call_golden_case(
     variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
     ``ERROR`` strategy rejects).
     """
-    lang_cls = type(spec)
+    lang_cls = cast("literalizer.LanguageCls", type(spec))
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=golden_name,
+        extension=lang_cls.extension,
+        lang_cls=lang_cls,
+    )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
