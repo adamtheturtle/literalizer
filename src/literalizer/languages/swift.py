@@ -135,10 +135,10 @@ def _swift_param(*, name: str, accepts_nil: bool) -> str:
 
 @beartype
 def _swift_args_contain_nil(*, args: Sequence[Value]) -> bool:
-    """Return ``True`` when any top-level or per-element call arg is
+    """Return ``True`` when any top-level or per-element call argument is
     ``None``.
 
-    *args* may be the flat per-call argument list or a list of
+    Accepts either the flat per-call argument list or a list of
     per-element call argument lists; both shapes are inspected so a
     ``None`` at any call's slot is detected.
     """

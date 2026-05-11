@@ -266,7 +266,7 @@ def _mojo_cross_call_scalar_wrap_ids(
     """Return ids of scalars in a cross-call divergent VARIANT slot.
 
     When *slot_values* contains scalars whose Mojo types diverge across
-    calls, return a ``frozenset`` of their ``id()`` so the call-arg
+    calls, return a ``frozenset`` of their ``id()`` so the call-argument
     formatter can wrap each as ``Value(...)``.  Returns an empty
     ``frozenset`` for homogeneous slots and slots that mix scalars
     with lists / dicts (those fall back to the generic stub and need

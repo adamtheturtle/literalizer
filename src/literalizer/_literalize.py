@@ -668,9 +668,9 @@ def _compute_call_slot_scalar_wrap_ids(
     calls and ask the language's
     :class:`~literalizer._language.HeterogeneousBehavior` whether any
     of those values need wrapping due to cross-call type divergence.
-    The default behavior returns an empty set for every slot; Mojo's
-    ``VARIANT`` strategy returns the value ids of divergent top-level
-    scalars so they render wrapped as ``Value(...)``.
+    The default behavior returns an empty set for every slot; the Mojo
+    language under the ``VARIANT`` strategy returns the value ids of
+    divergent top-level scalars so they render wrapped as ``Value(...)``.
     """
     slots = _gather_call_slot_values(elements=elements, ref_key=ref_key)
     return frozenset[int]().union(
