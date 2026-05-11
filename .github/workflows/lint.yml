@@ -229,45 +229,86 @@ jobs:
           find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
 
-  # Fixture languages whose interpreter is a quick `apt-get install`.
-  # Grouped so the apt-get cost is paid once for the whole group.
-  lint-apt-basics:
+  lint-forth:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install apt packages and Perl deps
+      - name: Install gforth
         run: |-
           sudo apt-get update
-          sudo apt-get install -y gforth tcl guile-3.0 octave cpanminus
-          sudo cpanm --notest DateTime
-
+          sudo apt-get install -y gforth
       - name: Lint Forth
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
           xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
 
+  lint-tcl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install tcl
+        run: |-
+          sudo apt-get update
+          sudo apt-get install -y tcl
       - name: Lint Tcl
         run: |-
           find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl
           xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
 
+  lint-scheme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install guile
+        run: |-
+          sudo apt-get update
+          sudo apt-get install -y guile-3.0
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
           xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
 
-      # Octave is a practical CI substitute, but it does not support
-      # every MATLAB builtin.  The per-fixture skip rules (for ``""``
-      # escaped quotes and the ``datetime`` builtin) are documented in
-      # .github/scripts/lint-matlab-fixture.sh.
+  # Octave is a practical CI substitute, but it does not support
+  # every MATLAB builtin.  The per-fixture skip rules (for ``""``
+  # escaped quotes and the ``datetime`` builtin) are documented in
+  # .github/scripts/lint-matlab-fixture.sh.
+  lint-matlab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install octave
+        run: |-
+          sudo apt-get update
+          sudo apt-get install -y octave
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
           xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
+  lint-perl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Perl deps
+        run: |-
+          sudo apt-get update
+          sudo apt-get install -y cpanminus
+          sudo cpanm --notest DateTime
       - name: Lint Perl
         run: |-
           find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl
@@ -1576,7 +1617,11 @@ jobs:
       - pre-commit
       - lint-fast
       - lint-odin
-      - lint-apt-basics
+      - lint-forth
+      - lint-tcl
+      - lint-scheme
+      - lint-matlab
+      - lint-perl
       - lint-go-installed
       - lint-npm-installed
       - lint-typescript-run
