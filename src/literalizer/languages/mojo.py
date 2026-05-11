@@ -1368,15 +1368,20 @@ class Mojo(metaclass=LanguageCls):
             modifiers: frozenset[enum.Enum],
         ) -> str:
             """Format the declaration, annotating string lists."""
-            match data:
-                case [first, *_] if _mojo_element_renders_as_string(
-                    item=first,
-                    date_renders_as_string=date_renders_as_string,
-                    datetime_renders_as_string=datetime_renders_as_string,
-                ):
-                    return f"var {name}: List[String] = {value}"
-                case _:
-                    return base_formatter(name, value, data, modifiers)
+            if (
+                isinstance(data, list)
+                and data
+                and all(
+                    _mojo_element_renders_as_string(
+                        item=item,
+                        date_renders_as_string=date_renders_as_string,
+                        datetime_renders_as_string=datetime_renders_as_string,
+                    )
+                    for item in data
+                )
+            ):
+                return f"var {name}: List[String] = {value}"
+            return base_formatter(name, value, data, modifiers)
 
         return _format
 
