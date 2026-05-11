@@ -10,7 +10,7 @@ import enum
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Protocol, cast, runtime_checkable
 
 from beartype import beartype
 
@@ -364,6 +364,54 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
         )
         for lang_cls, type_name in DEFAULT_SEQUENCE_ELEMENT_TYPES.items()
     ]
+
+
+@runtime_checkable
+class _HasEmptyDictKey(Protocol):
+    """Structural type for languages that expose an ``empty_dict_key``
+    constructor field.
+
+    Used by :func:`build_empty_dict_key_variants` to narrow a generic
+    :class:`literalizer.Language` to one with the field, without
+    introspecting ``__dataclass_fields__`` or casting to ``Any``.
+    """
+
+    empty_dict_key: enum.Enum
+    empty_dict_keys: type[enum.Enum]
+
+
+@beartype
+def build_empty_dict_key_variants() -> Iterable[Variant]:
+    """Build empty-dict-key variants for every language whose spec
+    exposes the field with more than one policy.
+
+    Languages whose ``EmptyDictKey`` enum has a single member (the common
+    case today) produce no variants; languages that don't expose
+    ``empty_dict_key`` at all are skipped via the protocol check.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(spec, _HasEmptyDictKey):
+            continue
+        default = spec.empty_dict_key
+        for fmt in spec.empty_dict_keys:
+            if fmt is default:
+                continue
+            variants.append(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}"
+                        f"_empty_dict_key_{fmt.name.lower()}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        empty_dict_key=fmt,
+                    ),
+                    lang_cls=lang_cls,
+                )
+            )
+    return variants
 
 
 @beartype
@@ -1145,6 +1193,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_default_sequence_element_type_variants
     ),
     "default_dict_value_type": build_default_dict_value_type_variants,
+    "empty_dict_key": build_empty_dict_key_variants,
     "default_dict_key_type": build_default_dict_key_type_variants,
     "default_ordered_map_value_type": (
         build_default_ordered_map_value_type_variants
@@ -1297,6 +1346,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
+    "empty_dict_key": (_ci(case_dir_name="simple_dict"),),
     "default_ordered_map_value_type": (_ci(case_dir_name="ordered_map"),),
     "comment": (_ci(case_dir_name="comments"),),
     "type_hints": tuple(
