@@ -9,8 +9,9 @@ remain in :mod:`tests.test_yaml`.
 
 import json
 import re
+from collections.abc import Mapping, Sequence
 from io import StringIO
-from typing import TYPE_CHECKING, assert_never, cast
+from typing import assert_never, cast
 
 import pytest
 import tomlkit
@@ -26,8 +27,15 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import Dhall, Mojo, Python
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
+type _SourceData = (
+    Mapping[str, _SourceData]
+    | Sequence[_SourceData]
+    | str
+    | int
+    | float
+    | bool
+    | None
+)
 
 MOJO = Mojo(
     date_format=Mojo.date_formats.ISO,
@@ -51,7 +59,7 @@ FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f != InputFormat.TOML]
 
 
 def _to_source(
-    data: object,
+    data: _SourceData,
     input_format: InputFormat,
 ) -> str:
     """Serialize *data* into a source string for *input_format*.
@@ -324,7 +332,7 @@ def test_raises_mixed_dict_inside_mixed_list(
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
     """Dicts with different key sets raise across all formats (Dhall)."""
-    data = {
+    data: _SourceData = {
         "items": [
             {"type": "create", "draft": True},
             {"type": "update"},
@@ -418,7 +426,7 @@ def test_no_raise_heterogeneous_for_language_supporting_it(
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
     """Uniform dict shapes do not raise across all formats (Dhall)."""
-    data = [
+    data: _SourceData = [
         {"type": "create", "name": "a"},
         {"type": "update", "name": "b"},
     ]
