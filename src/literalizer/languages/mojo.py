@@ -632,26 +632,38 @@ def _mojo_list_open(items: list[Value]) -> str:
 def _mojo_format_variable_declaration(
     name: str,
     value: str,
-    data: Value,
+    _data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format a Mojo ``var`` declaration.
-
-    Emits ``var name: List[String] = value`` when *data* is a non-empty
-    list whose rendered elements open with a double-quoted ``String``
-    literal (``str`` / ``bytes`` / ISO-rendered ``date`` / ISO-rendered
-    ``datetime`` lists).  Mojo does not infer ``List[String]`` from a
-    bare ``["a", "b"]`` literal; the result is a list of string
-    literals and is rejected when assigned into a ``Variant`` slot
-    expecting ``List[String]``.  Other element types (``Int``,
-    ``Float64``, ``Bool``, epoch-rendered datetimes, nested
-    collections) infer directly from the literal and need no
-    annotation.  A non-empty list ``data`` always renders with a ``[``
-    opener, so checking the character after ``[`` is sufficient.
-    """
-    if isinstance(data, list) and data and value[1:].lstrip().startswith('"'):
-        return f"var {name}: List[String] = {value}"
+    """Format a plain Mojo ``var name = value`` declaration."""
     return f"var {name} = {value}"
+
+
+@beartype
+def _mojo_element_renders_as_string(
+    item: Value,
+    *,
+    date_renders_as_string: bool,
+    datetime_renders_as_string: bool,
+) -> bool:
+    """Return whether *item* would render as a quoted ``String``.
+
+    Used to decide when a Mojo list literal needs an explicit
+    ``List[String]`` annotation: Mojo infers ``List[StringLiteral]`` from
+    a bare ``["a", "b"]`` literal, which is rejected when assigned into
+    a ``Variant`` slot expecting ``List[String]``.  ``str`` and ``bytes``
+    always render quoted; ``datetime`` and ``date`` only when the
+    configured formatter produces a string.
+    """
+    match item:
+        case str() | bytes():
+            return True
+        case datetime.datetime():
+            return datetime_renders_as_string
+        case datetime.date():
+            return date_renders_as_string
+        case _:
+            return False
 
 
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
@@ -1335,8 +1347,38 @@ class Mojo(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        """Callable that formats a new variable declaration.
+
+        Wraps the configured declaration formatter so a non-empty list of
+        string-rendering elements gets an explicit ``List[String]``
+        annotation.  Mojo infers ``List[StringLiteral]`` from a bare
+        ``["a", "b"]`` literal, which is rejected when assigned into a
+        ``Variant`` slot expecting ``List[String]``.
+        """
+        base_formatter = self.declaration_style.value.formatter
+        date_renders_as_string = self.date_format.value.type_produced is str
+        datetime_renders_as_string = (
+            self.datetime_format.value.type_produced is str
+        )
+
+        def _format(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Format the declaration, annotating string lists."""
+            match data:
+                case [first, *_] if _mojo_element_renders_as_string(
+                    item=first,
+                    date_renders_as_string=date_renders_as_string,
+                    datetime_renders_as_string=datetime_renders_as_string,
+                ):
+                    return f"var {name}: List[String] = {value}"
+                case _:
+                    return base_formatter(name, value, data, modifiers)
+
+        return _format
 
     @cached_property
     def format_variable_assignment(
