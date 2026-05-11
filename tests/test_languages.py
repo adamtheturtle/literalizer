@@ -365,6 +365,26 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     )
 
 
+def test_fortran_wrap_in_file_no_variable_form() -> None:
+    """``literalize(wrap_in_file=True)`` without a variable form omits
+    Fortran's ``contains`` section so the program stays valid.
+    """
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Fortran(module_name="main"),
+        wrap_in_file=True,
+        variable_form=None,
+    )
+    assert result.code.endswith(
+        "program main\n"
+        "    use fval_m\n"
+        "    implicit none\n"
+        "    42_int64\n"
+        "end program main"
+    )
+
+
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     """COBOL data names must not end with a hyphen after truncation."""
     long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
