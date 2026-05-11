@@ -589,16 +589,13 @@ jobs:
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
           xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
 
-  # Erlang + Elixir share the BEAM runtime via setup-beam. Gleam has its
-  # own sibling job (`lint-gleam`) that runs check and run passes in
-  # sequence.
-  lint-beam:
+  lint-elixir:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Erlang and Elixir
+      - name: Install Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
@@ -607,13 +604,24 @@ jobs:
       # Fixtures only declare `defmodule Check` with a `def x` body, so
       # `elixir` compiles the module but never invokes it. The script
       # compiles each fixture, calls `Check.x()` to force the body to
-      # execute, and purges the module between fixtures — all inside a
+      # execute, and purges the module between fixtures, all inside a
       # single BEAM VM, paying the cold-start cost once instead of twice
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
           find tests/integration/cases -name '*.ex' -print0 > /tmp/files-elixir
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
+
+  lint-erlang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
 
       # Compile every fixture in a single erlc invocation to pay the
       # BEAM VM startup cost once. Each fixture already carries a unique
@@ -1563,7 +1571,8 @@ jobs:
       - lint-uv-scripts
       - lint-dotnet
       - lint-curl-tarballs
-      - lint-beam
+      - lint-elixir
+      - lint-erlang
       - lint-gleam
       - lint-jvm-mini
       - lint-haskell-family
