@@ -73,6 +73,7 @@ from literalizer._language import (
     identity_call_statement,
     identity_call_target,
     no_call_stub,
+    no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -357,6 +358,7 @@ def _build_object_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 

@@ -656,6 +656,32 @@ def _compute_call_per_element_wrap_ids(
 
 
 @beartype
+def _compute_call_slot_scalar_wrap_ids(
+    *,
+    elements: list[Value],
+    spec: Language,
+    ref_key: str,
+) -> frozenset[int]:
+    """Compute ids of top-level scalar call arguments to wrap.
+
+    For each positional argument slot, gather the values across sibling
+    calls and ask the language's
+    :class:`~literalizer._language.HeterogeneousBehavior` whether any
+    of those values need wrapping due to cross-call type divergence.
+    The default behavior returns an empty set for every slot; Mojo's
+    ``VARIANT`` strategy returns the value ids of divergent top-level
+    scalars so they render wrapped as ``Value(...)``.
+    """
+    slots = _gather_call_slot_values(elements=elements, ref_key=ref_key)
+    return frozenset[int]().union(
+        *(
+            spec.heterogeneous_behavior.compute_call_slot_wrap_ids(slot_values)
+            for slot_values in slots
+        )
+    )
+
+
+@beartype
 def _compute_sequence_dict_override(
     *,
     items: list[Value],
@@ -2254,6 +2280,7 @@ def _format_single_call_arg(
     value: Value,
     language: Language,
     wrap_ids: frozenset[int],
+    scalar_wrap_ids: frozenset[int],
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
     ref_case: IdentifierCase | None,
@@ -2295,7 +2322,7 @@ def _format_single_call_arg(
         if is_consumable:
             return language.format_call_arg_ref_identifier_consumable(ref_name)
         return language.format_call_arg_ref_identifier(ref_name)
-    return wrap_arg(
+    formatted = wrap_arg(
         value,
         _format_value(
             value=value,
@@ -2310,6 +2337,9 @@ def _format_single_call_arg(
             multiline_prefix="",
         ),
     )
+    if id(value) in scalar_wrap_ids:
+        return language.heterogeneous_behavior.wrap_scalar(value, formatted)
+    return formatted
 
 
 @beartype
@@ -2344,6 +2374,7 @@ def _format_call_args(
     params: Sequence[str],
     language: Language,
     wrap_ids: frozenset[int],
+    scalar_wrap_ids: frozenset[int],
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
@@ -2377,6 +2408,7 @@ def _format_call_args(
             value=arg_value,
             language=language,
             wrap_ids=wrap_ids,
+            scalar_wrap_ids=scalar_wrap_ids,
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
             ref_case=ref_case,
@@ -2618,6 +2650,11 @@ def _render_call_per_element(
         spec=language,
         ref_key=ref_key,
     )
+    scalar_wrap_ids = _compute_call_slot_scalar_wrap_ids(
+        elements=data,
+        spec=language,
+        ref_key=ref_key,
+    )
     single_use_ref_names = _compute_call_arg_ref_single_use_names(
         elements=data,
         ref_key=ref_key,
@@ -2644,6 +2681,7 @@ def _render_call_per_element(
             params=parameter_names,
             language=language,
             wrap_ids=call_wrap_ids,
+            scalar_wrap_ids=scalar_wrap_ids,
             style=style,
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
@@ -2705,6 +2743,7 @@ def _render_call_whole(
         params=parameter_names,
         language=language,
         wrap_ids=call_wrap_ids,
+        scalar_wrap_ids=frozenset[int](),
         style=style,
         dict_open_overrides=[None],
         ref_case=ref_case,

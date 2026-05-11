@@ -7,8 +7,10 @@ struct _ClientType(Copyable, Movable):
 @fieldwise_init
 struct _AppType(Copyable, Movable):
     var client: _ClientType
+def emit[*Ts: AnyType](*args: *Ts):
+    pass
 def main():
     var app = _AppType(_ClientType())
-    app.client.fetch(Value(String("hello")))
-    app.client.fetch(Value(42))
-    app.client.fetch(Value(True))
+    emit(app.client.fetch(Value(String("hello"))))
+    emit(app.client.fetch(Value(42)))
+    emit(app.client.fetch(Value(True)))

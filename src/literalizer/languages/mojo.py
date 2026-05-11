@@ -161,6 +161,25 @@ def _value_to_mojo_type(
             return _mojo_call_arg_element_to_type(type(value))
 
 
+def _gather_mojo_call_slots(
+    arg_values: Sequence[Value],
+) -> list[list[Value]]:
+    """Group per-call argument values by positional slot."""
+    slots: list[list[Value]] = []
+    for element in arg_values:
+        per_arg = element if isinstance(element, list) else [element]
+        for slot_index, arg_value in enumerate(iterable=per_arg):
+            if slot_index >= len(slots):
+                slots.append([])
+            slots[slot_index].append(arg_value)
+    return slots
+
+
+def _slot_is_all_scalars(slot_values: Sequence[Value]) -> bool:
+    """Return ``True`` when every value at this slot is a scalar."""
+    return all(not isinstance(v, list | dict) for v in slot_values)
+
+
 def _mojo_typed_param_list(
     params: Sequence[str],
     arg_values: Sequence[Value],
@@ -183,18 +202,14 @@ def _mojo_typed_param_list(
     heterogeneous strategy: ``ERROR`` raises
     :exc:`HeterogeneousScalarCollectionError` so the call-stub path
     refuses input it cannot represent; ``VARIANT`` (signaled by a
-    non-``None`` ``heterogeneous_value_type``) falls back to ``None``
-    pending the cross-call wrap machinery in a follow-up slice.
+    non-``None`` ``heterogeneous_value_type``) emits the configured
+    Variant alias as the slot type when every per-call value at the
+    divergent slot is a scalar, and falls back to the generic stub
+    when the slot mixes lists, dicts, or other shapes.
     """
     if not params:
         return ()
-    slots: list[list[Value]] = []
-    for element in arg_values:
-        per_arg = element if isinstance(element, list) else [element]
-        for slot_index, arg_value in enumerate(iterable=per_arg):
-            if slot_index >= len(slots):
-                slots.append([])
-            slots[slot_index].append(arg_value)
+    slots = _gather_mojo_call_slots(arg_values=arg_values)
     if len(slots) != len(params):
         return None
     wrap_ids = (
@@ -219,6 +234,13 @@ def _mojo_typed_param_list(
         ]
         known_types: set[str] = {t for t in slot_types if t is not None}
         if (
+            len(known_types) > 1
+            and heterogeneous_value_type is not None
+            and _slot_is_all_scalars(slot_values=slot_values)
+        ):
+            typed.append(f"{name}: {heterogeneous_value_type}")
+            continue
+        if (
             not slot_types
             or None in slot_types
             or (len(known_types) > 1 and heterogeneous_value_type is not None)
@@ -236,6 +258,33 @@ def _mojo_typed_param_list(
         (mojo_type,) = known_types
         typed.append(f"{name}: {mojo_type}")
     return tuple(typed)
+
+
+def _mojo_cross_call_scalar_wrap_ids(
+    slot_values: Sequence[Value],
+) -> frozenset[int]:
+    """Return ids of scalars in a cross-call divergent VARIANT slot.
+
+    When *slot_values* contains scalars whose Mojo types diverge across
+    calls, return a ``frozenset`` of their ``id()`` so the call-arg
+    formatter can wrap each as ``Value(...)``.  Returns an empty
+    ``frozenset`` for homogeneous slots and slots that mix scalars
+    with lists / dicts (those fall back to the generic stub and need
+    no wrap).
+    """
+    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
+        return frozenset()
+    slot_types = {
+        _value_to_mojo_type(
+            v,
+            heterogeneous_value_type=None,
+            wrap_ids=frozenset(),
+        )
+        for v in slot_values
+    }
+    if len(slot_types) <= 1:
+        return frozenset()
+    return frozenset(id(v) for v in slot_values)
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
@@ -500,6 +549,7 @@ def _build_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
     )
 
 
