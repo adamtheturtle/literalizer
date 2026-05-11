@@ -509,8 +509,8 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
 
 
 def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
-    """``wrap_in_file`` keeps continuation lines indented without
-    prepending ``_ =``.
+    """``wrap_in_file`` indents continuation lines without the
+    ``_ =`` binding prefix.
 
     With ``collection_layout=MULTILINE``, a call argument that is a
     dict literal spans multiple lines. Only the top-level line of each
@@ -529,3 +529,23 @@ def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
     assert "        _ =     (" not in result.code
     assert "        _ = process(EDict [" in result.code
     assert '            ("a", EInt 1),' in result.code
+
+
+def test_elm_wrap_calls_with_declarations_multiline_continuation() -> None:
+    """``wrap_calls_with_declarations`` indents continuation lines
+    without the ``_ =`` binding prefix.
+
+    The Elm output for a call whose arg is a multi-line collection
+    must indent continuation lines plainly, leaving the ``_ = `` only
+    on the call's top-level line.
+    """
+    elm = Elm()
+    wrapped = elm.wrap_calls_with_declarations(
+        declarations=("my_var : Val\nmy_var = EInt 42",),
+        calls='process(EDict [\n    ("a", EInt 1),\n    ("b", EInt 2)\n    ])',
+        body_preamble=(),
+    )
+    assert "        _ =     (" not in wrapped
+    assert "        _ = process(EDict [" in wrapped
+    assert '            ("a", EInt 1),' in wrapped
+    assert "        my_var = EInt 42" in wrapped
