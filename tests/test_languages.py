@@ -367,7 +367,8 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
 
 def test_fortran_wrap_in_file_no_variable_form() -> None:
     """``literalize(wrap_in_file=True)`` without a variable form omits
-    Fortran's ``contains`` section so the program stays valid.
+    the program's ``contains`` section so the Fortran output stays
+    valid.
     """
     result = literalize(
         source="42",
