@@ -1,6 +1,6 @@
 """Meta-tests for project structure and CI configuration."""
 
-from typing import Any, cast
+from typing import Any
 
 import pytest
 from beartype import beartype
@@ -17,8 +17,8 @@ def fixture_lint_workflow(
     """Parse ``.github/workflows/lint.yml`` once per session."""
     lint_yml = pytestconfig.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
-    loaded = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]
-    return cast("dict[str, Any]", loaded)
+    loaded: dict[str, Any] = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]
+    return loaded
 
 
 def test_all_languages_have_lint_workflow(
