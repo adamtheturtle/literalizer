@@ -200,6 +200,7 @@ def _parse_json5(*, source: str) -> _ParsedInput:
 
 
 @functools.cache
+@beartype
 def get_yaml() -> YAML:
     """Return the cached round-trip ``YAML`` instance.
 
@@ -214,6 +215,7 @@ def get_yaml() -> YAML:
 
 
 @functools.cache
+@beartype
 def _get_safe_yaml() -> YAML:
     """Return the cached safe (C-backed when available) ``YAML`` instance.
 
@@ -227,7 +229,8 @@ def _get_safe_yaml() -> YAML:
     return YAML(typ="safe", pure=False)
 
 
-def _yaml_needs_roundtrip(source: str) -> bool:
+@beartype
+def _yaml_needs_roundtrip(*, source: str) -> bool:
     """Return True when *source* needs the comment-preserving loader.
 
     The fast path is only safe when the source has none of the

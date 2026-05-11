@@ -389,6 +389,7 @@ while still accepting the four non-kebab cases as legal identifiers.
 """
 
 
+@beartype
 def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
     """Convert *name* to *case* with snake_case normalization.
 
