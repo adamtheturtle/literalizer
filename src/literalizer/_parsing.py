@@ -147,7 +147,7 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
         case list():
             return [_coerce_yaml_keys(data=item) for item in data]
         case CommentedSet():
-            members = cast("set[Scalar]", set(data))
+            members: set[Scalar] = set(data)
             return {_unwrap_yaml_scalar(value=item) for item in members}
         case (
             bool()
