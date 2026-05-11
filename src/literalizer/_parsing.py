@@ -5,7 +5,7 @@ import datetime
 import enum
 import functools
 import json
-from typing import assert_never, cast
+from typing import assert_never
 
 import pyjson5
 import tomlkit
@@ -135,13 +135,12 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
     match data:
         case CommentedOrderedMap():
             omap_src: dict[object, YamlCoercible] = dict(data)
-            omap = ordereddict(
+            return ordereddict(
                 [
                     (f"{k}", _coerce_yaml_keys(data=v))
                     for k, v in omap_src.items()
                 ]
             )
-            return cast("Value", omap)
         case dict():
             return {f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()}
         case list():
