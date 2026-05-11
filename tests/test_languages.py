@@ -535,9 +535,9 @@ def test_elm_wrap_calls_with_declarations_multiline_continuation() -> None:
     """``wrap_calls_with_declarations`` indents continuation lines
     without the ``_ =`` binding prefix.
 
-    The Elm output for a call whose arg is a multi-line collection
-    must indent continuation lines plainly, leaving the ``_ = `` only
-    on the call's top-level line.
+    The Elm output for a call whose argument is a multi-line
+    collection must indent continuation lines plainly, leaving the
+    ``_ = `` only on the call's top-level line.
     """
     elm = Elm()
     wrapped = elm.wrap_calls_with_declarations(
