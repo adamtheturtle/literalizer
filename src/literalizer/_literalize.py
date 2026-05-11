@@ -250,16 +250,14 @@ def _maybe_wrap_child(
     and non-scalar children (ref markers, containers) through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
     """
-    if parent_id not in wrap_ids:
-        return formatted_value
     behavior = spec.heterogeneous_behavior
     if isinstance(raw_value, _SCALAR_TYPES):
         wrap_scalar = behavior.wrap_scalar
-        if wrap_scalar is None:
+        if wrap_scalar is None or parent_id not in wrap_ids:
             return formatted_value
         return wrap_scalar(raw_value, formatted_value)
     wrap_non_scalar = behavior.wrap_non_scalar
-    if wrap_non_scalar is None:
+    if wrap_non_scalar is None or parent_id not in wrap_ids:
         return formatted_value
     return wrap_non_scalar(raw_value, formatted_value)
 
