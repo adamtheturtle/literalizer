@@ -658,6 +658,7 @@ def _build_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=None,
         compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
     )
 
