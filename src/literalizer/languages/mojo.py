@@ -209,30 +209,31 @@ def _mojo_typed_param_list(
     )
     typed: list[str] = []
     for name, slot_values in zip(params, slots, strict=True):
-        types = {
+        slot_types = [
             _value_to_mojo_type(
                 v,
                 heterogeneous_value_type=heterogeneous_value_type,
                 wrap_ids=wrap_ids,
             )
             for v in slot_values
-        }
+        ]
+        known_types: set[str] = {t for t in slot_types if t is not None}
         if (
-            not types
-            or None in types
-            or (len(types) > 1 and heterogeneous_value_type is not None)
+            not slot_types
+            or None in slot_types
+            or (len(known_types) > 1 and heterogeneous_value_type is not None)
         ):
             return None
-        if len(types) > 1:
+        if len(known_types) > 1:
             msg = (
                 "Mojo call argument types diverge across calls at "
                 f"parameter '{name}' "
-                f"(got {sorted(cast('set[str]', types))}); "
+                f"(got {sorted(known_types)}); "
                 "the default ERROR heterogeneous_strategy cannot "
                 "represent this input."
             )
             raise HeterogeneousScalarCollectionError(msg)
-        (mojo_type,) = types
+        (mojo_type,) = known_types
         typed.append(f"{name}: {mojo_type}")
     return tuple(typed)
 
