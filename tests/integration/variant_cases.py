@@ -1278,6 +1278,7 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("nested_sequences", ""),
         ("dict_mixed_int_widths", ""),
         ("ordered_map", ""),
+        ("heterogeneous_list_with_string", ""),
     )
 )
 
