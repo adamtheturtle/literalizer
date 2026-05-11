@@ -443,6 +443,9 @@ class HeterogeneousBehavior:
     ``wrap_scalar`` wraps a formatted scalar value (e.g. Rust's
     tagged-enum ``Value::Variant(…)``).  For non-scalar inputs the
     implementation is expected to return *formatted* unchanged.
+    ``None`` indicates the language does not wrap; in that case
+    ``compute_wrap_ids`` and ``compute_call_slot_wrap_ids`` must
+    always return an empty set.
 
     ``compute_call_slot_wrap_ids`` is called per positional-argument
     slot with the per-call values gathered at that slot.  It returns
@@ -458,18 +461,13 @@ class HeterogeneousBehavior:
 
     skip_scalar_checks: bool
     compute_wrap_ids: Callable[[Value], frozenset[int]]
-    wrap_scalar: Callable[[Value, str], str]
+    wrap_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
 
 
 def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     """Return an empty wrap-id set — used by non-wrapping languages."""
     return frozenset()
-
-
-def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
-    """Return *formatted* unchanged — used by non-wrapping languages."""
-    return formatted  # pragma: no cover
 
 
 def _no_compute_call_slot_wrap_ids(
@@ -493,7 +491,7 @@ wrapping (every non-Mojo VARIANT-style behavior).
 NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     skip_scalar_checks=False,
     compute_wrap_ids=_no_compute_wrap_ids,
-    wrap_scalar=_no_wrap_scalar,
+    wrap_scalar=None,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar

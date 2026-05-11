@@ -238,12 +238,10 @@ def _maybe_wrap_child(
     on the spec's
     :attr:`~literalizer._language.Language.heterogeneous_behavior`.
     """
-    if parent_id not in wrap_ids:
+    wrap_scalar = spec.heterogeneous_behavior.wrap_scalar
+    if wrap_scalar is None or parent_id not in wrap_ids:
         return formatted_value
-    return spec.heterogeneous_behavior.wrap_scalar(
-        raw_value,
-        formatted_value,
-    )
+    return wrap_scalar(raw_value, formatted_value)
 
 
 @beartype
@@ -2383,9 +2381,10 @@ def _format_single_call_arg(
             multiline_prefix="",
         ),
     )
-    if id(value) in scalar_wrap_ids:
-        return language.heterogeneous_behavior.wrap_scalar(value, formatted)
-    return formatted
+    wrap_scalar = language.heterogeneous_behavior.wrap_scalar
+    if wrap_scalar is None or id(value) not in scalar_wrap_ids:
+        return formatted
+    return wrap_scalar(value, formatted)
 
 
 @beartype
