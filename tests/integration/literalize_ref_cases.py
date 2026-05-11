@@ -12,7 +12,6 @@ import dataclasses
 import functools
 import re
 from pathlib import Path
-from typing import cast
 
 import pytest
 from beartype import beartype
@@ -66,24 +65,28 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
     ]
 
 
-def _collect_ref_names(data: object, *, ref_key: str) -> list[str]:
+type _RefData = (
+    dict[str, _RefData] | list[_RefData] | str | int | float | bool | None
+)
+
+
+@beartype
+def _collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
     """Recursively collect all ref name values from parsed data."""
     match data:
         case dict():
-            typed_data = cast("dict[object, object]", data)
-            if len(typed_data) == 1 and ref_key in typed_data:
-                name = typed_data[ref_key]
+            if len(data) == 1 and ref_key in data:
+                name = data[ref_key]
                 return [name] if isinstance(name, str) else []
             return [
                 n
-                for v in typed_data.values()
+                for v in data.values()
                 for n in _collect_ref_names(data=v, ref_key=ref_key)
             ]
         case list():
-            typed_list = cast("list[object]", data)
             return [
                 n
-                for item in typed_list
+                for item in data
                 for n in _collect_ref_names(data=item, ref_key=ref_key)
             ]
         case _:
@@ -348,7 +351,7 @@ def run_literalize_ref_golden_case(
     final_code = result.code
     if variable_form_obj is not None:
         ruamel_yaml = _YAML()
-        raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        raw_data: _RefData = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=yaml_string,
         )
         stub_entries: list[tuple[str, str]] = []
