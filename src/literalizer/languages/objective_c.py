@@ -548,11 +548,13 @@ class ObjectiveC(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n    (void){variable_name};" if variable_name else ""
+        use_line = (
+            f"\n{self.indent}(void){variable_name};" if variable_name else ""
+        )
         return (
             f"int {self.module_name}(void) {{\n"
             f"@autoreleasepool {{\n{content}{use_line}\n"
-            "}\n    return 0;\n}"
+            f"}}\n{self.indent}return 0;\n}}"
         )
 
     def wrap_combined_in_file(
