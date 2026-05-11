@@ -134,7 +134,7 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
     # represents ``!!omap`` and must be demoted to ``ordereddict``.
     match data:
         case CommentedOrderedMap():
-            omap_src = cast("dict[object, object]", data)
+            omap_src: dict[object, object] = dict(data)
             omap = ordereddict(
                 [
                     (f"{k}", _coerce_yaml_keys(data=cast("YamlCoercible", v)))
