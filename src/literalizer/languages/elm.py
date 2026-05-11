@@ -794,9 +794,12 @@ class Elm(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         if not variable_name:
-            let_lines = [
-                f"        _ = {line}" for line in content.split(sep="\n")
-            ]
+            let_lines: list[str] = []
+            for line in content.split(sep="\n"):
+                if not line[0].isspace():
+                    let_lines.append(f"        _ = {line}")
+                else:
+                    let_lines.append(f"        {line}")
             return _elm_call_module(preamble=preamble, let_lines=let_lines)
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
@@ -820,9 +823,11 @@ class Elm(metaclass=LanguageCls):
             let_lines.extend(
                 f"        {line}" for line in decl.split(sep="\n")
             )
-        let_lines.extend(
-            f"        _ = {line}" for line in calls.split(sep="\n")
-        )
+        for line in calls.split(sep="\n"):
+            if not line[0].isspace():
+                let_lines.append(f"        _ = {line}")
+            else:
+                let_lines.append(f"        {line}")
         return _elm_call_module(preamble=preamble, let_lines=let_lines)
 
     @staticmethod

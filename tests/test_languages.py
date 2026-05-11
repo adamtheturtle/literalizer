@@ -9,6 +9,7 @@ from typing import ClassVar
 import pytest
 
 from literalizer import (
+    CollectionLayout,
     InputFormat,
     NewVariable,
     literalize,
@@ -21,6 +22,7 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Cobol,
     Dart,
+    Elm,
     Fortran,
     Gleam,
     Haskell,
@@ -504,3 +506,26 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
             input_format=InputFormat.YAML,
             language=Gleam(),
         )
+
+
+def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
+    """``wrap_in_file`` keeps continuation lines indented without
+    prepending ``_ =``.
+
+    With ``collection_layout=MULTILINE``, a call argument that is a
+    dict literal spans multiple lines. Only the top-level line of each
+    call gets the ``_ = `` binding prefix; continuation lines must
+    remain plain indented Elm.
+    """
+    result = literalize_call(
+        source="- - a: 1\n    b: 2\n  - 42\n",
+        input_format=InputFormat.YAML,
+        language=Elm(),
+        target_function="process",
+        parameter_names=["arg1", "arg2"],
+        wrap_in_file=True,
+        collection_layout=CollectionLayout.MULTILINE,
+    )
+    assert "        _ =     (" not in result.code
+    assert "        _ = process(EDict [" in result.code
+    assert '            ("a", EInt 1),' in result.code
