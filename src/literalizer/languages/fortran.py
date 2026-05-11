@@ -823,8 +823,6 @@ class Fortran(metaclass=LanguageCls):
         exec_stmts: list[str] = []
         for bare_code in declarations:
             lines = bare_code.splitlines()
-            if not lines:
-                continue
             type_decls.append(lines[0])
             exec_stmts.extend(lines[1:])
         body_parts: list[str] = [*type_decls, *exec_stmts, calls]

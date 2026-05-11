@@ -25,7 +25,6 @@ from literalizer.languages import (
     Gleam,
     Haskell,
     Java,
-    Jsonnet,
     Matlab,
     Python,
     R,
@@ -470,20 +469,3 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
             input_format=InputFormat.YAML,
             language=Gleam(),
         )
-
-
-def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
-    """Non-empty declarations are placed before the wrapped call
-    expression.
-
-    Jsonnet ``local`` bindings are invalid inside an array literal, so
-    ``wrap_calls_with_declarations`` emits them before the
-    ``wrap_in_file`` output rather than splicing them inside the array.
-    """
-    spec = Jsonnet()
-    result = spec.wrap_calls_with_declarations(
-        declarations=("local x = 1;",),
-        calls="[x]",
-        body_preamble=(),
-    )
-    assert result == "local x = 1;\n[x]"

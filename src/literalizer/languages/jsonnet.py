@@ -55,6 +55,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_statement,
     identity_call_target,
@@ -384,29 +385,7 @@ class Jsonnet(metaclass=LanguageCls):
         """Return call-statement formatting for this language."""
         return identity_call_statement
 
-    def wrap_calls_with_declarations(
-        self,
-        declarations: tuple[str, ...],
-        calls: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Emit ref declarations as top-level ``local`` bindings before
-        the call expressions, which :meth:`wrap_in_file` wraps in a
-        Jsonnet array.
-
-        The default ``wrap_calls_with_declarations`` would splice
-        declarations *into* the array, where ``local`` bindings are
-        invalid; placing them before keeps the file a single chained
-        let-binding ending in an array expression.
-        """
-        wrapped_calls = self.wrap_in_file(
-            content=calls,
-            variable_name="",
-            body_preamble=body_preamble,
-        )
-        if not declarations:
-            return wrapped_calls
-        return "\n".join(declarations) + "\n" + wrapped_calls
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
     def wrap_in_file(
