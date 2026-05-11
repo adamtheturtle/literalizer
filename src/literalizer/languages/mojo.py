@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -642,12 +642,12 @@ def _build_variant_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}({payload})`` where the
         payload comes from the signature's ``payload_template`` (with
         ``{value}`` substituted by the formatted scalar).
         """
-        signature = _mojo_variant_for_scalar(cast("Scalar", raw_value))
+        signature = _mojo_variant_for_scalar(raw_value)
         payload = signature.payload_template.replace(
             _VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
             formatted,

@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -440,16 +440,9 @@ def _build_union_type_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
-        """Wrap a scalar as ``{union_name}.{Variant} payload``.
-
-        :func:`~literalizer._literalize._maybe_wrap_child` filters
-        non-scalar values before dispatching, so *raw_value* is always
-        a scalar.
-        """
-        signature = _dhall_variant_for_scalar(
-            value=cast("Scalar", raw_value),
-        )
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
+        """Wrap a scalar as ``{union_name}.{Variant} payload``."""
+        signature = _dhall_variant_for_scalar(value=raw_value)
         if signature.inner_type is None:
             return f"{union_name}.{signature.name}"
         return f"{union_name}.{signature.name} {formatted}"

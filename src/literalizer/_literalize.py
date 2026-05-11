@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import assert_never
+from typing import Any, assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -240,8 +240,9 @@ def _maybe_wrap_child(
     """
     if parent_id not in wrap_ids:
         return formatted_value
+    raw_scalar: Any = raw_value
     return spec.heterogeneous_behavior.wrap_scalar(
-        raw_value,
+        raw_scalar,
         formatted_value,
     )
 
@@ -2384,7 +2385,10 @@ def _format_single_call_arg(
         ),
     )
     if id(value) in scalar_wrap_ids:
-        return language.heterogeneous_behavior.wrap_scalar(value, formatted)
+        raw_scalar: Any = value
+        return language.heterogeneous_behavior.wrap_scalar(
+            raw_scalar, formatted
+        )
     return formatted
 
 

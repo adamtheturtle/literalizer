@@ -7,7 +7,7 @@ import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -530,15 +530,10 @@ def _build_tagged_enum_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
-        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``.
-
-        :func:`~literalizer._literalize._maybe_wrap_child` filters
-        non-scalar values before dispatching, so *raw_value* is always
-        a scalar.
-        """
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
+        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
         signature = _heterogeneous_variant_for_scalar(
-            value=cast("Scalar", raw_value),
+            value=raw_value,
             date_type=date_type,
             datetime_type=datetime_type,
         )
