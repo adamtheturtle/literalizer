@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC process (VAL MOBILE LIT value, VAL MOBILE LIT label)
+    SKIP
+:
+PROC main ()
+    process(MOBILE LIT(lit.str; MOBILE []BYTE "hello"), MOBILE LIT(lit.str; MOBILE []BYTE "a"))
+    process(MOBILE LIT(lit.int; 42), MOBILE LIT(lit.str; MOBILE []BYTE "b"))
+    process(MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.str; MOBILE []BYTE "c"))
+    SEQ
+        SKIP
+:
