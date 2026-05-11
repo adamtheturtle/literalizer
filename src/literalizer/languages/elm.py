@@ -385,7 +385,7 @@ def _elm_call_stub(
     tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
     tuple that ``PositionalCallStyle`` emits at the call site.  Elm
     tuples cap at 3 elements, so 4+ parameters cannot produce
-    compilable Elm; the curried fallback exists for completeness only.
+    valid Elm; the curried fallback exists for completeness only.
     """
     flat_name = _elm_flatten_dotted(parts=parts)
     n = len(params)
@@ -410,7 +410,7 @@ def _elm_call_stub(
         case _:  # pragma: no cover
             # Elm tuples cap at 3 elements, and PositionalCallStyle
             # emits a tuple at the call site, so n > 3 cannot produce
-            # compilable Elm.  A curried stub is emitted as a best
+            # valid Elm.  A curried stub is emitted as a best
             # effort, but the call site will still be rejected by
             # ``elm make``; no integration case exercises this branch
             # for that reason.
