@@ -12,7 +12,7 @@ from .case_discovery import (
     discover_cases,
     discover_combined_cases,
 )
-from .language_specs import make_spec
+from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
@@ -28,11 +28,13 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
     expected: set[Path] = set()
 
     for variant_case in build_variant_cases():
-        ext = variant_case.variant.spec.extension
         expected.add(
-            cases_dir
-            / variant_case.case_dir_name
-            / (variant_case.variant_name + ext)
+            make_golden_path(
+                parent=cases_dir / variant_case.case_dir_name,
+                name=variant_case.variant_name,
+                extension=variant_case.variant.spec.extension,
+                lang_cls=variant_case.variant.lang_cls,
+            )
         )
 
     for case in build_statement_terminator_combined_cases():
@@ -41,25 +43,32 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
             statement_terminator_style=case.statement_terminator_style,
         )
         expected.add(
-            cases_dir
-            / case.case_dir_name
-            / (case.name + statement_terminator_style_spec.extension)
+            make_golden_path(
+                parent=cases_dir / case.case_dir_name,
+                name=case.name,
+                extension=statement_terminator_style_spec.extension,
+                lang_cls=case.lang_cls,
+            )
         )
 
     for strategy_case in build_heterogeneous_strategy_combined_cases():
-        ext = strategy_case.lang_cls.extension
         expected.add(
-            cases_dir
-            / strategy_case.case_dir_name
-            / (strategy_case.name + ext)
+            make_golden_path(
+                parent=cases_dir / strategy_case.case_dir_name,
+                name=strategy_case.name,
+                extension=strategy_case.lang_cls.extension,
+                lang_cls=strategy_case.lang_cls,
+            )
         )
 
     for pre_indent_case in build_pre_indent_cases():
-        ext = pre_indent_case.lang_cls.extension
         expected.add(
-            cases_dir
-            / pre_indent_case.case_dir_name
-            / (pre_indent_case.name + ext)
+            make_golden_path(
+                parent=cases_dir / pre_indent_case.case_dir_name,
+                name=pre_indent_case.name,
+                extension=pre_indent_case.lang_cls.extension,
+                lang_cls=pre_indent_case.lang_cls,
+            )
         )
 
     return expected
@@ -75,15 +84,23 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(case_dir / "input.yaml")
 
     for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
-        ext = lang_cls.extension
-        expected.add(cases_dir / case_name / (lang_cls.__name__ + ext))
+        expected.add(
+            make_golden_path(
+                parent=cases_dir / case_name,
+                name=lang_cls.__name__,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
+            )
+        )
 
     for combined_case in discover_combined_cases(cases_dir=cases_dir):
-        ext = combined_case.lang_cls.extension
         expected.add(
-            cases_dir
-            / combined_case.case_name
-            / (combined_case.golden_file_name + ext)
+            make_golden_path(
+                parent=cases_dir / combined_case.case_name,
+                name=combined_case.golden_file_name,
+                extension=combined_case.lang_cls.extension,
+                lang_cls=combined_case.lang_cls,
+            )
         )
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
@@ -91,37 +108,43 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
             continue
-        ext = call_case.lang_cls.extension
-        golden_name = f"{call_case.lang_cls.__name__}_call"
         expected.add(
-            cases_dir / call_case.config.case_dir_name / (golden_name + ext)
+            make_golden_path(
+                parent=cases_dir / call_case.config.case_dir_name,
+                name=f"{call_case.lang_cls.__name__}_call",
+                extension=call_case.lang_cls.extension,
+                lang_cls=call_case.lang_cls,
+            )
         )
 
     for call_variant_case in build_call_variant_cases():
-        variant_spec = call_variant_case.variant.spec
-        golden_name = f"{call_variant_case.variant.name}_call"
         expected.add(
-            cases_dir
-            / call_variant_case.config.case_dir_name
-            / (golden_name + variant_spec.extension)
+            make_golden_path(
+                parent=cases_dir / call_variant_case.config.case_dir_name,
+                name=f"{call_variant_case.variant.name}_call",
+                extension=call_variant_case.variant.spec.extension,
+                lang_cls=call_variant_case.variant.lang_cls,
+            )
         )
 
     for literalize_ref_case in discover_literalize_ref_cases():
-        ext = literalize_ref_case.lang_cls.extension
-        golden_name = f"{literalize_ref_case.lang_cls.__name__}_ref"
         expected.add(
-            cases_dir
-            / literalize_ref_case.config.case_dir_name
-            / (golden_name + ext)
+            make_golden_path(
+                parent=cases_dir / literalize_ref_case.config.case_dir_name,
+                name=f"{literalize_ref_case.lang_cls.__name__}_ref",
+                extension=literalize_ref_case.lang_cls.extension,
+                lang_cls=literalize_ref_case.lang_cls,
+            )
         )
 
     for default_ref_case in discover_literalize_default_ref_cases():
-        ext = default_ref_case.lang_cls.extension
-        golden_name = f"{default_ref_case.lang_cls.__name__}_ref_default"
         expected.add(
-            cases_dir
-            / default_ref_case.config.case_dir_name
-            / (golden_name + ext)
+            make_golden_path(
+                parent=cases_dir / default_ref_case.config.case_dir_name,
+                name=f"{default_ref_case.lang_cls.__name__}_ref_default",
+                extension=default_ref_case.lang_cls.extension,
+                lang_cls=default_ref_case.lang_cls,
+            )
         )
 
     return expected

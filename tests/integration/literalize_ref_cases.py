@@ -32,7 +32,11 @@ from .case_discovery import (
     LiteralizeRefCaseConfig,
 )
 from .check_golden import check_golden
-from .language_specs import sorted_languages, with_per_fixture_module_name
+from .language_specs import (
+    make_golden_path,
+    sorted_languages,
+    with_per_fixture_module_name,
+)
 from .variant_cases import wrap_variable_form
 
 
@@ -312,7 +316,12 @@ def run_literalize_ref_golden_case(
     """
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=golden_name,
+        extension=lang_cls.extension,
+        lang_cls=lang_cls,
+    )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
     try:

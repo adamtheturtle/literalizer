@@ -35,6 +35,7 @@ from .check_golden import check_golden
 from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
+    make_golden_path,
     make_spec,
     sorted_languages,
     with_per_fixture_module_name,
@@ -64,7 +65,12 @@ def test_golden_file(
         with subtests.test(case_name=case_name):
             input_path = cases_dir / case_name / "input.yaml"
             yaml_string = input_path.read_text()
-            golden_path = input_path.parent / (lang_name + lang_cls.extension)
+            golden_path = make_golden_path(
+                parent=input_path.parent,
+                name=lang_name,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
+            )
             spec = with_per_fixture_module_name(
                 spec=make_spec(lang_cls=lang_cls),
                 golden_path=golden_path,
@@ -137,8 +143,11 @@ def test_golden_file_combined_variable_forms(
             golden_file_name=combined_case.golden_file_name,
         ):
             input_path = cases_dir / combined_case.case_name / "input.yaml"
-            golden_path = input_path.parent / (
-                combined_case.golden_file_name + lang_cls.extension
+            golden_path = make_golden_path(
+                parent=input_path.parent,
+                name=combined_case.golden_file_name,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
             )
             spec = with_per_fixture_module_name(
                 spec=make_spec(
@@ -209,8 +218,11 @@ def test_format_variant_golden_file(
             case_dir = cases_dir / variant_case.case_dir_name
             variant = variant_case.variant
             yaml_string = (case_dir / "input.yaml").read_text()
-            golden_path = case_dir / (
-                variant_case.variant_name + variant.spec.extension
+            golden_path = make_golden_path(
+                parent=case_dir,
+                name=variant_case.variant_name,
+                extension=variant.spec.extension,
+                lang_cls=lang_cls,
             )
             spec = with_per_fixture_module_name(
                 spec=variant.spec,
@@ -292,7 +304,12 @@ def test_statement_terminator_style_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=make_golden_path(
+            parent=input_path.parent,
+            name=case.name,
+            extension=spec.extension,
+            lang_cls=case.lang_cls,
+        ),
     )
 
 
@@ -333,7 +350,12 @@ def test_heterogeneous_strategy_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=make_golden_path(
+            parent=input_path.parent,
+            name=case.name,
+            extension=spec.extension,
+            lang_cls=case.lang_cls,
+        ),
     )
 
 
@@ -375,5 +397,10 @@ def test_pre_indent_level_with_new_variable_golden_file(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=make_golden_path(
+            parent=input_path.parent,
+            name=case.name,
+            extension=spec.extension,
+            lang_cls=case.lang_cls,
+        ),
     )

@@ -1,18 +1,26 @@
 """Check syntax of Gleam golden files using a single ``gleam check``.
 
-Each Gleam invocation boots the BEAM VM, which costs ~1s. With 352
+Each Gleam invocation boots the BEAM VM, which costs ~1s. With 350+
 fixtures that dominated the lint job's wall-clock (3+ minutes). Instead
 we drop every fixture into one project as its own module and run
 ``gleam check`` once.
+
+Each fixture lives under ``tests/integration/cases/<case>/<gleam>.gleam``
+where both ``<case>`` and ``<gleam>`` are valid Gleam module identifiers
+(this is enforced by ``make_golden_path`` in the test harness). That
+means we can copy each fixture into the lint project at the same
+relative path and gleam's own diagnostics already point at a recognisable
+filename without any post-processing.
 """
 
 import os
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+_FIXTURE_PREFIX = Path("tests/integration/cases")
 
 
 def main() -> None:
@@ -28,13 +36,11 @@ def main() -> None:
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir(exist_ok=True)
 
-        # Map module-file basename -> original fixture path so we can
-        # rewrite gleam's error output back to the user's filenames.
-        module_to_fixture: dict[str, Path] = {}
-        for index, fixture in enumerate(fixtures):
-            module_name = f"f{index}"
-            module_to_fixture[module_name] = fixture
-            (src_dir / f"{module_name}.gleam").write_text(
+        for fixture in fixtures:
+            relative = fixture.relative_to(_FIXTURE_PREFIX)
+            destination = src_dir / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(
                 data=fixture.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
@@ -48,39 +54,9 @@ def main() -> None:
         )
 
     if result.returncode != 0:
-        # Rewrite `src/fN.gleam` references back to the original fixture
-        # paths so failures point at a file the developer recognises.
-        stderr = _remap_paths(
-            text=result.stderr,
-            module_to_fixture=module_to_fixture,
-        )
-        stdout = _remap_paths(
-            text=result.stdout,
-            module_to_fixture=module_to_fixture,
-        )
-        sys.stderr.write(stderr)
-        sys.stderr.write(stdout)
+        sys.stderr.write(result.stderr)
+        sys.stderr.write(result.stdout)
         sys.exit(1)
-
-
-def _remap_paths(
-    *,
-    text: str,
-    module_to_fixture: dict[str, Path],
-) -> str:
-    """Rewrite ``src/fN.gleam`` references back to original fixture
-    paths.
-    """
-
-    def replace(match: re.Match[str]) -> str:
-        """Resolve a single ``src/fN.gleam`` match to its fixture path."""
-        module_name = match.group(1)
-        fixture = module_to_fixture.get(module_name)
-        if fixture is None:
-            return match.group(0)
-        return str(fixture)
-
-    return re.sub(pattern=r"src/(f\d+)\.gleam", repl=replace, string=text)
 
 
 if __name__ == "__main__":
