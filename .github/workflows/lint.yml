@@ -589,10 +589,9 @@ jobs:
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
           xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
 
-  # Erlang + Elixir share the BEAM runtime via setup-beam. Gleam runs in
-  # its own sibling jobs (`lint-gleam`, `lint-gleam-run`) so that its
-  # check and run passes can fail independently and be retried in
-  # isolation.
+  # Erlang + Elixir share the BEAM runtime via setup-beam. Gleam has its
+  # own sibling job (`lint-gleam`) that runs check and run passes in
+  # sequence.
   lint-beam:
     runs-on: ubuntu-latest
     steps:
@@ -653,9 +652,6 @@ jobs:
             Results = [Run(M) || M <- [$modules]],
             case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
 
-  # Gleam parse-check. Split from `lint-gleam-run` so the two passes
-  # have independent statuses (a failure in one does not mask the
-  # other's result).
   lint-gleam:
     runs-on: ubuntu-latest
     steps:
@@ -673,8 +669,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       # Prime a project with downloaded dependencies once up front. The
-      # check script copies this primed dir and drops every fixture into
-      # it as a separate module, so it never pays `gleam deps download`.
+      # check and run scripts each copy this primed dir and drop every
+      # fixture into it, so they never pay `gleam deps download`.
       - name: Prime Gleam project
         run: |-
           mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
@@ -692,33 +688,9 @@ jobs:
           find tests/integration/cases -name '*.gleam' \
             | uv run --no-project python .github/scripts/check_gleam_syntax.py
 
-  # Gleam run pass. Sibling of `lint-gleam`; see comment there.
-  lint-gleam-run:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Gleam
-        uses: erlef/setup-beam@v1
-        with:
-          gleam-version: v1.16.0
-          otp-version: '27'
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      # See the matching step in `lint-gleam` for the rationale.
-      - name: Prime Gleam project
-        run: |-
-          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
-          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
-          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
-
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
-      # in sequence. See `lint-gleam` for the BEAM-startup rationale.
+      # in sequence. See the check step for the BEAM-startup rationale.
       - name: Run Gleam files
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
@@ -1593,7 +1565,6 @@ jobs:
       - lint-curl-tarballs
       - lint-beam
       - lint-gleam
-      - lint-gleam-run
       - lint-jvm-mini
       - lint-haskell-family
       - lint-c-tidy
