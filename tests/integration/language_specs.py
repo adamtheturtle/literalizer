@@ -140,15 +140,16 @@ def make_golden_path(
     """Return the on-disk path for a golden fixture file.
 
     For most languages this is just ``parent / (name + extension)``.
-    Gleam is special-cased: the basename is lowercased so it is a valid
-    Gleam module identifier.  The CI Gleam-lint job drops each fixture
-    into a one-shot project as a real module path (e.g.
-    ``binary/gleam_combined``), which fails compilation if the basename
-    starts with a capital letter or contains uppercase characters.
+    Gleam is special-cased: the file name is mapped to its lower-case
+    form so it is a valid Gleam module identifier.  The CI Gleam-lint
+    job drops each fixture into a one-shot project as a real module
+    path (e.g. ``binary/gleam_combined``), which fails compilation if
+    the file name starts with a capital letter or contains an
+    upper-case character.
 
     The name passed in (``Gleam_type_name_JsonVal``) keeps its original
     casing in pytest test IDs and error messages; only the on-disk
-    filename is lowered.
+    file name is mapped down.
     """
     filename = name + extension
     if lang_cls.__name__ == Gleam.__name__:
