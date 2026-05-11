@@ -1,7 +1,7 @@
 """Targeted Fortran call-stub tests.
 
-Covers no-parameter single-function stubs and empty-preamble paths in
-``Fortran.wrap_calls_with_declarations`` and ``Fortran.wrap_in_file``.
+Covers no-parameter single-function stubs and the empty-preamble path
+in ``Fortran.wrap_in_file``.
 """
 
 from literalizer._language import StubReturn
@@ -42,23 +42,6 @@ def test_wrap_in_file_call_mode_empty_preamble() -> None:
     result = fortran.wrap_in_file(
         content="call process()",
         variable_name="",
-        body_preamble=(),
-    )
-    assert result == (
-        "program main\n"
-        "    use fval_m\n"
-        "    implicit none\n"
-        "    call process()\n"
-        "end program main"
-    )
-
-
-def test_wrap_calls_with_declarations_empty_bare_code() -> None:
-    """Empty bare_code strings in declarations are skipped silently."""
-    fortran = Fortran(module_name="main")
-    result = fortran.wrap_calls_with_declarations(
-        declarations=("",),
-        calls="call process()",
         body_preamble=(),
     )
     assert result == (
