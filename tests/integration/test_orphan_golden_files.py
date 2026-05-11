@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+from beartype import beartype
+
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
@@ -20,6 +22,7 @@ from .literalize_ref_cases import (
 from .variant_cases import build_variant_cases
 
 
+@beartype
 def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
     """Return expected paths for variant, statement-terminator, strategy,
     and
@@ -65,6 +68,7 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
     return expected
 
 
+@beartype
 def _expected_golden_files(cases_dir: Path) -> set[Path]:
     """Return the set of all golden files that parameterized tests
     cover.

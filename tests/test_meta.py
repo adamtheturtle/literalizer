@@ -3,12 +3,14 @@
 from typing import Any, cast
 
 import pytest
+from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer.languages import ALL_LANGUAGES
 
 
 @pytest.fixture(scope="session", name="lint_workflow")
+@beartype
 def fixture_lint_workflow(
     pytestconfig: pytest.Config,
 ) -> dict[str, Any]:

@@ -15,6 +15,7 @@ from typing import assert_never, cast
 
 import pytest
 import tomlkit
+from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer import InputFormat, literalize
@@ -58,6 +59,7 @@ ALL_FORMATS = list(InputFormat)
 FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f != InputFormat.TOML]
 
 
+@beartype
 def _to_source(
     data: _SourceData,
     input_format: InputFormat,
