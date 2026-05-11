@@ -2216,6 +2216,47 @@ def _compute_call_arg_ref_single_use_names(
 
 
 @beartype
+def _compute_call_arg_ref_consume_inhibited_names(
+    *,
+    elements: list[Value],
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+    language: Language,
+) -> frozenset[str]:
+    """Return ref identifiers whose underlying value inhibits the
+    language's consume form.
+
+    Languages whose consume operator rejects certain value types (notably
+    Mojo's ``^`` on register-trivial scalars) expose
+    :attr:`~literalizer._language.Language.consumable_ref_value_inhibits_consuming_form`
+    so the call site can route those refs through the non-consuming
+    formatter instead.  Names are returned in the original (pre-``ref_case``)
+    form so they can be compared against the user-supplied
+    ``consumable_refs`` set without further conversion.
+
+    Refs whose value is not present in *ref_values* fall through with the
+    consume form intact, matching the historical behavior for callers
+    that omit ``ref_values``.
+    """
+    if not ref_values:
+        return frozenset[str]()
+    inhibits = language.consumable_ref_value_inhibits_consuming_form
+    referenced: set[str] = set()
+    for element in elements:
+        arg_values = element if isinstance(element, list) else [element]
+        for value in arg_values:
+            ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+            if ref_name is None:
+                continue
+            referenced.add(ref_name)
+    return frozenset(
+        name
+        for name in referenced
+        if name in ref_values and inhibits(ref_values[name])
+    )
+
+
+@beartype
 def _strip_call_arg_refs_for_preamble(
     *,
     data: Value,
@@ -2286,6 +2327,7 @@ def _format_single_call_arg(
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -2299,14 +2341,17 @@ def _format_single_call_arg(
     *consumable_ref_names* is the caller's declaration of which refs
     this call owns and may move from.  *single_use_ref_names* is the
     set of refs that appear exactly once across this call's argument
-    lists.  Both sets use the original (pre-``ref_case``) name.  A ref
-    is rendered via the language's
-    ``format_call_arg_ref_identifier_consumable`` hook only when it is
-    in both sets; otherwise it goes through the regular
-    ``format_call_arg_ref_identifier`` hook.  This ensures that a ref
-    used in more than one call (or more than once in a single call's
-    arguments) is never consumed, even when the caller listed it as
-    consumable.
+    lists.  *consume_inhibited_ref_names* is the set of refs whose
+    underlying value type inhibits the language's consume form (e.g.
+    Mojo's ``^`` on register-trivial scalars).  All three sets use the
+    original (pre-``ref_case``) name.  A ref is rendered via the
+    language's ``format_call_arg_ref_identifier_consumable`` hook only
+    when it is in *consumable_ref_names* and *single_use_ref_names* and
+    not in *consume_inhibited_ref_names*; otherwise it goes through the
+    regular ``format_call_arg_ref_identifier`` hook.  This ensures that
+    a ref used in more than one call -- or whose value type the
+    language's consume operator rejects -- is never consumed, even when
+    the caller listed it as consumable.
     """
     raw_ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
     if raw_ref_name is not None:
@@ -2318,6 +2363,7 @@ def _format_single_call_arg(
         is_consumable = (
             raw_ref_name in consumable_ref_names
             and raw_ref_name in single_use_ref_names
+            and raw_ref_name not in consume_inhibited_ref_names
         )
         if is_consumable:
             return language.format_call_arg_ref_identifier_consumable(ref_name)
@@ -2380,6 +2426,7 @@ def _format_call_args(
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -2414,6 +2461,7 @@ def _format_call_args(
             ref_case=ref_case,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2625,6 +2673,7 @@ def _render_call_per_element(
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
+    ref_values: Mapping[str, Value],
     ref_key: str,
     collection_comments: CollectionComments | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
@@ -2659,6 +2708,14 @@ def _render_call_per_element(
         elements=data,
         ref_key=ref_key,
     )
+    consume_inhibited_ref_names = (
+        _compute_call_arg_ref_consume_inhibited_names(
+            elements=data,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            language=language,
+        )
+    )
     rendered_elements: list[str] = []
     for element in data:
         arg_values = element if isinstance(element, list) else [element]
@@ -2687,6 +2744,7 @@ def _render_call_per_element(
             ref_case=ref_case,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2723,6 +2781,7 @@ def _render_call_whole(
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
+    ref_values: Mapping[str, Value],
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -2751,6 +2810,14 @@ def _render_call_whole(
         single_use_ref_names=_compute_call_arg_ref_single_use_names(
             elements=[[data]],
             ref_key=ref_key,
+        ),
+        consume_inhibited_ref_names=(
+            _compute_call_arg_ref_consume_inhibited_names(
+                elements=[[data]],
+                ref_values=ref_values,
+                ref_key=ref_key,
+                language=language,
+            )
         ),
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -3084,6 +3151,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
+            ref_values=ref_values or {},
             ref_key=ref_key,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
@@ -3098,6 +3166,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
+            ref_values=ref_values or {},
             ref_key=ref_key,
             collection_layout=collection_layout,
         )

@@ -1,0 +1,32 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC process (VAL MOBILE LIT value, VAL MOBILE LIT count)
+    SKIP
+:
+PROC main ()
+    VAL MOBILE LIT my_int IS 1:
+    VAL MOBILE LIT my_bool IS MOBILE LIT(lit.bool; TRUE):
+    VAL MOBILE LIT my_float IS 3.14:
+    VAL MOBILE LIT my_list IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.int; 1),
+        MOBILE LIT(lit.int; 2),
+        MOBILE LIT(lit.int; 3)
+    ]):
+    process(my_int, MOBILE LIT(lit.int; 42))
+    process(my_bool, MOBILE LIT(lit.int; 7))
+    process(my_float, MOBILE LIT(lit.int; 9))
+    process(my_list, MOBILE LIT(lit.int; 1))
+    SEQ
+        SKIP
+:

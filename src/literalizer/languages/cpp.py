@@ -74,6 +74,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -1457,6 +1458,18 @@ class Cpp(metaclass=LanguageCls):
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier_consumable
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  ``std::move``
+        is valid for every value type in this codebase.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def _cpp_date_type(self) -> str:
