@@ -1,5 +1,5 @@
 def main():
-    var my_data = [
+    var my_data: List[String] = [
         "issue #{42}",
         "color #red",
     ]

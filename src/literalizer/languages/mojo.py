@@ -27,7 +27,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
@@ -629,6 +628,32 @@ def _mojo_list_open(items: list[Value]) -> str:
     return "["
 
 
+@beartype
+def _mojo_format_variable_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a Mojo ``var`` declaration.
+
+    Emits ``var name: List[String] = value`` when *data* is a non-empty
+    list whose rendered elements open with a double-quoted ``String``
+    literal (``str`` / ``bytes`` / ISO-rendered ``date`` / ISO-rendered
+    ``datetime`` lists).  Mojo does not infer ``List[String]`` from a
+    bare ``["a", "b"]`` literal; the result is a list of string
+    literals and is rejected when assigned into a ``Variant`` slot
+    expecting ``List[String]``.  Other element types (``Int``,
+    ``Float64``, ``Bool``, epoch-rendered datetimes, nested
+    collections) infer directly from the literal and need no
+    annotation.  A non-empty list ``data`` always renders with a ``[``
+    opener, so checking the character after ``[`` is sufficient.
+    """
+    if isinstance(data, list) and data and value[1:].lstrip().startswith('"'):
+        return f"var {name}: List[String] = {value}"
+    return f"var {name} = {value}"
+
+
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(
@@ -762,9 +787,7 @@ class Mojo(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="var {name} = {value}"
-            ),
+            formatter=_mojo_format_variable_declaration,
             supports_redefinition=True,
         )
 
