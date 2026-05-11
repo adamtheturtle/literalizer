@@ -4,12 +4,11 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import assert_never
+from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
-from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
 from literalizer._comments import (
@@ -223,7 +222,7 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     return result
 
 
-_SCALAR_TYPES: tuple[type, ...] = (
+_SCALAR_TYPES: Final = (
     str,
     int,
     float,
@@ -233,11 +232,6 @@ _SCALAR_TYPES: tuple[type, ...] = (
     datetime.datetime,
     bytes,
 )
-
-
-def _is_scalar(value: Value) -> TypeIs[Scalar]:
-    """Return whether *value* is a :data:`~literalizer._types.Scalar`."""
-    return isinstance(value, _SCALAR_TYPES)
 
 
 @beartype
@@ -259,7 +253,7 @@ def _maybe_wrap_child(
     if parent_id not in wrap_ids:
         return formatted_value
     behavior = spec.heterogeneous_behavior
-    if _is_scalar(raw_value):
+    if isinstance(raw_value, _SCALAR_TYPES):
         return behavior.wrap_scalar(raw_value, formatted_value)
     return behavior.wrap_non_scalar(raw_value, formatted_value)
 
@@ -2401,7 +2395,7 @@ def _format_single_call_arg(
             multiline_prefix="",
         ),
     )
-    if id(value) in scalar_wrap_ids and _is_scalar(value):
+    if id(value) in scalar_wrap_ids and isinstance(value, _SCALAR_TYPES):
         return language.heterogeneous_behavior.wrap_scalar(value, formatted)
     return formatted
 

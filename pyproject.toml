@@ -38,7 +38,6 @@ dependencies = [
     # path is available on every platform where a wheel is published.
     "ruamel-yaml-clib>=0.2.15; platform_python_implementation=='CPython'",
     "tomlkit>=0.12",
-    "typing-extensions>=4.10",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.12.24",
