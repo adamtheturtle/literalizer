@@ -254,8 +254,14 @@ def _maybe_wrap_child(
         return formatted_value
     behavior = spec.heterogeneous_behavior
     if isinstance(raw_value, _SCALAR_TYPES):
-        return behavior.wrap_scalar(raw_value, formatted_value)
-    return behavior.wrap_non_scalar(raw_value, formatted_value)
+        wrap_scalar = behavior.wrap_scalar
+        if wrap_scalar is None:
+            return formatted_value
+        return wrap_scalar(raw_value, formatted_value)
+    wrap_non_scalar = behavior.wrap_non_scalar
+    if wrap_non_scalar is None:
+        return formatted_value
+    return wrap_non_scalar(raw_value, formatted_value)
 
 
 @beartype
@@ -2395,9 +2401,14 @@ def _format_single_call_arg(
             multiline_prefix="",
         ),
     )
-    if id(value) in scalar_wrap_ids and isinstance(value, _SCALAR_TYPES):
-        return language.heterogeneous_behavior.wrap_scalar(value, formatted)
-    return formatted
+    wrap_scalar = language.heterogeneous_behavior.wrap_scalar
+    if (
+        wrap_scalar is None
+        or id(value) not in scalar_wrap_ids
+        or not isinstance(value, _SCALAR_TYPES)
+    ):
+        return formatted
+    return wrap_scalar(value, formatted)
 
 
 @beartype
