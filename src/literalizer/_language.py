@@ -441,8 +441,13 @@ class HeterogeneousBehavior:
     of containers whose scalar children must be wrapped.
 
     ``wrap_scalar`` wraps a formatted scalar value (e.g. Rust's
-    tagged-enum ``Value::Variant(…)``).  For non-scalar inputs the
-    implementation is expected to return *formatted* unchanged.
+    tagged-enum ``Value::Variant(…)``).
+
+    ``wrap_non_scalar`` wraps a formatted ref-marker or container value
+    when its parent is in ``wrap_ids``.  Used by V's interface strategy,
+    which renders ``IVal(...)`` around every formatted child regardless
+    of underlying type.  Languages whose ``compute_wrap_ids`` only marks
+    parents with all-scalar children leave this as the identity.
 
     ``compute_call_slot_wrap_ids`` is called per positional-argument
     slot with the per-call values gathered at that slot.  It returns
@@ -459,6 +464,7 @@ class HeterogeneousBehavior:
     skip_scalar_checks: bool
     compute_wrap_ids: Callable[[Value], frozenset[int]]
     wrap_scalar: Callable[[Scalar, str], str]
+    wrap_non_scalar: Callable[[Value, str], str]
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
 
 
@@ -470,6 +476,19 @@ def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
 def _no_wrap_scalar(_raw: Scalar, formatted: str, /) -> str:
     """Return *formatted* unchanged — used by non-wrapping languages."""
     return formatted  # pragma: no cover
+
+
+def _no_wrap_non_scalar(_raw: Value, formatted: str, /) -> str:
+    """Return *formatted* unchanged — default for languages whose
+    ``compute_wrap_ids`` only marks parents with all-scalar children.
+    """
+    return formatted
+
+
+no_wrap_non_scalar: Callable[[Value, str], str] = _no_wrap_non_scalar
+"""Shared identity ``wrap_non_scalar`` for languages whose
+``compute_wrap_ids`` only marks parents with all-scalar children.
+"""
 
 
 def _no_compute_call_slot_wrap_ids(
@@ -494,6 +513,7 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     skip_scalar_checks=False,
     compute_wrap_ids=_no_compute_wrap_ids,
     wrap_scalar=_no_wrap_scalar,
+    wrap_non_scalar=_no_wrap_non_scalar,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar

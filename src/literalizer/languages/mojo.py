@@ -74,6 +74,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
+    no_wrap_non_scalar,
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
@@ -658,6 +659,7 @@ def _build_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=no_wrap_non_scalar,
         compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
     )
 

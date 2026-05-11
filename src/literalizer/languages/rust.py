@@ -83,6 +83,7 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
+    no_wrap_non_scalar,
     prepend_body_preamble,
     value_contains,
 )
@@ -545,6 +546,7 @@ def _build_tagged_enum_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=no_wrap_non_scalar,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 

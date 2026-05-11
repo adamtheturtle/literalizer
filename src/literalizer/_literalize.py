@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, assert_never
+from typing import TypeIs, assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -222,6 +222,23 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     return result
 
 
+_SCALAR_TYPES: tuple[type, ...] = (
+    str,
+    int,
+    float,
+    bool,
+    type(None),
+    datetime.date,
+    datetime.datetime,
+    bytes,
+)
+
+
+def _is_scalar(value: Value) -> TypeIs[Scalar]:
+    """Return whether *value* is a :data:`~literalizer._types.Scalar`."""
+    return isinstance(value, _SCALAR_TYPES)
+
+
 @beartype
 def _maybe_wrap_child(
     *,
@@ -233,18 +250,17 @@ def _maybe_wrap_child(
 ) -> str:
     """Wrap *formatted_value* when *parent_id* is in *wrap_ids*.
 
-    Delegates to
+    Routes scalar children through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
-    on the spec's
-    :attr:`~literalizer._language.Language.heterogeneous_behavior`.
+    and non-scalar children (ref markers, containers) through
+    :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
     """
     if parent_id not in wrap_ids:
         return formatted_value
-    raw_scalar: Any = raw_value
-    return spec.heterogeneous_behavior.wrap_scalar(
-        raw_scalar,
-        formatted_value,
-    )
+    behavior = spec.heterogeneous_behavior
+    if _is_scalar(raw_value):
+        return behavior.wrap_scalar(raw_value, formatted_value)
+    return behavior.wrap_non_scalar(raw_value, formatted_value)
 
 
 @beartype
@@ -2384,11 +2400,8 @@ def _format_single_call_arg(
             multiline_prefix="",
         ),
     )
-    if id(value) in scalar_wrap_ids:
-        raw_scalar: Any = value
-        return language.heterogeneous_behavior.wrap_scalar(
-            raw_scalar, formatted
-        )
+    if id(value) in scalar_wrap_ids and _is_scalar(value):
+        return language.heterogeneous_behavior.wrap_scalar(value, formatted)
     return formatted
 
 

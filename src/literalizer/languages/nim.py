@@ -79,6 +79,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
+    no_wrap_non_scalar,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -359,6 +360,7 @@ def _build_object_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=no_wrap_non_scalar,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
