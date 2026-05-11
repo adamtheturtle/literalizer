@@ -1086,15 +1086,15 @@ def run_call_golden_case(
         source_data=result.source_data,
         per_element=config.per_element,
     )
+    body_stubs.extend(
+        spec.format_call_stub(
+            target_function_parts,
+            config.parameter_names,
+            stub_return,
+            call_arg_values,
+        ),
+    )
     try:
-        body_stubs.extend(
-            spec.format_call_stub(
-                target_function_parts,
-                config.parameter_names,
-                stub_return,
-                call_arg_values,
-            ),
-        )
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
                 target_function_parts,
