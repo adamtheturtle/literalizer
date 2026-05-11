@@ -70,6 +70,7 @@ type _RefData = (
 )
 
 
+@beartype
 def _collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
     """Recursively collect all ref name values from parsed data."""
     match data:
