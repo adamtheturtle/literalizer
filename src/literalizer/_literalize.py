@@ -4,11 +4,12 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import TypeIs, assert_never
+from typing import assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
+from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
 from literalizer._comments import (
