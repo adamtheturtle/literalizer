@@ -365,6 +365,54 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     )
 
 
+def test_fortran_wrap_in_file_no_variable_form() -> None:
+    """``literalize(wrap_in_file=True)`` without a variable form omits
+    the program's ``contains`` section so the Fortran output stays
+    valid.
+    """
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Fortran(module_name="main"),
+        wrap_in_file=True,
+        variable_form=None,
+    )
+    assert result.code == (
+        "module fval_m\n"
+        "  use, intrinsic :: iso_fortran_env, only: int64\n"
+        "  implicit none\n"
+        "  type :: fval_t\n"
+        "    integer :: t = 0\n"
+        "  end type fval_t\n"
+        "contains\n"
+        "  function fnull() result(v); type(fval_t) :: v; end function\n"
+        "  function fbool(b) result(v); logical, intent(in) :: b;"
+        " type(fval_t) :: v; end function\n"
+        "  function fint(n) result(v); integer(kind=int64), intent(in) :: n;"
+        " type(fval_t) :: v; end function\n"
+        "  function freal(x) result(v); real, intent(in) :: x;"
+        " type(fval_t) :: v; end function\n"
+        "  function fstr(s) result(v); character(len=*), intent(in) :: s;"
+        " type(fval_t) :: v; end function\n"
+        "  function flist(a) result(v); type(fval_t), intent(in) :: a(:);"
+        " type(fval_t) :: v; end function\n"
+        "  function fmap(a) result(v); type(fval_t), intent(in) :: a(:);"
+        " type(fval_t) :: v; end function\n"
+        "  function fset(a) result(v); type(fval_t), intent(in) :: a(:);"
+        " type(fval_t) :: v; end function\n"
+        "  function fentry(k, u) result(v);"
+        " character(len=*), intent(in) :: k;"
+        " type(fval_t), intent(in) :: u;"
+        " type(fval_t) :: v; end function\n"
+        "end module fval_m\n"
+        "program main\n"
+        "    use fval_m\n"
+        "    implicit none\n"
+        "    42_int64\n"
+        "end program main"
+    )
+
+
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     """COBOL data names must not end with a hyphen after truncation."""
     long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
