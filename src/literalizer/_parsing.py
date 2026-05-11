@@ -296,7 +296,8 @@ def _parse_toml(*, source: str) -> _ParsedInput:
     except TOMLKitError as exc:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
-    toml_data = _coerce_toml_values(data=toml_doc.unwrap())
+    unwrapped: _TomlData = toml_doc.unwrap()
+    toml_data = _coerce_toml_values(data=unwrapped)
     return _ParsedInput(
         data=toml_data,
         raw_data=toml_doc,
@@ -320,8 +321,13 @@ def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             assert_never(unreachable)
 
 
+type _TomlData = (
+    dict[str, _TomlData] | list[_TomlData] | datetime.time | Scalar
+)
+
+
 @beartype
-def _coerce_toml_values(*, data: object) -> Value:
+def _coerce_toml_values(*, data: _TomlData) -> Value:
     """Recursively convert TOML-specific types to ``Value`` types.
 
     ``tomlkit`` produces ``datetime.time`` values which cannot be
@@ -330,16 +336,10 @@ def _coerce_toml_values(*, data: object) -> Value:
     """
     match data:
         case dict():
-            return {
-                k: _coerce_toml_values(data=v)
-                for k, v in cast("dict[str, object]", data).items()
-            }
+            return {k: _coerce_toml_values(data=v) for k, v in data.items()}
         case list():
-            return [
-                _coerce_toml_values(data=item)
-                for item in cast("list[object]", data)
-            ]
+            return [_coerce_toml_values(data=item) for item in data]
         case datetime.time():
             return data.isoformat()
         case _:
-            return cast("Value", data)
+            return data
