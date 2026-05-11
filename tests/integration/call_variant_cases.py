@@ -102,6 +102,21 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_heterogeneous_strategy_call_variants),
     ("call_dotted_method", build_heterogeneous_strategy_call_variants),
     ("call_deep_dotted_method", build_heterogeneous_strategy_call_variants),
+    ("call_transform_no_wrapper", build_heterogeneous_strategy_call_variants),
+    ("call_dotted_transform_stub", build_heterogeneous_strategy_call_variants),
+    ("call_snake_dotted_method", build_heterogeneous_strategy_call_variants),
+    (
+        "call_deep_dotted_transformed",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_scalar_args_uniform_second_slot",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_scalar_args_with_null",
+        build_heterogeneous_strategy_call_variants,
+    ),
 ]
 
 

@@ -70,6 +70,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -210,6 +211,7 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 

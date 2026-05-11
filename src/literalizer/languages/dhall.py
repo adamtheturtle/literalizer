@@ -61,6 +61,7 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -456,6 +457,7 @@ def _build_union_type_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 

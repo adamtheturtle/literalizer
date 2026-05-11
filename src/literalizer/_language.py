@@ -444,6 +444,14 @@ class HeterogeneousBehavior:
     tagged-enum ``Value::Variant(…)``).  For non-scalar inputs the
     implementation is expected to return *formatted* unchanged.
 
+    ``compute_call_slot_wrap_ids`` is called per positional-argument
+    slot with the per-call values gathered at that slot.  It returns
+    the ids of top-level scalar call arguments that should be wrapped
+    via ``wrap_scalar`` because their Mojo / target-language type
+    diverges across sibling calls (the cross-call VARIANT case).
+    Languages that do not need cross-call top-level wrapping return
+    an empty ``frozenset``.
+
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
     """
@@ -451,6 +459,7 @@ class HeterogeneousBehavior:
     skip_scalar_checks: bool
     compute_wrap_ids: Callable[[Value], frozenset[int]]
     wrap_scalar: Callable[[Value, str], str]
+    compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
 
 
 def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
@@ -463,10 +472,29 @@ def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
     return formatted  # pragma: no cover
 
 
+def _no_compute_call_slot_wrap_ids(
+    _slot_values: Sequence[Value],
+    /,
+) -> frozenset[int]:
+    """Return an empty wrap-id set for languages without cross-call
+    top-level scalar wrapping.
+    """
+    return frozenset()
+
+
+no_compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]] = (
+    _no_compute_call_slot_wrap_ids
+)
+"""Shared callable for languages without cross-call top-level scalar
+wrapping (every non-Mojo VARIANT-style behavior).
+"""
+
+
 NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     skip_scalar_checks=False,
     compute_wrap_ids=_no_compute_wrap_ids,
     wrap_scalar=_no_wrap_scalar,
+    compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.
