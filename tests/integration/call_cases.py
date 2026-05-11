@@ -778,11 +778,8 @@ def case_uses_ref_inside_dict_literal(
     literals.
     """
     yaml = YAML(typ="safe", pure=False)
-    loaded = cast(
-        "Value",
-        yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=(CALL_CASES_DIR / case_dir_name / "input.yaml").read_text(),
-        ),
+    loaded: Value = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        stream=(CALL_CASES_DIR / case_dir_name / "input.yaml").read_text(),
     )
     return _has_ref_inside_dict_literal(
         value=loaded,
