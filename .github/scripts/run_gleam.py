@@ -54,7 +54,10 @@ def main() -> None:
             # Print the original fixture path before each call so a
             # runtime crash points at the culprit (the BEAM aborts with
             # no Gleam-level traceback we can post-process reliably).
-            runner_calls.append(f'  io.println("RUN: {fixture}")')
+            # Escape backslashes and quotes so a fixture path containing
+            # either does not corrupt the generated Gleam source.
+            escaped = str(fixture).replace("\\", "\\\\").replace('"', '\\"')
+            runner_calls.append(f'  io.println("RUN: {escaped}")')
             runner_calls.append(f"  {module_alias}.main()")
 
         runner_src = (
