@@ -23,6 +23,17 @@ jobs:
         python-version: ['3.12', '3.13', '3.14']
         platform: [ubuntu-latest, windows-latest]
         hook-stage: [pre-commit, pre-push, manual]
+        # Windows is dropped from the heavy stages (pre-push, manual)
+        # because the type checkers and pylint dominate wall time on
+        # Windows runners and are platform-agnostic in practice. Re-add
+        # Windows here once prek supports hook groups so we can shard
+        # the heavy hooks across runners:
+        # https://github.com/j178/prek/issues/1385
+        exclude:
+          - platform: windows-latest
+            hook-stage: pre-push
+          - platform: windows-latest
+            hook-stage: manual
 
     runs-on: ${{ matrix.platform }}
 

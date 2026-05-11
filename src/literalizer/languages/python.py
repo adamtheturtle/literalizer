@@ -422,42 +422,53 @@ def _build_type_hint_preamble(
     return _preamble
 
 
-def _python_call_stub(
-    parts: Sequence[str],
-    _params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
-) -> tuple[str, ...]:
-    """Return Python stub declarations for a call name."""
-    variadic = "*_args: object, **_kwargs: object"
-    if len(parts) == 1:
-        return (f"def {parts[0]}({variadic}) -> object: ...",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    if not fields:
-        cls = f"_{root.capitalize()}Type"
-        return (
-            f"class {cls}:",
-            f"    def {method}(self, {variadic}) -> object: ...",
-            f"{root} = {cls}()",
-        )
-    lines: list[str] = []
-    inner_cls = f"_{fields[-1].capitalize()}Type"
-    lines.append(f"class {inner_cls}:")
-    lines.append(f"    def {method}(self, {variadic}) -> object: ...")
-    prev_cls = inner_cls
-    for i in range(len(fields) - 2, -1, -1):
-        cls = f"_{fields[i].capitalize()}Type"
-        lines.append(f"class {cls}:")
-        lines.append(f"    {fields[i + 1]} = {prev_cls}()")
-        prev_cls = cls
-    root_cls = f"_{root.capitalize()}Type"
-    lines.append(f"class {root_cls}:")
-    lines.append(f"    {fields[0]} = {prev_cls}()")
-    lines.append(f"{root} = {root_cls}()")
-    return tuple(lines)
+def _build_python_call_stub(
+    *,
+    indent: str,
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
+    """Return a Python call-stub builder bound to ``indent``."""
+
+    def _python_call_stub(
+        parts: Sequence[str],
+        _params: Sequence[str],
+        _stub_return: StubReturn,
+        _args: Sequence[Value],
+        /,
+    ) -> tuple[str, ...]:
+        """Return Python stub declarations for a call name."""
+        variadic = "*_args: object, **_kwargs: object"
+        if len(parts) == 1:
+            return (f"def {parts[0]}({variadic}) -> object: ...",)
+        root = parts[0]
+        method = parts[-1]
+        fields = parts[1:-1]
+        if not fields:
+            cls = f"_{root.capitalize()}Type"
+            return (
+                f"class {cls}:",
+                f"{indent}def {method}(self, {variadic}) -> object: ...",
+                f"{root} = {cls}()",
+            )
+        lines: list[str] = []
+        inner_cls = f"_{fields[-1].capitalize()}Type"
+        lines.append(f"class {inner_cls}:")
+        lines.append(f"{indent}def {method}(self, {variadic}) -> object: ...")
+        prev_cls = inner_cls
+        for i in range(len(fields) - 2, -1, -1):
+            cls = f"_{fields[i].capitalize()}Type"
+            lines.append(f"class {cls}:")
+            lines.append(f"{indent}{fields[i + 1]} = {prev_cls}()")
+            prev_cls = cls
+        root_cls = f"_{root.capitalize()}Type"
+        lines.append(f"class {root_cls}:")
+        lines.append(f"{indent}{fields[0]} = {prev_cls}()")
+        lines.append(f"{root} = {root_cls}()")
+        return tuple(lines)
+
+    return _python_call_stub
 
 
 @beartype
@@ -1069,7 +1080,7 @@ class Python(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
-        return _python_call_stub
+        return _build_python_call_stub(indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(

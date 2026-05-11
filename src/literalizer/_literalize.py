@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, assert_never
+from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -222,6 +222,18 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     return result
 
 
+_SCALAR_TYPES: Final = (
+    str,
+    int,
+    float,
+    bool,
+    type(None),
+    datetime.date,
+    datetime.datetime,
+    bytes,
+)
+
+
 @beartype
 def _maybe_wrap_child(
     *,
@@ -233,16 +245,21 @@ def _maybe_wrap_child(
 ) -> str:
     """Wrap *formatted_value* when *parent_id* is in *wrap_ids*.
 
-    Delegates to
+    Routes scalar children through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
-    on the spec's
-    :attr:`~literalizer._language.Language.heterogeneous_behavior`.
+    and non-scalar children (ref markers, containers) through
+    :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
     """
-    wrap_scalar = spec.heterogeneous_behavior.wrap_scalar
-    if wrap_scalar is None or parent_id not in wrap_ids:
+    behavior = spec.heterogeneous_behavior
+    if isinstance(raw_value, _SCALAR_TYPES):
+        wrap_scalar = behavior.wrap_scalar
+        if wrap_scalar is None or parent_id not in wrap_ids:
+            return formatted_value
+        return wrap_scalar(raw_value, formatted_value)
+    wrap_non_scalar = behavior.wrap_non_scalar
+    if wrap_non_scalar is None or parent_id not in wrap_ids:
         return formatted_value
-    raw_scalar: Any = raw_value
-    return wrap_scalar(raw_scalar, formatted_value)
+    return wrap_non_scalar(raw_value, formatted_value)
 
 
 @beartype
@@ -1104,7 +1121,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
             )
-        case list():  # pragma: no branch
+        case list():
             result = _format_list_value(
                 value=value,
                 spec=spec,
@@ -2383,10 +2400,13 @@ def _format_single_call_arg(
         ),
     )
     wrap_scalar = language.heterogeneous_behavior.wrap_scalar
-    if wrap_scalar is None or id(value) not in scalar_wrap_ids:
+    if (
+        wrap_scalar is None
+        or id(value) not in scalar_wrap_ids
+        or not isinstance(value, _SCALAR_TYPES)
+    ):
         return formatted
-    raw_scalar: Any = value
-    return wrap_scalar(raw_scalar, formatted)
+    return wrap_scalar(value, formatted)
 
 
 @beartype

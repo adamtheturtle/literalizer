@@ -314,6 +314,7 @@ def _build_elm_body_preamble(
     type_name: str,
     constructor_prefix: str,
     datetime_type_produced: type,
+    indent: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Elm.
 
@@ -349,8 +350,8 @@ def _build_elm_body_preamble(
             )
             if types & type_set
         ]
-        first_line = f"type {type_name}\n    = {constructors[0]}"
-        rest_lines = [f"    | {c}" for c in constructors[1:]]
+        first_line = f"type {type_name}\n{indent}= {constructors[0]}"
+        rest_lines = [f"{indent}| {c}" for c in constructors[1:]]
         return ("\n".join([first_line, *rest_lines]),)
 
     return _compute
@@ -449,26 +450,33 @@ _BYTES_FORMATTERS: dict[
     "BASE64": _build_elm_bytes_base64,
 }
 
-_ELM_PLATFORM_WORKER_SUFFIX: str = (
-    "\n    in\n"
-    "    Platform.worker\n"
-    "        { init = \\_ -> ( (), Cmd.none )\n"
-    "        , update = \\_ m -> ( m, Cmd.none )\n"
-    "        , subscriptions = \\_ -> Sub.none\n"
-    "        }"
-)
+
+def _elm_platform_worker_suffix(indent: str) -> str:
+    """Return the Elm ``Platform.worker`` suffix indented by
+    ``indent``.
+    """
+    one = indent
+    two = indent * 2
+    return (
+        f"\n{one}in\n"
+        f"{one}Platform.worker\n"
+        f"{two}{{ init = \\_ -> ( (), Cmd.none )\n"
+        f"{two}, update = \\_ m -> ( m, Cmd.none )\n"
+        f"{two}, subscriptions = \\_ -> Sub.none\n"
+        f"{two}}}"
+    )
 
 
-def _elm_call_module(preamble: str, let_lines: list[str]) -> str:
+def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
     """Build a complete Elm call-mode module from preamble and let-
     bindings.
     """
     return (
         f"module Check exposing (..)\n\n\n"
         f"{preamble}\n\n\n"
-        "main : Program () () Never\nmain =\n    let\n"
+        f"main : Program () () Never\nmain =\n{indent}let\n"
         + "\n".join(let_lines)
-        + _ELM_PLATFORM_WORKER_SUFFIX
+        + _elm_platform_worker_suffix(indent=indent)
     )
 
 
@@ -780,8 +788,8 @@ class Elm(metaclass=LanguageCls):
         """Return call-statement formatting for this language."""
         return identity_call_statement
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -793,18 +801,25 @@ class Elm(metaclass=LanguageCls):
         the generated file is syntactically valid Elm.
         """
         preamble = "\n".join(body_preamble)
+        let_indent = self.indent * 2
         if not variable_name:
             let_lines: list[str] = []
             for line in content.split(sep="\n"):
-                if not line[0].isspace():
-                    let_lines.append(f"        _ = {line}")
+                if not line:  # pragma: no cover
+                    let_lines.append("")
+                elif not line[0].isspace():
+                    let_lines.append(f"{let_indent}_ = {line}")
                 else:
-                    let_lines.append(f"        {line}")
-            return _elm_call_module(preamble=preamble, let_lines=let_lines)
+                    let_lines.append(f"{let_indent}{line}")
+            return _elm_call_module(
+                preamble=preamble,
+                let_lines=let_lines,
+                indent=self.indent,
+            )
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
-    @staticmethod
     def wrap_calls_with_declarations(
+        self,
         declarations: tuple[str, ...],
         calls: str,
         body_preamble: tuple[str, ...],
@@ -818,17 +833,26 @@ class Elm(metaclass=LanguageCls):
         that every ``let`` binding produces a value.
         """
         preamble = "\n".join(body_preamble)
+        let_indent = self.indent * 2
         let_lines: list[str] = []
         for decl in declarations:
-            let_lines.extend(
-                f"        {line}" for line in decl.split(sep="\n")
-            )
+            for line in decl.split(sep="\n"):
+                if not line:  # pragma: no cover
+                    let_lines.append("")
+                else:
+                    let_lines.append(f"{let_indent}{line}")
         for line in calls.split(sep="\n"):
-            if not line[0].isspace():
-                let_lines.append(f"        _ = {line}")
+            if not line:  # pragma: no cover
+                let_lines.append("")
+            elif not line[0].isspace():
+                let_lines.append(f"{let_indent}_ = {line}")
             else:
-                let_lines.append(f"        {line}")
-        return _elm_call_module(preamble=preamble, let_lines=let_lines)
+                let_lines.append(f"{let_indent}{line}")
+        return _elm_call_module(
+            preamble=preamble,
+            let_lines=let_lines,
+            indent=self.indent,
+        )
 
     @staticmethod
     def wrap_combined_in_file(
@@ -1210,4 +1234,5 @@ class Elm(metaclass=LanguageCls):
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             datetime_type_produced=self.datetime_format.value.type_produced,
+            indent=self.indent,
         )

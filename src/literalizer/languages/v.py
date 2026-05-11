@@ -78,7 +78,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -202,16 +202,23 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         """
         return _v_collect_ids_needing_wrap(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
+    def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``IVal(formatted)`` or the null sentinel."""
         if raw_value is None:
             return _V_NULL_WRAPPED
         return f"{_V_IFACE_NAME}({formatted})"
 
+    def _wrap_non_scalar(_raw_value: Value, formatted: str) -> str:
+        """Wrap a ref marker or container's formatted form as
+        ``IVal(formatted)``.
+        """
+        return f"{_V_IFACE_NAME}({formatted})"
+
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
-        wrap_scalar=_wrap,
+        wrap_scalar=_wrap_scalar,
+        wrap_non_scalar=_wrap_non_scalar,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 

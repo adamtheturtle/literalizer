@@ -722,8 +722,8 @@ class CSharp(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -765,7 +765,7 @@ class CSharp(metaclass=LanguageCls):
             return (
                 f"{preamble_block}class Check {{\n"
                 f"{content}\n"
-                "    public static void Main() {}\n"
+                f"{self.indent}public static void Main() {{}}\n"
                 "}"
             )
         stub_prefixes = ("class ", "static ")
@@ -786,9 +786,9 @@ class CSharp(metaclass=LanguageCls):
             return (
                 f"class Check {{\n"
                 f"{stub_block}"
-                f"    public static void Main() {{\n"
+                f"{self.indent}public static void Main() {{\n"
                 f"{body}\n"
-                f"    }}\n"
+                f"{self.indent}}}\n"
                 f"}}"
             )
         return wrap_in_file_noop(

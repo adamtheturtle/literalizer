@@ -437,6 +437,7 @@ def _num_instance(
     needs_catchall: bool,
     type_name: str,
     constructor_prefix: str,
+    indent: str,
 ) -> str:
     """Build the ``Num`` instance with only relevant constructors.
 
@@ -446,32 +447,33 @@ def _num_instance(
     exhaustive, and a catch-all would be redundant.
     """
     if has_int:
-        from_integer = f"    fromInteger = {constructor_prefix}Int"
+        from_integer = f"{indent}fromInteger = {constructor_prefix}Int"
     else:
         from_integer = (
-            f"    fromInteger n = {constructor_prefix}Float (fromIntegral n)"
+            f"{indent}fromInteger n = "
+            f"{constructor_prefix}Float (fromIntegral n)"
         )
     negate_parts: list[str] = []
     if has_int:
         negate_parts.append(
-            f"    negate ({constructor_prefix}Int n) = "
+            f"{indent}negate ({constructor_prefix}Int n) = "
             f"{constructor_prefix}Int (negate n)"
         )
     if has_float:
         negate_parts.append(
-            f"    negate ({constructor_prefix}Float f) = "
+            f"{indent}negate ({constructor_prefix}Float f) = "
             f"{constructor_prefix}Float (negate f)"
         )
     if needs_catchall:
-        negate_parts.append('    negate _ = error "not implemented"')
+        negate_parts.append(f'{indent}negate _ = error "not implemented"')
     return "\n".join(
         [
             f"instance Num {type_name} where",
             from_integer,
-            '    _ + _ = error "not implemented"',
-            '    _ * _ = error "not implemented"',
-            '    abs _ = error "not implemented"',
-            '    signum _ = error "not implemented"',
+            f'{indent}_ + _ = error "not implemented"',
+            f'{indent}_ * _ = error "not implemented"',
+            f'{indent}abs _ = error "not implemented"',
+            f'{indent}signum _ = error "not implemented"',
             *negate_parts,
         ]
     )
@@ -549,6 +551,7 @@ def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     constructor_prefix: str,
     emit_is_string: bool,
     emit_num: bool,
+    indent: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
@@ -674,13 +677,14 @@ def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
                     needs_catchall=needs_catchall,
                     type_name=type_name,
                     constructor_prefix=constructor_prefix,
+                    indent=indent,
                 ),
             )
         if emit_num and has_float:
             instances.append(
                 f"instance Fractional {type_name} where\n"
-                f"    fromRational r = {p}Float (realToFrac r)\n"
-                '    _ / _ = error "not implemented"'
+                f"{indent}fromRational r = {p}Float (realToFrac r)\n"
+                f'{indent}_ / _ = error "not implemented"'
             )
 
         lines: list[str] = imports
@@ -815,6 +819,7 @@ def _build_preamble_setup(
     type_name: str,
     constructor_prefix: str,
     emit_num: bool,
+    indent: str,
 ) -> _PreambleSetup:
     """Build scalar preamble and body-preamble computation."""
     _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
@@ -840,12 +845,13 @@ def _build_preamble_setup(
             is_string_import="import Data.String (IsString(fromString))",
             is_string_instance=(
                 f"instance IsString {type_name} where\n"
-                f"    fromString = {constructor_prefix}Str"
+                f"{indent}fromString = {constructor_prefix}Str"
             ),
             type_name=type_name,
             constructor_prefix=constructor_prefix,
             emit_is_string=not is_explicit,
             emit_num=emit_num,
+            indent=indent,
         ),
     )
 
@@ -1268,7 +1274,7 @@ class Haskell(metaclass=LanguageCls):
             # ``-Wunused-do-bind``. ``_ <-`` is also valid when the
             # action returns ``IO ()``.
             indented = "\n".join(
-                f"    _ <- {line}" if line.strip() else line
+                f"{self.indent}_ <- {line}" if line.strip() else line
                 for line in content.split(sep="\n")
             )
             return (
@@ -1276,7 +1282,7 @@ class Haskell(metaclass=LanguageCls):
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
-                + "\n    pure ()"
+                + f"\n{self.indent}pure ()"
             )
         return (
             f"module {self.module_name} where\n"
@@ -1305,7 +1311,7 @@ class Haskell(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         indented_calls = "\n".join(
-            f"    _ <- {line}" if line.strip() else line
+            f"{self.indent}_ <- {line}" if line.strip() else line
             for line in calls.split(sep="\n")
         )
         declaration_block = "\n".join(declarations)
@@ -1316,7 +1322,7 @@ class Haskell(metaclass=LanguageCls):
             + (declaration_block + "\n" if declaration_block else "")
             + "main :: IO ()\nmain = do\n"
             + indented_calls
-            + "\n    pure ()"
+            + f"\n{self.indent}pure ()"
         )
 
     @staticmethod
@@ -1606,6 +1612,7 @@ class Haskell(metaclass=LanguageCls):
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             emit_num=self.numeric_style.name != "EXPLICIT",
+            indent=self.indent,
         )
 
     @cached_property
