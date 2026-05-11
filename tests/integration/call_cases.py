@@ -10,7 +10,6 @@ import dataclasses
 import functools
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import cast
 
 import pytest
 from beartype import beartype
@@ -1075,6 +1074,7 @@ def run_call_golden_case(
     *,
     config: CallCaseConfig,
     spec: literalizer.Language,
+    lang_cls: literalizer.LanguageCls,
     golden_name: str,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
@@ -1086,7 +1086,6 @@ def run_call_golden_case(
     variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
     ``ERROR`` strategy rejects).
     """
-    lang_cls = cast("literalizer.LanguageCls", type(spec))
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
     golden_path = make_golden_path(
