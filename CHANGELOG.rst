@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` no longer rejects identity
+  ``call_transform`` values on Ada, Fortran, and SystemVerilog.  Bare
+  procedure-call statements (``Process(x);``, ``call process(x)``,
+  ``process(x);``) are valid in all three languages, so the prior
+  rejection encoded a constraint that does not exist.  The
+  ``Language.allows_bare_call_statement`` flag introduced alongside that
+  check has been removed.
+
 - The PureScript, Roc, and Elm wrapped-call indent helpers no longer
   carry defensive branches for blank or whitespace-leading lines.
   These helpers only ever receive single-line call expressions from
@@ -14,14 +22,6 @@ Next
   that drove the Elm helpers directly with constructed multi-line
   input have been removed in favor of the existing golden-file
   contract.
-
-- :func:`~literalizer.literalize_call` now raises
-  :class:`~literalizer.exceptions.UnsupportedCallShapeError` when a
-  ``call_transform`` would leave the rendered call as a bare statement
-  (the wrapper returns its input unchanged) on a language whose
-  :attr:`~literalizer._language.Language.allows_bare_call_statement` is
-  ``False`` (Ada, Fortran, SystemVerilog).  Previously the integration
-  test discovery silently skipped these combinations.
 
 - ``Mojo`` :func:`~literalizer.literalize_call` now supports refs nested
   inside dict literals and commented dict-literal call arguments.  The

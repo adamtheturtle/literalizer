@@ -237,7 +237,6 @@ class SystemVerilog(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    allows_bare_call_statement = False
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()

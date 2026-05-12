@@ -7,7 +7,7 @@ type
     of vkStr: strVal: string
     of vkInt: intVal: int
     of vkBool: boolVal: bool
-proc process[T0](value: T0): int {.discardable.} = 0
+template process(args: varargs[untyped]) = discard
 process("hello")
 process(42)
 process(true)

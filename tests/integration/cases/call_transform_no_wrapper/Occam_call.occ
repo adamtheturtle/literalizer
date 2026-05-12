@@ -11,8 +11,8 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-MOBILE LIT FUNCTION process (VAL MOBILE LIT value)
-    RESULT MOBILE LIT(lit.null)
+PROC process (VAL MOBILE LIT value)
+    SKIP
 :
 PROC main ()
     process(MOBILE LIT(lit.str; MOBILE []BYTE "hello"))
