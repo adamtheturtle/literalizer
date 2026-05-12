@@ -1426,7 +1426,17 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "bytes_format": (_ci(case_dir_name="binary"),),
     "trailing_comma": BASIC_COLLECTIONS,
     "statement_terminator_style": BASIC_COLLECTIONS,
-    "collection_layout": (_ci(case_dir_name="dict_with_list_value"),),
+    "collection_layout": tuple(
+        _ci(case_dir_name=d)
+        for d in (
+            "dict_with_list_value",
+            "nested",
+            "nested_mixed_set",
+            "ordered_map_in_sequence",
+            "mixed_type_dicts_in_sequence",
+            "multiline_sibling_list_widening",
+        )
+    ),
     "statement_terminator_style_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
     "type_name": ADT_INPUTS,
