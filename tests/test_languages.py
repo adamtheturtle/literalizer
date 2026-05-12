@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import json
 import re
+import textwrap
 from typing import ClassVar
 
 import pytest
@@ -529,6 +530,77 @@ def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
     assert "        _ =     (" not in result.code
     assert "        _ = process(EDict [" in result.code
     assert '            ("a", EInt 1),' in result.code
+
+
+def test_elm_wrap_in_file_preserves_empty_lines() -> None:
+    """``wrap_in_file`` preserves blank lines from *content* verbatim
+    rather than adding the ``_ =`` binding prefix or crashing on the
+    empty string.
+
+    An empty source list rendered with ``per_element=True`` yields an
+    empty *content* string, which splits to a single empty entry; the
+    blank branch must keep the resulting line blank so the surrounding
+    ``let`` block scaffolding remains well-formed.
+    """
+    elm = Elm()
+    wrapped = elm.wrap_in_file(
+        content="",
+        variable_name="",
+        body_preamble=(),
+    )
+    expected = textwrap.dedent(
+        text="""\
+        module Check exposing (..)
+
+
+
+
+
+        main : Program () () Never
+        main =
+            let
+
+            in
+            Platform.worker
+                { init = \\_ -> ( (), Cmd.none )
+                , update = \\_ m -> ( m, Cmd.none )
+                , subscriptions = \\_ -> Sub.none
+                }"""
+    )
+    assert wrapped == expected
+
+
+def test_elm_wrap_calls_with_declarations_preserves_empty_lines() -> None:
+    """``wrap_calls_with_declarations`` preserves blank lines from
+    *calls* verbatim rather than adding the ``_ =`` binding prefix or
+    crashing on the empty string.
+    """
+    elm = Elm()
+    wrapped = elm.wrap_calls_with_declarations(
+        declarations=(),
+        calls="",
+        body_preamble=(),
+    )
+    expected = textwrap.dedent(
+        text="""\
+        module Check exposing (..)
+
+
+
+
+
+        main : Program () () Never
+        main =
+            let
+
+            in
+            Platform.worker
+                { init = \\_ -> ( (), Cmd.none )
+                , update = \\_ m -> ( m, Cmd.none )
+                , subscriptions = \\_ -> Sub.none
+                }"""
+    )
+    assert wrapped == expected
 
 
 def test_elm_wrap_calls_with_declarations_multiline_continuation() -> None:
