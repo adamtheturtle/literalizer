@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never
+from typing import ClassVar, assert_never, cast
 
 from beartype import beartype
 
@@ -180,6 +180,12 @@ def _gather_mojo_call_slots(
     return slots
 
 
+@beartype
+def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
+    """Return ``True`` when every value at this slot is a scalar."""
+    return all(not isinstance(v, list | dict | set) for v in slot_values)
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _MojoSlotSignature:
     """Per-slot resolved type info for a Mojo typed param list.
@@ -332,38 +338,25 @@ def _mojo_cross_call_scalar_wrap_ids(
 ) -> frozenset[int]:
     """Return ids of scalars in a cross-call divergent VARIANT slot.
 
-    When the Mojo types resolved at *slot_values* diverge across calls,
-    return a ``frozenset`` of the ``id()`` of each scalar value at the
-    slot so the call-argument formatter wraps it as ``Value(...)``.
-    List and dict values in the slot are not included because Mojo
-    constructs the ``Variant`` implicitly from a list / dict literal
-    or a moved variable, while bare scalar literals require the
-    explicit wrap.  Returns an empty ``frozenset`` for empty slots,
-    homogeneous slots, and slots with at least one unresolvable Mojo
-    type (which forces the typed-param emitter to fall back to the
-    generic stub).
+    When *slot_values* are all scalars whose Mojo Variant buckets
+    diverge across calls, return a ``frozenset`` of their ``id()`` so
+    the call-argument formatter wraps each as ``Value(...)``.  Returns
+    an empty ``frozenset`` for empty slots, homogeneous slots, and
+    slots that mix scalars with lists, dicts, or sets — Mojo can
+    construct the ``Variant`` implicitly from a moved typed variable
+    in those cases, and an inline list / dict literal cannot be wrapped
+    by ``Value(...)`` without an intermediate typed declaration that
+    the call-argument formatter does not synthesize.
     """
-    if not slot_values:
+    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
         return frozenset()
-    type_tags: set[str] = set()
-    scalar_ids: set[int] = set()
-    for value in slot_values:
-        match value:
-            case list() | dict() | set():
-                structural = _value_to_mojo_type(
-                    value,
-                    heterogeneous_value_type=None,
-                    wrap_ids=frozenset[int](),
-                )
-                if structural is None:
-                    return frozenset()
-                type_tags.add(structural)
-            case _:
-                type_tags.add(_mojo_variant_for_scalar(value).type_name)
-                scalar_ids.add(id(value))
-    if len(type_tags) <= 1:
+    scalar_buckets = {
+        _mojo_variant_for_scalar(cast("Scalar", value)).type_name
+        for value in slot_values
+    }
+    if len(scalar_buckets) <= 1:
         return frozenset()
-    return frozenset(scalar_ids)
+    return frozenset(id(value) for value in slot_values)
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
