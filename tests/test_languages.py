@@ -531,6 +531,41 @@ def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
     assert '            ("a", EInt 1),' in result.code
 
 
+def test_elm_wrap_in_file_preserves_empty_lines() -> None:
+    """``wrap_in_file`` preserves blank lines from *content* verbatim
+    rather than prepending the ``_ =`` binding prefix or crashing on
+    the empty string.
+
+    An empty source list rendered with ``per_element=True`` yields an
+    empty *content* string, which splits to a single empty entry; the
+    blank branch must keep the resulting line blank so the surrounding
+    ``let`` block scaffolding remains well-formed.
+    """
+    elm = Elm()
+    wrapped = elm.wrap_in_file(
+        content="",
+        variable_name="",
+        body_preamble=(),
+    )
+    let_block = "    let\n\n    in"
+    assert let_block in wrapped
+
+
+def test_elm_wrap_calls_with_declarations_preserves_empty_lines() -> None:
+    """``wrap_calls_with_declarations`` preserves blank lines from
+    *calls* verbatim rather than prepending the ``_ =`` binding prefix
+    or crashing on the empty string.
+    """
+    elm = Elm()
+    wrapped = elm.wrap_calls_with_declarations(
+        declarations=(),
+        calls="",
+        body_preamble=(),
+    )
+    let_block = "    let\n\n    in"
+    assert let_block in wrapped
+
+
 def test_elm_wrap_calls_with_declarations_multiline_continuation() -> None:
     """``wrap_calls_with_declarations`` indents continuation lines
     without the ``_ =`` binding prefix.
