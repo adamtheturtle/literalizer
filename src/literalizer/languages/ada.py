@@ -215,6 +215,7 @@ class Ada(metaclass=LanguageCls):
     pygments_name = "ada"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     allows_bare_call_statement = False

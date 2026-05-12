@@ -535,6 +535,7 @@ class Nim(metaclass=LanguageCls):
     pygments_name = "nim"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
