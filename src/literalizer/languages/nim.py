@@ -535,6 +535,7 @@ class Nim(metaclass=LanguageCls):
     pygments_name = "nim"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -1225,7 +1226,9 @@ class Nim(metaclass=LanguageCls):
         ``@[`` so nested sequences render as Nim-native ``seq``
         literals at every level (the declaration formatter no longer
         adds a leading ``@`` because ``uses_typed_literal_for_scalars``
-        is turned off).
+        is turned off).  Empty sequences widen to ``newSeq[string]()`` so
+        the compiler does not reject ``var x = @[]`` with "cannot
+        infer the type of the sequence".
         """
         base = self.sequence_format.value
         if not self._uses_object_variant:
@@ -1235,6 +1238,7 @@ class Nim(metaclass=LanguageCls):
             sequence_open=fixed_open(open_str="@["),
             uses_typed_literal_for_scalars=False,
             preamble_lines=(),
+            empty_sequence="newSeq[string]()",
         )
 
     @cached_property

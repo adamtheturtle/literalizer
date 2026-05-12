@@ -117,6 +117,7 @@ class Json5(metaclass=LanguageCls):
     pygments_name = "json5"
     supports_special_floats = True
     supports_variable_names = False
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()

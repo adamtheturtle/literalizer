@@ -1,3 +1,3 @@
-var my_data = new Set();
+var my_data: Set<unknown> = new Set();
 my_data = new Set();
 export {};

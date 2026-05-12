@@ -20,6 +20,7 @@ program main
     implicit none
     type(fval_t) :: my_ints
     type(fval_t) :: my_strings
+    type(fval_t) :: my_empty
     my_ints = flist([fval_t :: &
         fint(1_int64), &
         fint(2_int64), &
@@ -29,8 +30,10 @@ program main
         fstr('a'), &
         fstr('b') &
     ])
+    my_empty = flist([fval_t :: ])
     call process(my_ints, fint(42_int64))
     call process(my_strings, fint(7_int64))
+    call process(my_empty, fint(99_int64))
 contains
     subroutine process(data, count)
         implicit none

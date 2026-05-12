@@ -607,6 +607,7 @@ class LanguageCls(type):
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
+    dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
@@ -875,6 +876,14 @@ class Language(Protocol):
     :class:`~literalizer.ExistingVariable`,
     or :class:`~literalizer.BothVariableForms` is rejected with
     :class:`~literalizer.exceptions.VariableNameNotSupportedError`.
+    """
+
+    dict_supports_heterogeneous_values: bool
+    """Whether the language's dict format can represent values spanning
+    multiple type families (e.g. Python's ``dict``, JavaScript's object
+    literal).  When ``False`` (e.g. Rust's ``HashMap``), inputs with
+    heterogeneous dict values raise
+    :class:`~literalizer.exceptions.MixedDictValuesError`.
     """
 
     @property

@@ -10,7 +10,9 @@ defmodule Check do
         "a",
         "b",
     ]
+    my_empty = []
     process(my_ints, 42)
     process(my_strings, 7)
+    process(my_empty, 99)
   end
 end

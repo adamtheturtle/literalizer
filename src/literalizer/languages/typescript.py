@@ -262,6 +262,7 @@ class TypeScript(metaclass=LanguageCls):
     pygments_name = "typescript"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -584,8 +585,6 @@ class TypeScript(metaclass=LanguageCls):
             sequence_is_tuple: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self is type(self).NEVER:
-                return auto_formatter
 
             def _typed_formatter(
                 name: str,
@@ -608,29 +607,34 @@ class TypeScript(metaclass=LanguageCls):
                     sequence_is_tuple=sequence_is_tuple,
                 )
 
-            if self.name == "SAFE":
+            if self is type(self).ALWAYS:
+                return _typed_formatter
 
-                def _safe_formatter(
-                    name: str,
-                    value: str,
-                    data: Value,
-                    modifiers: frozenset[enum.Enum],
-                ) -> str:
-                    """Annotate only when inference would widen
-                    unsafely.
-                    """
-                    if _ts_inference_widens_unsafely(data=data):
-                        return _typed_formatter(
-                            name=name,
-                            value=value,
-                            data=data,
-                            modifiers=modifiers,
-                        )
-                    return auto_formatter(name, value, data, modifiers)
+            def _safe_formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Annotate only when inference would widen unsafely.
 
-                return _safe_formatter
+                Applies to both NEVER and SAFE: empty collection
+                literals are inferred as evolving ``any[]`` / ``{}`` /
+                ``Set<unknown>`` and break under ``--noImplicitAny``
+                once the variable is consumed elsewhere, so the
+                annotation is unavoidable even when callers asked to
+                suppress hints.
+                """
+                if _ts_inference_widens_unsafely(data=data):
+                    return _typed_formatter(
+                        name=name,
+                        value=value,
+                        data=data,
+                        modifiers=modifiers,
+                    )
+                return auto_formatter(name, value, data, modifiers)
 
-            return _typed_formatter
+            return _safe_formatter
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
