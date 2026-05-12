@@ -16,6 +16,7 @@ from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
     build_heterogeneous_value_name_variants,
+    build_heterogeneous_value_variant_name_variants,
 )
 
 
@@ -61,9 +62,73 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
     return variants
 
 
+@functools.cache
+@beartype
+def build_heterogeneous_strategy_call_variants() -> list[Variant]:
+    """Return variants for every non-default heterogeneous strategy."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        default_strategy = spec.heterogeneous_strategy
+        variants.extend(
+            Variant(
+                name=(
+                    f"{lang_cls.__name__}_heterogeneous_strategy"
+                    f"_{strategy.name.lower()}"
+                ),
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=strategy,
+                ),
+                lang_cls=lang_cls,
+            )
+            for strategy in spec.heterogeneous_strategies
+            if strategy is not default_strategy
+        )
+    return variants
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
+    (
+        "call_mixed_type_dicts",
+        build_heterogeneous_value_variant_name_variants,
+    ),
+    # Non-default heterogeneous strategies on the cross-call divergent
+    # fixtures — covers the Mojo ``VARIANT`` typed-stub fallback (and
+    # exercises the corresponding paths in any other language whose
+    # non-default strategy can represent these inputs).
+    ("call_scalar_args", build_heterogeneous_strategy_call_variants),
+    ("call_dotted_method", build_heterogeneous_strategy_call_variants),
+    ("call_deep_dotted_method", build_heterogeneous_strategy_call_variants),
+    ("call_transform_no_wrapper", build_heterogeneous_strategy_call_variants),
+    ("call_dotted_transform_stub", build_heterogeneous_strategy_call_variants),
+    ("call_snake_dotted_method", build_heterogeneous_strategy_call_variants),
+    (
+        "call_deep_dotted_transformed",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_scalar_args_uniform_second_slot",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_scalar_args_with_null",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_ref_args_heterogeneous_list",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_ref_args_reused",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_ref_args_trivial_register",
+        build_heterogeneous_strategy_call_variants,
+    ),
 ]
 
 

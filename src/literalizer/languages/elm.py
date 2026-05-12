@@ -39,6 +39,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -59,6 +60,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -312,6 +314,7 @@ def _build_elm_body_preamble(
     type_name: str,
     constructor_prefix: str,
     datetime_type_produced: type,
+    indent: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Elm.
 
@@ -347,8 +350,8 @@ def _build_elm_body_preamble(
             )
             if types & type_set
         ]
-        first_line = f"type {type_name}\n    = {constructors[0]}"
-        rest_lines = [f"    | {c}" for c in constructors[1:]]
+        first_line = f"type {type_name}\n{indent}= {constructors[0]}"
+        rest_lines = [f"{indent}| {c}" for c in constructors[1:]]
         return ("\n".join([first_line, *rest_lines]),)
 
     return _compute
@@ -372,6 +375,7 @@ def _elm_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Elm top-level stub declarations for a call target.
@@ -380,38 +384,50 @@ def _elm_call_stub(
     the first is upper-cased).  For a single parameter the stub is
     polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
     tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
-    tuple that ``PositionalCallStyle`` emits at the call site.  For
-    4 or more parameters Elm does not support tuples, so curried type
-    signatures are used instead (``a -> b -> c -> d -> ()``).
+    tuple that ``PositionalCallStyle`` emits at the call site.  Elm
+    tuples cap at 3 elements, so 4+ parameters cannot produce
+    valid Elm; the curried fallback exists for completeness only.
     """
     flat_name = _elm_flatten_dotted(parts=parts)
     n = len(params)
     _max_elm_tuple_size = len(("a", "b", "c"))
-    if n == 0:  # pragma: no cover
-        type_sig = f"{flat_name} : ()"
-        impl = f"{flat_name} = ()"
-    elif n == 1:
-        type_sig = f"{flat_name} : a -> ()"
-        impl = f"{flat_name} _ = ()"
-    elif n <= _max_elm_tuple_size:
-        _alphabet_size = len(string.ascii_lowercase)
-        type_vars = ", ".join(
-            chr(ord("a") + (i % _alphabet_size))
-            + (str(object=i // _alphabet_size) if i >= _alphabet_size else "")
-            for i in range(n)
-        )
-        type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
-        impl = f"{flat_name} _ = ()"
-    else:  # pragma: no cover
-        _alphabet_size = len(string.ascii_lowercase)
-        type_vars = " -> ".join(
-            chr(ord("a") + (i % _alphabet_size))
-            + (str(object=i // _alphabet_size) if i >= _alphabet_size else "")
-            for i in range(n)
-        )
-        wildcards = " ".join("_" for _ in range(n))
-        type_sig = f"{flat_name} : {type_vars} -> ()"
-        impl = f"{flat_name} {wildcards} = ()"
+    match n:
+        case 1:
+            type_sig = f"{flat_name} : a -> ()"
+            impl = f"{flat_name} _ = ()"
+        case _ if n <= _max_elm_tuple_size:
+            _alphabet_size = len(string.ascii_lowercase)
+            type_vars = ", ".join(
+                chr(ord("a") + (i % _alphabet_size))
+                + (
+                    str(object=i // _alphabet_size)
+                    if i >= _alphabet_size
+                    else ""
+                )
+                for i in range(n)
+            )
+            type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
+            impl = f"{flat_name} _ = ()"
+        case _:  # pragma: no cover
+            # Elm tuples cap at 3 elements, and PositionalCallStyle
+            # emits a tuple at the call site, so n > 3 cannot produce
+            # valid Elm.  A curried stub is emitted as a best
+            # effort, but the call site will still be rejected by
+            # ``elm make``; no integration case exercises this branch
+            # for that reason.
+            _alphabet_size = len(string.ascii_lowercase)
+            type_vars = " -> ".join(
+                chr(ord("a") + (i % _alphabet_size))
+                + (
+                    str(object=i // _alphabet_size)
+                    if i >= _alphabet_size
+                    else ""
+                )
+                for i in range(n)
+            )
+            wildcards = " ".join("_" for _ in range(n))
+            type_sig = f"{flat_name} : {type_vars} -> ()"
+            impl = f"{flat_name} {wildcards} = ()"
     return (type_sig, impl)
 
 
@@ -434,26 +450,33 @@ _BYTES_FORMATTERS: dict[
     "BASE64": _build_elm_bytes_base64,
 }
 
-_ELM_PLATFORM_WORKER_SUFFIX: str = (
-    "\n    in\n"
-    "    Platform.worker\n"
-    "        { init = \\_ -> ( (), Cmd.none )\n"
-    "        , update = \\_ m -> ( m, Cmd.none )\n"
-    "        , subscriptions = \\_ -> Sub.none\n"
-    "        }"
-)
+
+def _elm_platform_worker_suffix(indent: str) -> str:
+    """Return the Elm ``Platform.worker`` suffix indented by
+    ``indent``.
+    """
+    one = indent
+    two = indent * 2
+    return (
+        f"\n{one}in\n"
+        f"{one}Platform.worker\n"
+        f"{two}{{ init = \\_ -> ( (), Cmd.none )\n"
+        f"{two}, update = \\_ m -> ( m, Cmd.none )\n"
+        f"{two}, subscriptions = \\_ -> Sub.none\n"
+        f"{two}}}"
+    )
 
 
-def _elm_call_module(preamble: str, let_lines: list[str]) -> str:
+def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
     """Build a complete Elm call-mode module from preamble and let-
     bindings.
     """
     return (
         f"module Check exposing (..)\n\n\n"
         f"{preamble}\n\n\n"
-        "main : Program () () Never\nmain =\n    let\n"
+        f"main : Program () () Never\nmain =\n{indent}let\n"
         + "\n".join(let_lines)
-        + _ELM_PLATFORM_WORKER_SUFFIX
+        + _elm_platform_worker_suffix(indent=indent)
     )
 
 
@@ -503,17 +526,12 @@ class Elm(metaclass=LanguageCls):
 
     extension = ".elm"
     pygments_name = "elm"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True
@@ -522,7 +540,6 @@ class Elm(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = False
     supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -698,7 +715,8 @@ class Elm(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -753,6 +771,9 @@ class Elm(metaclass=LanguageCls):
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -766,8 +787,8 @@ class Elm(metaclass=LanguageCls):
         """Return call-statement formatting for this language."""
         return identity_call_statement
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -776,23 +797,27 @@ class Elm(metaclass=LanguageCls):
 
         When *variable_name* is empty (call mode), each call expression
         in *content* is bound via ``_ = …`` inside a ``let`` block so
-        the generated file is syntactically valid Elm.
+        the generated file is syntactically valid Elm.  *content* is
+        one single-line call expression per line: this is the only
+        shape ``literalize_call`` produces for Elm, which uses
+        :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
+        standalone comments in that path.
         """
         preamble = "\n".join(body_preamble)
+        let_indent = self.indent * 2
         if not variable_name:
-            let_lines: list[str] = []
-            for line in content.split(sep="\n"):
-                if not line:  # pragma: no cover
-                    let_lines.append("")
-                elif not line[0].isspace():
-                    let_lines.append(f"        _ = {line}")
-                else:  # pragma: no cover
-                    let_lines.append(f"        {line}")
-            return _elm_call_module(preamble=preamble, let_lines=let_lines)
+            let_lines = [
+                f"{let_indent}_ = {line}" for line in content.split(sep="\n")
+            ]
+            return _elm_call_module(
+                preamble=preamble,
+                let_lines=let_lines,
+                indent=self.indent,
+            )
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
-    @staticmethod
     def wrap_calls_with_declarations(
+        self,
         declarations: tuple[str, ...],
         calls: str,
         body_preamble: tuple[str, ...],
@@ -803,24 +828,27 @@ class Elm(metaclass=LanguageCls):
         a ``let`` block so the generated file is a valid Elm module.
         Declarations are indented without a ``_ =`` prefix; call
         statements are bound via ``_ = …`` to satisfy Elm's requirement
-        that every ``let`` binding produces a value.
+        that every ``let`` binding produces a value.  *calls* is one
+        single-line call expression per line: this is the only shape
+        ``literalize_call`` produces for Elm, which uses
+        :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
+        standalone comments in that path.
         """
         preamble = "\n".join(body_preamble)
+        let_indent = self.indent * 2
         let_lines: list[str] = []
         for decl in declarations:
-            for line in decl.split(sep="\n"):
-                if not line:  # pragma: no cover
-                    let_lines.append("")
-                else:
-                    let_lines.append(f"        {line}")
-        for line in calls.split(sep="\n"):
-            if not line:  # pragma: no cover
-                let_lines.append("")
-            elif not line[0].isspace():
-                let_lines.append(f"        _ = {line}")
-            else:  # pragma: no cover
-                let_lines.append(f"        {line}")
-        return _elm_call_module(preamble=preamble, let_lines=let_lines)
+            let_lines.extend(
+                f"{let_indent}{line}" for line in decl.split(sep="\n")
+            )
+        let_lines.extend(
+            f"{let_indent}_ = {line}" for line in calls.split(sep="\n")
+        )
+        return _elm_call_module(
+            preamble=preamble,
+            let_lines=let_lines,
+            indent=self.indent,
+        )
 
     @staticmethod
     def wrap_combined_in_file(
@@ -840,7 +868,7 @@ class Elm(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_DASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -919,14 +947,20 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _elm_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -967,6 +1001,19 @@ class Elm(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def null_literal(self) -> str:
@@ -1183,4 +1230,5 @@ class Elm(metaclass=LanguageCls):
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             datetime_type_produced=self.datetime_format.value.type_produced,
+            indent=self.indent,
         )

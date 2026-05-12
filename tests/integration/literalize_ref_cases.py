@@ -12,7 +12,6 @@ import dataclasses
 import functools
 import re
 from pathlib import Path
-from typing import cast
 
 import pytest
 from beartype import beartype
@@ -23,6 +22,7 @@ import literalizer
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
+    VariableNameNotSupportedError,
 )
 
 from .case_discovery import (
@@ -31,7 +31,11 @@ from .case_discovery import (
     LiteralizeRefCaseConfig,
 )
 from .check_golden import check_golden
-from .language_specs import sorted_languages, with_per_fixture_module_name
+from .language_specs import (
+    make_golden_path,
+    sorted_languages,
+    with_per_fixture_module_name,
+)
 from .variant_cases import wrap_variable_form
 
 
@@ -65,24 +69,28 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
     ]
 
 
-def _collect_ref_names(data: object, *, ref_key: str) -> list[str]:
+type _RefData = (
+    dict[str, _RefData] | list[_RefData] | str | int | float | bool | None
+)
+
+
+@beartype
+def _collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
     """Recursively collect all ref name values from parsed data."""
     match data:
         case dict():
-            typed_data = cast("dict[object, object]", data)
-            if len(typed_data) == 1 and ref_key in typed_data:
-                name = typed_data[ref_key]
+            if len(data) == 1 and ref_key in data:
+                name = data[ref_key]
                 return [name] if isinstance(name, str) else []
             return [
                 n
-                for v in typed_data.values()
+                for v in data.values()
                 for n in _collect_ref_names(data=v, ref_key=ref_key)
             ]
         case list():
-            typed_list = cast("list[object]", data)
             return [
                 n
-                for item in typed_list
+                for item in data
                 for n in _collect_ref_names(data=item, ref_key=ref_key)
             ]
         case _:
@@ -311,14 +319,30 @@ def run_literalize_ref_golden_case(
     """
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=golden_name,
+        extension=lang_cls.extension,
+        lang_cls=lang_cls,
+    )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
+    try:
+        literalizer.literalize(
+            source='{"_": "_"}',
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            variable_form=variable_form_obj,
+            wrap_in_file=True,
+        )
+    except VariableNameNotSupportedError:
+        variable_form_obj = None
     try:
         result = literalizer.literalize(
             source=yaml_string,
             input_format=literalizer.InputFormat.YAML,
             language=spec,
-            variable_form=wrap_variable_form(lang_cls=lang_cls),
+            variable_form=variable_form_obj,
             wrap_in_file=True,
             ref_case=ref_case,
             ref_key=config.ref_key,
@@ -334,9 +358,9 @@ def run_literalize_ref_golden_case(
             f"{lang_cls.__name__} rejected ref identifier: {exc.reason}"
         )
     final_code = result.code
-    if wrap_variable_form(lang_cls=lang_cls) is not None:
+    if variable_form_obj is not None:
         ruamel_yaml = _YAML()
-        raw_data: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        raw_data: _RefData = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=yaml_string,
         )
         stub_entries: list[tuple[str, str]] = []
@@ -359,10 +383,9 @@ def run_literalize_ref_golden_case(
                 wrap_in_file=False,
             )
             stub_entries.append((converted_name, stub.declaration_code))
-        variable_form_obj = wrap_variable_form(lang_cls=lang_cls)
         final_code = _inject_stubs_before_variable(
             code=result.code,
-            variable_name=variable_form_obj.name if variable_form_obj else "",
+            variable_name=variable_form_obj.name,
             stub_entries=stub_entries,
         )
     check_golden(

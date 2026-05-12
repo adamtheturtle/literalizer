@@ -49,6 +49,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -74,6 +75,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_data_preamble,
     no_validate_call_arg,
@@ -459,41 +461,53 @@ def _build_type_hint_preamble(
     return _preamble
 
 
-def _python_call_stub(
-    parts: Sequence[str],
-    _params: Sequence[str],
-    _stub_return: StubReturn,
-    /,
-) -> tuple[str, ...]:
-    """Return Python stub declarations for a call name."""
-    variadic = "*_args: object, **_kwargs: object"
-    if len(parts) == 1:
-        return (f"def {parts[0]}({variadic}) -> object: ...",)
-    root = parts[0]
-    method = parts[-1]
-    fields = parts[1:-1]
-    if not fields:
-        cls = f"_{root.capitalize()}Type"
-        return (
-            f"class {cls}:",
-            f"    def {method}(self, {variadic}) -> object: ...",
-            f"{root} = {cls}()",
-        )
-    lines: list[str] = []
-    inner_cls = f"_{fields[-1].capitalize()}Type"
-    lines.append(f"class {inner_cls}:")
-    lines.append(f"    def {method}(self, {variadic}) -> object: ...")
-    prev_cls = inner_cls
-    for i in range(len(fields) - 2, -1, -1):
-        cls = f"_{fields[i].capitalize()}Type"
-        lines.append(f"class {cls}:")
-        lines.append(f"    {fields[i + 1]} = {prev_cls}()")
-        prev_cls = cls
-    root_cls = f"_{root.capitalize()}Type"
-    lines.append(f"class {root_cls}:")
-    lines.append(f"    {fields[0]} = {prev_cls}()")
-    lines.append(f"{root} = {root_cls}()")
-    return tuple(lines)
+def _build_python_call_stub(
+    *,
+    indent: str,
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
+    """Return a Python call-stub builder bound to ``indent``."""
+
+    def _python_call_stub(
+        parts: Sequence[str],
+        _params: Sequence[str],
+        _stub_return: StubReturn,
+        _args: Sequence[Value],
+        /,
+    ) -> tuple[str, ...]:
+        """Return Python stub declarations for a call name."""
+        variadic = "*_args: object, **_kwargs: object"
+        if len(parts) == 1:
+            return (f"def {parts[0]}({variadic}) -> object: ...",)
+        root = parts[0]
+        method = parts[-1]
+        fields = parts[1:-1]
+        if not fields:
+            cls = f"_{root.capitalize()}Type"
+            return (
+                f"class {cls}:",
+                f"{indent}def {method}(self, {variadic}) -> object: ...",
+                f"{root} = {cls}()",
+            )
+        lines: list[str] = []
+        inner_cls = f"_{fields[-1].capitalize()}Type"
+        lines.append(f"class {inner_cls}:")
+        lines.append(f"{indent}def {method}(self, {variadic}) -> object: ...")
+        prev_cls = inner_cls
+        for i in range(len(fields) - 2, -1, -1):
+            cls = f"_{fields[i].capitalize()}Type"
+            lines.append(f"class {cls}:")
+            lines.append(f"{indent}{fields[i + 1]} = {prev_cls}()")
+            prev_cls = cls
+        root_cls = f"_{root.capitalize()}Type"
+        lines.append(f"class {root_cls}:")
+        lines.append(f"{indent}{fields[0]} = {prev_cls}()")
+        lines.append(f"{root} = {root_cls}()")
+        return tuple(lines)
+
+    return _python_call_stub
 
 
 @beartype
@@ -610,7 +624,7 @@ class Python(metaclass=LanguageCls):
         variable_type_hints: Whether to add inline type hints to
             variable declarations.
 
-            * ``VariableTypeHints.AUTO`` — bare assignment,
+            * ``VariableTypeHints.NEVER`` — bare assignment,
               e.g. ``my_var = {...}``.  Empty collections still
               receive a type annotation so that type-checkers can
               infer the element types,
@@ -629,17 +643,12 @@ class Python(metaclass=LanguageCls):
 
     extension = ".py"
     pygments_name = "python"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = True
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -648,7 +657,6 @@ class Python(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -790,8 +798,9 @@ class Python(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         ALWAYS = enum.auto()
+        SAFE = enum.auto()
 
         def formatter(
             self,
@@ -1060,6 +1069,9 @@ class Python(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.PASCAL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -1112,7 +1124,7 @@ class Python(metaclass=LanguageCls):
     default_sequence_element_type: str = "Any"
     default_dict_key_type: str = "str"
     default_dict_value_type: str = "Any"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1177,14 +1189,20 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
-        return _python_call_stub
+        return _build_python_call_stub(indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -1222,6 +1240,19 @@ class Python(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 

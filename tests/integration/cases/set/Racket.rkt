@@ -1,6 +1,6 @@
 #lang racket
-(set
+(define my_data (set
     "apple"
     "banana"
     "cherry"
-)
+))

@@ -1,1 +1,1 @@
-"hello"
+(defparameter *my_data* "hello")

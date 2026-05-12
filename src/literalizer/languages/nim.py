@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -48,6 +48,7 @@ from literalizer._heterogeneous import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -71,7 +72,9 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
+    no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -333,10 +336,10 @@ def _build_object_variant_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}(kind: ..., ...Val: ...)``."""
         signature = _nim_variant_for_scalar(
-            value=cast("Scalar", raw_value),
+            value=raw_value,
             date_type=date_type,
             datetime_type=datetime_type,
         )
@@ -356,6 +359,8 @@ def _build_object_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=None,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 
@@ -413,6 +418,7 @@ def _nim_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
     *,
     indent: str,
@@ -527,17 +533,12 @@ class Nim(metaclass=LanguageCls):
 
     extension = ".nim"
     pygments_name = "nim"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -546,7 +547,6 @@ class Nim(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -794,7 +794,8 @@ class Nim(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -884,6 +885,9 @@ class Nim(metaclass=LanguageCls):
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -932,7 +936,7 @@ class Nim(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.SEQ
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1107,14 +1111,20 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return partial(_nim_call_stub, indent=self.indent)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -1122,13 +1132,41 @@ class Nim(metaclass=LanguageCls):
     def call_data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
-        """No data-dependent preamble for call context.
+        """Return data-dependent preamble lines for a call context.
 
-        The ``data_dependent_preamble`` method of Nim adds
-        ``import json`` for variable declarations that use ``%*``.
-        Call arguments are formatted as inline literals and never use
+        For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits the Nim
+        ``type`` block declaring the object variant used to wrap
+        heterogeneous scalars; the call rendering references that type
+        by name, so the declaration must be present.  For other
+        strategies, call arguments are inline literals that never use
         ``%*``, so ``import json`` is never needed in a call context.
         """
+        if self._uses_object_variant:
+            strategy_preamble = (
+                self.heterogeneous_strategy.value.build_preamble(
+                    self.heterogeneous_value_variant_name,
+                    self._heterogeneous_variant_date_type,
+                    self._heterogeneous_variant_datetime_type,
+                    self.indent,
+                )
+            )
+
+            def _preamble(data: Value, /) -> tuple[str, ...]:
+                """Suppress UnusedImport for ``tables`` and emit the
+                object-variant type block.
+
+                The ``import tables`` line is contributed by
+                :attr:`dict_format_config` so that ``{...}.toTable``
+                renders correctly, but the call stub uses
+                ``varargs[untyped]`` and never evaluates its arguments,
+                so the Nim compiler treats the import as unused.
+                """
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    *strategy_preamble(data),
+                )
+
+            return _preamble
         return no_data_preamble
 
     @cached_property
@@ -1167,6 +1205,19 @@ class Nim(metaclass=LanguageCls):
         return self.format_call_arg_ref_identifier
 
     @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
+
+    @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
@@ -1174,7 +1225,9 @@ class Nim(metaclass=LanguageCls):
         ``@[`` so nested sequences render as Nim-native ``seq``
         literals at every level (the declaration formatter no longer
         adds a leading ``@`` because ``uses_typed_literal_for_scalars``
-        is turned off).
+        is turned off).  Empty sequences widen to ``newSeq[string]()`` so
+        the compiler does not reject ``var x = @[]`` with "cannot
+        infer the type of the sequence".
         """
         base = self.sequence_format.value
         if not self._uses_object_variant:
@@ -1184,6 +1237,7 @@ class Nim(metaclass=LanguageCls):
             sequence_open=fixed_open(open_str="@["),
             uses_typed_literal_for_scalars=False,
             preamble_lines=(),
+            empty_sequence="newSeq[string]()",
         )
 
     @cached_property

@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -27,7 +27,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_factories import (
@@ -40,12 +39,14 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -76,7 +77,290 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    HeterogeneousScalarCollectionError,
+    NullInCollectionError,
+)
+
+_mojo_element_to_type = make_element_to_type(
+    str_type="String",
+    bool_type="Bool",
+    int_type="Int",
+    float_type="Float64",
+    mixed_numeric_type="String",
+    bytes_type="String",
+    date_type="String",
+    datetime_type="String",
+    list_template="List[{inner}]",
+    dict_type_template="Dict[String, {inner}]",
+    fallback_value_type="String",
+)
+
+# Strict resolver for call-argument typing: omits ``fallback_value_type``
+# so an unresolvable dict-value type (e.g. a nested
+# ``DictType(value_type=None)`` produced when the ``VARIANT``
+# heterogeneous strategy lets a mixed-value dict reach the typed-stub
+# helper) returns ``None`` instead of silently lying with
+# ``Dict[String, String]``.
+_mojo_call_arg_element_to_type = make_element_to_type(
+    str_type="String",
+    bool_type="Bool",
+    int_type="Int",
+    float_type="Float64",
+    mixed_numeric_type="String",
+    bytes_type="String",
+    date_type="String",
+    datetime_type="String",
+    list_template="List[{inner}]",
+    dict_type_template="Dict[String, {inner}]",
+    fallback_value_type=None,
+)
+
+
+@beartype
+def _value_to_mojo_type(
+    value: Value,
+    /,
+    *,
+    heterogeneous_value_type: str | None,
+    wrap_ids: frozenset[int],
+) -> str | None:
+    """Map one call-argument value to its Mojo type string.
+
+    Routes list values through :func:`infer_element_type` so a list
+    slot resolves to a recursive ``List[...]`` type (e.g.
+    ``[1, 2, 3]`` -> ``List[Int]``).  Dicts route the same way so a
+    homogeneous-value dict slot resolves to ``Dict[String, ...]``
+    (e.g. ``{"a": 1}`` -> ``Dict[String, Int]``).  Uses the strict
+    resolver so a dict whose values cannot be unified to a
+    concrete Mojo type (an empty dict, or a nested heterogeneous dict
+    that survives upstream checks under the ``VARIANT`` strategy)
+    returns ``None`` and the slot falls back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form rather than fabricating a
+    ``String`` value type.  When *heterogeneous_value_type* is given
+    (the ``VARIANT`` strategy supplies the configured Variant alias
+    name) a heterogeneous-value dict slot resolves to
+    ``Dict[String, {alias}]`` instead of falling back.  Other values
+    look up their Python ``type`` directly so only the scalar Mojo
+    mappings are typed and any other shape (ordered maps, etc.) falls
+    back to the same generic form.
+    """
+    match value:
+        case list():
+            return _mojo_call_arg_element_to_type(
+                infer_element_type(items=[value]) or list,
+            )
+        case dict():
+            if heterogeneous_value_type is not None and id(value) in wrap_ids:
+                return f"Dict[String, {heterogeneous_value_type}]"
+            return _mojo_call_arg_element_to_type(
+                infer_element_type(items=[value]) or dict,
+            )
+        case _:
+            return _mojo_call_arg_element_to_type(type(value))
+
+
+@beartype
+def _gather_mojo_call_slots(
+    *,
+    arg_values: Sequence[Value],
+) -> list[list[Value]]:
+    """Group per-call argument values by positional slot."""
+    slots: list[list[Value]] = []
+    for element in arg_values:
+        match element:
+            case list():
+                per_arg: Sequence[Value] = element
+            case _:
+                per_arg = [element]
+        for slot_index, arg_value in enumerate(iterable=per_arg):
+            if slot_index >= len(slots):
+                slots.append([])
+            slots[slot_index].append(arg_value)
+    return slots
+
+
+@beartype
+def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
+    """Return ``True`` when every value at this slot is a scalar."""
+    return all(not isinstance(v, list | dict | set) for v in slot_values)
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _MojoSlotSignature:
+    """Per-slot resolved type info for a Mojo typed param list.
+
+    ``known_types`` is the frozenset of concrete Mojo type strings
+    resolved at this slot across calls; ``None`` entries (unresolvable
+    values) are dropped, so a slot whose only values are unresolvable
+    has an empty ``known_types``.
+    """
+
+    name: str
+    known_types: frozenset[str]
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _MojoSlotInfo:
+    """Aggregate result of computing Mojo per-slot signatures.
+
+    ``typed_params`` is the formatted ``("name: Type", ...)`` tuple
+    consumed by the call-stub typed-param emitter, or ``None`` when the
+    caller must fall back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form.  ``slots`` carries per-slot
+    metadata: aligned with ``params`` when ``typed_params`` is a tuple,
+    a prefix up to and including the slot that triggered fallback when
+    fallback happened mid-analysis, and empty when the input slot count
+    does not match ``params``.
+    """
+
+    typed_params: tuple[str, ...] | None
+    slots: tuple[_MojoSlotSignature, ...]
+
+
+@beartype
+def _mojo_compute_slot_signatures(
+    *,
+    params: Sequence[str],
+    arg_values: Sequence[Value],
+    heterogeneous_value_type: str | None,
+) -> _MojoSlotInfo:
+    """Compute Mojo slot signatures and the typed-param list.
+
+    Returns a :class:`_MojoSlotInfo` whose ``typed_params`` mirrors the
+    behavior previously implemented by ``_mojo_typed_param_list``: it
+    is ``None`` to signal the caller should fall back to the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any per-call
+    value at a parameter slot has no Mojo type (a ref-marker dict,
+    ``None``, an inhomogeneous list, etc.) or when any slot has no
+    values (e.g. transform-stub callers pass an empty ``arg_values``).
+    A zero-parameter call returns ``()`` (typed, empty) so the caller
+    emits a bare ``def name():`` form rather than the generic stub.
+
+    When concrete Mojo types are known at every per-call value but
+    diverge across calls at one slot, the behavior depends on the
+    heterogeneous strategy: ``ERROR`` raises
+    :exc:`HeterogeneousScalarCollectionError` so the call-stub path
+    refuses input it cannot represent; ``VARIANT`` (signaled by a
+    non-``None`` ``heterogeneous_value_type``) emits the configured
+    Variant alias as the slot type regardless of whether the divergent
+    values are scalars, lists, or a mix of the two.
+
+    The ``slots`` field exposes the per-slot ``known_types`` set and
+    ``all_scalars`` flag so future callers (e.g. a body-preamble
+    builder that unions per-slot Variant alternatives with data-driven
+    alternatives) can reuse this analysis without recomputing it.
+    """
+    if not params:
+        return _MojoSlotInfo(typed_params=(), slots=())
+    slots = _gather_mojo_call_slots(arg_values=arg_values)
+    if len(slots) != len(params):
+        return _MojoSlotInfo(typed_params=None, slots=())
+    wrap_ids = (
+        frozenset[int]().union(
+            *(
+                collect_heterogeneous_container_ids(data=slot_values)
+                for slot_values in slots
+            )
+        )
+        if heterogeneous_value_type is not None
+        else frozenset[int]()
+    )
+    typed: list[str] = []
+    slot_signatures: list[_MojoSlotSignature] = []
+    for name, slot_values in zip(params, slots, strict=True):
+        slot_types = [
+            _value_to_mojo_type(
+                v,
+                heterogeneous_value_type=heterogeneous_value_type,
+                wrap_ids=wrap_ids,
+            )
+            for v in slot_values
+        ]
+        known_types: frozenset[str] = frozenset(
+            t for t in slot_types if t is not None
+        )
+        slot_signatures.append(
+            _MojoSlotSignature(
+                name=name,
+                known_types=known_types,
+            ),
+        )
+        if len(known_types) > 1 and heterogeneous_value_type is not None:
+            typed.append(f"{name}: {heterogeneous_value_type}")
+            continue
+        if not slot_types or None in slot_types:
+            return _MojoSlotInfo(
+                typed_params=None,
+                slots=tuple(slot_signatures),
+            )
+        if len(known_types) > 1:
+            msg = (
+                "Mojo call argument types diverge across calls at "
+                f"parameter '{name}' "
+                f"(got {sorted(known_types)}); "
+                "the default ERROR heterogeneous_strategy cannot "
+                "represent this input."
+            )
+            raise HeterogeneousScalarCollectionError(msg)
+        (mojo_type,) = known_types
+        typed.append(f"{name}: {mojo_type}")
+    return _MojoSlotInfo(
+        typed_params=tuple(typed),
+        slots=tuple(slot_signatures),
+    )
+
+
+@beartype
+def _mojo_typed_param_list(
+    *,
+    params: Sequence[str],
+    arg_values: Sequence[Value],
+    heterogeneous_value_type: str | None,
+) -> tuple[str, ...] | None:
+    """Return ``("name: Type", ...)`` for a typed Mojo signature.
+
+    Thin wrapper over :func:`_mojo_compute_slot_signatures` that
+    surfaces only the ``typed_params`` field.  See that function for
+    the full contract (fallback conditions, divergent-slot handling
+    under each heterogeneous strategy, zero-parameter behavior).
+    """
+    info = _mojo_compute_slot_signatures(
+        params=params,
+        arg_values=arg_values,
+        heterogeneous_value_type=heterogeneous_value_type,
+    )
+    return info.typed_params
+
+
+def _mojo_cross_call_scalar_wrap_ids(
+    slot_values: Sequence[Value],
+) -> frozenset[int]:
+    """Return ids of scalars in a cross-call divergent VARIANT slot.
+
+    When *slot_values* are all scalars whose Mojo Variant buckets
+    diverge across calls, return a ``frozenset`` of their ``id()`` so
+    the call-argument formatter wraps each as ``Value(...)``.  Returns
+    an empty ``frozenset`` for empty slots, homogeneous slots, and
+    slots that mix scalars with lists, dicts, or sets — Mojo can
+    construct the ``Variant`` implicitly from a moved typed variable
+    in those cases, and an inline list / dict literal cannot be wrapped
+    by ``Value(...)`` without an intermediate typed declaration that
+    the call-argument formatter does not synthesize.
+    """
+    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
+        return frozenset()
+    slot_types = {
+        _value_to_mojo_type(
+            value,
+            heterogeneous_value_type=None,
+            wrap_ids=frozenset[int](),
+        )
+        for value in slot_values
+    }
+    if len(slot_types) <= 1:
+        return frozenset()
+    return frozenset(id(value) for value in slot_values)
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
@@ -106,6 +390,7 @@ def _mojo_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Mojo body stub declarations for a call name.
@@ -125,29 +410,65 @@ def _mojo_call_stub(
 @beartype
 def _mojo_call_preamble_stub(
     parts: Sequence[str],
-    _params: Sequence[str],
-    _stub_return: StubReturn,
+    params: Sequence[str],
+    stub_return: StubReturn,
+    args: Sequence[Value],
     /,
     *,
     indent: str,
+    heterogeneous_value_type: str | None,
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
-    1-part names become a module-level generic ``fn``.  Multi-part
-    names become ``@fieldwise_init`` struct types: the innermost type
-    holds the method, and each enclosing type holds a field of the
-    next inner type.
+    1-part names become a module-level ``def``; multi-part names become
+    ``@fieldwise_init`` struct types whose innermost type holds the
+    method.  Both stub kinds emit typed per-parameter signatures when
+    every call's argument values at each slot resolve to the same
+    Mojo type (a scalar, a recursive ``List[...]``, or a homogeneous
+    ``Dict[String, ...]``), and the generic
+    ``[*Ts: AnyType](*args: *Ts)`` form otherwise.
+
+    When *stub_return* is :attr:`StubReturn.VALUE` (the call result feeds
+    a surrounding ``call_transform`` wrapper), the inner stub is given
+    an explicit ``-> None`` return annotation.  No per-call inference is
+    available (the transform is a plain string wrapper), so ``None`` is
+    used as a documented placeholder: it is always valid, the body stays
+    ``pass``, and the surrounding generic ``[*Ts: AnyType]`` wrapper
+    accepts it.  ``None`` also avoids ``-Werror`` ``value is unused``
+    diagnostics when the transform is the identity (no outer wrapper),
+    because the bare call has no value to leak.
     """
+    typed_params = _mojo_typed_param_list(
+        params=params,
+        arg_values=args,
+        heterogeneous_value_type=heterogeneous_value_type,
+    )
+    return_suffix = " -> None" if stub_return is StubReturn.VALUE else ""
     if len(parts) == 1:
-        return (f"fn {parts[0]}[*Ts: AnyType](*args: *Ts):\n{indent}pass",)
+        if typed_params is not None:
+            param_list = ", ".join(typed_params)
+            return (
+                f"def {parts[0]}({param_list}){return_suffix}:\n{indent}pass",
+            )
+        return (
+            f"def {parts[0]}[*Ts: AnyType](*args: *Ts)"
+            f"{return_suffix}:\n{indent}pass",
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     struct_header = "(Copyable, Movable)"
-    method_stub = (
-        f"{indent}fn {method}[*Ts: AnyType](self, *args: *Ts):\n"
-        f"{indent}{indent}pass"
-    )
+    if typed_params is not None:
+        method_param_list = ", ".join(("self", *typed_params))
+        method_stub = (
+            f"{indent}def {method}({method_param_list})"
+            f"{return_suffix}:\n{indent}{indent}pass"
+        )
+    else:
+        method_stub = (
+            f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts)"
+            f"{return_suffix}:\n{indent}{indent}pass"
+        )
     if not fields:
         type_name = f"_{root.capitalize()}Type"
         return (
@@ -180,19 +501,7 @@ def _mojo_call_preamble_stub(
 
 
 _mojo_narrowed_empty_form = make_narrowed_empty_form(
-    element_to_type=make_element_to_type(
-        str_type="String",
-        bool_type="Bool",
-        int_type="Int",
-        float_type="Float64",
-        mixed_numeric_type="String",
-        bytes_type="String",
-        date_type="String",
-        datetime_type="String",
-        list_template="List[{inner}]",
-        dict_type_template="Dict[String, {inner}]",
-        fallback_value_type="String",
-    ),
+    element_to_type=_mojo_element_to_type,
     template="List[{type}]()",
     fallback_type="String",
 )
@@ -275,6 +584,29 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
             assert_never(unreachable)
 
 
+_REGISTER_TRIVIAL_VARIANT_TYPE_NAMES: frozenset[str] = frozenset(
+    {"Bool", "Int", "Float64"},
+)
+"""Mojo ``Variant`` type-name buckets that map to register-trivial
+scalars.  Applying the ``^`` transfer operator to one of these is a
+hard error under ``--Werror`` in Mojo 0.26.1.0+.
+"""
+
+
+@beartype
+def _mojo_value_inhibits_consuming_form(value: Value, /) -> bool:
+    """Return ``True`` when ``^`` is illegal for *value*'s Mojo type.
+
+    Non-scalar values (lists, dicts, sets) and scalars that map to
+    non-trivial Mojo types (``String``, ``NoneType``) keep the existing
+    consuming-form behavior.
+    """
+    if isinstance(value, (list, dict, set)):
+        return False
+    signature = _mojo_variant_for_scalar(value)
+    return signature.type_name in _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES
+
+
 @dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Mojo heterogeneous-values strategy.
@@ -317,12 +649,12 @@ def _build_variant_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}({payload})`` where the
         payload comes from the signature's ``payload_template`` (with
         ``{value}`` substituted by the formatted scalar).
         """
-        signature = _mojo_variant_for_scalar(cast("Scalar", raw_value))
+        signature = _mojo_variant_for_scalar(raw_value)
         payload = signature.payload_template.replace(
             _VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
             formatted,
@@ -333,6 +665,98 @@ def _build_variant_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=None,
+        compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
+    )
+
+
+@beartype
+def _collect_variant_alternatives_from_data(data: Value, /) -> tuple[str, ...]:
+    """Return Mojo ``Variant`` alternative type names found in *data*.
+
+    The result is order-preserving and deduplicated.  Returns an empty
+    tuple when *data* contains no heterogeneous containers.
+    """
+    wrap_ids = collect_heterogeneous_container_ids(data=data)
+    if not wrap_ids:
+        return ()
+    scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+    type_names: list[str] = []
+    seen: set[str] = set()
+    for scalar in scalars:
+        signature = _mojo_variant_for_scalar(scalar)
+        if signature.type_name in seen:
+            continue
+        seen.add(signature.type_name)
+        type_names.append(signature.type_name)
+    return tuple(type_names)
+
+
+@beartype
+def _collect_variant_alternatives_from_slots(
+    data: Value,
+    /,
+    *,
+    heterogeneous_value_type: str,
+) -> tuple[str, ...]:
+    """Return Mojo ``Variant`` alternatives from cross-call divergent
+    slots.
+
+    Treats *data* as a sequence of per-element call argument lists and
+    collects Mojo type names from slots whose resolved types diverge
+    across the per-element calls (e.g. ``List[Int]`` vs ``List[String]``
+    in slot 0, or ``Int`` vs ``List[Int]``).  Returns an empty tuple
+    when *data* is not a list, contains no divergent slot, or every
+    divergent slot has an unresolvable value.  The cross-call analysis
+    runs unconditionally: a whole-call ``data`` whose top-level shape
+    happens to look like a per-element call list will not produce a
+    false positive because data-driven scalar-bucket detection covers
+    every shape this analysis can flag.
+    """
+    match data:
+        case list():
+            slots = _gather_mojo_call_slots(arg_values=data)
+        case _:
+            return ()
+    alternatives: list[str] = []
+    seen: set[str] = set()
+    for slot_values in slots:
+        slot_types: list[str] = []
+        for value in slot_values:
+            mojo_type = _value_to_mojo_type(
+                value,
+                heterogeneous_value_type=heterogeneous_value_type,
+                wrap_ids=frozenset[int](),
+            )
+            if mojo_type is not None:
+                slot_types.append(mojo_type)
+        if len(set(slot_types)) <= 1:
+            continue
+        for mojo_type in slot_types:
+            if mojo_type in seen:
+                continue
+            seen.add(mojo_type)
+            alternatives.append(mojo_type)
+    return tuple(alternatives)
+
+
+@beartype
+def _render_variant_preamble(
+    alternatives: Sequence[str],
+    /,
+    *,
+    variant_name: str,
+) -> tuple[str, ...]:
+    """Render the ``Variant`` import + ``comptime`` declaration lines.
+
+    Returns ``()`` when *alternatives* is empty.
+    """
+    if not alternatives:
+        return ()
+    joined = ", ".join(alternatives)
+    return (
+        _VARIANT_IMPORT_LINE,
+        f"comptime {variant_name} = Variant[{joined}]",
     )
 
 
@@ -344,24 +768,26 @@ def _build_variant_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the ``Variant`` import + ``comptime`` declaration for
-        *data*.
+        *data*.  Unions data-driven scalar alternatives with cross-call
+        divergent-slot alternatives so call sites whose reference
+        arguments carry diverging list or mixed shapes contribute their
+        slot types (e.g. ``List[Int]``, ``List[String]``) to the alias.
         """
-        wrap_ids = collect_heterogeneous_container_ids(data=data)
-        if not wrap_ids:
-            return ()
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        type_names: list[str] = []
+        data_alternatives = _collect_variant_alternatives_from_data(data)
+        slot_alternatives = _collect_variant_alternatives_from_slots(
+            data,
+            heterogeneous_value_type=variant_name,
+        )
         seen: set[str] = set()
-        for scalar in scalars:
-            signature = _mojo_variant_for_scalar(scalar)
-            if signature.type_name in seen:
+        merged: list[str] = []
+        for alternative in data_alternatives + slot_alternatives:
+            if alternative in seen:
                 continue
-            seen.add(signature.type_name)
-            type_names.append(signature.type_name)
-        joined = ", ".join(type_names)
-        return (
-            _VARIANT_IMPORT_LINE,
-            f"comptime {variant_name} = Variant[{joined}]",
+            seen.add(alternative)
+            merged.append(alternative)
+        return _render_variant_preamble(
+            tuple(merged),
+            variant_name=variant_name,
         )
 
     return _preamble
@@ -380,6 +806,44 @@ def _mojo_list_open(items: list[Value]) -> str:
         )
         raise NullInCollectionError(msg)
     return "["
+
+
+@beartype
+def _mojo_format_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a plain Mojo ``var name = value`` declaration."""
+    return f"var {name} = {value}"
+
+
+@beartype
+def _mojo_element_renders_as_string(
+    item: Value,
+    *,
+    date_renders_as_string: bool,
+    datetime_renders_as_string: bool,
+) -> bool:
+    """Return whether *item* would render as a quoted ``String``.
+
+    Used to decide when a Mojo list literal needs an explicit
+    ``List[String]`` annotation: Mojo infers ``List[StringLiteral]`` from
+    a bare ``["a", "b"]`` literal, which is rejected when assigned into
+    a ``Variant`` slot expecting ``List[String]``.  ``str`` and ``bytes``
+    always render quoted; ``datetime`` and ``date`` only when the
+    configured formatter produces a string.
+    """
+    match item:
+        case str() | bytes():
+            return True
+        case datetime.datetime():
+            return datetime_renders_as_string
+        case datetime.date():
+            return date_renders_as_string
+        case _:
+            return False
 
 
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
@@ -416,26 +880,20 @@ class Mojo(metaclass=LanguageCls):
 
     extension = ".mojo"
     pygments_name = "mojo"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = True
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = False
+    supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -520,9 +978,7 @@ class Mojo(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="var {name} = {value}"
-            ),
+            formatter=_mojo_format_variable_declaration,
             supports_redefinition=True,
         )
 
@@ -619,7 +1075,8 @@ class Mojo(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -703,6 +1160,9 @@ class Mojo(metaclass=LanguageCls):
         IdentifierCase.SNAKE,
         IdentifierCase.UPPER_SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -762,7 +1222,7 @@ class Mojo(metaclass=LanguageCls):
     default_sequence_element_type: str = "String"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "String"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -869,16 +1329,32 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _mojo_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
-        return partial(_mojo_call_preamble_stub, indent=self.indent)
+        cls = type(self.heterogeneous_strategy)
+        heterogeneous_value_type = (
+            self.heterogeneous_value_variant_name
+            if self.heterogeneous_strategy is cls.VARIANT
+            else None
+        )
+        return partial(
+            _mojo_call_preamble_stub,
+            indent=self.indent,
+            heterogeneous_value_type=heterogeneous_value_type,
+        )
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -925,8 +1401,28 @@ class Mojo(metaclass=LanguageCls):
         Used only for refs the caller declared as consumable on
         :func:`~literalizer.literalize_call` and that appear in just
         one call argument, so the transfer cannot strand a later use.
+        Refs whose underlying value is a register-trivial scalar
+        (``Int``, ``Bool``, ``Float64``) are routed away from this
+        formatter at the call site (see
+        :attr:`consumable_ref_value_inhibits_consuming_form`), because
+        applying ``^`` to such a value is a hard error under ``--Werror``.
         """
         return self.format_call_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Return ``True`` for ref values whose Mojo type is register-
+        trivial.
+
+        Mojo 0.26.1.0+ rejects ``^`` on ``Int``, ``Bool``, and
+        ``Float64`` values under ``--Werror`` because the transfer has
+        no effect.  The trivial-register set is derived from
+        :func:`_mojo_variant_for_scalar` so the formatter layer avoids
+        hard-coded Mojo type-name strings.
+        """
+        return _mojo_value_inhibits_consuming_form
 
     @cached_property
     def call_style_config(self) -> CallStyle:
@@ -1030,8 +1526,43 @@ class Mojo(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        """Callable that formats a new variable declaration.
+
+        Wraps the configured declaration formatter so a non-empty list of
+        string-rendering elements gets an explicit ``List[String]``
+        annotation.  Mojo infers ``List[StringLiteral]`` from a bare
+        ``["a", "b"]`` literal, which is rejected when assigned into a
+        ``Variant`` slot expecting ``List[String]``.
+        """
+        base_formatter = self.declaration_style.value.formatter
+        date_renders_as_string = self.date_format.value.type_produced is str
+        datetime_renders_as_string = (
+            self.datetime_format.value.type_produced is str
+        )
+
+        def _format(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Format the declaration, annotating string lists."""
+            if (
+                isinstance(data, list)
+                and data
+                and all(
+                    _mojo_element_renders_as_string(
+                        item=item,
+                        date_renders_as_string=date_renders_as_string,
+                        datetime_renders_as_string=datetime_renders_as_string,
+                    )
+                    for item in data
+                )
+            ):
+                return f"var {name}: List[String] = {value}"
+            return base_formatter(name, value, data, modifiers)
+
+        return _format
 
     @cached_property
     def format_variable_assignment(

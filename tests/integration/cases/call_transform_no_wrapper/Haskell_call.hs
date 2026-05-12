@@ -8,8 +8,8 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-process :: Val -> IO Val
-process _ = return undefined
+process :: Val -> IO ()
+process _ = return ()
 main :: IO ()
 main = do
     _ <- process(HStr "hello")

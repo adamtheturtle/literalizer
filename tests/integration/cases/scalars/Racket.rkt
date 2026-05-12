@@ -1,8 +1,8 @@
 #lang racket
-(list
+(define my_data (list
     42
     3.14
     #t
     #f
     "hello \"world\""
-)
+))

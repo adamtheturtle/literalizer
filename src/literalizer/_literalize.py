@@ -4,10 +4,10 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import assert_never
+from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
-from ruamel.yaml.comments import CommentedSeq
+from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._checks import check_data
@@ -49,9 +49,14 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallStubNotSupportedError,
+    DottedCallTargetNotSupportedError,
+    FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
+    VariableNameNotSupportedError,
 )
 
 _DISABLED_REF_KEY = ""
@@ -101,6 +106,17 @@ class LiteralizeResult:
     these and re-invoke :attr:`Language.compute_body_preamble` to
     derive a single body preamble that covers every type referenced
     across the combined output.
+    """
+
+    contains_standalone_comments: bool = False
+    """Whether the rendered source carried standalone comments (lines
+    whose only content is a comment, distinct from inline trailing
+    comments).  Set when ``literalize_call`` parses YAML input that
+    contains top-level before-element or trailing comments.  Callers
+    that wrap the result via :meth:`Language.wrap_calls_with_declarations`
+    can consult this together with
+    :attr:`Language.supports_standalone_comments_in_wrapped_calls`
+    to decide whether wrapping is safe.
     """
 
     source_data: Value = None
@@ -206,6 +222,18 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
     return result
 
 
+_SCALAR_TYPES: Final = (
+    str,
+    int,
+    float,
+    bool,
+    type(None),
+    datetime.date,
+    datetime.datetime,
+    bytes,
+)
+
+
 @beartype
 def _maybe_wrap_child(
     *,
@@ -217,17 +245,21 @@ def _maybe_wrap_child(
 ) -> str:
     """Wrap *formatted_value* when *parent_id* is in *wrap_ids*.
 
-    Delegates to
+    Routes scalar children through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
-    on the spec's
-    :attr:`~literalizer._language.Language.heterogeneous_behavior`.
+    and non-scalar children (ref markers, containers) through
+    :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
     """
-    if parent_id not in wrap_ids:
+    behavior = spec.heterogeneous_behavior
+    if isinstance(raw_value, _SCALAR_TYPES):
+        wrap_scalar = behavior.wrap_scalar
+        if wrap_scalar is None or parent_id not in wrap_ids:
+            return formatted_value
+        return wrap_scalar(raw_value, formatted_value)
+    wrap_non_scalar = behavior.wrap_non_scalar
+    if wrap_non_scalar is None or parent_id not in wrap_ids:
         return formatted_value
-    return spec.heterogeneous_behavior.wrap_scalar(
-        raw_value,
-        formatted_value,
-    )
+    return wrap_non_scalar(raw_value, formatted_value)
 
 
 @beartype
@@ -634,6 +666,32 @@ def _compute_call_per_element_wrap_ids(
     return frozenset[int]().union(
         *(
             _compute_wrap_ids(data=slot_values, spec=spec)
+            for slot_values in slots
+        )
+    )
+
+
+@beartype
+def _compute_call_slot_scalar_wrap_ids(
+    *,
+    elements: list[Value],
+    spec: Language,
+    ref_key: str,
+) -> frozenset[int]:
+    """Compute ids of top-level scalar call arguments to wrap.
+
+    For each positional argument slot, gather the values across sibling
+    calls and ask the language's
+    :class:`~literalizer._language.HeterogeneousBehavior` whether any
+    of those values need wrapping due to cross-call type divergence.
+    The default behavior returns an empty set for every slot; the Mojo
+    language under the ``VARIANT`` strategy returns the value ids of
+    divergent top-level scalars so they render wrapped as ``Value(...)``.
+    """
+    slots = _gather_call_slot_values(elements=elements, ref_key=ref_key)
+    return frozenset[int]().union(
+        *(
+            spec.heterogeneous_behavior.compute_call_slot_wrap_ids(slot_values)
             for slot_values in slots
         )
     )
@@ -1063,7 +1121,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
             )
-        case list():  # pragma: no branch
+        case list():
             result = _format_list_value(
                 value=value,
                 spec=spec,
@@ -1133,14 +1191,14 @@ def _collection_open_for_multiline_value(
     Used for a nested multiline collection.
     """
     del expand_refs
-    if isinstance(data, dict):
-        if is_ordered_map:
+    match data:
+        case dict() if is_ordered_map:
             opener = spec.ordered_map_format_config.ordered_map_open(data)
-        elif dict_open_override is not None:
+        case dict() if dict_open_override is not None:
             opener = dict_open_override
-        elif not ref_key:
+        case dict() if not ref_key:
             opener = spec.dict_format_config.dict_open(data)
-        else:
+        case dict():
             dict_open_items = {
                 k: v
                 for k, v in data.items()
@@ -1148,24 +1206,24 @@ def _collection_open_for_multiline_value(
                 or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
             }
             opener = spec.dict_format_config.dict_open(dict_open_items or data)
-    elif isinstance(data, set):
-        sorted_set: list[Value] = sorted(
-            data,
-            key=lambda v: (type(v).__name__, repr(v)),
-        )
-        opener = spec.set_format_config.set_open(sorted_set)
-    elif sequence_open_override is not None:
-        opener = sequence_open_override
-    elif not ref_key:
-        opener = spec.sequence_open(data)
-    else:
-        sequence_open_items = [
-            v
-            for v in data
-            if not isinstance(v, dict)
-            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-        ]
-        opener = spec.sequence_open(sequence_open_items or data)
+        case set():
+            sorted_set: list[Value] = sorted(
+                data,
+                key=lambda v: (type(v).__name__, repr(v)),
+            )
+            opener = spec.set_format_config.set_open(sorted_set)
+        case _ if sequence_open_override is not None:
+            opener = sequence_open_override
+        case _ if not ref_key:
+            opener = spec.sequence_open(data)
+        case _:
+            sequence_open_items = [
+                v
+                for v in data
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            ]
+            opener = spec.sequence_open(sequence_open_items or data)
     return opener
 
 
@@ -1948,13 +2006,22 @@ def literalize(
             and *wrap_in_file* is ``False``, or if the language's
             ``declaration_style`` does not support redefinition.
         UnsupportedIdentifierCaseError: If *ref_case* is not in
-            :attr:`~literalizer._language.Language.identifier_cases`
+            :attr:`~literalizer._language.Language.supported_ref_cases`
             for the target language.
+        VariableNameNotSupportedError: If *variable_form* is supplied
+            but the target language sets
+            :attr:`~literalizer._language.Language.supports_variable_names`
+            to ``False``.
     """
-    if ref_case is not None and ref_case not in language.identifier_cases:
+    if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
+        )
+    if variable_form is not None and not language.supports_variable_names:
+        raise VariableNameNotSupportedError(
+            language_name=type(language).__name__,
+            variable_name=variable_form.name,
         )
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
@@ -2165,10 +2232,51 @@ def _compute_call_arg_ref_single_use_names(
 
 
 @beartype
+def _compute_call_arg_ref_consume_inhibited_names(
+    *,
+    elements: list[Value],
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+    language: Language,
+) -> frozenset[str]:
+    """Return ref identifiers whose underlying value inhibits the
+    language's consume form.
+
+    Languages whose consume operator rejects certain value types (notably
+    the Mojo ``^`` on register-trivial scalars) expose
+    :attr:`~literalizer._language.Language.consumable_ref_value_inhibits_consuming_form`
+    so the call site can route those refs through the non-consuming
+    formatter instead.  Names are returned in the original (pre-``ref_case``)
+    form so they can be compared against the user-supplied
+    ``consumable_refs`` set without further conversion.
+
+    Refs whose value is not present in *ref_values* fall through with the
+    consume form intact, matching the historical behavior for callers
+    that omit ``ref_values``.
+    """
+    if not ref_values:
+        return frozenset[str]()
+    inhibits = language.consumable_ref_value_inhibits_consuming_form
+    referenced: set[str] = set()
+    for element in elements:
+        arg_values = element if isinstance(element, list) else [element]
+        for value in arg_values:
+            ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+            if ref_name is None:
+                continue
+            referenced.add(ref_name)
+    return frozenset(
+        name
+        for name in referenced
+        if name in ref_values and inhibits(ref_values[name])
+    )
+
+
+@beartype
 def _strip_call_arg_refs_for_preamble(
     *,
     data: Value,
-    per_element: bool,
+    per_element_data: list[Value] | None,
     ref_key: str,
     ref_values: Mapping[str, Value],
 ) -> Value:
@@ -2198,11 +2306,9 @@ def _strip_call_arg_refs_for_preamble(
             ref_key=ref_key,
         )
         return resolved.value if resolved.include else []
-    if per_element:
-        if not isinstance(data, list):
-            return data
+    if per_element_data is not None:
         result: list[Value] = []
-        for element in data:
+        for element in per_element_data:
             if isinstance(element, list):
                 result.append(
                     [
@@ -2231,11 +2337,13 @@ def _format_single_call_arg(
     value: Value,
     language: Language,
     wrap_ids: frozenset[int],
+    scalar_wrap_ids: frozenset[int],
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -2249,14 +2357,17 @@ def _format_single_call_arg(
     *consumable_ref_names* is the caller's declaration of which refs
     this call owns and may move from.  *single_use_ref_names* is the
     set of refs that appear exactly once across this call's argument
-    lists.  Both sets use the original (pre-``ref_case``) name.  A ref
-    is rendered via the language's
-    ``format_call_arg_ref_identifier_consumable`` hook only when it is
-    in both sets; otherwise it goes through the regular
-    ``format_call_arg_ref_identifier`` hook.  This ensures that a ref
-    used in more than one call (or more than once in a single call's
-    arguments) is never consumed, even when the caller listed it as
-    consumable.
+    lists.  *consume_inhibited_ref_names* is the set of refs whose
+    underlying value type inhibits the language's consume form (e.g.
+    the Mojo ``^`` on register-trivial scalars).  All three sets use the
+    original (pre-``ref_case``) name.  A ref is rendered via the
+    language's ``format_call_arg_ref_identifier_consumable`` hook only
+    when it is in *consumable_ref_names* and *single_use_ref_names* and
+    not in *consume_inhibited_ref_names*; otherwise it goes through the
+    regular ``format_call_arg_ref_identifier`` hook.  This ensures that
+    a ref used in more than one call -- or whose value type the
+    language's consume operator rejects -- is never consumed, even when
+    the caller listed it as consumable.
     """
     raw_ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
     if raw_ref_name is not None:
@@ -2268,11 +2379,12 @@ def _format_single_call_arg(
         is_consumable = (
             raw_ref_name in consumable_ref_names
             and raw_ref_name in single_use_ref_names
+            and raw_ref_name not in consume_inhibited_ref_names
         )
         if is_consumable:
             return language.format_call_arg_ref_identifier_consumable(ref_name)
         return language.format_call_arg_ref_identifier(ref_name)
-    return wrap_arg(
+    formatted = wrap_arg(
         value,
         _format_value(
             value=value,
@@ -2287,6 +2399,14 @@ def _format_single_call_arg(
             multiline_prefix="",
         ),
     )
+    wrap_scalar = language.heterogeneous_behavior.wrap_scalar
+    if (
+        wrap_scalar is None
+        or id(value) not in scalar_wrap_ids
+        or not isinstance(value, _SCALAR_TYPES)
+    ):
+        return formatted
+    return wrap_scalar(value, formatted)
 
 
 @beartype
@@ -2321,11 +2441,13 @@ def _format_call_args(
     params: Sequence[str],
     language: Language,
     wrap_ids: frozenset[int],
+    scalar_wrap_ids: frozenset[int],
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -2354,11 +2476,13 @@ def _format_call_args(
             value=arg_value,
             language=language,
             wrap_ids=wrap_ids,
+            scalar_wrap_ids=scalar_wrap_ids,
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
             ref_case=ref_case,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2446,8 +2570,7 @@ def _assemble_postfix_call(
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if wrapper:
-            call_expr = f"{call_expr} {wrapper}"
+        call_expr = f"{call_expr} {wrapper}"
     return call_expr
 
 
@@ -2474,8 +2597,7 @@ def _assemble_prefix_call(
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if wrapper:
-            call_expr = f"({wrapper}{arg_separator}{call_expr})"
+        call_expr = f"({wrapper}{arg_separator}{call_expr})"
     return call_expr
 
 
@@ -2503,11 +2625,10 @@ def _assemble_command_call(
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if wrapper:
-            call_expr = wrapped_call_template.format(
-                wrapper=wrapper,
-                inner=call_expr,
-            )
+        call_expr = wrapped_call_template.format(
+            wrapper=wrapper,
+            inner=call_expr,
+        )
     return call_expr
 
 
@@ -2570,6 +2691,7 @@ def _render_call_per_element(
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
+    ref_values: Mapping[str, Value],
     ref_key: str,
     collection_comments: CollectionComments | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
@@ -2595,9 +2717,22 @@ def _render_call_per_element(
         spec=language,
         ref_key=ref_key,
     )
+    scalar_wrap_ids = _compute_call_slot_scalar_wrap_ids(
+        elements=data,
+        spec=language,
+        ref_key=ref_key,
+    )
     single_use_ref_names = _compute_call_arg_ref_single_use_names(
         elements=data,
         ref_key=ref_key,
+    )
+    consume_inhibited_ref_names = (
+        _compute_call_arg_ref_consume_inhibited_names(
+            elements=data,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            language=language,
+        )
     )
     rendered_elements: list[str] = []
     for element in data:
@@ -2621,11 +2756,13 @@ def _render_call_per_element(
             params=parameter_names,
             language=language,
             wrap_ids=call_wrap_ids,
+            scalar_wrap_ids=scalar_wrap_ids,
             style=style,
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2662,6 +2799,7 @@ def _render_call_whole(
     call_transform: Callable[[str], str] | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
+    ref_values: Mapping[str, Value],
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -2682,6 +2820,7 @@ def _render_call_whole(
         params=parameter_names,
         language=language,
         wrap_ids=call_wrap_ids,
+        scalar_wrap_ids=frozenset[int](),
         style=style,
         dict_open_overrides=[None],
         ref_case=ref_case,
@@ -2689,6 +2828,14 @@ def _render_call_whole(
         single_use_ref_names=_compute_call_arg_ref_single_use_names(
             elements=[[data]],
             ref_key=ref_key,
+        ),
+        consume_inhibited_ref_names=(
+            _compute_call_arg_ref_consume_inhibited_names(
+                elements=[[data]],
+                ref_values=ref_values,
+                ref_key=ref_key,
+                language=language,
+            )
         ),
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -2702,6 +2849,162 @@ def _render_call_whole(
             style=style,
         )
     )
+
+
+@beartype
+def _has_inline_multiline_dict_arg(
+    *,
+    arg_values: Sequence[Value],
+    ref_key: str,
+) -> bool:
+    """Return ``True`` when *arg_values* contains a dict with two or
+    more entries that is not a ``$ref`` marker.
+    """
+    return any(
+        _value_is_multikey_non_ref_dict(value=value, ref_key=ref_key)
+        for value in arg_values
+    )
+
+
+@beartype
+def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
+    """Return ``True`` if *value* is a dict with multiple keys that is
+    not a single-key ``$ref`` marker.
+    """
+    if not isinstance(value, dict):
+        return False
+    if len(value) == 1 and isinstance(value.get(ref_key), str):
+        return False
+    return len(value) > 1
+
+
+@beartype
+def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
+    """Return ``True`` when the YAML source carries standalone comments.
+
+    Standalone comments are comments that appear on their own line —
+    either before a top-level element or after the last element.  Inline
+    comments (those that follow a value on the same line) do not count.
+    Returns ``False`` for non-YAML input or for YAML that parses to a
+    scalar; ``ruamel.yaml`` only attaches collection-comment metadata
+    to :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`.
+    """
+    if not isinstance(raw_data, CommentedSeq | CommentedMap | CommentedSet):
+        return False
+    collection_comments = extract_yaml_comments(ruamel_data=raw_data)
+    if collection_comments.trailing:
+        return True
+    return any(element.before for element in collection_comments.elements)
+
+
+@beartype
+def _validate_wrap_in_file_supports_standalone_comments(
+    *,
+    language: Language,
+    wrap_in_file: bool,
+    contains_standalone_comments: bool,
+) -> None:
+    """Raise when wrapping calls would drop required standalone
+    comments.
+    """
+    if (
+        wrap_in_file
+        and contains_standalone_comments
+        and not language.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "standalone comments cannot be preserved when wrapping "
+                "calls in this language"
+            ),
+        )
+
+
+@beartype
+def _validate_call_preconditions(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
+    arg_values: Sequence[Value],
+    ref_key: str,
+    ref_case: IdentifierCase | None,
+    call_transform: Callable[[str], str] | None,
+) -> None:
+    """Raise typed errors for unsupported ``literalize_call`` inputs."""
+    if (
+        len(parameter_names) == 0
+        and not language.supports_zero_parameter_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "zero-parameter calls have no representation in this language"
+            ),
+        )
+    if (
+        not language.supports_inline_multiline_dict_args
+        and _has_inline_multiline_dict_arg(
+            arg_values=arg_values, ref_key=ref_key
+        )
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "multi-key dict call arguments have no inline multiline "
+                "representation in this language"
+            ),
+        )
+    if call_transform is not None and not language.call_returns_expression:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "calls in this language are statements, not expressions, "
+                "so a call_transform wrapper cannot consume the call as a "
+                "value"
+            ),
+        )
+    if target_function_parts[-1] in language.reserved_identifiers:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"target_function {target_function!r} ends in a reserved "
+                f"identifier of this language"
+            ),
+        )
+    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
+        raise DottedCallTargetNotSupportedError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+        )
+    if call_transform is not None and (
+        not language.supports_dotted_call_stub
+        or not language.has_free_function_calls
+    ):
+        wrapper = _extract_call_transform_wrapper(
+            call_transform=call_transform,
+        )
+        if "." in wrapper and not language.supports_dotted_call_stub:
+            raise DottedCallStubNotSupportedError(
+                language_name=type(language).__name__,
+                transform_stub_name=wrapper,
+            )
+        if (
+            wrapper
+            and "." not in wrapper
+            and not language.has_free_function_calls
+        ):
+            raise FreeFunctionCallNotSupportedError(
+                language_name=type(language).__name__,
+                transform_stub_name=wrapper,
+            )
+    if ref_case is not None and ref_case not in language.supported_ref_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
 
 
 @beartype
@@ -2761,7 +3064,7 @@ def literalize_call(
             set, each ref identifier is normalized to ``snake_case``
             and then converted to the requested case via ``pyhumps``,
             so the same source can drive idiomatic identifiers across
-            multiple languages.  When *language*'s ``identifier_cases``
+            multiple languages.  When *language*'s ``supported_ref_cases``
             does not expose the requested case,
             :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
             is raised.
@@ -2811,6 +3114,9 @@ def literalize_call(
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
+    contains_standalone_comments = _yaml_has_standalone_comments(
+        raw_data=parsed.raw_data,
+    )
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
             raise CallsNotSupportedByLanguageError(
@@ -2823,21 +3129,7 @@ def literalize_call(
         case _ as style:
             pass
 
-    target_function_parts = tuple(target_function.split(sep="."))
-    if ref_case is not None and ref_case not in language.identifier_cases:
-        raise UnsupportedIdentifierCaseError(
-            language_name=type(language).__name__,
-            case_name=ref_case.name,
-        )
-    target_function = language.format_call_target(target_function_parts)
-
-    data_for_preamble = _strip_call_arg_refs_for_preamble(
-        data=data,
-        per_element=per_element,
-        ref_key=ref_key,
-        ref_values=ref_values or {},
-    )
-
+    per_element_data: list[Value] | None = None
     if per_element:
         if not isinstance(data, list):
             msg = (
@@ -2845,6 +3137,37 @@ def literalize_call(
                 f"got {type(data).__name__}"
             )
             raise PerElementNotListError(msg)
+        per_element_data = data
+    arg_values: Sequence[Value] = (
+        per_element_data if per_element_data is not None else [data]
+    )
+
+    target_function_parts = tuple(target_function.split(sep="."))
+    _validate_call_preconditions(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+        parameter_names=parameter_names,
+        arg_values=arg_values,
+        ref_key=ref_key,
+        ref_case=ref_case,
+        call_transform=call_transform,
+    )
+    _validate_wrap_in_file_supports_standalone_comments(
+        language=language,
+        wrap_in_file=wrap_in_file,
+        contains_standalone_comments=contains_standalone_comments,
+    )
+    target_function = language.format_call_target(target_function_parts)
+
+    data_for_preamble = _strip_call_arg_refs_for_preamble(
+        data=data,
+        per_element_data=per_element_data,
+        ref_key=ref_key,
+        ref_values=ref_values or {},
+    )
+
+    if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
             input_format is InputFormat.YAML
@@ -2855,7 +3178,7 @@ def literalize_call(
                 ruamel_data=parsed.raw_data,
             )
         result = _render_call_per_element(
-            data=data,
+            data=per_element_data,
             language=language,
             style=style,
             target_function=target_function,
@@ -2863,6 +3186,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
+            ref_values=ref_values or {},
             ref_key=ref_key,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
@@ -2877,6 +3201,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
+            ref_values=ref_values or {},
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2902,10 +3227,10 @@ def literalize_call(
             StubReturn.VALUE if call_transform is not None else StubReturn.VOID
         )
         body_stubs = language.format_call_stub(
-            target_function_parts, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return, arg_values
         )
         preamble_stubs = language.format_call_preamble_stub(
-            target_function_parts, parameter_names, stub_return
+            target_function_parts, parameter_names, stub_return, arg_values
         )
         wrapped = language.wrap_in_file(
             content=result,
@@ -2922,6 +3247,7 @@ def literalize_call(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
+            contains_standalone_comments=contains_standalone_comments,
             source_data=data_for_preamble,
         )
 
@@ -2930,5 +3256,6 @@ def literalize_call(
         preamble=preamble,
         body_preamble=computed.body,
         types_present=computed.types_present,
+        contains_standalone_comments=contains_standalone_comments,
         source_data=data_for_preamble,
     )

@@ -1,4 +1,4 @@
 #lang racket
-(hash
+(define my_data (hash
     "message" "no comment here"
-)
+))

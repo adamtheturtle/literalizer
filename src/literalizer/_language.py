@@ -12,7 +12,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @dataclasses.dataclass(frozen=True)
@@ -367,6 +367,29 @@ class IdentifierCase(enum.Enum):
         return _convert_identifier_case(case=self, name=name)
 
 
+ALL_REF_CASES: frozenset[IdentifierCase] = frozenset(IdentifierCase)
+"""Every :class:`IdentifierCase` member.
+
+Use as :attr:`Language.supported_ref_cases` for languages whose
+identifier grammar admits every case in :class:`IdentifierCase`,
+including ``KEBAB`` (e.g. Lisp-family languages where ``my-var`` is a
+single legal symbol).
+"""
+
+
+NON_KEBAB_REF_CASES: frozenset[IdentifierCase] = ALL_REF_CASES - {
+    IdentifierCase.KEBAB,
+}
+"""Every :class:`IdentifierCase` member except ``KEBAB``.
+
+Use as :attr:`Language.supported_ref_cases` for languages whose
+identifier grammar rejects ``-`` in identifiers (the common C-family
+case, where ``my-var`` would parse as subtraction or fail outright)
+while still accepting the four non-kebab cases as legal identifiers.
+"""
+
+
+@beartype
 def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
     """Convert *name* to *case* with snake_case normalization.
 
@@ -418,8 +441,25 @@ class HeterogeneousBehavior:
     of containers whose scalar children must be wrapped.
 
     ``wrap_scalar`` wraps a formatted scalar value (e.g. Rust's
-    tagged-enum ``Value::Variant(…)``).  For non-scalar inputs the
-    implementation is expected to return *formatted* unchanged.
+    tagged-enum ``Value::Variant(…)``).  ``None`` indicates the
+    language does not wrap scalars; in that case ``compute_wrap_ids``
+    and ``compute_call_slot_wrap_ids`` must always return an empty set
+    of scalar parents.
+
+    ``wrap_non_scalar`` wraps a formatted ref-marker or container value
+    when its parent is in ``wrap_ids``.  Used by V's interface strategy,
+    which renders ``IVal(...)`` around every formatted child regardless
+    of underlying type.  ``None`` indicates the language does not wrap
+    non-scalars; languages whose ``compute_wrap_ids`` only marks parents
+    with all-scalar children leave this as ``None``.
+
+    ``compute_call_slot_wrap_ids`` is called per positional-argument
+    slot with the per-call values gathered at that slot.  It returns
+    the ids of top-level scalar call arguments that should be wrapped
+    via ``wrap_scalar`` because their Mojo / target-language type
+    diverges across sibling calls (the cross-call VARIANT case).
+    Languages that do not need cross-call top-level wrapping return
+    an empty ``frozenset``.
 
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
@@ -427,7 +467,9 @@ class HeterogeneousBehavior:
 
     skip_scalar_checks: bool
     compute_wrap_ids: Callable[[Value], frozenset[int]]
-    wrap_scalar: Callable[[Value, str], str]
+    wrap_scalar: Callable[[Scalar, str], str] | None
+    wrap_non_scalar: Callable[[Value, str], str] | None
+    compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
 
 
 def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
@@ -435,15 +477,30 @@ def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     return frozenset()
 
 
-def _no_wrap_scalar(_raw: Value, formatted: str, /) -> str:
-    """Return *formatted* unchanged — used by non-wrapping languages."""
-    return formatted  # pragma: no cover
+def _no_compute_call_slot_wrap_ids(
+    _slot_values: Sequence[Value],
+    /,
+) -> frozenset[int]:
+    """Return an empty wrap-id set for languages without cross-call
+    top-level scalar wrapping.
+    """
+    return frozenset()
+
+
+no_compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]] = (
+    _no_compute_call_slot_wrap_ids
+)
+"""Shared callable for languages without cross-call top-level scalar
+wrapping (every non-Mojo VARIANT-style behavior).
+"""
 
 
 NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     skip_scalar_checks=False,
     compute_wrap_ids=_no_compute_wrap_ids,
-    wrap_scalar=_no_wrap_scalar,
+    wrap_scalar=None,
+    wrap_non_scalar=None,
+    compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.
@@ -530,23 +587,18 @@ class LanguageCls(type):
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
+    supported_ref_cases: frozenset[IdentifierCase]
     modifier_combinations: tuple[ModifierCombination, ...]
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
     VersionFormats: type[enum.Enum]
     version_formats: type[enum.Enum]
-    supports_default_set_element_type: bool
-    supports_default_sequence_element_type: bool
-    supports_default_dict_value_type: bool
-    supports_default_dict_key_type: bool
-    supports_default_ordered_map_value_type: bool
     supports_special_floats: bool
     supports_variable_names: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
-    allows_bare_call_statement: bool
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
@@ -555,7 +607,7 @@ class LanguageCls(type):
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
-    supports_call_refs_in_dict_literals: bool
+    dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
@@ -636,6 +688,14 @@ class Language(Protocol):
     def variable_type_hints_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the variable type hint options
         this language supports.
+
+        Every language exposes ``NEVER`` (no annotations, let the
+        language infer), ``ALWAYS`` (annotate every variable), and
+        ``SAFE``.  ``SAFE`` annotates only when the language's own
+        inference would widen the variable to a permissive type (e.g.
+        ``unknown[]`` for an empty TypeScript array, ``Object[]`` for an
+        empty Java array); for languages without a custom predicate it
+        produces the same output as ``NEVER``.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -753,20 +813,87 @@ class Language(Protocol):
 
     @property
     def identifier_cases(self) -> tuple[IdentifierCase, ...]:
-        """Identifier case conventions this language supports for
-        ``$ref`` conversion.
+        """Identifier case conventions idiomatic for this language.
 
-        Ordered by idiomatic preference — the first element is the
-        language's default case.  Passing a :class:`IdentifierCase`
-        to :func:`~literalizer.literalize_call` via ``ref_case`` is
+        Ordered by stylistic preference -- the first element is the
+        language's default/idiomatic case for generated defaults and
+        golden fixtures.  This list is *not* used to validate user
+        ``ref_case`` choices; that role belongs to
+        :attr:`supported_ref_cases`.  A language may prefer only
+        ``SNAKE`` while still syntactically supporting ``CAMEL``,
+        ``PASCAL``, and ``UPPER_SNAKE``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supported_ref_cases(self) -> frozenset[IdentifierCase]:
+        """Identifier cases that produce a syntactically legal
+        identifier in this language.
+
+        Used solely for correctness validation: passing a
+        :class:`IdentifierCase` not in this set to
+        :func:`~literalizer.literalize` or
+        :func:`~literalizer.literalize_call` via ``ref_case`` is
         rejected with
-        :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`
-        unless it is in this tuple.
+        :class:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
+        Independent of :attr:`identifier_cases`, which records
+        stylistic preference rather than syntactic validity.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
     extension: str
     """The file extension for this language, including the leading dot."""
+
+    supports_dotted_calls: bool
+    """Whether the language accepts dotted ``target_function`` values
+    (e.g. ``"module.fn"``) in
+    :func:`~literalizer.literalize_call`.  When ``False``, dotted
+    targets are rejected with
+    :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
+    """
+
+    supports_dotted_call_stub: bool
+    """Whether the language can declare a stub for a dotted call wrapper
+    name (e.g. ``tracer.emit``) produced by ``call_transform``.  When
+    ``False``, a dotted ``call_transform`` wrapper is rejected by
+    :func:`~literalizer.literalize_call` with
+    :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`.
+    """
+
+    has_free_function_calls: bool
+    """Whether the language has a free function call syntax (i.e. the
+    ability to call a function by a bare name with no dot).  When
+    ``False``, a ``call_transform`` whose wrapper is a bare name with
+    no dot is rejected by :func:`~literalizer.literalize_call` with
+    :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
+    """
+
+    @property
+    def reserved_identifiers(self) -> frozenset[str]:
+        """Identifiers that are reserved by the language and therefore
+        cannot appear as the innermost segment of ``target_function``.
+        :func:`~literalizer.literalize_call` rejects such targets with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    supports_variable_names: bool
+    """Whether the language supports wrapping output in a named variable
+    via the ``variable_form`` argument to
+    :func:`~literalizer.literalize`.  When ``False``, passing any
+    :class:`~literalizer.NewVariable`,
+    :class:`~literalizer.ExistingVariable`,
+    or :class:`~literalizer.BothVariableForms` is rejected with
+    :class:`~literalizer.exceptions.VariableNameNotSupportedError`.
+    """
+
+    dict_supports_heterogeneous_values: bool
+    """Whether the language's dict format can represent values spanning
+    multiple type families (e.g. Python's ``dict``, JavaScript's object
+    literal).  When ``False`` (e.g. Rust's ``HashMap``), inputs with
+    heterogeneous dict values raise
+    :class:`~literalizer.exceptions.MixedDictValuesError`.
+    """
 
     @property
     def language_version(self) -> enum.Enum:
@@ -1226,6 +1353,36 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def supports_zero_parameter_calls(self) -> bool:
+        """Whether the language can render a function call with no
+        parameters.  When ``False``,
+        :func:`~literalizer.literalize_call` rejects empty
+        ``parameter_names`` with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def call_returns_expression(self) -> bool:
+        """Whether a function call in this language is an expression
+        whose value can be consumed by an enclosing expression.  When
+        ``False``, :func:`~literalizer.literalize_call` rejects a
+        ``call_transform`` (whose output wraps the call as a value)
+        with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_inline_multiline_dict_args(self) -> bool:
+        """Whether the language can render a call argument as an inline
+        dict literal that spans multiple lines.  When ``False``,
+        :func:`~literalizer.literalize_call` rejects inputs that would
+        produce a multi-key dict argument with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def supports_standalone_comments_in_wrapped_calls(self) -> bool:
         """Whether manually wrapped call output can contain standalone
         comment lines between call statements.
@@ -1253,7 +1410,10 @@ class Language(Protocol):
     @property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declaration lines for a name used in a call
         expression.
 
@@ -1267,6 +1427,12 @@ class Language(Protocol):
         :attr:`StubReturn.VALUE` when the call expression's return
         value is consumed (e.g. passed as an argument to a transform
         wrapper), :attr:`StubReturn.VOID` otherwise.
+        The fourth argument is the parsed call argument data: one
+        entry per rendered call, where each entry is the arguments
+        row for that call (a single value for one-parameter calls, a
+        list of values for multi-parameter calls).  Languages whose
+        stubs need to be typed (e.g. Mojo) infer parameter types from
+        this; other languages ignore it.
 
         Stub lines are placed **inside** the language wrapper (e.g.
         inside ``func main()`` for Go, inside ``class Check`` for
@@ -1282,7 +1448,10 @@ class Language(Protocol):
     @property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Like :attr:`format_call_stub` but the lines are placed
         **before** the language wrapper — at file, package, or module
         scope.
@@ -1392,6 +1561,25 @@ class Language(Protocol):
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
+    @property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        makes the language's consume form illegal.
+
+        Returns ``True`` when the consume operator (e.g. Mojo ``^``)
+        would be rejected for *value*, in which case the call site
+        routes the ref through :attr:`format_call_arg_ref_identifier`
+        instead of :attr:`format_call_arg_ref_identifier_consumable`.
+
+        Most languages set this to :data:`never_inhibits_consuming_form`.
+        Mojo overrides it: applying ``^`` to a register-trivial scalar
+        (``Int``, ``Bool``, ``Float64``) is a hard error under
+        ``--Werror``, so those value types inhibit the consume form.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     def wrap_in_file(
         self,
         content: str,
@@ -1449,6 +1637,7 @@ def _no_call_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return no stub lines."""
@@ -1456,7 +1645,8 @@ def _no_call_stub(
 
 
 no_call_stub: Callable[
-    [Sequence[str], Sequence[str], StubReturn], tuple[str, ...]
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
 ] = _no_call_stub
 """Shared callable for languages that need no call stubs."""
 
@@ -1482,6 +1672,26 @@ identity_call_ref_identifier: Callable[[str], str] = (
 rewriting.  Languages that decorate ref identifiers (e.g. PHP's
 ``$name`` or Perl's ``$name``) override
 :attr:`Language.format_call_ref_identifier` instead.
+"""
+
+
+@beartype
+def _never_inhibits_consuming_form(_value: Value, /) -> bool:
+    """Return ``False`` — the language's consuming form accepts every
+    value type.
+    """
+    return False
+
+
+never_inhibits_consuming_form: Callable[[Value], bool] = (
+    _never_inhibits_consuming_form
+)
+"""Shared callable for languages whose consume form (e.g. C++
+``std::move``) is valid for every value type.  Languages whose consume
+operator rejects certain value types (notably the Mojo ``^``, which is a
+hard error on register-trivial scalars under ``--Werror``) override
+:attr:`Language.consumable_ref_value_inhibits_consuming_form` to a
+predicate that returns ``True`` for those values.
 """
 
 

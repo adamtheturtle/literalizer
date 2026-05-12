@@ -25,11 +25,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -52,11 +49,8 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 

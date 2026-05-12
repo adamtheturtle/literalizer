@@ -1,5 +1,5 @@
 def main():
-    var my_data = [
+    var my_data: List[String] = [
         "foo",
         "bar",
         "baz",

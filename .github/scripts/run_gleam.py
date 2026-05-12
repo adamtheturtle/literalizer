@@ -1,4 +1,16 @@
-"""Run a Gleam golden file using ``gleam run``."""
+"""Run Gleam golden files in a single ``gleam run`` invocation.
+
+Each Gleam invocation boots the BEAM VM, which costs ~1s. With 350+
+fixtures that dominated the lint job's wall-clock (3+ minutes). Instead
+we drop every fixture into one project as its own module, generate a
+runner module that calls each fixture's ``main`` in sequence, and run
+``gleam run`` once.
+
+Each fixture lives under ``tests/integration/cases/<case>/<gleam>.gleam``
+where both ``<case>`` and ``<gleam>`` are valid Gleam module identifiers
+(enforced by ``make_golden_path`` in the test harness), so the in-project
+module path is the fixture's relative path with ``.gleam`` stripped.
+"""
 
 import os
 import shutil
@@ -7,39 +19,71 @@ import sys
 import tempfile
 from pathlib import Path
 
+_FIXTURE_PREFIX = Path("tests/integration/cases")
+
 
 def main() -> None:
-    """Run the given Gleam golden file."""
+    """Run every Gleam golden file passed on stdin."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])
-    filename = sys.argv[1]
     gleam_path = shutil.which(cmd="gleam") or "gleam"
+    fixtures = [Path(line) for line in sys.stdin.read().splitlines() if line]
+
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Copy the primed project so each parallel worker has its own
-        # writable working tree and skips `gleam deps download` -- 168
-        # parallel downloads otherwise hammer hex.pm and trip transient
-        # network failures.
+        # Copy the primed project (deps already downloaded) so we do not
+        # pay `gleam deps download` here.
         shutil.copytree(src=primed_dir, dst=tmpdir, dirs_exist_ok=True)
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir(exist_ok=True)
-        src = Path(filename)
-        target = src_dir / "check.gleam"
-        target.write_text(
-            data=src.read_text(encoding="utf-8"),
+
+        runner_imports: list[str] = []
+        runner_calls: list[str] = []
+        for fixture in fixtures:
+            relative = fixture.relative_to(_FIXTURE_PREFIX)
+            destination = src_dir / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(
+                data=fixture.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            # Module path is the relative path with ``.gleam`` stripped
+            # and slashes preserved (Gleam treats ``foo/bar.gleam`` as
+            # module ``foo/bar``).
+            module_path = relative.with_suffix("").as_posix()
+            module_alias = module_path.replace("/", "_")
+            runner_imports.append(f"import {module_path} as {module_alias}")
+            # Print the original fixture path before each call so a
+            # runtime crash points at the culprit (the BEAM aborts with
+            # no Gleam-level traceback we can post-process reliably).
+            # Escape backslashes and quotes so a fixture path containing
+            # either does not corrupt the generated Gleam source.
+            escaped = str(fixture).replace("\\", "\\\\").replace('"', '\\"')
+            runner_calls.append(f'  io.println("RUN: {escaped}")')
+            runner_calls.append(f"  {module_alias}.main()")
+
+        runner_src = (
+            "import gleam/io\n"
+            + "\n".join(runner_imports)
+            + "\n\npub fn main() {\n"
+            + "\n".join(runner_calls)
+            + "\n  Nil\n}\n"
+        )
+        (src_dir / "runner.gleam").write_text(
+            data=runner_src,
             encoding="utf-8",
         )
+
         result = subprocess.run(
-            args=[gleam_path, "run"],
+            args=[gleam_path, "run", "-m", "runner"],
             capture_output=True,
             text=True,
             check=False,
             cwd=tmpdir,
         )
-        if result.returncode != 0:
-            msg = (
-                f"{filename}: gleam run failed\n{result.stderr}{result.stdout}"
-            )
-            sys.stderr.write(msg)
-            sys.exit(1)
+
+    if result.returncode != 0:
+        sys.stderr.write(result.stderr)
+        sys.stderr.write(result.stdout)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

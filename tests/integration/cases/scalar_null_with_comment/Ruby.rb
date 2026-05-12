@@ -1,1 +1,1 @@
-nil  # note
+my_data = nil  # note

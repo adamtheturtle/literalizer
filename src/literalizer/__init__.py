@@ -4,6 +4,8 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._language import (
+    ALL_REF_CASES,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CollectionLayout,
     CommandCallStyle,
@@ -37,6 +39,8 @@ from literalizer._literalize import (
 from literalizer._parsing import InputFormat
 
 __all__ = [
+    "ALL_REF_CASES",
+    "NON_KEBAB_REF_CASES",
     "BothVariableForms",
     "CallStyle",
     "CollectionLayout",

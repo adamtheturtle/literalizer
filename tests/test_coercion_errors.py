@@ -10,10 +10,11 @@ remain in :mod:`tests.test_yaml`.
 import json
 import re
 from io import StringIO
-from typing import TYPE_CHECKING, assert_never, cast
+from typing import TYPE_CHECKING, assert_never
 
 import pytest
 import tomlkit
+from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer import InputFormat, literalize
@@ -29,6 +30,16 @@ from literalizer.languages import Dhall, Mojo, Python
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+type _SourceData = (
+    dict[str, _SourceData]
+    | list[_SourceData]
+    | str
+    | int
+    | float
+    | bool
+    | None
+)
+
 MOJO = Mojo(
     date_format=Mojo.date_formats.ISO,
     datetime_format=Mojo.datetime_formats.ISO,
@@ -41,7 +52,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.AUTO,
+    variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
 
 ALL_FORMATS = list(InputFormat)
@@ -50,8 +61,9 @@ ALL_FORMATS = list(InputFormat)
 FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f != InputFormat.TOML]
 
 
+@beartype
 def _to_source(
-    data: object,
+    data: _SourceData,
     input_format: InputFormat,
 ) -> str:
     """Serialize *data* into a source string for *input_format*.
@@ -72,12 +84,10 @@ def _to_source(
             yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
             return stream.getvalue()
         case InputFormat.TOML:
-            toml_data: Mapping[str, object] = (
-                cast("Mapping[str, object]", data)
-                if isinstance(data, dict)
-                else {"_": data}
+            toml_data: Mapping[str, _SourceData] = (
+                data if isinstance(data, dict) else {"_": data}
             )
-            return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
+            return tomlkit.dumps(data=toml_data)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -324,7 +334,7 @@ def test_raises_mixed_dict_inside_mixed_list(
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
     """Dicts with different key sets raise across all formats (Dhall)."""
-    data = {
+    data: _SourceData = {
         "items": [
             {"type": "create", "draft": True},
             {"type": "update"},
@@ -418,7 +428,7 @@ def test_no_raise_heterogeneous_for_language_supporting_it(
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
     """Uniform dict shapes do not raise across all formats (Dhall)."""
-    data = [
+    data: _SourceData = [
         {"type": "create", "name": "a"},
         {"type": "update", "name": "b"},
     ]

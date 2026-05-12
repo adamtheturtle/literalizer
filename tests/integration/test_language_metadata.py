@@ -6,7 +6,7 @@ import pytest
 from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
-from literalizer._language import LanguageCls
+from literalizer import LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
@@ -72,6 +72,7 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_call_ref_identifier)
     assert callable(spec.format_call_arg_ref_identifier)
     assert callable(spec.format_call_arg_ref_identifier_consumable)
+    assert callable(spec.consumable_ref_value_inhibits_consuming_form)
     assert callable(spec.format_variable_declaration)
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)

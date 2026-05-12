@@ -18,13 +18,16 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     NullInCollectionError,
     UnrepresentableIntegerError,
+    VariableNameNotSupportedError,
 )
 
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
+    IndentCase,
     PreIndentCase,
     StatementTerminatorCombinedCase,
     build_heterogeneous_strategy_combined_cases,
+    build_indent_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     group_cases_by_language,
@@ -34,6 +37,7 @@ from .check_golden import check_golden
 from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
+    make_golden_path,
     make_spec,
     sorted_languages,
     with_per_fixture_module_name,
@@ -63,7 +67,12 @@ def test_golden_file(
         with subtests.test(case_name=case_name):
             input_path = cases_dir / case_name / "input.yaml"
             yaml_string = input_path.read_text()
-            golden_path = input_path.parent / (lang_name + lang_cls.extension)
+            golden_path = make_golden_path(
+                parent=input_path.parent,
+                name=lang_name,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
+            )
             spec = with_per_fixture_module_name(
                 spec=make_spec(lang_cls=lang_cls),
                 golden_path=golden_path,
@@ -75,7 +84,17 @@ def test_golden_file(
                     language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
-                    variable_form=wrap_variable_form(lang_cls=lang_cls),
+                    variable_form=wrap_variable_form(),
+                    wrap_in_file=True,
+                )
+            except VariableNameNotSupportedError:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=None,
                     wrap_in_file=True,
                 )
             except UnrepresentableIntegerError:
@@ -126,8 +145,11 @@ def test_golden_file_combined_variable_forms(
             golden_file_name=combined_case.golden_file_name,
         ):
             input_path = cases_dir / combined_case.case_name / "input.yaml"
-            golden_path = input_path.parent / (
-                combined_case.golden_file_name + lang_cls.extension
+            golden_path = make_golden_path(
+                parent=input_path.parent,
+                name=combined_case.golden_file_name,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
             )
             spec = with_per_fixture_module_name(
                 spec=make_spec(
@@ -198,8 +220,11 @@ def test_format_variant_golden_file(
             case_dir = cases_dir / variant_case.case_dir_name
             variant = variant_case.variant
             yaml_string = (case_dir / "input.yaml").read_text()
-            golden_path = case_dir / (
-                variant_case.variant_name + variant.spec.extension
+            golden_path = make_golden_path(
+                parent=case_dir,
+                name=variant_case.variant_name,
+                extension=variant.spec.extension,
+                lang_cls=lang_cls,
             )
             spec = with_per_fixture_module_name(
                 spec=variant.spec,
@@ -213,6 +238,17 @@ def test_format_variant_golden_file(
                     pre_indent_level=0,
                     include_delimiters=True,
                     variable_form=variant_case.variable_form,
+                    wrap_in_file=True,
+                    collection_layout=variant.collection_layout,
+                )
+            except VariableNameNotSupportedError:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=None,
                     wrap_in_file=True,
                     collection_layout=variant.collection_layout,
                 )
@@ -270,7 +306,12 @@ def test_statement_terminator_style_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=make_golden_path(
+            parent=input_path.parent,
+            name=case.name,
+            extension=spec.extension,
+            lang_cls=case.lang_cls,
+        ),
     )
 
 
@@ -311,7 +352,12 @@ def test_heterogeneous_strategy_combined_variable_forms(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=make_golden_path(
+            parent=input_path.parent,
+            name=case.name,
+            extension=spec.extension,
+            lang_cls=case.lang_cls,
+        ),
     )
 
 
@@ -353,5 +399,70 @@ def test_pre_indent_level_with_new_variable_golden_file(
         contents=result.code + "\n",
         extension=spec.extension,
         newline=None,
-        golden_path=input_path.parent / (case.name + spec.extension),
+        golden_path=make_golden_path(
+            parent=input_path.parent,
+            name=case.name,
+            extension=spec.extension,
+            lang_cls=case.lang_cls,
+        ),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=build_indent_cases(),
+    ids=[c.name for c in build_indent_cases()],
+)
+def test_indent_golden_file(
+    case: IndentCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """A non-default ``indent`` renders to a stable per-language golden.
+
+    Locks in issue #2084: every spec carries an ``indent`` field, but
+    until #2087 most languages hard-coded their indentation in the
+    ``wrap_in_file`` / preamble helpers.  Rendering ``bool_list`` with
+    a three-space indent for every language pins down the result so a
+    future regression that re-introduces a literal ``"    "`` (or
+    two-space, or a tab) cannot pass silently.
+    """
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=case.name,
+        extension=case.lang_cls.extension,
+        lang_cls=case.lang_cls,
+    )
+    spec = with_per_fixture_module_name(
+        spec=make_spec(lang_cls=case.lang_cls, indent=case.indent),
+        golden_path=golden_path,
+    )
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=literalizer.NewVariable(name="my_data"),
+            wrap_in_file=True,
+        )
+    except VariableNameNotSupportedError:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+            wrap_in_file=True,
+        )
+    check_golden(
+        file_regression=file_regression,
+        contents=result.code + "\n",
+        extension=case.lang_cls.extension,
+        newline=None,
+        golden_path=golden_path,
     )

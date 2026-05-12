@@ -1,5 +1,5 @@
 using Dates
-Set([
+my_data = Set([
     Date(2024, 1, 15),
     Date(2024, 6, 1),
 ])

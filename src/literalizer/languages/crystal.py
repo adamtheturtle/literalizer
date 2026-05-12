@@ -45,6 +45,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash_hash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -69,6 +70,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -120,6 +122,7 @@ def _crystal_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
@@ -170,17 +173,12 @@ class Crystal(metaclass=LanguageCls):
 
     extension = ".cr"
     pygments_name = "crystal"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -189,7 +187,6 @@ class Crystal(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = True
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -258,7 +255,7 @@ class Crystal(metaclass=LanguageCls):
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
-            empty_sequence=None,
+            empty_sequence="Tuple.new",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
@@ -412,7 +409,8 @@ class Crystal(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -470,6 +468,9 @@ class Crystal(metaclass=LanguageCls):
         IdentifierCase.UPPER_SNAKE,
         IdentifierCase.PASCAL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -522,7 +523,7 @@ class Crystal(metaclass=LanguageCls):
     default_set_element_type: str = "String"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "String"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -607,14 +608,20 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return partial(_crystal_call_stub, _to_pascal_case)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -652,6 +659,19 @@ class Crystal(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

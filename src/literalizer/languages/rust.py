@@ -7,7 +7,7 @@ import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -52,6 +52,7 @@ from literalizer._heterogeneous import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -76,12 +77,14 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
+    no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
+    no_validate_spec_for_data,
     prepend_body_preamble,
-    value_contains,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
@@ -202,7 +205,7 @@ def _rust_type_annotation(
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
     set_format_type_annotation: Callable[[str], str],
-    dict_format_type_annotation: Callable[[str, str], str] | None,
+    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -210,14 +213,10 @@ def _rust_type_annotation(
 ) -> str:
     """Derive a Rust type annotation string from a ``Value``.
 
-    When ``dict_format_type_annotation`` is ``None`` (``CONST`` /
-    ``STATIC``), :meth:`Rust.validate_spec_for_data` rejects dict data
-    upstream (Rust has no const-expression dict format), so the
-    ``case dict()`` arm is unreachable at runtime but still required
-    so the final ``case _`` narrows to ``Scalar`` for
-    ``_rust_scalar_type``.  When it is a callable (``LAZY_STATIC``),
-    dict data is supported and the arm emits ``HashMap<K, V>`` or
-    ``BTreeMap<K, V>``.
+    ``dict_format_type_annotation`` emits ``HashMap<K, V>`` or
+    ``BTreeMap<K, V>`` for ``LAZY_STATIC``; for ``CONST`` / ``STATIC``
+    it is a callable that raises :exc:`IncompatibleFormatsError`,
+    since Rust has no const-expression dict format.
     """
 
     def recurse(element: Value) -> str:
@@ -258,15 +257,6 @@ def _rust_type_annotation(
             )
             return sequence_format_type_annotation(element_type, len(data))
         case dict():
-            if dict_format_type_annotation is None:  # pragma: no cover
-                # Defensive: unreachable at runtime because
-                # validate_spec_for_data rejects dict data for
-                # CONST/STATIC before this function is called.
-                msg = (
-                    "Rust CONST/STATIC reject dict data in "
-                    "validate_spec_for_data"
-                )
-                raise AssertionError(msg)
             keys: list[Value] = list(data)
             key_type = _rust_homogeneous_element_type(
                 elements=keys,
@@ -306,6 +296,20 @@ def _format_typed_declaration(
     """Format a ``const`` or ``static`` declaration with a type
     annotation.
     """
+
+    def _reject_dict(_key_type: str, _value_type: str) -> str:
+        """Reject dict data for ``CONST`` / ``STATIC``.
+
+        Rust's ``HashMap::from`` and ``BTreeMap::from`` are runtime
+        calls, so neither produces a constant-expression initializer.
+        """
+        msg = (
+            f"Rust {keyword.upper()} requires a constant-expression "
+            f"initializer, but the dict format produces a runtime "
+            f"::from([…]) call which is not a constant expression."
+        )
+        raise IncompatibleFormatsError(msg)
+
     type_annotation = _rust_type_annotation(
         data=data,
         date_type=date_type,
@@ -313,7 +317,7 @@ def _format_typed_declaration(
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         set_format_type_annotation=set_format_type_annotation,
-        dict_format_type_annotation=None,
+        dict_format_type_annotation=_reject_dict,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type="",
@@ -527,15 +531,10 @@ def _build_tagged_enum_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
-        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``.
-
-        :func:`~literalizer._literalize._maybe_wrap_child` filters
-        non-scalar values before dispatching, so *raw_value* is always
-        a scalar.
-        """
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
+        """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
         signature = _heterogeneous_variant_for_scalar(
-            value=cast("Scalar", raw_value),
+            value=raw_value,
             date_type=date_type,
             datetime_type=datetime_type,
         )
@@ -547,6 +546,8 @@ def _build_tagged_enum_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=None,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 
@@ -594,6 +595,7 @@ def _rust_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
@@ -687,17 +689,12 @@ class Rust(metaclass=LanguageCls):
 
     extension = ".rs"
     pygments_name = "rust"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = True
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -706,7 +703,6 @@ class Rust(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -786,7 +782,7 @@ class Rust(metaclass=LanguageCls):
                 supports_heterogeneity=False,
                 single_element_trailing_comma=False,
                 supports_trailing_comma=True,
-                empty_template=None,
+                empty_template="[] as [{type}; 0]",
                 preamble_lines=(),
                 format_entry=passthrough_sequence_entry,
                 typed_opener_fallback_template=None,
@@ -1168,7 +1164,8 @@ class Rust(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -1248,6 +1245,9 @@ class Rust(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.UPPER_SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     def wrap_in_file(
         self,
@@ -1289,7 +1289,7 @@ class Rust(metaclass=LanguageCls):
     default_set_element_type: str = "String"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "String"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.LET
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1311,6 +1311,8 @@ class Rust(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_enum_name: str = "Value"
+    # Keep in sync with the ``--edition`` flag in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
     indent: str = "    "
 
@@ -1416,14 +1418,20 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _rust_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -1462,6 +1470,19 @@ class Rust(metaclass=LanguageCls):
         """
         return self.format_call_arg_ref_identifier
 
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
+
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     def __post_init__(self) -> None:
@@ -1493,25 +1514,7 @@ class Rust(metaclass=LanguageCls):
         """Return call-statement formatting for this language."""
         return identity_call_statement
 
-    def validate_spec_for_data(self, data: Value) -> None:
-        """Raise if the spec cannot produce valid code for *data*.
-
-        Rust's only dict/map formats (``HashMap::from`` and
-        ``BTreeMap::from``) are runtime calls, so ``CONST`` and
-        ``STATIC`` declarations cannot accept dict data.
-        """
-        _decl_cls = type(self.declaration_style)
-        if self.declaration_style not in {_decl_cls.CONST, _decl_cls.STATIC}:
-            return
-        if value_contains(data=data, predicate=lambda v: isinstance(v, dict)):
-            msg = (
-                f"Rust {self.declaration_style.name} requires a "
-                f"constant-expression initializer, but the "
-                f"{self.dict_format.name} dict format produces a "
-                f"runtime ::from([…]) call which is not a constant "
-                f"expression."
-            )
-            raise IncompatibleFormatsError(msg)
+    validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

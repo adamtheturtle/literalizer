@@ -49,6 +49,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -235,6 +236,24 @@ def _make_cpp_element_to_type(
     )
 
 
+@beartype
+def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
+    """Return ``True`` when ``std::move`` is unhelpful for *value*'s C++
+    type.
+
+    The literalize-generated C++ maps Python ``bool`` / ``int`` /
+    ``float`` to ``bool`` / a narrow integer / ``double``, all of which
+    are register-trivial.  ``date`` and ``datetime`` map to
+    ``std::chrono::year_month_day`` and
+    ``std::chrono::system_clock::time_point``, both also
+    register-trivial.  Strings, bytes, lists, and dicts allocate or own
+    heap storage, so ``std::move`` continues to deliver value for those.
+    """
+    if isinstance(value, (list, dict, set)):
+        return False
+    return isinstance(value, (bool, int, float, datetime.date))
+
+
 @dataclasses.dataclass(frozen=True)
 class _CppTypeCtx:
     """Context for C++ type resolution with value-driven int narrowing.
@@ -275,6 +294,8 @@ def _build_cpp_array_open(
         """Return the typed ``std::array`` opener, or ``{`` on
         fallback.
         """
+        if not items:
+            return "std::array<std::nullptr_t, 0>{"
         int_type = type_ctx.int_resolver(
             [
                 item
@@ -283,7 +304,7 @@ def _build_cpp_array_open(
             ],
         )
         element_to_type = type_ctx.element_to_type(int_type=int_type)
-        type_name = element_to_type(type(items[0])) if items else None
+        type_name = element_to_type(type(items[0]))
         if type_name is None or not all(
             element_to_type(type(i)) == type_name for i in items
         ):
@@ -795,7 +816,11 @@ def _infer_value_kind(*, value: str) -> ValueKind:
 
 
 def _cpp_call_stub(
-    parts: Sequence[str], _params: Sequence[str], stub_return: StubReturn, /
+    parts: Sequence[str],
+    _params: Sequence[str],
+    stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
 ) -> tuple[str, ...]:
     """Return C++ stub declarations for a call name."""
     if len(parts) == 1:
@@ -866,17 +891,12 @@ class Cpp(metaclass=LanguageCls):
 
     extension = ".cpp"
     pygments_name = "cpp"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -885,7 +905,6 @@ class Cpp(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = True
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -1209,6 +1228,9 @@ class Cpp(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
@@ -1235,7 +1257,8 @@ class Cpp(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -1275,10 +1298,12 @@ class Cpp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n    (void){variable_name};" if variable_name else ""
+        use_line = (
+            f"\n{self.indent}(void){variable_name};" if variable_name else ""
+        )
         return (
             f"int {self.module_name}() {{\n{content}{use_line}\n"
-            "    return 0;\n}"
+            f"{self.indent}return 0;\n}}"
         )
 
     def wrap_combined_in_file(
@@ -1306,7 +1331,7 @@ class Cpp(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.INITIALIZER_LIST
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.AUTO
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1327,6 +1352,8 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``-std=`` flag passed to clang++ in
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
@@ -1381,14 +1408,20 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return no_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return _cpp_call_stub
 
@@ -1445,6 +1478,22 @@ class Cpp(metaclass=LanguageCls):
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier_consumable
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Return ``True`` for ref values whose C++ type is register-
+        trivial.
+
+        ``clang-tidy``'s ``performance-move-const-arg`` rule (and the
+        equivalent ``hicpp-move-const-arg``) reports ``std::move`` on a
+        register-trivial value as an error: the move has no effect and
+        the wrapping is wasteful.  The call site routes these refs
+        through the non-consuming formatter so the emitted C++ compiles
+        cleanly under ``--warnings-as-errors``.
+        """
+        return _cpp_value_inhibits_consuming_form
 
     @cached_property
     def _cpp_date_type(self) -> str:

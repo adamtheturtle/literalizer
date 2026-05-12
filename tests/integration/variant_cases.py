@@ -10,11 +10,13 @@ import enum
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
 import literalizer
 from literalizer.languages import (
+    ALL_LANGUAGES,
     C,
     Cobol,
     Crystal,
@@ -26,6 +28,7 @@ from literalizer.languages import (
     FSharp,
     Gleam,
     Go,
+    Groovy,
     Haskell,
     Kotlin,
     Mojo,
@@ -47,22 +50,16 @@ _CASES_DIR = Path(__file__).parent / "cases"
 
 
 @beartype
-def _wrap_variable_name(lang_cls: literalizer.LanguageCls) -> str | None:
-    """Return the wrap variable name for a language class."""
-    return "my_data" if lang_cls.supports_variable_names else None
+def wrap_variable_form() -> literalizer.NewVariable:
+    """Return the canonical :class:`NewVariable` form used by the
+    variable-form integration tests.
 
-
-@beartype
-def wrap_variable_form(
-    lang_cls: literalizer.LanguageCls,
-) -> literalizer.NewVariable | None:
-    """Return a :class:`NewVariable` form for a language class, or
-    None.
+    Callers that pass the result to ``literalize`` should treat
+    :class:`~literalizer.exceptions.VariableNameNotSupportedError` as
+    the signal that the language cannot wrap output in a named
+    variable, rather than pre-filtering on ``supports_variable_names``.
     """
-    name = _wrap_variable_name(lang_cls=lang_cls)
-    if name is None:
-        return None
-    return literalizer.NewVariable(name=name)
+    return literalizer.NewVariable(name="my_data")
 
 
 # ---------------------------------------------------------------------------
@@ -79,44 +76,53 @@ def wrap_variable_form(
 
 # Alternative type names passed to the various ``default_*_type`` kwargs.
 # Each value must differ from the language's own default *and* be a valid
-# type name for that language's linter / compiler.  ``"String"`` is used
-# as the fallback for any supported language not listed explicitly.
-DEFAULT_TYPE_OVERRIDE_FALLBACK = "String"
-
-DEFAULT_SET_ELEMENT_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Crystal: "Int32",
-    Go: "string",
+# type name for that language's linter / compiler.  Each mapping enumerates
+# every language whose dataclass exposes the corresponding kwargs entry.
+DEFAULT_SET_ELEMENT_TYPES: dict[literalizer.LanguageCls, str] = {
     CSharp: "string",
+    Crystal: "Int32",
+    Dart: "String",
+    Go: "string",
+    Groovy: "String",
+    Kotlin: "String",
     Mojo: "Int",
     Odin: "int",
     Python: "int",
     Rust: "i32",
+    Swift: "String",
+    VisualBasic: "String",
 }
 
-DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Go: "interface{}",
+DEFAULT_SEQUENCE_ELEMENT_TYPES: dict[literalizer.LanguageCls, str] = {
     CSharp: "string",
+    Go: "interface{}",
     Mojo: "Int",
     Python: "int",
+    Rust: "i32",
+    Swift: "String",
+    VisualBasic: "String",
 }
 
-DEFAULT_DICT_VALUE_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Crystal: "Int32",
-    Go: "interface{}",
+DEFAULT_DICT_VALUE_TYPES: dict[literalizer.LanguageCls, str] = {
     CSharp: "object?",
+    Crystal: "Int32",
     Dart: "Object?",
+    Go: "interface{}",
     Kotlin: "Comparable<*>?",
     Mojo: "Int",
     Python: "int",
     Rust: "i32",
+    Swift: "String",
+    VisualBasic: "String",
 }
 
-DEFAULT_DICT_KEY_TYPE_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Crystal: "Int32",
-    Go: "any",
+DEFAULT_DICT_KEY_TYPES: dict[literalizer.LanguageCls, str] = {
     CSharp: "object",
+    Crystal: "Int32",
     Dart: "Object",
+    Go: "any",
     Kotlin: "Any",
+    Mojo: "Int",
     Python: "int",
     Rust: "&str",
     Swift: "AnyHashable",
@@ -138,9 +144,45 @@ def _enum_member_by_name(
     raise ValueError(msg)
 
 
-DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES: dict[
-    literalizer.LanguageCls, str
-] = {Go: "interface{}"}
+DEFAULT_ORDERED_MAP_VALUE_TYPES: dict[literalizer.LanguageCls, str] = {
+    Go: "interface{}",
+}
+
+
+def _check_default_type_tables() -> None:
+    """Validate the ``DEFAULT_*_TYPES`` tables at import time.
+
+    Each table must list exactly the languages whose dataclass exposes
+    the corresponding ``default_*_type`` field, and every override
+    value must differ from that field's own default; either kind of
+    drift would silently break variant coverage.
+    """
+    tables: tuple[tuple[str, dict[literalizer.LanguageCls, str]], ...] = (
+        ("default_set_element_type", DEFAULT_SET_ELEMENT_TYPES),
+        ("default_sequence_element_type", DEFAULT_SEQUENCE_ELEMENT_TYPES),
+        ("default_dict_value_type", DEFAULT_DICT_VALUE_TYPES),
+        ("default_dict_key_type", DEFAULT_DICT_KEY_TYPES),
+        ("default_ordered_map_value_type", DEFAULT_ORDERED_MAP_VALUE_TYPES),
+    )
+    for field_name, table in tables:
+        expected: set[literalizer.LanguageCls] = set()
+        for cls in ALL_LANGUAGES:
+            cls_fields: dict[str, object] = getattr(
+                cls, "__dataclass_fields__", {}
+            )
+            if field_name in cls_fields:
+                expected.add(cls)
+        assert set(table.keys()) == expected, field_name  # noqa: S101
+        for lang_cls, override in table.items():
+            fields_attr: dict[str, dataclasses.Field[object]] = getattr(
+                lang_cls, "__dataclass_fields__", {}
+            )
+            assert override != fields_attr[field_name].default, (  # noqa: S101
+                f"{lang_cls.__name__}.{field_name}={override!r}"
+            )
+
+
+_check_default_type_tables()
 
 # Languages that expose ``type_name`` / ``constructor_prefix`` kwargs for
 # the ADT they emit; the value is the test override to apply.
@@ -241,7 +283,7 @@ class VariantCase:
     variant_name: str
     variant: Variant
     case_dir_name: str
-    variable_form: literalizer.NewVariable | None
+    variable_form: literalizer.NewVariable
 
 
 @beartype
@@ -283,24 +325,16 @@ def build_non_default_variants(
 @beartype
 def build_default_set_element_type_variants() -> Iterable[Variant]:
     """Build default-set-type variants for languages that support it."""
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_set_element_type:
-            continue
-        type_name = DEFAULT_SET_ELEMENT_TYPE_OVERRIDES.get(
-            lang_cls,
-            DEFAULT_TYPE_OVERRIDE_FALLBACK,
+    return [
+        Variant(
+            name=f"{lang_cls.__name__}_default_set_element_type_string",
+            spec=make_spec(
+                lang_cls=lang_cls, default_set_element_type=type_name
+            ),
+            lang_cls=lang_cls,
         )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_default_set_element_type_string",
-                spec=make_spec(
-                    lang_cls=lang_cls, default_set_element_type=type_name
-                ),
-                lang_cls=lang_cls,
-            )
-        )
-    return variants
+        for lang_cls, type_name in DEFAULT_SET_ELEMENT_TYPES.items()
+    ]
 
 
 @beartype
@@ -308,25 +342,63 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
     """Build default-sequence-type variants for languages that support
     it.
     """
+    return [
+        Variant(
+            name=(f"{lang_cls.__name__}_default_sequence_element_type_string"),
+            spec=make_spec(
+                lang_cls=lang_cls, default_sequence_element_type=type_name
+            ),
+            lang_cls=lang_cls,
+        )
+        for lang_cls, type_name in DEFAULT_SEQUENCE_ELEMENT_TYPES.items()
+    ]
+
+
+@runtime_checkable
+class _HasEmptyDictKey(Protocol):
+    """Structural type for languages that expose an ``empty_dict_key``
+    constructor field.
+
+    Used by :func:`build_empty_dict_key_variants` to narrow a generic
+    :class:`literalizer.Language` to one with the field, without
+    introspecting ``__dataclass_fields__`` or casting to ``Any``.
+    """
+
+    empty_dict_key: enum.Enum
+    empty_dict_keys: type[enum.Enum]
+
+
+@beartype
+def build_empty_dict_key_variants() -> Iterable[Variant]:
+    """Build empty-dict-key variants for every language whose spec
+    exposes the field with more than one policy.
+
+    Languages whose ``EmptyDictKey`` enum has a single member (the common
+    case today) produce no variants; languages that don't expose
+    ``empty_dict_key`` at all are skipped via the protocol check.
+    """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_sequence_element_type:
+        spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(spec, _HasEmptyDictKey):
             continue
-        type_name = DEFAULT_SEQUENCE_ELEMENT_TYPE_OVERRIDES.get(
-            lang_cls,
-            DEFAULT_TYPE_OVERRIDE_FALLBACK,
-        )
-        variants.append(
-            Variant(
-                name=(
-                    f"{lang_cls.__name__}_default_sequence_element_type_string"
-                ),
-                spec=make_spec(
-                    lang_cls=lang_cls, default_sequence_element_type=type_name
-                ),
-                lang_cls=lang_cls,
+        default = spec.empty_dict_key
+        for fmt in spec.empty_dict_keys:
+            if fmt is default:
+                continue
+            variants.append(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}"
+                        f"_empty_dict_key_{fmt.name.lower()}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        empty_dict_key=fmt,
+                    ),
+                    lang_cls=lang_cls,
+                )
             )
-        )
     return variants
 
 
@@ -335,24 +407,16 @@ def build_default_dict_value_type_variants() -> Iterable[Variant]:
     """Build default-dict-value-type variants for languages that support
     it.
     """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_dict_value_type:
-            continue
-        type_name = DEFAULT_DICT_VALUE_TYPE_OVERRIDES.get(
-            lang_cls,
-            DEFAULT_TYPE_OVERRIDE_FALLBACK,
+    return [
+        Variant(
+            name=f"{lang_cls.__name__}_default_dict_value_type_string",
+            spec=make_spec(
+                lang_cls=lang_cls, default_dict_value_type=type_name
+            ),
+            lang_cls=lang_cls,
         )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_default_dict_value_type_string",
-                spec=make_spec(
-                    lang_cls=lang_cls, default_dict_value_type=type_name
-                ),
-                lang_cls=lang_cls,
-            )
-        )
-    return variants
+        for lang_cls, type_name in DEFAULT_DICT_VALUE_TYPES.items()
+    ]
 
 
 @beartype
@@ -360,24 +424,14 @@ def build_default_dict_key_type_variants() -> Iterable[Variant]:
     """Build default-dict-key-type variants for languages that support
     it.
     """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_dict_key_type:
-            continue
-        type_name = DEFAULT_DICT_KEY_TYPE_OVERRIDES.get(
-            lang_cls,
-            DEFAULT_TYPE_OVERRIDE_FALLBACK,
+    return [
+        Variant(
+            name=f"{lang_cls.__name__}_default_dict_key_type",
+            spec=make_spec(lang_cls=lang_cls, default_dict_key_type=type_name),
+            lang_cls=lang_cls,
         )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_default_dict_key_type",
-                spec=make_spec(
-                    lang_cls=lang_cls, default_dict_key_type=type_name
-                ),
-                lang_cls=lang_cls,
-            )
-        )
-    return variants
+        for lang_cls, type_name in DEFAULT_DICT_KEY_TYPES.items()
+    ]
 
 
 @beartype
@@ -385,24 +439,16 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
     """Build default-ordered-map-value-type variants for every language
     that supports the option.
     """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        if not lang_cls.supports_default_ordered_map_value_type:
-            continue
-        type_name = DEFAULT_ORDERED_MAP_VALUE_TYPE_OVERRIDES.get(
-            lang_cls,
-            DEFAULT_TYPE_OVERRIDE_FALLBACK,
+    return [
+        Variant(
+            name=f"{lang_cls.__name__}_default_ordered_map_value_type",
+            spec=make_spec(
+                lang_cls=lang_cls, default_ordered_map_value_type=type_name
+            ),
+            lang_cls=lang_cls,
         )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_default_ordered_map_value_type",
-                spec=make_spec(
-                    lang_cls=lang_cls, default_ordered_map_value_type=type_name
-                ),
-                lang_cls=lang_cls,
-            )
-        )
-    return variants
+        for lang_cls, type_name in DEFAULT_ORDERED_MAP_VALUE_TYPES.items()
+    ]
 
 
 @beartype
@@ -684,9 +730,7 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
                     enum_cls=Python.version_formats,
                     name="PY38",
                 ),
-                default_dict_value_type=DEFAULT_DICT_VALUE_TYPE_OVERRIDES[
-                    Python
-                ],
+                default_dict_value_type=DEFAULT_DICT_VALUE_TYPES[Python],
             ),
             lang_cls=Python,
         )
@@ -1188,6 +1232,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_default_sequence_element_type_variants
     ),
     "default_dict_value_type": build_default_dict_value_type_variants,
+    "empty_dict_key": build_empty_dict_key_variants,
     "default_dict_key_type": build_default_dict_key_type_variants,
     "default_ordered_map_value_type": (
         build_default_ordered_map_value_type_variants
@@ -1276,6 +1321,7 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("nested_sequences", ""),
         ("dict_mixed_int_widths", ""),
         ("ordered_map", ""),
+        ("heterogeneous_list_with_string", ""),
     )
 )
 
@@ -1344,6 +1390,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
+    "empty_dict_key": (_ci(case_dir_name="simple_dict"),),
     "default_ordered_map_value_type": (_ci(case_dir_name="ordered_map"),),
     "comment": (_ci(case_dir_name="comments"),),
     "type_hints": tuple(
@@ -1422,7 +1469,15 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "bytes_format": (_ci(case_dir_name="binary"),),
     "trailing_comma": BASIC_COLLECTIONS,
     "statement_terminator_style": BASIC_COLLECTIONS,
-    "collection_layout": (_ci(case_dir_name="dict_with_list_value"),),
+    "collection_layout": tuple(
+        _ci(case_dir_name=d)
+        for d in (
+            "dict_with_list_value",
+            "nested",
+            "nested_mixed_set",
+            "multiline_sibling_list_widening",
+        )
+    ),
     "statement_terminator_style_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
     "type_name": ADT_INPUTS,
@@ -1485,9 +1540,7 @@ def build_variant_cases() -> list[VariantCase]:
                     variant_name=f"{variant.name}{ci.suffix}",
                     variant=variant,
                     case_dir_name=ci.case_dir_name,
-                    variable_form=wrap_variable_form(
-                        lang_cls=variant.lang_cls
-                    ),
+                    variable_form=wrap_variable_form(),
                 )
                 for ci in inputs
                 if not (

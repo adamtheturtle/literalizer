@@ -1,4 +1,4 @@
-fn process[*Ts: AnyType](*args: *Ts):
+def process(v: String):
     pass
 def main():
     var my_str = "a\"b"

@@ -1,0 +1,9 @@
+---
+- - { $ref: my_int }
+  - 42
+- - { $ref: my_bool }
+  - 7
+- - { $ref: my_float }
+  - 9
+- - { $ref: my_list }
+  - 1

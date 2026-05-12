@@ -57,6 +57,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -82,6 +83,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -281,6 +283,7 @@ def _csharp_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return C# stub declarations for a call name.
@@ -352,17 +355,12 @@ class CSharp(metaclass=LanguageCls):
 
     extension = ".cs"
     pygments_name = "csharp"
-    supports_default_set_element_type = True
-    supports_default_sequence_element_type = True
-    supports_default_dict_value_type = True
-    supports_default_dict_key_type = True
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -371,7 +369,6 @@ class CSharp(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -470,7 +467,10 @@ class CSharp(metaclass=LanguageCls):
                 single_element_trailing_comma=False,
                 supports_trailing_comma=True,
                 empty_template="Array.Empty<{type}>()",
-                preamble_lines=("using System.Collections.Generic;",),
+                preamble_lines=(
+                    "using System;",
+                    "using System.Collections.Generic;",
+                ),
                 format_entry=passthrough_sequence_entry,
                 typed_opener_fallback_template=("new {type}[] {{"),
             )
@@ -660,6 +660,9 @@ class CSharp(metaclass=LanguageCls):
         IdentifierCase.CAMEL,
         IdentifierCase.UPPER_SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
@@ -690,7 +693,8 @@ class CSharp(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -720,8 +724,8 @@ class CSharp(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -763,7 +767,7 @@ class CSharp(metaclass=LanguageCls):
             return (
                 f"{preamble_block}class Check {{\n"
                 f"{content}\n"
-                "    public static void Main() {}\n"
+                f"{self.indent}public static void Main() {{}}\n"
                 "}"
             )
         stub_prefixes = ("class ", "static ")
@@ -784,9 +788,9 @@ class CSharp(metaclass=LanguageCls):
             return (
                 f"class Check {{\n"
                 f"{stub_block}"
-                f"    public static void Main() {{\n"
+                f"{self.indent}public static void Main() {{\n"
                 f"{body}\n"
-                f"    }}\n"
+                f"{self.indent}}}\n"
                 f"}}"
             )
         return wrap_in_file_noop(
@@ -819,7 +823,7 @@ class CSharp(metaclass=LanguageCls):
     default_sequence_element_type: str = "object"
     default_dict_key_type: str = "string"
     default_dict_value_type: str = "object"
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -907,14 +911,20 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _csharp_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -952,6 +962,19 @@ class CSharp(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def _date_tp(self) -> type:

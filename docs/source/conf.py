@@ -64,6 +64,7 @@ linkcheck_ignore = [
     r"https://dhall-lang\.org/",
     r"https://json5\.org/",
 ]
+linkcheck_retries = 5
 
 rst_prolog = f"""
 .. |project| replace:: {project}

@@ -1,4 +1,4 @@
-{
+my_data = {
   # Configuration
   "name" => "app",
   # Port setting

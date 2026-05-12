@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -42,6 +42,7 @@ from literalizer._heterogeneous import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -60,6 +61,8 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    never_inhibits_consuming_form,
+    no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -196,6 +199,7 @@ def _dhall_call_preamble_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return the ``DVal`` union-type definition for Dhall call stubs."""
@@ -207,6 +211,7 @@ def _dhall_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     r"""Return Dhall let-binding stub declarations for a call target.
@@ -435,16 +440,9 @@ def _build_union_type_behavior(
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
-        """Wrap a scalar as ``{union_name}.{Variant} payload``.
-
-        :func:`~literalizer._literalize._maybe_wrap_child` filters
-        non-scalar values before dispatching, so *raw_value* is always
-        a scalar.
-        """
-        signature = _dhall_variant_for_scalar(
-            value=cast("Scalar", raw_value),
-        )
+    def _wrap(raw_value: Scalar, formatted: str) -> str:
+        """Wrap a scalar as ``{union_name}.{Variant} payload``."""
+        signature = _dhall_variant_for_scalar(value=raw_value)
         if signature.inner_type is None:
             return f"{union_name}.{signature.name}"
         return f"{union_name}.{signature.name} {formatted}"
@@ -453,6 +451,8 @@ def _build_union_type_behavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
+        wrap_non_scalar=None,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 
@@ -518,17 +518,12 @@ class Dhall(metaclass=LanguageCls):
 
     extension = ".dhall"
     pygments_name = None
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -537,7 +532,6 @@ class Dhall(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = False
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     class DateFormats(enum.Enum):
         """Date format options for Dhall."""
@@ -704,7 +698,8 @@ class Dhall(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -777,6 +772,9 @@ class Dhall(metaclass=LanguageCls):
         IdentifierCase.SNAKE,
         IdentifierCase.CAMEL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -829,7 +827,7 @@ class Dhall(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.LINE
     declaration_style: DeclarationStyles = DeclarationStyles.LET
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -940,14 +938,20 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _dhall_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return the ``DVal`` union-type preamble for a call
         expression.
         """
@@ -1031,6 +1035,19 @@ class Dhall(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

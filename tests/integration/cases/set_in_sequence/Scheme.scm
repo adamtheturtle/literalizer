@@ -1,3 +1,3 @@
-(list
+(define my_data (list
     (list "a" "b")
-)
+))

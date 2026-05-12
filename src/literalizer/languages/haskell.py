@@ -44,6 +44,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -66,6 +67,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -80,6 +82,7 @@ def _haskell_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Emit ``OverloadedRecordDot`` when the call target contains dots."""
@@ -160,7 +163,10 @@ def _build_haskell_call_stub_lines(
 
 def _build_haskell_call_stub(
     type_name: str,
-) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
     """Build a call stub function that uses *type_name* for field
     types.
     """
@@ -169,6 +175,7 @@ def _build_haskell_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
+        _args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
@@ -280,26 +287,27 @@ def _build_date_formatters(
     else:
         fmt_date = date_formatter
 
-    if datetime_format_name == "HASKELL":
-        fmt_datetime: Callable[[datetime.datetime], str] = (
-            _build_haskell_datetime_formatter(prefix=constructor_prefix)
-        )
-    elif datetime_format_name == "EPOCH":
-        fmt_datetime = datetime_formatter
-    elif is_explicit:
-        _str_pfx_dt = f"{constructor_prefix}Str "
-
-        def _explicit_datetime(value: datetime.datetime) -> str:
-            """Delegate to module-level implementation."""
-            return _wrap_with_str_constructor_datetime(
-                value=value,
-                str_prefix=_str_pfx_dt,
-                formatter=datetime_formatter,
+    match datetime_format_name:
+        case "HASKELL":
+            fmt_datetime: Callable[[datetime.datetime], str] = (
+                _build_haskell_datetime_formatter(prefix=constructor_prefix)
             )
+        case "EPOCH":
+            fmt_datetime = datetime_formatter
+        case _ if is_explicit:
+            _str_pfx_dt = f"{constructor_prefix}Str "
 
-        fmt_datetime = _explicit_datetime
-    else:
-        fmt_datetime = datetime_formatter
+            def _explicit_datetime(value: datetime.datetime) -> str:
+                """Delegate to module-level implementation."""
+                return _wrap_with_str_constructor_datetime(
+                    value=value,
+                    str_prefix=_str_pfx_dt,
+                    formatter=datetime_formatter,
+                )
+
+            fmt_datetime = _explicit_datetime
+        case _:
+            fmt_datetime = datetime_formatter
 
     return _DateTimeFormatters(
         format_date=fmt_date,
@@ -429,6 +437,7 @@ def _num_instance(
     needs_catchall: bool,
     type_name: str,
     constructor_prefix: str,
+    indent: str,
 ) -> str:
     """Build the ``Num`` instance with only relevant constructors.
 
@@ -438,32 +447,33 @@ def _num_instance(
     exhaustive, and a catch-all would be redundant.
     """
     if has_int:
-        from_integer = f"    fromInteger = {constructor_prefix}Int"
+        from_integer = f"{indent}fromInteger = {constructor_prefix}Int"
     else:
         from_integer = (
-            f"    fromInteger n = {constructor_prefix}Float (fromIntegral n)"
+            f"{indent}fromInteger n = "
+            f"{constructor_prefix}Float (fromIntegral n)"
         )
     negate_parts: list[str] = []
     if has_int:
         negate_parts.append(
-            f"    negate ({constructor_prefix}Int n) = "
+            f"{indent}negate ({constructor_prefix}Int n) = "
             f"{constructor_prefix}Int (negate n)"
         )
     if has_float:
         negate_parts.append(
-            f"    negate ({constructor_prefix}Float f) = "
+            f"{indent}negate ({constructor_prefix}Float f) = "
             f"{constructor_prefix}Float (negate f)"
         )
     if needs_catchall:
-        negate_parts.append('    negate _ = error "not implemented"')
+        negate_parts.append(f'{indent}negate _ = error "not implemented"')
     return "\n".join(
         [
             f"instance Num {type_name} where",
             from_integer,
-            '    _ + _ = error "not implemented"',
-            '    _ * _ = error "not implemented"',
-            '    abs _ = error "not implemented"',
-            '    signum _ = error "not implemented"',
+            f'{indent}_ + _ = error "not implemented"',
+            f'{indent}_ * _ = error "not implemented"',
+            f'{indent}abs _ = error "not implemented"',
+            f'{indent}signum _ = error "not implemented"',
             *negate_parts,
         ]
     )
@@ -541,6 +551,7 @@ def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     constructor_prefix: str,
     emit_is_string: bool,
     emit_num: bool,
+    indent: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
@@ -666,13 +677,14 @@ def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
                     needs_catchall=needs_catchall,
                     type_name=type_name,
                     constructor_prefix=constructor_prefix,
+                    indent=indent,
                 ),
             )
         if emit_num and has_float:
             instances.append(
                 f"instance Fractional {type_name} where\n"
-                f"    fromRational r = {p}Float (realToFrac r)\n"
-                '    _ / _ = error "not implemented"'
+                f"{indent}fromRational r = {p}Float (realToFrac r)\n"
+                f'{indent}_ / _ = error "not implemented"'
             )
 
         lines: list[str] = imports
@@ -807,6 +819,7 @@ def _build_preamble_setup(
     type_name: str,
     constructor_prefix: str,
     emit_num: bool,
+    indent: str,
 ) -> _PreambleSetup:
     """Build scalar preamble and body-preamble computation."""
     _overloaded_strings = ("{-# LANGUAGE OverloadedStrings #-}",)
@@ -832,12 +845,13 @@ def _build_preamble_setup(
             is_string_import="import Data.String (IsString(fromString))",
             is_string_instance=(
                 f"instance IsString {type_name} where\n"
-                f"    fromString = {constructor_prefix}Str"
+                f"{indent}fromString = {constructor_prefix}Str"
             ),
             type_name=type_name,
             constructor_prefix=constructor_prefix,
             emit_is_string=not is_explicit,
             emit_num=emit_num,
+            indent=indent,
         ),
     )
 
@@ -943,17 +957,12 @@ class Haskell(metaclass=LanguageCls):
 
     extension = ".hs"
     pygments_name = "haskell"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True
@@ -962,7 +971,6 @@ class Haskell(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = False
     supports_commented_dict_call_args = True
     supports_module_name = True
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -1177,7 +1185,8 @@ class Haskell(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -1232,6 +1241,9 @@ class Haskell(metaclass=LanguageCls):
         IdentifierCase.CAMEL,
         IdentifierCase.PASCAL,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     validate_spec_for_data = no_validate_spec_for_data
 
@@ -1261,7 +1273,7 @@ class Haskell(metaclass=LanguageCls):
             # ``-Wunused-do-bind``. ``_ <-`` is also valid when the
             # action returns ``IO ()``.
             indented = "\n".join(
-                f"    _ <- {line}" if line.strip() else line
+                f"{self.indent}_ <- {line}" if line.strip() else line
                 for line in content.split(sep="\n")
             )
             return (
@@ -1269,7 +1281,7 @@ class Haskell(metaclass=LanguageCls):
                 + preamble
                 + "\nmain :: IO ()\nmain = do\n"
                 + indented
-                + "\n    pure ()"
+                + f"\n{self.indent}pure ()"
             )
         return (
             f"module {self.module_name} where\n"
@@ -1298,7 +1310,7 @@ class Haskell(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         indented_calls = "\n".join(
-            f"    _ <- {line}" if line.strip() else line
+            f"{self.indent}_ <- {line}" if line.strip() else line
             for line in calls.split(sep="\n")
         )
         declaration_block = "\n".join(declarations)
@@ -1309,7 +1321,7 @@ class Haskell(metaclass=LanguageCls):
             + (declaration_block + "\n" if declaration_block else "")
             + "main :: IO ()\nmain = do\n"
             + indented_calls
-            + "\n    pure ()"
+            + f"\n{self.indent}pure ()"
         )
 
     @staticmethod
@@ -1330,7 +1342,7 @@ class Haskell(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_DASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1599,6 +1611,7 @@ class Haskell(metaclass=LanguageCls):
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             emit_num=self.numeric_style.name != "EXPLICIT",
+            indent=self.indent,
         )
 
     @cached_property
@@ -1626,14 +1639,20 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Callable that returns Haskell stub declarations for a call."""
         return _build_haskell_call_stub(type_name=self.type_name)
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Callable that returns preamble stub declarations."""
         return _haskell_call_preamble_stub
 
@@ -1671,3 +1690,16 @@ class Haskell(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form

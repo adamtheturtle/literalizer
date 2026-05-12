@@ -1,4 +1,4 @@
-(list
+(defparameter *my_data* (list
     (cons "s" "string")
     (cons "i" 1)
     (cons "f" 1.5)
@@ -7,4 +7,4 @@
     (cons "d" "2024-01-15")
     (cons "dt" "2024-01-15T12:00:00")
     (cons "by" "48656c6c6f")
-)
+))

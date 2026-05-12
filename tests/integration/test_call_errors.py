@@ -16,18 +16,27 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    DottedCallStubNotSupportedError,
+    DottedCallTargetNotSupportedError,
+    FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
+    VariableNameNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
     Dhall,
+    Elm,
     Haskell,
+    Hcl,
     JavaScript,
     Nix,
     Python,
     Racket,
+    Raku,
+    Wren,
     Yaml,
 )
 
@@ -265,6 +274,99 @@ def test_literalize_call_bash_rejects_list_arg_per_element_false() -> None:
         )
 
 
+def test_literalize_call_dotted_target_unsupported_raises() -> None:
+    """Dotted ``target_function`` raises for languages without support."""
+    with pytest.raises(
+        expected_exception=DottedCallTargetNotSupportedError,
+        match=(
+            r"^Hcl does not support dotted call targets: "
+            r"'module\.fn'$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Hcl(),
+            target_function="module.fn",
+            parameter_names=["a"],
+        )
+
+
+def test_literalize_call_dotted_target_unsupported_per_element_false() -> None:
+    """Dotted ``target_function`` raises on the per_element=False path."""
+    with pytest.raises(
+        expected_exception=DottedCallTargetNotSupportedError,
+        match=(
+            r"^Hcl does not support dotted call targets: "
+            r"'module\.fn'$"
+        ),
+    ):
+        literalize_call(
+            source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=Hcl(),
+            target_function="module.fn",
+            parameter_names=["data"],
+            per_element=False,
+        )
+
+
+def test_literalize_call_dotted_target_supported_language() -> None:
+    """Dotted ``target_function`` succeeds when the language supports
+    it.
+    """
+    result = literalize_call(
+        source="[[1]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="module.fn",
+        parameter_names=["a"],
+    )
+    assert result.code == "module.fn(a=1)"
+
+
+def test_literalize_call_dotted_stub_unsupported_raises() -> None:
+    """Dotted ``call_transform`` wrapper raises for languages without
+    support.
+    """
+    with pytest.raises(
+        expected_exception=DottedCallStubNotSupportedError,
+        match=(
+            r"^Haskell does not support dotted call stubs: "
+            r"'tracer\.emit'$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Haskell(),
+            target_function="process",
+            parameter_names=["value"],
+            call_transform=lambda c: f"tracer.emit({c})",
+        )
+
+
+def test_literalize_call_free_function_unsupported_raises() -> None:
+    """A bare ``call_transform`` wrapper name with no dot raises for
+    languages without free function call syntax.
+    """
+    with pytest.raises(
+        expected_exception=FreeFunctionCallNotSupportedError,
+        match=(
+            r"^Wren has no free function call syntax for call stub: "
+            r"'emit'$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Wren(),
+            target_function="Throttler.process",
+            parameter_names=["value"],
+            call_transform=lambda c: f"emit({c})",
+        )
+
+
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
     """Refs count as arguments; parameter-count mismatch still raises."""
     with pytest.raises(
@@ -280,11 +382,36 @@ def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
         )
 
 
+def test_literalize_call_wrap_in_file_standalone_comments_raises() -> None:
+    """``wrap_in_file=True`` rejects standalone comments when the target
+    language cannot represent them in wrapped output.
+    """
+    source = "# header\n- 1\n- 2\n"
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"^Haskell cannot represent this call shape: standalone "
+            r"comments cannot be preserved when wrapping calls in this "
+            r"language$"
+        ),
+    ):
+        literalize_call(
+            source=source,
+            input_format=InputFormat.YAML,
+            language=Haskell(),
+            target_function="process",
+            parameter_names=["value"],
+            wrap_in_file=True,
+        )
+
+
 def test_literalize_call_ref_case_unsupported_raises() -> None:
-    """``ref_case`` outside the language's ``IdentifierCases`` raises."""
+    """``ref_case`` outside the language's ``supported_ref_cases``
+    raises.
+    """
     with pytest.raises(
         expected_exception=UnsupportedIdentifierCaseError,
-        match=r"^Python does not support identifier case 'CAMEL'$",
+        match=r"^Python does not support identifier case 'KEBAB'$",
     ):
         literalize_call(
             source='[[{"$ref": "user_obj"}, 42]]',
@@ -292,12 +419,14 @@ def test_literalize_call_ref_case_unsupported_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["data", "count"],
-            ref_case=IdentifierCase.CAMEL,
+            ref_case=IdentifierCase.KEBAB,
         )
 
 
 def test_literalize_ref_case_unsupported_raises() -> None:
-    """``ref_case`` outside the language's ``identifier_cases`` raises."""
+    """``ref_case`` outside the language's ``supported_ref_cases``
+    raises.
+    """
     with pytest.raises(
         expected_exception=UnsupportedIdentifierCaseError,
         match=r"^Python does not support identifier case 'KEBAB'$",
@@ -308,6 +437,78 @@ def test_literalize_ref_case_unsupported_raises() -> None:
             language=Python(),
             ref_case=IdentifierCase.KEBAB,
         )
+
+
+def test_literalize_accepts_syntactic_non_idiomatic_ref_case() -> None:
+    """Cases legal in the language but absent from the idiomatic
+    preference list are accepted and rendered.
+
+    Python's ``identifier_cases`` lists only ``SNAKE``, ``UPPER_SNAKE``,
+    and ``PASCAL``; ``CAMEL`` is non-idiomatic but still a syntactically
+    legal Python identifier.  Validation uses ``supported_ref_cases``,
+    which exposes ``CAMEL``.
+    """
+    assert Python().identifier_cases == (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+    )
+    assert Python().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+        },
+    )
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_case=IdentifierCase.CAMEL,
+    )
+
+    assert result.declaration_code == "userObj"
+
+
+def test_literalize_kebab_friendly_language_accepts_kebab_ref_case() -> None:
+    """Kebab-friendly languages render kebab-form refs as legal
+    symbols.
+    """
+    assert Raku().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+            IdentifierCase.KEBAB,
+        },
+    )
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Raku(),
+        ref_case=IdentifierCase.KEBAB,
+    )
+
+    assert result.declaration_code == "$user-obj"
+
+
+def test_supported_ref_cases_independent_of_identifier_cases() -> None:
+    """``supported_ref_cases`` is not derived from ``identifier_cases``.
+
+    The two attributes answer different questions -- syntactic validity
+    vs. stylistic preference -- and one is not a function of the other.
+    """
+    python = Python()
+    assert frozenset(python.identifier_cases) != python.supported_ref_cases
+    assert frozenset(python.identifier_cases) <= python.supported_ref_cases
+
+    raku = Raku()
+    assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
+    assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases
 
 
 def test_literalize_call_unknown_ref_values_keep_strip_behavior() -> None:
@@ -430,7 +631,38 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
         literalize(
             source="42",
             input_format=InputFormat.JSON,
+            language=Elm(),
+            variable_form=BothVariableForms(name="x"),
+            wrap_in_file=True,
+        )
+
+
+def test_literalize_variable_names_not_supported_raises() -> None:
+    """``variable_form`` raises for languages without variable-name
+    support.
+    """
+    with pytest.raises(
+        expected_exception=VariableNameNotSupportedError,
+        match=r"^Yaml does not support variable names: 'x'$",
+    ):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
             language=Yaml(),
             variable_form=BothVariableForms(name="x"),
             wrap_in_file=True,
         )
+
+
+def test_literalize_variable_names_supported_renders() -> None:
+    """``variable_form`` succeeds for languages with variable-name
+    support.
+    """
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=BothVariableForms(name="x"),
+        wrap_in_file=True,
+    )
+    assert result.code == "x = 42\nx = 42"

@@ -1,1 +1,1 @@
-42
+(define my_data 42)

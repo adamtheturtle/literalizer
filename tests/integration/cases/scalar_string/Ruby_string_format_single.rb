@@ -1,1 +1,1 @@
-'hello'
+my_data = 'hello'

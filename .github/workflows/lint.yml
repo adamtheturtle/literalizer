@@ -23,6 +23,17 @@ jobs:
         python-version: ['3.12', '3.13', '3.14']
         platform: [ubuntu-latest, windows-latest]
         hook-stage: [pre-commit, pre-push, manual]
+        # Windows is dropped from the heavy stages (pre-push, manual)
+        # because the type checkers and pylint dominate wall time on
+        # Windows runners and are platform-agnostic in practice. Re-add
+        # Windows here once prek supports hook groups so we can shard
+        # the heavy hooks across runners:
+        # https://github.com/j178/prek/issues/1385
+        exclude:
+          - platform: windows-latest
+            hook-stage: pre-push
+          - platform: windows-latest
+            hook-stage: manual
 
     runs-on: ${{ matrix.platform }}
 
@@ -31,11 +42,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -123,6 +131,10 @@ jobs:
       # current file. Compile each file from inside a private tmpdir so
       # the stale .mod is not on the module search path and parallel
       # runs cannot clobber each other's output.
+      # The Fortran generator emits Fortran 2008 features (e.g. ``int64``
+      # from ``iso_fortran_env``) even though ``Fortran.language_version``
+      # in ``src/literalizer/languages/fortran.py`` is ``V2003``; tracked
+      # in https://github.com/adamtheturtle/literalizer/issues/1919.
       - name: Lint Fortran
         run: |-
           find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran
@@ -228,44 +240,101 @@ jobs:
           find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
 
-  # Fixture languages whose interpreter is a quick `apt-get install`.
-  # Grouped so the apt-get cost is paid once for the whole group.
-  lint-apt-basics:
+  lint-forth:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install apt packages and Perl deps
+      - name: Install gforth
         run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
           sudo apt-get update -qq
-          sudo apt-get install -y -qq gforth tcl guile-3.0 octave cpanminus
-          sudo cpanm --notest DateTime
-
+          sudo apt-get install -y --no-install-recommends gforth
       - name: Lint Forth
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
           xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
 
+  lint-tcl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install tcl
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends tcl
       - name: Lint Tcl
         run: |-
           find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl
           xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
 
+  lint-scheme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install guile
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends guile-3.0
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
           xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
 
-      # Octave is a practical CI substitute, but it does not support
-      # every MATLAB builtin.  The per-fixture skip rules (for ``""``
-      # escaped quotes and the ``datetime`` builtin) are documented in
-      # .github/scripts/lint-matlab-fixture.sh.
+  # Octave is a practical CI substitute, but it does not support
+  # every MATLAB builtin.  The per-fixture skip rules (for ``""``
+  # escaped quotes and the ``datetime`` builtin) are documented in
+  # .github/scripts/lint-matlab-fixture.sh.
+  lint-matlab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install octave
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends octave
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
           xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
+  lint-perl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Perl deps
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends cpanminus
+          sudo cpanm --notest DateTime
       - name: Lint Perl
         run: |-
           find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl
@@ -295,7 +364,9 @@ jobs:
           find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
 
-  # Fixture languages linted by npm tools.
+  # Json5 + Norg + TypeScript syntax check. The Run-TypeScript and Elm
+  # passes are split into sibling jobs (`lint-typescript-run`, `lint-elm`)
+  # so each long-running per-fixture loop fans out instead of serializing.
   lint-npm-installed:
     runs-on: ubuntu-latest
     steps:
@@ -310,14 +381,6 @@ jobs:
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Build tree-sitter-norg parser
         run: |-
@@ -342,8 +405,54 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-ts
+
+  # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
+  # so the per-fixture tsx startups run in parallel with the tsc syntax
+  # check instead of after it.
+  lint-typescript-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
+      - name: Install npm-sourced linters
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Run TypeScript files
-        run: xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+        run: |-
+          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
+          xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+
+  # Elm format + syntax check. Split from `lint-elm-run` so the two
+  # `elm make`-based passes (compile-only vs. compile + Node execute)
+  # fan out instead of running back-to-back; recent main runs show the
+  # combined step taking 1:30-3:50, so the parallel split saves
+  # meaningful wall-clock for ~10-15s of extra setup.
+  lint-elm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
+      - name: Install npm-sourced linters
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Elm
         run: |-
@@ -352,6 +461,32 @@ jobs:
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
           xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
+
+  # Elm runtime check. Sibling to `lint-elm` so the compile + Node
+  # execute pass runs in parallel with the format + compile-only pass.
+  lint-elm-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          cache: npm
+          cache-dependency-path: .github/npm-linters/package-lock.json
+      - name: Install npm-sourced linters
+        run: |
+          npm ci --prefix .github/npm-linters
+          echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Run Elm
+        run: |-
+          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm
           xargs -0 uv run --no-project python .github/scripts/run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
@@ -362,13 +497,15 @@ jobs:
         with:
           persist-credentials: false
       - name: Install apt packages for Ada
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq gnat
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends gnat
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -475,8 +612,7 @@ jobs:
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
             dotnet fsi --nologo --exec "$driver"
 
-  # Fixture languages whose toolchain is a tarball download.
-  lint-curl-tarballs:
+  lint-sml:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -486,16 +622,6 @@ jobs:
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
-      - name: Install Dhall
-        run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
-          echo "$PWD/bin" >> "$GITHUB_PATH"
-      - name: Install Wren CLI
-        run: |
-          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
-          unzip -o /tmp/wren.zip -d /tmp/wren
-          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
       # Every fixture defines its own entry point at top level, so compile
       # and run each file directly. Each invocation gets a private tmpdir
@@ -512,6 +638,18 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
 
+  lint-dhall:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Dhall
+        run: |-
+          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
+            | tar -xj
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+
       - name: Lint Dhall
         run: |-
           find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall
@@ -520,65 +658,56 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
 
-      - name: Lint Wren
-        run: |-
-          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
-          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
-
-  # Erlang + Elixir + Gleam all share the BEAM runtime via setup-beam,
-  # so one install serves all three.
-  lint-beam:
+  lint-wren:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Erlang, Elixir and Gleam
+      - name: Install Wren CLI
+        run: |
+          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+          unzip -o /tmp/wren.zip -d /tmp/wren
+          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+
+      - name: Lint Wren
+        run: |-
+          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
+          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
+
+  lint-elixir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: '1.18'
-          gleam-version: v1.16.0
           otp-version: '27'
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-      # Populate a shared primed project once up front so each parallel
-      # `.github/scripts/check_gleam_syntax.py` worker can copy from it instead of
-      # running its own `gleam deps download`. 168 parallel downloads
-      # otherwise hammer hex.pm and trip transient network failures.
-      - name: Prime Gleam project
-        run: |-
-          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
-          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
-          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
-
-      - name: Lint Gleam
-        env:
-          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: |-
-          find tests/integration/cases -name '*.gleam' -print0 > /tmp/files-gleam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
-      - name: Run Gleam files
-        env:
-          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: |-
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
       # `elixir` compiles the module but never invokes it. The script
       # compiles each fixture, calls `Check.x()` to force the body to
-      # execute, and purges the module between fixtures — all inside a
+      # execute, and purges the module between fixtures, all inside a
       # single BEAM VM, paying the cold-start cost once instead of twice
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
           find tests/integration/cases -name '*.ex' -print0 > /tmp/files-elixir
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
+
+  lint-erlang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27'
 
       # Compile every fixture in a single erlc invocation to pay the
       # BEAM VM startup cost once. Each fixture already carries a unique
@@ -617,6 +746,52 @@ jobs:
             Results = [Run(M) || M <- [$modules]],
             case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
 
+  lint-gleam:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Gleam
+        uses: erlef/setup-beam@v1
+        with:
+          gleam-version: v1.16.0
+          otp-version: '27'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Prime a project with downloaded dependencies once up front. The
+      # check and run scripts each copy this primed dir and drop every
+      # fixture into it, so they never pay `gleam deps download`.
+      - name: Prime Gleam project
+        run: |-
+          mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
+          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
+
+      # All ~350 fixtures are checked in a single `gleam check` invocation
+      # because each Gleam invocation boots the BEAM VM (~1s) and that
+      # startup cost -- not the per-fixture compile work -- dominated the
+      # old per-file parallel approach.
+      - name: Lint Gleam
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
+        run: |-
+          find tests/integration/cases -name '*.gleam' \
+            | uv run --no-project python .github/scripts/check_gleam_syntax.py
+
+      # All ~350 fixtures are run in a single `gleam run` invocation; the
+      # script generates a runner module that calls each fixture's `main`
+      # in sequence. See the check step for the BEAM-startup rationale.
+      - name: Run Gleam files
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
+        run: |-
+          find tests/integration/cases -name '*.gleam' \
+            | uv run --no-project python .github/scripts/run_gleam.py
+
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
     runs-on: ubuntu-latest
@@ -630,7 +805,12 @@ jobs:
           clj-kondo: latest
           bb: latest
       - name: Install Groovy
-        run: sudo apt-get install -y groovy
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends groovy
 
       - name: Lint Clojure
         run: |-
@@ -663,11 +843,8 @@ jobs:
         with:
           purescript: latest
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
@@ -722,19 +899,18 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``-std=c99`` matches ``C.language_version`` in
+      # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c11 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   lint-cpp-tidy:
     runs-on: ubuntu-latest
@@ -743,15 +919,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``-std=c++20`` matches ``Cpp.language_version`` in
+      # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Run clang-tidy on C++ files
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
@@ -792,12 +967,14 @@ jobs:
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
+      # ``-std=c99`` matches ``C.language_version`` in
+      # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run C files
         run: |-
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c11 "$1" -o "$tmpdir/run" || exit 1
+          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
@@ -816,6 +993,8 @@ jobs:
       # covering every header any fixture includes, then preload it in
       # each compile invocation so the parsed AST is reused instead of
       # re-parsed per file.
+      # ``-std=c++20`` matches ``Cpp.language_version`` in
+      # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Build precompiled header
         run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
           /tmp/pch.hpp.pch
@@ -1067,6 +1246,8 @@ jobs:
           cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
           deps="$tmpdir/chrono-check/target/debug/deps"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          # ``--edition 2021`` matches ``Rust.language_version`` in
+          # ``src/literalizer/languages/rust.py``; keep them in sync.
           while IFS= read -r -d '' f; do
             rustc --edition 2021 \
               -L "dependency=$deps" \
@@ -1175,15 +1356,12 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install Mojo
-        run: uv tool install mojo-compiler
+        run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax
         run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
 
@@ -1415,11 +1593,8 @@ jobs:
           cd /tmp/vlang && make
           sudo ln -s /tmp/vlang/v /usr/local/bin/v
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pin uv because otherwise setup-uv looks up the latest
-          # version, and that lookup sometimes fails.
-          version: 0.11.7
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
@@ -1432,8 +1607,15 @@ jobs:
           # V's ``format_call_ref_identifier`` always appends
           # ``.clone()``, and ``int.clone()`` is rejected by V.
           # Tracked in https://github.com/adamtheturtle/literalizer/issues/1823.
+          # ``multiline_sibling_list_widening`` has sibling lists with
+          # heterogeneous element types (int vs string) inside a dict,
+          # which V rejects because V infers a single element type
+          # per array; the rendered output is shape-correct but does
+          # not compile.
+          # Tracked in https://github.com/adamtheturtle/literalizer/issues/2105.
           grep -z -v -e 'heterogeneous_strategy_error' \
-            -e 'call_ref_args_reused' /tmp/files-to-lint \
+            -e 'call_ref_args_reused' \
+            -e 'multiline_sibling_list_widening' /tmp/files-to-lint \
             > /tmp/files-to-run || true
           xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
 
@@ -1502,13 +1684,24 @@ jobs:
       - pre-commit
       - lint-fast
       - lint-odin
-      - lint-apt-basics
+      - lint-forth
+      - lint-tcl
+      - lint-scheme
+      - lint-matlab
+      - lint-perl
       - lint-go-installed
       - lint-npm-installed
+      - lint-typescript-run
+      - lint-elm
+      - lint-elm-run
       - lint-uv-scripts
       - lint-dotnet
-      - lint-curl-tarballs
-      - lint-beam
+      - lint-sml
+      - lint-dhall
+      - lint-wren
+      - lint-elixir
+      - lint-erlang
+      - lint-gleam
       - lint-jvm-mini
       - lint-haskell-family
       - lint-c-tidy

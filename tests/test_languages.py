@@ -386,6 +386,54 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     )
 
 
+def test_fortran_wrap_in_file_no_variable_form() -> None:
+    """``literalize(wrap_in_file=True)`` without a variable form omits
+    the program's ``contains`` section so the Fortran output stays
+    valid.
+    """
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Fortran(module_name="main"),
+        wrap_in_file=True,
+        variable_form=None,
+    )
+    assert result.code == (
+        "module fval_m\n"
+        "  use, intrinsic :: iso_fortran_env, only: int64\n"
+        "  implicit none\n"
+        "  type :: fval_t\n"
+        "    integer :: t = 0\n"
+        "  end type fval_t\n"
+        "contains\n"
+        "  function fnull() result(v); type(fval_t) :: v; end function\n"
+        "  function fbool(b) result(v); logical, intent(in) :: b;"
+        " type(fval_t) :: v; end function\n"
+        "  function fint(n) result(v); integer(kind=int64), intent(in) :: n;"
+        " type(fval_t) :: v; end function\n"
+        "  function freal(x) result(v); real, intent(in) :: x;"
+        " type(fval_t) :: v; end function\n"
+        "  function fstr(s) result(v); character(len=*), intent(in) :: s;"
+        " type(fval_t) :: v; end function\n"
+        "  function flist(a) result(v); type(fval_t), intent(in) :: a(:);"
+        " type(fval_t) :: v; end function\n"
+        "  function fmap(a) result(v); type(fval_t), intent(in) :: a(:);"
+        " type(fval_t) :: v; end function\n"
+        "  function fset(a) result(v); type(fval_t), intent(in) :: a(:);"
+        " type(fval_t) :: v; end function\n"
+        "  function fentry(k, u) result(v);"
+        " character(len=*), intent(in) :: k;"
+        " type(fval_t), intent(in) :: u;"
+        " type(fval_t) :: v; end function\n"
+        "end module fval_m\n"
+        "program main\n"
+        "    use fval_m\n"
+        "    implicit none\n"
+        "    42_int64\n"
+        "end program main"
+    )
+
+
 def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
     """Bare F# scalar integers above i64 range use the ``I`` suffix."""
     result = literalize(
@@ -535,15 +583,16 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
 def test_gleam_call_preamble_stub_many_parameters() -> None:
     """Gleam call stubs handle more than 26 parameters.
 
-    ``_gleam_type_var`` falls back to numeric suffixes past the 26-letter
-    alphabet, so a 27-parameter call must emit a ``z`` for the last
-    single-letter slot and an ``a1`` for the next one.
+    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
+    suffix branch, emitting ``z`` for the last single-letter slot and
+    ``a1`` for the next one in the generated stub signature.
     """
     params = [f"p{i}" for i in range(27)]
     (line,) = Gleam().format_call_preamble_stub(
         ("target",),
         params,
         StubReturn.VOID,
+        (),
     )
     assert line == (
         "pub fn target("
@@ -576,6 +625,45 @@ def test_gleam_call_preamble_stub_many_parameters() -> None:
         "_p26: a1"
         ") -> Nil { Nil }"
     )
+
+
+def test_gleam_call_stub_more_than_26_parameters() -> None:
+    """Gleam type-var generation falls back to numeric suffixes past
+    the 26-letter alphabet.
+
+    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
+    suffix branch, emitting ``z`` for the last single-letter slot and
+    ``a1`` for the next one in the generated stub signature.
+    """
+    parameter_names = [f"p{i}" for i in range(27)]
+    yaml_row = "\n".join(f"  - {i}" for i in range(26))
+    source = f"---\n-\n{yaml_row}\n  - [100]\n"
+    result = literalize_call(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=Gleam(),
+        target_function="process",
+        parameter_names=parameter_names,
+        wrap_in_file=True,
+    )
+    signature_params = ", ".join(
+        f"_p{i}: {chr(ord('a') + i)}" for i in range(26)
+    )
+    int_args = ", ".join(f"GInt({i})" for i in range(26))
+    call_args = f"{int_args}, GList([GInt(100)])"
+    expected = textwrap.dedent(
+        text=f"""\
+        pub type GVal {{
+          GInt(Int)
+          GList(List(GVal))
+        }}
+        pub fn process({signature_params}, _p26: a1) -> Nil {{ Nil }}
+
+        pub fn main() {{
+          process({call_args})
+        }}""",
+    )
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(

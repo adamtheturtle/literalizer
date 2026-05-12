@@ -1,22 +1,24 @@
 """Meta-tests for project structure and CI configuration."""
 
-from typing import Any, cast
+from typing import Any
 
 import pytest
+from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer.languages import ALL_LANGUAGES
 
 
 @pytest.fixture(scope="session", name="lint_workflow")
+@beartype
 def fixture_lint_workflow(
     pytestconfig: pytest.Config,
 ) -> dict[str, Any]:
     """Parse ``.github/workflows/lint.yml`` once per session."""
     lint_yml = pytestconfig.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
-    loaded = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]
-    return cast("dict[str, Any]", loaded)
+    loaded: dict[str, Any] = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]
+    return loaded
 
 
 def test_all_languages_have_lint_workflow(

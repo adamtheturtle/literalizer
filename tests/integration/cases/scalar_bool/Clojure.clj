@@ -1,1 +1,1 @@
-true
+(def my_data true)

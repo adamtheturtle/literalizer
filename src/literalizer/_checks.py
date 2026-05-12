@@ -406,14 +406,16 @@ def check_data(*, data: Value, spec: Language) -> None:
     if spec.sequence_format_config.requires_uniform_record_shapes:
         _check_mixed_dict_shapes(data=data)
 
-    if (
-        not spec.sequence_format_config.supports_heterogeneity
-        and not spec.heterogeneous_behavior.skip_scalar_checks
-    ):
-        _check_heterogeneous(data=data)
-        _check_heterogeneous_sibling_lists(data=data)
-        _check_mixed_dict_values(data=data)
-        _check_mixed_list_values(data=data)
+    seq_supports_het = spec.sequence_format_config.supports_heterogeneity
+    dict_supports_het = spec.dict_supports_heterogeneous_values
+    if not spec.heterogeneous_behavior.skip_scalar_checks:
+        if not seq_supports_het:
+            _check_heterogeneous(data=data)
+            _check_heterogeneous_sibling_lists(data=data)
+        if not dict_supports_het:
+            _check_mixed_dict_values(data=data)
+        if not seq_supports_het:
+            _check_mixed_list_values(data=data)
 
     if not spec.set_format_config.supports_heterogeneity:
         _check_heterogeneous_set(data=data)

@@ -1,5 +1,5 @@
 using DataStructures
-OrderedDict(
+my_data = OrderedDict(
     "name" => "Alice",
     "scores" => [10, 20, 30],
 )

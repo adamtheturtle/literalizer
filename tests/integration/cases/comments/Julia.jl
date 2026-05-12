@@ -1,4 +1,4 @@
-Dict(
+my_data = Dict(
     # Server configuration
     "host" => "localhost",  # default host
     "port" => 8080,

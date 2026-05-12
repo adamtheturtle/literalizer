@@ -1,2 +1,2 @@
-; note
-42
+(defparameter *my_data* ; note
+42)

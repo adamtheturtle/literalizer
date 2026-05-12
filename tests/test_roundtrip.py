@@ -9,8 +9,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from literalizer import InputFormat, literalize
-from literalizer._language import Language
+from literalizer import InputFormat, Language, literalize
 from literalizer.languages import (
     Cpp,
     Erlang,
@@ -29,7 +28,7 @@ PYTHON = Python(
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.LIST,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.AUTO,
+    variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
 PYTHON_BYTES = Python(
     date_format=Python.date_formats.PYTHON,
@@ -37,7 +36,7 @@ PYTHON_BYTES = Python(
     bytes_format=Python.bytes_formats.PYTHON,
     sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.AUTO,
+    variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
 
 type _JSONScalar = str | int | float | bool | None

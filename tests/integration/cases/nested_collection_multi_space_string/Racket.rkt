@@ -1,4 +1,4 @@
 #lang racket
-(list
+(define my_data (list
     (hash "key" "hello   world" "value" 1)
-)
+))

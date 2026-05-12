@@ -8,25 +8,33 @@ driven through :func:`literalizer.literalize_call`.  The runner
 
 import dataclasses
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import cast
 
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
-from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
+from literalizer._preamble import deduplicate_preamble_entries
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    DottedCallStubNotSupportedError,
+    DottedCallTargetNotSupportedError,
+    FreeFunctionCallNotSupportedError,
     HeterogeneousCollectionError,
+    UnsupportedCallShapeError,
+    VariableNameNotSupportedError,
 )
 
 from .check_golden import check_golden
-from .language_specs import sorted_languages, with_per_fixture_module_name
+from .language_specs import (
+    make_golden_path,
+    sorted_languages,
+    with_per_fixture_module_name,
+)
 
 
 @beartype
@@ -38,51 +46,6 @@ def _prepend_preamble(
     if not preamble:
         return wrapped
     return "\n".join(preamble) + "\n" + wrapped
-
-
-@beartype
-def _dedupe_preamble_blocks(*, blocks: Iterable[str]) -> tuple[str, ...]:
-    """Return preamble *blocks* with duplicates merged.
-
-    Some languages emit multi-line preamble blocks whose first line is a
-    stable header (for example, ``pub type GVal {`` in Gleam). When the
-    call-test harness combines declaration preambles with call
-    preambles, the same header can appear multiple times with different
-    bodies. Blocks sharing the same header *and* footer are merged: the
-    first block's middle lines are kept as-is, and any additional middle
-    lines from subsequent blocks that are not yet present are appended.
-    Blocks that share only the header but differ in their footer (e.g.
-    two distinct type definitions sharing a common attribute decorator)
-    are kept as separate blocks.
-    """
-    key_to_middle: dict[tuple[str, str], list[str]] = {}
-    order: list[tuple[str, str]] = []
-    for block in blocks:
-        lines = block.splitlines()
-        if not lines:  # pragma: no cover
-            continue
-        header = lines[0]
-        footer = lines[-1] if len(lines) > 1 else ""
-        key = (header, footer)
-        middle = lines[1:-1]
-        if key not in key_to_middle:
-            key_to_middle[key] = list(middle)
-            order.append(key)
-        else:
-            existing = set(key_to_middle[key])
-            for line in middle:
-                if line not in existing:
-                    key_to_middle[key].append(line)
-                    existing.add(line)
-    result: list[str] = []
-    for key in order:
-        header, footer = key
-        middle = key_to_middle[key]
-        parts: list[str] = [header, *middle]
-        if footer and footer != header:
-            parts.append(footer)
-        result.append("\n".join(parts))
-    return tuple(result)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -254,6 +217,21 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_homogeneous_dotted_method",
+        target_function="app.client.fetch",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
         target_function="obj.api.client.post",
         parameter_names=["data"],
@@ -317,7 +295,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],
-        call_transform=lambda c: c,
+        call_transform=None,
         transform_stub_names=[],
         per_element=True,
         call_style_type=None,
@@ -389,6 +367,21 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=True,
     ),
     CallCaseConfig(
+        case_dir_name="call_homogeneous_value_dict_arg",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=True,
+    ),
+    CallCaseConfig(
         case_dir_name="call_existing_ref_arg",
         target_function="process",
         parameter_names=["value"],
@@ -439,12 +432,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_names=[],
         per_element=True,
         call_style_type=None,
-        # ``single_var`` is declared first so its preamble (which sees
-        # both ``int`` and ``list``) wins ``_dedupe_preamble_blocks``
-        # against the ``int``-only preamble emitted for
-        # ``repeated_var``.  Without this ordering, languages that emit
-        # a header-keyed type union (e.g. Gleam's ``pub type GVal``)
-        # end up missing the ``GList`` constructor.
         ref_declarations={
             "single_var": "[4, 5, 6]",
             "repeated_var": "1",
@@ -452,6 +439,36 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         wrap_in_file=False,
         ref_case_per_language=False,
         consumable_refs=frozenset({"repeated_var", "single_var"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        # Mix of register-trivial (Int / Bool / Float64) and non-trivial
+        # (List) consumable refs.  Each ref is single-use, so without
+        # the consume-suppression hook every ref would be eligible for
+        # the consuming form.  the Mojo ``^`` is a hard error under
+        # ``--Werror`` for register-trivial scalars, so the trivial refs
+        # must emit as bare identifiers while ``my_list`` keeps ``^``.
+        # Other languages that move consumable refs (notably C++) still
+        # render the consuming form for every ref.
+        case_dir_name="call_ref_args_trivial_register",
+        target_function="process",
+        parameter_names=["value", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_int": "1",
+            "my_bool": "true",
+            "my_float": "3.14",
+            "my_list": "[1, 2, 3]",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset(
+            {"my_int", "my_bool", "my_float", "my_list"},
+        ),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -505,6 +522,30 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         wrap_in_file=False,
         ref_case_per_language=True,
         consumable_refs=frozenset({"myVar", "MyOther"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        # Slot 0 holds lists whose Mojo element type disagrees across
+        # calls (``List[Int]`` vs ``List[String]``), forcing
+        # ``_mojo_typed_param_list`` to fall back to the generic
+        # ``[*Ts: AnyType](*args: *Ts)`` stub so the typed list-slot
+        # path stays the only producer of ``data: List[T]`` signatures.
+        case_dir_name="call_ref_args_heterogeneous_list",
+        target_function="process",
+        parameter_names=["data", "count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "my_ints": "[1, 2, 3]",
+            "my_strings": '["a", "b"]',
+            "my_empty": "[]",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset({"my_ints", "my_strings", "my_empty"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
@@ -622,6 +663,36 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),
+    CallCaseConfig(
+        case_dir_name="call_scalar_args_uniform_second_slot",
+        target_function="process",
+        parameter_names=["value", "label"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_scalar_args_with_null",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+    ),
     *[
         CallCaseConfig(
             case_dir_name=f"call_{name}",
@@ -657,86 +728,42 @@ class CallCase:
 
     config: CallCaseConfig
     lang_cls: literalizer.LanguageCls
-
-
-CALL_CASES_DIR = Path(__file__).parent / "cases"
+    expected_exception: type[Exception] | None = None
 
 
 @beartype
-def _has_ref_inside_dict_literal(
+def _expected_call_shape_exception(
     *,
-    value: Value,
-    ref_key: str,
-    inside_dict_literal: bool,
-) -> bool:
-    """Return ``True`` if *value* contains a ref beneath a dict
-    literal.
-    """
-    match value:
-        case dict() if len(value) == 1 and isinstance(value.get(ref_key), str):
-            return inside_dict_literal
-        case dict():
-            return any(
-                _has_ref_inside_dict_literal(
-                    value=child,
-                    ref_key=ref_key,
-                    inside_dict_literal=True,
-                )
-                for child in value.values()
-            )
-        case list():
-            return any(
-                _has_ref_inside_dict_literal(
-                    value=child,
-                    ref_key=ref_key,
-                    inside_dict_literal=inside_dict_literal,
-                )
-                for child in value
-            )
-        case _:
-            return False
-
-
-@functools.cache
-@beartype
-def case_uses_ref_inside_dict_literal(
-    *,
-    case_dir_name: str,
-    ref_key: str,
-) -> bool:
-    """Return whether the call case input needs refs inside dict
-    literals.
-    """
-    yaml = YAML(typ="safe", pure=False)
-    loaded = cast(
-        "Value",
-        yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=(CALL_CASES_DIR / case_dir_name / "input.yaml").read_text(),
-        ),
-    )
-    return _has_ref_inside_dict_literal(
-        value=loaded,
-        ref_key=ref_key,
-        inside_dict_literal=False,
-    )
-
-
-@beartype
-def _lang_supports_case(
-    config: CallCaseConfig,
     lang_cls: literalizer.LanguageCls,
-) -> bool:
-    """Return True if *lang_cls* can produce valid output for *config*."""
-    if "." in config.target_function and not lang_cls.supports_dotted_calls:
-        return False
+    config: CallCaseConfig,
+) -> type[Exception] | None:
+    """Return the exception ``literalize_call`` is expected to raise for
+    this (lang, config) pair, or ``None`` if it should produce output.
+    """
     if (
-        any("." in name for name in config.transform_stub_names)
-        and not lang_cls.supports_dotted_call_stub
+        len(config.parameter_names) == 0
+        and not lang_cls.supports_zero_parameter_calls
     ):
-        return False
-    return lang_cls.has_free_function_calls or not any(
-        "." not in name for name in config.transform_stub_names
-    )
+        return UnsupportedCallShapeError
+    if (
+        config.requires_inline_multiline_dict_args
+        and not lang_cls.supports_inline_multiline_dict_args
+    ):
+        return UnsupportedCallShapeError
+    if (
+        config.requires_call_returns_expression
+        and not lang_cls.call_returns_expression
+    ):
+        return UnsupportedCallShapeError
+    if (
+        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
+        and not lang_cls.supports_standalone_comments_in_wrapped_calls
+    ):
+        return UnsupportedCallShapeError
+    innermost_target_function = config.target_function.split(sep=".")[-1]
+    if innermost_target_function in lang_cls.reserved_identifiers:
+        return UnsupportedCallShapeError
+    return None
 
 
 @beartype
@@ -747,21 +774,6 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
-    _probe = "__probe__"
-    if (
-        config.call_transform is not None
-        and config.call_transform(_probe) == _probe
-        and not lang_cls.allows_bare_call_statement
-    ):
-        return False
-    if (
-        config.requires_call_returns_expression
-        and not lang_cls.call_returns_expression
-    ):
-        return False
-    innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
-        return False
     return _lang_satisfies_call_shape_constraints(
         lang_cls=lang_cls,
         config=config,
@@ -777,31 +789,9 @@ def _lang_satisfies_call_shape_constraints(
     """Return False if *lang_cls* cannot represent *config*'s call
     shape.
     """
-    if (
-        len(config.parameter_names) == 0
-        and not lang_cls.supports_zero_parameter_calls
-    ):
-        return False
-    if (
-        config.requires_inline_multiline_dict_args
-        and not lang_cls.supports_inline_multiline_dict_args
-    ):
-        return False
-    if (
-        case_uses_ref_inside_dict_literal(
-            case_dir_name=config.case_dir_name,
-            ref_key="$ref",
-        )
-        and not lang_cls.supports_call_refs_in_dict_literals
-    ):
-        return False
-    if (
-        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
-        and not lang_cls.supports_standalone_comments_in_wrapped_calls
-    ):
-        return False
     return not (
         config.case_dir_name in _CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS
+        and lang_cls.supports_inline_multiline_dict_args
         and not lang_cls.supports_commented_dict_call_args
     )
 
@@ -814,8 +804,6 @@ def discover_call_cases() -> list[CallCase]:
     for config in CALL_CASE_CONFIGS:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
-                continue
-            if not _lang_supports_case(config=config, lang_cls=lang_cls):
                 continue
             if not _lang_satisfies_config_constraints(
                 lang_cls=lang_cls, config=config
@@ -835,7 +823,17 @@ def discover_call_cases() -> list[CallCase]:
                 default_style = styles[0]
                 if isinstance(default_style.value, config.call_style_type):
                     continue
-            cases.append(CallCase(config=config, lang_cls=lang_cls))
+            expected_exception = _expected_call_shape_exception(
+                lang_cls=lang_cls,
+                config=config,
+            )
+            cases.append(
+                CallCase(
+                    config=config,
+                    lang_cls=lang_cls,
+                    expected_exception=expected_exception,
+                )
+            )
     return cases
 
 
@@ -878,28 +876,99 @@ def _run_wrap_in_file_case(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class _CallWithDeclarations:
+    """Result of literalizing ref declarations and a call together."""
+
+    decl_results: list[literalizer.LiteralizeResult]
+    result: literalizer.LiteralizeResult
+
+
 @beartype
-def _check_call_result_includes_ref_declaration_types(
+def _run_call_with_declarations(
     *,
-    result: literalizer.LiteralizeResult,
-    decl_results: list[literalizer.LiteralizeResult],
-) -> None:
-    """Check refs supplied via ``ref_values`` feed call type
-    collection.
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    yaml_string: str,
+    declaration_names: dict[str, str],
+    effective_ref_case: literalizer.IdentifierCase | None,
+    lang_name: str,
+    golden_path: Path,
+) -> _CallWithDeclarations:
+    """Run ref declarations and the call, skipping on typed unsupported
+    signals.
     """
-    if not decl_results:
-        return
-    empty_types: frozenset[type] = frozenset()
-    declaration_types = empty_types.union(
-        *(d.types_present for d in decl_results),
-    )
-    missing_types = declaration_types - result.types_present
-    if missing_types == empty_types:
-        return
-    pytest.fail(  # pragma: no cover
-        "literalize_call result types do not include ref declaration "
-        f"types: missing {missing_types!r}",
-    )
+    try:
+        decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
+            ref_name: literalizer.literalize(
+                source=ref_source,
+                input_format=literalizer.InputFormat.JSON,
+                language=spec,
+                variable_form=literalizer.NewVariable(
+                    name=declaration_names[ref_name],
+                ),
+            )
+            for ref_name, ref_source in config.ref_declarations.items()
+        }
+        decl_results = list(decl_results_by_ref_name.values())
+        ref_values = {
+            ref_name: declaration.source_data
+            for ref_name, declaration in decl_results_by_ref_name.items()
+        }
+        result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            per_element=config.per_element,
+            ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
+            ref_values=ref_values or None,
+        )
+    except VariableNameNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} does not support variable-name wrapping "
+            f"for ref declarations",
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_name} cannot represent this heterogeneous input",
+        )
+    except DottedCallTargetNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} does not support dotted call targets")
+    except DottedCallStubNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} does not support dotted call stubs")
+    except FreeFunctionCallNotSupportedError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} has no free function call syntax")
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
+    return _CallWithDeclarations(decl_results=decl_results, result=result)
+
+
+@beartype
+def _arg_values_for_stub(
+    *,
+    source_data: Value,
+    per_element: bool,
+) -> Sequence[Value]:
+    """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of
+    arguments rows for per-element calls; a single-entry list
+    wrapping the whole data otherwise.
+
+    A per-element call always yields a list ``source_data``; the
+    ``isinstance`` check narrows the type for the static checker.
+    """
+    if per_element and isinstance(source_data, list):
+        return source_data
+    return [source_data]
 
 
 @beartype
@@ -907,6 +976,7 @@ def run_call_golden_case(
     *,
     config: CallCaseConfig,
     spec: literalizer.Language,
+    lang_cls: literalizer.LanguageCls,
     golden_name: str,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
@@ -918,10 +988,14 @@ def run_call_golden_case(
     variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
     ``ERROR`` strategy rejects).
     """
-    lang_cls = type(spec)
     input_path = cases_dir / config.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = input_path.parent / (golden_name + lang_cls.extension)
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=golden_name,
+        extension=lang_cls.extension,
+        lang_cls=lang_cls,
+    )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
@@ -951,52 +1025,17 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
         return
-    try:
-        # Literalize each ``{"$ref": "name"}`` target into a variable
-        # declaration so the generated file is self-contained and the
-        # golden file can lint cleanly.
-        decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
-            ref_name: literalizer.literalize(
-                source=ref_source,
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=literalizer.NewVariable(
-                    name=declaration_names[ref_name],
-                ),
-            )
-            for ref_name, ref_source in config.ref_declarations.items()
-        }
-        decl_results = list(decl_results_by_ref_name.values())
-        ref_values = {
-            ref_name: declaration.source_data
-            for ref_name, declaration in decl_results_by_ref_name.items()
-        }
-        result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            per_element=config.per_element,
-            ref_case=effective_ref_case,
-            consumable_refs=config.consumable_refs,
-            ref_values=ref_values or None,
-        )
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous input",
-        )
-    except CallArgNotSupportedError as exc:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} rejected call arg: {exc.reason}",
-        )
-    _check_call_result_includes_ref_declaration_types(
-        result=result,
-        decl_results=decl_results,
+    call_outcome = _run_call_with_declarations(
+        config=config,
+        spec=spec,
+        yaml_string=yaml_string,
+        declaration_names=declaration_names,
+        effective_ref_case=effective_ref_case,
+        lang_name=lang_cls.__name__,
+        golden_path=golden_path,
     )
+    decl_results = call_outcome.decl_results
+    result = call_outcome.result
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
@@ -1006,21 +1045,33 @@ def run_call_golden_case(
         else StubReturn.VOID
     )
     target_function_parts = tuple(config.target_function.split(sep="."))
-    # Stubs for the call function (with full parameter names).
+    call_arg_values = _arg_values_for_stub(
+        source_data=result.source_data,
+        per_element=config.per_element,
+    )
     body_stubs.extend(
         spec.format_call_stub(
             target_function_parts,
             config.parameter_names,
             stub_return,
+            call_arg_values,
         ),
     )
-    preamble_stubs.extend(
-        spec.format_call_preamble_stub(
-            target_function_parts,
-            config.parameter_names,
-            stub_return,
-        ),
-    )
+    try:
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(
+                target_function_parts,
+                config.parameter_names,
+                stub_return,
+                call_arg_values,
+            ),
+        )
+    except HeterogeneousCollectionError:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(
+            f"{lang_cls.__name__} cannot represent this heterogeneous "
+            "input in its typed call stub",
+        )
     # Stubs for transform function names (single argument).
     for wrapper_name in config.transform_stub_names:
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))
@@ -1029,6 +1080,7 @@ def run_call_golden_case(
                 wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
+                (),
             ),
         )
         preamble_stubs.extend(
@@ -1036,9 +1088,9 @@ def run_call_golden_case(
                 wrapper_name_parts,
                 ["_arg"],
                 StubReturn.VOID,
+                (),
             ),
         )
-    decl_preambles = tuple(line for d in decl_results for line in d.preamble)
     # Recompute the body preamble across the union of types observed in
     # every declaration *and* the call.  Concatenating each piece's
     # already-rendered body preamble would emit overlapping
@@ -1060,14 +1112,42 @@ def run_call_golden_case(
         union_types, combined_source_data
     )
     call_body_preamble = unified_body_preamble + tuple(body_stubs)
+    if (
+        result.contains_standalone_comments
+        and not spec.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=lang_cls.__name__,
+            reason=(
+                "standalone comments cannot be preserved when wrapping "
+                "calls in this language"
+            ),
+        )
     declarations_bare_codes = tuple(d.bare_code for d in decl_results)
     wrapped = spec.wrap_calls_with_declarations(
         declarations=declarations_bare_codes,
         calls=result.bare_code,
         body_preamble=call_body_preamble,
     )
-    all_preamble = _dedupe_preamble_blocks(
-        blocks=decl_preambles + result.preamble + tuple(preamble_stubs)
+    # ``literalize_call`` substitutes ``ref_values`` into the data fed
+    # to its preamble computation, so ``result.preamble`` already
+    # contains the union version of any multi-line data-dependent block
+    # (e.g. Gleam's ``pub type GVal {...}``) covering every type
+    # observed across the declarations *and* the call.  Each
+    # declaration's own multi-line block, by contrast, was computed
+    # from that declaration's data alone and would conflict with the
+    # union version under string-level duplicate filtering.  Drop the
+    # multi-line entries from declaration preambles and keep their
+    # single-line entries (e.g. the Nim ``import json`` line);
+    # filtering duplicate lines handles the rest.
+    decl_preamble_lines = tuple(
+        entry
+        for d in decl_results
+        for entry in d.preamble
+        if "\n" not in entry
+    )
+    all_preamble = deduplicate_preamble_entries(
+        entries=decl_preamble_lines + result.preamble + tuple(preamble_stubs),
     )
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     check_golden(

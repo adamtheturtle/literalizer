@@ -1,2 +1,2 @@
 ; note
-"hello # world"
+(defparameter *my_data* "hello # world")

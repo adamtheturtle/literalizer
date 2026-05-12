@@ -177,8 +177,10 @@ class UnrepresentableSpecialFloatError(Exception):
 
 
 class UnsupportedIdentifierCaseError(Exception):
-    """Raised when ``literalize_call`` is passed a ``ref_case`` that the
-    target language's ``IdentifierCases`` enum does not expose.
+    """Raised when ``literalize`` or ``literalize_call`` is passed a
+    ``ref_case`` that is not in the target language's
+    ``supported_ref_cases`` -- i.e. one that would not produce a
+    syntactically legal identifier in the target language.
     """
 
     def __init__(self, *, language_name: str, case_name: str) -> None:
@@ -188,6 +190,98 @@ class UnsupportedIdentifierCaseError(Exception):
         )
         self.language_name = language_name
         self.case_name = case_name
+
+
+class DottedCallTargetNotSupportedError(Exception):
+    """Raised when ``literalize_call`` is given a dotted
+    ``target_function``
+    but the target language does not support dotted call expressions.
+    """
+
+    def __init__(self, *, language_name: str, target_function: str) -> None:
+        """Create a ``DottedCallTargetNotSupportedError``."""
+        super().__init__(
+            f"{language_name} does not support dotted call targets: "
+            f"{target_function!r}"
+        )
+        self.language_name = language_name
+        self.target_function = target_function
+
+
+class DottedCallStubNotSupportedError(Exception):
+    """Raised when ``literalize_call`` is given a ``call_transform``
+    whose wrapper is dotted (e.g. ``tracer.emit``) but the target
+    language does not support dotted call stub names.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        transform_stub_name: str,
+    ) -> None:
+        """Create a ``DottedCallStubNotSupportedError``."""
+        super().__init__(
+            f"{language_name} does not support dotted call stubs: "
+            f"{transform_stub_name!r}"
+        )
+        self.language_name = language_name
+        self.transform_stub_name = transform_stub_name
+
+
+class FreeFunctionCallNotSupportedError(Exception):
+    """Raised when ``literalize_call`` is given a ``call_transform``
+    whose wrapper is a bare name with no dot (e.g. ``emit``) but the
+    target language has no free function call syntax.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        transform_stub_name: str,
+    ) -> None:
+        """Create a ``FreeFunctionCallNotSupportedError``."""
+        super().__init__(
+            f"{language_name} has no free function call syntax for "
+            f"call stub: {transform_stub_name!r}"
+        )
+        self.language_name = language_name
+        self.transform_stub_name = transform_stub_name
+
+
+class VariableNameNotSupportedError(Exception):
+    """Raised when ``literalize`` is given a ``variable_form`` but the
+    target language does not support variable-name wrapping.
+    """
+
+    def __init__(self, *, language_name: str, variable_name: str) -> None:
+        """Create a ``VariableNameNotSupportedError``."""
+        super().__init__(
+            f"{language_name} does not support variable names: "
+            f"{variable_name!r}"
+        )
+        self.language_name = language_name
+        self.variable_name = variable_name
+
+
+class UnsupportedCallShapeError(Exception):
+    """Raised when ``literalize_call`` is given a call shape the target
+    language cannot represent.
+
+    Distinct from :class:`CallArgNotSupportedError` (which concerns
+    individual argument values): this covers structural properties of
+    the call itself, e.g. zero-parameter calls in languages whose
+    syntax requires at least one operand.
+    """
+
+    def __init__(self, *, language_name: str, reason: str) -> None:
+        """Create an ``UnsupportedCallShapeError``."""
+        super().__init__(
+            f"{language_name} cannot represent this call shape: {reason}"
+        )
+        self.language_name = language_name
+        self.reason = reason
 
 
 class WrapCombinedInFileNotSupportedError(Exception):

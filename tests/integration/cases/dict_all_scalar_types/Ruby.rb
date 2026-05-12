@@ -1,5 +1,5 @@
 require 'date'
-{
+my_data = {
   "s" => "string",
   "i" => 1,
   "f" => 1.5,

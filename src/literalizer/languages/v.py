@@ -46,6 +46,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._heterogeneous import collect_heterogeneous_container_ids
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -69,13 +70,14 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
-    no_data_preamble,
+    never_inhibits_consuming_form,
+    no_compute_call_slot_wrap_ids,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -199,16 +201,24 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         """
         return _v_collect_ids_needing_wrap(data=data)
 
-    def _wrap(raw_value: Value, formatted: str) -> str:
+    def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``IVal(formatted)`` or the null sentinel."""
         if raw_value is None:
             return _V_NULL_WRAPPED
         return f"{_V_IFACE_NAME}({formatted})"
 
+    def _wrap_non_scalar(_raw_value: Value, formatted: str) -> str:
+        """Wrap a ref marker or container's formatted form as
+        ``IVal(formatted)``.
+        """
+        return f"{_V_IFACE_NAME}({formatted})"
+
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
-        wrap_scalar=_wrap,
+        wrap_scalar=_wrap_scalar,
+        wrap_non_scalar=_wrap_non_scalar,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
 
 
@@ -227,11 +237,44 @@ def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
     return _preamble
 
 
+def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
+    """ERROR strategy: emit ``interface IVal {}`` when empty containers
+    will render as ``[]IVal{}`` / ``map[string]IVal{}``.
+    """
+
+    def _has_empty_container(item: Value) -> bool:
+        """Return True if *item* or any descendant is an empty list,
+        dict, or set.
+        """
+        match item:
+            case dict():
+                return not item or any(
+                    _has_empty_container(item=v) for v in item.values()
+                )
+            case list() | set():
+                return not item or any(
+                    _has_empty_container(item=v) for v in item
+                )
+            case _:
+                return False
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Emit ``interface IVal {}`` when an empty collection literal
+        will reference it.
+        """
+        if not _has_empty_container(item=data):
+            return ()
+        return (_V_IFACE_DECL,)
+
+    return _preamble
+
+
 @beartype
 def _v_call_preamble_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
     *,
     indent: str,
@@ -298,6 +341,7 @@ def _v_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return V body-level variable stubs for a call name.
@@ -330,17 +374,12 @@ class V(metaclass=LanguageCls):
 
     extension = ".v"
     pygments_name = "v"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -349,7 +388,6 @@ class V(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = False
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -557,7 +595,8 @@ class V(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
+        SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
     declaration_styles = DeclarationStyles
@@ -596,9 +635,15 @@ class V(metaclass=LanguageCls):
 
         ERROR = _VHeterogeneousStrategyConfig(
             build_behavior=lambda: NO_HETEROGENEOUS_BEHAVIOR,
-            build_preamble=lambda: no_data_preamble,
+            build_preamble=_build_v_empty_container_preamble,
         )
-        """Raise on heterogeneous scalar collections (default)."""
+        """Raise on heterogeneous scalar collections (default).
+
+        Still emits ``interface IVal {}`` when the data contains an
+        empty list, dict, or set, because the empty-literal rendering
+        (``[]IVal{}`` / ``map[string]IVal{}``) references it regardless
+        of strategy.
+        """
 
         INTERFACE = _VHeterogeneousStrategyConfig(
             build_behavior=_build_v_interface_behavior,
@@ -622,6 +667,9 @@ class V(metaclass=LanguageCls):
         IdentifierCase.SNAKE,
         IdentifierCase.PASCAL,
         IdentifierCase.CAMEL,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
     )
 
     validate_spec_for_data = no_validate_spec_for_data
@@ -674,7 +722,7 @@ class V(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.ARRAY
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -764,14 +812,20 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _v_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return partial(_v_call_preamble_stub, indent=self.indent)
 
@@ -819,6 +873,19 @@ class V(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

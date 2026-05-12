@@ -49,6 +49,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -73,6 +74,7 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
+    never_inhibits_consuming_form,
     no_call_stub,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -115,6 +117,7 @@ def _java_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
     _stub_return: StubReturn,
+    _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     """Return Java stub declarations for a call name."""
@@ -450,6 +453,22 @@ def _format_java_assignment(
 
 
 @beartype
+def _java_inference_widens_unsafely(*, data: Value) -> bool:
+    """Return True if Java ``var`` inference for *data* would widen to a
+    permissive type (e.g. ``Object[]`` for ``new Object[]{}``).
+
+    Empty collection literals trigger this fallback in
+    :func:`_java_common_element_type`, so they are the canonical case
+    for which a ``SAFE`` annotation is preferable to inference.
+    """
+    match data:
+        case list() | set() | dict():
+            return not data
+        case _:
+            return False
+
+
+@beartype
 def _format_java_typed_declaration(
     *,
     name: str,
@@ -568,17 +587,12 @@ class Java(metaclass=LanguageCls):
 
     extension = ".java"
     pygments_name = "java"
-    supports_default_set_element_type = False
-    supports_default_sequence_element_type = False
-    supports_default_dict_value_type = False
-    supports_default_dict_key_type = False
-    supports_default_ordered_map_value_type = False
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    allows_bare_call_statement = True
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -587,7 +601,6 @@ class Java(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_commented_dict_call_args = True
     supports_module_name = True
-    supports_call_refs_in_dict_literals = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -914,6 +927,9 @@ class Java(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.UPPER_SNAKE,
     )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
@@ -944,8 +960,9 @@ class Java(metaclass=LanguageCls):
     class VariableTypeHints(enum.Enum):
         """Variable type hint options."""
 
-        AUTO = enum.auto()
+        NEVER = enum.auto()
         ALWAYS = enum.auto()
+        SAFE = enum.auto()
 
         def formatter(
             self,
@@ -984,11 +1001,36 @@ class Java(metaclass=LanguageCls):
                     set_outer=set_outer,
                 )
 
-            if self is type(self).AUTO:
+            if self is type(self).NEVER:
                 return _object_nil_declaration(
                     base_formatter=auto_formatter,
                     typed_formatter=typed,
                 )
+            if self.name == "SAFE":
+                auto_with_nil = _object_nil_declaration(
+                    base_formatter=auto_formatter,
+                    typed_formatter=typed,
+                )
+
+                def _safe_formatter(
+                    name: str,
+                    value: str,
+                    data: Value,
+                    modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Annotate when inference would widen unsafely
+                    (empty collection).
+                    """
+                    if _java_inference_widens_unsafely(data=data):
+                        return typed(
+                            name=name,
+                            value=value,
+                            data=data,
+                            modifiers=modifiers,
+                        )
+                    return auto_with_nil(name, value, data, modifiers)
+
+                return _safe_formatter
             return typed
 
     variable_type_hints_formats = VariableTypeHints
@@ -1072,9 +1114,9 @@ class Java(metaclass=LanguageCls):
         return (
             f"class {self.module_name} {{\n"
             f"{class_block}"
-            f"    public static void {method_name}() {{\n"
+            f"{self.indent}public static void {method_name}() {{\n"
             f"{content}\n"
-            "    }\n"
+            f"{self.indent}}}\n"
             "}"
         )
 
@@ -1097,7 +1139,7 @@ class Java(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
-    variable_type_hints: VariableTypeHints = VariableTypeHints.AUTO
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1182,14 +1224,20 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_call_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return stub declarations for a call expression."""
         return _java_call_stub
 
     @cached_property
     def format_call_preamble_stub(
         self,
-    ) -> Callable[[Sequence[str], Sequence[str], StubReturn], tuple[str, ...]]:
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
 
@@ -1227,6 +1275,19 @@ class Java(metaclass=LanguageCls):
         this to opt into a consuming form (e.g. C++ ``std::move``).
         """
         return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+
+        Delegates to :data:`never_inhibits_consuming_form`.  Languages
+        whose consume operator rejects certain value types (notably
+        the Mojo ``^`` on register-trivial scalars) override this.
+        """
+        return never_inhibits_consuming_form
 
     @cached_property
     def _suffix_is_auto(self) -> bool:

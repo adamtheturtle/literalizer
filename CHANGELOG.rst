@@ -4,6 +4,168 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` now raises
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError` when the
+  innermost segment of ``target_function`` collides with one of the
+  target language's reserved identifiers.  The renderer previously
+  produced output that would not parse in the target language.
+
+- :func:`~literalizer.literalize_call` now raises
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError` when a
+  ``call_transform`` wrapper is supplied for a language whose calls are
+  statements rather than expressions (i.e. ``call_returns_expression``
+  is ``False``).  The wrapper cannot consume the call as a value in
+  that case, and the renderer previously emitted invalid output.
+
+- :func:`~literalizer.literalize_call` no longer rejects identity
+  ``call_transform`` values on Ada, Fortran, and SystemVerilog.  Bare
+  procedure-call statements (``Process(x);``, ``call process(x)``,
+  ``process(x);``) are valid in all three languages, so the prior
+  rejection encoded a constraint that does not exist.  The
+  ``Language.allows_bare_call_statement`` flag introduced alongside that
+  check has been removed.
+
+- The PureScript, Roc, and Elm wrapped-call indent helpers no longer
+  carry defensive branches for blank or whitespace-leading lines.
+  These helpers only ever receive single-line call expressions from
+  ``literalize_call`` (which uses :attr:`CollectionLayout.COMPACT` for
+  wrapped calls and rejects standalone comments in that path), so the
+  empty-line and continuation arms were unreachable via the golden
+  integration cases.  Four unit tests in ``tests/test_languages.py``
+  that drove the Elm helpers directly with constructed multi-line
+  input have been removed in favor of the existing golden-file
+  contract.
+
+- ``Mojo`` :func:`~literalizer.literalize_call` now supports refs nested
+  inside dict literals and commented dict-literal call arguments.  The
+  typed-stub work landed in #1972 made both shapes compile cleanly under
+  ``mojo run --Werror``, so the corresponding
+  ``supports_call_refs_in_dict_literals`` and
+  ``supports_commented_dict_call_args`` flags flip to ``True`` for Mojo
+  and two new ``call_*`` golden cases are exercised.
+
+- ``Mojo`` and ``C++`` :func:`~literalizer.literalize_call` no longer
+  wrap a consumable ``$ref`` in the language's consume form when the
+  underlying value's type would make the wrapping a hard error or a
+  ``clang-tidy`` lint failure.  In Mojo, ``^`` is dropped for
+  register-trivial scalars (``Int``, ``Bool``, ``Float64``) because
+  Mojo 0.26.1.0+ rejects "transfer from a value of trivial register
+  type" under ``--Werror``.  In C++, ``std::move`` is dropped for
+  register-trivial types (``bool``, integer, ``double``,
+  ``std::chrono::year_month_day``,
+  ``std::chrono::system_clock::time_point``) which
+  ``performance-move-const-arg`` / ``hicpp-move-const-arg`` reject.
+  Non-trivial refs (e.g. ``List[...]``, ``Dict[...]``, strings, bytes)
+  keep their consume form.  ``Language`` exposes a new
+  :attr:`~literalizer._language.Language.consumable_ref_value_inhibits_consuming_form`
+  predicate that languages override to opt into per-value routing; the
+  default (:data:`~literalizer._language.never_inhibits_consuming_form`)
+  preserves the existing behavior.
+
+- Renamed ``VariableTypeHints.AUTO`` to ``VariableTypeHints.NEVER`` for
+  every language.  The behavior is unchanged; the new name describes
+  the option (no annotation, defer to the language's inference) rather
+  than implying intent, and pairs symmetrically with ``ALWAYS``.
+
+- Every language's ``VariableTypeHints`` enum now exposes a third value,
+  ``SAFE``, alongside ``NEVER`` and ``ALWAYS``.  ``SAFE`` annotates only
+  when the language's own inference would widen the variable to a
+  permissive type (e.g. ``unknown[]`` for an empty TypeScript array,
+  ``Object[]`` for an empty Java array), making downstream consumption
+  safer than ``NEVER`` without the noise of ``ALWAYS``.  The predicate is
+  per-language: ``TypeScript`` and ``Java`` annotate empty list / set /
+  dict literals; for every other language ``SAFE`` currently produces
+  the same output as ``NEVER`` while leaving room for a future
+  per-language predicate.
+
+- ``Nim`` :func:`~literalizer.literalize_call` now emits the
+  object-variant ``type`` declaration when the ``OBJECT_VARIANT``
+  heterogeneous strategy is active, so the rendered call references a
+  defined wrapping type.
+
+- ``Mojo`` typed call stubs now cover ``bool``, ``float``, ``bytes``,
+  ``date``, and ``datetime`` argument values (mapped to ``Bool``,
+  ``Float64``, and ``String`` respectively), and apply to dotted-method
+  stubs as well as free-function stubs.  The generic
+  ``[*Ts: AnyType](*args: *Ts)`` form is still emitted when scalar
+  types disagree across calls or any argument is non-scalar.
+
+- ``Mojo`` :meth:`~literalizer.Language.format_call_preamble_stub` now
+  raises
+  :class:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
+  under the default ``ERROR`` ``heterogeneous_strategy`` when concrete
+  Mojo argument types diverge across calls at one parameter slot
+  (including divergent shapes such as scalar in one call and list in
+  another).  ``VARIANT`` callers continue to fall back to the generic
+  ``[*Ts: AnyType](*args: *Ts)`` form for cross-call divergence pending
+  follow-up wrap machinery.
+
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`
+  when ``wrap_in_file=True`` and the YAML source carries standalone
+  comments but the target language sets
+  ``supports_standalone_comments_in_wrapped_calls = False`` (currently
+  ``Elm``, ``Erlang``, ``Haskell``, ``Jsonnet``, ``PureScript``, and
+  ``Roc``).  :class:`~literalizer.LiteralizeResult` now exposes
+  :attr:`~literalizer.LiteralizeResult.contains_standalone_comments`
+  so callers that wrap manually via
+  :meth:`~literalizer.Language.wrap_calls_with_declarations` can apply
+  the same guard.
+
+- :func:`~literalizer.literalize` now raises a typed
+  :class:`~literalizer.exceptions.VariableNameNotSupportedError`
+  when ``variable_form`` is supplied but the target language sets
+  ``supports_variable_names = False`` (currently ``Json5``,
+  ``Jsonnet``, and ``Yaml``).  The capability flag is now enforced
+  rather than declarative.
+
+- ``supports_variable_names`` is now ``True`` on ``Clojure``,
+  ``CommonLisp``, ``Julia``, ``Racket``, ``Ruby``, and ``Scheme``,
+  reflecting that these languages do support named variable wrapping
+  via ``literalize``'s ``variable_form`` argument (and have golden
+  files exercising that behavior).
+
+- Separated syntactic ``ref_case`` validity from stylistic preference.
+  :class:`~literalizer.Language` now exposes
+  :attr:`~literalizer.Language.supported_ref_cases` -- a frozenset of
+  cases that produce a syntactically legal identifier -- alongside the
+  existing :attr:`~literalizer.Language.identifier_cases`, which now
+  documents stylistic preference only.  ``literalize`` and
+  ``literalize_call`` validate ``ref_case`` against
+  ``supported_ref_cases``, so cases that are syntactically legal but
+  non-idiomatic (e.g. ``IdentifierCase.CAMEL`` in Python) are now
+  accepted.  Two shared constants,
+  :data:`~literalizer.NON_KEBAB_REF_CASES` and
+  :data:`~literalizer.ALL_REF_CASES`, cover the common settings.
+
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`
+  when ``target_function`` contains a dot but the target language sets
+  ``supports_dotted_calls = False`` (currently only ``Hcl``).  The
+  capability flag is now enforced rather than declarative.
+
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`
+  when ``call_transform`` produces a dotted wrapper name (e.g.
+  ``tracer.emit``) but the target language sets
+  ``supports_dotted_call_stub = False``.  The capability flag is now
+  enforced rather than declarative.
+
+- :func:`~literalizer.literalize_call` now raises a typed
+  :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`
+  when ``call_transform`` produces a bare wrapper name with no dot
+  (e.g. ``emit``) but the target language sets
+  ``has_free_function_calls = False`` (currently only ``Wren``).  The
+  capability flag is now enforced rather than declarative.
+
+- Removed the redundant ``supports_default_set_element_type``,
+  ``supports_default_sequence_element_type``,
+  ``supports_default_dict_value_type``, ``supports_default_dict_key_type``,
+  and ``supports_default_ordered_map_value_type`` class attributes from
+  ``LanguageCls`` and all language implementations.  Direct constructor
+  calls already surface unsupported ``default_*_type`` keyword arguments
+  through type checking, making these probe flags unnecessary.
+
 - :func:`~literalizer.literalize_call` accepts a new ``ref_values``
   mapping from ``{"$ref": "name"}`` identifiers to the source values
   declared elsewhere.  Supplied ref values now participate in
