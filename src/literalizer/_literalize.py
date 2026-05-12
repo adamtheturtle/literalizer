@@ -2570,8 +2570,7 @@ def _assemble_postfix_call(
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if wrapper:
-            call_expr = f"{call_expr} {wrapper}"
+        call_expr = f"{call_expr} {wrapper}"
     return call_expr
 
 
@@ -2598,8 +2597,7 @@ def _assemble_prefix_call(
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if wrapper:
-            call_expr = f"({wrapper}{arg_separator}{call_expr})"
+        call_expr = f"({wrapper}{arg_separator}{call_expr})"
     return call_expr
 
 
@@ -2627,11 +2625,10 @@ def _assemble_command_call(
         wrapper = _extract_call_transform_wrapper(
             call_transform=call_transform,
         )
-        if wrapper:
-            call_expr = wrapped_call_template.format(
-                wrapper=wrapper,
-                inner=call_expr,
-            )
+        call_expr = wrapped_call_template.format(
+            wrapper=wrapper,
+            inner=call_expr,
+        )
     return call_expr
 
 
