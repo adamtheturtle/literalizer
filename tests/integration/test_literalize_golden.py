@@ -23,9 +23,11 @@ from literalizer.exceptions import (
 
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
+    IndentCase,
     PreIndentCase,
     StatementTerminatorCombinedCase,
     build_heterogeneous_strategy_combined_cases,
+    build_indent_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     group_cases_by_language,
@@ -403,4 +405,64 @@ def test_pre_indent_level_with_new_variable_golden_file(
             extension=spec.extension,
             lang_cls=case.lang_cls,
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=build_indent_cases(),
+    ids=[c.name for c in build_indent_cases()],
+)
+def test_indent_golden_file(
+    case: IndentCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """A non-default ``indent`` renders to a stable per-language golden.
+
+    Locks in issue #2084: every spec carries an ``indent`` field, but
+    until #2087 most languages hard-coded their indentation in the
+    ``wrap_in_file`` / preamble helpers.  Rendering ``bool_list`` with
+    a three-space indent for every language pins down the result so a
+    future regression that re-hardcodes ``"    "`` (or two-space, or a
+    tab) cannot pass silently.
+    """
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=case.name,
+        extension=case.lang_cls.extension,
+        lang_cls=case.lang_cls,
+    )
+    spec = with_per_fixture_module_name(
+        spec=make_spec(lang_cls=case.lang_cls, indent=case.indent),
+        golden_path=golden_path,
+    )
+    try:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=literalizer.NewVariable(name="my_data"),
+            wrap_in_file=True,
+        )
+    except VariableNameNotSupportedError:
+        result = literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+            wrap_in_file=True,
+        )
+    check_golden(
+        file_regression=file_regression,
+        contents=result.code + "\n",
+        extension=case.lang_cls.extension,
+        newline=None,
+        golden_path=golden_path,
     )

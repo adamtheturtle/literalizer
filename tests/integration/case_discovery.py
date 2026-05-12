@@ -448,6 +448,45 @@ class PreIndentCase:
     modifiers: frozenset[enum.Enum]
 
 
+@dataclasses.dataclass(frozen=True)
+class IndentCase:
+    """A non-default ``indent`` golden-file test case.
+
+    Re-renders the ``bool_list`` fixture for every language with a
+    three-space ``indent`` (a value no language defaults to) to lock
+    in the fix from issue #2084: every spec's ``indent`` field must
+    actually flow through ``wrap_in_file`` and the core literalizer.
+    """
+
+    name: str
+    lang_cls: literalizer.LanguageCls
+    case_dir_name: str
+    indent: str
+
+
+@functools.cache
+@beartype
+def build_indent_cases() -> list[IndentCase]:
+    r"""Build one non-default-indent case per language.
+
+    The chosen indent (``"   "``) is three spaces, which is distinct
+    from every language's default (``"    "``, ``"  "``, or ``"\t"``)
+    so the golden file is guaranteed to diverge from the default-indent
+    ``bool_list`` rendering unless ``self.indent`` is being ignored.
+    """
+    case_dir_name = "bool_list"
+    indent = "   "
+    return [
+        IndentCase(
+            name=f"{lang_cls.__name__}_indent_three_space",
+            lang_cls=lang_cls,
+            case_dir_name=case_dir_name,
+            indent=indent,
+        )
+        for lang_cls in sorted_languages()
+    ]
+
+
 @functools.cache
 @beartype
 def build_pre_indent_cases() -> list[PreIndentCase]:
