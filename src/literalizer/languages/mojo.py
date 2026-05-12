@@ -751,9 +751,9 @@ def _build_variant_preamble(
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the ``Variant`` import + ``comptime`` declaration for
         *data*.  Unions data-driven scalar alternatives with cross-call
-        divergent-slot alternatives so call sites whose ref-arg slots
-        carry diverging list / mixed shapes contribute their slot types
-        (e.g. ``List[Int]``, ``List[String]``) to the alias.
+        divergent-slot alternatives so call sites whose reference
+        arguments carry diverging list or mixed shapes contribute their
+        slot types (e.g. ``List[Int]``, ``List[String]``) to the alias.
         """
         data_alternatives = _collect_variant_alternatives_from_data(data)
         slot_alternatives = _collect_variant_alternatives_from_slots(
