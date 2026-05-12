@@ -465,23 +465,19 @@ def _roc_format_call_arg(_value: Value, formatted: str) -> str:
 
 
 def _indent_call_lines(*, content: str, indent: str) -> str:
-    """Indent each line of *content* into a Roc ``main`` body.
+    """Wrap each call line of *content* in ``dbg (...)`` for a Roc
+    ``main`` body.
 
-    Top-level lines (no leading whitespace) are wrapped in
-    ``dbg (...)`` so Roc does not flag the discarded pure-function
-    result as an ``UNNECESSARY DEFINITION``.  Continuation lines that
-    already start with whitespace are kept as-is so multi-line
-    expressions remain syntactically intact.
+    *content* is one single-line call expression per line: this is the
+    only shape produced by ``literalize_call`` for Roc, which uses
+    :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
+    standalone comments in that path.  Wrapping each line in
+    ``dbg (...)`` prevents Roc from flagging the discarded
+    pure-function result as an ``UNNECESSARY DEFINITION``.
     """
-    out: list[str] = []
-    for line in content.split(sep="\n"):
-        if not line:  # pragma: no cover
-            out.append("")
-        elif line[0].isspace():  # pragma: no cover
-            out.append(f"{indent}{line}")
-        else:
-            out.append(f"{indent}dbg ({line})")
-    return "\n".join(out)
+    return "\n".join(
+        f"{indent}dbg ({line})" for line in content.split(sep="\n")
+    )
 
 
 @beartype
