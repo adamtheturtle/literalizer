@@ -87,7 +87,7 @@ def _to_source(
             toml_data: Mapping[str, _SourceData] = (
                 data if isinstance(data, dict) else {"_": data}
             )
-            return tomlkit.dumps(data=toml_data)
+            return tomlkit.dumps(data=toml_data)  # pyright: ignore[reportUnknownMemberType]
         case _ as unreachable:
             assert_never(unreachable)
 

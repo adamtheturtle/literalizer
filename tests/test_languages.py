@@ -697,8 +697,8 @@ def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
     """
     spec = Jsonnet()
     result = spec.wrap_calls_with_declarations(
-        declarations=("local x = 1;",),
-        calls="[x]",
-        body_preamble=(),
+        ("local x = 1;",),
+        "[x]",
+        (),
     )
     assert result == "local x = 1;\n[x]"
