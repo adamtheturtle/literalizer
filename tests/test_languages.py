@@ -533,8 +533,8 @@ def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
 
 def test_elm_wrap_in_file_preserves_empty_lines() -> None:
     """``wrap_in_file`` preserves blank lines from *content* verbatim
-    rather than prepending the ``_ =`` binding prefix or crashing on
-    the empty string.
+    rather than adding the ``_ =`` binding prefix or crashing on the
+    empty string.
 
     An empty source list rendered with ``per_element=True`` yields an
     empty *content* string, which splits to a single empty entry; the
@@ -553,8 +553,8 @@ def test_elm_wrap_in_file_preserves_empty_lines() -> None:
 
 def test_elm_wrap_calls_with_declarations_preserves_empty_lines() -> None:
     """``wrap_calls_with_declarations`` preserves blank lines from
-    *calls* verbatim rather than prepending the ``_ =`` binding prefix
-    or crashing on the empty string.
+    *calls* verbatim rather than adding the ``_ =`` binding prefix or
+    crashing on the empty string.
     """
     elm = Elm()
     wrapped = elm.wrap_calls_with_declarations(
