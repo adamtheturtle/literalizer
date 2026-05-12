@@ -1353,6 +1353,16 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def call_returns_expression(self) -> bool:
+        """Whether a function call in this language is an expression
+        whose value can be consumed by an enclosing expression.  When
+        ``False``, :func:`~literalizer.literalize_call` rejects a
+        ``call_transform`` (whose output wraps the call as a value)
+        with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def supports_inline_multiline_dict_args(self) -> bool:
         """Whether the language can render a call argument as an inline
         dict literal that spans multiple lines.  When ``False``,

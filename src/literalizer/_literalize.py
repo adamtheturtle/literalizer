@@ -2957,6 +2957,15 @@ def _validate_call_preconditions(
                 "representation in this language"
             ),
         )
+    if call_transform is not None and not language.call_returns_expression:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "calls in this language are statements, not expressions, "
+                "so a call_transform wrapper cannot consume the call as a "
+                "value"
+            ),
+        )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
         raise DottedCallTargetNotSupportedError(
             language_name=type(language).__name__,

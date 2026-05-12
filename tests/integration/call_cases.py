@@ -751,6 +751,11 @@ def _expected_call_shape_exception(
     ):
         return UnsupportedCallShapeError
     if (
+        config.requires_call_returns_expression
+        and not lang_cls.call_returns_expression
+    ):
+        return UnsupportedCallShapeError
+    if (
         config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
         and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
@@ -766,11 +771,6 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
-    if (
-        config.requires_call_returns_expression
-        and not lang_cls.call_returns_expression
-    ):
-        return False
     innermost_target_function = config.target_function.split(sep=".")[-1]
     if innermost_target_function in lang_cls.reserved_identifiers:
         return False
