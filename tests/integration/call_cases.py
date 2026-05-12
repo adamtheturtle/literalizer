@@ -754,6 +754,13 @@ def _expected_call_shape_exception(
         and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
         return UnsupportedCallShapeError
+    _probe = "__probe__"
+    if (
+        config.call_transform is not None
+        and config.call_transform(_probe) == _probe
+        and not lang_cls.allows_bare_call_statement
+    ):
+        return UnsupportedCallShapeError
     return None
 
 
@@ -765,13 +772,6 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
-    _probe = "__probe__"
-    if (
-        config.call_transform is not None
-        and config.call_transform(_probe) == _probe
-        and not lang_cls.allows_bare_call_statement
-    ):
-        return False
     if (
         config.requires_call_returns_expression
         and not lang_cls.call_returns_expression

@@ -1345,6 +1345,16 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def allows_bare_call_statement(self) -> bool:
+        """Whether the language permits a bare call expression as a
+        top-level statement.  When ``False``,
+        :func:`~literalizer.literalize_call` rejects calls that would
+        render without a surrounding ``call_transform`` wrapper with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def supports_inline_multiline_dict_args(self) -> bool:
         """Whether the language can render a call argument as an inline
         dict literal that spans multiple lines.  When ``False``,
