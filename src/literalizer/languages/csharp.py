@@ -357,6 +357,7 @@ class CSharp(metaclass=LanguageCls):
     pygments_name = "csharp"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -467,7 +468,10 @@ class CSharp(metaclass=LanguageCls):
                 single_element_trailing_comma=False,
                 supports_trailing_comma=True,
                 empty_template="Array.Empty<{type}>()",
-                preamble_lines=("using System.Collections.Generic;",),
+                preamble_lines=(
+                    "using System;",
+                    "using System.Collections.Generic;",
+                ),
                 format_entry=passthrough_sequence_entry,
                 typed_opener_fallback_template=("new {type}[] {{"),
             )

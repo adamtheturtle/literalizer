@@ -262,6 +262,7 @@ class TypeScript(metaclass=LanguageCls):
     pygments_name = "typescript"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()

@@ -294,6 +294,8 @@ def _build_cpp_array_open(
         """Return the typed ``std::array`` opener, or ``{`` on
         fallback.
         """
+        if not items:
+            return "std::array<std::nullptr_t, 0>{"
         int_type = type_ctx.int_resolver(
             [
                 item
@@ -302,7 +304,7 @@ def _build_cpp_array_open(
             ],
         )
         element_to_type = type_ctx.element_to_type(int_type=int_type)
-        type_name = element_to_type(type(items[0])) if items else None
+        type_name = element_to_type(type(items[0]))
         if type_name is None or not all(
             element_to_type(type(i)) == type_name for i in items
         ):
@@ -891,6 +893,7 @@ class Cpp(metaclass=LanguageCls):
     pygments_name = "cpp"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
