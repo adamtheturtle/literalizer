@@ -966,11 +966,9 @@ def _check_call_result_includes_ref_declaration_types(
         *(d.types_present for d in decl_results),
     )
     missing_types = declaration_types - result.types_present
-    if missing_types == empty_types:
-        return
-    pytest.fail(  # pragma: no cover
+    assert missing_types == empty_types, (  # noqa: S101
         "literalize_call result types do not include ref declaration "
-        f"types: missing {missing_types!r}",
+        f"types: missing {missing_types!r}"
     )
 
 

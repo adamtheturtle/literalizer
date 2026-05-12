@@ -148,9 +148,8 @@ def run_elm_make(
     env: Mapping[str, str],
 ) -> subprocess.CompletedProcess[str]:
     """Run ``elm make``, retrying transient cache failures."""
-    attempts = 5
-    result: subprocess.CompletedProcess[str] | None = None
-    for attempt in range(attempts):
+    retries = 4
+    for attempt in range(retries):
         result = subprocess.run(
             args=list(args),
             capture_output=True,
@@ -161,14 +160,17 @@ def run_elm_make(
         )
         if result.returncode == 0 or not _is_elm_transient_error(result):
             return result
-        if attempt + 1 < attempts:
-            # Transient failures (especially CORRUPT CACHE) leave a
-            # bad ``elm-stuff`` cache on disk; subsequent attempts
-            # would just re-read the corruption.  Wipe it so the
-            # retry starts from a clean cache.
-            shutil.rmtree(Path(cwd) / "elm-stuff", ignore_errors=True)
-            time.sleep(0.5 * (attempt + 1))
-    if result is None:  # pragma: no cover
-        msg = "elm make was not attempted"
-        raise RuntimeError(msg)
-    return result
+        # Transient failures (especially CORRUPT CACHE) leave a
+        # bad ``elm-stuff`` cache on disk; subsequent attempts
+        # would just re-read the corruption.  Wipe it so the
+        # retry starts from a clean cache.
+        shutil.rmtree(Path(cwd) / "elm-stuff", ignore_errors=True)
+        time.sleep(0.5 * (attempt + 1))
+    return subprocess.run(
+        args=list(args),
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=cwd,
+        env=dict(env),
+    )
