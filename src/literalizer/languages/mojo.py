@@ -180,12 +180,6 @@ def _gather_mojo_call_slots(
     return slots
 
 
-@beartype
-def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
-    """Return ``True`` when every value at this slot is a scalar."""
-    return all(not isinstance(v, list | dict) for v in slot_values)
-
-
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _MojoSlotSignature:
     """Per-slot resolved type info for a Mojo typed param list.
@@ -193,13 +187,11 @@ class _MojoSlotSignature:
     ``known_types`` is the frozenset of concrete Mojo type strings
     resolved at this slot across calls; ``None`` entries (unresolvable
     values) are dropped, so a slot whose only values are unresolvable
-    has an empty ``known_types``.  ``all_scalars`` is ``True`` when
-    every per-call value at this slot is a scalar (not a list or dict).
+    has an empty ``known_types``.
     """
 
     name: str
     known_types: frozenset[str]
-    all_scalars: bool
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -282,12 +274,10 @@ def _mojo_compute_slot_signatures(
         known_types: frozenset[str] = frozenset(
             t for t in slot_types if t is not None
         )
-        all_scalars = _slot_is_all_scalars(slot_values=slot_values)
         slot_signatures.append(
             _MojoSlotSignature(
                 name=name,
                 known_types=known_types,
-                all_scalars=all_scalars,
             ),
         )
         if len(known_types) > 1 and heterogeneous_value_type is not None:
@@ -342,26 +332,38 @@ def _mojo_cross_call_scalar_wrap_ids(
 ) -> frozenset[int]:
     """Return ids of scalars in a cross-call divergent VARIANT slot.
 
-    When *slot_values* contains scalars whose Mojo types diverge across
-    calls, return a ``frozenset`` of their ``id()`` so the call-argument
-    formatter can wrap each as ``Value(...)``.  Returns an empty
-    ``frozenset`` for homogeneous slots and slots that mix scalars
-    with lists / dicts (those fall back to the generic stub and need
-    no wrap).
+    When the Mojo types resolved at *slot_values* diverge across calls,
+    return a ``frozenset`` of the ``id()`` of each scalar value at the
+    slot so the call-argument formatter wraps it as ``Value(...)``.
+    List and dict values in the slot are not included because Mojo
+    constructs the ``Variant`` implicitly from a list / dict literal
+    or a moved variable, while bare scalar literals require the
+    explicit wrap.  Returns an empty ``frozenset`` for empty slots,
+    homogeneous slots, and slots with at least one unresolvable Mojo
+    type (which forces the typed-param emitter to fall back to the
+    generic stub).
     """
-    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
+    if not slot_values:
         return frozenset()
-    slot_types = {
-        _value_to_mojo_type(
-            v,
-            heterogeneous_value_type=None,
-            wrap_ids=frozenset(),
-        )
-        for v in slot_values
-    }
-    if len(slot_types) <= 1:
+    type_tags: set[str] = set()
+    scalar_ids: set[int] = set()
+    for value in slot_values:
+        match value:
+            case list() | dict() | set():
+                structural = _value_to_mojo_type(
+                    value,
+                    heterogeneous_value_type=None,
+                    wrap_ids=frozenset[int](),
+                )
+                if structural is None:
+                    return frozenset()
+                type_tags.add(structural)
+            case _:
+                type_tags.add(_mojo_variant_for_scalar(value).type_name)
+                scalar_ids.add(id(value))
+    if len(type_tags) <= 1:
         return frozenset()
-    return frozenset(id(v) for v in slot_values)
+    return frozenset(scalar_ids)
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
@@ -697,9 +699,11 @@ def _collect_variant_alternatives_from_slots(
     false positive because data-driven scalar-bucket detection covers
     every shape this analysis can flag.
     """
-    if not isinstance(data, list):
-        return ()
-    slots = _gather_mojo_call_slots(arg_values=data)
+    match data:
+        case list():
+            slots = _gather_mojo_call_slots(arg_values=data)
+        case _:
+            return ()
     alternatives: list[str] = []
     seen: set[str] = set()
     for slot_values in slots:
