@@ -607,7 +607,6 @@ class LanguageCls(type):
     supports_standalone_comments_in_wrapped_calls: bool
     supports_commented_dict_call_args: bool
     supports_module_name: bool
-    supports_call_refs_in_dict_literals: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
