@@ -322,7 +322,7 @@ def test_literalize_call_dotted_target_supported_language() -> None:
         target_function="module.fn",
         parameter_names=["a"],
     )
-    assert "module.fn(a=1)" in result.code
+    assert result.code == "module.fn(a=1)"
 
 
 def test_literalize_call_dotted_stub_unsupported_raises() -> None:
@@ -448,8 +448,19 @@ def test_literalize_accepts_syntactic_non_idiomatic_ref_case() -> None:
     legal Python identifier.  Validation uses ``supported_ref_cases``,
     which exposes ``CAMEL``.
     """
-    assert IdentifierCase.CAMEL not in Python().identifier_cases
-    assert IdentifierCase.CAMEL in Python().supported_ref_cases
+    assert Python().identifier_cases == (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+    )
+    assert Python().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+        },
+    )
 
     result = literalize(
         source='{"$ref": "user_obj"}',
@@ -458,14 +469,22 @@ def test_literalize_accepts_syntactic_non_idiomatic_ref_case() -> None:
         ref_case=IdentifierCase.CAMEL,
     )
 
-    assert "userObj" in result.declaration_code
+    assert result.declaration_code == "userObj"
 
 
 def test_literalize_kebab_friendly_language_accepts_kebab_ref_case() -> None:
     """Kebab-friendly languages render kebab-form refs as legal
     symbols.
     """
-    assert IdentifierCase.KEBAB in Raku().supported_ref_cases
+    assert Raku().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+            IdentifierCase.KEBAB,
+        },
+    )
 
     result = literalize(
         source='{"$ref": "user_obj"}',
@@ -474,7 +493,7 @@ def test_literalize_kebab_friendly_language_accepts_kebab_ref_case() -> None:
         ref_case=IdentifierCase.KEBAB,
     )
 
-    assert "user-obj" in result.declaration_code
+    assert result.declaration_code == "$user-obj"
 
 
 def test_supported_ref_cases_independent_of_identifier_cases() -> None:
@@ -646,4 +665,4 @@ def test_literalize_variable_names_supported_renders() -> None:
         variable_form=BothVariableForms(name="x"),
         wrap_in_file=True,
     )
-    assert "x = 42" in result.code
+    assert result.code == "x = 42\nx = 42"
