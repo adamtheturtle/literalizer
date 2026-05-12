@@ -543,23 +543,14 @@ def _purescript_format_call_arg(_original: Value, formatted: str, /) -> str:
 def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     """Indent call expressions for a PureScript ``let`` block.
 
-    Lines that start without whitespace begin a new call expression and
-    receive two levels of *indent* plus ``_ = ``.  Lines that start with
-    whitespace are continuations of a multi-line argument and receive two
-    additional levels of *indent* so they remain indented relative to the
-    binding.
+    *calls* is one single-line call expression per line: this is the
+    only shape produced by ``literalize_call`` for PureScript, which
+    uses :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
+    standalone comments in that path.  Each line receives two levels of
+    *indent* plus ``_ = ``.
     """
-    double_indent = indent * 2
-    binding_prefix = double_indent + "_ = "
-    result: list[str] = []
-    for line in calls.split(sep="\n"):
-        if not line:  # pragma: no cover
-            result.append("")
-        elif line[0].isspace():  # pragma: no cover
-            result.append(double_indent + line)
-        else:
-            result.append(binding_prefix + line)
-    return "\n".join(result)
+    binding_prefix = indent * 2 + "_ = "
+    return "\n".join(binding_prefix + line for line in calls.split(sep="\n"))
 
 
 def _build_purescript_call_output(
@@ -667,6 +658,7 @@ class PureScript(metaclass=LanguageCls):
     pygments_name = None
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()

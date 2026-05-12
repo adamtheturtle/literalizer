@@ -321,6 +321,7 @@ class Fortran(metaclass=LanguageCls):
     pygments_name = "fortran"
     supports_special_floats = True
     supports_variable_names = True
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     allows_empty_call_parens = True

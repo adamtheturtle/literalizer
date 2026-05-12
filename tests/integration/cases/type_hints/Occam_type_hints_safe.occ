@@ -1,0 +1,26 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "Alice")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "age"; MOBILE LIT(lit.int; 30)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "active"; MOBILE LIT(lit.bool; TRUE)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "score"; MOBILE LIT(lit.null)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "joined"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "last_login"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15T12:30:00+00:00")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "avatar"; MOBILE LIT(lit.str; MOBILE []BYTE "48656c6c6f"))
+    ]):
+    SEQ
+        SKIP
+:
