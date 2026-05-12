@@ -10,7 +10,7 @@ import enum
 import functools
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -30,7 +30,6 @@ from literalizer.languages import (
     Go,
     Groovy,
     Haskell,
-    Java,
     Kotlin,
     Mojo,
     Nim,
@@ -41,7 +40,6 @@ from literalizer.languages import (
     Roc,
     Rust,
     Swift,
-    TypeScript,
     VisualBasic,
 )
 
@@ -49,27 +47,6 @@ from .case_discovery import cases_with_special_floats
 from .language_specs import make_spec, sorted_languages
 
 _CASES_DIR = Path(__file__).parent / "cases"
-
-
-# Languages where ``variable_type_hints=SAFE`` defines a custom predicate
-# that can produce different output from ``NEVER``.  For other languages
-# ``SAFE`` is a documented no-op alias, so the variant builders below
-# skip it to avoid generating duplicate golden files.
-_LANGUAGES_WITH_SAFE_PREDICATE: frozenset[literalizer.LanguageCls] = frozenset(
-    {TypeScript, Java},
-)
-
-
-@beartype
-def _skip_type_hints_format(
-    *,
-    lang_cls: literalizer.LanguageCls,
-    fmt: enum.Enum,
-) -> bool:
-    """Return True if a type-hint variant should be skipped."""
-    return (
-        fmt.name == "SAFE" and lang_cls not in _LANGUAGES_WITH_SAFE_PREDICATE
-    )
 
 
 @beartype
@@ -319,10 +296,6 @@ def build_non_default_variants(
         default_format = get_default(spec)
         for fmt in get_formats(spec):
             if fmt is default_format:
-                continue
-            if category == "type_hints" and _skip_type_hints_format(
-                lang_cls=lang_cls, fmt=fmt
-            ):
                 continue
             variants.append(
                 Variant(
@@ -876,8 +849,6 @@ def build_type_hints_cross_variants() -> list[Variant]:
         lang_name = lang_cls.__name__
         for th_fmt in spec.variable_type_hints_formats:
             if th_fmt is default_th:
-                continue
-            if _skip_type_hints_format(lang_cls=lang_cls, fmt=th_fmt):
                 continue
             th_tag = th_fmt.name.lower()
             for axis_name, get_default, get_formats, kwarg in axes:
@@ -1470,60 +1441,6 @@ def _variants_for_axis(axis_key: str) -> list[Variant]:
     return list(_COMPLEX_BUILDERS[axis_key]())
 
 
-@beartype
-def _safe_variant_matches_never(
-    *, variant: Variant, case_dir_name: str
-) -> bool:
-    """Return True if a ``variable_type_hints=SAFE`` variant produces the
-    same output as the corresponding ``NEVER`` variant for *case_dir_name*.
-
-    Used to skip SAFE golden files that only duplicate the NEVER golden;
-    SAFE only differs when the predicate fires (empty collection at top
-    level), so non-triggering case/variant pairings are pure noise.
-    """
-    yaml_string = (_CASES_DIR / case_dir_name / "input.yaml").read_text()
-    never_member = next(
-        m
-        for m in variant.spec.variable_type_hints_formats
-        if m.name == "NEVER"
-    )
-    spec_as_dataclass: Any = variant.spec
-    spec_kwargs: dict[str, object] = {
-        f.name: getattr(variant.spec, f.name)
-        for f in dataclasses.fields(class_or_instance=spec_as_dataclass)
-        if f.name != "variable_type_hints"
-    }
-    never_spec: literalizer.Language = variant.lang_cls(
-        variable_type_hints=never_member, **spec_kwargs
-    )
-    safe_out = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=variant.spec,
-        variable_form=wrap_variable_form(),
-    )
-    never_out = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=never_spec,
-        variable_form=wrap_variable_form(),
-    )
-    return safe_out.code == never_out.code
-
-
-@beartype
-def _keep_variant_case(*, variant: Variant, case_dir_name: str) -> bool:
-    """Return True if the (variant, case) pair should produce a golden."""
-    if (
-        variant.lang_cls in _LANGUAGES_WITH_SAFE_PREDICATE
-        and "_type_hints_safe" in variant.name
-    ):
-        return not _safe_variant_matches_never(
-            variant=variant, case_dir_name=case_dir_name
-        )
-    return True
-
-
 @functools.cache
 @beartype
 def build_variant_cases() -> list[VariantCase]:
@@ -1549,9 +1466,6 @@ def build_variant_cases() -> list[VariantCase]:
                 if not (
                     ci.case_dir_name in special_float_cases
                     and not variant.lang_cls.supports_special_floats
-                )
-                and _keep_variant_case(
-                    variant=variant, case_dir_name=ci.case_dir_name
                 )
             )
     cases.extend(build_modifier_variant_cases())
