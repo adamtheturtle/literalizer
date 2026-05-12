@@ -867,6 +867,15 @@ class Language(Protocol):
     :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
     """
 
+    @property
+    def reserved_identifiers(self) -> frozenset[str]:
+        """Identifiers that are reserved by the language and therefore
+        cannot appear as the innermost segment of ``target_function``.
+        :func:`~literalizer.literalize_call` rejects such targets with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
     supports_variable_names: bool
     """Whether the language supports wrapping output in a named variable
     via the ``variable_form`` argument to

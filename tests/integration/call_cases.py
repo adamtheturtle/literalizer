@@ -760,6 +760,9 @@ def _expected_call_shape_exception(
         and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
         return UnsupportedCallShapeError
+    innermost_target_function = config.target_function.split(sep=".")[-1]
+    if innermost_target_function in lang_cls.reserved_identifiers:
+        return UnsupportedCallShapeError
     return None
 
 
@@ -771,9 +774,6 @@ def _lang_satisfies_config_constraints(
     """Return False if *lang_cls* does not satisfy *config*'s language
     constraints.
     """
-    innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
-        return False
     return _lang_satisfies_call_shape_constraints(
         lang_cls=lang_cls,
         config=config,
