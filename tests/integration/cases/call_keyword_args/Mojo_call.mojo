@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ThrottlerType(Copyable, Movable):
-    def check(self, user_id: String, ts: Float64) -> object:
+    def check(self, user_id: String, ts: Float64) -> None:
         pass
 def emit[*Ts: AnyType](*args: *Ts):
     pass

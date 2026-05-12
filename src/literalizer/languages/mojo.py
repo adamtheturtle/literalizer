@@ -430,17 +430,20 @@ def _mojo_call_preamble_stub(
 
     When *stub_return* is :attr:`StubReturn.VALUE` (the call result feeds
     a surrounding ``call_transform`` wrapper), the inner stub is given
-    an explicit return-type annotation so the outer call has a defined
-    type to consume.  No per-call inference is available (the transform
-    is a plain string wrapper), so we use ``object`` as a documented
-    placeholder that compiles against any consumer.
+    an explicit ``-> None`` return annotation.  No per-call inference is
+    available (the transform is a plain string wrapper), so ``None`` is
+    used as a documented placeholder: it is always valid, the body stays
+    ``pass``, and the surrounding generic ``[*Ts: AnyType]`` wrapper
+    accepts it.  ``None`` also avoids ``-Werror`` ``value is unused``
+    diagnostics when the transform is the identity (no outer wrapper),
+    because the bare call has no value to leak.
     """
     typed_params = _mojo_typed_param_list(
         params=params,
         arg_values=args,
         heterogeneous_value_type=heterogeneous_value_type,
     )
-    return_suffix = " -> object" if stub_return is StubReturn.VALUE else ""
+    return_suffix = " -> None" if stub_return is StubReturn.VALUE else ""
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)

@@ -1,4 +1,4 @@
-def process() -> object:
+def process() -> None:
     pass
 def emit[*Ts: AnyType](*args: *Ts):
     pass
