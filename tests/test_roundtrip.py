@@ -9,8 +9,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from literalizer import InputFormat, literalize
-from literalizer._language import Language
+from literalizer import InputFormat, Language, literalize
 from literalizer.languages import (
     Cpp,
     Erlang,
