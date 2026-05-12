@@ -6,7 +6,7 @@ import pytest
 from pygments.lexers import find_lexer_class_by_name
 
 import literalizer.languages
-from literalizer._language import LanguageCls
+from literalizer import LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
