@@ -1,6 +1,6 @@
 from std.utils.variant import Variant
 comptime Value = Variant[String, Int, Bool]
-def process(value: Value):
+def process(value: Value) -> None:
     pass
 @fieldwise_init
 struct _TracerType(Copyable, Movable):
