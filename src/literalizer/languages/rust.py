@@ -83,8 +83,8 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
+    no_validate_spec_for_data,
     prepend_body_preamble,
-    value_contains,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
@@ -205,7 +205,7 @@ def _rust_type_annotation(
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
     set_format_type_annotation: Callable[[str], str],
-    dict_format_type_annotation: Callable[[str, str], str] | None,
+    dict_format_type_annotation: Callable[[str, str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
     default_dict_key_type: str,
@@ -213,14 +213,10 @@ def _rust_type_annotation(
 ) -> str:
     """Derive a Rust type annotation string from a ``Value``.
 
-    When ``dict_format_type_annotation`` is ``None`` (``CONST`` /
-    ``STATIC``), :meth:`Rust.validate_spec_for_data` rejects dict data
-    upstream (Rust has no const-expression dict format), so the
-    ``case dict()`` arm is unreachable at runtime but still required
-    so the final ``case _`` narrows to ``Scalar`` for
-    ``_rust_scalar_type``.  When it is a callable (``LAZY_STATIC``),
-    dict data is supported and the arm emits ``HashMap<K, V>`` or
-    ``BTreeMap<K, V>``.
+    ``dict_format_type_annotation`` emits ``HashMap<K, V>`` or
+    ``BTreeMap<K, V>`` for ``LAZY_STATIC``; for ``CONST`` / ``STATIC``
+    it is a callable that raises :exc:`IncompatibleFormatsError`,
+    since Rust has no const-expression dict format.
     """
 
     def recurse(element: Value) -> str:
@@ -261,15 +257,6 @@ def _rust_type_annotation(
             )
             return sequence_format_type_annotation(element_type, len(data))
         case dict():
-            if dict_format_type_annotation is None:  # pragma: no cover
-                # Defensive: unreachable at runtime because
-                # validate_spec_for_data rejects dict data for
-                # CONST/STATIC before this function is called.
-                msg = (
-                    "Rust CONST/STATIC reject dict data in "
-                    "validate_spec_for_data"
-                )
-                raise AssertionError(msg)
             keys: list[Value] = list(data)
             key_type = _rust_homogeneous_element_type(
                 elements=keys,
@@ -309,6 +296,20 @@ def _format_typed_declaration(
     """Format a ``const`` or ``static`` declaration with a type
     annotation.
     """
+
+    def _reject_dict(_key_type: str, _value_type: str) -> str:
+        """Reject dict data for ``CONST`` / ``STATIC``.
+
+        Rust's ``HashMap::from`` and ``BTreeMap::from`` are runtime
+        calls, so neither produces a constant-expression initializer.
+        """
+        msg = (
+            f"Rust {keyword.upper()} requires a constant-expression "
+            f"initializer, but the dict format produces a runtime "
+            f"::from([…]) call which is not a constant expression."
+        )
+        raise IncompatibleFormatsError(msg)
+
     type_annotation = _rust_type_annotation(
         data=data,
         date_type=date_type,
@@ -316,7 +317,7 @@ def _format_typed_declaration(
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         set_format_type_annotation=set_format_type_annotation,
-        dict_format_type_annotation=None,
+        dict_format_type_annotation=_reject_dict,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
         default_dict_key_type="",
@@ -1514,25 +1515,7 @@ class Rust(metaclass=LanguageCls):
         """Return call-statement formatting for this language."""
         return identity_call_statement
 
-    def validate_spec_for_data(self, data: Value) -> None:
-        """Raise if the spec cannot produce valid code for *data*.
-
-        Rust's only dict/map formats (``HashMap::from`` and
-        ``BTreeMap::from``) are runtime calls, so ``CONST`` and
-        ``STATIC`` declarations cannot accept dict data.
-        """
-        _decl_cls = type(self.declaration_style)
-        if self.declaration_style not in {_decl_cls.CONST, _decl_cls.STATIC}:
-            return
-        if value_contains(data=data, predicate=lambda v: isinstance(v, dict)):
-            msg = (
-                f"Rust {self.declaration_style.name} requires a "
-                f"constant-expression initializer, but the "
-                f"{self.dict_format.name} dict format produces a "
-                f"runtime ::from([…]) call which is not a constant "
-                f"expression."
-            )
-            raise IncompatibleFormatsError(msg)
+    validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
