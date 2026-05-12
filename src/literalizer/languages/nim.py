@@ -1225,7 +1225,7 @@ class Nim(metaclass=LanguageCls):
         ``@[`` so nested sequences render as Nim-native ``seq``
         literals at every level (the declaration formatter no longer
         adds a leading ``@`` because ``uses_typed_literal_for_scalars``
-        is turned off).  Empty seqs widen to ``newSeq[string]()`` so
+        is turned off).  Empty sequences widen to ``newSeq[string]()`` so
         the compiler does not reject ``var x = @[]`` with "cannot
         infer the type of the sequence".
         """

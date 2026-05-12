@@ -248,13 +248,13 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
         """
         match item:
             case dict():
-                if not item:
-                    return True
-                return any(_has_empty_container(item=v) for v in item.values())
+                return not item or any(
+                    _has_empty_container(item=v) for v in item.values()
+                )
             case list() | set():
-                if not item:
-                    return True
-                return any(_has_empty_container(item=v) for v in item)
+                return not item or any(
+                    _has_empty_container(item=v) for v in item
+                )
             case _:
                 return False
 
