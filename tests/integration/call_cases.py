@@ -86,6 +86,7 @@ class CallCaseConfig:
     consumable_refs: frozenset[str]
     requires_call_returns_expression: bool
     requires_inline_multiline_dict_args: bool
+    requires_standalone_wrapped_comments: bool
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -110,6 +111,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -125,6 +127,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_comments",
@@ -140,6 +143,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=True,
     ),
     CallCaseConfig(
         case_dir_name="call_comments_dict_args",
@@ -155,6 +159,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
+        requires_standalone_wrapped_comments=True,
     ),
     CallCaseConfig(
         case_dir_name="call_negative_int",
@@ -170,6 +175,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -185,6 +191,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_reserved_target",
@@ -200,6 +207,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -215,6 +223,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_homogeneous_dotted_method",
@@ -230,6 +239,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -245,6 +255,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_snake_dotted_method",
@@ -260,6 +271,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -275,6 +287,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_dotted_transform_stub",
@@ -290,6 +303,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -305,6 +319,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_no_params",
@@ -320,6 +335,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_no_params_transform",
@@ -335,6 +351,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -350,6 +367,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_per_element_false_dict_arg",
@@ -365,6 +383,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_homogeneous_value_dict_arg",
@@ -380,6 +399,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_existing_ref_arg",
@@ -395,6 +415,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -413,6 +434,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"my_var", "my_other"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         # Same ref reused across multiple per-element calls.  The
@@ -441,6 +463,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"repeated_var", "single_var"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         # Mix of register-trivial (Int / Bool / Float64) and non-trivial
@@ -471,6 +494,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted",
@@ -489,6 +513,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"my_var", "my_other"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted_whole",
@@ -506,6 +531,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"my_var"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted_nonsnake",
@@ -524,6 +550,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"myVar", "MyOther"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         # Slot 0 holds lists whose Mojo element type disagrees across
@@ -548,6 +575,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset({"my_ints", "my_strings", "my_empty"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_escaped_quote",
@@ -563,6 +591,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_in_list",
@@ -581,6 +610,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_in_dict",
@@ -598,6 +628,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_converted",
@@ -615,6 +646,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -630,6 +662,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
@@ -647,6 +680,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_wrap_in_file_escaped_quote",
@@ -662,6 +696,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args_uniform_second_slot",
@@ -677,6 +712,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args_with_null",
@@ -692,6 +728,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
     ),
     *[
         CallCaseConfig(
@@ -708,15 +745,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             consumable_refs=frozenset[str](),
             requires_call_returns_expression=True,
             requires_inline_multiline_dict_args=False,
+            requires_standalone_wrapped_comments=False,
         )
         for name, cls in CALL_STYLE_VARIANTS
     ],
 ]
-
-
-_CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS = frozenset(
-    {"call_comments", "call_comments_dict_args"}
-)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -753,7 +786,7 @@ def _expected_call_shape_exception(
     ):
         return UnsupportedCallShapeError
     if (
-        config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
+        config.requires_standalone_wrapped_comments
         and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
         return UnsupportedCallShapeError
