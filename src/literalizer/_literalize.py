@@ -2966,6 +2966,14 @@ def _validate_call_preconditions(
                 "value"
             ),
         )
+    if target_function_parts[-1] in language.reserved_identifiers:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"target_function {target_function!r} ends in a reserved "
+                f"identifier of this language"
+            ),
+        )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
         raise DottedCallTargetNotSupportedError(
             language_name=type(language).__name__,

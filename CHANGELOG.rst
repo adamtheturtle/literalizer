@@ -5,6 +5,12 @@ Next
 ----
 
 - :func:`~literalizer.literalize_call` now raises
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError` when the
+  innermost segment of ``target_function`` collides with one of the
+  target language's reserved identifiers.  The renderer previously
+  produced output that would not parse in the target language.
+
+- :func:`~literalizer.literalize_call` now raises
   :class:`~literalizer.exceptions.UnsupportedCallShapeError` when a
   ``call_transform`` wrapper is supplied for a language whose calls are
   statements rather than expressions (i.e. ``call_returns_expression``
