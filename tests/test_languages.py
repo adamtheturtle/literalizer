@@ -547,8 +547,25 @@ def test_elm_wrap_in_file_preserves_empty_lines() -> None:
         variable_name="",
         body_preamble=(),
     )
-    let_block = "    let\n\n    in"
-    assert let_block in wrapped
+    expected = (
+        "module Check exposing (..)\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "main : Program () () Never\n"
+        "main =\n"
+        "    let\n"
+        "\n"
+        "    in\n"
+        "    Platform.worker\n"
+        "        { init = \\_ -> ( (), Cmd.none )\n"
+        "        , update = \\_ m -> ( m, Cmd.none )\n"
+        "        , subscriptions = \\_ -> Sub.none\n"
+        "        }"
+    )
+    assert wrapped == expected
 
 
 def test_elm_wrap_calls_with_declarations_preserves_empty_lines() -> None:
@@ -562,8 +579,25 @@ def test_elm_wrap_calls_with_declarations_preserves_empty_lines() -> None:
         calls="",
         body_preamble=(),
     )
-    let_block = "    let\n\n    in"
-    assert let_block in wrapped
+    expected = (
+        "module Check exposing (..)\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "\n"
+        "main : Program () () Never\n"
+        "main =\n"
+        "    let\n"
+        "\n"
+        "    in\n"
+        "    Platform.worker\n"
+        "        { init = \\_ -> ( (), Cmd.none )\n"
+        "        , update = \\_ m -> ( m, Cmd.none )\n"
+        "        , subscriptions = \\_ -> Sub.none\n"
+        "        }"
+    )
+    assert wrapped == expected
 
 
 def test_elm_wrap_calls_with_declarations_multiline_continuation() -> None:
