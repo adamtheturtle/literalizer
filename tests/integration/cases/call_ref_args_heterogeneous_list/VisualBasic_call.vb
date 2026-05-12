@@ -13,7 +13,9 @@ Module Check
             "a",
             "b"
         }
+        Dim my_empty = New Object() {}
         process(my_ints, 42)
         process(my_strings, 7)
+        process(my_empty, 99)
     End Sub
 End Module

@@ -11,5 +11,7 @@ x() ->
         "a",
         "b"
     ],
+    My_empty = [],
     process(My_ints, 42),
-    process(My_strings, 7).
+    process(My_strings, 7),
+    process(My_empty, 99).

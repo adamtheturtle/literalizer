@@ -15,6 +15,8 @@ pub fn main() {
     GStr("a"),
     GStr("b"),
   ])
+  let my_empty = GList([])
   process(my_ints, GInt(42))
   process(my_strings, GInt(7))
+  process(my_empty, GInt(99))
 }

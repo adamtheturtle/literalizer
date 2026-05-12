@@ -21,7 +21,9 @@ static _VVal my_strings[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "a"},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "b"}
 };
+static _VVal my_empty[] = '{};
 process(my_ints, _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
 process(my_strings, _VVal'{tag: _VVAL_INT, i: 7, r: 0.0, s: ""});
+process(my_empty, _VVal'{tag: _VVAL_INT, i: 99, r: 0.0, s: ""});
 end
 endmodule
