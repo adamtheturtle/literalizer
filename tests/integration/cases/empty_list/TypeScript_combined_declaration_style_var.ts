@@ -1,3 +1,3 @@
-var my_data = [];
+var my_data: unknown[] = [];
 my_data = [];
 export {};

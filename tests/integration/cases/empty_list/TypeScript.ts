@@ -1,2 +1,2 @@
-const my_data = [];
+const my_data: unknown[] = [];
 export {};

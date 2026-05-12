@@ -41,7 +41,6 @@ from literalizer.languages import (
     Roc,
     Rust,
     Swift,
-    TypeScript,
     VisualBasic,
 )
 
@@ -54,9 +53,12 @@ _CASES_DIR = Path(__file__).parent / "cases"
 # Languages where ``variable_type_hints=SAFE`` defines a custom predicate
 # that can produce different output from ``NEVER``.  For other languages
 # ``SAFE`` is a documented no-op alias, so the variant builders below
-# skip it to avoid generating duplicate golden files.
+# skip it to avoid generating duplicate golden files.  TypeScript was
+# previously here but now produces identical output for ``NEVER`` and
+# ``SAFE`` (both annotate empty collection literals, which TypeScript
+# rejects under ``--noImplicitAny`` once consumed).
 _LANGUAGES_WITH_SAFE_PREDICATE: frozenset[literalizer.LanguageCls] = frozenset(
-    {TypeScript, Java},
+    {Java},
 )
 
 
