@@ -467,7 +467,10 @@ class CSharp(metaclass=LanguageCls):
                 single_element_trailing_comma=False,
                 supports_trailing_comma=True,
                 empty_template="Array.Empty<{type}>()",
-                preamble_lines=("using System.Collections.Generic;",),
+                preamble_lines=(
+                    "using System;",
+                    "using System.Collections.Generic;",
+                ),
                 format_entry=passthrough_sequence_entry,
                 typed_opener_fallback_template=("new {type}[] {{"),
             )
