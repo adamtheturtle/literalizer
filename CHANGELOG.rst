@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` now raises
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError` when a
+  ``call_transform`` wrapper is supplied for a language whose calls are
+  statements rather than expressions (i.e. ``call_returns_expression``
+  is ``False``).  The wrapper cannot consume the call as a value in
+  that case, and the renderer previously emitted invalid output.
+
 - :func:`~literalizer.literalize_call` no longer rejects identity
   ``call_transform`` values on Ada, Fortran, and SystemVerilog.  Bare
   procedure-call statements (``Process(x);``, ``call process(x)``,
