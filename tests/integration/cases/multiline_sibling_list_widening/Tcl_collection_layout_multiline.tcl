@@ -1,4 +1,7 @@
 set my_data [dict create \
+    "omap_value" [dict create \
+        "first" 1 \
+    ] \
     "sibling_lists" [dict create \
         "numbers" [list \
             1 \

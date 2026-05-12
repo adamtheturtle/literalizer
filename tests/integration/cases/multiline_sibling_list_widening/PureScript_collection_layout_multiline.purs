@@ -11,6 +11,9 @@ data Val
 
 my_data :: Val
 my_data = PDict [
+    (Tuple "omap_value" (PDict [
+        (Tuple "first" (PInt 1))
+        ])),
     (Tuple "sibling_lists" (PDict [
         (Tuple "numbers" (PList [
             PInt 1,

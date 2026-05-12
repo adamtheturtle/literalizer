@@ -1,4 +1,7 @@
 : my_data
+    s\" omap_value"
+        s\" first" 1
+
     s\" sibling_lists"
         s\" numbers"
             1

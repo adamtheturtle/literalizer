@@ -9,6 +9,9 @@ Val : [
 
 my_data : Val
 my_data = RDict [
+    ("omap_value", RDict [
+        ("first", RInt 1i128),
+        ]),
     ("sibling_lists", RDict [
         ("numbers", RList [
             RInt 1i128,

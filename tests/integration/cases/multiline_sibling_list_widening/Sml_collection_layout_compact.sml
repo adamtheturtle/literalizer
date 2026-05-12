@@ -4,6 +4,7 @@ datatype val_t =
   | SList of val_t list
   | SMap of (string * val_t) list
 val my_data : val_t = SMap [
+    ("omap_value", SMap [("first", SInt 1)]),
     ("sibling_lists", SMap [("numbers", SList [SInt 1, SInt 2]), ("strings", SList [SStr "x", SStr "y"])]),
     ("ref_marker_present", SList [SStr "$keep", SStr "z"])
 ]

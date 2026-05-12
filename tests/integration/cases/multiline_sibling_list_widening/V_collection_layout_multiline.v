@@ -2,6 +2,9 @@ interface IVal {}
 
 fn main() {
 	my_data := {
+		'omap_value': IVal({
+			'first': 1,
+		}),
 		'sibling_lists': IVal({
 			'numbers': [
 				1,

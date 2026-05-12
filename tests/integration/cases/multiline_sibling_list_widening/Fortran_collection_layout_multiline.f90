@@ -20,6 +20,9 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
+        fentry('omap_value', fmap([fval_t :: &
+            fentry('first', fint(1_int64)) &
+        ])), &
         fentry('sibling_lists', fmap([fval_t :: &
             fentry('numbers', flist([fval_t :: &
                 fint(1_int64), &

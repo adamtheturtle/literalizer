@@ -2,9 +2,13 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <utility>
 #include <variant>
 int main() {
-auto my_data = std::map<std::string, std::variant<std::map<std::string, std::variant<std::vector<int>, std::vector<std::string>>>, std::vector<std::string>>>{
+auto my_data = std::map<std::string, std::variant<std::vector<std::pair<std::string, int>>, std::map<std::string, std::variant<std::vector<int>, std::vector<std::string>>>, std::vector<std::string>>>{
+    {"omap_value", std::vector<std::pair<std::string, int>>{
+        {"first", 1},
+    }},
     {"sibling_lists", std::map<std::string, std::variant<std::vector<int>, std::vector<std::string>>>{
         {"numbers", std::vector<int>{
             1,

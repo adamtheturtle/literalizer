@@ -1,4 +1,7 @@
 my_data = struct(
+    'omap_value', struct(
+        'first', 1
+    ),
     'sibling_lists', struct(
         'numbers', {{
             1,

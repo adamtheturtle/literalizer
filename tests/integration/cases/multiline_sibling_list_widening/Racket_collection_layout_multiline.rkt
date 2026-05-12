@@ -1,5 +1,8 @@
 #lang racket
 (define my_data (hash
+    "omap_value" (hash
+        "first" 1
+    )
     "sibling_lists" (hash
         "numbers" (list
             1

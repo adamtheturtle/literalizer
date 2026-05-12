@@ -1,4 +1,6 @@
 ---
+omap_value: !!omap
+  - first: 1
 sibling_lists:
   numbers: [1, 2]
   strings: ["x", "y"]

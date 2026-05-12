@@ -16,6 +16,9 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
+    {"omap_value", ((CVal){.m = (CKV[]){
+        {"first", ((CVal){.i = 1})},
+    }})},
     {"sibling_lists", ((CVal){.m = (CKV[]){
         {"numbers", ((CVal){.a = (CVal[]){
             ((CVal){.i = 1}),

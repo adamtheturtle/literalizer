@@ -1,4 +1,7 @@
 my_data <- list(
+    "omap_value" = list(
+        "first" = 1
+    ),
     "sibling_lists" = list(
         "numbers" = list(
             1,

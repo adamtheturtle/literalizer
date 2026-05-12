@@ -1,4 +1,7 @@
 declare -A my_data=(
+    ["omap_value"]="(
+        [\"first\"]=1
+    )"
     ["sibling_lists"]="(
         [\"numbers\"]=\"(
             1

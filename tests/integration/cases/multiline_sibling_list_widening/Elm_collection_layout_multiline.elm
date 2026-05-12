@@ -10,6 +10,9 @@ type Val
 
 my_data : Val
 my_data = EDict [
+    ("omap_value", EDict [
+        ("first", EInt 1)
+        ]),
     ("sibling_lists", EDict [
         ("numbers", EList [
             EInt 1,

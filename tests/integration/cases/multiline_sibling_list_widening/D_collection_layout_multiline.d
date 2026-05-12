@@ -1,6 +1,9 @@
 import std.json;
 void main() {
 auto my_data = JSONValue([
+    "omap_value": JSONValue([
+        JSONValue([JSONValue("first"), JSONValue(1)]),
+    ]),
     "sibling_lists": JSONValue([
         "numbers": JSONValue([
             JSONValue(1),

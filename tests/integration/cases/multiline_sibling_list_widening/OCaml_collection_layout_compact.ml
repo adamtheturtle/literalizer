@@ -6,6 +6,7 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
 let my_data : val_t = OMap [
+    ("omap_value", OMap [("first", OInt 1)]);
     ("sibling_lists", OMap [("numbers", OList [OInt 1; OInt 2]); ("strings", OList [OStr "x"; OStr "y"])]);
     ("ref_marker_present", OList [OStr "$keep"; OStr "z"])
 ]

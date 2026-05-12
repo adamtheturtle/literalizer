@@ -2,6 +2,9 @@ import java.util.Map;
 class Main {
     public static void main() {
 var my_data = Map.ofEntries(
+    Map.entry("omap_value", new java.util.ArrayList<>(java.util.Arrays.asList(
+        Map.entry("first", 1)
+    ))),
     Map.entry("sibling_lists", Map.ofEntries(
         Map.entry("numbers", new Object[]{
             1,

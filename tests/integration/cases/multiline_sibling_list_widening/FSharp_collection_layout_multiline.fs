@@ -6,6 +6,9 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
 let my_data: Val = FMap [
+    ("omap_value", FMap [
+        ("first", FInt 1L)
+    ]);
     ("sibling_lists", FMap [
         ("numbers", FList [
             FInt 1L;

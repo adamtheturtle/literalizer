@@ -1,6 +1,9 @@
 module Fixture_multiline_sibling_list_widening_Crystal_collection_layout_multiline
 extend self
 my_data = {
+    "omap_value" => {
+        "first" => 1,
+    },
     "sibling_lists" => {
         "numbers" => [
             1,

@@ -1,4 +1,7 @@
 (defparameter *my_data* (list
+    (cons "omap_value" (list
+        (cons "first" 1)
+    ))
     (cons "sibling_lists" (list
         (cons "numbers" (list
             1

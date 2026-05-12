@@ -2,6 +2,9 @@
 -export([x/0]).
 x() ->
     My_data = #{
+        "omap_value" => [
+            {"first", 1}
+        ],
         "sibling_lists" => #{
             "numbers" => [
                 1,

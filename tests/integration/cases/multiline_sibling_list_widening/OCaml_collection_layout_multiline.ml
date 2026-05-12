@@ -6,6 +6,9 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
 let my_data : val_t = OMap [
+    ("omap_value", OMap [
+        ("first", OInt 1)
+    ]);
     ("sibling_lists", OMap [
         ("numbers", OList [
             OInt 1;

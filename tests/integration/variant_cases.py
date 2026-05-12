@@ -1432,8 +1432,6 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "dict_with_list_value",
             "nested",
             "nested_mixed_set",
-            "ordered_map_in_sequence",
-            "mixed_type_dicts_in_sequence",
             "multiline_sibling_list_widening",
         )
     ),
