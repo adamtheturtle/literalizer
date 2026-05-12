@@ -78,7 +78,6 @@ def test_protocol_properties_accessible(
     assert callable(spec.type_hint_collection_preamble_lines)
     assert isinstance(spec.scalar_body_preamble, dict)
     assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
-    assert isinstance(spec.supports_commented_dict_call_args, bool)
 
 
 @pytest.mark.parametrize(

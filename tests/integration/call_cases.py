@@ -717,9 +717,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS = frozenset(
     {"call_comments", "call_comments_dict_args"}
 )
-_CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS = frozenset(
-    {"call_comments_dict_args"}
-)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -766,36 +763,6 @@ def _expected_call_shape_exception(
     return None
 
 
-@beartype
-def _lang_satisfies_config_constraints(
-    lang_cls: literalizer.LanguageCls,
-    config: CallCaseConfig,
-) -> bool:
-    """Return False if *lang_cls* does not satisfy *config*'s language
-    constraints.
-    """
-    return _lang_satisfies_call_shape_constraints(
-        lang_cls=lang_cls,
-        config=config,
-    )
-
-
-@beartype
-def _lang_satisfies_call_shape_constraints(
-    *,
-    lang_cls: literalizer.LanguageCls,
-    config: CallCaseConfig,
-) -> bool:
-    """Return False if *lang_cls* cannot represent *config*'s call
-    shape.
-    """
-    return not (
-        config.case_dir_name in _CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS
-        and lang_cls.supports_inline_multiline_dict_args
-        and not lang_cls.supports_commented_dict_call_args
-    )
-
-
 @functools.cache
 @beartype
 def discover_call_cases() -> list[CallCase]:
@@ -804,10 +771,6 @@ def discover_call_cases() -> list[CallCase]:
     for config in CALL_CASE_CONFIGS:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
-                continue
-            if not _lang_satisfies_config_constraints(
-                lang_cls=lang_cls, config=config
-            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a

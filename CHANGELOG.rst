@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- The ``supports_commented_dict_call_args`` flag has been removed from
+  ``Language``.  Every (language, shape) pair previously dropped by the
+  test-discovery filter on this flag is either already short-circuited
+  by an earlier exception path or now renders cleanly, leaving the flag
+  with no load-bearing callers.
+
 - :func:`~literalizer.literalize_call` now raises
   :class:`~literalizer.exceptions.UnsupportedCallShapeError` when the
   innermost segment of ``target_function`` collides with one of the
