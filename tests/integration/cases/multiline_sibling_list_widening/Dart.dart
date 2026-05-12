@@ -1,0 +1,5 @@
+final my_data = <String, dynamic>{
+    "omap_value": {"first": 1},
+    "sibling_lists": <String, dynamic>{"numbers": [1, 2], "strings": ["x", "y"]},
+    "ref_marker_present": <String>["\$keep", "z"],
+};

@@ -1,0 +1,7 @@
+* my_data
+@code json
+{
+    "name": "Alice",
+    "tags": [true, 42, "apple"]
+}
+@end
