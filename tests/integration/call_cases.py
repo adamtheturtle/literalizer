@@ -14,7 +14,6 @@ from pathlib import Path
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
-from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import StubReturn
@@ -758,65 +757,6 @@ def _expected_call_shape_exception(
     return None
 
 
-CALL_CASES_DIR = Path(__file__).parent / "cases"
-
-
-@beartype
-def _has_ref_inside_dict_literal(
-    *,
-    value: Value,
-    ref_key: str,
-    inside_dict_literal: bool,
-) -> bool:
-    """Return ``True`` if *value* contains a ref beneath a dict
-    literal.
-    """
-    match value:
-        case dict() if len(value) == 1 and isinstance(value.get(ref_key), str):
-            return inside_dict_literal
-        case dict():
-            return any(
-                _has_ref_inside_dict_literal(
-                    value=child,
-                    ref_key=ref_key,
-                    inside_dict_literal=True,
-                )
-                for child in value.values()
-            )
-        case list():
-            return any(
-                _has_ref_inside_dict_literal(
-                    value=child,
-                    ref_key=ref_key,
-                    inside_dict_literal=inside_dict_literal,
-                )
-                for child in value
-            )
-        case _:
-            return False
-
-
-@functools.cache
-@beartype
-def case_uses_ref_inside_dict_literal(
-    *,
-    case_dir_name: str,
-    ref_key: str,
-) -> bool:
-    """Return whether the call case input needs refs inside dict
-    literals.
-    """
-    yaml = YAML(typ="safe", pure=False)
-    loaded: Value = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-        stream=(CALL_CASES_DIR / case_dir_name / "input.yaml").read_text(),
-    )
-    return _has_ref_inside_dict_literal(
-        value=loaded,
-        ref_key=ref_key,
-        inside_dict_literal=False,
-    )
-
-
 @beartype
 def _lang_satisfies_config_constraints(
     lang_cls: literalizer.LanguageCls,
@@ -855,14 +795,6 @@ def _lang_satisfies_call_shape_constraints(
     """Return False if *lang_cls* cannot represent *config*'s call
     shape.
     """
-    if (
-        case_uses_ref_inside_dict_literal(
-            case_dir_name=config.case_dir_name,
-            ref_key="$ref",
-        )
-        and not lang_cls.supports_call_refs_in_dict_literals
-    ):
-        return False
     return not (
         config.case_dir_name in _CASES_REQUIRING_COMMENTED_DICT_CALL_ARGS
         and lang_cls.supports_inline_multiline_dict_args
