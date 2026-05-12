@@ -4,12 +4,6 @@ Changelog
 Next
 ----
 
-- Remove unreachable empty-line handling from ``Elm``'s
-  ``wrap_in_file`` and ``wrap_calls_with_declarations``.  The
-  call-rendering flow never emits empty lines in the content,
-  declarations, or calls passed to these helpers, so the defensive
-  branches were dead code.
-
 - ``Mojo`` and ``C++`` :func:`~literalizer.literalize_call` no longer
   wrap a consumable ``$ref`` in the language's consume form when the
   underlying value's type would make the wrapping a hard error or a
