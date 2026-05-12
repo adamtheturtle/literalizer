@@ -4,9 +4,9 @@ Changelog
 Next
 ----
 
-- The PureScript, Roc, and Elm wrapped-call indenters no longer carry
-  defensive branches for blank or whitespace-leading lines.  These
-  helpers only ever receive single-line call expressions from
+- The PureScript, Roc, and Elm wrapped-call indent helpers no longer
+  carry defensive branches for blank or whitespace-leading lines.
+  These helpers only ever receive single-line call expressions from
   ``literalize_call`` (which uses :attr:`CollectionLayout.COMPACT` for
   wrapped calls and rejects standalone comments in that path), so the
   empty-line and continuation arms were unreachable via the golden
