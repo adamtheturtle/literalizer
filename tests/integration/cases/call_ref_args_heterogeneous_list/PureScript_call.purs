@@ -19,6 +19,8 @@ my_strings = PList [
     PStr "a",
     PStr "b"
     ]
+my_empty :: Val
+my_empty = PList []
 
 
 main :: Unit
@@ -26,5 +28,6 @@ main =
     let
         _ = process my_ints (PInt 42)
         _ = process my_strings (PInt 7)
+        _ = process my_empty (PInt 99)
     in
     unit

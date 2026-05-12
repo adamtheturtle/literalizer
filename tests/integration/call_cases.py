@@ -541,10 +541,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_declarations={
             "my_ints": "[1, 2, 3]",
             "my_strings": '["a", "b"]',
+            "my_empty": "[]",
         },
         wrap_in_file=False,
         ref_case_per_language=False,
-        consumable_refs=frozenset({"my_ints", "my_strings"}),
+        consumable_refs=frozenset({"my_ints", "my_strings", "my_empty"}),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
     ),

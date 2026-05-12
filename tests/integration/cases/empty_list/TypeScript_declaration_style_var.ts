@@ -1,2 +1,2 @@
-var my_data = [];
+var my_data: unknown[] = [];
 export {};

@@ -1,6 +1,4 @@
-from std.utils.variant import Variant
-comptime Value = Variant[List[Int], List[String]]
-def process(data: Value, count: Int):
+def process[*Ts: AnyType](*args: *Ts):
     pass
 def main():
     var my_ints = [

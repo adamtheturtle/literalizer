@@ -10,6 +10,8 @@ auto my_strings = JSONValue([
     JSONValue("a"),
     JSONValue("b"),
 ]);
+auto my_empty = parseJSON("[]");
 process(my_ints, 42);
 process(my_strings, 7);
+process(my_empty, 99);
 }

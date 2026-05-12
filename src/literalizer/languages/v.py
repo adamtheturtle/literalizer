@@ -72,7 +72,6 @@ from literalizer._language import (
     identity_call_target,
     never_inhibits_consuming_form,
     no_compute_call_slot_wrap_ids,
-    no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -232,6 +231,38 @@ def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
         """
         wrap_ids = _v_collect_ids_needing_wrap(data=data)
         if not wrap_ids:
+            return ()
+        return (_V_IFACE_DECL,)
+
+    return _preamble
+
+
+def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
+    """ERROR strategy: emit ``interface IVal {}`` when empty containers
+    will render as ``[]IVal{}`` / ``map[string]IVal{}``.
+    """
+
+    def _has_empty_container(item: Value) -> bool:
+        """Return True if *item* or any descendant is an empty list,
+        dict, or set.
+        """
+        match item:
+            case dict():
+                return not item or any(
+                    _has_empty_container(item=v) for v in item.values()
+                )
+            case list() | set():
+                return not item or any(
+                    _has_empty_container(item=v) for v in item
+                )
+            case _:
+                return False
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Emit ``interface IVal {}`` when an empty collection literal
+        will reference it.
+        """
+        if not _has_empty_container(item=data):
             return ()
         return (_V_IFACE_DECL,)
 
@@ -604,9 +635,15 @@ class V(metaclass=LanguageCls):
 
         ERROR = _VHeterogeneousStrategyConfig(
             build_behavior=lambda: NO_HETEROGENEOUS_BEHAVIOR,
-            build_preamble=lambda: no_data_preamble,
+            build_preamble=_build_v_empty_container_preamble,
         )
-        """Raise on heterogeneous scalar collections (default)."""
+        """Raise on heterogeneous scalar collections (default).
+
+        Still emits ``interface IVal {}`` when the data contains an
+        empty list, dict, or set, because the empty-literal rendering
+        (``[]IVal{}`` / ``map[string]IVal{}``) references it regardless
+        of strategy.
+        """
 
         INTERFACE = _VHeterogeneousStrategyConfig(
             build_behavior=_build_v_interface_behavior,

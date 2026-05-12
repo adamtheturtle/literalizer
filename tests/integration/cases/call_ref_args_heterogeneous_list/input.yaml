@@ -2,3 +2,5 @@
   - 42
 - - { $ref: my_strings }
   - 7
+- - { $ref: my_empty }
+  - 99

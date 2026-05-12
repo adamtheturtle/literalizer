@@ -21,6 +21,8 @@ pub fn main() void {
         .{ .str = "a" },
         .{ .str = "b" },
     }};
+    const my_empty: ZVal = .{ .arr = &.{}};
     process(my_ints, .{ .int = 42 });
     process(my_strings, .{ .int = 7 });
+    process(my_empty, .{ .int = 99 });
 }

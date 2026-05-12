@@ -23,8 +23,11 @@ main =
             EStr "a",
             EStr "b"
             ]
+        my_empty : Val
+        my_empty = EList []
         _ = process(my_ints, EInt 42)
         _ = process(my_strings, EInt 7)
+        _ = process(my_empty, EInt 99)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )
