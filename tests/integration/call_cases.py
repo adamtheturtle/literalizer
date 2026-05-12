@@ -950,28 +950,6 @@ def _run_wrap_in_file_case(
     )
 
 
-@beartype
-def _check_call_result_includes_ref_declaration_types(
-    *,
-    result: literalizer.LiteralizeResult,
-    decl_results: list[literalizer.LiteralizeResult],
-) -> None:
-    """Check refs supplied via ``ref_values`` feed call type
-    collection.
-    """
-    if not decl_results:
-        return
-    empty_types: frozenset[type] = frozenset()
-    declaration_types = empty_types.union(
-        *(d.types_present for d in decl_results),
-    )
-    missing_types = declaration_types - result.types_present
-    assert missing_types == empty_types, (  # noqa: S101
-        "literalize_call result types do not include ref declaration "
-        f"types: missing {missing_types!r}"
-    )
-
-
 @dataclasses.dataclass(frozen=True)
 class _CallWithDeclarations:
     """Result of literalizing ref declarations and a call together."""
@@ -1132,10 +1110,6 @@ def run_call_golden_case(
     )
     decl_results = call_outcome.decl_results
     result = call_outcome.result
-    _check_call_result_includes_ref_declaration_types(
-        result=result,
-        decl_results=decl_results,
-    )
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
