@@ -478,14 +478,23 @@ def test_gleam_call_stub_more_than_26_parameters() -> None:
         parameter_names=parameter_names,
         wrap_in_file=True,
     )
-    assert (
-        "pub fn process("
-        "_p0: a, _p1: b, _p2: c, _p3: d, _p4: e, _p5: f, _p6: g, "
-        "_p7: h, _p8: i, _p9: j, _p10: k, _p11: l, _p12: m, _p13: n, "
-        "_p14: o, _p15: p, _p16: q, _p17: r, _p18: s, _p19: t, "
-        "_p20: u, _p21: v, _p22: w, _p23: x, _p24: y, _p25: z, "
-        "_p26: a1) -> Nil { Nil }"
-    ) in result.code
+    signature_params = ", ".join(
+        f"_p{i}: {chr(ord('a') + i)}" for i in range(26)
+    )
+    call_args = ", ".join(f"GInt({i})" for i in range(27))
+    expected = textwrap.dedent(
+        text=f"""\
+        pub type GVal {{
+          GInt(Int)
+          GList(List(GVal))
+        }}
+        pub fn process({signature_params}, _p26: a1) -> Nil {{ Nil }}
+
+        pub fn main() {{
+          process({call_args})
+        }}""",
+    )
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
@@ -527,9 +536,35 @@ def test_elm_call_wrap_in_file_multiline_dict_arg() -> None:
         wrap_in_file=True,
         collection_layout=CollectionLayout.MULTILINE,
     )
-    assert "        _ =     (" not in result.code
-    assert "        _ = process(EDict [" in result.code
-    assert '            ("a", EInt 1),' in result.code
+    expected = textwrap.dedent(
+        text="""\
+        module Check exposing (..)
+
+
+        process : ( a, b ) -> ()
+        process _ = ()
+        type Val
+            = EInt Int
+            | EStr String
+            | EList (List Val)
+            | EDict (List ( String, Val ))
+
+
+        main : Program () () Never
+        main =
+            let
+                _ = process(EDict [
+                    ("a", EInt 1),
+                    ("b", EInt 2)
+                    ], EInt 42)
+            in
+            Platform.worker
+                { init = \\_ -> ( (), Cmd.none )
+                , update = \\_ m -> ( m, Cmd.none )
+                , subscriptions = \\_ -> Sub.none
+                }""",
+    )
+    assert result.code == expected
 
 
 def test_elm_wrap_in_file_preserves_empty_lines() -> None:
@@ -617,7 +652,28 @@ def test_elm_wrap_calls_with_declarations_multiline_continuation() -> None:
         calls='process(EDict [\n    ("a", EInt 1),\n    ("b", EInt 2)\n    ])',
         body_preamble=(),
     )
-    assert "        _ =     (" not in wrapped
-    assert "        _ = process(EDict [" in wrapped
-    assert '            ("a", EInt 1),' in wrapped
-    assert "        my_var = EInt 42" in wrapped
+    expected = textwrap.dedent(
+        text="""\
+        module Check exposing (..)
+
+
+
+
+
+        main : Program () () Never
+        main =
+            let
+                my_var : Val
+                my_var = EInt 42
+                _ = process(EDict [
+                    ("a", EInt 1),
+                    ("b", EInt 2)
+                    ])
+            in
+            Platform.worker
+                { init = \\_ -> ( (), Cmd.none )
+                , update = \\_ m -> ( m, Cmd.none )
+                , subscriptions = \\_ -> Sub.none
+                }""",
+    )
+    assert wrapped == expected
