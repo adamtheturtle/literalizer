@@ -2,7 +2,7 @@ from std.utils.variant import Variant
 comptime Value = Variant[String, Int, Bool]
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    def fetch(self, payload: Value):
+    def fetch(self, payload: Value) -> object:
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):

@@ -411,7 +411,7 @@ def _mojo_call_stub(
 def _mojo_call_preamble_stub(
     parts: Sequence[str],
     params: Sequence[str],
-    _stub_return: StubReturn,
+    stub_return: StubReturn,
     args: Sequence[Value],
     /,
     *,
@@ -427,17 +427,30 @@ def _mojo_call_preamble_stub(
     Mojo type (a scalar, a recursive ``List[...]``, or a homogeneous
     ``Dict[String, ...]``), and the generic
     ``[*Ts: AnyType](*args: *Ts)`` form otherwise.
+
+    When *stub_return* is :attr:`StubReturn.VALUE` (the call result feeds
+    a surrounding ``call_transform`` wrapper), the inner stub is given
+    an explicit return-type annotation so the outer call has a defined
+    type to consume.  No per-call inference is available (the transform
+    is a plain string wrapper), so we use ``object`` as a documented
+    placeholder that compiles against any consumer.
     """
     typed_params = _mojo_typed_param_list(
         params=params,
         arg_values=args,
         heterogeneous_value_type=heterogeneous_value_type,
     )
+    return_suffix = " -> object" if stub_return is StubReturn.VALUE else ""
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)
-            return (f"def {parts[0]}({param_list}):\n{indent}pass",)
-        return (f"def {parts[0]}[*Ts: AnyType](*args: *Ts):\n{indent}pass",)
+            return (
+                f"def {parts[0]}({param_list}){return_suffix}:\n{indent}pass",
+            )
+        return (
+            f"def {parts[0]}[*Ts: AnyType](*args: *Ts)"
+            f"{return_suffix}:\n{indent}pass",
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -445,12 +458,13 @@ def _mojo_call_preamble_stub(
     if typed_params is not None:
         method_param_list = ", ".join(("self", *typed_params))
         method_stub = (
-            f"{indent}def {method}({method_param_list}):\n{indent}{indent}pass"
+            f"{indent}def {method}({method_param_list})"
+            f"{return_suffix}:\n{indent}{indent}pass"
         )
     else:
         method_stub = (
-            f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts):\n"
-            f"{indent}{indent}pass"
+            f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts)"
+            f"{return_suffix}:\n{indent}{indent}pass"
         )
     if not fields:
         type_name = f"_{root.capitalize()}Type"
