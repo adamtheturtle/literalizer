@@ -295,7 +295,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],
-        call_transform=lambda c: c,
+        call_transform=None,
         transform_stub_names=[],
         per_element=True,
         call_style_type=None,
@@ -753,13 +753,6 @@ def _expected_call_shape_exception(
     if (
         config.case_dir_name in _CASES_REQUIRING_STANDALONE_WRAPPED_COMMENTS
         and not lang_cls.supports_standalone_comments_in_wrapped_calls
-    ):
-        return UnsupportedCallShapeError
-    _probe = "__probe__"
-    if (
-        config.call_transform is not None
-        and config.call_transform(_probe) == _probe
-        and not lang_cls.allows_bare_call_statement
     ):
         return UnsupportedCallShapeError
     return None

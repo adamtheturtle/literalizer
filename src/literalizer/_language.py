@@ -598,7 +598,6 @@ class LanguageCls(type):
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
-    allows_bare_call_statement: bool
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
@@ -1340,16 +1339,6 @@ class Language(Protocol):
         parameters.  When ``False``,
         :func:`~literalizer.literalize_call` rejects empty
         ``parameter_names`` with
-        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
-    def allows_bare_call_statement(self) -> bool:
-        """Whether the language permits a bare call expression as a
-        top-level statement.  When ``False``,
-        :func:`~literalizer.literalize_call` rejects calls that would
-        render without a surrounding ``call_transform`` wrapper with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
         ...  # pylint: disable=unnecessary-ellipsis

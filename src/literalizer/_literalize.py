@@ -2947,18 +2947,6 @@ def _validate_call_preconditions(
                 "zero-parameter calls have no representation in this language"
             ),
         )
-    _probe = "__probe__"
-    if (
-        call_transform is not None
-        and call_transform(_probe) == _probe
-        and not language.allows_bare_call_statement
-    ):
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                "bare call statements have no representation in this language"
-            ),
-        )
     if (
         not language.supports_inline_multiline_dict_args
         and _has_inline_multiline_dict_arg(

@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-static id process(id _a0) { (void)_a0; return nil; }
+static void process(id _a0) { (void)_a0; }
 int main(void) {
 @autoreleasepool {
 process(@"hello");
