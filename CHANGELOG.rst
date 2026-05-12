@@ -8,7 +8,7 @@ Next
   ``call_transform`` values on Ada, Fortran, and SystemVerilog.  Bare
   procedure-call statements (``Process(x);``, ``call process(x)``,
   ``process(x);``) are valid in all three languages, so the prior
-  rejection was modelling a constraint that does not exist.  The
+  rejection encoded a constraint that does not exist.  The
   ``Language.allows_bare_call_statement`` flag introduced alongside that
   check has been removed.
 
