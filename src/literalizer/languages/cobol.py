@@ -341,7 +341,6 @@ class Cobol(metaclass=LanguageCls):
     supports_zero_parameter_calls = False
     supports_inline_multiline_dict_args = False
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = False
     supports_module_name = False
 
     class DateFormats(enum.Enum):
