@@ -805,9 +805,7 @@ class Elm(metaclass=LanguageCls):
         if not variable_name:
             let_lines: list[str] = []
             for line in content.split(sep="\n"):
-                if not line:  # pragma: no cover
-                    let_lines.append("")
-                elif not line[0].isspace():
+                if not line[0].isspace():
                     let_lines.append(f"{let_indent}_ = {line}")
                 else:
                     let_lines.append(f"{let_indent}{line}")
@@ -836,15 +834,11 @@ class Elm(metaclass=LanguageCls):
         let_indent = self.indent * 2
         let_lines: list[str] = []
         for decl in declarations:
-            for line in decl.split(sep="\n"):
-                if not line:  # pragma: no cover
-                    let_lines.append("")
-                else:
-                    let_lines.append(f"{let_indent}{line}")
+            let_lines.extend(
+                f"{let_indent}{line}" for line in decl.split(sep="\n")
+            )
         for line in calls.split(sep="\n"):
-            if not line:  # pragma: no cover
-                let_lines.append("")
-            elif not line[0].isspace():
+            if not line[0].isspace():
                 let_lines.append(f"{let_indent}_ = {line}")
             else:
                 let_lines.append(f"{let_indent}{line}")
