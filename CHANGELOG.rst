@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- The PureScript, Roc, and Elm wrapped-call indenters no longer carry
+  defensive branches for blank or whitespace-leading lines.  These
+  helpers only ever receive single-line call expressions from
+  ``literalize_call`` (which uses :attr:`CollectionLayout.COMPACT` for
+  wrapped calls and rejects standalone comments in that path), so the
+  empty-line and continuation arms were unreachable via the golden
+  integration cases.  Four unit tests in ``tests/test_languages.py``
+  that drove the Elm helpers directly with constructed multi-line
+  input have been removed in favor of the existing golden-file
+  contract.
+
 - ``Mojo`` :func:`~literalizer.literalize_call` now supports refs nested
   inside dict literals and commented dict-literal call arguments.  The
   typed-stub work landed in #1972 made both shapes compile cleanly under

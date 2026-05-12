@@ -797,19 +797,18 @@ class Elm(metaclass=LanguageCls):
 
         When *variable_name* is empty (call mode), each call expression
         in *content* is bound via ``_ = …`` inside a ``let`` block so
-        the generated file is syntactically valid Elm.
+        the generated file is syntactically valid Elm.  *content* is
+        one single-line call expression per line: this is the only
+        shape ``literalize_call`` produces for Elm, which uses
+        :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
+        standalone comments in that path.
         """
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         if not variable_name:
-            let_lines: list[str] = []
-            for line in content.split(sep="\n"):
-                if not line:
-                    let_lines.append("")
-                elif not line[0].isspace():
-                    let_lines.append(f"{let_indent}_ = {line}")
-                else:
-                    let_lines.append(f"{let_indent}{line}")
+            let_lines = [
+                f"{let_indent}_ = {line}" for line in content.split(sep="\n")
+            ]
             return _elm_call_module(
                 preamble=preamble,
                 let_lines=let_lines,
@@ -829,7 +828,11 @@ class Elm(metaclass=LanguageCls):
         a ``let`` block so the generated file is a valid Elm module.
         Declarations are indented without a ``_ =`` prefix; call
         statements are bound via ``_ = …`` to satisfy Elm's requirement
-        that every ``let`` binding produces a value.
+        that every ``let`` binding produces a value.  *calls* is one
+        single-line call expression per line: this is the only shape
+        ``literalize_call`` produces for Elm, which uses
+        :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
+        standalone comments in that path.
         """
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
@@ -838,13 +841,9 @@ class Elm(metaclass=LanguageCls):
             let_lines.extend(
                 f"{let_indent}{line}" for line in decl.split(sep="\n")
             )
-        for line in calls.split(sep="\n"):
-            if not line:
-                let_lines.append("")
-            elif not line[0].isspace():
-                let_lines.append(f"{let_indent}_ = {line}")
-            else:
-                let_lines.append(f"{let_indent}{line}")
+        let_lines.extend(
+            f"{let_indent}_ = {line}" for line in calls.split(sep="\n")
+        )
         return _elm_call_module(
             preamble=preamble,
             let_lines=let_lines,
