@@ -490,7 +490,6 @@ ignore_names = [
     # ruamel.yaml configuration attributes
     "default_flow_style",
     "sort_base_mapping_type_on_output",
-    "reserved_identifiers",
 ]
 # Duplicate some of .gitignore
 exclude = [
