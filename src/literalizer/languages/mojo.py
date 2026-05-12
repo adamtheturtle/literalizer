@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never, cast
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -350,11 +350,15 @@ def _mojo_cross_call_scalar_wrap_ids(
     """
     if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
         return frozenset()
-    scalar_buckets = {
-        _mojo_variant_for_scalar(cast("Scalar", value)).type_name
+    slot_types = {
+        _value_to_mojo_type(
+            value,
+            heterogeneous_value_type=None,
+            wrap_ids=frozenset[int](),
+        )
         for value in slot_values
     }
-    if len(scalar_buckets) <= 1:
+    if len(slot_types) <= 1:
         return frozenset()
     return frozenset(id(value) for value in slot_values)
 
