@@ -468,8 +468,8 @@ def test_gleam_call_stub_more_than_26_parameters() -> None:
     ``a1`` for the next one in the generated stub signature.
     """
     parameter_names = [f"p{i}" for i in range(27)]
-    yaml_row = "\n".join(f"  - {i}" for i in range(27))
-    source = f"---\n-\n{yaml_row}\n"
+    yaml_row = "\n".join(f"  - {i}" for i in range(26))
+    source = f"---\n-\n{yaml_row}\n  - [100]\n"
     result = literalize_call(
         source=source,
         input_format=InputFormat.YAML,
@@ -481,7 +481,8 @@ def test_gleam_call_stub_more_than_26_parameters() -> None:
     signature_params = ", ".join(
         f"_p{i}: {chr(ord('a') + i)}" for i in range(26)
     )
-    call_args = ", ".join(f"GInt({i})" for i in range(27))
+    int_args = ", ".join(f"GInt({i})" for i in range(26))
+    call_args = f"{int_args}, GList([GInt(100)])"
     expected = textwrap.dedent(
         text=f"""\
         pub type GVal {{
