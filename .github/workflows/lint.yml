@@ -249,7 +249,10 @@ jobs:
           persist-credentials: false
       - name: Install gforth
         run: |-
-          sudo apt-get update
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends gforth
       - name: Lint Forth
         run: |-
@@ -265,7 +268,10 @@ jobs:
           persist-credentials: false
       - name: Install tcl
         run: |-
-          sudo apt-get update
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends tcl
       - name: Lint Tcl
         run: |-
@@ -281,7 +287,10 @@ jobs:
           persist-credentials: false
       - name: Install guile
         run: |-
-          sudo apt-get update
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends guile-3.0
       - name: Lint Scheme
         run: |-
@@ -301,7 +310,10 @@ jobs:
           persist-credentials: false
       - name: Install octave
         run: |-
-          sudo apt-get update
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends octave
       - name: Lint Matlab
         run: |-
@@ -317,7 +329,10 @@ jobs:
           persist-credentials: false
       - name: Install Perl deps
         run: |-
-          sudo apt-get update
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends cpanminus
           sudo cpanm --notest DateTime
       - name: Lint Perl
@@ -482,8 +497,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Install apt packages for Ada
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends
-          gnat
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends gnat
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -786,7 +805,12 @@ jobs:
           clj-kondo: latest
           bb: latest
       - name: Install Groovy
-        run: sudo apt-get install -y --no-install-recommends groovy
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends groovy
 
       - name: Lint Clojure
         run: |-
