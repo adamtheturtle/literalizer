@@ -424,8 +424,8 @@ def test_indent_golden_file(
     until #2087 most languages hard-coded their indentation in the
     ``wrap_in_file`` / preamble helpers.  Rendering ``bool_list`` with
     a three-space indent for every language pins down the result so a
-    future regression that re-hardcodes ``"    "`` (or two-space, or a
-    tab) cannot pass silently.
+    future regression that re-introduces a literal ``"    "`` (or
+    two-space, or a tab) cannot pass silently.
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
