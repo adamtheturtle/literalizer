@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import json
 import re
+import textwrap
 from typing import ClassVar
 
 import pytest
@@ -547,23 +548,24 @@ def test_elm_wrap_in_file_preserves_empty_lines() -> None:
         variable_name="",
         body_preamble=(),
     )
-    expected = (
-        "module Check exposing (..)\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "main : Program () () Never\n"
-        "main =\n"
-        "    let\n"
-        "\n"
-        "    in\n"
-        "    Platform.worker\n"
-        "        { init = \\_ -> ( (), Cmd.none )\n"
-        "        , update = \\_ m -> ( m, Cmd.none )\n"
-        "        , subscriptions = \\_ -> Sub.none\n"
-        "        }"
+    expected = textwrap.dedent(
+        text="""\
+        module Check exposing (..)
+
+
+
+
+
+        main : Program () () Never
+        main =
+            let
+
+            in
+            Platform.worker
+                { init = \\_ -> ( (), Cmd.none )
+                , update = \\_ m -> ( m, Cmd.none )
+                , subscriptions = \\_ -> Sub.none
+                }"""
     )
     assert wrapped == expected
 
@@ -579,23 +581,24 @@ def test_elm_wrap_calls_with_declarations_preserves_empty_lines() -> None:
         calls="",
         body_preamble=(),
     )
-    expected = (
-        "module Check exposing (..)\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "\n"
-        "main : Program () () Never\n"
-        "main =\n"
-        "    let\n"
-        "\n"
-        "    in\n"
-        "    Platform.worker\n"
-        "        { init = \\_ -> ( (), Cmd.none )\n"
-        "        , update = \\_ m -> ( m, Cmd.none )\n"
-        "        , subscriptions = \\_ -> Sub.none\n"
-        "        }"
+    expected = textwrap.dedent(
+        text="""\
+        module Check exposing (..)
+
+
+
+
+
+        main : Program () () Never
+        main =
+            let
+
+            in
+            Platform.worker
+                { init = \\_ -> ( (), Cmd.none )
+                , update = \\_ m -> ( m, Cmd.none )
+                , subscriptions = \\_ -> Sub.none
+                }"""
     )
     assert wrapped == expected
 
