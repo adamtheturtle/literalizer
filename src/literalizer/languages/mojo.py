@@ -183,7 +183,7 @@ def _gather_mojo_call_slots(
 @beartype
 def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
     """Return ``True`` when every value at this slot is a scalar."""
-    return all(not isinstance(v, list | dict) for v in slot_values)
+    return all(not isinstance(v, list | dict | set) for v in slot_values)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -193,13 +193,11 @@ class _MojoSlotSignature:
     ``known_types`` is the frozenset of concrete Mojo type strings
     resolved at this slot across calls; ``None`` entries (unresolvable
     values) are dropped, so a slot whose only values are unresolvable
-    has an empty ``known_types``.  ``all_scalars`` is ``True`` when
-    every per-call value at this slot is a scalar (not a list or dict).
+    has an empty ``known_types``.
     """
 
     name: str
     known_types: frozenset[str]
-    all_scalars: bool
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -245,9 +243,8 @@ def _mojo_compute_slot_signatures(
     :exc:`HeterogeneousScalarCollectionError` so the call-stub path
     refuses input it cannot represent; ``VARIANT`` (signaled by a
     non-``None`` ``heterogeneous_value_type``) emits the configured
-    Variant alias as the slot type when every per-call value at the
-    divergent slot is a scalar, and falls back to the generic stub
-    when the slot mixes lists, dicts, or other shapes.
+    Variant alias as the slot type regardless of whether the divergent
+    values are scalars, lists, or a mix of the two.
 
     The ``slots`` field exposes the per-slot ``known_types`` set and
     ``all_scalars`` flag so future callers (e.g. a body-preamble
@@ -283,26 +280,16 @@ def _mojo_compute_slot_signatures(
         known_types: frozenset[str] = frozenset(
             t for t in slot_types if t is not None
         )
-        all_scalars = _slot_is_all_scalars(slot_values=slot_values)
         slot_signatures.append(
             _MojoSlotSignature(
                 name=name,
                 known_types=known_types,
-                all_scalars=all_scalars,
             ),
         )
-        if (
-            len(known_types) > 1
-            and heterogeneous_value_type is not None
-            and all_scalars
-        ):
+        if len(known_types) > 1 and heterogeneous_value_type is not None:
             typed.append(f"{name}: {heterogeneous_value_type}")
             continue
-        if (
-            not slot_types
-            or None in slot_types
-            or (len(known_types) > 1 and heterogeneous_value_type is not None)
-        ):
+        if not slot_types or None in slot_types:
             return _MojoSlotInfo(
                 typed_params=None,
                 slots=tuple(slot_signatures),
@@ -351,26 +338,29 @@ def _mojo_cross_call_scalar_wrap_ids(
 ) -> frozenset[int]:
     """Return ids of scalars in a cross-call divergent VARIANT slot.
 
-    When *slot_values* contains scalars whose Mojo types diverge across
-    calls, return a ``frozenset`` of their ``id()`` so the call-argument
-    formatter can wrap each as ``Value(...)``.  Returns an empty
-    ``frozenset`` for homogeneous slots and slots that mix scalars
-    with lists / dicts (those fall back to the generic stub and need
-    no wrap).
+    When *slot_values* are all scalars whose Mojo Variant buckets
+    diverge across calls, return a ``frozenset`` of their ``id()`` so
+    the call-argument formatter wraps each as ``Value(...)``.  Returns
+    an empty ``frozenset`` for empty slots, homogeneous slots, and
+    slots that mix scalars with lists, dicts, or sets — Mojo can
+    construct the ``Variant`` implicitly from a moved typed variable
+    in those cases, and an inline list / dict literal cannot be wrapped
+    by ``Value(...)`` without an intermediate typed declaration that
+    the call-argument formatter does not synthesize.
     """
     if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
         return frozenset()
     slot_types = {
         _value_to_mojo_type(
-            v,
+            value,
             heterogeneous_value_type=None,
-            wrap_ids=frozenset(),
+            wrap_ids=frozenset[int](),
         )
-        for v in slot_values
+        for value in slot_values
     }
     if len(slot_types) <= 1:
         return frozenset()
-    return frozenset(id(v) for v in slot_values)
+    return frozenset(id(value) for value in slot_values)
 
 
 def _mojo_init_expr(parts: Sequence[str]) -> str:
@@ -686,6 +676,54 @@ def _collect_variant_alternatives_from_data(data: Value, /) -> tuple[str, ...]:
 
 
 @beartype
+def _collect_variant_alternatives_from_slots(
+    data: Value,
+    /,
+    *,
+    heterogeneous_value_type: str,
+) -> tuple[str, ...]:
+    """Return Mojo ``Variant`` alternatives from cross-call divergent
+    slots.
+
+    Treats *data* as a sequence of per-element call argument lists and
+    collects Mojo type names from slots whose resolved types diverge
+    across the per-element calls (e.g. ``List[Int]`` vs ``List[String]``
+    in slot 0, or ``Int`` vs ``List[Int]``).  Returns an empty tuple
+    when *data* is not a list, contains no divergent slot, or every
+    divergent slot has an unresolvable value.  The cross-call analysis
+    runs unconditionally: a whole-call ``data`` whose top-level shape
+    happens to look like a per-element call list will not produce a
+    false positive because data-driven scalar-bucket detection covers
+    every shape this analysis can flag.
+    """
+    match data:
+        case list():
+            slots = _gather_mojo_call_slots(arg_values=data)
+        case _:
+            return ()
+    alternatives: list[str] = []
+    seen: set[str] = set()
+    for slot_values in slots:
+        slot_types: list[str] = []
+        for value in slot_values:
+            mojo_type = _value_to_mojo_type(
+                value,
+                heterogeneous_value_type=heterogeneous_value_type,
+                wrap_ids=frozenset[int](),
+            )
+            if mojo_type is not None:
+                slot_types.append(mojo_type)
+        if len(set(slot_types)) <= 1:
+            continue
+        for mojo_type in slot_types:
+            if mojo_type in seen:
+                continue
+            seen.add(mojo_type)
+            alternatives.append(mojo_type)
+    return tuple(alternatives)
+
+
+@beartype
 def _render_variant_preamble(
     alternatives: Sequence[str],
     /,
@@ -713,10 +751,25 @@ def _build_variant_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the ``Variant`` import + ``comptime`` declaration for
-        *data*.
+        *data*.  Unions data-driven scalar alternatives with cross-call
+        divergent-slot alternatives so call sites whose reference
+        arguments carry diverging list or mixed shapes contribute their
+        slot types (e.g. ``List[Int]``, ``List[String]``) to the alias.
         """
+        data_alternatives = _collect_variant_alternatives_from_data(data)
+        slot_alternatives = _collect_variant_alternatives_from_slots(
+            data,
+            heterogeneous_value_type=variant_name,
+        )
+        seen: set[str] = set()
+        merged: list[str] = []
+        for alternative in data_alternatives + slot_alternatives:
+            if alternative in seen:
+                continue
+            seen.add(alternative)
+            merged.append(alternative)
         return _render_variant_preamble(
-            _collect_variant_alternatives_from_data(data),
+            tuple(merged),
             variant_name=variant_name,
         )
 

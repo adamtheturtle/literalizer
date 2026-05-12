@@ -1,6 +1,6 @@
 from std.utils.variant import Variant
-comptime Value = Variant[Bool, Int, Float64]
-def process[*Ts: AnyType](*args: *Ts):
+comptime Value = Variant[Bool, Int, Float64, List[Int]]
+def process(value: Value, count: Int):
     pass
 def main():
     var my_int = 1
