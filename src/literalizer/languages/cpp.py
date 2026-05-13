@@ -795,12 +795,12 @@ def _format_variable_declaration_placeholder(
     only to satisfy :class:`DeclarationStyleConfig`'s required
     ``formatter`` field.
     """
-    msg = (
+    msg = (  # pragma: no cover
         "Cpp AUTO requires the type-aware formatter built by "
         "build_formatter; the DeclarationStyleConfig formatter is a "
         "placeholder and must not be called directly."
     )
-    raise NotImplementedError(msg)
+    raise NotImplementedError(msg)  # pragma: no cover
 
 
 @beartype
