@@ -32,7 +32,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run --extra=dev pytest -s -vvv -n auto --cov-fail-under 100 --cov=src/ --cov=tests --ignore=tests/benchmarks .
+          uv run --extra=dev pytest -s -vvv --cov-fail-under 100 --cov=src/ --cov=tests --ignore=tests/benchmarks .
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
