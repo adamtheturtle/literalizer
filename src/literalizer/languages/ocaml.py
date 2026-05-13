@@ -81,9 +81,7 @@ from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
 @beartype
-def _apply_ocaml_entry(  # noqa: PLR0911
-    original: Value, formatted: str, prefix: str
-) -> str:
+def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
@@ -91,32 +89,19 @@ def _apply_ocaml_entry(  # noqa: PLR0911
         case bool():
             return formatted
         case int():
-            needs_parens = formatted.startswith("-")
-            return (
-                f"{prefix}Int ({formatted})"
-                if needs_parens
-                else f"{prefix}Int {formatted}"
-            )
+            tag = "Int"
         case float():
-            negative = formatted.startswith("-")
-            return (
-                f"{prefix}Float ({formatted})"
-                if negative
-                else f"{prefix}Float {formatted}"
-            )
+            tag = "Float"
         case str() | bytes():
-            return f"{prefix}Str {formatted}"
+            tag = "Str"
         case datetime.datetime() if formatted.lstrip("-").isdigit():
-            needs_parens = formatted.startswith("-")
-            return (
-                f"{prefix}Int ({formatted})"
-                if needs_parens
-                else f"{prefix}Int {formatted}"
-            )
+            tag = "Int"
         case datetime.date() if formatted.startswith('"'):
-            return f"{prefix}Str {formatted}"
+            tag = "Str"
         case _:
             return formatted
+    literal = f"({formatted})" if formatted.startswith("-") else formatted
+    return f"{prefix}{tag} {literal}"
 
 
 def _build_ocaml_entry_formatter(
