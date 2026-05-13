@@ -142,21 +142,42 @@ def _check_default_type_tables() -> None:
     value must differ from that field's own default; either kind of
     drift would silently break variant coverage.
     """
-    tables: tuple[tuple[str, dict[literalizer.LanguageCls, str]], ...] = (
-        ("default_set_element_type", DEFAULT_SET_ELEMENT_TYPES),
-        ("default_sequence_element_type", DEFAULT_SEQUENCE_ELEMENT_TYPES),
-        ("default_dict_value_type", DEFAULT_DICT_VALUE_TYPES),
-        ("default_dict_key_type", DEFAULT_DICT_KEY_TYPES),
-        ("default_ordered_map_value_type", DEFAULT_ORDERED_MAP_VALUE_TYPES),
+    tables: tuple[
+        tuple[
+            str,
+            dict[literalizer.LanguageCls, str],
+            Callable[[literalizer.LanguageCls], bool],
+        ],
+        ...,
+    ] = (
+        (
+            "default_set_element_type",
+            DEFAULT_SET_ELEMENT_TYPES,
+            lambda cls: cls.supports_default_set_element_type,
+        ),
+        (
+            "default_sequence_element_type",
+            DEFAULT_SEQUENCE_ELEMENT_TYPES,
+            lambda cls: cls.supports_default_sequence_element_type,
+        ),
+        (
+            "default_dict_value_type",
+            DEFAULT_DICT_VALUE_TYPES,
+            lambda cls: cls.supports_default_dict_value_type,
+        ),
+        (
+            "default_dict_key_type",
+            DEFAULT_DICT_KEY_TYPES,
+            lambda cls: cls.supports_default_dict_key_type,
+        ),
+        (
+            "default_ordered_map_value_type",
+            DEFAULT_ORDERED_MAP_VALUE_TYPES,
+            lambda cls: cls.supports_default_ordered_map_value_type,
+        ),
     )
-    for field_name, table in tables:
-        expected: set[literalizer.LanguageCls] = set()
-        for cls in ALL_LANGUAGES:
-            cls_fields: dict[str, object] = getattr(
-                cls, "__dataclass_fields__", {}
-            )
-            if field_name in cls_fields:
-                expected.add(cls)
+    for field_name, table, supports in tables:
+        expected = {cls for cls in ALL_LANGUAGES if supports(cls)}
         assert set(table.keys()) == expected, field_name  # noqa: S101
         for lang_cls, override in table.items():
             fields_attr: dict[str, dataclasses.Field[object]] = getattr(
