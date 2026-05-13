@@ -856,25 +856,20 @@ def _expected_call_shape_exception(
     this (lang, config) pair, or ``None`` if it should produce output.
     """
     parameter_count = len(config.parameter_names)
-    if parameter_count == 0 and not lang_cls.supports_zero_parameter_calls:
-        return UnsupportedCallShapeError
-    if (
-        config.requires_inline_multiline_dict_args
-        and not lang_cls.supports_inline_multiline_dict_args
-    ):
-        return UnsupportedCallShapeError
-    if (
-        config.requires_call_returns_expression
-        and not lang_cls.call_returns_expression
-    ):
-        return UnsupportedCallShapeError
-    if (
-        config.requires_standalone_wrapped_comments
-        and not lang_cls.supports_standalone_comments_in_wrapped_calls
-    ):
-        return UnsupportedCallShapeError
+    max_params = lang_cls.max_call_parameters
     innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
+    unsupported_signals = (
+        parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
+        max_params is not None and parameter_count > max_params,
+        config.requires_inline_multiline_dict_args
+        and not lang_cls.supports_inline_multiline_dict_args,
+        config.requires_call_returns_expression
+        and not lang_cls.call_returns_expression,
+        config.requires_standalone_wrapped_comments
+        and not lang_cls.supports_standalone_comments_in_wrapped_calls,
+        innermost_target_function in lang_cls.reserved_identifiers,
+    )
+    if any(unsupported_signals):
         return UnsupportedCallShapeError
     return None
 

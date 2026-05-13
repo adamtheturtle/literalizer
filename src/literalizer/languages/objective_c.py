@@ -186,6 +186,11 @@ def _objc_format_call_target(parts: Sequence[str], /) -> str:
     return ".".join((_objc_global_root(parts[0]), *parts[1:]))
 
 
+# Maximum parameter count of any existing call case; stubs above this
+# get a ``// NOLINTNEXTLINE`` for ``bugprone-easily-swappable-parameters``.
+_SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
+
+
 def _objc_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -221,8 +226,20 @@ def _objc_call_stub(
     return_stmt = " return nil;" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
+    # Long uniform-typed parameter lists trip clang-tidy's
+    # ``bugprone-easily-swappable-parameters`` check past its
+    # name-suffix-dissimilarity silencing heuristic.  The stub is
+    # generated, so the warning is not actionable.  Suppress it on
+    # stubs whose parameter count exceeds anything the existing call
+    # cases use, to avoid touching shorter-stub goldens.
+    nolint = (
+        ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
+        if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD
+        else ()
+    )
     if len(parts) == 1:
         return (
+            *nolint,
             f"static {return_keyword} {parts[0]}({stub_signature}) "
             f"{stub_body}",
         )
@@ -233,6 +250,7 @@ def _objc_call_stub(
     if not fields:
         type_name = f"{root}Type_"
         return (
+            *nolint,
             f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
             f"struct {type_name} "
             f"{{ {return_keyword} (*{method})({proto}); }};",
@@ -240,6 +258,7 @@ def _objc_call_stub(
             f"{{ .{method} = {stub_fn} }};",
         )
     lines: list[str] = [
+        *nolint,
         f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
     inner_type = f"{fields[-1]}Type_"

@@ -603,6 +603,7 @@ class LanguageCls(type):
     supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_zero_parameter_calls: bool
+    max_call_parameters: int | None
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
     supports_module_name: bool
@@ -618,6 +619,19 @@ class LanguageCls(type):
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
     call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
+
+    def __init__(
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, object],
+        /,
+        **kwargs: object,
+    ) -> None:
+        """Apply class-attribute defaults that not every language sets."""
+        super().__init__(name, bases, namespace, **kwargs)
+        if "max_call_parameters" not in namespace:
+            cls.max_call_parameters = None
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -1381,6 +1395,16 @@ class Language(Protocol):
         parameters.  When ``False``,
         :func:`~literalizer.literalize_call` rejects empty
         ``parameter_names`` with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def max_call_parameters(self) -> int | None:
+        """Maximum parameter count the language's call syntax accepts,
+        or ``None`` for no fixed limit.  When set,
+        :func:`~literalizer.literalize_call` rejects ``parameter_names``
+        longer than this with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
