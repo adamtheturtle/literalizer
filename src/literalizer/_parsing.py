@@ -18,6 +18,7 @@ from ruamel.yaml.comments import (
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
+from tomlkit.toml_document import TOMLDocument
 
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
@@ -59,6 +60,8 @@ class _ParsedInput:
     no round-trip metadata and must not be passed to
     ``resolve_yaml_comments``.
     """
+    toml_doc: TOMLDocument | None
+    """The parsed tomlkit document, or ``None`` for non-TOML inputs."""
 
 
 @beartype
@@ -177,6 +180,7 @@ def _parse_json(*, source: str) -> _ParsedInput:
         data=data,
         raw_data=data,
         yaml_needs_comment_resolve=False,
+        toml_doc=None,
     )
 
 
@@ -192,6 +196,7 @@ def _parse_json5(*, source: str) -> _ParsedInput:
         data=data,
         raw_data=data,
         yaml_needs_comment_resolve=False,
+        toml_doc=None,
     )
 
 
@@ -271,6 +276,7 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
             data=data,
             raw_data=raw_data,
             yaml_needs_comment_resolve=True,
+            toml_doc=None,
         )
 
     safe_yaml = _get_safe_yaml()
@@ -284,6 +290,7 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
         data=data,
         raw_data=plain_data,
         yaml_needs_comment_resolve=False,
+        toml_doc=None,
     )
 
 
@@ -301,6 +308,7 @@ def _parse_toml(*, source: str) -> _ParsedInput:
         data=toml_data,
         raw_data=toml_doc,
         yaml_needs_comment_resolve=False,
+        toml_doc=toml_doc,
     )
 
 

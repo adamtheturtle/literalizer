@@ -9,7 +9,6 @@ from typing import Final, assert_never
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
-from tomlkit.toml_document import TOMLDocument
 
 from literalizer._checks import check_data
 from literalizer._comments import (
@@ -1760,10 +1759,10 @@ def _literalize_pre_form(
             result = resolved.result
         case InputFormat.TOML:
             comment_cfg = language.comment_config
-            if not isinstance(parsed.raw_data, TOMLDocument):
+            if parsed.toml_doc is None:
                 raise NotImplementedError
             resolved = resolve_toml_comments(
-                toml_doc=parsed.raw_data,
+                toml_doc=parsed.toml_doc,
                 base=result,
                 language=language,
                 comment_prefix=comment_cfg.prefix,
