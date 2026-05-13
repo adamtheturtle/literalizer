@@ -104,24 +104,25 @@ def _escape_nested(text: str) -> str:
 
 
 @beartype
-def _format_sv_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
+def _format_sv_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in a named ``_VVal`` struct literal."""
     match original:
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            return f'_VVal\'{{tag: _VVAL_INT, i: {formatted}, r: 0.0, s: ""}}'
-        case str() | bytes() | datetime.date():
-            return f"_VVal'{{tag: _VVAL_STR, i: 0, r: 0.0, s: {formatted}}}"
         case bool():
             return formatted
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
         case int():
-            return f'_VVal\'{{tag: _VVAL_INT, i: {formatted}, r: 0.0, s: ""}}'
+            payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
         case float():
-            return f'_VVal\'{{tag: _VVAL_REAL, i: 0, r: {formatted}, s: ""}}'
+            payload = f'_VVAL_REAL, i: 0, r: {formatted}, s: ""'
+        case str() | bytes() | datetime.date():
+            payload = f"_VVAL_STR, i: 0, r: 0.0, s: {formatted}"
         case list() | dict() | set():
             escaped = _escape_nested(text=formatted)
-            return f'_VVal\'{{tag: _VVAL_STR, i: 0, r: 0.0, s: "{escaped}"}}'
+            payload = f'_VVAL_STR, i: 0, r: 0.0, s: "{escaped}"'
         case _:
             return formatted
+    return f"_VVal'{{tag: {payload}}}"
 
 
 @beartype
