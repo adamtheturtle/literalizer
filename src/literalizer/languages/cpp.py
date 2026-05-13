@@ -783,8 +783,8 @@ class _CppDeclarationStyleConfig:
 
     Unlike :class:`DeclarationStyleConfig`, this carries no
     ``formatter`` slot: Cpp builds its declaration formatter
-    per-instance via :meth:`Cpp.DeclarationStyles.build_formatter`
-    so it can close over the chosen date/datetime ``type_produced``.
+    per-instance in :attr:`Cpp.format_variable_declaration` so it can
+    close over the chosen date/datetime ``type_produced``.
     """
 
     supports_redefinition: bool
@@ -1079,36 +1079,6 @@ class Cpp(metaclass=LanguageCls):
         """Declaration style options."""
 
         AUTO = _CppDeclarationStyleConfig(supports_redefinition=True)
-
-        def build_formatter(
-            self,
-            *,
-            date_type: type,
-            datetime_type: type,
-        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-            """Return a formatter bound to the date/datetime
-            ``type_produced`` for this language instance.
-            """
-
-            def _formatter(
-                name: str,
-                value: str,
-                data: Value,
-                modifiers: frozenset[enum.Enum],
-            ) -> str:
-                """Adapt :func:`_format_variable_declaration` to the
-                positional formatter interface.
-                """
-                return _format_variable_declaration(
-                    name=name,
-                    value=value,
-                    data=data,
-                    modifiers=modifiers,
-                    date_type=date_type,
-                    datetime_type=datetime_type,
-                )
-
-            return _formatter
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -1676,11 +1646,34 @@ class Cpp(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.build_formatter(
-            date_type=self.date_format.value.type_produced,
-            datetime_type=self.datetime_format.value.type_produced,
-        )
+        """Callable that formats a new variable declaration.
+
+        Closes over the chosen date/datetime ``type_produced`` so the
+        ``const auto*`` vs ``auto`` decision can be driven by the parsed
+        :class:`Value` rather than the rendered text.
+        """
+        date_type = self.date_format.value.type_produced
+        datetime_type = self.datetime_format.value.type_produced
+
+        def _formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Adapt :func:`_format_variable_declaration` to the
+            positional formatter interface.
+            """
+            return _format_variable_declaration(
+                name=name,
+                value=value,
+                data=data,
+                modifiers=modifiers,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+
+        return _formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
