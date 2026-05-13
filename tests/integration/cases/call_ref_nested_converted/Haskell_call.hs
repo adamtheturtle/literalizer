@@ -14,5 +14,5 @@ myVar :: Val
 myVar = 42
 main :: IO ()
 main = do
-    _ <- process(HList [myVar, 42, HStr "static"])
+    _ <- process (HList [myVar, 42, HStr "static"])
     pure ()

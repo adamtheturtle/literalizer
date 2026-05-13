@@ -8,8 +8,8 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-process :: (Val, Val) -> IO ()
-process _ = return ()
+process :: Val -> Val -> IO ()
+process _ _ = return ()
 my_ints :: Val
 my_ints = HList [
     1,
@@ -25,7 +25,7 @@ my_empty :: Val
 my_empty = HList []
 main :: IO ()
 main = do
-    _ <- process(my_ints, 42)
-    _ <- process(my_strings, 7)
-    _ <- process(my_empty, 99)
+    _ <- process my_ints (42)
+    _ <- process my_strings (7)
+    _ <- process my_empty (99)
     pure ()

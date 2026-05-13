@@ -16,7 +16,7 @@ obj :: ObjType_
 obj = ObjType_ { api = ApiType_ { client = ClientType_ { post = \_ -> return () } } }
 main :: IO ()
 main = do
-    _ <- obj.api.client.post(HStr "hello")
-    _ <- obj.api.client.post(42)
-    _ <- obj.api.client.post(HBool True)
+    _ <- obj.api.client.post (HStr "hello")
+    _ <- obj.api.client.post (42)
+    _ <- obj.api.client.post (HBool True)
     pure ()

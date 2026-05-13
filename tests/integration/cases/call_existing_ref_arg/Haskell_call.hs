@@ -14,5 +14,5 @@ existing :: Val
 existing = 42
 main :: IO ()
 main = do
-    _ <- process(existing)
+    _ <- process existing
     pure ()

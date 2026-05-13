@@ -8,10 +8,10 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-process :: (Val, Val) -> IO ()
-process _ = return ()
+process :: Val -> Val -> IO ()
+process _ _ = return ()
 main :: IO ()
 main = do
-    _ <- process(1, 42)
-    _ <- process(2, 100)
+    _ <- process (1) (42)
+    _ <- process (2) (100)
     pure ()

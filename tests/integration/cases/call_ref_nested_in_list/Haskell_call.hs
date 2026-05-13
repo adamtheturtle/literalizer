@@ -16,6 +16,6 @@ my_other :: Val
 my_other = 7
 main :: IO ()
 main = do
-    _ <- process(HList [my_var, 42, HStr "static"])
-    _ <- process(HList [my_other, 7, HStr "label"])
+    _ <- process (HList [my_var, 42, HStr "static"])
+    _ <- process (HList [my_other, 7, HStr "label"])
     pure ()

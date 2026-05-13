@@ -4,6 +4,6 @@ process :: Val -> IO ()
 process _ = return ()
 main :: IO ()
 main = do
-    _ <- process(HNull)
-    _ <- process(HStr "hello")
+    _ <- process (HNull)
+    _ <- process (HStr "hello")
     pure ()

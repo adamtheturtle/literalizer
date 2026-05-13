@@ -4,5 +4,5 @@ process _ = return ()
 data Val = HStr String | HList [Val]
 main :: IO ()
 main = do
-    _ <- process(HStr "a\"b")
+    _ <- process (HStr "a\"b")
     pure ()

@@ -1243,11 +1243,11 @@ class Haskell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Haskell call style options."""
 
-        POSITIONAL = PositionalCallStyle()
         CURRIED = CommandCallStyle(
             arg_separator=" ",
             wrapped_call_template="{wrapper} ({inner})",
         )
+        POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
 
@@ -1396,7 +1396,7 @@ class Haskell(metaclass=LanguageCls):
     statement_terminator_style: StatementTerminatorStyles = (
         StatementTerminatorStyles.SEMICOLON
     )
-    call_style: CallStyles = CallStyles.POSITIONAL
+    call_style: CallStyles = CallStyles.CURRIED
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )

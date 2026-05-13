@@ -15,7 +15,7 @@ my_app :: My_appType_
 my_app = My_appType_ { http_client = Http_clientType_ { fetch = \_ -> return () } }
 main :: IO ()
 main = do
-    _ <- my_app.http_client.fetch(HStr "hello")
-    _ <- my_app.http_client.fetch(42)
-    _ <- my_app.http_client.fetch(HBool True)
+    _ <- my_app.http_client.fetch (HStr "hello")
+    _ <- my_app.http_client.fetch (42)
+    _ <- my_app.http_client.fetch (HBool True)
     pure ()
