@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
 from literalizer import (
     BothVariableForms,
     IdentifierCase,
@@ -43,6 +40,9 @@ from literalizer.languages import (
     Wren,
     Yaml,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
