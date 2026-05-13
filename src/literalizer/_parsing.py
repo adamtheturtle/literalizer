@@ -80,7 +80,7 @@ ParsedInput = ParsedPlain | ParsedYaml | ParsedToml
 
 
 @beartype
-def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
+def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
@@ -118,11 +118,7 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
                 microsecond=value.microsecond,
                 tzinfo=value.tzinfo,
             )
-        case datetime.date():
-            return value
-        case bytes():
-            return value
-        case None:
+        case datetime.date() | bytes() | None:
             return value
         case _ as unreachable:
             assert_never(unreachable)
