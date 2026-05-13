@@ -194,6 +194,26 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
+        # Four-parameter call.  Elm rejects this because Elm tuples
+        # cap at three elements and ``PositionalCallStyle`` emits a
+        # tuple at the call site, so a four-element tuple has no
+        # representation.
+        case_dir_name="call_quad_args",
+        target_function="process",
+        parameter_names=["a", "b", "c", "d"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_reserved_target",
         target_function="op",  # Reserved in SML.
         parameter_names=["value"],
@@ -770,10 +790,15 @@ def _expected_call_shape_exception(
     """Return the exception ``literalize_call`` is expected to raise for
     this (lang, config) pair, or ``None`` if it should produce output.
     """
-    if (
-        len(config.parameter_names) == 0
-        and not lang_cls.supports_zero_parameter_calls
-    ):
+    parameter_count = len(config.parameter_names)
+    max_call_parameters = lang_cls.max_call_parameters
+    parameter_count_unsupported = (
+        parameter_count == 0 and not lang_cls.supports_zero_parameter_calls
+    ) or (
+        max_call_parameters is not None
+        and parameter_count > max_call_parameters
+    )
+    if parameter_count_unsupported:
         return UnsupportedCallShapeError
     if (
         config.requires_inline_multiline_dict_args
