@@ -16,16 +16,14 @@ from literalizer._types import Value
 def _collect_value_types(*, data: Value) -> frozenset[type]:
     """Return the set of Python types present in *data*."""
     match data:
-        case ordereddict():
-            child_types: frozenset[type] = frozenset()
-            for v in data.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                child_types = child_types | _collect_value_types(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return frozenset({ordereddict, str}) | child_types
         case dict():
-            child_types = frozenset()
+            child_types: frozenset[type] = frozenset()
             for v in data.values():
                 child_types = child_types | _collect_value_types(data=v)
-            return frozenset({dict, str}) | child_types
+            container_type = (
+                ordereddict if isinstance(data, ordereddict) else dict
+            )
+            return frozenset({container_type, str}) | child_types
         case set():
             scalar_types: frozenset[type] = frozenset(
                 t
