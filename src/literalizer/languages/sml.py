@@ -138,7 +138,7 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
-def _apply_sml_entry_formatter(  # noqa: PLR0911
+def _apply_sml_entry_formatter(
     original: Value, formatted: str, prefix: str
 ) -> str:
     """Wrap a formatted entry in the appropriate SML ``datatype``
@@ -146,35 +146,36 @@ def _apply_sml_entry_formatter(  # noqa: PLR0911
     """
     match original:
         case bool():
-            return formatted
+            result = formatted
         case int():
             negative = formatted.startswith("~")
-            return (
+            result = (
                 f"{prefix}Int ({formatted})"
                 if negative
                 else f"{prefix}Int {formatted}"
             )
         case float():
             negative = formatted.startswith(("~", "("))
-            return (
+            result = (
                 f"{prefix}Real ({formatted})"
                 if negative
                 else f"{prefix}Real {formatted}"
             )
         case str() | bytes():
-            return f"{prefix}Str {formatted}"
+            result = f"{prefix}Str {formatted}"
         case datetime.datetime() if formatted.lstrip("-").isdigit():
             negative = formatted.startswith("-")
             literal = f"~{formatted[1:]}" if negative else formatted
-            return (
+            result = (
                 f"{prefix}Int ({literal})"
                 if negative
                 else f"{prefix}Int {literal}"
             )
         case datetime.date() if formatted.startswith('"'):
-            return f"{prefix}Str {formatted}"
+            result = f"{prefix}Str {formatted}"
         case _:
-            return formatted
+            result = formatted
+    return result
 
 
 def _build_sml_entry_formatter(

@@ -286,10 +286,14 @@ jobs:
         with:
           packages: guile-3.0
           version: 1.0
+      # Invoke ``guile-3.0`` directly rather than ``guile`` because
+      # cache-apt-pkgs-action does not replay the package's
+      # ``update-alternatives`` postinst on cache hit, so ``/usr/bin/guile``
+      # is missing.
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
-          xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
+          xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
@@ -302,11 +306,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # cache-apt-pkgs-action does not reliably restore octave's shared
+      # library dependencies to their system paths (liblapack.so.3 stays
+      # missing even with the package listed explicitly and ldconfig run
+      # after), so install via apt directly here.
       - name: Install octave
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: octave
-          version: 1.0
+        run: |-
+          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
+          # update so we only refresh the Ubuntu archive we actually install from.
+          sudo rm -f /etc/apt/sources.list.d/*.list
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends octave
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
@@ -811,10 +821,14 @@ jobs:
       # instead of cold-starting groovyc/groovy per file. A fresh
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
+      # Invoke the wrapper at /usr/share/groovy/bin/groovy directly rather
+      # than ``groovy`` because cache-apt-pkgs-action does not replay the
+      # package's ``update-alternatives`` postinst on cache hit, so
+      # ``/usr/bin/groovy`` is missing.
       - name: Lint Groovy
         run: |-
           find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy
-          groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
+          /usr/share/groovy/bin/groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
