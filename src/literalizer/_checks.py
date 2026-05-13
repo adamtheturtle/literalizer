@@ -452,6 +452,7 @@ def check_data(*, data: Value, spec: Language) -> None:
 
     seq_supports_het = spec.sequence_format_config.supports_heterogeneity
     dict_supports_het = spec.dict_supports_heterogeneous_values
+    set_supports_het = spec.set_format_config.supports_heterogeneity
     behavior = spec.heterogeneous_behavior
     if not behavior.skip_scalar_checks:
         if not seq_supports_het:
@@ -461,6 +462,8 @@ def check_data(*, data: Value, spec: Language) -> None:
             _check_mixed_dict_values(data=data)
         if not seq_supports_het:
             _check_mixed_list_values(data=data)
+        if not set_supports_het:
+            _check_heterogeneous_set(data=data)
     elif behavior.wrap_non_scalar is None:
         # A wrapping strategy that only wraps scalars cannot uniformly
         # represent a dict whose values span multiple type families and
@@ -476,6 +479,3 @@ def check_data(*, data: Value, spec: Language) -> None:
                 "represent"
             )
             raise MixedDictValuesError(msg)
-
-    if not spec.set_format_config.supports_heterogeneity:
-        _check_heterogeneous_set(data=data)
