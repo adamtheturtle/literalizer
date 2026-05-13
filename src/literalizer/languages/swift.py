@@ -83,7 +83,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -196,7 +196,81 @@ def _swift_call_stub(
 
 
 @beartype
-def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _swift_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Swift annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "Bool"
+        case int():
+            hint = "Int"
+        case float():
+            hint = "Double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case None:
+            hint = "Any?"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _swift_collapse(types: list[str]) -> str:
+    """Return a single Swift element type or ``Any`` / ``Any?``
+    fallback.
+    """
+    unique = list(dict.fromkeys(types))
+    match unique:
+        case [single]:
+            return single
+        case _ if "Any?" in unique:
+            return "Any?"
+        case _:
+            return "Any"
+
+
+@beartype
+def _swift_dict_hint(
+    *,
+    val_types: list[str],
+    is_empty: bool,
+    default_dict_value_type: str,
+) -> str:
+    """Derive a Swift dictionary type annotation."""
+    if is_empty:
+        return f"[String: {default_dict_value_type}]"
+    return f"[String: {_swift_collapse(types=val_types)}]"
+
+
+@beartype
+def _swift_list_hint(
+    *,
+    elem_types: list[str],
+    is_empty: bool,
+    sequence_is_tuple: bool,
+    default_sequence_element_type: str,
+) -> str:
+    """Derive a Swift array/tuple type annotation."""
+    if is_empty:
+        return (
+            "()" if sequence_is_tuple else f"[{default_sequence_element_type}]"
+        )
+    if sequence_is_tuple:
+        return f"({', '.join(elem_types)})"
+    return f"[{_swift_collapse(types=elem_types)}]"
+
+
+@beartype
+def _swift_type_hint(
     *,
     data: Value,
     date_hint: str,
@@ -217,57 +291,28 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
         sequence_is_tuple=sequence_is_tuple,
     )
     match data:
-        case bool():
-            return "Bool"
-        case int():
-            return "Int"
-        case float():
-            return "Double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Any?"
         case dict():
-            if not data:
-                return f"[String: {default_dict_value_type}]"
-            val_types = [recurse(data=v) for v in data.values()]
-            unique = list(dict.fromkeys(val_types))
-            match unique:
-                case [single]:
-                    val_type = single
-                case _ if "Any?" in unique:
-                    val_type = "Any?"
-                case _:
-                    val_type = "Any"
-            return f"[String: {val_type}]"
+            hint = _swift_dict_hint(
+                val_types=[recurse(data=v) for v in data.values()],
+                is_empty=not data,
+                default_dict_value_type=default_dict_value_type,
+            )
         case set():
-            return f"Set<{default_set_element_type}>"
+            hint = f"Set<{default_set_element_type}>"
         case list():
-            if not data:
-                if sequence_is_tuple:
-                    return "()"
-                return f"[{default_sequence_element_type}]"
-            if sequence_is_tuple:
-                elem_types = [recurse(data=e) for e in data]
-                return f"({', '.join(elem_types)})"
-            elem_types = [recurse(data=e) for e in data]
-            unique = list(dict.fromkeys(elem_types))
-            match unique:
-                case [single]:
-                    elem_type = single
-                case _ if "Any?" in unique:
-                    elem_type = "Any?"
-                case _:
-                    elem_type = "Any"
-            return f"[{elem_type}]"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = _swift_list_hint(
+                elem_types=[recurse(data=e) for e in data],
+                is_empty=not data,
+                sequence_is_tuple=sequence_is_tuple,
+                default_sequence_element_type=default_sequence_element_type,
+            )
+        case _:
+            hint = _swift_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype
@@ -910,14 +955,18 @@ class Swift(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -929,7 +978,7 @@ class Swift(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

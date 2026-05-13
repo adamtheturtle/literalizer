@@ -81,7 +81,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
 
@@ -282,7 +282,36 @@ def _java_common_element_type(
 
 
 @beartype
-def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _java_scalar_hint(
+    *,
+    data: Scalar,
+    int_type: str,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Java annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "boolean"
+        case int():
+            hint = int_type
+        case float():
+            hint = "double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case None:
+            hint = "Object"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _java_type_hint(
     *,
     data: Value,
     int_type: str,
@@ -293,82 +322,45 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
     set_outer: str,
 ) -> str:
     """Derive a Java type from *data*."""
+    common = functools.partial(
+        _java_common_element_type,
+        int_type=int_type,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        seq_is_array=seq_is_array,
+        dict_outer=dict_outer,
+        set_outer=set_outer,
+    )
     match data:
-        case bool():
-            return "boolean"
-        case int():
-            return int_type
-        case float():
-            return "double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Object"
         case dict():
-            val_type = _java_common_element_type(
-                elements=list(data.values()),
-                boxed=True,
-                int_type=int_type,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
-            )
+            val_type = common(elements=list(data.values()), boxed=True)
             outer = (
-                dict_outer
-                if not isinstance(data, (ordereddict, OrderedDict))
-                else "Map"
+                "Map"
+                if isinstance(data, (ordereddict, OrderedDict))
+                else dict_outer
             )
-            return f"{outer}<String, {val_type}>"
+            hint = f"{outer}<String, {val_type}>"
         case set():
-            elem_type = _java_common_element_type(
-                elements=list(data),
-                boxed=True,
-                int_type=int_type,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
-            )
-            return f"{set_outer}<{elem_type}>"
+            elem_type = common(elements=list(data), boxed=True)
+            hint = f"{set_outer}<{elem_type}>"
+        case list() if seq_is_array:
+            elem_type = common(elements=data, boxed=False)
+            # Java cannot create arrays of generic types, so fall back
+            # to Object[] when the element type is generic.
+            if "<" in elem_type:
+                elem_type = "Object"
+            hint = f"{elem_type}[]"
         case list():
-            if seq_is_array:
-                elem_type = _java_common_element_type(
-                    elements=data,
-                    boxed=False,
-                    int_type=int_type,
-                    date_hint=date_hint,
-                    datetime_hint=datetime_hint,
-                    seq_is_array=seq_is_array,
-                    dict_outer=dict_outer,
-                    set_outer=set_outer,
-                )
-                # Java cannot create arrays of generic types, so fall
-                # back to Object[] when the element type is generic.
-                if "<" in elem_type:
-                    elem_type = "Object"
-                return f"{elem_type}[]"
-            elem_type = _java_common_element_type(
-                elements=data,
-                boxed=True,
+            elem_type = common(elements=data, boxed=True)
+            hint = f"List<{elem_type}>"
+        case _:
+            hint = _java_scalar_hint(
+                data=data,
                 int_type=int_type,
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
             )
-            return f"List<{elem_type}>"
-        case _ as unreachable:
-            assert_never(unreachable)
+    return hint
 
 
 @beartype
@@ -1257,14 +1249,18 @@ class Java(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1276,7 +1272,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

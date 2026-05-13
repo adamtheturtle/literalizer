@@ -775,14 +775,16 @@ class Cobol(metaclass=LanguageCls):
         return _cobol_call_statement
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Raise for any ``{"$ref": "name"}`` identifier.
 
         COBOL DATA DIVISION VALUE clauses only accept literals, not
         identifier references, so refs are not supported.
         """
 
-        def _raise_for_cobol_ref(name: str, /) -> str:
+        def _raise_for_cobol_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
                 language_name="COBOL",
@@ -795,7 +797,9 @@ class Cobol(metaclass=LanguageCls):
         return _raise_for_cobol_ref
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -807,7 +811,7 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

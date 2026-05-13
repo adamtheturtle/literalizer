@@ -639,7 +639,9 @@ class Ruby(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Raise for any ``{"$ref": "name"}`` identifier.
 
         Ruby output is not wrapped in a function body; variable
@@ -647,7 +649,7 @@ class Ruby(metaclass=LanguageCls):
         injected via the call framework.
         """
 
-        def _raise_for_ruby_ref(name: str, /) -> str:
+        def _raise_for_ruby_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
                 language_name="Ruby",
@@ -661,7 +663,9 @@ class Ruby(metaclass=LanguageCls):
         return _raise_for_ruby_ref
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` call-argument identifier.
 
         Unlike :attr:`format_call_ref_identifier`, this is used only when
@@ -675,7 +679,7 @@ class Ruby(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

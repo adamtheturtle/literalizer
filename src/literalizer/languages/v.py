@@ -853,23 +853,37 @@ class V(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``.clone()`` to the ref identifier.
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Append ``.clone()`` to the ref identifier, except for scalars.
 
-        V maps cannot be copied by direct assignment; the caller must
-        explicitly clone the value.  ``$ref`` markers appear on the
-        right-hand side of an assignment emitted by
-        :func:`~literalizer.literalize`, so ``.clone()`` is required.
+        V's container types (arrays, maps) are not copied by direct
+        assignment, so a ``$ref`` marker appearing on the right-hand
+        side of an emitted assignment must be cloned to satisfy the
+        V compiler.  V's primitive scalars (``int``, ``bool``,
+        ``f64``, …) have no ``.clone()`` method - ``int.clone()`` is a
+        hard error - so we emit the bare identifier and let V's
+        automatic primitive copy do the right thing.  When the caller
+        did not supply ``ref_values`` we cannot tell which case applies
+        and fall back to ``.clone()``, which is correct for V's
+        original use case (map/array refs).
         """
 
-        def _clone(name: str, /) -> str:
-            """Return *name* with ``.clone()`` appended."""
+        def _clone(name: str, value: Value | None, /) -> str:
+            """Return *name* with ``.clone()`` appended unless *value*
+            is a register-trivial scalar that V auto-copies.
+            """
+            if isinstance(value, bool | int | float):
+                return name
             return f"{name}.clone()"
 
         return _clone
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Return the ref identifier unchanged in a call-argument context.
 
         When a ``$ref`` is passed as a function argument (directly or
@@ -882,7 +896,7 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

@@ -332,6 +332,7 @@ def _format_ordered_map_value(
     spec: Language,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -371,6 +372,7 @@ def _format_ordered_map_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=CollectionLayout.COMPACT,
@@ -388,6 +390,7 @@ def _format_ordered_map_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
@@ -411,6 +414,7 @@ def _format_dict_value(
     open_override: str | None,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -452,6 +456,7 @@ def _format_dict_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=CollectionLayout.COMPACT,
@@ -469,6 +474,7 @@ def _format_dict_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
@@ -512,6 +518,7 @@ def _format_dict_entry_value(
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -535,6 +542,7 @@ def _format_dict_entry_value(
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=expand_refs,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -547,6 +555,7 @@ def _format_dict_entry_value(
         wrap_ids=wrap_ids,
         sequence_open_override=None,
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=expand_refs,
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -860,6 +869,7 @@ def _format_sequence_child(
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -915,6 +925,7 @@ def _format_sequence_child(
             parent_override if parent_override is not None else sibling_open
         ),
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=expand_refs,
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -931,6 +942,7 @@ def _format_list_value(
     sequence_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -967,6 +979,7 @@ def _format_list_value(
             line_prefix=multiline_prefix,
             wrap_ids=wrap_ids,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=expand_refs,
             ref_key=ref_key,
             sequence_open_override=sequence_open_override,
@@ -994,6 +1007,7 @@ def _format_list_value(
                         child_sequence_open_overrides
                     ),
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
@@ -1041,6 +1055,7 @@ def _format_value(
     wrap_ids: frozenset[int],
     sequence_open_override: str | None,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -1074,14 +1089,22 @@ def _format_value(
     first.
     """
     if ref_key and isinstance(value, dict):
-        ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-        if ref_name is not None:
-            if ref_case is not None:
-                ref_name = ref_case.convert(name=ref_name)
+        raw_ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+        if raw_ref_name is not None:
+            ref_name = (
+                ref_case.convert(name=raw_ref_name)
+                if ref_case is not None
+                else raw_ref_name
+            )
+            ref_value = (
+                ref_values.get(raw_ref_name)
+                if ref_values is not None
+                else None
+            )
             return (
-                spec.format_call_arg_ref_identifier(ref_name)
+                spec.format_call_arg_ref_identifier(ref_name, ref_value)
                 if expand_refs
-                else spec.format_call_ref_identifier(ref_name)
+                else spec.format_call_ref_identifier(ref_name, ref_value)
             )
     if (
         collection_layout is CollectionLayout.MULTILINE
@@ -1094,6 +1117,7 @@ def _format_value(
             line_prefix=multiline_prefix,
             wrap_ids=wrap_ids,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=expand_refs,
             ref_key=ref_key,
             dict_open_override=dict_open_override,
@@ -1106,6 +1130,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=collection_layout,
@@ -1118,6 +1143,7 @@ def _format_value(
                 open_override=dict_open_override,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=collection_layout,
@@ -1137,6 +1163,7 @@ def _format_value(
                 sequence_open_override=sequence_open_override,
                 child_sequence_open_overrides=(),
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=collection_layout,
@@ -1243,6 +1270,7 @@ def _format_multiline_collection_value(
     line_prefix: str,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     dict_open_override: str | None = None,
@@ -1266,6 +1294,7 @@ def _format_multiline_collection_value(
         is_ordered_map=is_ordered_map,
         wrap_ids=wrap_ids,
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=expand_refs,
         ref_key=ref_key,
         collection_layout=CollectionLayout.MULTILINE,
@@ -1327,6 +1356,7 @@ def _format_collection_lines(
     is_ordered_map: bool,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -1361,6 +1391,7 @@ def _format_collection_lines(
                     wrap_ids=wrap_ids,
                     sequence_open_override=None,
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=False,
                     ref_key=ref_key,
                     collection_layout=CollectionLayout.COMPACT,
@@ -1377,6 +1408,7 @@ def _format_collection_lines(
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ref_case=ref_case,
+                        ref_values=ref_values,
                         expand_refs=expand_refs,
                         ref_key=ref_key,
                         collection_layout=collection_layout,
@@ -1428,6 +1460,7 @@ def _format_collection_lines(
                             wrap_ids=wrap_ids,
                             sequence_open_override=None,
                             ref_case=ref_case,
+                            ref_values=ref_values,
                             expand_refs=expand_refs,
                             ref_key=ref_key,
                             collection_layout=collection_layout,
@@ -1474,6 +1507,7 @@ def _format_collection_lines(
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
                             ref_case=ref_case,
+                            ref_values=ref_values,
                             expand_refs=expand_refs,
                             ref_key=ref_key,
                             collection_layout=collection_layout,
@@ -1509,6 +1543,7 @@ def _literalize(
     line_prefix: str,
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -1538,16 +1573,31 @@ def _literalize(
             Ignored for scalar values.
         ref_case: When set, ref identifiers are converted to this case
             before rendering.
+        ref_values: Optional mapping from ref identifier to the value
+            declared elsewhere for that ref.  Forwarded to the
+            language's ``format_call_ref_identifier`` /
+            ``format_call_arg_ref_identifier`` hooks so type-sensitive
+            languages can pick the right form.
         ref_key: The key used to identify ref markers in the input.
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
     if ref_key and isinstance(data, dict):
-        ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
-        if ref_name is not None:
-            if ref_case is not None:
-                ref_name = ref_case.convert(name=ref_name)
-            identifier = language.format_call_ref_identifier(ref_name)
+        raw_ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
+        if raw_ref_name is not None:
+            ref_name = (
+                ref_case.convert(name=raw_ref_name)
+                if ref_case is not None
+                else raw_ref_name
+            )
+            ref_value = (
+                ref_values.get(raw_ref_name)
+                if ref_values is not None
+                else None
+            )
+            identifier = language.format_call_ref_identifier(
+                ref_name, ref_value
+            )
             return f"{line_prefix}{identifier}"
 
     check_data(data=data, spec=language)
@@ -1580,6 +1630,7 @@ def _literalize(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=False,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -1606,6 +1657,7 @@ def _literalize(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=False,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -1627,6 +1679,7 @@ def _literalize(
         is_ordered_map=is_ordered_map,
         wrap_ids=wrap_ids,
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=False,
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -1695,9 +1748,17 @@ def _apply_variable_wrapper(
 class _PreFormState:
     """Variable-form-independent results of
     :func:`_literalize_pre_form`.
+
+    ``data`` is the parsed input with ``$ref`` markers left intact so
+    the renderer can emit them as bare identifiers.  ``data_for_preamble``
+    is the same tree with each ref marker resolved against the caller's
+    ``ref_values`` (or stripped when the value is not supplied), so
+    preamble inference sees the types actually flowing through the
+    rendered code -- not the marker's ``{str: str}`` shape.
     """
 
     data: Value
+    data_for_preamble: Value
     result: str
     resolved: ResolvedComments | None
     line_prefix: str
@@ -1712,6 +1773,7 @@ def _literalize_pre_form(
     pre_indent_level: int,
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> _PreFormState:
@@ -1738,6 +1800,7 @@ def _literalize_pre_form(
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
+        ref_values=ref_values,
         ref_key=active_ref_key,
         collection_layout=collection_layout,
     )
@@ -1779,8 +1842,18 @@ def _literalize_pre_form(
         case _:
             pass
 
+    data_for_preamble: Value = data
+    if ref_values:
+        resolution = _resolve_ref_for_preamble(
+            value=data,
+            ref_values=ref_values,
+            ref_key=active_ref_key,
+        )
+        data_for_preamble = resolution.value if resolution.include else []
+
     return _PreFormState(
         data=data,
+        data_for_preamble=data_for_preamble,
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
@@ -1823,7 +1896,7 @@ def _literalize_apply_form(
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
     computed = compute_preamble(
-        data=pre_form.data,
+        data=pre_form.data_for_preamble,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
@@ -1831,7 +1904,7 @@ def _literalize_apply_form(
         entries=(
             tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(pre_form.data)
+            + language.data_dependent_preamble(pre_form.data_for_preamble)
         )
     )
 
@@ -1853,7 +1926,7 @@ def _literalize_apply_form(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
-            source_data=pre_form.data,
+            source_data=pre_form.data_for_preamble,
         )
 
     return LiteralizeResult(
@@ -1862,7 +1935,7 @@ def _literalize_apply_form(
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
         types_present=computed.types_present,
-        source_data=pre_form.data,
+        source_data=pre_form.data_for_preamble,
     )
 
 
@@ -1876,6 +1949,7 @@ def _literalize_both_forms(
     include_delimiters: bool,
     variable_form: BothVariableForms,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
@@ -1887,6 +1961,7 @@ def _literalize_both_forms(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
+        ref_values=ref_values,
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
@@ -1937,6 +2012,7 @@ def literalize(
     variable_form: VariableForm | None = None,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
+    ref_values: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
@@ -1987,6 +2063,15 @@ def literalize(
             hook.  When ``None`` (default), ref names are emitted
             verbatim.  When set, the identifier name is converted to
             *ref_case* first.
+        ref_values: Optional mapping from ref identifier to the value
+            declared elsewhere for that ref.  Some languages render a
+            ref differently depending on the type behind it (V emits
+            ``name`` for primitive scalars but ``name.clone()`` for
+            arrays and maps); supplying *ref_values* lets those
+            languages pick the right form.  When omitted, a ref's type
+            is unknown and languages fall back to their type-agnostic
+            default.  Keys should match the identifiers used in *source*
+            before any *ref_case* conversion.
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
@@ -2032,6 +2117,14 @@ def literalize(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
+    materialized_ref_values: Mapping[str, Value] | None = (
+        {
+            name: _materialize_value_input(value=value)
+            for name, value in ref_values.items()
+        }
+        if ref_values is not None
+        else None
+    )
     if variable_form is not None and not language.supports_variable_names:
         raise VariableNameNotSupportedError(
             language_name=type(language).__name__,
@@ -2064,6 +2157,7 @@ def literalize(
             include_delimiters=include_delimiters,
             variable_form=variable_form,
             ref_case=ref_case,
+            ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2075,6 +2169,7 @@ def literalize(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
+        ref_values=materialized_ref_values,
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
@@ -2363,6 +2458,7 @@ def _format_single_call_arg(
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
     consume_inhibited_ref_names: frozenset[str],
@@ -2403,9 +2499,14 @@ def _format_single_call_arg(
             and raw_ref_name in single_use_ref_names
             and raw_ref_name not in consume_inhibited_ref_names
         )
+        ref_value = (
+            ref_values.get(raw_ref_name) if ref_values is not None else None
+        )
         if is_consumable:
-            return language.format_call_arg_ref_identifier_consumable(ref_name)
-        return language.format_call_arg_ref_identifier(ref_name)
+            return language.format_call_arg_ref_identifier_consumable(
+                ref_name, ref_value
+            )
+        return language.format_call_arg_ref_identifier(ref_name, ref_value)
     formatted = wrap_arg(
         value,
         _format_value(
@@ -2415,6 +2516,7 @@ def _format_single_call_arg(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=True,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -2467,6 +2569,7 @@ def _format_call_args(
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
     consume_inhibited_ref_names: frozenset[str],
@@ -2502,6 +2605,7 @@ def _format_call_args(
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
             ref_case=ref_case,
+            ref_values=ref_values,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
             consume_inhibited_ref_names=consume_inhibited_ref_names,
@@ -2782,6 +2886,7 @@ def _render_call_per_element(
             style=style,
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
+            ref_values=ref_values,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
             consume_inhibited_ref_names=consume_inhibited_ref_names,
@@ -2846,6 +2951,7 @@ def _render_call_whole(
         style=style,
         dict_open_overrides=[None],
         ref_case=ref_case,
+        ref_values=ref_values,
         consumable_ref_names=consumable_ref_names,
         single_use_ref_names=_compute_call_arg_ref_single_use_names(
             elements=[[data]],

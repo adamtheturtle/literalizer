@@ -10,8 +10,10 @@ language's default identifier case.  The runner
 
 import dataclasses
 import functools
+import json
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from beartype import beartype
@@ -37,6 +39,9 @@ from .language_specs import (
     with_per_fixture_module_name,
 )
 from .variant_cases import wrap_variable_form
+
+if TYPE_CHECKING:
+    from literalizer._types import ValueInput
 
 
 @dataclasses.dataclass(frozen=True)
@@ -337,6 +342,14 @@ def run_literalize_ref_golden_case(
         )
     except VariableNameNotSupportedError:
         variable_form_obj = None
+    ref_values_input: dict[str, ValueInput] | None = (
+        {
+            name: json.loads(s=source_json)
+            for name, source_json in config.ref_value_sources
+        }
+        if config.ref_value_sources
+        else None
+    )
     try:
         result = literalizer.literalize(
             source=yaml_string,
@@ -345,6 +358,7 @@ def run_literalize_ref_golden_case(
             variable_form=variable_form_obj,
             wrap_in_file=True,
             ref_case=ref_case,
+            ref_values=ref_values_input,
             ref_key=config.ref_key,
         )
     except HeterogeneousCollectionError:
@@ -363,6 +377,7 @@ def run_literalize_ref_golden_case(
         raw_data: _RefData = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=yaml_string,
         )
+        stub_sources = dict(config.ref_value_sources)
         stub_entries: list[tuple[str, str]] = []
         for raw_name in _collect_ref_names(
             data=raw_data,
@@ -373,8 +388,9 @@ def run_literalize_ref_golden_case(
                 if ref_case is not None
                 else raw_name
             )
+            stub_source = stub_sources.get(raw_name, '{"_": "_"}')
             stub = literalizer.literalize(
-                source='{"_": "_"}',
+                source=stub_source,
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
                 variable_form=literalizer.NewVariable(

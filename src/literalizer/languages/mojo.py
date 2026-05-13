@@ -1365,22 +1365,37 @@ class Mojo(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``^`` to trigger move/transfer semantics in Mojo.
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Append ``^`` to trigger move/transfer semantics in Mojo,
+        except for register-trivial scalars.
 
         Mojo ``Dict`` does not implement ``Copyable``, so a bare
-        variable reference fails to compile.  Using ``^`` transfers
-        ownership instead of copying.
+        variable reference fails to compile and ``^`` transfers
+        ownership instead.  Applying ``^`` to a register-trivial scalar
+        (``Int``, ``Bool``, ``Float64``) is a hard error under
+        ``--Werror``, so we drop the operator when the caller's
+        ``ref_values`` identifies the ref as one of those types.  When
+        the value is unknown we keep the historical ``^`` form.
         """
 
-        def _format_mojo_ref_identifier(name: str, /) -> str:
-            """Append ``^`` for the Mojo transfer operator."""
+        def _format_mojo_ref_identifier(
+            name: str, value: Value | None, /
+        ) -> str:
+            """Append ``^`` unless *value* is register-trivial."""
+            if value is not None and _mojo_value_inhibits_consuming_form(
+                value
+            ):
+                return name
             return f"{name}^"
 
         return _format_mojo_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Emit a call-argument ``$ref`` as the bare identifier.
 
         The Mojo transfer operator ``^`` consumes the variable, which
@@ -1396,7 +1411,7 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Append ``^`` to a consumable call-argument ``$ref``.
 
         Used only for refs the caller declared as consumable on

@@ -5,6 +5,37 @@ Next
 ----
 
 
+- :func:`~literalizer.literalize` now accepts a ``ref_values`` mapping
+  from ref identifier to the value declared elsewhere for that ref.
+  Languages whose ``$ref`` rendering depends on the referenced type
+  (V's ``.clone()`` for arrays and maps, Mojo's ``^`` for non-trivial
+  values, C++'s ``std::move`` for non-trivially-copyable values)
+  consult it to choose the right form; when omitted these languages
+  keep their type-agnostic default.  ``V`` now emits a bare identifier
+  for scalar refs (``int``, ``bool``, ``f64``) because ``int.clone()``
+  is rejected by the V compiler; ``Mojo`` drops ``^`` for
+  register-trivial scalars where it is a hard error under ``--Werror``;
+  ``Cpp`` drops ``std::move`` for trivially-copyable scalars where
+  clang-tidy's ``hicpp-move-const-arg`` rejects it.  Preamble inference
+  also walks the resolved ``ref_values`` so sum-type body declarations
+  (Haskell's ``data Val``, OCaml's ``val_t``, Roc's ``Val``, …) include
+  the variants needed by the referenced types.
+  ``SystemVerilog``'s :func:`literalize` rejects scalar ``$ref`` markers
+  via :exc:`~literalizer.exceptions.CallArgNotSupportedError`: SV keys
+  the variable declaration off the marker dict's shape (``_VKV name[]``)
+  and cannot produce a coherent declaration for a scalar referent.
+
+- The
+  :attr:`~literalizer._language.Language.format_call_ref_identifier`,
+  :attr:`~literalizer._language.Language.format_call_arg_ref_identifier`,
+  and
+  :attr:`~literalizer._language.Language.format_call_arg_ref_identifier_consumable`
+  hooks now receive a second positional argument: the ``Value`` behind
+  the ref (or ``None`` when the caller did not supply ``ref_values``).
+  This is a breaking change for custom :class:`~literalizer.Language`
+  implementations that override these hooks; most overrides ignore the
+  new argument.
+
 - :class:`~literalizer.V` now defaults
   ``heterogeneous_strategy`` to
   ``V.heterogeneous_strategies.ERROR`` and reports

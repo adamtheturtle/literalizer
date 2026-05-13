@@ -603,14 +603,18 @@ class R(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -622,7 +626,7 @@ class R(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

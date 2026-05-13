@@ -81,7 +81,7 @@ from literalizer._language import (
     value_contains,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     WrapCombinedInFileNotSupportedError,
@@ -101,7 +101,91 @@ def _format_dart_bigint_literal(value: int) -> str:
 
 
 @beartype
-def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _dart_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Dart annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "bool"
+        case int():
+            hint = "int"
+        case float():
+            hint = "double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case None:
+            hint = "Null"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _dart_unique_or_dynamic(types: list[str]) -> str:
+    """Return the sole element of *types* or ``dynamic`` if
+    heterogeneous.
+    """
+    unique = list(dict.fromkeys(types))
+    match unique:
+        case [single]:
+            return single
+        case _:
+            return "dynamic"
+
+
+@beartype
+def _dart_dict_hint(
+    *,
+    val_types: list[str],
+    is_empty: bool,
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+) -> str:
+    """Derive a Dart Map type annotation."""
+    if is_empty:
+        return f"Map<{default_dict_key_type}, {default_dict_value_type}>"
+    val_type = _dart_unique_or_dynamic(types=val_types)
+    return f"Map<{default_dict_key_type}, {val_type}>"
+
+
+@beartype
+def _dart_set_hint(
+    *,
+    elem_types: list[str],
+    is_empty: bool,
+    default_set_element_type: str,
+) -> str:
+    """Derive a Dart Set type annotation."""
+    if is_empty:
+        return f"Set<{default_set_element_type}>"
+    return f"Set<{_dart_unique_or_dynamic(types=elem_types)}>"
+
+
+@beartype
+def _dart_list_hint(
+    *,
+    elem_types: list[str],
+    is_empty: bool,
+    sequence_is_tuple: bool,
+) -> str:
+    """Derive a Dart List/record type annotation."""
+    if is_empty:
+        return "()" if sequence_is_tuple else "List<dynamic>"
+    if sequence_is_tuple:
+        return f"({', '.join(elem_types)},)"
+    return f"List<{_dart_unique_or_dynamic(types=elem_types)}>"
+
+
+@beartype
+def _dart_type_hint(
     *,
     data: Value,
     date_hint: str,
@@ -122,63 +206,32 @@ def _dart_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
         sequence_is_tuple=sequence_is_tuple,
     )
     match data:
-        case bool():
-            return "bool"
-        case int():
-            return "int"
-        case float():
-            return "double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Null"
         case dict():
-            if not data:
-                return (
-                    f"Map<{default_dict_key_type}, {default_dict_value_type}>"
-                )
-            val_types = [recurse(data=v) for v in data.values()]
-            unique = list(dict.fromkeys(val_types))
-            match unique:
-                case [single]:
-                    val_type = single
-                case _:
-                    val_type = "dynamic"
-            return f"Map<{default_dict_key_type}, {val_type}>"
+            hint = _dart_dict_hint(
+                val_types=[recurse(data=v) for v in data.values()],
+                is_empty=not data,
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+            )
         case set():
-            if not data:
-                return f"Set<{default_set_element_type}>"
-            elem_types_sorted = sorted({recurse(data=e) for e in data})
-            match elem_types_sorted:
-                case [single]:
-                    elem_type = single
-                case _:
-                    elem_type = "dynamic"
-            return f"Set<{elem_type}>"
+            hint = _dart_set_hint(
+                elem_types=sorted({recurse(data=e) for e in data}),
+                is_empty=not data,
+                default_set_element_type=default_set_element_type,
+            )
         case list():
-            if not data:
-                if sequence_is_tuple:
-                    return "()"
-                return "List<dynamic>"
-            if sequence_is_tuple:
-                elem_types = [recurse(data=e) for e in data]
-                return f"({', '.join(elem_types)},)"
-            elem_types = [recurse(data=e) for e in data]
-            unique = list(dict.fromkeys(elem_types))
-            match unique:
-                case [single]:
-                    elem_type = single
-                case _:
-                    elem_type = "dynamic"
-            return f"List<{elem_type}>"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = _dart_list_hint(
+                elem_types=[recurse(data=e) for e in data],
+                is_empty=not data,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+        case _:
+            hint = _dart_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype
@@ -870,14 +923,18 @@ class Dart(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -889,7 +946,7 @@ class Dart(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
