@@ -208,24 +208,36 @@ def _has_heterogeneous(*, data: Value) -> bool:
 def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
     """Recursively check whether data contains sibling lists whose
     combined scalar elements are heterogeneous.
+
+    Sibling lists are detected both as the direct children of a list
+    and as the values of a dict.
     """
     match data:
         case dict() | ordereddict():
-            return any(
-                _has_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            values = list(data.values())  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType]
+            if any(_has_heterogeneous_sibling_lists(data=v) for v in values):
+                return True
+            sublists: list[list[Value]] = [
+                v for v in values if isinstance(v, list)
+            ]
+            return (
+                len(sublists) == len(values)
+                and len(sublists) > 1
+                and _all_scalars_heterogeneous(
+                    values=[e for sub in sublists for e in sub],
+                )
             )
         case list():
             if any(_has_heterogeneous_sibling_lists(data=v) for v in data):
                 return True
-            sublists: list[list[Value]] = [
+            list_sublists: list[list[Value]] = [
                 v for v in data if isinstance(v, list)
             ]
             return (
-                len(sublists) == len(data)
-                and len(sublists) > 1
+                len(list_sublists) == len(data)
+                and len(list_sublists) > 1
                 and _all_scalars_heterogeneous(
-                    values=[e for sub in sublists for e in sub],
+                    values=[e for sub in list_sublists for e in sub],
                 )
             )
         case _:
