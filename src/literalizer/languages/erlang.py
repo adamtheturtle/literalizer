@@ -129,7 +129,9 @@ def _erlang_format_call_target(parts: Sequence[str], /) -> str:
 
 
 @beartype
-def _erlang_format_call_ref_identifier(name: str, /) -> str:
+def _erlang_format_call_ref_identifier(
+    name: str, _value: Value | None, /
+) -> str:
     """Capitalize a ``$ref`` name so it matches the declaration site.
 
     :func:`_format_variable_declaration` writes ``my_var = ...`` as
@@ -647,14 +649,18 @@ class Erlang(metaclass=LanguageCls):
         return _erlang_format_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Capitalize a ``{"$ref": "name"}`` identifier so the call
         site references the declared Erlang variable.
         """
         return _erlang_format_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -666,7 +672,7 @@ class Erlang(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

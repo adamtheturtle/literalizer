@@ -1464,7 +1464,9 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
@@ -1473,14 +1475,18 @@ class Cpp(metaclass=LanguageCls):
         copy and satisfies the linter.
         """
 
-        def _format_cpp_ref_identifier(name: str, /) -> str:
+        def _format_cpp_ref_identifier(
+            name: str, _value: Value | None, /
+        ) -> str:
             """Wrap the identifier in ``std::move()``."""
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Emit a call-argument ``$ref`` as the bare identifier.
 
         ``std::move`` would consume the variable, which is unsafe when
@@ -1496,7 +1502,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Wrap a consumable call-argument ``$ref`` in ``std::move()``.
 
         Used only for refs the caller declared as consumable on
@@ -1504,7 +1510,9 @@ class Cpp(metaclass=LanguageCls):
         one call argument, so the move cannot strand a later use.
         """
 
-        def _format_cpp_ref_identifier_consumable(name: str, /) -> str:
+        def _format_cpp_ref_identifier_consumable(
+            name: str, _value: Value | None, /
+        ) -> str:
             """Wrap the identifier in ``std::move()``."""
             return f"std::move({name})"
 
