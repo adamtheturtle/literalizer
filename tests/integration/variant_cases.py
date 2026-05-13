@@ -1419,6 +1419,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="int_set"),
         _ci(case_dir_name="mixed_set"),
         _ci(case_dir_name="empty_set"),
+        _ci(case_dir_name="set_mixed_int_widths"),
     ),
     "default_set_element_type": (
         _ci(case_dir_name="empty_set"),
@@ -1448,6 +1449,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "int_set",
             "mixed_set",
             "empty_set",
+            "set_mixed_int_widths",
             "mixed_number_list",
             "nested_sequence",
             "dict_with_list_value",
@@ -1487,6 +1489,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "scalar_date",
             "scalar_datetime",
             "binary",
+            "set_mixed_int_widths",
         )
     ),
     "dict_format": DICT_FORMAT_INPUTS,
