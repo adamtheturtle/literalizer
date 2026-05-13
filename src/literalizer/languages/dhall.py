@@ -371,7 +371,7 @@ class _VariantSignature:
 
 
 @beartype
-def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:  # noqa: PLR0911
+def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:
     """Return the Dhall union-type variant signature for *value*.
 
     Dhall has no per-width integer types, so all integers map to a
@@ -382,23 +382,24 @@ def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:  # noqa: PLR0
     """
     match value:
         case bool():
-            return _VariantSignature(name="Bool", inner_type="Bool")
+            signature = _VariantSignature(name="Bool", inner_type="Bool")
         case int():
-            return _VariantSignature(name="Int", inner_type="Integer")
+            signature = _VariantSignature(name="Int", inner_type="Integer")
         case float():
-            return _VariantSignature(name="Double", inner_type="Double")
+            signature = _VariantSignature(name="Double", inner_type="Double")
         case str():
-            return _VariantSignature(name="Str", inner_type="Text")
+            signature = _VariantSignature(name="Str", inner_type="Text")
         case bytes():
-            return _VariantSignature(name="Bytes", inner_type="Text")
+            signature = _VariantSignature(name="Bytes", inner_type="Text")
         case datetime.datetime():
-            return _VariantSignature(name="DateTime", inner_type="Text")
+            signature = _VariantSignature(name="DateTime", inner_type="Text")
         case datetime.date():
-            return _VariantSignature(name="Date", inner_type="Text")
+            signature = _VariantSignature(name="Date", inner_type="Text")
         case None:
-            return _VariantSignature(name="Null", inner_type=None)
+            signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
             assert_never(unreachable)
+    return signature
 
 
 @dataclasses.dataclass(frozen=True)
