@@ -536,18 +536,26 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
     that is both syntactically valid and visually demonstrates the
     fix: the declaration line carries the indent, the value sits flush
     against ``=``, and continuation lines keep their relative offsets.
+
+    ``simple_dict`` exercises a multi-line container value at indent.
+    ``comment_scalar_before_and_inline`` exercises a scalar whose
+    formatted value is preceded by ``//`` comment lines that carry the
+    same ``line_prefix`` indent: the scenario that previously caused
+    Cpp to misclassify a string scalar as a typed expression.
     """
     cases: list[PreIndentCase] = []
-    case_dir_name = "simple_dict"
-    for lang_cls in sorted_languages():
-        cases.extend(
-            PreIndentCase(
-                name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}",
-                lang_cls=lang_cls,
-                case_dir_name=case_dir_name,
-                pre_indent_level=1,
-                modifiers=combo.modifiers,
+    case_dir_names = ("simple_dict", "comment_scalar_before_and_inline")
+    for case_dir_name in case_dir_names:
+        suffix = "" if case_dir_name == "simple_dict" else f"_{case_dir_name}"
+        for lang_cls in sorted_languages():
+            cases.extend(
+                PreIndentCase(
+                    name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}{suffix}",
+                    lang_cls=lang_cls,
+                    case_dir_name=case_dir_name,
+                    pre_indent_level=1,
+                    modifiers=combo.modifiers,
+                )
+                for combo in lang_cls.modifier_combinations
             )
-            for combo in lang_cls.modifier_combinations
-        )
     return cases
