@@ -155,6 +155,7 @@ def _ts_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C90
         case None:
             return "null"
         case dict():
+            val_types = [recurse(data=v) for v in data.values()]
             template = (
                 "Record<string, {val}>"
                 if isinstance(data, (ordereddict, OrderedDict))
@@ -164,7 +165,6 @@ def _ts_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C90
             # type, so the annotation must match.
             if not data or "Map<" in template:
                 return template.format(val="unknown")
-            val_types = [recurse(data=v) for v in data.values()]  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
             val_union = _ts_element_union(types=val_types)
             return template.format(val=val_union)
         case set():
