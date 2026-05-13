@@ -410,10 +410,10 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
     types needed to decide which ``GVal`` constructors to emit.
     """
     match value:
-        case ordereddict() | dict():
+        case dict():
             child: frozenset[type] = frozenset()
-            for v in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                child = child | _collect_gleam_types(value=v)  # pyright: ignore[reportUnknownArgumentType]
+            for v in value.values():
+                child = child | _collect_gleam_types(value=v)
             return frozenset({dict}) | child
         case set():
             child = frozenset()

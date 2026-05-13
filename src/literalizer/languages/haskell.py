@@ -526,10 +526,9 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
             return bool(data.microsecond)
         case datetime.date():
             return False
-        case ordereddict() | dict():
+        case dict():
             return any(
-                _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                _has_microsecond_datetime(data=v) for v in data.values()
             )
         case list() | set():
             return any(_has_microsecond_datetime(data=v) for v in data)
@@ -546,10 +545,9 @@ def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
             return not data.microsecond
         case datetime.date():
             return False
-        case ordereddict() | dict():
+        case dict():
             return any(
-                _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                _has_nonmicrosecond_datetime(data=v) for v in data.values()
             )
         case list() | set():
             return any(_has_nonmicrosecond_datetime(data=v) for v in data)

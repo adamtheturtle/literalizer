@@ -591,12 +591,9 @@ def _has_empty_collection(data: Value) -> bool:
             return True
         case list():
             return any(_has_empty_collection(data=v) for v in data)
-        case ordereddict() | dict():
-            mapping_values = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            return any(
-                _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in mapping_values  # pyright: ignore[reportUnknownVariableType]
-            )
+        case dict():
+            mapping_values = data.values()
+            return any(_has_empty_collection(data=v) for v in mapping_values)
         case _:
             return False
 
