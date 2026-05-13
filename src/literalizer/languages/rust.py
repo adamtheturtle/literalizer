@@ -428,7 +428,7 @@ class _VariantSignature:
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex  # noqa: PLR0911
+def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
     *,
     value: Scalar,
     date_type: str,
@@ -442,41 +442,42 @@ def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex  # noqa: P
     """
     match value:
         case bool():
-            return _VariantSignature(name="Bool", inner_type="bool")
+            signature = _VariantSignature(name="Bool", inner_type="bool")
         case int():
             int_type = _rust_integer_type(value=value)
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name=int_type.upper(),
                 inner_type=int_type,
             )
         case float():
-            return _VariantSignature(name="F64", inner_type="f64")
+            signature = _VariantSignature(name="F64", inner_type="f64")
         case str():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name="Str",
                 inner_type="&'static str",
             )
         case bytes():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name="Bytes",
                 inner_type="&'static str",
             )
         case datetime.datetime() if datetime_type in {"i32", "i64", "i128"}:
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name=datetime_type.upper(),
                 inner_type=datetime_type,
             )
         case datetime.datetime():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name="DateTime",
                 inner_type=datetime_type,
             )
         case datetime.date():
-            return _VariantSignature(name="Date", inner_type=date_type)
+            signature = _VariantSignature(name="Date", inner_type=date_type)
         case None:
-            return _VariantSignature(name="Null", inner_type=None)
+            signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
             assert_never(unreachable)
+    return signature
 
 
 @dataclasses.dataclass(frozen=True)
