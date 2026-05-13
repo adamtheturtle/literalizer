@@ -14,6 +14,7 @@ from literalizer import (
     InputFormat,
     NewVariable,
     literalize,
+    literalize_call,
 )
 from literalizer.exceptions import (
     NullInCollectionError,
