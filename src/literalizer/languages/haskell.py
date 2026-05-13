@@ -95,13 +95,18 @@ def _haskell_call_preamble_stub(
 @beartype
 def _haskell_arg_type_str(
     *, params: Sequence[str], type_name: str, curried: bool
-) -> str:
+) -> str | None:
     """Return the Haskell argument-type string for a call signature.
 
-    Curried: ``Val -> Val -> Val``.  Positional: ``Val`` for one param,
-    or a tuple ``(Val, Val)`` for many.
+    Curried: ``Val -> Val -> Val``, or ``None`` for the zero-parameter case
+    (which is a thunk binding ``f :: IO Val`` with no arrow).
+    Positional: ``Val`` for one param, or a tuple ``(Val, ...)`` for
+    many (including ``()`` for zero, since :class:`PositionalCallStyle`
+    emits ``f()`` at the call site).
     """
     if curried:
+        if not params:
+            return None
         return " -> ".join(type_name for _ in params)
     if len(params) == 1:
         return type_name
@@ -139,13 +144,19 @@ def _build_haskell_call_stub_lines(
         if is_wrapper_stub:
             sig = f"{parts[0]} :: a -> IO ()"
             return (sig, f"{parts[0]} _ = {body}")
+        if arg_type is None:
+            return (f"{parts[0]} :: {ret}", f"{parts[0]} = {body}")
         sig = f"{parts[0]} :: {arg_type} -> {ret}"
         return (sig, f"{parts[0]} {lhs_wildcards} = {body}")
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    field_type = f"{arg_type} -> {ret}"
-    construction_lambda = f"\\{lambda_wildcards} -> {body}"
+    if arg_type is None:
+        field_type = ret
+        construction_lambda = body
+    else:
+        field_type = f"{arg_type} -> {ret}"
+        construction_lambda = f"\\{lambda_wildcards} -> {body}"
     if not fields:
         cls = root.capitalize() + "Type_"
         return (

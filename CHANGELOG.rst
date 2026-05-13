@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Haskell` ``CURRIED``
+  :class:`~literalizer.CallStyle` now emits a thunk binding
+  (``process :: IO Val`` / ``process = ...``) for zero-parameter
+  calls instead of a malformed signature with an empty argument
+  type (``process ::  -> IO Val``).
 - :func:`~literalizer.literalize` now raises
   :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`
   when ``wrap_in_file=True`` is combined with ``variable_form=None`` for
