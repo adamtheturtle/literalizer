@@ -92,7 +92,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -206,7 +206,122 @@ def _kotlin_type_to_opener(
 
 
 @beartype
-def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _kotlin_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Kotlin annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "Boolean"
+        case int():
+            hint = "Int"
+        case float():
+            hint = "Double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case None:
+            hint = "Nothing?"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _kotlin_dict_hint(
+    *,
+    is_empty: bool,
+    is_ordered: bool,
+    val_types: list[str],
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+    dict_outer: str,
+) -> str:
+    """Derive a Kotlin map type annotation."""
+    outer = "LinkedHashMap" if is_ordered else dict_outer
+    if is_empty:
+        return f"{outer}<{default_dict_key_type}, {default_dict_value_type}>"
+    unique = list(dict.fromkeys(val_types))
+    val_type = unique[0] if len(unique) == 1 else "Any?"
+    return f"{outer}<{default_dict_key_type}, {val_type}>"
+
+
+@beartype
+def _kotlin_set_hint(
+    *,
+    elem_types_sorted: list[str],
+    is_empty: bool,
+    default_set_element_type: str,
+    set_outer: str,
+) -> str:
+    """Derive a Kotlin set type annotation."""
+    if is_empty:
+        return f"{set_outer}<{default_set_element_type}>"
+    elem_type = elem_types_sorted[0] if len(elem_types_sorted) == 1 else "Any?"
+    return f"{set_outer}<{elem_type}>"
+
+
+@beartype
+def _kotlin_tuple_hint(*, elem_types: list[str]) -> str:
+    """Derive a Kotlin tuple-shaped annotation."""
+    match elem_types:
+        case [_, _]:
+            return f"Pair<{', '.join(elem_types)}>"
+        case [_, _, _]:
+            return f"Triple<{', '.join(elem_types)}>"
+        case _:
+            return "List<Any?>"
+
+
+@beartype
+def _kotlin_array_or_list_hint(*, elem_types: list[str]) -> str:
+    """Derive a Kotlin array/list annotation for the ``LIST`` format."""
+    unique = list(dict.fromkeys(elem_types))
+    if len(unique) != 1:
+        return "List<Any?>"
+    elem_type = unique[0]
+    kotlin_prim = {
+        "Boolean": "BooleanArray",
+        "Int": "IntArray",
+        "Double": "DoubleArray",
+    }
+    if elem_type in kotlin_prim:
+        return kotlin_prim[elem_type]
+    # Generic element types (e.g. Map<…>) use listOf, not arrayOf, so
+    # the container type is List, not Array.
+    if "<" in elem_type:
+        return f"List<{elem_type}>"
+    return f"Array<{elem_type}>"
+
+
+@beartype
+def _kotlin_list_hint(
+    *,
+    data: list[Value],
+    recurse: Callable[..., str],
+    sequence_format_name: str,
+) -> str:
+    """Derive a Kotlin sequence type annotation."""
+    if not data:
+        return (
+            "Array<Any?>" if sequence_format_name == "ARRAY" else "List<Any?>"
+        )
+    elem_types = [recurse(data=e) for e in data]
+    if sequence_format_name == "TUPLE":
+        return _kotlin_tuple_hint(elem_types=elem_types)
+    if sequence_format_name == "ARRAY":
+        return "Array<Any?>"
+    return _kotlin_array_or_list_hint(elem_types=elem_types)
+
+
+@beartype
+def _kotlin_type_hint(
     *,
     data: Value,
     date_hint: str,
@@ -231,92 +346,35 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         sequence_format_name=sequence_format_name,
     )
     match data:
-        case bool():
-            return "Boolean"
-        case int():
-            return "Int"
-        case float():
-            return "Double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Nothing?"
         case dict():
-            if not data:
-                outer = (
-                    dict_outer
-                    if not isinstance(data, (ordereddict, OrderedDict))
-                    else "LinkedHashMap"
-                )
-                return (
-                    f"{outer}<{default_dict_key_type}"
-                    f", {default_dict_value_type}>"
-                )
-            val_types = [recurse(data=v) for v in data.values()]
-            unique = list(dict.fromkeys(val_types))
-            match unique:
-                case [single]:
-                    val_type = single
-                case _:
-                    val_type = "Any?"
-            outer = (
-                dict_outer
-                if not isinstance(data, (ordereddict, OrderedDict))
-                else "LinkedHashMap"
+            hint = _kotlin_dict_hint(
+                is_empty=not data,
+                is_ordered=isinstance(data, (ordereddict, OrderedDict)),
+                val_types=[recurse(data=v) for v in data.values()],
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+                dict_outer=dict_outer,
             )
-            return f"{outer}<{default_dict_key_type}, {val_type}>"
         case set():
-            if not data:
-                return f"{set_outer}<{default_set_element_type}>"
-            elem_types = sorted({recurse(data=e) for e in data})
-            match elem_types:
-                case [single]:
-                    elem_type = single
-                case _:
-                    elem_type = "Any?"
-            return f"{set_outer}<{elem_type}>"
+            hint = _kotlin_set_hint(
+                elem_types_sorted=sorted({recurse(data=e) for e in data}),
+                is_empty=not data,
+                default_set_element_type=default_set_element_type,
+                set_outer=set_outer,
+            )
         case list():
-            if not data:
-                if sequence_format_name == "ARRAY":
-                    return "Array<Any?>"
-                return "List<Any?>"
-            if sequence_format_name == "TUPLE":
-                elem_types = [recurse(data=e) for e in data]
-                match data:
-                    case [_, _]:
-                        return f"Pair<{', '.join(elem_types)}>"
-                    case [_, _, _]:
-                        return f"Triple<{', '.join(elem_types)}>"
-                    case _:
-                        return "List<Any?>"
-            if sequence_format_name == "ARRAY":
-                return "Array<Any?>"
-            # LIST format — use typed arrays matching the opener
-            elem_types = [recurse(data=e) for e in data]
-            unique = list(dict.fromkeys(elem_types))
-            if len(unique) != 1:
-                return "List<Any?>"
-            elem_type = unique[0]
-            kotlin_prim = {
-                "Boolean": "BooleanArray",
-                "Int": "IntArray",
-                "Double": "DoubleArray",
-            }
-            if elem_type in kotlin_prim:
-                return kotlin_prim[elem_type]
-            # Generic element types (e.g. Map<…>) use listOf, not
-            # arrayOf, so the container type is List, not Array.
-            if "<" in elem_type:
-                return f"List<{elem_type}>"
-            return f"Array<{elem_type}>"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = _kotlin_list_hint(
+                data=data,
+                recurse=recurse,
+                sequence_format_name=sequence_format_name,
+            )
+        case _:
+            hint = _kotlin_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype
