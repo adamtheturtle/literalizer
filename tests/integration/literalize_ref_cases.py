@@ -9,11 +9,12 @@ language's default identifier case.  The runner
 """
 
 import dataclasses
+import datetime
 import functools
 import json
 import re
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 from beartype import beartype
@@ -40,8 +41,12 @@ from .language_specs import (
 )
 from .variant_cases import wrap_variable_form
 
-if TYPE_CHECKING:
-    from literalizer._types import ValueInput
+type _Scalar = (
+    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
+)
+type _ValueInput = (
+    _Scalar | Sequence[_ValueInput] | Mapping[str, _ValueInput] | set[_Scalar]
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -342,7 +347,7 @@ def run_literalize_ref_golden_case(
         )
     except VariableNameNotSupportedError:
         variable_form_obj = None
-    ref_values_input: dict[str, ValueInput] | None = (
+    ref_values_input: dict[str, _ValueInput] | None = (
         {
             name: json.loads(s=source_json)
             for name, source_json in config.ref_value_sources
