@@ -1748,9 +1748,17 @@ def _apply_variable_wrapper(
 class _PreFormState:
     """Variable-form-independent results of
     :func:`_literalize_pre_form`.
+
+    ``data`` is the parsed input with ``$ref`` markers left intact so
+    the renderer can emit them as bare identifiers.  ``data_for_preamble``
+    is the same tree with each ref marker resolved against the caller's
+    ``ref_values`` (or stripped when the value is not supplied), so
+    preamble inference sees the types actually flowing through the
+    rendered code -- not the marker's ``{str: str}`` shape.
     """
 
     data: Value
+    data_for_preamble: Value
     result: str
     resolved: ResolvedComments | None
     line_prefix: str
@@ -1834,8 +1842,18 @@ def _literalize_pre_form(
         case _:
             pass
 
+    data_for_preamble: Value = data
+    if ref_values:
+        resolution = _resolve_ref_for_preamble(
+            value=data,
+            ref_values=ref_values,
+            ref_key=active_ref_key,
+        )
+        data_for_preamble = resolution.value if resolution.include else []
+
     return _PreFormState(
         data=data,
+        data_for_preamble=data_for_preamble,
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
@@ -1878,7 +1896,7 @@ def _literalize_apply_form(
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
     computed = compute_preamble(
-        data=pre_form.data,
+        data=pre_form.data_for_preamble,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
@@ -1886,7 +1904,7 @@ def _literalize_apply_form(
         entries=(
             tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(pre_form.data)
+            + language.data_dependent_preamble(pre_form.data_for_preamble)
         )
     )
 
@@ -1908,7 +1926,7 @@ def _literalize_apply_form(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
-            source_data=pre_form.data,
+            source_data=pre_form.data_for_preamble,
         )
 
     return LiteralizeResult(
@@ -1917,7 +1935,7 @@ def _literalize_apply_form(
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
         types_present=computed.types_present,
-        source_data=pre_form.data,
+        source_data=pre_form.data_for_preamble,
     )
 
 

@@ -1,4 +1,3 @@
-import java.util.Map;
 class Main {
     public static void main() {
 var myInt = 42;

@@ -1,9 +1,7 @@
 #include <initializer_list>
-#include <string>
-#include <map>
 int main() {
 auto my_int = 42;
-auto my_data = std::move(my_int);
+auto my_data = my_int;
     (void)my_data;
     return 0;
 }

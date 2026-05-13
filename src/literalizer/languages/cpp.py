@@ -1467,18 +1467,30 @@ class Cpp(metaclass=LanguageCls):
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
-        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
+        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
+        except for trivially-copyable scalars.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
-        the variable is never modified.  Using ``std::move`` avoids the
-        copy and satisfies the linter.
+        the variable is never modified, so ``std::move`` is used for
+        container-typed refs to satisfy the linter.  Applying
+        ``std::move`` to a trivially-copyable scalar (``int``, ``bool``,
+        ``float``) is itself a clang-tidy
+        ``hicpp-move-const-arg`` / ``performance-move-const-arg``
+        warning ("has no effect; remove std::move()"), so we drop the
+        wrapper when the caller's ``ref_values`` identifies the ref as
+        one of those types.  When the value is unknown we keep the
+        historical ``std::move`` form.
         """
 
         def _format_cpp_ref_identifier(
-            name: str, _value: Value | None, /
+            name: str, value: Value | None, /
         ) -> str:
-            """Wrap the identifier in ``std::move()``."""
+            """Wrap the identifier in ``std::move()`` unless *value* is
+            a trivially-copyable scalar.
+            """
+            if isinstance(value, bool | int | float):
+                return name
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier

@@ -2,8 +2,7 @@ module Check exposing (..)
 
 
 type Val
-    = EStr String
-    | EDict (List ( String, Val ))
+    = EInt Int
 
 
 myInt : Val
