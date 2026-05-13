@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
-module Fixture_call_no_params_curried_dotted_Haskell_call where
+module Fixture_call_no_params_dotted_Haskell_call where
 data Val = HList [Val]
 data ThrottlerType_ = ThrottlerType_ { check :: IO () }
 throttler :: ThrottlerType_
