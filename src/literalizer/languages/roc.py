@@ -521,6 +521,13 @@ class Roc(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
     supports_special_floats = True
 
     class DateFormats(enum.Enum):

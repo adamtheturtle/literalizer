@@ -485,6 +485,13 @@ ignore_names = [
     "ZONED",
     # Used by downstream consumers
     "supports_module_name",
+    "supports_empty_dict_key",
+    "supports_call_style",
+    "supports_default_dict_key_type",
+    "supports_default_dict_value_type",
+    "supports_default_sequence_element_type",
+    "supports_default_set_element_type",
+    "supports_default_ordered_map_value_type",
     # Used in documentation code examples
     "custom",
     "result",

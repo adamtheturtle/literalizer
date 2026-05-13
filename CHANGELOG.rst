@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer._language.LanguageCls` now exposes
+  ``supports_empty_dict_key``, ``supports_call_style``,
+  ``supports_default_dict_key_type``, ``supports_default_dict_value_type``,
+  ``supports_default_sequence_element_type``,
+  ``supports_default_set_element_type``, and
+  ``supports_default_ordered_map_value_type`` flags alongside the existing
+  ``supports_module_name``.  Runtime-dispatched callers that look up a
+  language by name can use these to decide whether to pass the matching
+  constructor keyword argument without inspecting dataclass fields or the
+  ``__init__`` signature.
+
 2026.05.13
 ----------
 

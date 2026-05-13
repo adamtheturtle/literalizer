@@ -237,6 +237,13 @@ class Scala(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
