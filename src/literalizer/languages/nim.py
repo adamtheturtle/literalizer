@@ -213,7 +213,7 @@ class _VariantSignature:
 
 
 @beartype
-def _nim_variant_for_scalar(  # noqa: PLR0911
+def _nim_variant_for_scalar(
     *,
     value: Scalar,
     date_type: str,
@@ -222,55 +222,56 @@ def _nim_variant_for_scalar(  # noqa: PLR0911
     """Return the Nim object-variant signature for *value*."""
     match value:
         case bool():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkBool",
                 field_name="boolVal",
                 field_type="bool",
             )
         case int():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkInt",
                 field_name="intVal",
                 field_type="int",
             )
         case float():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkFloat",
                 field_name="floatVal",
                 field_type="float",
             )
         case str():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkStr",
                 field_name="strVal",
                 field_type="string",
             )
         case bytes():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkBytes",
                 field_name="bytesVal",
                 field_type="string",
             )
         case datetime.datetime():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkDateTime",
                 field_name="dateTimeVal",
                 field_type=datetime_type,
             )
         case datetime.date():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkDate",
                 field_name="dateVal",
                 field_type=date_type,
             )
         case None:
-            return _VariantSignature(
+            signature = _VariantSignature(
                 kind_name="vkNull",
                 field_name=None,
                 field_type=None,
             )
         case _ as unreachable:
             assert_never(unreachable)
+    return signature
 
 
 @dataclasses.dataclass(frozen=True)
