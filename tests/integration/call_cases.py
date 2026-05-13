@@ -748,6 +748,26 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
+        # 27-parameter call exercises the type-variable generators in
+        # languages whose call-stub signatures use one type variable per
+        # parameter past the 26-letter alphabet (Gleam ``a1``, Roc
+        # ``a1``, Rust ``A1``).
+        case_dir_name="call_27_parameters",
+        target_function="process",
+        parameter_names=[f"p{i}" for i in range(27)],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_wrap_in_file_escaped_quote",
         target_function="process",
         parameter_names=["v"],
