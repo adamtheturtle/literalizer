@@ -154,7 +154,7 @@ def _unify_rust_types(types: Sequence[str]) -> str:
 
 
 @beartype
-def _rust_scalar_type(  # noqa: PLR0911
+def _rust_scalar_type(
     *,
     data: Scalar,
     date_type: str,
@@ -163,23 +163,22 @@ def _rust_scalar_type(  # noqa: PLR0911
     """Return the Rust type annotation for a scalar value."""
     match data:
         case bool():
-            return "bool"
+            result = "bool"
         case int():
-            return _rust_integer_type(value=data)
+            result = _rust_integer_type(value=data)
         case float():
-            return "f64"
-        case str():
-            return "&str"
-        case bytes():
-            return "&str"
+            result = "f64"
+        case str() | bytes():
+            result = "&str"
         case datetime.datetime():
-            return datetime_type
+            result = datetime_type
         case datetime.date():
-            return date_type
+            result = date_type
         case None:
-            return "Option<()>"
+            result = "Option<()>"
         case _ as unreachable:
             assert_never(unreachable)
+    return result
 
 
 @beartype
