@@ -134,6 +134,99 @@ DEFAULT_ORDERED_MAP_VALUE_TYPES: dict[literalizer.LanguageCls, str] = {
 }
 
 
+@runtime_checkable
+class _HasDefaultSetElementType(Protocol):
+    """Structural type for languages with a ``default_set_element_type``
+    field.
+    """
+
+    default_set_element_type: str
+
+
+@runtime_checkable
+class _HasDefaultSequenceElementType(Protocol):
+    """Structural type for languages with a
+    ``default_sequence_element_type`` field.
+    """
+
+    default_sequence_element_type: str
+
+
+@runtime_checkable
+class _HasDefaultDictValueType(Protocol):
+    """Structural type for languages with a ``default_dict_value_type``
+    field.
+    """
+
+    default_dict_value_type: str
+
+
+@runtime_checkable
+class _HasDefaultDictKeyType(Protocol):
+    """Structural type for languages with a ``default_dict_key_type``
+    field.
+    """
+
+    default_dict_key_type: str
+
+
+@runtime_checkable
+class _HasDefaultOrderedMapValueType(Protocol):
+    """Structural type for languages with a
+    ``default_ordered_map_value_type`` field.
+    """
+
+    default_ordered_map_value_type: str
+
+
+def _read_default_set_element_type(spec: literalizer.Language) -> str:
+    """Read ``default_set_element_type`` from a default-constructed
+    spec.
+    """
+    assert isinstance(spec, _HasDefaultSetElementType)  # noqa: S101
+    return spec.default_set_element_type
+
+
+def _read_default_sequence_element_type(spec: literalizer.Language) -> str:
+    """Read ``default_sequence_element_type`` from a default-constructed
+    spec.
+    """
+    assert isinstance(spec, _HasDefaultSequenceElementType)  # noqa: S101
+    return spec.default_sequence_element_type
+
+
+def _read_default_dict_value_type(spec: literalizer.Language) -> str:
+    """Read ``default_dict_value_type`` from a default-constructed
+    spec.
+    """
+    assert isinstance(spec, _HasDefaultDictValueType)  # noqa: S101
+    return spec.default_dict_value_type
+
+
+def _read_default_dict_key_type(spec: literalizer.Language) -> str:
+    """Read ``default_dict_key_type`` from a default-constructed spec."""
+    assert isinstance(spec, _HasDefaultDictKeyType)  # noqa: S101
+    return spec.default_dict_key_type
+
+
+def _read_default_ordered_map_value_type(spec: literalizer.Language) -> str:
+    """Read ``default_ordered_map_value_type`` from a default-constructed
+    spec.
+    """
+    assert isinstance(spec, _HasDefaultOrderedMapValueType)  # noqa: S101
+    return spec.default_ordered_map_value_type
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _DefaultTypeTable:
+    """Validation entry for one ``DEFAULT_*_TYPES`` override table."""
+
+    field_name: str
+    table: dict[literalizer.LanguageCls, str]
+    supports: Callable[[literalizer.LanguageCls], bool]
+    read_default: Callable[[literalizer.Language], str]
+
+
 def _check_default_type_tables() -> None:
     """Validate the ``DEFAULT_*_TYPES`` tables at import time.
 
@@ -142,49 +235,45 @@ def _check_default_type_tables() -> None:
     value must differ from that field's own default; either kind of
     drift would silently break variant coverage.
     """
-    tables: tuple[
-        tuple[
-            str,
-            dict[literalizer.LanguageCls, str],
-            Callable[[literalizer.LanguageCls], bool],
-        ],
-        ...,
-    ] = (
-        (
-            "default_set_element_type",
-            DEFAULT_SET_ELEMENT_TYPES,
-            lambda cls: cls.supports_default_set_element_type,
+    tables: tuple[_DefaultTypeTable, ...] = (
+        _DefaultTypeTable(
+            field_name="default_set_element_type",
+            table=DEFAULT_SET_ELEMENT_TYPES,
+            supports=lambda cls: cls.supports_default_set_element_type,
+            read_default=_read_default_set_element_type,
         ),
-        (
-            "default_sequence_element_type",
-            DEFAULT_SEQUENCE_ELEMENT_TYPES,
-            lambda cls: cls.supports_default_sequence_element_type,
+        _DefaultTypeTable(
+            field_name="default_sequence_element_type",
+            table=DEFAULT_SEQUENCE_ELEMENT_TYPES,
+            supports=lambda cls: cls.supports_default_sequence_element_type,
+            read_default=_read_default_sequence_element_type,
         ),
-        (
-            "default_dict_value_type",
-            DEFAULT_DICT_VALUE_TYPES,
-            lambda cls: cls.supports_default_dict_value_type,
+        _DefaultTypeTable(
+            field_name="default_dict_value_type",
+            table=DEFAULT_DICT_VALUE_TYPES,
+            supports=lambda cls: cls.supports_default_dict_value_type,
+            read_default=_read_default_dict_value_type,
         ),
-        (
-            "default_dict_key_type",
-            DEFAULT_DICT_KEY_TYPES,
-            lambda cls: cls.supports_default_dict_key_type,
+        _DefaultTypeTable(
+            field_name="default_dict_key_type",
+            table=DEFAULT_DICT_KEY_TYPES,
+            supports=lambda cls: cls.supports_default_dict_key_type,
+            read_default=_read_default_dict_key_type,
         ),
-        (
-            "default_ordered_map_value_type",
-            DEFAULT_ORDERED_MAP_VALUE_TYPES,
-            lambda cls: cls.supports_default_ordered_map_value_type,
+        _DefaultTypeTable(
+            field_name="default_ordered_map_value_type",
+            table=DEFAULT_ORDERED_MAP_VALUE_TYPES,
+            supports=lambda cls: cls.supports_default_ordered_map_value_type,
+            read_default=_read_default_ordered_map_value_type,
         ),
     )
-    for field_name, table, supports in tables:
-        expected = {cls for cls in ALL_LANGUAGES if supports(cls)}
-        assert set(table.keys()) == expected, field_name  # noqa: S101
-        for lang_cls, override in table.items():
-            fields_attr: dict[str, dataclasses.Field[object]] = getattr(
-                lang_cls, "__dataclass_fields__", {}
-            )
-            assert override != fields_attr[field_name].default, (  # noqa: S101
-                f"{lang_cls.__name__}.{field_name}={override!r}"
+    for entry in tables:
+        expected = {cls for cls in ALL_LANGUAGES if entry.supports(cls)}
+        assert set(entry.table.keys()) == expected, entry.field_name  # noqa: S101
+        for lang_cls, override in entry.table.items():
+            default = entry.read_default(make_spec(lang_cls=lang_cls))
+            assert override != default, (  # noqa: S101
+                f"{lang_cls.__name__}.{entry.field_name}={override!r}"
             )
 
 
