@@ -96,6 +96,28 @@ def test_rust_vec_format_type_annotation() -> None:
     assert result == "Vec<i32>"
 
 
+def test_rust_static_set_annotation_unifies_integer_widths() -> None:
+    """Set type annotations infer one element type for all values."""
+    rust = Rust(
+        declaration_style=Rust.declaration_styles.STATIC,
+        sequence_format=Rust.sequence_formats.ARRAY,
+        set_format=Rust.set_formats.HASH_SET,
+    )
+    result = literalize(
+        source="!!set {1, 1099511627776}",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=NewVariable(name="DATA"),
+    )
+
+    assert result.code == (
+        "static DATA: HashSet<i64> = HashSet::from([\n"
+        "    1,\n"
+        "    1099511627776i64,\n"
+        "]);"
+    )
+
+
 def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
     """Single-element tuple annotations include the required comma."""
     rust = Rust(
