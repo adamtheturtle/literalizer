@@ -4,6 +4,22 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize` now raises
+  :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`
+  when ``wrap_in_file=True`` is combined with ``variable_form=None`` for
+  a target language that cannot represent a bare value at file-statement
+  scope.  Each :class:`~literalizer._language.Language` declares its
+  ability to render this shape via a new
+  ``supports_no_variable_wrap_in_file`` flag.  Strict-typed compiled
+  languages (Rust, C, C++, Haskell, OCaml, Swift, Ada, D, Dart, C#, Elm,
+  Mojo, Nim, Objective-C, Odin, SML, V, Zig, Go, Java, Kotlin, F#,
+  Scala, Erlang, Gleam, Roc, PureScript, Tcl, Bash, VB, SystemVerilog,
+  Occam) opt out, along with Cobol, Fortran, Php, Lua, Toml, and Dhall
+  — each of which produced a file whose linter rejected the resulting
+  bare-value rendering even though the issue text initially listed them
+  as opt-in.  The renderer no longer silently emits invalid output for
+  any of these.
+
 - :class:`~literalizer.Haskell`, :class:`~literalizer.FSharp`,
   :class:`~literalizer.OCaml`, and :class:`~literalizer.Sml` now expose
   a ``CURRIED`` :class:`~literalizer.CallStyle` alongside the existing

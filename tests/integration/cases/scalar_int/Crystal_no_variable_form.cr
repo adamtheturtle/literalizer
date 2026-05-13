@@ -1,0 +1,4 @@
+module Fixture_scalar_int_Crystal_no_variable_form
+extend self
+42
+end

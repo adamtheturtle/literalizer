@@ -321,6 +321,7 @@ class Fortran(metaclass=LanguageCls):
     pygments_name = "fortran"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -587,25 +588,15 @@ class Fortran(metaclass=LanguageCls):
                 f"end program {self.module_name}"
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if body_preamble:
-            stubs_str = "\n".join(body_preamble)
-            indented_stubs = textwrap.indent(
-                text=stubs_str, prefix=self.indent
-            )
-            return (
-                f"program {self.module_name}\n"
-                f"{self.indent}use fval_m\n"
-                f"{self.indent}implicit none\n"
-                f"{indented}\n"
-                f"contains\n"
-                f"{indented_stubs}\n"
-                f"end program {self.module_name}"
-            )
+        stubs_str = "\n".join(body_preamble)
+        indented_stubs = textwrap.indent(text=stubs_str, prefix=self.indent)
         return (
             f"program {self.module_name}\n"
             f"{self.indent}use fval_m\n"
             f"{self.indent}implicit none\n"
             f"{indented}\n"
+            f"contains\n"
+            f"{indented_stubs}\n"
             f"end program {self.module_name}"
         )
 

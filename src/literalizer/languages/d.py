@@ -161,6 +161,7 @@ class D(metaclass=LanguageCls):
     pygments_name = "d"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True

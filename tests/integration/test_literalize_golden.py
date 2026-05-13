@@ -24,10 +24,12 @@ from literalizer.exceptions import (
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
     IndentCase,
+    NoVariableFormCase,
     PreIndentCase,
     StatementTerminatorCombinedCase,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
+    build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     group_cases_by_language,
@@ -405,6 +407,55 @@ def test_pre_indent_level_with_new_variable_golden_file(
             extension=spec.extension,
             lang_cls=case.lang_cls,
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=build_no_variable_form_cases(),
+    ids=[c.name for c in build_no_variable_form_cases()],
+)
+def test_no_variable_form_golden_file(
+    case: NoVariableFormCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``literalize(wrap_in_file=True, variable_form=None)`` renders to a
+    stable per-language golden for every opt-in language.
+
+    Locks in issue #2138: languages whose
+    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+    is ``True`` must produce valid file-scope output for a bare value;
+    opt-out languages are rejected upstream with
+    :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`.
+    """
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=case.name,
+        extension=case.lang_cls.extension,
+        lang_cls=case.lang_cls,
+    )
+    spec = with_per_fixture_module_name(
+        spec=make_spec(lang_cls=case.lang_cls),
+        golden_path=golden_path,
+    )
+    result = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+        wrap_in_file=True,
+    )
+    check_golden(
+        file_regression=file_regression,
+        contents=result.code + "\n",
+        extension=case.lang_cls.extension,
+        newline=None,
+        golden_path=golden_path,
     )
 
 
