@@ -286,8 +286,6 @@ jobs:
         with:
           packages: guile-3.0
           version: 1.0
-          # Required so update-alternatives creates /usr/bin/guile on cache hit.
-          execute_install_scripts: true
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
@@ -307,11 +305,11 @@ jobs:
       - name: Install octave
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: octave
+          # cache-apt-pkgs-action does not resolve transitive dependencies,
+          # so liblapack3 (needed for octave-cli's liblapack.so.3) has to
+          # be listed explicitly here.
+          packages: octave liblapack3
           version: 1.0
-          # Required so ldconfig registers transitive shared libraries
-          # (e.g. liblapack.so.3) after restore.
-          execute_install_scripts: true
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
