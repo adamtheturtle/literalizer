@@ -248,12 +248,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install gforth
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gforth
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: gforth
+          version: 1.0
       - name: Lint Forth
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
@@ -267,12 +265,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install tcl
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends tcl
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: tcl
+          version: 1.0
       - name: Lint Tcl
         run: |-
           find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl
@@ -286,12 +282,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install guile
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends guile-3.0
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: guile-3.0
+          version: 1.0
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
@@ -309,12 +303,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install octave
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends octave
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: octave
+          version: 1.0
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
@@ -327,14 +319,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Perl deps
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends cpanminus
-          sudo cpanm --notest DateTime
+      - name: Install cpanminus
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: cpanminus
+          version: 1.0
+      - name: Install Perl DateTime
+        run: sudo cpanm --notest DateTime
       - name: Lint Perl
         run: |-
           find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl
@@ -497,12 +488,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install apt packages for Ada
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends gnat
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: gnat
+          version: 1.0
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -805,12 +794,10 @@ jobs:
           clj-kondo: latest
           bb: latest
       - name: Install Groovy
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends groovy
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: groovy
+          version: 1.0
 
       - name: Lint Clojure
         run: |-
