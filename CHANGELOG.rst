@@ -5,6 +5,19 @@ Next
 ----
 
 
+- The internal :data:`~literalizer._types.Value` and
+  :data:`~literalizer._types.ValueInput` aliases now permit any
+  :data:`~literalizer._types.Scalar` as a dict key, in preparation for
+  surface formats that admit non-string dict keys.  A new
+  :exc:`~literalizer.exceptions.UnrepresentableInputError` and a
+  ``supports_non_string_dict_keys`` class attribute on
+  :class:`~literalizer.Language` (defaulting to ``True``; overridden to
+  ``False`` on :class:`~literalizer.Json5`,
+  :class:`~literalizer.Jsonnet`, and :class:`~literalizer.Toml`) wire a
+  centralized guard at the dict-formatting boundary.  The surface
+  parsers still produce only string-keyed dicts, so behavior is
+  unchanged.
+
 - :func:`~literalizer.literalize` now accepts a ``ref_values`` mapping
   from ref identifier to the value declared elsewhere for that ref.
   Languages whose ``$ref`` rendering depends on the referenced type

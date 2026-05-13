@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 type Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
-type Value = Scalar | list[Value] | dict[str, Value] | set[Scalar]
+type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
 type ValueInput = (
-    Scalar | Sequence[ValueInput] | Mapping[str, ValueInput] | set[Scalar]
+    Scalar | Sequence[ValueInput] | Mapping[Scalar, ValueInput] | set[Scalar]
 )

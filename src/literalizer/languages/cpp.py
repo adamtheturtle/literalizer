@@ -80,7 +80,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 class _CppModifiers(enum.Enum):
@@ -628,7 +628,7 @@ def _apply_cpp_variant_sequence_open(
 @beartype
 def _apply_cpp_variant_dict_open(
     *,
-    items: dict[str, Value],
+    items: dict[Scalar, Value],
     type_ctx: _CppTypeCtx,
     opener_template: str,
 ) -> str:
@@ -657,7 +657,7 @@ def _apply_cpp_variant_set_open(
 @beartype
 def _apply_cpp_variant_ordered_map_open(
     *,
-    data: dict[str, Value],
+    data: dict[Scalar, Value],
     type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ordered-map opener."""
@@ -690,12 +690,12 @@ def _build_variant_dict_open(
     *,
     type_ctx: _CppTypeCtx,
     opener_template: str,
-) -> Callable[[dict[str, Value]], str]:
+) -> Callable[[dict[Scalar, Value]], str]:
     """Build a dict opener that uses ``std::variant`` for
     heterogeneous dict values.
     """
 
-    def _open(items: dict[str, Value]) -> str:
+    def _open(items: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_dict_open(
             items=items,
@@ -724,12 +724,12 @@ def _build_variant_set_open(
 def _build_variant_ordered_map_open(
     *,
     type_ctx: _CppTypeCtx,
-) -> Callable[[dict[str, Value]], str]:
+) -> Callable[[dict[Scalar, Value]], str]:
     """Build an ordered-map opener that uses
     ``std::vector<std::pair<...>>``.
     """
 
-    def _open(data: dict[str, Value]) -> str:
+    def _open(data: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_ordered_map_open(
             data=data,
@@ -941,6 +941,7 @@ class Cpp(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(

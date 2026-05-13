@@ -284,15 +284,15 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
                 non_dict.append(elem)
     merged: list[Value] = list(non_dict)
     if has_plain:
-        merged.append(
-            {str(object=i): v for i, v in enumerate(iterable=plain_vals)}
-        )
+        plain_repr: dict[Scalar, Value] = {
+            str(object=i): v for i, v in enumerate(iterable=plain_vals)
+        }
+        merged.append(plain_repr)
     if has_ordered:
-        merged.append(
-            OrderedDict(
-                {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
-            )
-        )
+        ordered_repr: dict[Scalar, Value] = {
+            str(object=i): v for i, v in enumerate(iterable=ordered_vals)
+        }
+        merged.append(OrderedDict(ordered_repr))
     return merged
 
 
@@ -588,6 +588,7 @@ class Python(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(

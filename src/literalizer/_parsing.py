@@ -156,7 +156,10 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
                 ]
             )
         case dict():
-            return {f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()}
+            coerced: dict[Scalar, Value] = {
+                f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()
+            }
+            return coerced
         case list():
             return [_coerce_yaml_keys(data=item) for item in data]
         case CommentedSet():
@@ -337,7 +340,10 @@ def _coerce_toml_values(*, data: _TomlData) -> Value:
     """
     match data:
         case dict():
-            return {k: _coerce_toml_values(data=v) for k, v in data.items()}
+            coerced: dict[Scalar, Value] = {
+                k: _coerce_toml_values(data=v) for k, v in data.items()
+            }
+            return coerced
         case list():
             return [_coerce_toml_values(data=item) for item in data]
         case datetime.time():
