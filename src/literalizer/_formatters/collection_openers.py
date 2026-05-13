@@ -10,6 +10,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     ListType,
     MixedNumeric,
+    WideInt,
     infer_element_type,
 )
 from literalizer._types import Value
@@ -49,6 +50,7 @@ def make_element_to_type(
     list_template: str,
     dict_type_template: str | None,
     fallback_value_type: str | None,
+    wide_int_type: str | None = None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.
@@ -79,6 +81,10 @@ def make_element_to_type(
             (float, float_type),
             (bytes, bytes_type),
             (MixedNumeric, mixed_numeric_type),
+            (
+                WideInt,
+                wide_int_type if wide_int_type is not None else int_type,
+            ),
             (datetime.date, date_type),
             (datetime.datetime, datetime_type),
         )
@@ -352,6 +358,7 @@ class TypedOpenerConfig:
         set_opener_template: str,
         dict_type_template: str | None,
         fallback_value_type: str | None,
+        wide_int_type: str | None = None,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._str_type = str_type
@@ -368,6 +375,7 @@ class TypedOpenerConfig:
         self._set_opener_template = set_opener_template
         self._dict_type_template = dict_type_template
         self._fallback_value_type = fallback_value_type
+        self._wide_int_type = wide_int_type
 
     @beartype
     def type_name(self, py_type: type) -> str | None:
@@ -385,6 +393,12 @@ class TypedOpenerConfig:
                 (float, self._float_type),
                 (bytes, self._bytes_type),
                 (MixedNumeric, self._mixed_numeric_type),
+                (
+                    WideInt,
+                    self._wide_int_type
+                    if self._wide_int_type is not None
+                    else self._int_type,
+                ),
                 (datetime.date, self._date_type),
                 (datetime.datetime, self._datetime_type),
             )
@@ -422,6 +436,7 @@ class TypedOpenerConfig:
             str_type=self._str_type,
             bool_type=self._bool_type,
             int_type=self._int_type,
+            wide_int_type=self._wide_int_type,
             float_type=self._float_type,
             bytes_type=self._bytes_type,
             mixed_numeric_type=self._mixed_numeric_type,

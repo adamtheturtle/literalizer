@@ -43,6 +43,30 @@ class MixedNumeric:
     """
 
 
+class WideInt:
+    """Sentinel class for int collections containing values outside the
+    signed 32-bit range.
+
+    Used as a key in scalar type mapping dicts so each language can
+    decide what wider integer type (e.g. ``long``, ``i64``) the
+    collection's element type should be annotated as.
+    """
+
+
+_I32_MIN = -(2**31)
+_I32_MAX = 2**31 - 1
+
+
+def _int_needs_widening(items: list[Value]) -> bool:
+    """Return ``True`` if any int in *items* is outside i32 range."""
+    return any(
+        isinstance(item, int)
+        and not isinstance(item, bool)
+        and not _I32_MIN <= item <= _I32_MAX
+        for item in items
+    )
+
+
 @dataclass(frozen=True)
 class _Collected:
     """Per-item type buckets gathered for ``infer_element_type``."""
@@ -90,6 +114,30 @@ def _collect_element_types(
 
 
 @beartype
+def _resolve_single_type(
+    *,
+    the_type: type | ListType,
+    items: list[Value],
+    all_dict_values: list[Value],
+) -> type | ListType | DictType:
+    """Resolve a unique element type to its inferred return value.
+
+    Handles the ``dict`` -> :class:`DictType` and the int-widening to
+    :class:`WideInt` branches; falls through to ``the_type`` itself
+    otherwise.
+    """
+    if the_type is dict:
+        value_type = infer_element_type(items=all_dict_values)
+        return DictType(
+            value_type=value_type,
+            values=tuple(all_dict_values),
+        )
+    if the_type is int and _int_needs_widening(items=items):
+        return WideInt
+    return the_type
+
+
+@beartype
 def infer_element_type(
     items: list[Value],
 ) -> type | ListType | DictType | None:
@@ -106,16 +154,12 @@ def infer_element_type(
     if not isinstance(collected, _Collected):
         return None
     element_types = collected.element_types
-    all_dict_values = collected.dict_values
     if len(element_types) == 1:
-        the_type = next(iter(element_types))
-        if the_type is dict:
-            value_type = infer_element_type(items=all_dict_values)
-            return DictType(
-                value_type=value_type,
-                values=tuple(all_dict_values),
-            )
-        return the_type
+        return _resolve_single_type(
+            the_type=next(iter(element_types)),
+            items=items,
+            all_dict_values=collected.dict_values,
+        )
     if element_types == {int, float}:
         return MixedNumeric
     return None

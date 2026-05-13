@@ -47,6 +47,7 @@ from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_long_suffix_formatter,
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
@@ -205,6 +206,10 @@ def _kotlin_type_to_opener(
             return scalar_openers.get(element_type)
 
 
+_KOTLIN_I32_MIN = -(2**31)
+_KOTLIN_I32_MAX = 2**31 - 1
+
+
 @beartype
 def _kotlin_scalar_hint(
     *,
@@ -217,7 +222,11 @@ def _kotlin_scalar_hint(
         case bool():
             hint = "Boolean"
         case int():
-            hint = "Int"
+            hint = (
+                "Long"
+                if not _KOTLIN_I32_MIN <= data <= _KOTLIN_I32_MAX
+                else "Int"
+            )
         case float():
             hint = "Double"
         case str() | bytes():
@@ -263,7 +272,13 @@ def _kotlin_set_hint(
     """Derive a Kotlin set type annotation."""
     if is_empty:
         return f"{set_outer}<{default_set_element_type}>"
-    elem_type = elem_types_sorted[0] if len(elem_types_sorted) == 1 else "Any?"
+    unique = set(elem_types_sorted)
+    if unique == {"Int", "Long"}:
+        elem_type = "Long"
+    elif len(unique) == 1:
+        elem_type = elem_types_sorted[0]
+    else:
+        elem_type = "Any?"
     return f"{set_outer}<{elem_type}>"
 
 
@@ -518,6 +533,7 @@ class Kotlin(metaclass=LanguageCls):
         str_type="String",
         bool_type="Boolean",
         int_type="Int",
+        wide_int_type="Long",
         float_type="Double",
         bytes_type="String",
         mixed_numeric_type=None,
@@ -1220,6 +1236,19 @@ class Kotlin(metaclass=LanguageCls):
             base=self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
             ),
+            fallback=_format_kotlin_biginteger_literal,
+        )
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``L``-suffixed integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=make_long_suffix_formatter(base=base),
             fallback=_format_kotlin_biginteger_literal,
         )
 

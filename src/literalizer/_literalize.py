@@ -25,6 +25,7 @@ from literalizer._comments_resolve import (
 )
 from literalizer._formatters.type_inference import (
     DictType,
+    WideInt,
     infer_element_type,
 )
 from literalizer._language import (
@@ -208,15 +209,31 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 
 
 @beartype
-def _format_scalar(*, value: Scalar, spec: Language) -> str:
-    """Format a scalar JSON value as a native language literal."""
+def _format_scalar(
+    *,
+    value: Scalar,
+    spec: Language,
+    int_formatter: Callable[[int], str] | None = None,
+) -> str:
+    """Format a scalar JSON value as a native language literal.
+
+    *int_formatter* overrides ``spec.format_integer`` when given; the
+    collection formatter passes a widened formatter (e.g. one that
+    always appends an ``L`` suffix) when the surrounding collection's
+    inferred element type required widening for some other element.
+    """
     match value:
         case None:
             result = spec.null_literal
         case bool():
             result = spec.true_literal if value else spec.false_literal
         case int():
-            result = spec.format_integer(value)
+            format_int = (
+                int_formatter
+                if int_formatter is not None
+                else spec.format_integer
+            )
+            result = format_int(value)
         case float():
             result = spec.format_float(value)
         case str():
@@ -228,6 +245,23 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
         case _:
             result = spec.format_date(value)
     return result
+
+
+@beartype
+def _widened_int_formatter(
+    *,
+    items: list[Value],
+    spec: Language,
+) -> Callable[[int], str] | None:
+    """Return a widened integer formatter for *items* or ``None``.
+
+    Returns ``None`` when *items* do not require widening (no
+    out-of-i32 integer present) or when the language does not expose a
+    ``format_integer_widened`` override.
+    """
+    if infer_element_type(items=items) is not WideInt:
+        return None
+    return getattr(spec, "format_integer_widened", None)
 
 
 _SCALAR_TYPES: Final = (
@@ -307,7 +341,11 @@ def _format_set_value(
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     parent_id = id(value)
-    formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
+    int_formatter = _widened_int_formatter(items=items_as_values, spec=spec)
+    formatted = [
+        _format_scalar(value=v, spec=spec, int_formatter=int_formatter)
+        for v in sorted_items
+    ]
     entries = [
         spec.format_set_entry(
             v,
@@ -1060,6 +1098,7 @@ def _format_value(
     ref_key: str,
     collection_layout: CollectionLayout,
     multiline_prefix: str,
+    int_formatter: Callable[[int], str] | None = None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -1170,7 +1209,9 @@ def _format_value(
                 multiline_prefix=multiline_prefix,
             )
         case _:
-            result = _format_scalar(value=value, spec=spec)
+            result = _format_scalar(
+                value=value, spec=spec, int_formatter=int_formatter
+            )
     return result
 
 
@@ -1446,6 +1487,10 @@ def _format_collection_lines(
                 key=lambda v: (type(v).__name__, repr(v)),
             )
             set_parent_id = id(set_data)
+            set_int_formatter = _widened_int_formatter(
+                items=list(sorted_items),
+                spec=spec,
+            )
             formatted_entries = [
                 spec.format_set_entry(
                     item,
@@ -1465,6 +1510,7 @@ def _format_collection_lines(
                             ref_key=ref_key,
                             collection_layout=collection_layout,
                             multiline_prefix=body_prefix,
+                            int_formatter=set_int_formatter,
                         ),
                         spec=spec,
                     ),
