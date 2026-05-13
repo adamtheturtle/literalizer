@@ -74,7 +74,7 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_format_c_entry(  # noqa: PLR0911
+def _apply_format_c_entry(
     *,
     original: Value,
     formatted: str,
@@ -84,24 +84,25 @@ def _apply_format_c_entry(  # noqa: PLR0911
     string_field: str,
 ) -> str:
     """Wrap a formatted entry in the appropriate union literal."""
+    # Values above ``LLONG_MAX`` cannot be assigned to the signed
+    # ``long long`` field without an implementation-defined narrowing
+    # conversion; route them to the unsigned field.
     match original:
         case datetime.datetime() if formatted.lstrip("-").isdigit():
-            return f"((CVal){{.{int_field} = {formatted}}})"
+            field = int_field
         case str() | bytes() | datetime.date():
-            return f"((CVal){{.{string_field} = {formatted}}})"
+            field = string_field
         case bool():
             return formatted
+        case int() if original > I64_MAX:
+            field = uint_field
         case int():
-            # Values above ``LLONG_MAX`` cannot be assigned to the signed
-            # ``long long`` field without an implementation-defined
-            # narrowing conversion; route them to the unsigned field.
-            if original > I64_MAX:
-                return f"((CVal){{.{uint_field} = {formatted}}})"
-            return f"((CVal){{.{int_field} = {formatted}}})"
+            field = int_field
         case float():
-            return f"((CVal){{.{float_field} = {formatted}}})"
+            field = float_field
         case _:
             return formatted
+    return f"((CVal){{.{field} = {formatted}}})"
 
 
 @beartype
