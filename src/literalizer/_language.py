@@ -620,19 +620,6 @@ class LanguageCls(type):
     format_call_statement: Callable[[str], str]
     call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
 
-    def __init__(
-        cls,
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, object],
-        /,
-        **kwargs: object,
-    ) -> None:
-        """Apply class-attribute defaults that not every language sets."""
-        super().__init__(name, bases, namespace, **kwargs)
-        if "max_call_parameters" not in namespace:
-            cls.max_call_parameters = None
-
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
         instance: Language = super().__call__(*args, **kwargs)

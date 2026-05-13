@@ -340,6 +340,7 @@ class Cobol(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = False
     supports_zero_parameter_calls = False
+    max_call_parameters: int | None = None
     supports_inline_multiline_dict_args = False
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = False
