@@ -136,6 +136,10 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow print() in docs for output-illustrating examples.
     "T201",
 ]
+lint.per-file-ignores."tests/**/test_*.py" = [
+    # Allow 'assert' as we use it for tests.
+    "S101",
+]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
     # unused-import checks (F401) so we catch stale imports.
@@ -153,10 +157,6 @@ lint.per-file-ignores."tests/integration/test_*.py" = [
     "S101",
     # FileRegressionFixture must be imported at runtime for beartype.
     "TC002",
-]
-lint.per-file-ignores."tests/test_*.py" = [
-    # Allow 'assert' as we use it for tests.
-    "S101",
 ]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
