@@ -150,32 +150,22 @@ def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
     )
 
 
-_COLLAPSED_DART_MAP_COUNT = 2
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _DartSkipNulls(Dart):
-    """Dart subclass that skips null dict values.
-
-    The widening bug in
-    :func:`~literalizer._literalize._compute_dict_open_override` only
-    manifests when a language combines a value-type-sensitive
-    ``dict_open`` (produced by
-    :func:`~literalizer._formatters.collection_openers.typed_dict_open`)
-    with ``skip_null_dict_values=True``.  No production language pairs
-    those two today — the ``typed_dict_open`` languages (Dart, CSharp,
-    Kotlin, Scala, Go) all keep nulls, while the
-    ``skip_null_dict_values=True`` languages (Java, Lua, Toml, Wren)
-    all use ``fixed_dict_open`` whose constant opener never triggers
-    widening.
-
-    That is also why these tests live here rather than in the
-    ``tests/integration/cases/`` golden-file suite, which iterates over
-    :data:`~literalizer.languages.ALL_LANGUAGES` and has no way to
-    inject a test-only language.
-    """
-
-    skip_null_dict_values: ClassVar[bool] = True
+# The widening branch in
+# :func:`~literalizer._literalize._compute_dict_open_override` only
+# fires when a language combines a value-type-sensitive ``dict_open``
+# (from
+# :func:`~literalizer._formatters.collection_openers.typed_dict_open`)
+# with ``skip_null_dict_values=True``. No production language pairs
+# those two: the ``typed_dict_open`` languages (Dart, CSharp, Kotlin,
+# Scala, Go) all keep nulls, while the ``skip_null_dict_values=True``
+# languages (Java, Lua, Toml, Wren) all use ``fixed_dict_open`` whose
+# constant opener never triggers widening. Each test below therefore
+# defines a Dart subclass inline rather than reusing a production
+# language or a shared test helper; that is also why these tests live
+# here rather than in the ``tests/integration/cases/`` golden-file
+# suite, which iterates over
+# :data:`~literalizer.languages.ALL_LANGUAGES` and has no way to
+# inject a test-only language.
 
 
 def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
@@ -186,11 +176,18 @@ def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
     dicts whose remaining value types diverge (``int`` vs. ``String``).
     The override must widen so both dicts share a ``dynamic`` opener.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null, "b": 1}, {"a": "hello", "b": null}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
@@ -213,11 +210,18 @@ def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
     override must widen both to the fallback so the sequence is
     consistent.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null}, {"x": 1}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
@@ -240,18 +244,28 @@ def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
     fallback ``<String, dynamic>{`` opener on their own, so widening
     would be a no-op.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null}, {"b": null}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
     )
 
-    assert (
-        result.code.count("<String, dynamic>{}") == _COLLAPSED_DART_MAP_COUNT
+    assert result.code == (
+        "<Map<String, dynamic>>[\n"
+        "    <String, dynamic>{},\n"
+        "    <String, dynamic>{},\n"
+        "]"
     )
 
 
@@ -259,14 +273,21 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
     """No override is needed when filtered dicts all share one opener.
 
     Null masks hide keys ``a`` and ``b`` in each dict, leaving only
-    ``{"n": 1}`` and ``{"n": 2}`` — both ``<String, int>``.  Widening
+    ``{"n": 1}`` and ``{"n": 2}``, both ``<String, int>``.  Widening
     would be redundant; each dict renders with its own inferred opener.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null, "n": 1}, {"b": null, "n": 2}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
