@@ -810,14 +810,22 @@ def _format_variable_declaration(
 def _renders_as_string_literal(*, value: str) -> bool:
     """Return whether *value* renders as a C string literal.
 
-    A YAML scalar may carry a *before* comment which is emitted as a
-    ``//`` line inserted between ``=`` and the underlying literal; skip
-    any such leading comment lines before checking the prefix.
+    A YAML scalar may carry *before* comments which are emitted as
+    ``//`` lines inserted between ``=`` and the underlying literal; the
+    formatted comments may also carry the caller's ``line_prefix``
+    indent (e.g. when ``pre_indent_level > 0``).  Skip any leading
+    whitespace-then-``//`` lines before inspecting the underlying
+    literal.
     """
-    payload = value
-    while payload.startswith("//"):
-        _, _, payload = payload.partition("\n")
-    return payload.startswith('"')
+    literal_line = next(
+        (
+            line.lstrip()
+            for line in value.splitlines()
+            if not line.lstrip().startswith("//")
+        ),
+        "",
+    )
+    return literal_line.startswith('"')
 
 
 def _cpp_call_stub(
