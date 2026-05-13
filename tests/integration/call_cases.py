@@ -860,7 +860,7 @@ def _expected_call_shape_exception(
     innermost_target_function = config.target_function.split(sep=".")[-1]
     unsupported_signals = (
         parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
-        max_params is not None and parameter_count > max_params,
+        parameter_count > max_params,
         config.requires_inline_multiline_dict_args
         and not lang_cls.supports_inline_multiline_dict_args,
         config.requires_call_returns_expression

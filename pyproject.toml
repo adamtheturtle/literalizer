@@ -277,6 +277,8 @@ ignore = [
     "CONTRIBUTING.rst",
     "LICENSE",
     "Makefile",
+    "issue.md",
+    "repro.py",
     "ci",
     "ci/**",
     "docs",
