@@ -41,6 +41,7 @@ from literalizer._formatters.format_strings import (
     escape_control_chars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -419,6 +420,22 @@ def _roc_format_call_target(parts: Sequence[str]) -> str:
     return "_".join(parts)
 
 
+@beartype
+def _roc_type_var(*, index: int) -> str:
+    """Return a unique lowercase identifier for a Roc type variable.
+
+    Indices ``0``..``25`` map to ``a``..``z``; higher indices append a
+    numeric suffix (``a1``..``z1``, ``a2``..``z2``, ...) so that
+    27-or-more parameter stubs do not overflow the alphabet into
+    non-letter ASCII like ``{``.
+    """
+    letter = chr(ord("a") + index % 26)
+    group = index // 26
+    if group == 0:
+        return letter
+    return f"{letter}{group}"
+
+
 def _roc_call_body_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -439,7 +456,7 @@ def _roc_call_body_stub(
         sig = f"{flat_name} : {{}}"
         impl = f"{flat_name} = {{}}"
     else:
-        type_vars = ", ".join(chr(ord("a") + i) for i in range(n))
+        type_vars = ", ".join(_roc_type_var(index=i) for i in range(n))
         wildcards = ", ".join("_" for _ in range(n))
         sig = f"{flat_name} : {type_vars} -> {{}}"
         impl = f"{flat_name} = \\{wildcards} -> {{}}"
@@ -518,6 +535,7 @@ class Roc(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
     supports_module_name = False

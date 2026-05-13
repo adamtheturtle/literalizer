@@ -45,7 +45,10 @@ type _Scalar = (
     str | int | float | bool | None | datetime.date | datetime.datetime | bytes
 )
 type _ValueInput = (
-    _Scalar | Sequence[_ValueInput] | Mapping[str, _ValueInput] | set[_Scalar]
+    _Scalar
+    | Sequence[_ValueInput]
+    | Mapping[_Scalar, _ValueInput]
+    | set[_Scalar]
 )
 
 
