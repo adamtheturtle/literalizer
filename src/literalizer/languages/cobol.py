@@ -593,21 +593,14 @@ class Cobol(metaclass=LanguageCls):
                 Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if body_preamble:
-            stubs = "\n".join(body_preamble)
-            return (
-                Cobol._PROGRAM_PREFIX
-                + "PROCEDURE DIVISION.\n"
-                + f"{indented}\n"
-                + f"{self.indent}STOP RUN.\n"
-                + f"{stubs}\n"
-                + "END PROGRAM CHECK."
-            )
-        return (  # pragma: no cover
+        stubs = "\n".join(body_preamble)
+        return (
             Cobol._PROGRAM_PREFIX
             + "PROCEDURE DIVISION.\n"
             + f"{indented}\n"
-            + f"{self.indent}STOP RUN."
+            + f"{self.indent}STOP RUN.\n"
+            + f"{stubs}\n"
+            + "END PROGRAM CHECK."
         )
 
     @staticmethod
