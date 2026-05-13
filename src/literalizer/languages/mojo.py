@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -537,7 +537,7 @@ class _VariantSignature:
 
 
 @beartype
-def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PLR0911
+def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:
     """Return the Mojo Variant alternative for *value*.
 
     Strings, bytes, dates, and datetimes all map to ``String`` because
@@ -547,10 +547,6 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
     ``Variant`` constructor in Mojo cannot infer ``NoneType`` from the
     bare ``None`` literal.
     """
-    _string_signature = _VariantSignature(
-        type_name="String",
-        payload_template="String({value})",
-    )
     match value:
         case bool():
             return _VariantSignature(
@@ -567,21 +563,16 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
                 type_name="Float64",
                 payload_template="Float64({value})",
             )
-        case str():
-            return _string_signature
-        case bytes():
-            return _string_signature
-        case datetime.datetime():
-            return _string_signature
-        case datetime.date():
-            return _string_signature
+        case str() | bytes() | datetime.datetime() | datetime.date():
+            return _VariantSignature(
+                type_name="String",
+                payload_template="String({value})",
+            )
         case None:
             return _VariantSignature(
                 type_name="NoneType",
                 payload_template="NoneType()",
             )
-        case _ as unreachable:
-            assert_never(unreachable)
 
 
 _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES: frozenset[str] = frozenset(
