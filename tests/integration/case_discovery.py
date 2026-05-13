@@ -100,26 +100,35 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     return False
 
 
-@beartype
-def has_non_printable_ascii_dict_keys(data: object) -> bool:
+type YamlData = (
+    dict[object, "YamlData"]
+    | list["YamlData"]
+    | str
+    | int
+    | float
+    | bool
+    | None
+)
+
+
+def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
     """
     match data:
         case dict():
-            for key in data:  # pyright: ignore[reportUnknownVariableType]
+            for key in data:
                 if isinstance(key, str) and (
                     not key or not key.isprintable() or not key.isascii()
                 ):
                     return True
             return any(
-                has_non_printable_ascii_dict_keys(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+                has_non_printable_ascii_dict_keys(data=v)
+                for v in data.values()
             )
         case list():
             return any(
-                has_non_printable_ascii_dict_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
-                for item in data  # pyright: ignore[reportUnknownVariableType]
+                has_non_printable_ascii_dict_keys(data=item) for item in data
             )
         case _:
             return False
@@ -136,7 +145,7 @@ def cases_with_non_trivial_dict_keys(
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=(case_dir / "input.yaml").read_text(),
         )
         if has_non_printable_ascii_dict_keys(data=loaded):
@@ -144,8 +153,7 @@ def cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
-@beartype
-def has_special_floats(data: object) -> bool:
+def has_special_floats(data: YamlData) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
     """
@@ -153,15 +161,9 @@ def has_special_floats(data: object) -> bool:
         case float():
             return not math.isfinite(data)
         case dict():
-            return any(
-                has_special_floats(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownVariableType]
-            )
+            return any(has_special_floats(data=v) for v in data.values())
         case list():
-            return any(
-                has_special_floats(data=item)  # pyright: ignore[reportUnknownArgumentType]
-                for item in data  # pyright: ignore[reportUnknownVariableType]
-            )
+            return any(has_special_floats(data=item) for item in data)
         case _:
             return False
 
@@ -177,7 +179,7 @@ def cases_with_special_floats(
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=(case_dir / "input.yaml").read_text(),
         )
         if has_special_floats(data=loaded):
