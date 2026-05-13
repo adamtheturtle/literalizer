@@ -6,7 +6,7 @@ import enum
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar
+from typing import ClassVar, assert_never
 
 from beartype import beartype
 
@@ -573,6 +573,8 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:
                 type_name="NoneType",
                 payload_template="NoneType()",
             )
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES: frozenset[str] = frozenset(
