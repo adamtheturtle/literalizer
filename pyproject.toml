@@ -310,6 +310,7 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    "repro.py",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -332,12 +333,14 @@ ignore_errors = true
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
+project-excludes = [ "repro.py" ]
 search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
+    "repro.py",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
@@ -350,6 +353,7 @@ analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
 overrides = []
 environment.extra-paths = [ ".github/scripts" ]
+src.exclude = [ "repro.py" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true
