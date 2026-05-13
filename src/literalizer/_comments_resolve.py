@@ -6,6 +6,7 @@ from typing import Any
 
 from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
+from tomlkit.toml_document import TOMLDocument
 
 from literalizer._comments import (
     CollectionComments,
@@ -213,7 +214,7 @@ def resolve_yaml_comments(
 @beartype
 def resolve_toml_comments(
     *,
-    toml_doc: object,
+    toml_doc: TOMLDocument,
     base: str,
     language: Language,
     comment_prefix: str,

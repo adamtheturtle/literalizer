@@ -40,7 +40,13 @@ from literalizer._language import (
     PrefixCallStyle,
     StubReturn,
 )
-from literalizer._parsing import InputFormat, parse_input
+from literalizer._parsing import (
+    InputFormat,
+    ParsedInput,
+    ParsedToml,
+    ParsedYaml,
+    parse_input,
+)
 from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
@@ -1740,8 +1746,8 @@ def _literalize_pre_form(
     )
 
     resolved: ResolvedComments | None = None
-    match input_format:
-        case InputFormat.YAML if parsed.yaml_needs_comment_resolve:
+    match parsed:
+        case ParsedYaml() if parsed.needs_comment_resolve:
             comment_cfg = language.comment_config
             cp = comment_cfg.prefix
             cs = comment_cfg.suffix
@@ -1757,10 +1763,10 @@ def _literalize_pre_form(
                 include_delimiters=include_delimiters,
             )
             result = resolved.result
-        case InputFormat.TOML:
+        case ParsedToml():
             comment_cfg = language.comment_config
             resolved = resolve_toml_comments(
-                toml_doc=parsed.raw_data,
+                toml_doc=parsed.toml_doc,
                 base=result,
                 language=language,
                 comment_prefix=comment_cfg.prefix,
@@ -2894,7 +2900,7 @@ def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
 
 
 @beartype
-def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
+def _yaml_has_standalone_comments(*, parsed: ParsedInput) -> bool:
     """Return ``True`` when the YAML source carries standalone comments.
 
     Standalone comments are comments that appear on their own line —
@@ -2904,9 +2910,13 @@ def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
     scalar; ``ruamel.yaml`` only attaches collection-comment metadata
     to :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`.
     """
-    if not isinstance(raw_data, CommentedSeq | CommentedMap | CommentedSet):
+    if not isinstance(parsed, ParsedYaml):
         return False
-    collection_comments = extract_yaml_comments(ruamel_data=raw_data)
+    if not isinstance(
+        parsed.raw_data, CommentedSeq | CommentedMap | CommentedSet
+    ):
+        return False
+    collection_comments = extract_yaml_comments(ruamel_data=parsed.raw_data)
     if collection_comments.trailing:
         return True
     return any(element.before for element in collection_comments.elements)
@@ -3143,9 +3153,7 @@ def literalize_call(
     """
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
-    contains_standalone_comments = _yaml_has_standalone_comments(
-        raw_data=parsed.raw_data,
-    )
+    contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
             raise CallsNotSupportedByLanguageError(
@@ -3199,8 +3207,8 @@ def literalize_call(
     if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
-            input_format is InputFormat.YAML
-            and parsed.yaml_needs_comment_resolve
+            isinstance(parsed, ParsedYaml)
+            and parsed.needs_comment_resolve
             and isinstance(parsed.raw_data, CommentedSeq)
         ):
             collection_comments = extract_yaml_comments(

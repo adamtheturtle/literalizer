@@ -3,13 +3,11 @@
 import datetime
 
 import pytest
-import tomlkit
 
 from literalizer import (
     InputFormat,
     literalize,
 )
-from literalizer._comments import extract_toml_comments
 from literalizer.exceptions import (
     ParseError,
     TOMLParseError,
@@ -52,38 +50,34 @@ def test_invalid_toml_is_parse_error() -> None:
         )
 
 
-def test_extract_toml_comments_non_document() -> None:
-    """``extract_toml_comments`` returns empty for non-document input."""
-    result = extract_toml_comments(toml_doc={"not": "a document"})
-    assert not result.elements
-    assert not result.trailing
-
-
-def test_extract_toml_comments_from_document() -> None:
-    """``extract_toml_comments`` keeps standalone and inline comments."""
-    toml_doc = tomlkit.parse(
-        string="# before\n\nanswer = 42 # inline\nplain = 'ok'\n# trailing\n",
+def test_toml_comments_propagate() -> None:
+    """Standalone and inline TOML comments survive in the rendered
+    output.
+    """
+    result = literalize(
+        source="# before\n\nanswer = 42 # inline\nplain = 'ok'\n# trailing\n",
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=False,
     )
-    result = extract_toml_comments(toml_doc=toml_doc)
-    first, second = result.elements
 
-    assert first.before == ("before",)
-    assert first.inline == "inline"
-    assert second.before == ()
-    assert second.inline == ""
-    assert result.trailing == ("trailing",)
-
-
-def test_extract_toml_comments_includes_table_entries() -> None:
-    """TOML tables are included without inline comment metadata."""
-    toml_doc = tomlkit.parse(
-        string="[section]\nvalue = 1\n",
+    assert result.code == (
+        '# before\n"answer": 42,  # inline\n"plain": "ok",\n# trailing'
     )
-    result = extract_toml_comments(toml_doc=toml_doc)
 
-    assert len(result.elements) == 1
-    assert result.elements[0].before == ()
-    assert result.elements[0].inline == ""
+
+def test_toml_table_entries_literalize() -> None:
+    """TOML tables become dict entries in the rendered output."""
+    result = literalize(
+        source="[section]\nvalue = 1\n",
+        input_format=InputFormat.TOML,
+        language=PYTHON,
+        pre_indent_level=0,
+        include_delimiters=False,
+    )
+
+    assert result.code == '"section": {"value": 1},'
 
 
 def test_toml_time_values_literalize() -> None:
