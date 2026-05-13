@@ -3072,15 +3072,8 @@ def _validate_parameter_count(
                 "zero-parameter calls have no representation in this language"
             ),
         )
-    # Read via ``getattr`` from the language's class rather than the
-    # ``Language`` Protocol: adding the attribute as a Protocol member
-    # triggered a ~200x slowdown in beartype's structural-conformance
-    # check on every literalize() call.  The metaclass ``LanguageCls``
-    # supplies ``None`` as the default.
-    max_params: int | None = getattr(
-        type(language), "max_call_parameters", None
-    )
-    if max_params is not None and len(parameter_names) > max_params:
+    max_params = language.max_call_parameters
+    if len(parameter_names) > max_params:
         raise UnsupportedCallShapeError(
             language_name=type(language).__name__,
             reason=(

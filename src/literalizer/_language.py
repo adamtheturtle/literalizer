@@ -4,8 +4,9 @@ import dataclasses
 import datetime
 import enum
 import math
+import sys
 from collections.abc import Callable, Sequence
-from typing import Protocol, assert_never, runtime_checkable
+from typing import Final, Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
@@ -507,6 +508,22 @@ values.
 """
 
 
+NO_CALL_PARAMETER_LIMIT: Final = sys.maxsize
+"""Sentinel for ``Language.max_call_parameters`` meaning "no fixed
+parameter limit".
+
+Cannot be ``None``: when an attribute's value in a class's
+``__dict__`` is ``None``, CPython's ``_proto_hook`` returns
+``NotImplemented`` (the PEP 544 "this attribute is not implemented"
+signal).  ``NotImplemented`` prevents the ABC subclass cache from
+warming, so every subsequent ``isinstance(_, Language)`` falls into
+an O(N)-in-protocol-member-count walk in
+``_ProtocolMeta.__instancecheck__``.  With our ~110-member protocol
+that turned a 1.3 ms ``literalize()`` call into a 305 ms one.  Using
+``sys.maxsize`` as the "unlimited" sentinel keeps the cache warm.
+"""
+
+
 @beartype
 def _identity_call_arg(_value: Value, formatted: str, /) -> str:
     """Return *formatted* unchanged for languages with no argument wrapper."""
@@ -603,7 +620,7 @@ class LanguageCls(type):
     supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_zero_parameter_calls: bool
-    max_call_parameters: int | None
+    max_call_parameters: int
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
     supports_module_name: bool
@@ -1382,6 +1399,17 @@ class Language(Protocol):
         parameters.  When ``False``,
         :func:`~literalizer.literalize_call` rejects empty
         ``parameter_names`` with
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def max_call_parameters(self) -> int:
+        """Maximum parameter count the language's call syntax accepts.
+
+        :data:`NO_CALL_PARAMETER_LIMIT` for languages with no fixed
+        limit.  When :func:`~literalizer.literalize_call` is given more
+        ``parameter_names`` than this, it raises
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
         ...  # pylint: disable=unnecessary-ellipsis

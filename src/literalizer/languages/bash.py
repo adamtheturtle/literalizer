@@ -34,6 +34,7 @@ from literalizer._formatters.format_strings import (
     format_string_bash_single,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -199,7 +200,7 @@ class Bash(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
-    max_call_parameters: int | None = None
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = False
