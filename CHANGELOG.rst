@@ -4,6 +4,20 @@ Changelog
 Next
 ----
 
+
+- :class:`~literalizer.V` now defaults
+  ``heterogeneous_strategy`` to
+  ``V.heterogeneous_strategies.ERROR`` and reports
+  ``dict_supports_heterogeneous_values=False`` and
+  ``supports_heterogeneity=False`` on its sequence and set formats.
+  V is statically typed and rejects unwrapped heterogeneous
+  collections, so rendering them now raises rather than emitting
+  code the V compiler will not accept.  Callers that want to
+  materialize heterogeneous data must opt in to
+  ``V.heterogeneous_strategies.INTERFACE``, which wraps values with
+  ``IVal(...)`` and emits the ``interface IVal {}`` declaration as
+  before.
+
 2026.05.13.1
 ------------
 

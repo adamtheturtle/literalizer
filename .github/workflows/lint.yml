@@ -1583,15 +1583,7 @@ jobs:
           # V's ``format_call_ref_identifier`` always appends
           # ``.clone()``, and ``int.clone()`` is rejected by V.
           # Tracked in https://github.com/adamtheturtle/literalizer/issues/1823.
-          # ``multiline_sibling_list_widening`` has sibling lists with
-          # heterogeneous element types (int vs string) inside a dict,
-          # which V rejects because V infers a single element type
-          # per array; the rendered output is shape-correct but does
-          # not compile.
-          # Tracked in https://github.com/adamtheturtle/literalizer/issues/2105.
-          grep -z -v -e 'heterogeneous_strategy_error' \
-            -e 'call_ref_args_reused' \
-            -e 'multiline_sibling_list_widening' /tmp/files-to-lint \
+          grep -z -v -e 'call_ref_args_reused' /tmp/files-to-lint \
             > /tmp/files-to-run || true
           xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
 

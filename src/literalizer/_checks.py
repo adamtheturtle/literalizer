@@ -208,24 +208,36 @@ def _has_heterogeneous(*, data: Value) -> bool:
 def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
     """Recursively check whether data contains sibling lists whose
     combined scalar elements are heterogeneous.
+
+    Sibling lists are detected both as the direct children of a list
+    and as the values of a dict.
     """
     match data:
         case dict() | ordereddict():
-            return any(
-                _has_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            values = list(data.values())  # pyright: ignore[reportUnknownArgumentType,reportUnknownMemberType]
+            if any(_has_heterogeneous_sibling_lists(data=v) for v in values):
+                return True
+            sublists: list[list[Value]] = [
+                v for v in values if isinstance(v, list)
+            ]
+            return (
+                len(sublists) == len(values)
+                and len(sublists) > 1
+                and _all_scalars_heterogeneous(
+                    values=[e for sub in sublists for e in sub],
+                )
             )
         case list():
             if any(_has_heterogeneous_sibling_lists(data=v) for v in data):
                 return True
-            sublists: list[list[Value]] = [
+            list_sublists: list[list[Value]] = [
                 v for v in data if isinstance(v, list)
             ]
             return (
-                len(sublists) == len(data)
-                and len(sublists) > 1
+                len(list_sublists) == len(data)
+                and len(list_sublists) > 1
                 and _all_scalars_heterogeneous(
-                    values=[e for sub in sublists for e in sub],
+                    values=[e for sub in list_sublists for e in sub],
                 )
             )
         case _:
@@ -271,6 +283,38 @@ def _has_mixed_dict_values(*, data: Value) -> bool:
             return any(_has_mixed_dict_values(data=v) for v in values)
         case list():
             return any(_has_mixed_dict_values(data=v) for v in data)
+        case _:
+            return False
+
+
+@beartype
+def _has_dict_with_unwrappable_value_mix(*, data: Value) -> bool:
+    """Recursively check whether data contains any dict whose values span
+    multiple type families and at least one value is a container.
+
+    Wrapping strategies that only wrap scalars (tagged-enum / variant
+    payload with no list/dict member) cannot uniformly type such a
+    dict — scalar values would render wrapped while container values
+    stay raw, and any two distinct non-scalar families (e.g. ``dict``
+    and ``list``) cannot share a single map value type even after the
+    wrapping.  The static-typed target rejects the resulting
+    heterogeneous map.
+    """
+    match data:
+        case ordereddict() | dict():
+            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+            has_container = any(
+                isinstance(v, (list, dict, set)) for v in values
+            )
+            if has_container and _values_mixed_types(values=values):
+                return True
+            return any(
+                _has_dict_with_unwrappable_value_mix(data=v) for v in values
+            )
+        case list():
+            return any(
+                _has_dict_with_unwrappable_value_mix(data=v) for v in data
+            )
         case _:
             return False
 
@@ -408,7 +452,9 @@ def check_data(*, data: Value, spec: Language) -> None:
 
     seq_supports_het = spec.sequence_format_config.supports_heterogeneity
     dict_supports_het = spec.dict_supports_heterogeneous_values
-    if not spec.heterogeneous_behavior.skip_scalar_checks:
+    set_supports_het = spec.set_format_config.supports_heterogeneity
+    behavior = spec.heterogeneous_behavior
+    if not behavior.skip_scalar_checks:
         if not seq_supports_het:
             _check_heterogeneous(data=data)
             _check_heterogeneous_sibling_lists(data=data)
@@ -416,6 +462,20 @@ def check_data(*, data: Value, spec: Language) -> None:
             _check_mixed_dict_values(data=data)
         if not seq_supports_het:
             _check_mixed_list_values(data=data)
-
-    if not spec.set_format_config.supports_heterogeneity:
-        _check_heterogeneous_set(data=data)
+        if not set_supports_het:
+            _check_heterogeneous_set(data=data)
+    elif behavior.wrap_non_scalar is None:
+        # A wrapping strategy that only wraps scalars cannot uniformly
+        # represent a dict whose values span multiple type families and
+        # include at least one container — the tagged-enum / variant
+        # payload has no member that fits the container, and two
+        # distinct non-scalar families share no map value type either.
+        if not dict_supports_het and _has_dict_with_unwrappable_value_mix(
+            data=data,
+        ):
+            msg = (
+                "Dict has values of mixed type families including a "
+                "container, which this heterogeneous strategy cannot "
+                "represent"
+            )
+            raise MixedDictValuesError(msg)
