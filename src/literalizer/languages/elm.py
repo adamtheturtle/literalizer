@@ -40,6 +40,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -51,12 +52,10 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
-    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     never_inhibits_consuming_form,
@@ -380,24 +379,29 @@ def _elm_call_stub(
     """Return Elm top-level stub declarations for a call target.
 
     Dotted names are flattened (the first character of each part after
-    the first is upper-cased).  For a single parameter the stub is
-    polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
-    tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
-    tuple that ``PositionalCallStyle`` emits at the call site.  Elm
-    tuples cap at 3 elements, so 4+ parameter calls are rejected
-    upstream by ``literalize_call`` via ``max_call_parameters``.
+    the first is upper-cased).  Elm calls are curried, so the stub
+    chains its type variables with ``->`` (``a -> ()``,
+    ``a -> b -> ()``, ``a -> b -> c -> d -> ()``) and the
+    implementation takes one ``_`` per parameter.
     """
     flat_name = _elm_flatten_dotted(parts=parts)
     parameter_count = len(params)
-    implementation = f"{flat_name} _ = ()"
-    if parameter_count == 1:
-        type_signature = f"{flat_name} : a -> ()"
-    else:
-        type_variables = ", ".join(
-            chr(ord("a") + position) for position in range(parameter_count)
-        )
-        type_signature = f"{flat_name} : ( {type_variables} ) -> ()"
+    type_variables = [
+        chr(ord("a") + position) for position in range(parameter_count)
+    ]
+    type_signature = f"{flat_name} : {' -> '.join([*type_variables, '()'])}"
+    implementation = f"{flat_name} {' '.join(['_'] * parameter_count)} = ()"
     return (type_signature, implementation)
+
+
+def _elm_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted Elm value in parentheses for curried application.
+
+    Every literal Elm value is a constructor application (``EInt 1``,
+    ``EList […]``), so each argument must be parenthesized to avoid
+    being parsed as additional arguments to the outer call.
+    """
+    return f"({formatted})"
 
 
 _INT_BASE: dict[str, Callable[[int], str]] = {
@@ -505,21 +509,9 @@ class Elm(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = False
-    max_call_parameters: ClassVar[int] = 3
-    """Elm tuple literals cap at 3 elements, which caps the parameter
-    count for a call: ``PositionalCallStyle`` emits a tuple at the
-    call site.
-    """
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
     supports_module_name = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Elm."""
@@ -714,7 +706,10 @@ class Elm(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Elm call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -749,6 +744,11 @@ class Elm(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap each formatted call argument in parentheses."""
+        return _elm_format_call_arg
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -858,7 +858,7 @@ class Elm(metaclass=LanguageCls):
     statement_terminator_style: StatementTerminatorStyles = (
         StatementTerminatorStyles.SEMICOLON
     )
-    call_style: CallStyles = CallStyles.POSITIONAL
+    call_style: CallStyles = CallStyles.CURRIED
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )

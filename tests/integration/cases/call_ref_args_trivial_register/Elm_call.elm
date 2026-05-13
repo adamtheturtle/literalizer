@@ -6,8 +6,8 @@ type Val
     | EInt Int
     | EFloat Float
     | EList (List Val)
-process : ( a, b ) -> ()
-process _ = ()
+process : a -> b -> ()
+process _ _ = ()
 
 
 main : Program () () Never
@@ -25,10 +25,10 @@ main =
             EInt 2,
             EInt 3
             ]
-        _ = process(my_int, EInt 42)
-        _ = process(my_bool, EInt 7)
-        _ = process(my_float, EInt 9)
-        _ = process(my_list, EInt 1)
+        _ = process my_int (EInt 42)
+        _ = process my_bool (EInt 7)
+        _ = process my_float (EInt 9)
+        _ = process my_list (EInt 1)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

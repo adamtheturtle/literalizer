@@ -4,6 +4,22 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Elm` :func:`~literalizer.literalize_call` now
+  emits curried-application calls (``process (EInt 1) (EInt 2)``) with
+  curried type stubs (``process : a -> b -> ()``) in place of the prior
+  tuple-form (``process (EInt 1, EInt 2)``).  Elm tuple literals cap at
+  three elements, so the tuple form had no representation for calls
+  with four or more parameters; the curried form composes naturally
+  with ``|>`` and matches the convention used by ``elm-format`` and the
+  standard library.
+
+- The ``Language.max_call_parameters`` attribute has been removed.  No
+  remaining language sets a maximum parameter count, so the
+  upstream ``UnsupportedCallShapeError`` check in
+  :func:`~literalizer.literalize_call` and the corresponding
+  ``language_cls.max_call_parameters`` introspection no longer have a
+  load-bearing caller.
+
 - The ``supports_commented_dict_call_args`` flag has been removed from
   ``Language``.  Every (language, shape) pair previously dropped by the
   test-discovery filter on this flag is either already short-circuited

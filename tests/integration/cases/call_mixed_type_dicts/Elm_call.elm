@@ -13,8 +13,8 @@ appMgrRun _ = ()
 main : Program () () Never
 main =
     let
-        _ = appMgrRun(EDict [("type", EStr "create"), ("pr_id", EStr "pr_1"), ("draft", EBool True)])
-        _ = appMgrRun(EDict [("type", EStr "create"), ("pr_id", EStr "pr_2")])
+        _ = appMgrRun (EDict [("type", EStr "create"), ("pr_id", EStr "pr_1"), ("draft", EBool True)])
+        _ = appMgrRun (EDict [("type", EStr "create"), ("pr_id", EStr "pr_2")])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

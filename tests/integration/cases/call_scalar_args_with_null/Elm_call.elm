@@ -12,8 +12,8 @@ process _ = ()
 main : Program () () Never
 main =
     let
-        _ = process(ENull)
-        _ = process(EStr "hello")
+        _ = process (ENull)
+        _ = process (EStr "hello")
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

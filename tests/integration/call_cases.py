@@ -194,10 +194,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
-        # Four-parameter call.  Elm rejects this because Elm tuples
-        # cap at three elements and ``PositionalCallStyle`` emits a
-        # tuple at the call site, so a four-element tuple has no
-        # representation.
+        # Four-parameter call.
         case_dir_name="call_quad_args",
         target_function="process",
         parameter_names=["a", "b", "c", "d"],
@@ -791,14 +788,7 @@ def _expected_call_shape_exception(
     this (lang, config) pair, or ``None`` if it should produce output.
     """
     parameter_count = len(config.parameter_names)
-    max_call_parameters = lang_cls.max_call_parameters
-    parameter_count_unsupported = (
-        parameter_count == 0 and not lang_cls.supports_zero_parameter_calls
-    ) or (
-        max_call_parameters is not None
-        and parameter_count > max_call_parameters
-    )
-    if parameter_count_unsupported:
+    if parameter_count == 0 and not lang_cls.supports_zero_parameter_calls:
         return UnsupportedCallShapeError
     if (
         config.requires_inline_multiline_dict_args

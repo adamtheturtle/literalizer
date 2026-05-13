@@ -2,16 +2,17 @@ module Check exposing (..)
 
 
 type Val
-    = EStr String
+    = EInt Int
     | EList (List Val)
-op : a -> ()
-op _ = ()
+process : a -> b -> c -> d -> ()
+process _ _ _ _ = ()
 
 
 main : Program () () Never
 main =
     let
-        _ = op (EStr "hello")
+        _ = process (EInt 1) (EInt 2) (EInt 3) (EInt 4)
+        _ = process (EInt 5) (EInt 6) (EInt 7) (EInt 8)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

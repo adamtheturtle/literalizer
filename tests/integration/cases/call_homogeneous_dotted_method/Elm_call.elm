@@ -11,8 +11,8 @@ appClientFetch _ = ()
 main : Program () () Never
 main =
     let
-        _ = appClientFetch(EStr "hello")
-        _ = appClientFetch(EStr "world")
+        _ = appClientFetch (EStr "hello")
+        _ = appClientFetch (EStr "world")
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

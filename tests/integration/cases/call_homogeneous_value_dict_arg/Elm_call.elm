@@ -12,7 +12,7 @@ process _ = ()
 main : Program () () Never
 main =
     let
-        _ = process(EDict [("a", EInt 1), ("b", EInt 2)])
+        _ = process (EDict [("a", EInt 1), ("b", EInt 2)])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

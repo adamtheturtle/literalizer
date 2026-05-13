@@ -602,7 +602,6 @@ class LanguageCls(type):
     supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_zero_parameter_calls: bool
-    max_call_parameters: int | None
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
     supports_module_name: bool
@@ -1357,16 +1356,6 @@ class Language(Protocol):
         parameters.  When ``False``,
         :func:`~literalizer.literalize_call` rejects empty
         ``parameter_names`` with
-        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
-    def max_call_parameters(self) -> int | None:
-        """Maximum number of parameters the language can render in a
-        call, or ``None`` if there is no language-imposed limit.  When
-        set, :func:`~literalizer.literalize_call` rejects
-        ``parameter_names`` longer than this with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
