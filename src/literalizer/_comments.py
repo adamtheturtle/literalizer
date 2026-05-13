@@ -165,7 +165,7 @@ def _collection_targets(
         case CommentedMap():
             return _CollectionTargets(
                 token_idx=2,
-                keys=list(ruamel_data.keys()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                keys=list(ruamel_data),
             )
         case CommentedSeq():
             return _CollectionTargets(
