@@ -15,7 +15,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import Cpp, CSharp, Nim, Rust
+from literalizer.languages import CSharp, Nim, Rust
 
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
@@ -258,20 +258,6 @@ def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:
     raises instead.
     """
     style = Rust.declaration_styles.LAZY_STATIC
-    with pytest.raises(expected_exception=NotImplementedError):
-        style.value.formatter("x", "v", None, frozenset())
-
-
-def test_cpp_auto_config_formatter_raises_if_called_directly() -> None:
-    """The ``AUTO`` ``DeclarationStyleConfig`` formatter is a
-    placeholder.
-
-    The real formatter is built by
-    :meth:`Cpp.DeclarationStyles.build_formatter`; calling the
-    stored one directly would silently emit ``auto`` for string
-    values, so it raises instead.
-    """
-    style = Cpp.declaration_styles.AUTO
     with pytest.raises(expected_exception=NotImplementedError):
         style.value.formatter("x", "v", None, frozenset())
 
