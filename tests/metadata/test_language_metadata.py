@@ -8,6 +8,7 @@ from pygments.lexers import find_lexer_class_by_name
 import literalizer.languages
 from literalizer import LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.languages import Python, Raku
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
@@ -142,3 +143,18 @@ def test_wrap_combined_in_file_unsupported_raises(
             variable_name="x",
             body_preamble=(),
         )
+
+
+def test_supported_ref_cases_independent_of_identifier_cases() -> None:
+    """``supported_ref_cases`` is not derived from ``identifier_cases``.
+
+    The two attributes answer different questions -- syntactic validity
+    vs. stylistic preference -- and one is not a function of the other.
+    """
+    python = Python()
+    assert frozenset(python.identifier_cases) != python.supported_ref_cases
+    assert frozenset(python.identifier_cases) <= python.supported_ref_cases
+
+    raku = Raku()
+    assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
+    assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases

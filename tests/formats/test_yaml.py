@@ -1,27 +1,24 @@
-"""Tests for YAML-related literalizer functionality."""
+"""YAML-format-specific behavior.
 
-import re
+YAML carries native tagged types (``!!binary``, ``!!omap``, ``!!set``)
+and native ``date``/``datetime`` scalars that other input formats
+either cannot express or express only as strings.  Heterogeneous-type
+checks involving those tags therefore stay in this module; pure
+collection-shape checks that work across every format live in
+:mod:`tests.errors.test_coercion_errors`.
+"""
+
 import textwrap
 
 import pytest
 
-from literalizer import (
-    InputFormat,
-    literalize,
-)
+from literalizer import InputFormat, literalize
 from literalizer.exceptions import (
     HeterogeneousCollectionError,
-    InvalidDictKeyError,
     ParseError,
     YAMLParseError,
 )
-from literalizer.languages import (
-    Dhall,
-    Mojo,
-    Nix,
-    Python,
-    R,
-)
+from literalizer.languages import Mojo, Python
 
 MOJO = Mojo(
     date_format=Mojo.date_formats.ISO,
@@ -76,7 +73,7 @@ def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
 
 
 def test_heterogeneous_bytes_in_collection_raises() -> None:
-    """Bytes in a heterogeneous collection raise for Mojo."""
+    """``!!binary`` bytes in a heterogeneous collection raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         key1: !!binary |
@@ -96,7 +93,7 @@ def test_heterogeneous_bytes_in_collection_raises() -> None:
 
 
 def test_heterogeneous_date_in_collection_raises() -> None:
-    """Dates in a heterogeneous collection raise for Mojo."""
+    """YAML-native dates in a heterogeneous collection raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         - 2024-01-15
@@ -115,7 +112,7 @@ def test_heterogeneous_date_in_collection_raises() -> None:
 
 
 def test_heterogeneous_datetime_in_collection_raises() -> None:
-    """Datetimes in a heterogeneous collection raise for Mojo."""
+    """YAML-native datetimes in a heterogeneous collection raise."""
     yaml_string = textwrap.dedent(
         text="""\
         - 2024-01-15T12:30:00
@@ -133,28 +130,8 @@ def test_heterogeneous_datetime_in_collection_raises() -> None:
         )
 
 
-def test_mixed_dict_values_none_with_list_raises() -> None:
-    """Dicts with None alongside a list raise for Mojo."""
-    yaml_string = textwrap.dedent(
-        text="""\
-        tags:
-          - admin
-        extra:
-    """,
-    )
-    with pytest.raises(expected_exception=HeterogeneousCollectionError):
-        literalize(
-            source=yaml_string,
-            input_format=InputFormat.YAML,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
 def test_mixed_dict_values_set_with_string_raises() -> None:
-    """Dicts with a set alongside a string raise for Mojo."""
+    """Dicts with a ``!!set`` alongside a string raise for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         name: Alice
@@ -173,29 +150,8 @@ def test_mixed_dict_values_set_with_string_raises() -> None:
         )
 
 
-def test_mixed_dict_values_with_list_raises() -> None:
-    """Dicts with string and list values raise for Mojo."""
-    yaml_string = textwrap.dedent(
-        text="""\
-        name: Bob
-        tags:
-          - admin
-          - user
-    """,
-    )
-    with pytest.raises(expected_exception=HeterogeneousCollectionError):
-        literalize(
-            source=yaml_string,
-            input_format=InputFormat.YAML,
-            language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
 def test_mixed_ordered_map_values_raises() -> None:
-    """Ordered maps with mixed value types raise for Mojo."""
+    """``!!omap`` with mixed value types raises for Mojo."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -216,37 +172,8 @@ def test_mixed_ordered_map_values_raises() -> None:
         )
 
 
-def test_r_empty_dict_key_error() -> None:
-    """R with ERROR empty_dict_key raises InvalidDictKeyError."""
-    spec = R(
-        date_format=R.date_formats.R,
-        datetime_format=R.datetime_formats.R,
-        empty_dict_key=R.empty_dict_keys.ERROR,
-        bytes_format=R.bytes_formats.HEX,
-        sequence_format=R.sequence_formats.LIST,
-    )
-    yaml_string = '{"": "value"}\n'
-    expected_msg = re.escape(
-        pattern='R does not support the dict key "". '
-        "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
-        "as unnamed list elements instead."
-    )
-    with pytest.raises(
-        expected_exception=InvalidDictKeyError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=yaml_string,
-            input_format=InputFormat.YAML,
-            language=spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
 def test_raises_for_heterogeneous_ordered_map() -> None:
-    """Raises for heterogeneous ordered-map values."""
+    """Raises for heterogeneous ``!!omap`` values."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!omap
@@ -266,7 +193,7 @@ def test_raises_for_heterogeneous_ordered_map() -> None:
 
 
 def test_raises_for_heterogeneous_set() -> None:
-    """Raises for heterogeneous sets."""
+    """Raises for heterogeneous ``!!set`` members."""
     yaml_string = textwrap.dedent(
         text="""\
         --- !!set
@@ -279,72 +206,6 @@ def test_raises_for_heterogeneous_set() -> None:
             source=yaml_string,
             input_format=InputFormat.YAML,
             language=MOJO,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
-def test_dhall_empty_dict_key_error() -> None:
-    """Dhall raises InvalidDictKeyError for empty-string dict keys."""
-    yaml_string = '{"": "value"}\n'
-    expected_msg = re.escape(
-        pattern='Dhall does not support the dict key "". '
-        "Backtick-quoted labels must be non-empty and contain only "
-        "printable ASCII (no backticks or control characters)."
-    )
-    with pytest.raises(
-        expected_exception=InvalidDictKeyError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=yaml_string,
-            input_format=InputFormat.YAML,
-            language=Dhall(),
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
-def test_dhall_control_char_key_error() -> None:
-    """Dhall rejects control characters in dict keys."""
-    yaml_string = '{"\\x01": "value"}\n'
-    expected_msg = re.escape(
-        pattern='Dhall does not support the dict key "\\u{0001}". '
-        "Backtick-quoted labels must be non-empty and contain only "
-        "printable ASCII (no backticks or control characters)."
-    )
-    with pytest.raises(
-        expected_exception=InvalidDictKeyError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=yaml_string,
-            input_format=InputFormat.YAML,
-            language=Dhall(),
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
-def test_nix_control_char_key_error() -> None:
-    """Nix rejects control characters in dict keys."""
-    yaml_string = '{"\\x01": "value"}\n'
-    expected_msg = re.escape(
-        pattern='Nix does not support the dict key "\x01". '
-        "Attribute names must be non-empty and must not contain "
-        "control characters."
-    )
-    with pytest.raises(
-        expected_exception=InvalidDictKeyError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=yaml_string,
-            input_format=InputFormat.YAML,
-            language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
             variable_form=None,

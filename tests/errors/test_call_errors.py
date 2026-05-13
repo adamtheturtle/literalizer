@@ -1,4 +1,9 @@
-"""Negative-path checks for ``literalize_call``."""
+"""Negative-path checks for ``literalize_call``.
+
+Positive-path checks for individual language behaviors (Haskell ref
+inference, Python kebab-non-support, Raku kebab support, etc.) live
+in :mod:`tests.test_languages`.
+"""
 
 import re
 
@@ -35,7 +40,6 @@ from literalizer.languages import (
     Nix,
     Python,
     Racket,
-    Raku,
     Wren,
     Yaml,
 )
@@ -308,20 +312,6 @@ def test_literalize_call_dotted_target_unsupported_per_element_false() -> None:
         )
 
 
-def test_literalize_call_dotted_target_supported_language() -> None:
-    """Dotted ``target_function`` succeeds when the language supports
-    it.
-    """
-    result = literalize_call(
-        source="[[1]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="module.fn",
-        parameter_names=["a"],
-    )
-    assert result.code == "module.fn(a=1)"
-
-
 def test_literalize_call_dotted_stub_unsupported_raises() -> None:
     """Dotted ``call_transform`` wrapper raises for languages without
     support.
@@ -436,168 +426,6 @@ def test_literalize_ref_case_unsupported_raises() -> None:
         )
 
 
-def test_literalize_accepts_syntactic_non_idiomatic_ref_case() -> None:
-    """Cases legal in the language but absent from the idiomatic
-    preference list are accepted and rendered.
-
-    Python's ``identifier_cases`` lists only ``SNAKE``, ``UPPER_SNAKE``,
-    and ``PASCAL``; ``CAMEL`` is non-idiomatic but still a syntactically
-    legal Python identifier.  Validation uses ``supported_ref_cases``,
-    which exposes ``CAMEL``.
-    """
-    assert Python().identifier_cases == (
-        IdentifierCase.SNAKE,
-        IdentifierCase.UPPER_SNAKE,
-        IdentifierCase.PASCAL,
-    )
-    assert Python().supported_ref_cases == frozenset(
-        {
-            IdentifierCase.SNAKE,
-            IdentifierCase.UPPER_SNAKE,
-            IdentifierCase.PASCAL,
-            IdentifierCase.CAMEL,
-        },
-    )
-
-    result = literalize(
-        source='{"$ref": "user_obj"}',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        ref_case=IdentifierCase.CAMEL,
-    )
-
-    assert result.declaration_code == "userObj"
-
-
-def test_literalize_kebab_friendly_language_accepts_kebab_ref_case() -> None:
-    """Kebab-friendly languages render kebab-form refs as legal
-    symbols.
-    """
-    assert Raku().supported_ref_cases == frozenset(
-        {
-            IdentifierCase.SNAKE,
-            IdentifierCase.UPPER_SNAKE,
-            IdentifierCase.PASCAL,
-            IdentifierCase.CAMEL,
-            IdentifierCase.KEBAB,
-        },
-    )
-
-    result = literalize(
-        source='{"$ref": "user_obj"}',
-        input_format=InputFormat.JSON,
-        language=Raku(),
-        ref_case=IdentifierCase.KEBAB,
-    )
-
-    assert result.declaration_code == "$user-obj"
-
-
-def test_supported_ref_cases_independent_of_identifier_cases() -> None:
-    """``supported_ref_cases`` is not derived from ``identifier_cases``.
-
-    The two attributes answer different questions -- syntactic validity
-    vs. stylistic preference -- and one is not a function of the other.
-    """
-    python = Python()
-    assert frozenset(python.identifier_cases) != python.supported_ref_cases
-    assert frozenset(python.identifier_cases) <= python.supported_ref_cases
-
-    raku = Raku()
-    assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
-    assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases
-
-
-def test_literalize_call_unknown_ref_values_keep_strip_behavior() -> None:
-    """Unknown refs still do not contribute marker dict types."""
-    result = literalize_call(
-        source='[[{"$ref": "myList"}]]',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-        ref_values={},
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-def test_literalize_call_unknown_ref_values_strip_top_level_ref() -> None:
-    """Unknown refs are stripped even when other ref values are
-    supplied.
-    """
-    result = literalize_call(
-        source='{"$ref": "myList"}',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-        per_element=False,
-        ref_values={"other": 1},
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-def test_literalize_call_unknown_refs_strip_from_nested_preamble() -> None:
-    """Unknown nested refs do not shape preamble type inference."""
-    result = literalize_call(
-        source=(
-            '[[{"$ref": "known"}, {"$ref": "missing"}, '
-            '{"inner": {"$ref": "missing"}}]]'
-        ),
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["a", "b", "c"],
-        ref_values={"known": [1, {"nested": "value"}]},
-    )
-
-    assert result.body_preamble == (
-        "data Val = HInt Integer | HStr String | HList [Val] | HMap "
-        "[(String, Val)]",
-        "instance Num Val where\n"
-        "    fromInteger = HInt\n"
-        '    _ + _ = error "not implemented"\n'
-        '    _ * _ = error "not implemented"\n'
-        '    abs _ = error "not implemented"\n'
-        '    signum _ = error "not implemented"\n'
-        "    negate (HInt n) = HInt (negate n)\n"
-        '    negate _ = error "not implemented"',
-    )
-
-
-def test_literalize_call_without_ref_values_strips_top_level_ref() -> None:
-    """The historical top-level ref strip behavior is retained."""
-    result = literalize_call(
-        source='{"$ref": "myList"}',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-        per_element=False,
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-def test_literalize_call_without_ref_values_strips_per_element_ref() -> None:
-    """Per-element preamble inference skips ref marker elements."""
-    result = literalize_call(
-        source='[{"$ref": "myList"}]',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
-
-
 def test_both_variable_forms_without_wrap_in_file_raises() -> None:
     """BothVariableForms without wrap_in_file=True raises ValueError."""
     expected_msg = "BothVariableForms requires wrap_in_file=True"
@@ -669,17 +497,3 @@ def test_literalize_wrap_in_file_without_variable_not_supported_raises() -> (
             variable_form=None,
             wrap_in_file=True,
         )
-
-
-def test_literalize_variable_names_supported_renders() -> None:
-    """``variable_form`` succeeds for languages with variable-name
-    support.
-    """
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        variable_form=BothVariableForms(name="x"),
-        wrap_in_file=True,
-    )
-    assert result.code == "x = 42\nx = 42"
