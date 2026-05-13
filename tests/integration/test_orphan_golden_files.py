@@ -10,6 +10,7 @@ from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
+    build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     discover_cases,
@@ -82,6 +83,16 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
                 name=pre_indent_case.name,
                 extension=pre_indent_case.lang_cls.extension,
                 lang_cls=pre_indent_case.lang_cls,
+            )
+        )
+
+    for no_variable_form_case in build_no_variable_form_cases():
+        expected.add(
+            make_golden_path(
+                parent=cases_dir / no_variable_form_case.case_dir_name,
+                name=no_variable_form_case.name,
+                extension=no_variable_form_case.lang_cls.extension,
+                lang_cls=no_variable_form_case.lang_cls,
             )
         )
 

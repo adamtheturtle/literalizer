@@ -331,6 +331,7 @@ class Cobol(metaclass=LanguageCls):
     pygments_name = "cobol"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -592,21 +593,14 @@ class Cobol(metaclass=LanguageCls):
                 Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if body_preamble:
-            stubs = "\n".join(body_preamble)
-            return (
-                Cobol._PROGRAM_PREFIX
-                + "PROCEDURE DIVISION.\n"
-                + f"{indented}\n"
-                + f"{self.indent}STOP RUN.\n"
-                + f"{stubs}\n"
-                + "END PROGRAM CHECK."
-            )
+        stubs = "\n".join(body_preamble)
         return (
             Cobol._PROGRAM_PREFIX
             + "PROCEDURE DIVISION.\n"
             + f"{indented}\n"
-            + f"{self.indent}STOP RUN."
+            + f"{self.indent}STOP RUN.\n"
+            + f"{stubs}\n"
+            + "END PROGRAM CHECK."
         )
 
     @staticmethod

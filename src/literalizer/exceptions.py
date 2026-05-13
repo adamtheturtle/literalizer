@@ -265,6 +265,30 @@ class VariableNameNotSupportedError(Exception):
         self.variable_name = variable_name
 
 
+class WrapInFileWithoutVariableNotSupportedError(Exception):
+    """Raised when ``literalize`` is called with ``wrap_in_file=True``
+    and ``variable_form=None`` for a target language that cannot
+    represent a bare value at file-statement scope.
+
+    Most strict-typed compiled languages (Rust, C, C++, Haskell, Swift,
+    OCaml, Ada, D, Dart, C#, Elm, Mojo, Nim, Objective-C, Odin, SML, V,
+    Zig, etc.) require every top-level item to be a declaration; a bare
+    expression at file scope is a syntax error.  Such languages opt out
+    of the shape by setting
+    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+    to ``False``, and ``literalize`` rejects the combination at the
+    boundary instead of silently emitting invalid code.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``WrapInFileWithoutVariableNotSupportedError``."""
+        super().__init__(
+            f"{language_name} cannot wrap a bare value (without a "
+            f"variable_form) at file scope"
+        )
+        self.language_name = language_name
+
+
 class UnsupportedCallShapeError(Exception):
     """Raised when ``literalize_call`` is given a call shape the target
     language cannot represent.

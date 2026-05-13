@@ -24,6 +24,7 @@ from literalizer.exceptions import (
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
+    WrapInFileWithoutVariableNotSupportedError,
 )
 from literalizer.languages import (
     Bash,
@@ -650,6 +651,28 @@ def test_literalize_variable_names_not_supported_raises() -> None:
             input_format=InputFormat.JSON,
             language=Yaml(),
             variable_form=BothVariableForms(name="x"),
+            wrap_in_file=True,
+        )
+
+
+def test_literalize_wrap_in_file_without_variable_not_supported_raises() -> (
+    None
+):
+    """``wrap_in_file=True, variable_form=None`` raises for languages
+    that cannot represent a bare value at file scope.
+    """
+    with pytest.raises(
+        expected_exception=WrapInFileWithoutVariableNotSupportedError,
+        match=(
+            r"^Haskell cannot wrap a bare value \(without a variable_form\) "
+            r"at file scope$"
+        ),
+    ):
+        literalize(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Haskell(),
+            variable_form=None,
             wrap_in_file=True,
         )
 
