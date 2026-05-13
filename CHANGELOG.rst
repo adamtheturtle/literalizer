@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.13.1
+------------
+
+
 - :class:`~literalizer._language.LanguageCls` now exposes
   ``supports_empty_dict_key``, ``supports_call_style``,
   ``supports_default_dict_key_type``, ``supports_default_dict_value_type``,
