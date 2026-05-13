@@ -160,6 +160,7 @@ class Groovy(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(

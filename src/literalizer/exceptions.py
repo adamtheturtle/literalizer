@@ -30,6 +30,16 @@ class InvalidDictKeyError(Exception):
     """
 
 
+class UnrepresentableInputError(Exception):
+    """Raised when an input value cannot be represented in the target
+    language.
+
+    Used as the centralized error for shape-level rejections at the
+    formatting boundary, e.g. when a dict carries a non-string key for
+    a language whose surface syntax only admits string-typed keys.
+    """
+
+
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.

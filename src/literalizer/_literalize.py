@@ -61,6 +61,7 @@ from literalizer.exceptions import (
     FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnrepresentableInputError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
@@ -326,6 +327,26 @@ def _format_set_value(
 
 
 @beartype
+def _guard_dict_keys_supported(
+    *,
+    value: Mapping[Scalar, Value],
+    spec: Language,
+) -> None:
+    """Reject non-string dict keys for languages that cannot represent
+    them.
+    """
+    if spec.supports_non_string_dict_keys:
+        return
+    for key in value:
+        if not isinstance(key, str):
+            msg = (
+                f"{type(spec).__name__} cannot represent dict key of "
+                f"type {type(key).__name__}"
+            )
+            raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _format_ordered_map_value(
     *,
     value: ordereddict,
@@ -339,6 +360,7 @@ def _format_ordered_map_value(
     multiline_prefix: str,
 ) -> str:
     """Format an ordered map as a native language literal."""
+    _guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
     ordered_map_items: list[tuple[str, Value]] = [
@@ -409,7 +431,7 @@ def _format_ordered_map_value(
 @beartype
 def _format_dict_value(
     *,
-    value: dict[str, Value],
+    value: dict[Scalar, Value],
     spec: Language,
     open_override: str | None,
     wrap_ids: frozenset[int],
@@ -421,9 +443,10 @@ def _format_dict_value(
     multiline_prefix: str,
 ) -> str:
     """Format a dict as a native language literal."""
+    _guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
-    dict_items: dict[str, Value] = {
+    dict_items: dict[Scalar, Value] = {
         k: v
         for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
@@ -573,7 +596,7 @@ def _compute_dict_open_override(
     different value types, or ``None`` when no widening is needed.
     """
     dict_open = spec.dict_format_config.dict_open
-    dicts: list[dict[str, Value]] = [
+    dicts: list[dict[Scalar, Value]] = [
         item
         for item in items
         if isinstance(item, dict) and not isinstance(item, ordereddict)
@@ -602,7 +625,7 @@ def _compute_dict_open_override(
     # "unknown type" to the widening — otherwise a dict that filters
     # to ``{}`` would narrow the widened type to the other dicts'
     # concrete value type, losing the null slot's uncertainty.
-    combined: dict[str, Value] = {}
+    combined: dict[Scalar, Value] = {}
     idx = 0
     for d in dicts:
         for v in d.values():
@@ -1179,7 +1202,7 @@ def _wrap_body(
     *,
     body: str,
     is_ordered_map: bool,
-    data: list[Value] | dict[str, Value] | set[Scalar],
+    data: list[Value] | dict[Scalar, Value] | set[Scalar],
     spec: Language,
     line_prefix: str,
 ) -> str:
@@ -1213,7 +1236,7 @@ def _wrap_body(
 @beartype
 def _collection_open_for_multiline_value(
     *,
-    data: dict[str, Value] | set[Scalar] | list[Value],
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
     spec: Language,
     is_ordered_map: bool,
     dict_open_override: str | None,
@@ -1265,7 +1288,7 @@ def _collection_open_for_multiline_value(
 @beartype
 def _format_multiline_collection_value(
     *,
-    value: dict[str, Value] | set[Scalar] | list[Value],
+    value: dict[Scalar, Value] | set[Scalar] | list[Value],
     spec: Language,
     line_prefix: str,
     wrap_ids: frozenset[int],
@@ -1349,7 +1372,7 @@ def _append_entries(
 @beartype
 def _format_collection_lines(
     *,
-    data: dict[str, Value] | set[Scalar] | list[Value],
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
     spec: Language,
     body_prefix: str,
     trailing_comma: bool,
@@ -1647,7 +1670,7 @@ def _literalize(
         and all(v is None for v in data.values())
     ):
         is_ordered_map = isinstance(data, ordereddict)
-        empty_value: ordereddict | dict[str, Value] = (
+        empty_value: ordereddict | dict[Scalar, Value] = (
             ordereddict() if is_ordered_map else {}
         )
         formatted = _format_value(
@@ -2305,7 +2328,7 @@ def _resolve_ref_for_preamble(
                 resolved_list.append(resolved.value)
         return _PreambleRefResolution(include=True, value=resolved_list)
     if isinstance(value, dict):
-        resolved_dict: dict[str, Value] = {}
+        resolved_dict: dict[Scalar, Value] = {}
         for key, item in value.items():
             resolved = _resolve_ref_for_preamble(
                 value=item,
@@ -3155,7 +3178,7 @@ def _validate_call_preconditions(
 
 def _is_value_mapping(
     value: ValueInput, /
-) -> TypeIs[Mapping[str, ValueInput]]:
+) -> TypeIs[Mapping[Scalar, ValueInput]]:
     """Narrow ``value`` to the ``Mapping`` arm of ``ValueInput``."""
     return isinstance(value, Mapping)
 

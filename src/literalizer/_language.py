@@ -130,7 +130,7 @@ class CommentConfig:
 class DictFormatConfig:
     """Configuration for dict formatting."""
 
-    dict_open: Callable[[dict[str, Value]], str]
+    dict_open: Callable[[dict[Scalar, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
     empty_dict: str | None
@@ -143,7 +143,7 @@ class DictFormatConfig:
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
 
-    ordered_map_open: Callable[[dict[str, Value]], str]
+    ordered_map_open: Callable[[dict[Scalar, Value]], str]
     close: str
     preamble_lines: tuple[str, ...]
 
@@ -609,6 +609,7 @@ class LanguageCls(type):
     supports_empty_dict_key: bool
     supports_call_style: bool
     supports_default_dict_key_type: bool
+    supports_non_string_dict_keys: bool
     supports_default_dict_value_type: bool
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
@@ -1394,6 +1395,18 @@ class Language(Protocol):
         with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
+
+    supports_non_string_dict_keys: bool
+    """Whether the language can represent a dict whose keys include
+    values that are not strings.  When ``False``,
+    :func:`~literalizer.literalize` rejects such inputs at the
+    formatting boundary with
+    :class:`~literalizer.exceptions.UnrepresentableInputError`.
+
+    Most languages allow scalar dict keys natively; pure data formats
+    whose surface syntax only admits string keys (JSON-family, TOML)
+    set this to ``False``.
+    """
 
     @property
     def supports_inline_multiline_dict_args(self) -> bool:

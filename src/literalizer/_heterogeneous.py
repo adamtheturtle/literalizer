@@ -78,7 +78,7 @@ def _siblings_mixed_ids(
 
 
 @beartype
-def _collect_from_dict(data: dict[str, Value]) -> frozenset[int]:
+def _collect_from_dict(data: dict[Scalar, Value]) -> frozenset[int]:
     """Return container ids for a dict, its sibling-list values, and
     descendants.
     """
@@ -116,7 +116,9 @@ def _collect_from_list(data: list[Value]) -> frozenset[int]:
         total=len(data),
         combined=[e for sublist in sublists for e in sublist],
     )
-    subdicts: list[dict[str, Value]] = [v for v in data if isinstance(v, dict)]
+    subdicts: list[dict[Scalar, Value]] = [
+        v for v in data if isinstance(v, dict)
+    ]
     subdict_ids = _siblings_mixed_ids(
         siblings=subdicts,
         total=len(data),
