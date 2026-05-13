@@ -13,7 +13,7 @@ main =
     let
         existing : Val
         existing = EInt 42
-        _ = process(existing)
+        _ = process existing
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

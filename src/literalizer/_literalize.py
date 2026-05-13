@@ -2940,18 +2940,6 @@ def _validate_parameter_count(
                 "zero-parameter calls have no representation in this language"
             ),
         )
-    max_call_parameters = language.max_call_parameters
-    if (
-        max_call_parameters is not None
-        and len(parameter_names) > max_call_parameters
-    ):
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                f"calls with more than {max_call_parameters} parameters "
-                f"have no representation in this language"
-            ),
-        )
 
 
 @beartype

@@ -13,9 +13,9 @@ objApiClientPost _ = ()
 main : Program () () Never
 main =
     let
-        _ = objApiClientPost(EStr "hello")
-        _ = objApiClientPost(EInt 42)
-        _ = objApiClientPost(EBool True)
+        _ = objApiClientPost (EStr "hello")
+        _ = objApiClientPost (EInt 42)
+        _ = objApiClientPost (EBool True)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

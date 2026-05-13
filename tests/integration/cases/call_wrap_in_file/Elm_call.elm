@@ -1,8 +1,8 @@
 module Check exposing (..)
 
 
-process : ( a, b ) -> ()
-process _ = ()
+process : a -> b -> ()
+process _ _ = ()
 type Val
     = EInt Int
     | EList (List Val)
@@ -11,8 +11,8 @@ type Val
 main : Program () () Never
 main =
     let
-        _ = process(EInt 1, EInt 2)
-        _ = process(EInt 3, EInt 4)
+        _ = process (EInt 1) (EInt 2)
+        _ = process (EInt 3) (EInt 4)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

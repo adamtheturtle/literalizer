@@ -13,7 +13,7 @@ main =
     let
         my_str : Val
         my_str = EStr "a\"b"
-        _ = process(my_str)
+        _ = process my_str
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )
