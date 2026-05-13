@@ -5,6 +5,21 @@ Next
 ----
 
 
+- :func:`~literalizer.literalize_call` now accepts a ``variable_form``
+  argument (``NewVariable`` / ``ExistingVariable`` / ``BothVariableForms``,
+  the same union :func:`~literalizer.literalize` already takes) that
+  wraps the rendered call in an idiomatic per-language variable
+  binding (e.g. ``let result = make_widget(42);``,
+  ``const result = make_widget({ count: 42 });``,
+  ``result = make_widget(count=42)``).  Mutability and inference style
+  are controlled by the per-language ``declaration_style`` and
+  ``Modifiers`` enums on the supplied ``Language`` instance.
+  Incompatible with ``per_element=True`` and with languages whose
+  call form is a statement rather than an expression
+  (``call_returns_expression=False``); both combinations raise
+  :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  Closes
+  `#1961 <https://github.com/adamtheturtle/literalizer/issues/1961>`_.
+
 - The internal :data:`~literalizer._types.Value` and
   :data:`~literalizer._types.ValueInput` aliases now permit any
   :data:`~literalizer._types.Scalar` as a dict key, in preparation for

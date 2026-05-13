@@ -86,6 +86,11 @@ class CallCaseConfig:
     requires_call_returns_expression: bool
     requires_inline_multiline_dict_args: bool
     requires_standalone_wrapped_comments: bool
+    # When set, drive ``literalize_call(..., variable_form=...)`` to
+    # exercise the call-binding output mode.  Only meaningful with
+    # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
+    # the generated file is self-contained around the binding.
+    variable_form: literalizer.VariableForm | None = None
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -748,6 +753,23 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
     ),
     CallCaseConfig(
+        case_dir_name="call_variable_form_new",
+        target_function="make_widget",
+        parameter_names=["count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        variable_form=literalizer.NewVariable(name="result"),
+    ),
+    CallCaseConfig(
         case_dir_name="call_wrap_in_file_escaped_quote",
         target_function="process",
         parameter_names=["v"],
@@ -827,7 +849,7 @@ class CallCase:
 
 
 @beartype
-def _expected_call_shape_exception(
+def _expected_call_shape_exception(  # noqa: PLR0911
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
@@ -853,8 +875,29 @@ def _expected_call_shape_exception(
         and not lang_cls.supports_standalone_comments_in_wrapped_calls
     ):
         return UnsupportedCallShapeError
+    variable_form_exc = _variable_form_expected_exception(
+        lang_cls=lang_cls, variable_form=config.variable_form
+    )
+    if variable_form_exc is not None:
+        return variable_form_exc
     innermost_target_function = config.target_function.split(sep=".")[-1]
     if innermost_target_function in lang_cls.reserved_identifiers:
+        return UnsupportedCallShapeError
+    return None
+
+
+@beartype
+def _variable_form_expected_exception(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    variable_form: literalizer.VariableForm | None,
+) -> type[Exception] | None:
+    """Mirror ``_validate_call_variable_form`` rejection paths."""
+    if variable_form is None:
+        return None
+    if not lang_cls.supports_variable_names:
+        return VariableNameNotSupportedError
+    if not lang_cls.call_returns_expression:
         return UnsupportedCallShapeError
     return None
 
@@ -922,6 +965,7 @@ def _run_wrap_in_file_case(
             per_element=config.per_element,
             wrap_in_file=True,
             ref_case=effective_ref_case,
+            variable_form=config.variable_form,
         )
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)

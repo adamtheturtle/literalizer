@@ -2952,11 +2952,18 @@ def _render_call_whole(
     ref_values: Mapping[str, Value],
     ref_key: str,
     collection_layout: CollectionLayout,
+    variable_form: NewVariable | ExistingVariable | None,
 ) -> str:
     """Render a single call from the whole parsed value.
 
     A single top-level ref marker renders as just the identifier; in
     that case shape validation and wrap-id computation are skipped.
+
+    When *variable_form* is supplied, the assembled call expression is
+    wrapped via the language's ``format_variable_declaration`` /
+    ``format_variable_assignment`` hook (instead of being routed through
+    ``format_call_statement`` and the language's statement terminator),
+    producing an idiomatic binding such as ``let p2 = Playlist::new();``.
     """
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is None:
         stripped_data = _strip_refs_from_value(value=data, ref_key=ref_key)
@@ -2991,14 +2998,29 @@ def _render_call_whole(
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
-    return language.format_call_statement(
-        _assemble_call(
-            target_function=target_function,
-            args_str=args_str,
-            call_transform=call_transform,
-            statement_terminator=language.statement_terminator,
-            style=style,
+    if variable_form is None:
+        return language.format_call_statement(
+            _assemble_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                statement_terminator=language.statement_terminator,
+                style=style,
+            )
         )
+    call_expr = _assemble_call(
+        target_function=target_function,
+        args_str=args_str,
+        call_transform=call_transform,
+        statement_terminator="",
+        style=style,
+    )
+    return _apply_variable_wrapper(
+        result=call_expr,
+        language=language,
+        data=data,
+        variable_form=variable_form,
+        line_prefix="",
     )
 
 
@@ -3098,6 +3120,51 @@ def _validate_parameter_count(
 
 
 @beartype
+def _validate_call_variable_form(
+    *,
+    language: Language,
+    variable_form: VariableForm,
+    per_element: bool,
+    wrap_in_file: bool,
+) -> None:
+    """Raise typed errors for unsupported ``variable_form``
+    combinations.
+    """
+    if per_element:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "variable_form is incompatible with per_element=True; "
+                "the API does not provide a name per element"
+            ),
+        )
+    if not language.supports_variable_names:
+        raise VariableNameNotSupportedError(
+            language_name=type(language).__name__,
+            variable_name=variable_form.name,
+        )
+    if not language.call_returns_expression:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "calls in this language are statements, not expressions, "
+                "so the call result cannot be bound to a variable"
+            ),
+        )
+    if isinstance(variable_form, BothVariableForms):
+        if not wrap_in_file:
+            msg = "BothVariableForms requires wrap_in_file=True"
+            raise ValueError(msg)
+        if not language.declaration_style.value.supports_redefinition:
+            msg = (
+                "BothVariableForms requires a declaration_style that "
+                "supports redefinition; "
+                f"{language.declaration_style.name!r} does not."
+            )
+            raise ValueError(msg)
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -3108,11 +3175,21 @@ def _validate_call_preconditions(
     ref_key: str,
     ref_case: IdentifierCase | None,
     call_transform: Callable[[str], str] | None,
+    variable_form: VariableForm | None,
+    per_element: bool,
+    wrap_in_file: bool,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
     _validate_parameter_count(
         language=language, parameter_names=parameter_names
     )
+    if variable_form is not None:
+        _validate_call_variable_form(
+            language=language,
+            variable_form=variable_form,
+            per_element=per_element,
+            wrap_in_file=wrap_in_file,
+        )
     if (
         not language.supports_inline_multiline_dict_args
         and _has_inline_multiline_dict_arg(
@@ -3190,6 +3267,65 @@ def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
     return isinstance(value, Sequence) and not isinstance(value, str | bytes)
 
 
+@beartype
+def _wrap_call_in_file(
+    *,
+    language: Language,
+    result: str,
+    combined_assignment: str | None,
+    variable_form: VariableForm | None,
+    target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
+    arg_values: Sequence[Value],
+    call_transform: Callable[[str], str] | None,
+    preamble: tuple[str, ...],
+    computed_body: tuple[str, ...],
+) -> str:
+    """Wrap a rendered ``literalize_call`` result in a complete file.
+
+    Emits a no-op stub for the target function so the wrapped file
+    compiles on its own.  ``StubReturn.VALUE`` is used whenever the
+    call's return value is consumed -- either by a ``call_transform``
+    or by binding it to a ``variable_form``; otherwise the call result
+    is discarded and a void stub suffices.
+    """
+    stub_return = (
+        StubReturn.VALUE
+        if call_transform is not None or variable_form is not None
+        else StubReturn.VOID
+    )
+    body_stubs = language.format_call_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
+    preamble_stubs = language.format_call_preamble_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
+    if combined_assignment is not None and isinstance(
+        variable_form, BothVariableForms
+    ):
+        wrapped = language.wrap_combined_in_file(
+            declaration=result,
+            assignment=combined_assignment,
+            variable_name=variable_form.name,
+            body_preamble=body_stubs + computed_body,
+        )
+    else:
+        wrap_variable_name = (
+            variable_form.name if variable_form is not None else ""
+        )
+        wrapped = language.wrap_in_file(
+            content=result,
+            variable_name=wrap_variable_name,
+            body_preamble=body_stubs + computed_body,
+        )
+    # Stubs follow the language's static preamble (e.g. Go's
+    # ``package main`` must come first).
+    full_preamble = preamble + preamble_stubs
+    if full_preamble:
+        wrapped = "\n".join(full_preamble) + "\n" + wrapped
+    return wrapped
+
+
 def _materialize_value_input(*, value: ValueInput) -> Value:
     """Convert a user-supplied ``ValueInput`` into the internal ``Value``
     form, replacing any non-``list`` ``Sequence`` and non-``dict``
@@ -3221,6 +3357,7 @@ def literalize_call(
     ref_values: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    variable_form: VariableForm | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -3293,6 +3430,23 @@ def literalize_call(
             preserves the existing one-line nested rendering, while
             ``CollectionLayout.MULTILINE`` expands non-empty nested
             collections with one element per line.
+        variable_form: When supplied, wrap the call expression in a
+            variable binding using the language's
+            ``format_variable_declaration`` /
+            ``format_variable_assignment`` hook (the same machinery
+            used by :func:`literalize`).  Pass :class:`NewVariable` for
+            an idiomatic declaration (``let p2 = Playlist::new();``,
+            ``const p2 = new Playlist();``, ``p2 = Playlist()``),
+            :class:`ExistingVariable` for an assignment to an existing
+            name, or :class:`BothVariableForms` to produce both halves
+            combined via the language's ``wrap_combined_in_file``
+            (requires *wrap_in_file*).  Mutability and inference are
+            controlled by the per-language ``declaration_style`` and
+            ``Modifiers`` enums on the supplied ``Language`` instance,
+            not by extra arguments here.  Incompatible with
+            ``per_element=True`` (no per-element name vector is
+            provided); incompatible with languages whose call form is
+            not an expression (``call_returns_expression=False``).
 
     .. note::
 
@@ -3348,6 +3502,9 @@ def literalize_call(
         ref_key=ref_key,
         ref_case=ref_case,
         call_transform=call_transform,
+        variable_form=variable_form,
+        per_element=per_element,
+        wrap_in_file=wrap_in_file,
     )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,
@@ -3368,6 +3525,15 @@ def literalize_call(
         ref_values=materialized_ref_values,
     )
 
+    combined_assignment: str | None = None
+    inner_variable_form: NewVariable | ExistingVariable | None
+    if isinstance(variable_form, BothVariableForms):
+        inner_variable_form = NewVariable(
+            name=variable_form.name,
+            modifiers=variable_form.modifiers,
+        )
+    else:
+        inner_variable_form = variable_form
     if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
@@ -3405,11 +3571,29 @@ def literalize_call(
             ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
+            variable_form=inner_variable_form,
         )
+        if isinstance(variable_form, BothVariableForms):
+            combined_assignment = _render_call_whole(
+                data=data,
+                language=language,
+                style=style,
+                target_function=target_function,
+                parameter_names=parameter_names,
+                call_transform=call_transform,
+                ref_case=ref_case,
+                consumable_ref_names=consumable_refs,
+                ref_values=materialized_ref_values,
+                ref_key=ref_key,
+                collection_layout=collection_layout,
+                variable_form=ExistingVariable(name=variable_form.name),
+            )
     computed = compute_preamble(
         data=data_for_preamble,
         language=language,
-        has_variable_declaration=False,
+        has_variable_declaration=isinstance(
+            variable_form, NewVariable | BothVariableForms
+        ),
     )
     preamble = deduplicate_preamble_entries(
         entries=(
@@ -3420,29 +3604,18 @@ def literalize_call(
     )
 
     if wrap_in_file:
-        # Emit a no-op stub for ``target_function`` so the wrapped file
-        # compiles on its own.  ``StubReturn.VALUE`` is used whenever a
-        # ``call_transform`` consumes the call's return value; otherwise
-        # the call result is discarded and a void stub suffices.
-        stub_return = (
-            StubReturn.VALUE if call_transform is not None else StubReturn.VOID
+        wrapped = _wrap_call_in_file(
+            language=language,
+            result=result,
+            combined_assignment=combined_assignment,
+            variable_form=variable_form,
+            target_function_parts=target_function_parts,
+            parameter_names=parameter_names,
+            arg_values=arg_values,
+            call_transform=call_transform,
+            preamble=preamble,
+            computed_body=computed.body,
         )
-        body_stubs = language.format_call_stub(
-            target_function_parts, parameter_names, stub_return, arg_values
-        )
-        preamble_stubs = language.format_call_preamble_stub(
-            target_function_parts, parameter_names, stub_return, arg_values
-        )
-        wrapped = language.wrap_in_file(
-            content=result,
-            variable_name="",
-            body_preamble=body_stubs + computed.body,
-        )
-        # Stubs follow the language's static preamble (e.g. Go's
-        # ``package main`` must come first).
-        full_preamble = preamble + preamble_stubs
-        if full_preamble:
-            wrapped = "\n".join(full_preamble) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
             preamble=(),
