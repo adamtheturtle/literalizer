@@ -1,5 +1,6 @@
 """Shared helpers for the Elm lint scripts."""
 
+import dataclasses
 import json
 import os
 import shutil
@@ -76,9 +77,16 @@ def prime_elm_home(*, elm_path: str, elm_home: Path) -> None:
             raise RuntimeError(msg)
 
 
-_primed_elm_home: Path | None = None
-_worker_homes_root: Path | None = None
-_worker_elm_home_dir: Path | None = None
+@dataclasses.dataclass
+class _ElmHomeState:
+    """Mutable container for per-worker ELM_HOME state."""
+
+    primed: Path | None
+    workers_root: Path | None
+    worker_dir: Path | None
+
+
+_state = _ElmHomeState(primed=None, workers_root=None, worker_dir=None)
 
 
 def init_worker_elm_home(primed_elm_home: str, worker_homes_root: str) -> None:
@@ -93,9 +101,8 @@ def init_worker_elm_home(primed_elm_home: str, worker_homes_root: str) -> None:
     ``os._exit`` (CPython's ``multiprocessing._bootstrap``), which
     skips registered ``atexit`` callbacks on Python <= 3.14.
     """
-    global _primed_elm_home, _worker_homes_root  # noqa: PLW0603
-    _primed_elm_home = Path(primed_elm_home)
-    _worker_homes_root = Path(worker_homes_root)
+    _state.primed = Path(primed_elm_home)
+    _state.workers_root = Path(worker_homes_root)
 
 
 def worker_elm_home() -> Path:
@@ -106,22 +113,21 @@ def worker_elm_home() -> Path:
     ELM_HOME (it locks the cache and fails with "resource busy"),
     so each worker keeps its own copy for its lifetime.
     """
-    global _worker_elm_home_dir  # noqa: PLW0603
-    if _worker_elm_home_dir is not None:
-        return _worker_elm_home_dir
-    if _primed_elm_home is None or _worker_homes_root is None:
+    if _state.worker_dir is not None:
+        return _state.worker_dir
+    if _state.primed is None or _state.workers_root is None:
         msg = "init_worker_elm_home was not called"
         raise RuntimeError(msg)
     worker_dir = Path(
         tempfile.mkdtemp(
             prefix="elm-home-worker-",
             suffix=NOINDEX_SUFFIX,
-            dir=_worker_homes_root,
+            dir=_state.workers_root,
         ),
     )
-    shutil.copytree(src=_primed_elm_home, dst=worker_dir, dirs_exist_ok=True)
-    _worker_elm_home_dir = worker_dir
-    return _worker_elm_home_dir
+    shutil.copytree(src=_state.primed, dst=worker_dir, dirs_exist_ok=True)
+    _state.worker_dir = worker_dir
+    return _state.worker_dir
 
 
 _ELM_TRANSIENT_BINARY_FILE_MARKERS = ("openBinaryFile", "withBinaryFile")
