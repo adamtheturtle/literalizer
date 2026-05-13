@@ -111,6 +111,15 @@ type YamlData = (
 )
 
 
+def _load_case_input_yaml(case_dir: Path) -> YamlData:
+    """Parse ``input.yaml`` from a case directory into ``YamlData``."""
+    yaml = YAML()
+    loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        stream=(case_dir / "input.yaml").read_text(),
+    )
+    return loaded
+
+
 def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
@@ -142,12 +151,9 @@ def cases_with_non_trivial_dict_keys(
     """Return case directory names whose input YAML has dict keys that
     some languages cannot represent (empty or non-printable-ASCII).
     """
-    yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=(case_dir / "input.yaml").read_text(),
-        )
+        loaded = _load_case_input_yaml(case_dir=case_dir)
         if has_non_printable_ascii_dict_keys(data=loaded):
             result.add(case_dir.name)
     return frozenset(result)
@@ -176,12 +182,9 @@ def cases_with_special_floats(
     """Return case directory names whose input YAML contains a
     non-finite float that some languages cannot produce at runtime.
     """
-    yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=(case_dir / "input.yaml").read_text(),
-        )
+        loaded = _load_case_input_yaml(case_dir=case_dir)
         if has_special_floats(data=loaded):
             result.add(case_dir.name)
     return frozenset(result)
