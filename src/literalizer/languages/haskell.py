@@ -1396,7 +1396,7 @@ class Haskell(metaclass=LanguageCls):
     statement_terminator_style: StatementTerminatorStyles = (
         StatementTerminatorStyles.SEMICOLON
     )
-    call_style: CallStyles = CallStyles.POSITIONAL
+    call_style: CallStyles = CallStyles.CURRIED
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )

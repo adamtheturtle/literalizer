@@ -11,5 +11,5 @@ process :: Val -> IO ()
 process _ = return ()
 main :: IO ()
 main = do
-    _ <- process(1)
+    _ <- process (1)
     pure ()

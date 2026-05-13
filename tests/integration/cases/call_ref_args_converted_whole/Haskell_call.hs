@@ -18,5 +18,5 @@ myVar = HList [
     ]
 main :: IO ()
 main = do
-    _ <- process(myVar)
+    _ <- process myVar
     pure ()

@@ -1,6 +1,6 @@
 module Fixture_call_wrap_in_file_Haskell_call where
-process :: (Val, Val) -> IO ()
-process _ = return ()
+process :: Val -> Val -> IO ()
+process _ _ = return ()
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -12,6 +12,6 @@ instance Num Val where
     negate _ = error "not implemented"
 main :: IO ()
 main = do
-    _ <- process(1, 2)
-    _ <- process(3, 4)
+    _ <- process (1) (2)
+    _ <- process (3) (4)
     pure ()

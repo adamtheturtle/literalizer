@@ -30,7 +30,9 @@ Next
   a ``CURRIED`` :class:`~literalizer.CallStyle` alongside the existing
   ``POSITIONAL`` member.  Selecting it emits curried application calls
   (``process arg1 arg2``) with curried stubs in place of the tuple
-  form.  ``POSITIONAL`` remains the default for these languages.
+  form.  :class:`~literalizer.Haskell` defaults to ``CURRIED`` since
+  curried application is the idiomatic call form in Haskell; F#, OCaml,
+  and SML keep ``POSITIONAL`` as the default.
 
 - :class:`~literalizer.Elm` :func:`~literalizer.literalize_call` now
   emits curried-application calls (``process (EInt 1) (EInt 2)``) with

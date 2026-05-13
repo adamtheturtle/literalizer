@@ -12,8 +12,8 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     _ / _ = error "not implemented"
-process :: (Val, Val) -> IO ()
-process _ = return ()
+process :: Val -> Val -> IO ()
+process _ _ = return ()
 my_int :: Val
 my_int = 1
 my_bool :: Val
@@ -28,8 +28,8 @@ my_list = HList [
     ]
 main :: IO ()
 main = do
-    _ <- process(my_int, 42)
-    _ <- process(my_bool, 7)
-    _ <- process(my_float, 9)
-    _ <- process(my_list, 1)
+    _ <- process my_int (42)
+    _ <- process my_bool (7)
+    _ <- process my_float (9)
+    _ <- process my_list (1)
     pure ()

@@ -6,5 +6,5 @@ my_str :: Val
 my_str = HStr "a\"b"
 main :: IO ()
 main = do
-    _ <- process(my_str)
+    _ <- process my_str
     pure ()

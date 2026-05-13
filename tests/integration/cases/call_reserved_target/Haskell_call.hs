@@ -4,5 +4,5 @@ op :: Val -> IO ()
 op _ = return ()
 main :: IO ()
 main = do
-    _ <- op(HStr "hello")
+    _ <- op (HStr "hello")
     pure ()
