@@ -84,9 +84,6 @@ def _apply_format_c_entry(
     string_field: str,
 ) -> str:
     """Wrap a formatted entry in the appropriate union literal."""
-    # Values above ``LLONG_MAX`` cannot be assigned to the signed
-    # ``long long`` field without an implementation-defined narrowing
-    # conversion; route them to the unsigned field.
     match original:
         case datetime.datetime() if formatted.lstrip("-").isdigit():
             field = int_field
@@ -94,6 +91,9 @@ def _apply_format_c_entry(
             field = string_field
         case bool():
             return formatted
+        # Values above ``LLONG_MAX`` cannot be assigned to the signed
+        # ``long long`` field without an implementation-defined
+        # narrowing conversion; route them to the unsigned field.
         case int() if original > I64_MAX:
             field = uint_field
         case int():
