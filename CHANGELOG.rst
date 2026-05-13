@@ -20,6 +20,13 @@ Next
   as opt-in.  The renderer no longer silently emits invalid output for
   any of these.
 
+- :class:`~literalizer.Haskell`, :class:`~literalizer.FSharp`,
+  :class:`~literalizer.OCaml`, and :class:`~literalizer.Sml` now expose
+  a ``CURRIED`` :class:`~literalizer.CallStyle` alongside the existing
+  ``POSITIONAL`` member.  Selecting it emits curried application calls
+  (``process arg1 arg2``) with curried stubs in place of the tuple
+  form.  ``POSITIONAL`` remains the default for these languages.
+
 - :class:`~literalizer.Elm` :func:`~literalizer.literalize_call` now
   emits curried-application calls (``process (EInt 1) (EInt 2)``) with
   curried type stubs (``process : a -> b -> ()``) in place of the prior

@@ -46,6 +46,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -92,11 +93,29 @@ def _haskell_call_preamble_stub(
 
 
 @beartype
+def _haskell_arg_type_str(
+    *, params: Sequence[str], type_name: str, curried: bool
+) -> str:
+    """Return the Haskell argument-type string for a call signature.
+
+    Curried: ``Val -> Val -> Val``.  Positional: ``Val`` for one param,
+    or a tuple ``(Val, Val)`` for many.
+    """
+    if curried:
+        return " -> ".join(type_name for _ in params)
+    if len(params) == 1:
+        return type_name
+    return "(" + ", ".join(type_name for _ in params) + ")"
+
+
+@beartype
 def _build_haskell_call_stub_lines(
+    *,
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     type_name: str,
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return Haskell stub declarations for a call name."""
     if stub_return is StubReturn.VALUE:
@@ -110,30 +129,29 @@ def _build_haskell_call_stub_lines(
     # another call. Declare them with a polymorphic argument so GHC
     # never needs to default the wrapped expression's type.
     is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
+    effective_curried = curried and not is_wrapper_stub
+    arg_type = _haskell_arg_type_str(
+        params=params, type_name=type_name, curried=effective_curried
+    )
+    lhs_wildcards = " ".join("_" for _ in params) if effective_curried else "_"
+    lambda_wildcards = lhs_wildcards
     if len(parts) == 1:
         if is_wrapper_stub:
             sig = f"{parts[0]} :: a -> IO ()"
-        else:
-            if len(params) == 1:
-                arg_type = type_name
-            else:
-                arg_type = "(" + ", ".join(type_name for _ in params) + ")"
-            sig = f"{parts[0]} :: {arg_type} -> {ret}"
-        return (sig, f"{parts[0]} _ = {body}")
+            return (sig, f"{parts[0]} _ = {body}")
+        sig = f"{parts[0]} :: {arg_type} -> {ret}"
+        return (sig, f"{parts[0]} {lhs_wildcards} = {body}")
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if len(params) == 1:
-        arg_type = type_name
-    else:
-        arg_type = "(" + ", ".join(type_name for _ in params) + ")"
     field_type = f"{arg_type} -> {ret}"
+    construction_lambda = f"\\{lambda_wildcards} -> {body}"
     if not fields:
         cls = root.capitalize() + "Type_"
         return (
             f"data {cls} = {cls} {{ {method} :: {field_type} }}",
             f"{root} :: {cls}",
-            f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
+            f"{root} = {cls} {{ {method} = {construction_lambda} }}",
         )
     lines: list[str] = []
     inner_cls = fields[-1].capitalize() + "Type_"
@@ -151,7 +169,7 @@ def _build_haskell_call_stub_lines(
     lines.append(
         f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
     )
-    construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
+    construction = f"{inner_cls} {{ {method} = {construction_lambda} }}"
     for i in range(len(fields) - 2, -1, -1):
         cls = fields[i].capitalize() + "Type_"
         construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
@@ -162,7 +180,9 @@ def _build_haskell_call_stub_lines(
 
 
 def _build_haskell_call_stub(
+    *,
     type_name: str,
+    curried: bool,
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
@@ -184,9 +204,18 @@ def _build_haskell_call_stub(
             params=params,
             stub_return=stub_return,
             type_name=type_name,
+            curried=curried,
         )
 
     return _haskell_call_stub
+
+
+@beartype
+def _haskell_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted Haskell value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
 
 
 @beartype
@@ -972,13 +1001,6 @@ class Haskell(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = False
     supports_module_name = True
 
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
-
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
 
@@ -1211,6 +1233,10 @@ class Haskell(metaclass=LanguageCls):
         """Haskell call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -1634,7 +1660,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config
 
     @cached_property
     def format_call_stub(
@@ -1644,7 +1671,22 @@ class Haskell(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Callable that returns Haskell stub declarations for a call."""
-        return _build_haskell_call_stub(type_name=self.type_name)
+        return _build_haskell_call_stub(
+            type_name=self.type_name,
+            curried=isinstance(self.call_style.value, CommandCallStyle),
+        )
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications (``HInt 1``) are not parsed as additional arguments
+        to the outer call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _haskell_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
