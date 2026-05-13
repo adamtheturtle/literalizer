@@ -24,12 +24,10 @@ from literalizer.exceptions import (
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
     IndentCase,
-    NoVariableFormCase,
     PreIndentCase,
     StatementTerminatorCombinedCase,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
-    build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     group_cases_by_language,
@@ -461,55 +459,6 @@ def test_indent_golden_file(
             variable_form=None,
             wrap_in_file=True,
         )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=case.lang_cls.extension,
-        newline=None,
-        golden_path=golden_path,
-    )
-
-
-@pytest.mark.parametrize(
-    argnames="case",
-    argvalues=build_no_variable_form_cases(),
-    ids=[c.name for c in build_no_variable_form_cases()],
-)
-def test_no_variable_form_golden_file(
-    case: NoVariableFormCase,
-    cases_dir: Path,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """``literalize(wrap_in_file=True, variable_form=None)`` produces a
-    stable per-language golden.
-
-    Locks in the ``variable_name == ""`` branch of each language's
-    ``wrap_in_file``: ``variable_form=None`` together with
-    ``wrap_in_file=True`` emits a complete file whose contents are the
-    rendered value placed in the language's statement-level position,
-    without a surrounding named declaration.
-    """
-    input_path = cases_dir / case.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
-    golden_path = make_golden_path(
-        parent=input_path.parent,
-        name=case.name,
-        extension=case.lang_cls.extension,
-        lang_cls=case.lang_cls,
-    )
-    spec = with_per_fixture_module_name(
-        spec=make_spec(lang_cls=case.lang_cls),
-        golden_path=golden_path,
-    )
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        wrap_in_file=True,
-    )
     check_golden(
         file_regression=file_regression,
         contents=result.code + "\n",
