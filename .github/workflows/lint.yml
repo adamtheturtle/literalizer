@@ -314,6 +314,11 @@ jobs:
           # be listed explicitly here.
           packages: octave liblapack3
           version: 1.0
+      # cache-apt-pkgs-action skips package postinst scripts on cache hit,
+      # so the ld.so symlinks (e.g. liblapack.so.3) that ldconfig normally
+      # creates are missing until we run it ourselves.
+      - name: Register shared libraries
+        run: sudo ldconfig
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
