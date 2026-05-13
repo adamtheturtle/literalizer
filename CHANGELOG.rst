@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.13
+----------
+
+
 - :class:`~literalizer.Haskell` ``CURRIED``
   :class:`~literalizer.CallStyle` now emits a thunk binding
   (``process :: IO Val`` / ``process = ...``) for zero-parameter
