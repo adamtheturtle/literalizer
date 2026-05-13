@@ -17,7 +17,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer._preamble import deduplicate_preamble_entries
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -1206,9 +1205,12 @@ def run_call_golden_case(
         for entry in d.preamble
         if "\n" not in entry
     )
-    all_preamble = deduplicate_preamble_entries(
-        entries=decl_preamble_lines + result.preamble + tuple(preamble_stubs),
-    )
+    seen: set[str] = set()
+    all_preamble: tuple[str, ...] = ()
+    for entry in decl_preamble_lines + result.preamble + tuple(preamble_stubs):
+        if entry not in seen:
+            seen.add(entry)
+            all_preamble += (entry,)
     wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
     check_golden(
         file_regression=file_regression,
