@@ -159,6 +159,9 @@ lint.per-file-ignores."tests/test_*.py" = [
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
+lint.flake8-tidy-imports.banned-api."builtins.getattr".msg = "getattr is banned: declare a typed protocol and use isinstance narrowing, or access the attribute directly."
+lint.flake8-tidy-imports.banned-api."builtins.hasattr".msg = "hasattr is banned: declare a typed protocol and use isinstance narrowing instead."
+lint.flake8-tidy-imports.banned-api."builtins.setattr".msg = "setattr is banned: assign through a typed attribute or constructor instead."
 lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: use explicit type narrowing or a typed variable instead."
 lint.pydocstyle.convention = "google"
 
