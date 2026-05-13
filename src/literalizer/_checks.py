@@ -14,6 +14,7 @@ from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
     HeterogeneousSiblingListsError,
+    MixedDictKeysError,
     MixedDictShapesError,
     MixedDictValuesError,
     MixedListValuesError,
@@ -268,6 +269,46 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
 
 
 @beartype
+def _has_mixed_dict_keys(*, data: Value) -> bool:
+    """Recursively check whether data contains any dict whose keys span
+    multiple type families.
+    """
+    match data:
+        case dict():
+            keys: list[Value] = list(data.keys())
+            if _values_mixed_types(values=keys):
+                return True
+            return any(_has_mixed_dict_keys(data=v) for v in data.values())
+        case list():
+            return any(_has_mixed_dict_keys(data=v) for v in data)
+        case _:
+            return False
+
+
+@beartype
+def _find_first_mixed_keys(*, data: Value) -> Sequence[Value]:
+    """Return the keys of the first dict in *data* whose keys span
+    multiple type families.
+    """
+    children: Sequence[Value]
+    match data:
+        case dict():
+            keys: list[Value] = list(data.keys())
+            if _values_mixed_types(values=keys):
+                return keys
+            children = list(data.values())
+        case list():
+            children = data
+        case _:
+            return []
+    for child in children:
+        result = _find_first_mixed_keys(data=child)
+        if result:
+            return result
+    return []
+
+
+@beartype
 def _has_mixed_dict_values(*, data: Value) -> bool:
     """Recursively check whether data contains any dict whose values span
     multiple type families.
@@ -386,6 +427,22 @@ def _check_mixed_dict_shapes(*, data: Value) -> None:
 
 
 @beartype
+def _check_mixed_dict_keys(*, data: Value) -> None:
+    """Raise if any dict has keys spanning multiple type families."""
+    if _has_mixed_dict_keys(data=data):
+        keys = _find_first_mixed_keys(data=data)
+        types = ", ".join(
+            sorted({_value_type_family(value=k) for k in keys}),
+        )
+        msg = (
+            "Dict contains keys of mixed types that cannot be "
+            "represented in the target language "
+            f"(found types: {types})"
+        )
+        raise MixedDictKeysError(msg)
+
+
+@beartype
 def _check_mixed_dict_values(*, data: Value) -> None:
     """Raise if any dict has values spanning multiple type families."""
     if _has_mixed_dict_values(data=data):
@@ -450,6 +507,7 @@ def check_data(*, data: Value, spec: Language) -> None:
             _check_heterogeneous(data=data)
             _check_heterogeneous_sibling_lists(data=data)
         if not dict_supports_het:
+            _check_mixed_dict_keys(data=data)
             _check_mixed_dict_values(data=data)
         if not seq_supports_het:
             _check_mixed_list_values(data=data)
