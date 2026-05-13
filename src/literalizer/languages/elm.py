@@ -506,8 +506,9 @@ class Elm(metaclass=LanguageCls):
     call_returns_expression = True
     supports_zero_parameter_calls = False
     max_call_parameters: ClassVar[int] = 3
-    """Elm tuple literals cap at 3 elements, which caps positional call
-    arity since ``PositionalCallStyle`` emits a tuple at the call site.
+    """Elm tuple literals cap at 3 elements, which caps the parameter
+    count for a call: ``PositionalCallStyle`` emits a tuple at the
+    call site.
     """
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
