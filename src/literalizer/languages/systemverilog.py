@@ -687,12 +687,12 @@ class SystemVerilog(metaclass=LanguageCls):
         language's call expression syntax, rejecting scalar refs.
 
         SystemVerilog's variable declarations key the type off the
-        marker dict's shape (``_VKV name[]``), so a top-level ref
+        marker mapping shape (``_VKV name[]``), so a top-level ref
         pointing to a scalar produces a typed declaration that does
         not match the referenced ``_VVal`` variable.  Refuse those
         cases so the renderer fails fast instead of emitting code that
-        the SV compiler rejects with "types are not assignment
-        compatible".
+        the SystemVerilog compiler rejects with "types are not
+        assignment compatible".
         """
 
         def _sv_format_ref_identifier(
