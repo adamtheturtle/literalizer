@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import enum
 import math
-import string
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -385,50 +384,20 @@ def _elm_call_stub(
     polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
     tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
     tuple that ``PositionalCallStyle`` emits at the call site.  Elm
-    tuples cap at 3 elements, so 4+ parameters cannot produce
-    valid Elm; the curried fallback exists for completeness only.
+    tuples cap at 3 elements, so 4+ parameter calls are rejected
+    upstream by ``literalize_call`` via ``max_call_parameters``.
     """
     flat_name = _elm_flatten_dotted(parts=parts)
-    n = len(params)
-    _max_elm_tuple_size = len(("a", "b", "c"))
-    match n:
-        case 1:
-            type_sig = f"{flat_name} : a -> ()"
-            impl = f"{flat_name} _ = ()"
-        case _ if n <= _max_elm_tuple_size:
-            _alphabet_size = len(string.ascii_lowercase)
-            type_vars = ", ".join(
-                chr(ord("a") + (i % _alphabet_size))
-                + (
-                    str(object=i // _alphabet_size)
-                    if i >= _alphabet_size
-                    else ""
-                )
-                for i in range(n)
-            )
-            type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
-            impl = f"{flat_name} _ = ()"
-        case _:  # pragma: no cover
-            # Elm tuples cap at 3 elements, and PositionalCallStyle
-            # emits a tuple at the call site, so n > 3 cannot produce
-            # valid Elm.  A curried stub is emitted as a best
-            # effort, but the call site will still be rejected by
-            # ``elm make``; no integration case exercises this branch
-            # for that reason.
-            _alphabet_size = len(string.ascii_lowercase)
-            type_vars = " -> ".join(
-                chr(ord("a") + (i % _alphabet_size))
-                + (
-                    str(object=i // _alphabet_size)
-                    if i >= _alphabet_size
-                    else ""
-                )
-                for i in range(n)
-            )
-            wildcards = " ".join("_" for _ in range(n))
-            type_sig = f"{flat_name} : {type_vars} -> ()"
-            impl = f"{flat_name} {wildcards} = ()"
-    return (type_sig, impl)
+    parameter_count = len(params)
+    implementation = f"{flat_name} _ = ()"
+    if parameter_count == 1:
+        type_signature = f"{flat_name} : a -> ()"
+    else:
+        type_variables = ", ".join(
+            chr(ord("a") + position) for position in range(parameter_count)
+        )
+        type_signature = f"{flat_name} : ( {type_variables} ) -> ()"
+    return (type_signature, implementation)
 
 
 _INT_BASE: dict[str, Callable[[int], str]] = {
@@ -536,6 +505,11 @@ class Elm(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = False
+    max_call_parameters: ClassVar[int] = 3
+    """Elm tuple literals cap at 3 elements, which caps the parameter
+    count for a call: ``PositionalCallStyle`` emits a tuple at the
+    call site.
+    """
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
     supports_module_name = False

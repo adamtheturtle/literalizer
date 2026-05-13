@@ -2922,6 +2922,39 @@ def _validate_wrap_in_file_supports_standalone_comments(
 
 
 @beartype
+def _validate_parameter_count(
+    *,
+    language: Language,
+    parameter_names: Sequence[str],
+) -> None:
+    """Raise ``UnsupportedCallShapeError`` if the parameter count is out
+    of range for ``language``.
+    """
+    if (
+        len(parameter_names) == 0
+        and not language.supports_zero_parameter_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "zero-parameter calls have no representation in this language"
+            ),
+        )
+    max_call_parameters = language.max_call_parameters
+    if (
+        max_call_parameters is not None
+        and len(parameter_names) > max_call_parameters
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"calls with more than {max_call_parameters} parameters "
+                f"have no representation in this language"
+            ),
+        )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -2934,16 +2967,9 @@ def _validate_call_preconditions(
     call_transform: Callable[[str], str] | None,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
-    if (
-        len(parameter_names) == 0
-        and not language.supports_zero_parameter_calls
-    ):
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                "zero-parameter calls have no representation in this language"
-            ),
-        )
+    _validate_parameter_count(
+        language=language, parameter_names=parameter_names
+    )
     if (
         not language.supports_inline_multiline_dict_args
         and _has_inline_multiline_dict_arg(
