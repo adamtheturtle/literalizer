@@ -394,7 +394,6 @@ def _elm_call_stub(
     return (type_signature, implementation)
 
 
-@beartype
 def _elm_format_call_arg(_original: Value, formatted: str, /) -> str:
     """Wrap a formatted Elm value in parentheses for curried application.
 
