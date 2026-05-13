@@ -98,7 +98,7 @@ def _haskell_arg_type_str(
 ) -> str | None:
     """Return the Haskell argument-type string for a call signature.
 
-    Curried: ``Val -> Val -> Val``, or ``None`` for the zero-arg case
+    Curried: ``Val -> Val -> Val``, or ``None`` for the zero-parameter case
     (which is a thunk binding ``f :: IO Val`` with no arrow).
     Positional: ``Val`` for one param, or a tuple ``(Val, ...)`` for
     many (including ``()`` for zero, since :class:`PositionalCallStyle`
