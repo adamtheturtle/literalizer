@@ -48,6 +48,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -212,32 +213,35 @@ def _build_fsharp_declaration(
     return _format
 
 
-def _fsharp_call_stub(
+@beartype
+def _build_fsharp_call_stub_lines(
+    *,
     parts: Sequence[str],
     params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return F# stub declarations for a call name."""
+    if curried:
+        param_list = " " + " ".join(f"(_{p}: obj)" for p in params)
+    else:
+        param_list = "(" + ", ".join(f"_{p}: obj" for p in params) + ")"
+    let_param_list = param_list if curried else f" {param_list}"
     if len(parts) == 1:
-        param_list = ", ".join(f"_{p}: obj" for p in params)
-        return (f"let {parts[0]} ({param_list}) : obj = null",)
+        return (f"let {parts[0]}{let_param_list} : obj = null",)
     root = parts[0]
     method = parts[-1]
-    param_list = ", ".join(f"_{p}: obj" for p in params)
     fields = parts[1:-1]
     if not fields:
         cls = f"{root.title()}Type_"
         return (
             f"type {cls}() =",
-            f"    member _.{method}({param_list}) : obj = null",
+            f"    member _.{method}{param_list} : obj = null",
             f"let {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"{fields[-1].title()}Type_"
     lines.append(f"type {inner_cls}() =")
-    lines.append(f"    member _.{method}({param_list}) : obj = null")
+    lines.append(f"    member _.{method}{param_list} : obj = null")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = f"{fields[i].title()}Type_"
@@ -249,6 +253,40 @@ def _fsharp_call_stub(
     lines.append(f"    member _.{fields[0]} = {prev_cls}()")
     lines.append(f"let {root} = {root_cls}()")
     return tuple(lines)
+
+
+def _fsharp_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return F# positional (tuple-form) stub declarations."""
+    return _build_fsharp_call_stub_lines(
+        parts=parts, params=params, curried=False
+    )
+
+
+def _fsharp_curried_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return F# curried stub declarations."""
+    return _build_fsharp_call_stub_lines(
+        parts=parts, params=params, curried=True
+    )
+
+
+@beartype
+def _fsharp_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted F# value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
 
 
 @beartype
@@ -292,13 +330,6 @@ class FSharp(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = True
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""
@@ -525,6 +556,10 @@ class FSharp(metaclass=LanguageCls):
         """FSharp call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -692,7 +727,21 @@ class FSharp(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _fsharp_curried_call_stub
         return _fsharp_call_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications are not parsed as additional arguments to the outer
+        call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _fsharp_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
@@ -1014,4 +1063,5 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config

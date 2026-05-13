@@ -46,6 +46,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -253,12 +254,12 @@ def _format_sml_preamble_lines(
     )
 
 
-def _sml_call_stub(
+@beartype
+def _build_sml_call_stub_lines(
+    *,
     parts: Sequence[str],
-    _params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
+    params: Sequence[str],
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return SML stub declarations for a call name.
 
@@ -266,12 +267,52 @@ def _sml_call_stub(
     are emitted so that ``app.client.fetch arg`` is valid at the call
     site.  The innermost name becomes a ``fun`` declaration that accepts
     any argument and returns unit.
+
+    Under curried calling, each parameter is bound separately
+    (``fun f _ _ = ()``); under positional calling, a single placeholder
+    accepts the whole tuple (``fun f _ = ()``).
     """
     method = parts[-1]
-    lines: list[str] = [f"fun {method} _ = ()"]
+    if curried:
+        wildcards = " ".join("_" for _ in params)
+        lines: list[str] = [f"fun {method} {wildcards} = ()"]
+    else:
+        lines = [f"fun {method} _ = ()"]
     for part in reversed(parts[:-1]):
         lines = [f"structure {part} = struct", *lines, "end"]
     return tuple(lines)
+
+
+def _sml_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return SML positional (tuple-form) stub declarations."""
+    return _build_sml_call_stub_lines(
+        parts=parts, params=params, curried=False
+    )
+
+
+def _sml_curried_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return SML curried stub declarations."""
+    return _build_sml_call_stub_lines(parts=parts, params=params, curried=True)
+
+
+@beartype
+def _sml_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted SML value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
 
 
 @beartype
@@ -317,13 +358,6 @@ class Sml(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Standard ML."""
@@ -540,6 +574,10 @@ class Sml(metaclass=LanguageCls):
         """Sml call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -692,7 +730,8 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config
 
     @cached_property
     def format_call_stub(
@@ -702,7 +741,21 @@ class Sml(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _sml_curried_call_stub
         return _sml_call_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications are not parsed as additional arguments to the outer
+        call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _sml_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
