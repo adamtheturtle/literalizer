@@ -57,6 +57,7 @@ from literalizer.exceptions import (
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
+    WrapInFileWithoutVariableNotSupportedError,
 )
 
 _DISABLED_REF_KEY = ""
@@ -2012,6 +2013,12 @@ def literalize(
             but the target language sets
             :attr:`~literalizer._language.Language.supports_variable_names`
             to ``False``.
+        WrapInFileWithoutVariableNotSupportedError: If *wrap_in_file*
+            is ``True`` and *variable_form* is ``None`` but the target
+            language sets
+            :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+            to ``False`` (i.e. it cannot represent a bare value at
+            file-statement scope).
     """
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
@@ -2022,6 +2029,14 @@ def literalize(
         raise VariableNameNotSupportedError(
             language_name=type(language).__name__,
             variable_name=variable_form.name,
+        )
+    if (
+        wrap_in_file
+        and variable_form is None
+        and not language.supports_no_variable_wrap_in_file
+    ):
+        raise WrapInFileWithoutVariableNotSupportedError(
+            language_name=type(language).__name__,
         )
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:

@@ -464,6 +464,43 @@ class IndentCase:
     indent: str
 
 
+@dataclasses.dataclass(frozen=True)
+class NoVariableFormCase:
+    """A ``wrap_in_file=True, variable_form=None`` golden-file case.
+
+    Exercises the shape on every language whose
+    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+    is ``True`` (i.e. the language can represent a bare value at
+    file-statement scope).  Languages that opt out are covered by a
+    separate error-raising test.
+    """
+
+    name: str
+    lang_cls: literalizer.LanguageCls
+    case_dir_name: str
+
+
+@functools.cache
+@beartype
+def build_no_variable_form_cases() -> list[NoVariableFormCase]:
+    """Build one ``no_variable_form`` case per opt-in language.
+
+    Uses the ``scalar_int`` fixture (``42``) because it is the
+    minimum input that exercises the bare-value-at-file-scope shape
+    and matches every opt-in language's value vocabulary.
+    """
+    case_dir_name = "scalar_int"
+    return [
+        NoVariableFormCase(
+            name=f"{lang_cls.__name__}_no_variable_form",
+            lang_cls=lang_cls,
+            case_dir_name=case_dir_name,
+        )
+        for lang_cls in sorted_languages()
+        if lang_cls.supports_no_variable_wrap_in_file
+    ]
+
+
 @functools.cache
 @beartype
 def build_indent_cases() -> list[IndentCase]:

@@ -595,6 +595,7 @@ class LanguageCls(type):
     VersionFormats: type[enum.Enum]
     supports_special_floats: bool
     supports_variable_names: bool
+    supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
@@ -883,6 +884,23 @@ class Language(Protocol):
     :class:`~literalizer.ExistingVariable`,
     or :class:`~literalizer.BothVariableForms` is rejected with
     :class:`~literalizer.exceptions.VariableNameNotSupportedError`.
+    """
+
+    supports_no_variable_wrap_in_file: bool
+    """Whether the language can represent a bare value (no variable
+    binding) at file-statement scope.  When ``False``,
+    :func:`~literalizer.literalize` rejects ``wrap_in_file=True`` with
+    ``variable_form=None`` with
+    :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedEr
+    ror`,
+    rather than silently emitting a file whose top-level item is a bare
+    expression (a syntax error in strict-typed languages like Rust, C,
+    Haskell, Swift, Ada, D, Dart, C#, Elm, Mojo, Nim, Objective-C, Odin,
+    SML, V, Zig, etc.).
+
+    Languages with no variable-name syntax at all
+    (:attr:`supports_variable_names` is ``False``) must set this to
+    ``True``: their ``wrap_in_file`` output has no other shape.
     """
 
     dict_supports_heterogeneous_values: bool
