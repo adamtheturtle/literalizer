@@ -79,17 +79,25 @@ def _siblings_mixed_ids(
 
 @beartype
 def _collect_from_dict(data: dict[str, Value]) -> frozenset[int]:
-    """Return container ids for a dict and its descendants."""
+    """Return container ids for a dict, its sibling-list values, and
+    descendants.
+    """
     values: list[Value] = list(data.values())
     own: frozenset[int] = (
         frozenset({id(data)})
         if _all_scalars_mixed_buckets(values=values)
         else frozenset()
     )
+    sublists: list[list[Value]] = [v for v in values if isinstance(v, list)]
+    sublist_ids = _siblings_mixed_ids(
+        siblings=sublists,
+        total=len(values),
+        combined=[e for sublist in sublists for e in sublist],
+    )
     descendants = frozenset[int]().union(
         *(collect_heterogeneous_container_ids(data=v) for v in values)
     )
-    return own | descendants
+    return own | sublist_ids | descendants
 
 
 @beartype

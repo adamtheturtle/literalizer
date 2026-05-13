@@ -1360,6 +1360,8 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("dict_mixed_int_widths", ""),
         ("ordered_map", ""),
         ("heterogeneous_list_with_string", ""),
+        ("dict_with_list_value", "_list_val"),
+        ("multiline_sibling_list_widening", "_sibling_widening"),
     )
 )
 
