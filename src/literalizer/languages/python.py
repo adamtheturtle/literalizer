@@ -271,12 +271,14 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
     has_ordered = False
     for elem in elements:
         match elem:
-            case ordereddict() | OrderedDict():
-                has_ordered = True
-                ordered_vals.extend(elem.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             case dict():
-                has_plain = True
-                plain_vals.extend(elem.values())
+                is_ordered = isinstance(elem, (ordereddict, OrderedDict))
+                target = ordered_vals if is_ordered else plain_vals
+                target.extend(elem.values())
+                if is_ordered:
+                    has_ordered = True
+                else:
+                    has_plain = True
             case _:
                 non_dict.append(elem)
     merged: list[Value] = list(non_dict)
