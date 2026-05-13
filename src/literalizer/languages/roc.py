@@ -419,15 +419,6 @@ def _roc_format_call_target(parts: Sequence[str]) -> str:
     return "_".join(parts)
 
 
-def _roc_type_var(index: int) -> str:
-    """Return a unique lowercase identifier for a Roc type variable."""
-    letter = chr(ord("a") + index % 26)
-    group = index // 26
-    if group == 0:
-        return letter
-    return f"{letter}{group}"  # pragma: no cover
-
-
 def _roc_call_body_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -444,11 +435,11 @@ def _roc_call_body_stub(
     """
     flat_name = _roc_format_call_target(parts=parts)
     n = len(params)
-    if n == 0:  # pragma: no cover
+    if n == 0:
         sig = f"{flat_name} : {{}}"
         impl = f"{flat_name} = {{}}"
     else:
-        type_vars = ", ".join(_roc_type_var(index=i) for i in range(n))
+        type_vars = ", ".join(chr(ord("a") + i) for i in range(n))
         wildcards = ", ".join("_" for _ in range(n))
         sig = f"{flat_name} : {type_vars} -> {{}}"
         impl = f"{flat_name} = \\{wildcards} -> {{}}"
