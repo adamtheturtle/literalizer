@@ -29,10 +29,18 @@ from .language_specs import (
 class LiteralizeRefCaseConfig:
     """Configuration for a ``literalize`` ``$ref`` golden-file test
     case.
+
+    When *ref_value_sources* is supplied, each entry maps a
+    ``{ref_key: name}`` marker in ``input.yaml`` to a JSON source whose
+    value seeds ``ref_values`` on the :func:`literalize` call and the
+    matching ref stub.  Without it the harness keeps its historical
+    behavior: refs render with no value-type knowledge and stubs are
+    dict shaped.
     """
 
     case_dir_name: str
     ref_key: str
+    ref_value_sources: tuple[tuple[str, str], ...] = ()
 
 
 LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
@@ -63,6 +71,11 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_deep_nesting",
         ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_scalar",
+        ref_key="$ref",
+        ref_value_sources=(("my_int", "42"),),
     ),
 ]
 

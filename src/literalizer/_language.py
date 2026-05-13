@@ -1522,7 +1522,7 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(self) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the form
         required by this language's call expression syntax.
 
@@ -1534,15 +1534,20 @@ class Language(Protocol):
 
         Called after :func:`~literalizer.literalize_call`'s ``ref_case``
         normalization, so *name* is already in the requested identifier
-        case.  Most languages emit ref identifiers bare and use
-        :data:`identity_call_ref_identifier`.  Languages where variable
-        references carry a sigil (e.g. PHP ``$name``, Perl ``$name``)
-        override this to prepend the sigil.
+        case.  The second positional argument is the ``Value`` declared
+        elsewhere for that ref (taken from the caller's ``ref_values``
+        mapping), or ``None`` when the caller did not supply the value.
+        Most languages emit ref identifiers bare and use
+        :data:`identity_call_ref_identifier`; languages that wrap the
+        identifier in a type-sensitive way (V's ``.clone()`` for
+        non-scalars) inspect the value to choose the right form.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier used as a direct
         call argument (via :func:`~literalizer.literalize_call`).
 
@@ -1561,7 +1566,7 @@ class Language(Protocol):
     @property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` call-argument identifier the
         caller authorized as consumable on
         :func:`~literalizer.literalize_call`.
@@ -1676,18 +1681,29 @@ identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
 
 
-def _identity_call_ref_identifier(name: str, /) -> str:
-    """Return *name* unchanged."""
+def _identity_call_ref_identifier(name: str, value: Value | None, /) -> str:
+    """Return *name* unchanged.
+
+    Accepts but ignores *value*; only languages whose ref rendering
+    depends on the referenced type (e.g. V's ``.clone()`` on non-scalar
+    values) inspect it.
+    """
+    del value
     return name
 
 
-identity_call_ref_identifier: Callable[[str], str] = (
+identity_call_ref_identifier: Callable[[str, Value | None], str] = (
     _identity_call_ref_identifier
 )
 """Shared callable for languages that need no ``$ref`` identifier
 rewriting.  Languages that decorate ref identifiers (e.g. PHP's
 ``$name`` or Perl's ``$name``) override
 :attr:`Language.format_call_ref_identifier` instead.
+
+The callable receives both the (already case-converted) ref name and the
+``Value`` declared elsewhere for that ref (or ``None`` when the caller
+did not pass ``ref_values``).  Most languages ignore the value; V uses
+it to skip ``.clone()`` for scalars.
 """
 
 

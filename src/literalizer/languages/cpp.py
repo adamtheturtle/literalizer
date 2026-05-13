@@ -1464,23 +1464,41 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
+        except for trivially-copyable scalars.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
-        the variable is never modified.  Using ``std::move`` avoids the
-        copy and satisfies the linter.
+        the variable is never modified, so ``std::move`` is used for
+        container-typed refs to satisfy the linter.  Applying
+        ``std::move`` to a trivially-copyable scalar (``int``, ``bool``,
+        ``float``) is itself a clang-tidy
+        ``hicpp-move-const-arg`` / ``performance-move-const-arg``
+        warning ("has no effect; remove std::move()"), so we drop the
+        wrapper when the caller's ``ref_values`` identifies the ref as
+        one of those types.  When the value is unknown we keep the
+        historical ``std::move`` form.
         """
 
-        def _format_cpp_ref_identifier(name: str, /) -> str:
-            """Wrap the identifier in ``std::move()``."""
+        def _format_cpp_ref_identifier(
+            name: str, value: Value | None, /
+        ) -> str:
+            """Wrap the identifier in ``std::move()`` unless *value* is
+            a trivially-copyable scalar.
+            """
+            if isinstance(value, bool | int | float):
+                return name
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Emit a call-argument ``$ref`` as the bare identifier.
 
         ``std::move`` would consume the variable, which is unsafe when
@@ -1496,7 +1514,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Wrap a consumable call-argument ``$ref`` in ``std::move()``.
 
         Used only for refs the caller declared as consumable on
@@ -1504,7 +1522,9 @@ class Cpp(metaclass=LanguageCls):
         one call argument, so the move cannot strand a later use.
         """
 
-        def _format_cpp_ref_identifier_consumable(name: str, /) -> str:
+        def _format_cpp_ref_identifier_consumable(
+            name: str, _value: Value | None, /
+        ) -> str:
             """Wrap the identifier in ``std::move()``."""
             return f"std::move({name})"
 

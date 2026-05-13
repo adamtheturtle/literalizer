@@ -340,7 +340,7 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
         prev_is_word = next_prev_is_word
 
 
-def _dhall_reject_ref_identifier(name: str) -> str:
+def _dhall_reject_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     any ``$ref`` argument.
 
@@ -1015,7 +1015,9 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_format_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Raise for any ``$ref`` argument.
 
         Dhall's stub parameter type is ``DVal``; a ref variable holds a
@@ -1024,7 +1026,9 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_reject_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1036,7 +1040,7 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

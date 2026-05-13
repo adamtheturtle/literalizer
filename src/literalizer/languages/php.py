@@ -89,7 +89,7 @@ def _php_format_call_target(parts: Sequence[str], /) -> str:
     return "$" + parts[0] + "".join(f"->{p}" for p in parts[1:])
 
 
-def _php_format_call_ref_identifier(name: str, /) -> str:
+def _php_format_call_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Prepend PHP's ``$`` variable sigil to a call-ref identifier."""
     return f"${name}"
 
@@ -592,14 +592,18 @@ class Php(metaclass=LanguageCls):
         return _php_format_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Prepend PHP's ``$`` sigil so a ``{"$ref": "name"}`` argument
         renders as ``$name`` at the call site.
         """
         return _php_format_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -611,7 +615,7 @@ class Php(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

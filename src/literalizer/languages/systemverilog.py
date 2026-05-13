@@ -68,6 +68,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import CallArgNotSupportedError
 
 _INT32_MIN = -(2**31)
 _INT32_MAX = 2**31 - 1
@@ -679,26 +680,56 @@ class SystemVerilog(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        language's call expression syntax, rejecting scalar refs.
+
+        SystemVerilog's variable declarations key the type off the
+        marker mapping shape (``_VKV name[]``), so a top-level ref
+        pointing to a scalar produces a typed declaration that does
+        not match the referenced ``_VVal`` variable.  Refuse those
+        cases so the renderer fails fast instead of emitting code that
+        the SystemVerilog compiler rejects with "types are not
+        assignment compatible".
+        """
+
+        def _sv_format_ref_identifier(
+            name: str, value: Value | None, /
+        ) -> str:
+            """Reject scalar refs; emit any other ref unchanged."""
+            if value is not None and not isinstance(value, (list, dict, set)):
+                raise CallArgNotSupportedError(
+                    language_name="SystemVerilog",
+                    reason=(
+                        f"SystemVerilog cannot reference a scalar value "
+                        f"behind a ``$ref`` (got {name!r}); the variable "
+                        f"declaration shape is keyed off the ref marker "
+                        f"and does not match the scalar's ``_VVal`` type."
+                    ),
+                )
+            return name
+
+        return _sv_format_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Emit a call-argument ``$ref`` as the bare identifier.
+
+        Call arguments have their type fixed by the function signature,
+        so the scalar/dict shape mismatch that affects
+        :attr:`format_call_ref_identifier` (top-level ``$ref`` in
+        :func:`literalize`) does not arise here.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
-
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
-        """
-        return self.format_call_ref_identifier
-
-    @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
