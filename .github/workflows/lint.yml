@@ -302,21 +302,16 @@ jobs:
   lint-matlab:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Use a prebuilt Octave image instead of `apt-get install octave`, which
+    # is slow (the Ubuntu package pulls a large dependency tree) and which
+    # cache-apt-pkgs-action could not reliably restore (liblapack.so.3 kept
+    # going missing even with the package listed explicitly).
+    container:
+      image: gnuoctave/octave:9.2.0
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # cache-apt-pkgs-action does not reliably restore octave's shared
-      # library dependencies to their system paths (liblapack.so.3 stays
-      # missing even with the package listed explicitly and ldconfig run
-      # after), so install via apt directly here.
-      - name: Install octave
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends octave
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
