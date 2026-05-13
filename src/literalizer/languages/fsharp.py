@@ -83,9 +83,7 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_fsharp_entry(  # noqa: PLR0911
-    original: Value, formatted: str, prefix: str
-) -> str:
+def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
     """
@@ -117,9 +115,11 @@ def _apply_fsharp_entry(  # noqa: PLR0911
         case datetime.datetime() if formatted.startswith(f"{prefix}Int"):
             return formatted
         case str() | bytes() | datetime.date():
-            if formatted.startswith("System."):
-                return f"{prefix}Str (string ({formatted}))"
-            return f"{prefix}Str {formatted}"
+            return (
+                f"{prefix}Str (string ({formatted}))"
+                if formatted.startswith("System.")
+                else f"{prefix}Str {formatted}"
+            )
         case _:
             return formatted
 
