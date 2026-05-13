@@ -312,11 +312,11 @@ def _kotlin_list_hint(
         return (
             "Array<Any?>" if sequence_format_name == "ARRAY" else "List<Any?>"
         )
+    if sequence_format_name == "ARRAY":
+        return "Array<Any?>"
     elem_types = [recurse(data=e) for e in data]
     if sequence_format_name == "TUPLE":
         return _kotlin_tuple_hint(elem_types=elem_types)
-    if sequence_format_name == "ARRAY":
-        return "Array<Any?>"
     return _kotlin_array_or_list_hint(elem_types=elem_types)
 
 
