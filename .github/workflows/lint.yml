@@ -281,16 +281,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # cache-apt-pkgs-action does not run post-install scripts, so the
-      # update-alternatives step that creates /usr/bin/guile never fires
-      # and the lint step fails with "guile: No such file or directory".
       - name: Install guile
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends guile-3.0
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: guile-3.0
+          version: 1.0
+          # Required so update-alternatives creates /usr/bin/guile on cache hit.
+          execute_install_scripts: true
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
@@ -307,16 +304,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      # cache-apt-pkgs-action does not reliably restore octave's transitive
-      # library dependencies (e.g. liblapack3), leaving octave-cli unable to
-      # load liblapack.so.3 at runtime.
       - name: Install octave
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends octave
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: octave
+          version: 1.0
+          # Required so ldconfig registers transitive shared libraries
+          # (e.g. liblapack.so.3) after restore.
+          execute_install_scripts: true
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
