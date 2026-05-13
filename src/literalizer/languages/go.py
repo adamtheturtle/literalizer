@@ -273,6 +273,13 @@ class Go(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = True
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(

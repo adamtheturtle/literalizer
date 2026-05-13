@@ -606,6 +606,13 @@ class LanguageCls(type):
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
     supports_module_name: bool
+    supports_empty_dict_key: bool
+    supports_call_style: bool
+    supports_default_dict_key_type: bool
+    supports_default_dict_value_type: bool
+    supports_default_sequence_element_type: bool
+    supports_default_set_element_type: bool
+    supports_default_ordered_map_value_type: bool
     dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
