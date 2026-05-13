@@ -54,7 +54,6 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
-    DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -778,29 +777,17 @@ def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     return " ".join(keywords) + " "
 
 
-@beartype
-def _format_variable_declaration_placeholder(
-    _name: str,
-    _value: str,
-    _data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Unreachable placeholder for the ``AUTO`` config formatter.
+@dataclasses.dataclass(frozen=True)
+class _CppDeclarationStyleConfig:
+    """Configuration for a Cpp declaration style.
 
-    The real formatter is built per-instance by
-    :meth:`Cpp.DeclarationStyles.build_formatter`, which closes over
-    the date/datetime ``type_produced`` metadata so the
-    ``const auto*`` vs ``auto`` decision can be driven by the parsed
-    :class:`Value` rather than the rendered text.  This stub exists
-    only to satisfy :class:`DeclarationStyleConfig`'s required
-    ``formatter`` field.
+    Unlike :class:`DeclarationStyleConfig`, this carries no
+    ``formatter`` slot: Cpp builds its declaration formatter
+    per-instance via :meth:`Cpp.DeclarationStyles.build_formatter`
+    so it can close over the chosen date/datetime ``type_produced``.
     """
-    msg = (  # pragma: no cover
-        "Cpp AUTO requires the type-aware formatter built by "
-        "build_formatter; the DeclarationStyleConfig formatter is a "
-        "placeholder and must not be called directly."
-    )
-    raise NotImplementedError(msg)  # pragma: no cover
+
+    supports_redefinition: bool
 
 
 @beartype
@@ -1091,10 +1078,7 @@ class Cpp(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        AUTO = DeclarationStyleConfig(
-            formatter=_format_variable_declaration_placeholder,
-            supports_redefinition=True,
-        )
+        AUTO = _CppDeclarationStyleConfig(supports_redefinition=True)
 
         def build_formatter(
             self,
