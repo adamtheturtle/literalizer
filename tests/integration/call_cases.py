@@ -93,6 +93,7 @@ CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
     ("keyword", literalizer.KeywordCallStyle),
     ("positional", literalizer.PositionalCallStyle),
     ("object", literalizer.ObjectCallStyle),
+    ("curried", literalizer.CommandCallStyle),
 ]
 
 

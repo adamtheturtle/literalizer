@@ -47,6 +47,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -138,12 +139,11 @@ _format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 
 @beartype
-def _ocaml_call_stub(
+def _build_ocaml_call_stub_lines(
+    *,
     parts: Sequence[str],
-    _params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
+    params: Sequence[str],
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return OCaml stub declarations for a call name.
 
@@ -153,13 +153,54 @@ def _ocaml_call_stub(
     any argument and returns unit.  Each module-path component has its
     first character in uppercase, as OCaml requires module names to begin
     with an uppercase letter.
+
+    Under curried calling, each parameter is bound separately
+    (``let f _ _ = ()``) so that space-separated arguments at the call
+    site are accepted; under positional calling, a single placeholder
+    accepts the whole tuple (``let f _ = ()``).
     """
     method = parts[-1]
-    lines: list[str] = [f"let {method} _ = ()"]
+    if curried:
+        wildcards = " ".join("_" for _ in params)
+        lines: list[str] = [f"let {method} {wildcards} = ()"]
+    else:
+        lines = [f"let {method} _ = ()"]
     for part in reversed(parts[:-1]):
         cap = part[0].upper() + part[1:]
         lines = [f"module {cap} = struct", *lines, "end"]
     return tuple(lines)
+
+
+def _ocaml_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return OCaml positional (tuple-form) stub declarations."""
+    return _build_ocaml_call_stub_lines(
+        parts=parts, params=params, curried=False
+    )
+
+
+def _ocaml_curried_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return OCaml curried stub declarations."""
+    return _build_ocaml_call_stub_lines(
+        parts=parts, params=params, curried=True
+    )
+
+
+@beartype
+def _ocaml_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted OCaml value in parentheses for curried application."""
+    return f"({formatted})"
 
 
 @beartype
@@ -262,13 +303,6 @@ class OCaml(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for OCaml."""
@@ -511,6 +545,10 @@ class OCaml(metaclass=LanguageCls):
         """OCaml call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -664,7 +702,21 @@ class OCaml(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _ocaml_curried_call_stub
         return _ocaml_call_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications are not parsed as additional arguments to the outer
+        call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _ocaml_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
