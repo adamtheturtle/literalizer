@@ -308,35 +308,35 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
     prev_is_word = False
     for c in sanitized:
         next_prev_is_word = False
-        if c == "(":
-            if prev_is_word:
+        match c:
+            case "(":
+                if prev_is_word:
+                    raise CallArgNotSupportedError(
+                        language_name="Dhall",
+                        reason=(
+                            "call_transform produces a function application "
+                            "without the whitespace Dhall requires before '(' "
+                            f"(in: {call_expr!r})"
+                        ),
+                    )
+                depths["paren"] += 1
+            case "," if (
+                depths["paren"] >= 1
+                and depths["brace"] == 0
+                and depths["bracket"] == 0
+            ):
                 raise CallArgNotSupportedError(
                     language_name="Dhall",
                     reason=(
-                        "call_transform produces a function application "
-                        "without the whitespace Dhall requires before '(' "
-                        f"(in: {call_expr!r})"
+                        "Dhall has no tuple type; PositionalCallStyle cannot "
+                        "represent calls with more than one argument"
                     ),
                 )
-            depths["paren"] += 1
-        elif c in _DHALL_BRACKET_DELTA:
-            key, delta = _DHALL_BRACKET_DELTA[c]
-            depths[key] += delta
-        elif (
-            c == ","
-            and depths["paren"] >= 1
-            and depths["brace"] == 0
-            and depths["bracket"] == 0
-        ):
-            raise CallArgNotSupportedError(
-                language_name="Dhall",
-                reason=(
-                    "Dhall has no tuple type; PositionalCallStyle cannot "
-                    "represent calls with more than one argument"
-                ),
-            )
-        else:
-            next_prev_is_word = c.isalnum() or c == "_"
+            case _ if c in _DHALL_BRACKET_DELTA:
+                key, delta = _DHALL_BRACKET_DELTA[c]
+                depths[key] += delta
+            case _:
+                next_prev_is_word = c.isalnum() or c == "_"
         prev_is_word = next_prev_is_word
 
 

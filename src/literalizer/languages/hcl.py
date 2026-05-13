@@ -84,6 +84,20 @@ class _HclScanState:
 
 
 @beartype
+def _advance_outside_string(*, char: str, state: _HclScanState) -> None:
+    """Update *state* for a character that is not inside a string."""
+    match char:
+        case '"':
+            state.in_string = True
+        case "[" | "{" | "(":
+            state.depth += 1
+        case "]" | "}" | ")":
+            state.depth -= 1
+        case _:
+            pass
+
+
+@beartype
 def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
     r"""Update *state* by scanning brackets and strings in *line*.
 
@@ -98,17 +112,15 @@ def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
             state.escaped = False
             continue
         if state.in_string:
-            if char == "\\":
-                state.escaped = True
-            elif char == '"':
-                state.in_string = False
+            match char:
+                case "\\":
+                    state.escaped = True
+                case '"':
+                    state.in_string = False
+                case _:
+                    pass
             continue
-        if char == '"':
-            state.in_string = True
-        elif char in "[{(":
-            state.depth += 1
-        elif char in "]})":
-            state.depth -= 1
+        _advance_outside_string(char=char, state=state)
 
 
 @beartype

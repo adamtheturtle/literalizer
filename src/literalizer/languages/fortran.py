@@ -134,15 +134,22 @@ def _fortran_comment_pos(line: str) -> int | None:
     i = 0
     while i < len(line):
         c = line[i]
-        if c == "'" and not in_double_quote:
-            if in_single_quote and i + 1 < len(line) and line[i + 1] == "'":
-                i += 2
-                continue
-            in_single_quote = not in_single_quote
-        elif c == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
-        elif c == "!" and not in_single_quote and not in_double_quote:
-            return i
+        match c:
+            case "'" if not in_double_quote:
+                if (
+                    in_single_quote
+                    and i + 1 < len(line)
+                    and line[i + 1] == "'"
+                ):
+                    i += 2
+                    continue
+                in_single_quote = not in_single_quote
+            case '"' if not in_single_quote:
+                in_double_quote = not in_double_quote
+            case "!" if not in_single_quote and not in_double_quote:
+                return i
+            case _:
+                pass
         i += 1
     return None
 
