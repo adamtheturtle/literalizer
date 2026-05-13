@@ -100,7 +100,7 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
+def _format_zig_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
     tag.
     """
@@ -108,8 +108,6 @@ def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
         case bool():
             return formatted
         case int():
-            if original > I64_MAX:
-                return f".{{ .uint = {formatted} }}"
             if original < I64_MIN:
                 msg = (
                     f"Zig cannot represent negative integer {original} "
@@ -117,16 +115,16 @@ def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
                     "union's unsigned variant."
                 )
                 raise UnrepresentableIntegerError(msg)
-            return f".{{ .int = {formatted} }}"
+            tag = "uint" if original > I64_MAX else "int"
         case float():
-            return f".{{ .float = {formatted} }}"
+            tag = "float"
         case str() | bytes():
-            return f".{{ .str = {formatted} }}"
+            tag = "str"
         case datetime.date():
             tag = "str" if formatted.startswith('"') else "int"
-            return f".{{ .{tag} = {formatted} }}"
         case _:
             return formatted
+    return f".{{ .{tag} = {formatted} }}"
 
 
 @beartype
