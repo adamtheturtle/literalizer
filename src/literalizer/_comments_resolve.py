@@ -2,7 +2,6 @@
 
 import dataclasses
 from io import StringIO
-from typing import Any
 
 from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -23,7 +22,7 @@ from literalizer._parsing import get_yaml
 @beartype
 def _filter_null_dict_comments(
     *,
-    data: dict[Any, Any],
+    data: CommentedMap,
     collection_comments: CollectionComments,
 ) -> CollectionComments:
     """Remove comments for null-valued dict entries.
@@ -33,7 +32,8 @@ def _filter_null_dict_comments(
     """
     pending: list[str] = []
     filtered_elements_list: list[ElementComments] = []
-    for key, ec in zip(data, collection_comments.elements, strict=True):
+    keys: list[object] = list(data)
+    for key, ec in zip(keys, collection_comments.elements, strict=True):
         if data[key] is None:
             pending.extend(ec.before)
             if ec.inline:
@@ -102,7 +102,6 @@ def _resolve_collection_comments(
 def _resolve_yaml_collection_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap,
-    data: object,
     base: str,
     language: Language,
     comment_prefix: str,
@@ -115,13 +114,11 @@ def _resolve_yaml_collection_comments(
         ruamel_data=ruamel_data,
     )
 
-    if (
-        language.skip_null_dict_values
-        and isinstance(ruamel_data, CommentedMap)
-        and isinstance(data, dict)
+    if language.skip_null_dict_values and isinstance(
+        ruamel_data, CommentedMap
     ):
         collection_comments = _filter_null_dict_comments(
-            data=data,  # pyright: ignore[reportUnknownArgumentType]
+            data=ruamel_data,
             collection_comments=collection_comments,
         )
 
@@ -174,7 +171,6 @@ def resolve_yaml_comments(
         case CommentedSeq() | CommentedMap():
             return _resolve_yaml_collection_comments(
                 ruamel_data=raw_data,
-                data=raw_data,
                 base=base,
                 language=language,
                 comment_prefix=comment_prefix,
