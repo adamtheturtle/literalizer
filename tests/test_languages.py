@@ -9,6 +9,8 @@ from typing import ClassVar
 import pytest
 
 from literalizer import (
+    BothVariableForms,
+    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
@@ -20,11 +22,13 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Cobol,
     Dart,
+    Dhall,
     Gleam,
     Haskell,
     Java,
     Matlab,
     Python,
+    Raku,
     Rust,
     Sml,
 )
@@ -418,3 +422,193 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
             input_format=InputFormat.YAML,
             language=Gleam(),
         )
+
+
+def test_dhall_quoted_dict_key() -> None:
+    """Dhall backtick-label validation decodes simple escapes."""
+    result = literalize(
+        source='{"a\\"b": 1}\n',
+        input_format=InputFormat.YAML,
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+    )
+
+    assert result.code == '{\n  `a"b` = +1,\n}'
+
+
+def test_python_dotted_target_function_renders() -> None:
+    """Dotted ``target_function`` succeeds when the language supports
+    it.
+    """
+    result = literalize_call(
+        source="[[1]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="module.fn",
+        parameter_names=["a"],
+    )
+    assert result.code == "module.fn(a=1)"
+
+
+def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
+    """Cases legal in the language but absent from the idiomatic
+    preference list are accepted and rendered.
+
+    Python's ``identifier_cases`` lists only ``SNAKE``, ``UPPER_SNAKE``,
+    and ``PASCAL``; ``CAMEL`` is non-idiomatic but still a syntactically
+    legal Python identifier.  Validation uses ``supported_ref_cases``,
+    which exposes ``CAMEL``.
+    """
+    assert Python().identifier_cases == (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+    )
+    assert Python().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+        },
+    )
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_case=IdentifierCase.CAMEL,
+    )
+
+    assert result.declaration_code == "userObj"
+
+
+def test_raku_kebab_ref_case_renders() -> None:
+    """Kebab-friendly languages render kebab-form refs as legal
+    symbols.
+    """
+    assert Raku().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+            IdentifierCase.KEBAB,
+        },
+    )
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Raku(),
+        ref_case=IdentifierCase.KEBAB,
+    )
+
+    assert result.declaration_code == "$user-obj"
+
+
+def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
+    """Haskell unknown refs do not contribute marker dict types."""
+    result = literalize_call(
+        source='[[{"$ref": "myList"}]]',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        ref_values={},
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
+    """Haskell strips unknown top-level refs even when ref_values is
+    set.
+    """
+    result = literalize_call(
+        source='{"$ref": "myList"}',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        per_element=False,
+        ref_values={"other": 1},
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
+    """Haskell unknown nested refs do not shape preamble type
+    inference.
+    """
+    result = literalize_call(
+        source=(
+            '[[{"$ref": "known"}, {"$ref": "missing"}, '
+            '{"inner": {"$ref": "missing"}}]]'
+        ),
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["a", "b", "c"],
+        ref_values={"known": [1, {"nested": "value"}]},
+    )
+
+    assert result.body_preamble == (
+        "data Val = HInt Integer | HStr String | HList [Val] | HMap "
+        "[(String, Val)]",
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    _ + _ = error "not implemented"\n'
+        '    _ * _ = error "not implemented"\n'
+        '    abs _ = error "not implemented"\n'
+        '    signum _ = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        '    negate _ = error "not implemented"',
+    )
+
+
+def test_haskell_without_ref_values_strips_top_level_ref() -> None:
+    """Haskell's historical top-level ref strip behavior is retained."""
+    result = literalize_call(
+        source='{"$ref": "myList"}',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        per_element=False,
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_haskell_without_ref_values_strips_per_element_ref() -> None:
+    """Haskell per-element preamble inference skips ref marker
+    elements.
+    """
+    result = literalize_call(
+        source='[{"$ref": "myList"}]',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_python_variable_names_supported_renders() -> None:
+    """``variable_form`` succeeds for Python's variable-name support."""
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=BothVariableForms(name="x"),
+        wrap_in_file=True,
+    )
+    assert result.code == "x = 42\nx = 42"

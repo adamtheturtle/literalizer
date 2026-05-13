@@ -4,7 +4,7 @@ These tests verify that ``literalize`` raises precise exceptions when
 input data cannot be represented in the target language's collection
 formats (e.g. heterogeneous scalar types in Mojo, non-uniform record
 shapes in Dhall).  Format-specific tests for ordered maps and sets
-remain in :mod:`tests.test_yaml`.
+remain in :mod:`tests.formats.test_yaml`.
 """
 
 import json

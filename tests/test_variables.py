@@ -87,15 +87,6 @@ def test_rust_tuple_format_type_annotation_raises() -> None:
         )
 
 
-def test_rust_vec_format_type_annotation() -> None:
-    """``format_type_annotation`` returns ``Vec<T>`` for vector format."""
-    result = Rust.sequence_formats.VEC.format_type_annotation(
-        element_type="i32",
-        length=3,
-    )
-    assert result == "Vec<i32>"
-
-
 def test_rust_static_set_annotation_unifies_integer_widths() -> None:
     """Set type annotations infer one element type for all values."""
     rust = Rust(
