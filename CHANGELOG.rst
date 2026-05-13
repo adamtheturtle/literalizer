@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Haskell` ``CURRIED``
+  :class:`~literalizer.CallStyle` now emits a thunk binding
+  (``process :: IO Val`` / ``process = ...``) for zero-parameter
+  calls instead of a malformed signature with an empty argument
+  type (``process ::  -> IO Val``).
+
 - :class:`~literalizer.Haskell`, :class:`~literalizer.FSharp`,
   :class:`~literalizer.OCaml`, and :class:`~literalizer.Sml` now expose
   a ``CURRIED`` :class:`~literalizer.CallStyle` alongside the existing
