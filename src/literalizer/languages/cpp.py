@@ -558,13 +558,6 @@ def _needs_variant_type(
                 items=sorted_items,
                 element_to_type=element_to_type,
             )
-        case ordereddict():
-            omap_vals = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            values: list[Value] = list(omap_vals)  # pyright: ignore[reportUnknownArgumentType]
-            return _items_need_variant(
-                items=values,
-                element_to_type=element_to_type,
-            )
         case list():
             return _items_need_variant(
                 items=data,
