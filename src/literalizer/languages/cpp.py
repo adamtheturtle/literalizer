@@ -809,8 +809,16 @@ def _format_variable_declaration(
 
 
 def _infer_value_kind(*, value: str) -> ValueKind:
-    """Classify a formatted C++ value string."""
-    if value.startswith('"'):
+    """Classify a formatted C++ value string.
+
+    A leading ``//`` comment line (emitted when a YAML scalar carries a
+    *before* comment) is skipped so the underlying literal still drives
+    the type keyword choice.
+    """
+    payload = value
+    while payload.startswith("//"):
+        _, _, payload = payload.partition("\n")
+    if payload.startswith('"'):
         return ValueKind.STRING_LITERAL
     return ValueKind.TYPED_EXPRESSION
 
