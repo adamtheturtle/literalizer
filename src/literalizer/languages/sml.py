@@ -274,8 +274,11 @@ def _build_sml_call_stub_lines(
     """
     method = parts[-1]
     if curried:
-        wildcards = " ".join("_" for _ in params)
-        lines: list[str] = [f"fun {method} {wildcards} = ()"]
+        if not params:
+            lines: list[str] = [f"val {method} = ()"]
+        else:
+            wildcards = " ".join("_" for _ in params)
+            lines = [f"fun {method} {wildcards} = ()"]
     else:
         lines = [f"fun {method} _ = ()"]
     for part in reversed(parts[:-1]):
