@@ -1,7 +1,6 @@
 """Negative-path checks for ``literalize_call``."""
 
 import re
-from typing import TYPE_CHECKING
 
 import pytest
 
@@ -40,9 +39,6 @@ from literalizer.languages import (
     Wren,
     Yaml,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 
 def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
@@ -547,7 +543,6 @@ def test_literalize_call_unknown_ref_values_strip_top_level_ref() -> None:
 
 def test_literalize_call_unknown_refs_strip_from_nested_preamble() -> None:
     """Unknown nested refs do not shape preamble type inference."""
-    ref_values: Mapping[str, int] = {"known": 42}
     result = literalize_call(
         source=(
             '[[{"$ref": "known"}, {"$ref": "missing"}, '
@@ -557,7 +552,7 @@ def test_literalize_call_unknown_refs_strip_from_nested_preamble() -> None:
         language=Haskell(),
         target_function="process",
         parameter_names=["a", "b", "c"],
-        ref_values=ref_values,
+        ref_values={"known": [1, {"nested": "value"}]},
     )
 
     assert result.body_preamble == (

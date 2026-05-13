@@ -9,6 +9,7 @@ from typing import Final, assert_never
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
+from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
 from literalizer._comments import (
@@ -51,7 +52,7 @@ from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import Scalar, Value, ValueInput
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -3046,6 +3047,35 @@ def _validate_call_preconditions(
         )
 
 
+def _is_value_mapping(
+    value: ValueInput, /
+) -> TypeIs[Mapping[str, ValueInput]]:
+    """Narrow ``value`` to the ``Mapping`` arm of ``ValueInput``."""
+    return isinstance(value, Mapping)
+
+
+def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
+    """Narrow ``value`` to the ``Sequence`` arm of ``ValueInput``,
+    excluding the ``str``/``bytes`` scalars that are also sequences.
+    """
+    return isinstance(value, Sequence) and not isinstance(value, str | bytes)
+
+
+def _materialize_value_input(*, value: ValueInput) -> Value:
+    """Convert a user-supplied ``ValueInput`` into the internal ``Value``
+    form, replacing any non-``list`` ``Sequence`` and non-``dict``
+    ``Mapping`` with concrete ``list`` / ``dict`` instances.
+    """
+    if _is_value_mapping(value):
+        return {
+            key: _materialize_value_input(value=item)
+            for key, item in value.items()
+        }
+    if _is_value_sequence(value):
+        return [_materialize_value_input(value=item) for item in value]
+    return value
+
+
 @beartype
 def literalize_call(
     *,
@@ -3059,7 +3089,7 @@ def literalize_call(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     consumable_refs: frozenset[str] = frozenset(),
-    ref_values: Mapping[str, Value] | None = None,
+    ref_values: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
@@ -3197,11 +3227,16 @@ def literalize_call(
     )
     target_function = language.format_call_target(target_function_parts)
 
+    materialized_ref_values: Mapping[str, Value] = {
+        name: _materialize_value_input(value=value)
+        for name, value in (ref_values or {}).items()
+    }
+
     data_for_preamble = _strip_call_arg_refs_for_preamble(
         data=data,
         per_element_data=per_element_data,
         ref_key=ref_key,
-        ref_values=ref_values or {},
+        ref_values=materialized_ref_values,
     )
 
     if per_element_data is not None:
@@ -3223,7 +3258,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
-            ref_values=ref_values or {},
+            ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
@@ -3238,7 +3273,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
-            ref_values=ref_values or {},
+            ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
