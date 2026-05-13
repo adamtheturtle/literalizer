@@ -54,7 +54,6 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
-    DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -778,26 +777,47 @@ def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     return " ".join(keywords) + " "
 
 
+@dataclasses.dataclass(frozen=True)
+class _CppDeclarationStyleConfig:
+    """Configuration for a Cpp declaration style.
+
+    Unlike :class:`DeclarationStyleConfig`, this carries no
+    ``formatter`` slot: Cpp builds its declaration formatter
+    per-instance in :attr:`Cpp.format_variable_declaration` so it can
+    close over the chosen date/datetime ``type_produced``.
+    """
+
+    supports_redefinition: bool
+
+
 @beartype
 def _format_variable_declaration(
+    *,
     name: str,
     value: str,
-    _data: Value,
+    data: Value,
     modifiers: frozenset[enum.Enum],
+    date_type: type,
+    datetime_type: type,
 ) -> str:
     """Format a C++ variable declaration.
 
     * ``const auto*`` — string literal (``"..."``), required by
-      ``readability-qualified-auto``.  The check is on the rendered
-      value, not the parsed type, because date/datetime variants emit
-      ISO strings for ``datetime.date``/``datetime.datetime`` inputs.
+      ``readability-qualified-auto``.  Driven by the parsed *data*
+      together with the chosen date/datetime ``type_produced``: bytes
+      and strings always render as quoted strings, and dates/datetimes
+      do so when their format produces a :class:`str`.
     * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
     When *modifiers* is non-empty, applicable modifier keywords
     (``static``, ``const``) are prepended.  ``const`` is not duplicated
     against the built-in ``const auto*`` for string literals.
     """
-    if _renders_as_string_literal(value=value):
+    if _renders_as_string_literal(
+        data=data,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    ):
         type_keyword = "const auto*"
         extra = modifiers - {_CppModifiers.CONST}
     else:
@@ -807,25 +827,29 @@ def _format_variable_declaration(
     return f"{prefix}{type_keyword} {name} = {value};"
 
 
-def _renders_as_string_literal(*, value: str) -> bool:
-    """Return whether *value* renders as a C string literal.
+@beartype
+def _renders_as_string_literal(
+    *,
+    data: Value,
+    date_type: type,
+    datetime_type: type,
+) -> bool:
+    """Return whether *data* renders as a C string literal.
 
-    A YAML scalar may carry *before* comments which are emitted as
-    ``//`` lines inserted between ``=`` and the underlying literal; the
-    formatted comments may also carry the caller's ``line_prefix``
-    indent (e.g. when ``pre_indent_level > 0``).  Skip any leading
-    whitespace-then-``//`` lines before inspecting the underlying
-    literal.
+    ``bytes`` and ``str`` always render as quoted strings in C++.
+    ``datetime.datetime`` and ``datetime.date`` do so only when their
+    format's ``type_produced`` is :class:`str` (the ISO variants);
+    other variants render as ``std::chrono`` or numeric expressions.
     """
-    literal_line = next(
-        (
-            line.lstrip()
-            for line in value.splitlines()
-            if not line.lstrip().startswith("//")
-        ),
-        "",
-    )
-    return literal_line.startswith('"')
+    match data:
+        case bytes() | str():
+            return True
+        case datetime.datetime():
+            return datetime_type is str
+        case datetime.date():
+            return date_type is str
+        case _:
+            return False
 
 
 def _cpp_call_stub(
@@ -1054,10 +1078,7 @@ class Cpp(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        AUTO = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
-            supports_redefinition=True,
-        )
+        AUTO = _CppDeclarationStyleConfig(supports_redefinition=True)
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -1625,8 +1646,34 @@ class Cpp(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        """Callable that formats a new variable declaration.
+
+        Closes over the chosen date/datetime ``type_produced`` so the
+        ``const auto*`` vs ``auto`` decision can be driven by the parsed
+        :class:`Value` rather than the rendered text.
+        """
+        date_type = self.date_format.value.type_produced
+        datetime_type = self.datetime_format.value.type_produced
+
+        def _formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Adapt :func:`_format_variable_declaration` to the
+            positional formatter interface.
+            """
+            return _format_variable_declaration(
+                name=name,
+                value=value,
+                data=data,
+                modifiers=modifiers,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+
+        return _formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
