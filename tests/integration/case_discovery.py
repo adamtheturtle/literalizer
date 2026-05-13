@@ -536,18 +536,43 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
     that is both syntactically valid and visually demonstrates the
     fix: the declaration line carries the indent, the value sits flush
     against ``=``, and continuation lines keep their relative offsets.
+
+    ``simple_dict`` exercises a multi-line container value at indent
+    across every language with class-field modifiers.  Cpp additionally
+    gets a ``comment_scalar_before_and_inline`` case to exercise a
+    scalar whose formatted value is preceded by ``//`` comment lines
+    that carry the same ``line_prefix`` indent: the scenario that
+    previously caused Cpp to misclassify a string scalar as a typed
+    expression.  Java and CSharp cannot share that case because their
+    ``wrap_in_file`` class-field detection runs off the first token of
+    *content*, which is the leading comment rather than the modifier
+    once before-comments are prepended; fixing that latent issue is
+    out of scope for this case.
     """
     cases: list[PreIndentCase] = []
-    case_dir_name = "simple_dict"
     for lang_cls in sorted_languages():
         cases.extend(
             PreIndentCase(
                 name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}",
                 lang_cls=lang_cls,
-                case_dir_name=case_dir_name,
+                case_dir_name="simple_dict",
                 pre_indent_level=1,
                 modifiers=combo.modifiers,
             )
             for combo in lang_cls.modifier_combinations
         )
+    cpp_cls = next(c for c in sorted_languages() if c.__name__ == "Cpp")
+    cases.extend(
+        PreIndentCase(
+            name=(
+                f"{cpp_cls.__name__}_pre_indent_1_{combo.name}"
+                "_comment_scalar_before_and_inline"
+            ),
+            lang_cls=cpp_cls,
+            case_dir_name="comment_scalar_before_and_inline",
+            pre_indent_level=1,
+            modifiers=combo.modifiers,
+        )
+        for combo in cpp_cls.modifier_combinations
+    )
     return cases

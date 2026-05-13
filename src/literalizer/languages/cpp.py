@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -80,7 +80,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Value
 
 
 class _CppModifiers(enum.Enum):
@@ -788,31 +788,44 @@ def _format_variable_declaration(
     """Format a C++ variable declaration.
 
     * ``const auto*`` — string literal (``"..."``), required by
-      ``readability-qualified-auto``.
+      ``readability-qualified-auto``.  The check is on the rendered
+      value, not the parsed type, because date/datetime variants emit
+      ISO strings for ``datetime.date``/``datetime.datetime`` inputs.
     * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
     When *modifiers* is non-empty, applicable modifier keywords
     (``static``, ``const``) are prepended.  ``const`` is not duplicated
     against the built-in ``const auto*`` for string literals.
     """
-    match _infer_value_kind(value=value):
-        case ValueKind.STRING_LITERAL:
-            type_keyword = "const auto*"
-            extra = modifiers - {_CppModifiers.CONST}
-        case ValueKind.TYPED_EXPRESSION:
-            type_keyword = "auto"
-            extra = modifiers
-        case _ as unreachable:
-            assert_never(unreachable)  # pyrefly: ignore[bad-argument-type]
+    if _renders_as_string_literal(value=value):
+        type_keyword = "const auto*"
+        extra = modifiers - {_CppModifiers.CONST}
+    else:
+        type_keyword = "auto"
+        extra = modifiers
     prefix = _cpp_modifier_prefix(modifiers=extra)
     return f"{prefix}{type_keyword} {name} = {value};"
 
 
-def _infer_value_kind(*, value: str) -> ValueKind:
-    """Classify a formatted C++ value string."""
-    if value.startswith('"'):
-        return ValueKind.STRING_LITERAL
-    return ValueKind.TYPED_EXPRESSION
+def _renders_as_string_literal(*, value: str) -> bool:
+    """Return whether *value* renders as a C string literal.
+
+    A YAML scalar may carry *before* comments which are emitted as
+    ``//`` lines inserted between ``=`` and the underlying literal; the
+    formatted comments may also carry the caller's ``line_prefix``
+    indent (e.g. when ``pre_indent_level > 0``).  Skip any leading
+    whitespace-then-``//`` lines before inspecting the underlying
+    literal.
+    """
+    literal_line = next(
+        (
+            line.lstrip()
+            for line in value.splitlines()
+            if not line.lstrip().startswith("//")
+        ),
+        "",
+    )
+    return literal_line.startswith('"')
 
 
 def _cpp_call_stub(
