@@ -83,7 +83,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -296,7 +296,40 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 
 
 @beartype
-def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _python_scalar_hint(
+    *,
+    data: Scalar,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive a Python type hint for a scalar value."""
+    # Order matters: datetime before date (datetime is a date subclass),
+    # bool before int (bool is an int subclass).
+    match data:
+        case bool():
+            hint = "bool"
+        case int():
+            hint = "int"
+        case float():
+            hint = "float"
+        case str():
+            hint = "str"
+        case bytes():
+            hint = bytes_hint
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case None:
+            hint = "None"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _python_type_hint(
     *,
     data: Value,
     bytes_hint: str,
@@ -325,25 +358,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         default_dict_key_type=default_dict_key_type,
     )
 
-    # Order matters: datetime before date (datetime is a date subclass),
-    # bool before int (bool is an int subclass).
     match data:
-        case bool():
-            return "bool"
-        case int():
-            return "int"
-        case float():
-            return "float"
-        case str():
-            return "str"
-        case bytes():
-            return bytes_hint
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "None"
         case dict():
             outer = (
                 "OrderedDict"
@@ -358,7 +373,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 merge_dicts=False,
                 default_type=default_dict_value_type,
             )
-            return f"{outer}[{key_hint}, {val_union}]"
+            hint = f"{outer}[{key_hint}, {val_union}]"
         case set():
             elem_union = _collection_element_union(
                 elements=list(data),
@@ -367,7 +382,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 merge_dicts=False,
                 default_type=default_set_element_type,
             )
-            return f"{set_hint}[{elem_union}]"
+            hint = f"{set_hint}[{elem_union}]"
         case list():
             elem_union = _collection_element_union(
                 elements=data,
@@ -376,11 +391,19 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 merge_dicts=True,
                 default_type=default_sequence_element_type,
             )
-            if sequence_hint == "tuple":
-                return f"{sequence_hint}[{elem_union}, ...]"
-            return f"{sequence_hint}[{elem_union}]"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = (
+                f"{sequence_hint}[{elem_union}, ...]"
+                if sequence_hint == "tuple"
+                else f"{sequence_hint}[{elem_union}]"
+            )
+        case _:
+            hint = _python_scalar_hint(
+                data=data,
+                bytes_hint=bytes_hint,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype

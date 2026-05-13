@@ -365,8 +365,41 @@ _format_purescript_string = _build_purescript_str_formatter(prefix="P")
 _purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
+def _purescript_negative_float(val: float) -> bool:
+    """Return True if *val* is a float requiring ``import Prelude``."""
+    return math.copysign(1, val) < 0 or math.isinf(val) or math.isnan(val)
+
+
 @beartype
-def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C901
+def _purescript_needs_prelude(val: Value) -> bool:
+    """Return True if *val* needs ``import Prelude``.
+
+    Prelude is required for ``negate`` (any negative int or float)
+    and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
+    """
+    if isinstance(val, bool):
+        result = False
+    elif isinstance(val, float):
+        result = _purescript_negative_float(val=val)
+    elif isinstance(val, int):
+        result = val < 0
+    elif isinstance(val, list):
+        result = any(_purescript_needs_prelude(val=v) for v in val)
+    elif isinstance(val, dict):
+        result = any(_purescript_needs_prelude(val=v) for v in val.values())
+    elif isinstance(val, set):
+        result = any(
+            _purescript_needs_prelude(val=v)
+            for v in val
+            if isinstance(v, (int, float)) and not isinstance(v, bool)
+        )
+    else:
+        result = False
+    return result
+
+
+@beartype
+def _build_purescript_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
@@ -378,32 +411,6 @@ def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C90
     the type declaration with only the constructors that are actually
     needed, plus any necessary imports.
     """
-
-    def _needs_prelude(val: Value) -> bool:
-        """Return True if *val* needs ``import Prelude``.
-
-        Prelude is required for ``negate`` (any negative int or float)
-        and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
-        """
-        if isinstance(val, (int, float)) and not isinstance(val, bool):
-            if isinstance(val, float):
-                return (
-                    math.copysign(1, val) < 0
-                    or math.isinf(val)
-                    or math.isnan(val)
-                )
-            return val < 0
-        if isinstance(val, list):
-            return any(_needs_prelude(val=v) for v in val)
-        if isinstance(val, dict):
-            return any(_needs_prelude(val=v) for v in val.values())
-        if isinstance(val, set):
-            return any(
-                _needs_prelude(val=v)
-                for v in val
-                if isinstance(v, (int, float)) and not isinstance(v, bool)
-            )
-        return False
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
@@ -440,7 +447,9 @@ def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C90
                 if c == f"{p}Int Int"
             )
             constructors.insert(int_idx + 1, f"{p}Long Number")
-        needs_prelude = bool(types & {int, float}) and _needs_prelude(val=data)
+        needs_prelude = bool(
+            types & {int, float}
+        ) and _purescript_needs_prelude(val=data)
         lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")

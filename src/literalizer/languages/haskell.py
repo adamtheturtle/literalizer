@@ -578,8 +578,207 @@ def _datetime_import_items(
     return items
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _HaskellPreambleConfig:
+    """Captured configuration for the Haskell body preamble
+    computation.
+    """
+
+    include_hdate: bool
+    include_hdatetime: bool
+    datetime_produces_int: bool
+    date_needs_is_string: bool
+    datetime_needs_is_string: bool
+    date_needs_str_explicit: bool
+    datetime_needs_str_explicit: bool
+    is_string_import: str
+    is_string_instance: str
+    type_name: str
+    constructor_prefix: str
+    emit_is_string: bool
+    emit_num: bool
+    indent: str
+
+
 @beartype
-def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
+def _haskell_base_constructors(
+    *,
+    types: frozenset[type],
+    constructor_prefix: str,
+    type_name: str,
+) -> list[str]:
+    """Return base data-type constructors for the types present in
+    data.
+    """
+    p = constructor_prefix
+    return [
+        constructor
+        for type_set, constructor in (
+            (frozenset({type(None)}), f"{p}Null"),
+            (frozenset({bool}), f"{p}Bool Bool"),
+            (frozenset({int}), f"{p}Int Integer"),
+            (frozenset({float}), f"{p}Float Double"),
+            (frozenset({str, bytes}), f"{p}Str String"),
+            (frozenset({list}), f"{p}List [{type_name}]"),
+            (
+                frozenset({dict, ordereddict}),
+                f"{p}Map [(String, {type_name})]",
+            ),
+            (frozenset({set}), f"{p}Set [{type_name}]"),
+        )
+        if types & type_set
+    ]
+
+
+@beartype
+def _haskell_extend_for_dates(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+    data: Value,
+    data_val_parts: list[str],
+) -> list[str]:
+    """Append date/datetime constructors and return the import-item
+    list.
+    """
+    p = cfg.constructor_prefix
+    import_items: list[str] = []
+    if cfg.include_hdate and datetime.date in types:
+        data_val_parts.append(f"{p}Date Day")
+        import_items.extend(["Day", "fromGregorian"])
+    if cfg.include_hdatetime and datetime.datetime in types:
+        data_val_parts.append(f"{p}Datetime UTCTime")
+        import_items.extend(
+            _datetime_import_items(
+                has_from_gregorian="fromGregorian" in import_items,
+                has_microsecond=_has_microsecond_datetime(data=data),
+                has_nonmicrosecond=_has_nonmicrosecond_datetime(data=data),
+            ),
+        )
+    if (
+        cfg.datetime_produces_int
+        and datetime.datetime in types
+        and f"{p}Int Integer" not in data_val_parts
+    ):
+        data_val_parts.append(f"{p}Int Integer")
+    return import_items
+
+
+@beartype
+def _haskell_needs_str_constructor(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+) -> bool:
+    """Return True if an ``HStr String`` constructor must be present."""
+    return (
+        bool(types & {str, bytes})
+        or (cfg.date_needs_is_string and datetime.date in types)
+        or (cfg.datetime_needs_is_string and datetime.datetime in types)
+        or (cfg.date_needs_str_explicit and datetime.date in types)
+        or (cfg.datetime_needs_str_explicit and datetime.datetime in types)
+    )
+
+
+@beartype
+def _haskell_num_instances(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+    data_val_parts: list[str],
+) -> list[str]:
+    """Return ``Num``/``Fractional`` instance lines for the data types."""
+    if not cfg.emit_num:
+        return []
+    p = cfg.constructor_prefix
+    has_float = float in types
+    has_int = int in types or (
+        cfg.datetime_produces_int and datetime.datetime in types
+    )
+    instances: list[str] = []
+    if has_float or has_int:
+        # The numeric catch-all for ``negate`` is redundant when ``Val``
+        # has only numeric constructors, because the specific
+        # ``HInt`` / ``HFloat`` clauses cover the type.
+        num_constructor_count = (1 if has_int else 0) + (1 if has_float else 0)
+        needs_catchall = len(data_val_parts) > num_constructor_count
+        instances.append(
+            _num_instance(
+                has_int=has_int,
+                has_float=has_float,
+                needs_catchall=needs_catchall,
+                type_name=cfg.type_name,
+                constructor_prefix=cfg.constructor_prefix,
+                indent=cfg.indent,
+            ),
+        )
+    if has_float:
+        instances.append(
+            f"instance Fractional {cfg.type_name} where\n"
+            f"{cfg.indent}fromRational r = {p}Float (realToFrac r)\n"
+            f'{cfg.indent}_ / _ = error "not implemented"'
+        )
+    return instances
+
+
+@beartype
+def _haskell_compute_preamble(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+    data: Value,
+) -> tuple[str, ...]:
+    """Return body-preamble lines for the given *types* and *data*."""
+    p = cfg.constructor_prefix
+    data_val_parts = _haskell_base_constructors(
+        types=types,
+        constructor_prefix=p,
+        type_name=cfg.type_name,
+    )
+    import_items = _haskell_extend_for_dates(
+        cfg=cfg,
+        types=types,
+        data=data,
+        data_val_parts=data_val_parts,
+    )
+
+    needs_is_string = cfg.emit_is_string and (
+        bool(types & {str, bytes})
+        or (cfg.date_needs_is_string and datetime.date in types)
+        or (cfg.datetime_needs_is_string and datetime.datetime in types)
+    )
+    if (
+        _haskell_needs_str_constructor(cfg=cfg, types=types)
+        and f"{p}Str String" not in data_val_parts
+    ):
+        data_val_parts.append(f"{p}Str String")
+
+    # Emit imports first, then data declaration, then instances.
+    imports: list[str] = []
+    if import_items:
+        imports.append("import Data.Time (" + ", ".join(import_items) + ")")
+    if needs_is_string:
+        imports.append(cfg.is_string_import)
+
+    instances: list[str] = []
+    if needs_is_string:
+        instances.append(cfg.is_string_instance)
+    instances.extend(
+        _haskell_num_instances(
+            cfg=cfg,
+            types=types,
+            data_val_parts=data_val_parts,
+        ),
+    )
+
+    lines: list[str] = imports
+    lines.append(f"data {cfg.type_name} = " + " | ".join(data_val_parts))
+    lines.extend(instances)
+    return tuple(lines)
+
+
+@beartype
+def _build_scalar_body_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
@@ -606,129 +805,38 @@ def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     When *emit_num* is ``False``, the ``Num`` and ``Fractional``
     instances are suppressed (used by the ``EXPLICIT`` numeric style).
     """
-    include_hdate = date_format.value.type_produced is datetime.date
-    include_hdatetime = (
-        datetime_format.value.type_produced is datetime.datetime
-    )
-    datetime_produces_int = datetime_format.value.type_produced is int
-    date_needs_is_string = bool(
-        emit_is_string and date_format.value.preamble_lines
-    )
-    datetime_needs_is_string = bool(
-        emit_is_string and datetime_format.value.preamble_lines
-    )
-    # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped strings,
-    # so HStr String must appear in the data type.
-    date_needs_str_explicit = bool(
-        not emit_is_string and date_format.value.type_produced is str
-    )
-    datetime_needs_str_explicit = bool(
-        not emit_is_string and datetime_format.value.type_produced is str
+    cfg = _HaskellPreambleConfig(
+        include_hdate=date_format.value.type_produced is datetime.date,
+        include_hdatetime=(
+            datetime_format.value.type_produced is datetime.datetime
+        ),
+        datetime_produces_int=datetime_format.value.type_produced is int,
+        date_needs_is_string=bool(
+            emit_is_string and date_format.value.preamble_lines
+        ),
+        datetime_needs_is_string=bool(
+            emit_is_string and datetime_format.value.preamble_lines
+        ),
+        # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped
+        # strings, so HStr String must appear in the data type.
+        date_needs_str_explicit=bool(
+            not emit_is_string and date_format.value.type_produced is str
+        ),
+        datetime_needs_str_explicit=bool(
+            not emit_is_string and datetime_format.value.type_produced is str
+        ),
+        is_string_import=is_string_import,
+        is_string_instance=is_string_instance,
+        type_name=type_name,
+        constructor_prefix=constructor_prefix,
+        emit_is_string=emit_is_string,
+        emit_num=emit_num,
+        indent=indent,
     )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
-        p = constructor_prefix
-        data_val_parts = [
-            constructor
-            for type_set, constructor in (
-                (frozenset({type(None)}), f"{p}Null"),
-                (frozenset({bool}), f"{p}Bool Bool"),
-                (frozenset({int}), f"{p}Int Integer"),
-                (frozenset({float}), f"{p}Float Double"),
-                (frozenset({str, bytes}), f"{p}Str String"),
-                (frozenset({list}), f"{p}List [{type_name}]"),
-                (
-                    frozenset({dict, ordereddict}),
-                    f"{p}Map [(String, {type_name})]",
-                ),
-                (frozenset({set}), f"{p}Set [{type_name}]"),
-            )
-            if types & type_set
-        ]
-        import_items: list[str] = []
-        if include_hdate and datetime.date in types:
-            data_val_parts.append(f"{p}Date Day")
-            import_items.extend(["Day", "fromGregorian"])
-        if include_hdatetime and datetime.datetime in types:
-            data_val_parts.append(f"{p}Datetime UTCTime")
-            import_items.extend(
-                _datetime_import_items(
-                    has_from_gregorian="fromGregorian" in import_items,
-                    has_microsecond=_has_microsecond_datetime(data=data),
-                    has_nonmicrosecond=_has_nonmicrosecond_datetime(
-                        data=data,
-                    ),
-                ),
-            )
-        if (
-            datetime_produces_int
-            and datetime.datetime in types
-            and f"{p}Int Integer" not in data_val_parts
-        ):
-            data_val_parts.append(f"{p}Int Integer")
-
-        needs_is_string = emit_is_string and (
-            bool(types & {str, bytes})
-            or (date_needs_is_string and datetime.date in types)
-            or (datetime_needs_is_string and datetime.datetime in types)
-        )
-        needs_str_constructor = (
-            bool(types & {str, bytes})
-            or (date_needs_is_string and datetime.date in types)
-            or (datetime_needs_is_string and datetime.datetime in types)
-            or (date_needs_str_explicit and datetime.date in types)
-            or (datetime_needs_str_explicit and datetime.datetime in types)
-        )
-        if needs_str_constructor and f"{p}Str String" not in data_val_parts:
-            data_val_parts.append(f"{p}Str String")
-
-        # Emit imports first, then data declaration, then instances.
-        imports: list[str] = []
-        if import_items:
-            imports.append(
-                "import Data.Time (" + ", ".join(import_items) + ")"
-            )
-        if needs_is_string:
-            imports.append(is_string_import)
-
-        instances: list[str] = []
-        if needs_is_string:
-            instances.append(is_string_instance)
-
-        has_float = float in types
-        has_int = int in types or (
-            datetime_produces_int and datetime.datetime in types
-        )
-        if emit_num and (has_float or has_int):
-            # The numeric catch-all for ``negate`` is redundant when
-            # ``Val`` has only numeric constructors, because the
-            # specific ``HInt`` / ``HFloat`` clauses cover the type.
-            num_constructor_count = (1 if has_int else 0) + (
-                1 if has_float else 0
-            )
-            needs_catchall = len(data_val_parts) > num_constructor_count
-            instances.append(
-                _num_instance(
-                    has_int=has_int,
-                    has_float=has_float,
-                    needs_catchall=needs_catchall,
-                    type_name=type_name,
-                    constructor_prefix=constructor_prefix,
-                    indent=indent,
-                ),
-            )
-        if emit_num and has_float:
-            instances.append(
-                f"instance Fractional {type_name} where\n"
-                f"{indent}fromRational r = {p}Float (realToFrac r)\n"
-                f'{indent}_ / _ = error "not implemented"'
-            )
-
-        lines: list[str] = imports
-        lines.append(f"data {type_name} = " + " | ".join(data_val_parts))
-        lines.extend(instances)
-        return tuple(lines)
+        return _haskell_compute_preamble(cfg=cfg, types=types, data=data)
 
     return _compute
 
