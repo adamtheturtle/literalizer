@@ -502,12 +502,13 @@ def check_data(*, data: Value, spec: Language) -> None:
     dict_supports_het = spec.dict_supports_heterogeneous_values
     set_supports_het = spec.set_format_config.supports_heterogeneity
     behavior = spec.heterogeneous_behavior
+    if not dict_supports_het:
+        _check_mixed_dict_keys(data=data)
     if not behavior.skip_scalar_checks:
         if not seq_supports_het:
             _check_heterogeneous(data=data)
             _check_heterogeneous_sibling_lists(data=data)
         if not dict_supports_het:
-            _check_mixed_dict_keys(data=data)
             _check_mixed_dict_values(data=data)
         if not seq_supports_het:
             _check_mixed_list_values(data=data)
