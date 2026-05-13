@@ -1,6 +1,6 @@
 Module Check
-    Dim my_data = New HashSet(Of Integer) From {
-        1,
-        1099511627776
+    Dim my_data = New HashSet(Of Long) From {
+        1L,
+        1099511627776L
     }
 End Module
