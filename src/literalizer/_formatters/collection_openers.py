@@ -12,13 +12,13 @@ from literalizer._formatters.type_inference import (
     MixedNumeric,
     infer_element_type,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
 def fixed_open(
     *, open_str: str
-) -> Callable[[list[Value] | dict[str, Value]], str]:
+) -> Callable[[list[Value] | dict[Scalar, Value]], str]:
     """Return an opener callable that always returns *open_str*.
 
     Use this as ``sequence_open``, ``set_open``, ``dict_open``, or
@@ -28,7 +28,7 @@ def fixed_open(
     Example: ``fixed_open(open_str="[")([1, 2, 3])`` -> ``"["``.
     """
 
-    def _open(_items: list[Value] | dict[str, Value], /) -> str:
+    def _open(_items: list[Value] | dict[Scalar, Value], /) -> str:
         """Return the fixed opening delimiter, ignoring *_items*."""
         return open_str
 
@@ -271,7 +271,7 @@ def typed_collection_open(
 
 @beartype
 def _typed_dict_open_impl(
-    items: dict[str, Value],
+    items: dict[Scalar, Value],
     type_to_opener: Callable[[type | ListType | DictType], str | None],
     fallback: str,
 ) -> str:
@@ -287,7 +287,7 @@ def typed_dict_open(
     *,
     type_to_opener: Callable[[type | ListType | DictType], str | None],
     fallback: str,
-) -> Callable[[dict[str, Value]], str]:
+) -> Callable[[dict[Scalar, Value]], str]:
     """Return a ``dict_open`` callable that infers a common value type
     and delegates to *type_to_opener*.
 
@@ -307,7 +307,7 @@ def typed_dict_open(
         )
     """
 
-    def _open(items: dict[str, Value]) -> str:
+    def _open(items: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _typed_dict_open_impl(
             items=items, type_to_opener=type_to_opener, fallback=fallback

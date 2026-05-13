@@ -67,7 +67,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -157,9 +157,9 @@ def _format_datetime_matlab(value: datetime.datetime) -> str:
 
 
 @beartype
-def _containers_map_open(data: dict[str, Value]) -> str:
+def _containers_map_open(data: dict[Scalar, Value]) -> str:
     """Build the ``containers.Map`` opener with all keys collected."""
-    keys = ", ".join(_matlab_char_key(s=k) for k in data)
+    keys = ", ".join(_matlab_char_key(s=k) for k in data if isinstance(k, str))
     return f"containers.Map({{{keys}}}, {{"
 
 
@@ -225,6 +225,7 @@ class Matlab(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
