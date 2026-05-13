@@ -47,21 +47,36 @@ class InputFormat(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
-class _ParsedInput:
-    """Result of parsing an input string."""
+class ParsedPlain:
+    """Result of parsing a comment-free input (JSON or JSON5)."""
+
+    data: Value
+
+
+@dataclasses.dataclass(frozen=True)
+class ParsedYaml:
+    """Result of parsing a YAML input string."""
 
     data: Value
     raw_data: object
-    yaml_needs_comment_resolve: bool
+    needs_comment_resolve: bool
     """Whether the YAML comment-resolution phase must run.
 
-    False for non-YAML inputs and for the YAML fast path (no comment
-    or tag markers in the source).  When False, ``raw_data`` carries
-    no round-trip metadata and must not be passed to
-    ``resolve_yaml_comments``.
+    False for the YAML fast path (no comment or tag markers in the
+    source).  When False, ``raw_data`` carries no round-trip metadata
+    and must not be passed to ``resolve_yaml_comments``.
     """
-    toml_doc: TOMLDocument | None
-    """The parsed tomlkit document, or ``None`` for non-TOML inputs."""
+
+
+@dataclasses.dataclass(frozen=True)
+class ParsedToml:
+    """Result of parsing a TOML input string."""
+
+    data: Value
+    toml_doc: TOMLDocument
+
+
+ParsedInput = ParsedPlain | ParsedYaml | ParsedToml
 
 
 @beartype
@@ -167,8 +182,8 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
 
 
 @beartype
-def _parse_json(*, source: str) -> _ParsedInput:
-    """Parse a JSON string into a ``_ParsedInput``."""
+def _parse_json(*, source: str) -> ParsedInput:
+    """Parse a JSON string into a ``ParsedInput``."""
     try:
         data = json.loads(s=source)
     except json.JSONDecodeError as exc:
@@ -176,28 +191,18 @@ def _parse_json(*, source: str) -> _ParsedInput:
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
         raise JSONParseError(message) from exc
-    return _ParsedInput(
-        data=data,
-        raw_data=data,
-        yaml_needs_comment_resolve=False,
-        toml_doc=None,
-    )
+    return ParsedPlain(data=data)
 
 
 @beartype
-def _parse_json5(*, source: str) -> _ParsedInput:
-    """Parse a JSON5 string into a ``_ParsedInput``."""
+def _parse_json5(*, source: str) -> ParsedInput:
+    """Parse a JSON5 string into a ``ParsedInput``."""
     try:
         data = pyjson5.decode(data=source)  # pylint: disable=no-member
     except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
         message = f"Invalid JSON5: {exc}"
         raise JSON5ParseError(message) from exc
-    return _ParsedInput(
-        data=data,
-        raw_data=data,
-        yaml_needs_comment_resolve=False,
-        toml_doc=None,
-    )
+    return ParsedPlain(data=data)
 
 
 @functools.cache
@@ -253,8 +258,8 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
 
 
 @beartype
-def _parse_yaml(*, source: str) -> _ParsedInput:
-    """Parse a YAML string into a ``_ParsedInput``.
+def _parse_yaml(*, source: str) -> ParsedInput:
+    """Parse a YAML string into a ``ParsedInput``.
 
     When the source contains no comments or other round-trip-only
     constructs, uses a C-backed safe loader and marks the result with
@@ -272,11 +277,10 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
             message = f"Invalid YAML: {exc}"
             raise YAMLParseError(message) from exc
         data = _coerce_yaml_keys(data=raw_data)
-        return _ParsedInput(
+        return ParsedYaml(
             data=data,
             raw_data=raw_data,
-            yaml_needs_comment_resolve=True,
-            toml_doc=None,
+            needs_comment_resolve=True,
         )
 
     safe_yaml = _get_safe_yaml()
@@ -286,17 +290,16 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
     data = _coerce_yaml_keys(data=plain_data)
-    return _ParsedInput(
+    return ParsedYaml(
         data=data,
         raw_data=plain_data,
-        yaml_needs_comment_resolve=False,
-        toml_doc=None,
+        needs_comment_resolve=False,
     )
 
 
 @beartype
-def _parse_toml(*, source: str) -> _ParsedInput:
-    """Parse a TOML string into a ``_ParsedInput``."""
+def _parse_toml(*, source: str) -> ParsedInput:
+    """Parse a TOML string into a ``ParsedInput``."""
     try:
         toml_doc = tomlkit.parse(string=source)
     except TOMLKitError as exc:
@@ -304,16 +307,11 @@ def _parse_toml(*, source: str) -> _ParsedInput:
         raise TOMLParseError(message) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
     toml_data = _coerce_toml_values(data=unwrapped)
-    return _ParsedInput(
-        data=toml_data,
-        raw_data=toml_doc,
-        yaml_needs_comment_resolve=False,
-        toml_doc=toml_doc,
-    )
+    return ParsedToml(data=toml_data, toml_doc=toml_doc)
 
 
 @beartype
-def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
+def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
     """Parse and coerce an input string according to its format."""
     match input_format:
         case InputFormat.JSON:
