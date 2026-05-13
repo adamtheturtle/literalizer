@@ -231,7 +231,7 @@ def _objc_call_stub(
     # name-suffix-dissimilarity silencing heuristic.  The stub is
     # generated, so the warning is not actionable.  Suppress it on
     # stubs whose parameter count exceeds anything the existing call
-    # cases use, to avoid touching shorter-stub goldens.
+    # cases use, to avoid touching shorter-stub golden files.
     nolint = (
         ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
         if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD
