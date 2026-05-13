@@ -24,7 +24,6 @@ from literalizer._parsing import get_yaml
 def _filter_null_dict_comments(
     *,
     data: dict[Any, Any],
-    ruamel_data: CommentedMap,
     collection_comments: CollectionComments,
 ) -> CollectionComments:
     """Remove comments for null-valued dict entries.
@@ -34,11 +33,7 @@ def _filter_null_dict_comments(
     """
     pending: list[str] = []
     filtered_elements_list: list[ElementComments] = []
-    for key, ec in zip(  # pyright: ignore[reportUnknownVariableType]
-        ruamel_data.keys(),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-        collection_comments.elements,
-        strict=True,
-    ):
+    for key, ec in zip(data, collection_comments.elements, strict=True):
         if data[key] is None:
             pending.extend(ec.before)
             if ec.inline:
@@ -127,7 +122,6 @@ def _resolve_yaml_collection_comments(
     ):
         collection_comments = _filter_null_dict_comments(
             data=data,  # pyright: ignore[reportUnknownArgumentType]
-            ruamel_data=ruamel_data,
             collection_comments=collection_comments,
         )
 
