@@ -314,7 +314,7 @@ def extract_yaml_comments(
 @beartype
 def extract_toml_comments(
     *,
-    toml_doc: object,
+    toml_doc: TOMLDocument,
 ) -> CollectionComments:
     """Extract top-level comments from a parsed tomlkit document.
 
@@ -322,9 +322,6 @@ def extract_toml_comments(
     nodes as "before" comments for the next keyed item, and inline
     ``trivia.comment`` values as inline comments.
     """
-    if not isinstance(toml_doc, TOMLDocument):
-        return CollectionComments(elements=(), trailing=())
-
     pending_before: list[str] = []
     elements: list[ElementComments] = []
 

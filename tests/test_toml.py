@@ -51,7 +51,9 @@ def test_invalid_toml_is_parse_error() -> None:
 
 
 def test_toml_comments_propagate() -> None:
-    """Standalone and inline TOML comments survive literalization."""
+    """Standalone and inline TOML comments survive in the rendered
+    output.
+    """
     result = literalize(
         source="# before\n\nanswer = 42 # inline\nplain = 'ok'\n# trailing\n",
         input_format=InputFormat.TOML,
