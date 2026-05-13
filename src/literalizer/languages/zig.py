@@ -50,7 +50,6 @@ from literalizer._language import (
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
-    DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -100,10 +99,34 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
     return str(object=int(value.timestamp()))
 
 
+@dataclasses.dataclass(frozen=True)
+class _ZigDeclarationStyleConfig:
+    """Configuration for a Zig declaration style.
+
+    Unlike :class:`DeclarationStyleConfig`, this carries no
+    ``formatter`` slot: Zig builds its declaration formatter
+    per-instance in :attr:`Zig.format_variable_declaration` so it can
+    close over the chosen date/datetime ``type_produced``.
+    """
+
+    keyword: str
+    supports_redefinition: bool
+
+
 @beartype
-def _format_zig_entry(original: Value, formatted: str) -> str:
+def _format_zig_entry(
+    *,
+    original: Value,
+    formatted: str,
+    date_type: type,
+    datetime_type: type,
+) -> str:
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
     tag.
+
+    The ``str`` vs ``int`` choice for dates/datetimes is driven by the
+    parsed :class:`Value` together with the chosen date/datetime
+    format's ``type_produced``, rather than by sniffing *formatted*.
     """
     match original:
         case bool():
@@ -121,42 +144,13 @@ def _format_zig_entry(original: Value, formatted: str) -> str:
             tag = "float"
         case str() | bytes():
             tag = "str"
+        case datetime.datetime():
+            tag = "str" if datetime_type is str else "int"
         case datetime.date():
-            tag = "str" if formatted.startswith('"') else "int"
+            tag = "str" if date_type is str else "int"
         case _:
             return formatted
     return f".{{ .{tag} = {formatted} }}"
-
-
-@beartype
-def _format_const_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
-    wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"const {name}: ZVal = {wrapped};"
-
-
-@beartype
-def _format_var_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
-    wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"var {name}: ZVal = {wrapped};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a Zig assignment to an existing ``ZVal`` variable."""
-    wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"{name} = {wrapped};"
 
 
 @beartype
@@ -257,7 +251,10 @@ class Zig(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Zig."""
 
-        ZIG = DateFormatConfig(formatter=_format_date_zig)
+        ZIG = DateFormatConfig(
+            formatter=_format_date_zig,
+            type_produced=int,
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -267,7 +264,10 @@ class Zig(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Zig."""
 
-        ZIG = DatetimeFormatConfig(formatter=_format_datetime_zig)
+        ZIG = DatetimeFormatConfig(
+            formatter=_format_datetime_zig,
+            type_produced=int,
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -335,12 +335,12 @@ class Zig(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        CONST = DeclarationStyleConfig(
-            formatter=_format_const_declaration,
+        CONST = _ZigDeclarationStyleConfig(
+            keyword="const",
             supports_redefinition=False,
         )
-        VAR = DeclarationStyleConfig(
-            formatter=_format_var_declaration,
+        VAR = _ZigDeclarationStyleConfig(
+            keyword="var",
             supports_redefinition=True,
         )
 
@@ -620,19 +620,51 @@ class Zig(metaclass=LanguageCls):
         return self.call_style.value
 
     @cached_property
+    def _format_entry(self) -> Callable[[Value, str], str]:
+        """Shared entry formatter closing over date/datetime
+        ``type_produced``.
+        """
+        date_type = self.date_format.value.type_produced
+        datetime_type = self.datetime_format.value.type_produced
+
+        @beartype
+        def _formatter(original: Value, formatted: str) -> str:
+            """Adapt :func:`_format_zig_entry` to the positional
+            entry-formatter interface.
+            """
+            return _format_zig_entry(
+                original=original,
+                formatted=formatted,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+
+        return _formatter
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_zig_entry
+        return self._format_entry
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_zig_entry
+        return self._format_entry
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return _format_variable_assignment
+        format_entry = self._format_entry
+
+        @beartype
+        def _format_assign(name: str, value: str, data: Value) -> str:
+            """Format a Zig assignment to an existing ``ZVal``
+            variable.
+            """
+            wrapped = format_entry(data, value)
+            return f"{name} = {wrapped};"
+
+        return _format_assign
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -689,7 +721,7 @@ class Zig(metaclass=LanguageCls):
         match the parameter shape emitted by
         :func:`_zig_call_preamble_stub`.
         """
-        return _format_zig_entry
+        return self._format_entry
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -766,7 +798,7 @@ class Zig(metaclass=LanguageCls):
             close="}}",
             format_entry=dict_entry_with_template(
                 template=".{{ .key = {key}, .val = {value} }}",
-                format_value=_format_zig_entry,
+                format_value=self._format_entry,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -838,15 +870,34 @@ class Zig(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_template(
             template=".{{ .key = {key}, .val = {value} }}",
-            format_value=_format_zig_entry,
+            format_value=self._format_entry,
         )
 
     @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        """Callable that formats a new variable declaration.
+
+        Closes over the chosen date/datetime ``type_produced`` so the
+        ``ZVal`` tag selection can be driven by the parsed
+        :class:`Value` rather than the rendered text.
+        """
+        keyword = self.declaration_style.value.keyword
+        format_entry = self._format_entry
+
+        @beartype
+        def _format_decl(
+            name: str,
+            value: str,
+            data: Value,
+            _modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Format a Zig declaration with explicit ``ZVal`` type."""
+            wrapped = format_entry(data, value)
+            return f"{keyword} {name}: ZVal = {wrapped};"
+
+        return _format_decl
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
