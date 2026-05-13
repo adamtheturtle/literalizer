@@ -489,11 +489,13 @@ def _build_purescript_call_stub_lines(
     if is_wrapper_stub:
         func_type = "forall a. a -> Unit"
         func_body = "\\_ -> unit"
+    elif not params:
+        func_type = "Unit"
+        func_body = "unit"
     else:
-        n = len(params)
-        arg_types = " -> ".join(type_name for _ in range(n))
+        arg_types = " -> ".join(type_name for _ in params)
         func_type = f"{arg_types} -> Unit"
-        wildcards = " ".join("_" for _ in range(n))
+        wildcards = " ".join("_" for _ in params)
         func_body = f"\\{wildcards} -> unit"
 
     inner_type = f"{{ {method} :: {func_type} }}"
