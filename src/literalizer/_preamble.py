@@ -47,12 +47,12 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
 def _walk_empty_collections(*, val: Value, result: set[type]) -> None:
     """Walk *val* and add empty collection types to *result*."""
     match val:
-        case ordereddict() | dict():
+        case dict():
             if not val:
                 result.add(dict)
             else:
-                for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                    _walk_empty_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
+                for v in val.values():
+                    _walk_empty_collections(val=v, result=result)
         case set():
             if not val:
                 result.add(set)

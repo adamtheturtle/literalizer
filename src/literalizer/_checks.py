@@ -111,9 +111,9 @@ def _collect_scalar_type_names(*, data: Value) -> set[str]:
     """Collect the names of scalar type buckets found in *data*."""
     names: set[str] = set()
     match data:
-        case ordereddict() | dict():
-            for v in data.values():  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-                names |= _collect_scalar_type_names(data=v)  # pyright: ignore[reportUnknownArgumentType]
+        case dict():
+            for v in data.values():
+                names |= _collect_scalar_type_names(data=v)
         case list():
             for v in data:
                 names |= _collect_scalar_type_names(data=v)
@@ -144,8 +144,8 @@ def _find_first_mixed_values(
     """
     children: Sequence[Value]
     match data:
-        case ordereddict() | dict():
-            children = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case dict():
+            children = list(data.values())
             if container_type is dict and _values_mixed_types(
                 values=children,
             ):
@@ -190,8 +190,8 @@ def _has_heterogeneous(*, data: Value) -> bool:
     all-scalar collections.
     """
     match data:
-        case ordereddict() | dict():
-            children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case dict():
+            children: list[Value] = list(data.values())
         case list():
             children = data
         case set():
@@ -210,10 +210,9 @@ def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
     combined scalar elements are heterogeneous.
     """
     match data:
-        case dict() | ordereddict():
+        case dict():
             return any(
-                _has_heterogeneous_sibling_lists(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                _has_heterogeneous_sibling_lists(data=v) for v in data.values()
             )
         case list():
             if any(_has_heterogeneous_sibling_lists(data=v) for v in data):
@@ -238,11 +237,8 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
     with different key sets.
     """
     match data:
-        case ordereddict() | dict():
-            return any(
-                _has_mixed_dict_shapes(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            )
+        case dict():
+            return any(_has_mixed_dict_shapes(data=v) for v in data.values())
         case list():
             dicts_in_list = [v for v in data if isinstance(v, dict)]
             key_sets = {frozenset(d.keys()) for d in dicts_in_list}
@@ -264,8 +260,8 @@ def _has_mixed_dict_values(*, data: Value) -> bool:
     multiple type families.
     """
     match data:
-        case ordereddict() | dict():
-            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case dict():
+            values: list[Value] = list(data.values())
             if _values_mixed_types(values=values):
                 return True
             return any(_has_mixed_dict_values(data=v) for v in values)
@@ -281,11 +277,8 @@ def _has_mixed_list_values(*, data: Value) -> bool:
     multiple type families.
     """
     match data:
-        case ordereddict() | dict():
-            return any(
-                _has_mixed_list_values(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            )
+        case dict():
+            return any(_has_mixed_list_values(data=v) for v in data.values())
         case list():
             if _values_mixed_types(values=data):
                 return True
@@ -302,11 +295,8 @@ def _has_heterogeneous_set(*, data: Value) -> bool:
     match data:
         case set():
             return _all_scalars_heterogeneous(values=list(data))
-        case ordereddict() | dict():
-            return any(
-                _has_heterogeneous_set(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            )
+        case dict():
+            return any(_has_heterogeneous_set(data=v) for v in data.values())
         case list():
             return any(_has_heterogeneous_set(data=v) for v in data)
         case _:

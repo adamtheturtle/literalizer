@@ -12,7 +12,6 @@ import datetime
 from collections.abc import Sequence
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._types import Scalar, Value
 
@@ -136,7 +135,7 @@ def collect_heterogeneous_container_ids(*, data: Value) -> frozenset[int]:
       values are heterogeneous (sibling-dict heterogeneity).
     """
     match data:
-        case ordereddict() | dict():
+        case dict():
             return _collect_from_dict(data=data)
         case list():
             return _collect_from_list(data=data)
@@ -156,8 +155,8 @@ def iter_wrapped_scalars(
     appears in *wrap_ids*.
     """
     match data:
-        case ordereddict() | dict():
-            children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case dict():
+            children: list[Value] = list(data.values())
         case list():
             children = list(data)
         case _:
