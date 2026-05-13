@@ -298,8 +298,8 @@ def _has_dict_with_unwrappable_value_mix(*, data: Value) -> bool:
     heterogeneous map.
     """
     match data:
-        case ordereddict() | dict():
-            values: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case dict():
+            values: list[Value] = list(data.values())
             has_container = any(
                 isinstance(v, (list, dict, set)) for v in values
             )
