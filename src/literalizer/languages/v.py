@@ -13,6 +13,8 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -86,6 +88,26 @@ _V_IFACE_NAME = "IVal"
 _V_IFACE_DECL = f"interface {_V_IFACE_NAME} {{}}"
 _V_NULL_WRAPPED = f"{_V_IFACE_NAME}(unsafe {{ nil }})"
 
+_v_element_to_type = make_element_to_type(
+    str_type="string",
+    bool_type="bool",
+    int_type="int",
+    float_type="f64",
+    bytes_type="string",
+    mixed_numeric_type="string",
+    date_type="string",
+    datetime_type="string",
+    list_template="[]{inner}",
+    dict_type_template=None,
+    fallback_value_type=_V_IFACE_NAME,
+)
+
+_v_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=_v_element_to_type,
+    template="[]{type}{{}}",
+    fallback_type=_V_IFACE_NAME,
+)
+
 
 @beartype
 def _format_v_u64_positive(value: int) -> str:
@@ -113,7 +135,7 @@ def _make_v_i64_formatter(
     return _format
 
 
-def _v_collect_ids_needing_wrap(
+def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
     data: Value,
 ) -> frozenset[int]:
     """Return container ids that need interface-type wrapping in V.
@@ -436,7 +458,7 @@ class V(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
-            narrowed_empty_form=None,
+            narrowed_empty_form=_v_narrowed_empty_form,
         )
 
     class SetFormats(enum.Enum):
