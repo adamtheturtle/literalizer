@@ -1400,16 +1400,6 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def max_call_parameters(self) -> int | None:
-        """Maximum parameter count the language's call syntax accepts,
-        or ``None`` for no fixed limit.  When set,
-        :func:`~literalizer.literalize_call` rejects ``parameter_names``
-        longer than this with
-        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
     def call_returns_expression(self) -> bool:
         """Whether a function call in this language is an expression
         whose value can be consumed by an enclosing expression.  When
