@@ -1589,8 +1589,7 @@ jobs:
           # per array; the rendered output is shape-correct but does
           # not compile.
           # Tracked in https://github.com/adamtheturtle/literalizer/issues/2105.
-          grep -z -v -e 'heterogeneous_strategy_error' \
-            -e 'call_ref_args_reused' \
+          grep -z -v -e 'call_ref_args_reused' \
             -e 'multiline_sibling_list_widening' /tmp/files-to-lint \
             > /tmp/files-to-run || true
           xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run

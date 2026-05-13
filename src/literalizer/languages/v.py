@@ -377,7 +377,7 @@ class V(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    dict_supports_heterogeneous_values = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -445,7 +445,7 @@ class V(metaclass=LanguageCls):
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="["),
             close="]",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
             empty_sequence=f"[]{_V_IFACE_NAME}{{}}",
@@ -467,7 +467,7 @@ class V(metaclass=LanguageCls):
             empty_set=f"[]{_V_IFACE_NAME}{{}}",
             preamble_lines=(),
             set_opener_template="",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
             supports_trailing_comma=True,
         )
 
@@ -646,6 +646,11 @@ class V(metaclass=LanguageCls):
         )
         """Raise on heterogeneous scalar collections (default).
 
+        V is statically typed and rejects unwrapped heterogeneous
+        collections, so the default refuses to render them rather than
+        emit code the V compiler will not accept.  Callers that want
+        to materialize such data must opt in to ``INTERFACE``.
+
         Still emits ``interface IVal {}`` when the data contains an
         empty list, dict, or set, because the empty-literal rendering
         (``[]IVal{}`` / ``map[string]IVal{}``) references it regardless
@@ -747,7 +752,7 @@ class V(metaclass=LanguageCls):
         StatementTerminatorStyles.NEWLINE
     )
     heterogeneous_strategy: HeterogeneousStrategies = (
-        HeterogeneousStrategies.INTERFACE
+        HeterogeneousStrategies.ERROR
     )
     language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "\t"

@@ -1,13 +1,12 @@
-interface IVal {}
 
 fn main() {
 	mut my_data := [
-		IVal(unsafe { nil }),
-		IVal(unsafe { nil }),
+		unsafe { nil },
+		unsafe { nil },
 	]
 	my_data = [
-		IVal(unsafe { nil }),
-		IVal(unsafe { nil }),
+		unsafe { nil },
+		unsafe { nil },
 	]
 	_ = my_data
 }
