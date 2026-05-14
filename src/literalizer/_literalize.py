@@ -1781,6 +1781,7 @@ def _apply_variable_wrapper(
     data: Value,
     variable_form: NewVariable | ExistingVariable | None,
     line_prefix: str,
+    is_call_binding: bool,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
@@ -1791,6 +1792,16 @@ def _apply_variable_wrapper(
     declaration's ``=``, then re-prepended once to the entire wrapped
     output.  This keeps every line uniformly indented instead of
     doubly-indenting continuation lines.
+
+    When *is_call_binding* is ``True`` the right-hand side is a call
+    expression, not a literal value.  Languages whose literal-binding
+    declaration template injects a value-type-derived tag (Haskell's
+    ``x :: Val`` annotation, Elm's ``x : Val``, etc.) can opt in to a
+    call-specific declaration formatter via
+    ``format_call_variable_declaration``; languages that do not define
+    one fall back to ``format_variable_declaration`` unchanged.  The
+    assignment template re-binds an existing variable and is bare in
+    these languages already, so no call-specific override is needed.
     """
     if variable_form is None:
         return result
@@ -1802,12 +1813,14 @@ def _apply_variable_wrapper(
 
     match variable_form:
         case NewVariable(name=name, modifiers=modifiers):
-            wrapped = language.format_variable_declaration(
-                name,
-                value,
-                data,
-                modifiers,
-            )
+            declaration_formatter = language.format_variable_declaration
+            if is_call_binding:
+                declaration_formatter = getattr(
+                    language,
+                    "format_call_variable_declaration",
+                    declaration_formatter,
+                )
+            wrapped = declaration_formatter(name, value, data, modifiers)
         case _:
             wrapped = language.format_variable_assignment(
                 variable_form.name,
@@ -1954,6 +1967,7 @@ def _literalize_apply_form(
         data=pre_form.data,
         variable_form=variable_form,
         line_prefix=pre_form.line_prefix,
+        is_call_binding=False,
     )
 
     resolved = pre_form.resolved
@@ -3072,6 +3086,7 @@ def _render_call_whole(
         data=data,
         variable_form=variable_form,
         line_prefix="",
+        is_call_binding=True,
     )
 
 
@@ -3364,9 +3379,16 @@ def _wrap_call_in_file(
         variable_name=wrap_variable_name,
         body_preamble=body_stubs + computed_body,
     )
+    call_binding_pragmas: tuple[str, ...] = ()
+    if variable_form is not None:
+        pragma_hook = getattr(
+            language, "format_call_binding_file_pragmas", None
+        )
+        if pragma_hook is not None:
+            call_binding_pragmas = pragma_hook()
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
-    full_preamble = preamble + preamble_stubs
+    full_preamble = preamble + call_binding_pragmas + preamble_stubs
     if full_preamble:
         wrapped = "\n".join(full_preamble) + "\n" + wrapped
     return wrapped
