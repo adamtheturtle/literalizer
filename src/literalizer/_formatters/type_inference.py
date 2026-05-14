@@ -215,7 +215,7 @@ def collect_record_shapes(*, data: Value) -> dict[int, RecordShape]:
     return result
 
 
-def _accumulate_record_shapes(  # pylint: disable=too-complex
+def _accumulate_record_shapes(
     *,
     data: Value,
     out: dict[int, RecordShape],

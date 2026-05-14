@@ -274,7 +274,7 @@ class CombinedCase:
 
 @functools.cache
 @beartype
-def discover_combined_cases(  # pylint: disable=too-complex
+def discover_combined_cases(
     cases_dir: Path,
 ) -> list[CombinedCase]:
     """Return combined test cases for all redefinition-supporting

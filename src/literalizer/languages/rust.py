@@ -857,10 +857,10 @@ def _gather_record_field_values(  # pylint: disable=too-complex
                 ordered_shapes.append(shape)
                 field_values[shape] = {}
             # Iterate ``shape.keys`` (guaranteed strings) rather than
-            # ``data.items()`` to keep ``stored``'s ``dict[str, ...]``
-            # type without isinstance narrowing.  First occurrence wins,
-            # so later same-shape siblings don't overwrite the example
-            # values used for type inference.
+            # ``data.items()`` so ``stored`` keeps its ``dict[str, ...]``
+            # type without per-key type narrowing.  First occurrence
+            # wins, so later same-shape siblings don't overwrite the
+            # example values used for type inference.
             stored = field_values[shape]
             for key in shape.keys:
                 if key in stored:
