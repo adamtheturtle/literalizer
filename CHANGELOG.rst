@@ -17,6 +17,14 @@ Next
   :class:`~literalizer.Toml` instead of being re-emitted as a quoted
   string.
 
+- ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime
+  errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
+  The ``laytan/setup-odin`` action is pinned to ``dev-2026-04``, the
+  last Odin release where ``odin run .`` did not segfault on these
+  fixtures; ``release: latest`` (``dev-2026-05``) crashes at runtime, and
+  the compiler itself segfaults on some fixtures under
+  ``odin build .``.  See #1745.
+
 2026.05.14.1
 ------------
 
