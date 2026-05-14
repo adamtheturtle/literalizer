@@ -1,19 +1,12 @@
-"""Active compiler/interpreter versions per language for golden-file
-selection and CI linters.
+"""Active compiler version per language for golden-file selection.
 
-A language listed here may have version-specific golden variants on disk
-named ``{stem}@{version}{extension}`` alongside the unversioned
-``{stem}{extension}``.  Tests prefer the versioned variant when it
-exists for the active version; CI linters filter the fixture set the
-same way before invoking the compiler.
-
-The active version may be overridden at runtime via the
-``LITERALIZER_LANG_VERSION_<NAME>`` env var (e.g.
-``LITERALIZER_LANG_VERSION_ODIN=dev-2026-05``) so a one-off run can
-exercise a different toolchain without editing this file.
+A language listed in :data:`LANGUAGE_VERSIONS` may have version-tagged
+golden variants named ``{stem}@{version}{extension}`` alongside the
+base ``{stem}{extension}``.  The integration tests prefer the tagged
+variant when the active version matches; the CI compile job filters
+fixtures the same way so it only compiles variants for the pinned
+release.
 """
-
-import os
 
 from beartype import beartype
 
@@ -27,8 +20,4 @@ LANGUAGE_VERSIONS: dict[str, str] = {
 @beartype
 def language_version_for(lang_cls: literalizer.LanguageCls) -> str | None:
     """Return the active version string for *lang_cls*, or ``None``."""
-    name = lang_cls.__name__
-    env_key = f"LITERALIZER_LANG_VERSION_{name.upper()}"
-    if env_key in os.environ:
-        return os.environ[env_key]
-    return LANGUAGE_VERSIONS.get(name)
+    return LANGUAGE_VERSIONS.get(lang_cls.__name__)

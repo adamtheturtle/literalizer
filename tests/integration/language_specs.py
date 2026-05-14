@@ -153,12 +153,12 @@ def make_golden_path(
     casing in pytest test IDs and error messages; only the on-disk
     file name is mapped down.
 
-    Languages with a registered active version (see
-    ``language_versions.LANGUAGE_VERSIONS``) prefer a version-tagged
+    Languages registered in
+    ``language_versions.LANGUAGE_VERSIONS`` prefer a version-tagged
     variant ``{stem}@{version}{extension}`` when one exists on disk,
-    falling back to the unversioned base file otherwise.  This lets a
-    single fixture diverge across compiler versions without forking
-    every case.
+    falling back to the base file otherwise.  This lets a single
+    fixture diverge across compiler versions without forking every
+    case.
     """
     filename = name + extension
     if lang_cls.__name__ == Gleam.__name__:
@@ -167,8 +167,6 @@ def make_golden_path(
     version = language_version_for(lang_cls=lang_cls)
     if version is not None:
         versioned = parent / f"{base_path.stem}@{version}{extension}"
-        if lang_cls.__name__ == Gleam.__name__:
-            versioned = parent / versioned.name.lower()
         if versioned.is_file():
             return versioned
     return base_path

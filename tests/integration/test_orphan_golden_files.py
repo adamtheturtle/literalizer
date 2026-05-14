@@ -180,7 +180,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
 def _unversioned(path: Path) -> Path:
     """Strip a ``@version`` suffix from *path*'s stem if present.
 
-    A versioned variant ``Odin@dev-2026-05.odin`` collapses to its base
+    A variant ``Odin@dev-2026-05.odin`` collapses to its base
     ``Odin.odin`` so the orphan check treats both forms as the same
     logical fixture.
     """

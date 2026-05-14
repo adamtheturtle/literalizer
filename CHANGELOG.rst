@@ -6,14 +6,12 @@ Next
 
 - Golden-file integration tests now support version-tagged variants:
   a golden named ``{stem}@{version}{extension}`` (e.g.
-  ``Odin@dev-2026-05.odin``) shadows the unversioned base when the
-  active language version registered in
-  ``tests/integration/language_versions.py`` matches.  The active
-  version may be overridden per-run with
-  ``LITERALIZER_LANG_VERSION_<NAME>``.  The ``lint-odin`` CI job picks
-  the matching variant for the pinned compiler version and falls back
-  to the base file otherwise.  Lets one fixture diverge across
-  compiler versions without forking every case.
+  ``Odin@dev-2026-05.odin``) shadows the base when the active language
+  version registered in ``tests/integration/language_versions.py``
+  matches.  The ``lint-odin`` CI job picks the matching variant for
+  the pinned compiler version and falls back to the base file
+  otherwise.  Lets one fixture diverge across compiler versions
+  without forking every case.
 
 - ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime
   errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
