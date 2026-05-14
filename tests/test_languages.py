@@ -880,7 +880,7 @@ def test_python_variable_names_supported_renders() -> None:
         variable_form=BothVariableForms(name="x"),
         wrap_in_file=True,
     )
-    assert result.code == "x = 42\nx = 42"
+    assert result.code == "from __future__ import annotations\nx = 42\nx = 42"
 
 
 _TIME_COVERAGE_SOURCES = (
