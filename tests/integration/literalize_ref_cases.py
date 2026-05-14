@@ -10,6 +10,7 @@ language's default identifier case.  The runner
 
 import dataclasses
 import datetime
+import enum
 import functools
 import json
 import re
@@ -330,6 +331,7 @@ def run_literalize_ref_golden_case(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     ref_case: literalizer.IdentifierCase | None,
+    version: enum.Enum,
 ) -> None:
     """Run a literalize ``$ref`` golden-file case against *golden_name*.
 
@@ -345,6 +347,7 @@ def run_literalize_ref_golden_case(
         name=golden_name,
         extension=lang_cls.extension,
         lang_cls=lang_cls,
+        version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()

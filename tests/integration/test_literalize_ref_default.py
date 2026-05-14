@@ -41,21 +41,28 @@ def test_literalize_ref_default_golden_file(
     ref_case: LiteralizeRefCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """``literalize`` renders ref markers without requiring
     ``ref_case``.
     """
     lang_cls = ref_case.lang_cls
-    spec = make_spec(lang_cls=lang_cls)
-    run_literalize_ref_golden_case(
-        config=ref_case.config,
-        lang_cls=lang_cls,
-        spec=spec,
-        golden_name=f"{lang_cls.__name__}_ref_default",
-        cases_dir=cases_dir,
-        file_regression=file_regression,
-        ref_case=None,
-    )
+    for version_format in lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            spec = make_spec(
+                lang_cls=lang_cls,
+                language_version=version_format,
+            )
+            run_literalize_ref_golden_case(
+                config=ref_case.config,
+                lang_cls=lang_cls,
+                spec=spec,
+                golden_name=f"{lang_cls.__name__}_ref_default",
+                cases_dir=cases_dir,
+                file_regression=file_regression,
+                ref_case=None,
+                version=version_format,
+            )
 
 
 @pytest.mark.parametrize(
@@ -77,4 +84,5 @@ def test_literalize_ref_default_variant_golden_file(
         cases_dir=cases_dir,
         file_regression=file_regression,
         ref_case=None,
+        version=variant.spec.language_version,
     )

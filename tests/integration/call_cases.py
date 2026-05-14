@@ -7,6 +7,7 @@ driven through :func:`literalizer.literalize_call`.  The runner
 """
 
 import dataclasses
+import enum
 import functools
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -1100,6 +1101,7 @@ def run_call_golden_case(
     golden_name: str,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    version: enum.Enum,
 ) -> None:
     """Assemble a literalize_call golden-file case against *golden_name*.
 
@@ -1115,6 +1117,7 @@ def run_call_golden_case(
         name=golden_name,
         extension=lang_cls.extension,
         lang_cls=lang_cls,
+        version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None

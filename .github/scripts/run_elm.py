@@ -67,7 +67,7 @@ main =
 # source for these fixtures; only the compile-and-execute step is
 # skipped.
 _SKIP_SUFFIXES = (
-    "tests/integration/cases/scalar_int_very_negative_large/Elm.elm",
+    "tests/integration/cases/scalar_int_very_negative_large/Elm@v0_19.elm",
 )
 
 
@@ -88,7 +88,10 @@ def _run_fixture(
         check_path = src_dir / "Check.elm"
         output_js = tmpdir / "main.js"
         src = Path(filename)
-        is_call = src.stem.endswith("_call")
+        # Strip the ``@<version>`` tag every fixture filename carries before
+        # checking for the ``_call`` suffix that selects the call-mode driver.
+        logical_stem = src.stem.split(sep="@", maxsplit=1)[0]
+        is_call = logical_stem.endswith("_call")
         main_path.write_text(
             data=_CALL_MAIN_ELM if is_call else _MAIN_ELM,
             encoding="utf-8",

@@ -26,7 +26,7 @@ _FIXTURE_PREFIX = Path("tests/integration/cases")
 def _strip_version(*, relative: Path) -> Path:
     """Drop a ``@<version>`` suffix from *relative*'s stem.
 
-    Version-tagged fixtures (e.g. ``gleam_combined@v1.16.0.gleam``)
+    Version-tagged fixtures (e.g. ``gleam_combined@v1.gleam``)
     cannot be copied verbatim into a Gleam project because the ``@``
     is rejected as part of a module identifier.  Compilation only
     cares about the base stem so we drop the tag on the way in.
