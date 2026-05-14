@@ -248,23 +248,21 @@ def spec_with_version(
     spec: literalizer.Language,
     version: enum.Enum,
 ) -> literalizer.Language:
-    """Return *spec* with its ``language_version`` replaced by *version*.
+    """Return *spec* with its ``language_version`` set to *version*.
 
-    Wraps :func:`dataclasses.replace` for use on
-    :class:`literalizer.Language` values, whose Protocol type does not
-    statically satisfy the ``DataclassInstance`` constraint that
-    ``dataclasses.replace`` requires.  Every concrete language is a
-    dataclass at runtime, so the call is valid; the helper hides the
-    type-checker noise behind one local cast.
+    Today every language exposes a single :class:`VersionFormats` member,
+    so the spec's existing ``language_version`` necessarily matches
+    *version*; callers iterate ``lang_cls.VersionFormats`` purely so a
+    second member added in future automatically multiplies the
+    parameter space.  When that day comes, swap this helper for a real
+    rebuild (e.g. extending the variant builders to thread
+    ``language_version`` through their own ``make_spec`` calls).
     """
-    kwargs_dict: dict[str, object] = {
-        field.name: getattr(spec, field.name)
-        for field in dataclasses.fields(spec)  # pyright: ignore[reportArgumentType]
-        if field.init
-    }
-    kwargs_dict["language_version"] = version
-    lang_cls: literalizer.LanguageCls = type(spec)  # pyright: ignore[reportAssignmentType]
-    return cached_spec(
-        lang_cls=lang_cls,
-        kwargs_items=frozenset(kwargs_dict.items()),
-    )
+    if spec.language_version is not version:
+        msg = (
+            "Multi-version specs are not yet supported on this code path; "
+            f"{type(spec).__name__} default is "
+            f"{spec.language_version.name!r}, asked for {version.name!r}."
+        )
+        raise NotImplementedError(msg)
+    return spec
