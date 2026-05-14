@@ -803,7 +803,7 @@ def build_language_version_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        versions_cls = lang_cls.version_formats
+        versions_cls = lang_cls.VersionFormats
         if len(versions_cls) <= 1:
             continue
         spec = make_spec(lang_cls=lang_cls)
