@@ -201,8 +201,28 @@ jobs:
           # last release known to work with `odin run .`.
           release: dev-2026-04
       - name: Run Odin files
+        env:
+          ODIN_VERSION: dev-2026-04
         run: |-
-          mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
+          # Pick the right golden per stem: prefer `Foo@${ODIN_VERSION}.odin`
+          # over `Foo.odin`, and drop variants for other versions.  Keeps
+          # this in sync with `tests/integration/language_versions.py`.
+          mapfile -d '' -t all < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
+          declare -A keep
+          for f in "${all[@]}"; do
+            base="${f%.odin}"
+            stem="${base##*/}"
+            dir="${f%/*}"
+            if [[ "$stem" == *"@"* ]]; then
+              variant_version="${stem##*@}"
+              [[ "$variant_version" == "$ODIN_VERSION" ]] || continue
+              unversioned_stem="${stem%@*}"
+              keep["$dir/$unversioned_stem"]="$f"
+            else
+              keep["$dir/$stem"]="${keep[$dir/$stem]:-$f}"
+            fi
+          done
+          mapfile -d '' -t files < <(printf '%s\0' "${keep[@]}" | sort -z)
           n=${#files[@]}
           run_odin() {
             local src="$1"
