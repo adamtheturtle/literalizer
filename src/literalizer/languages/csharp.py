@@ -401,6 +401,7 @@ class CSharp(metaclass=LanguageCls):
         bytes_type="string",
         date_type="DateOnly",
         datetime_type="DateTime",
+        time_type="TimeOnly",
         list_template="{inner}[]",
         sequence_opener_template="new {type_name}[] {{",
         dict_opener_template="new Dictionary<{key_type}, {type_name}> {{",

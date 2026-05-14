@@ -546,6 +546,7 @@ class Kotlin(metaclass=LanguageCls):
         mixed_numeric_type=None,
         date_type="LocalDate",
         datetime_type="LocalDateTime",
+        time_type="LocalTime",
         list_template="Array<{inner}>",
         sequence_opener_template="arrayOf(",
         dict_opener_template="mapOf<{key_type}, {type_name}>(",

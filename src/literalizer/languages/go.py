@@ -799,6 +799,7 @@ class Go(metaclass=LanguageCls):
             bytes_type="string",
             date_type=date_type,
             datetime_type=datetime_type,
+            time_type="string",
             list_template="[]{inner}",
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",

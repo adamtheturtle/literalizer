@@ -232,6 +232,7 @@ def _make_cpp_element_to_type(
         bytes_type="std::string",
         date_type=date_type,
         datetime_type=datetime_type,
+        time_type="std::string",
         list_template="std::vector<{inner}>",
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,

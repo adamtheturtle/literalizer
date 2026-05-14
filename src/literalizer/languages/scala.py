@@ -269,6 +269,7 @@ class Scala(metaclass=LanguageCls):
         bytes_type="String",
         date_type="LocalDate",
         datetime_type="ZonedDateTime",
+        time_type="LocalTime",
         list_template="Array[{inner}]",
         sequence_opener_template="Array[{type_name}](",
         dict_opener_template="Map[String, {type_name}](",
