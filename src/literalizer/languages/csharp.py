@@ -1094,7 +1094,12 @@ class CSharp(metaclass=LanguageCls):
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
-                        list_template=None,
+                        list_template=(
+                            None
+                            if self.sequence_format
+                            is self.sequence_formats.ARRAY
+                            else self.default_dict_value_type
+                        ),
                         date_type=cfg.type_name(py_type=self._date_tp),
                         datetime_type=cfg.type_name(py_type=self._dt_tp),
                         enable_dict_type=False,

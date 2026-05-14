@@ -96,7 +96,7 @@ def _apply_fortran_entry(
             return f"{int_name}({formatted})"
         case float():
             return f"{real_name}({formatted})"
-        case str() | bytes() | datetime.date():
+        case str() | bytes() | datetime.date() | datetime.time():
             return f"{str_name}({formatted})"
         case _:
             return formatted

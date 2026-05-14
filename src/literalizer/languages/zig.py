@@ -147,6 +147,8 @@ def _format_zig_entry(
             tag = "str"
         case datetime.datetime():
             tag = "str" if datetime_type is str else "int"
+        case datetime.time():
+            tag = "str"
         case datetime.date():
             tag = "str" if date_type is str else "int"
         case _:

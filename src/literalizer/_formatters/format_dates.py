@@ -79,8 +79,13 @@ def format_time_csharp(value: datetime.time) -> str:
 
 @beartype
 def format_time_fsharp(value: datetime.time) -> str:
-    """Format a time as an F# ``TimeOnly(...)`` expression."""
-    return f"TimeOnly({_time_only_args(value=value)})"
+    """Format a time as an F# ``System.TimeOnly(...)`` expression.
+
+    Fully qualifies ``System.TimeOnly`` so the rendered output does not
+    require an ``open System`` preamble; an ``open`` directive would
+    sort before ``module``, which F# rejects.
+    """
+    return f"System.TimeOnly({_time_only_args(value=value)})"
 
 
 @beartype

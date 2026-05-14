@@ -173,6 +173,8 @@ def _apply_sml_entry_formatter(
                 if negative
                 else f"{prefix}Int {literal}"
             )
+        case datetime.time() if formatted.startswith('"'):
+            result = f"{prefix}Str {formatted}"
         case datetime.date() if formatted.startswith('"'):
             result = f"{prefix}Str {formatted}"
         case _:

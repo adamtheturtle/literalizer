@@ -122,6 +122,26 @@ def _build_roc_date_iso(
 
 
 @beartype
+def _apply_roc_str_wrapped_time(value: datetime.time, prefix: str) -> str:
+    """Format a time as a Roc string via ISO 8601."""
+    return f"{prefix}Str {format_time_iso(value=value)}"
+
+
+def _build_roc_time_iso(
+    prefix: str,
+) -> Callable[[datetime.time], str]:
+    """Build a time formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    def _format(value: datetime.time) -> str:
+        """Delegate to module-level implementation."""
+        return _apply_roc_str_wrapped_time(value=value, prefix=prefix)
+
+    return _format
+
+
+@beartype
 def _apply_roc_str_wrapped_datetime(
     value: datetime.datetime, prefix: str
 ) -> str:
@@ -1151,7 +1171,7 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+        return _build_roc_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
