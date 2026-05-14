@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
@@ -46,6 +46,11 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_raw_rust,
+)
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    collect_record_shapes,
+    record_shape_for_dict,
 )
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
@@ -513,9 +518,9 @@ class _HeterogeneousStrategyConfig:
     type names so the resulting functions can close over them.
     """
 
-    build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
+    build_behavior: Callable[[str, str, str, str], HeterogeneousBehavior]
     build_preamble: Callable[
-        [str, str, str],
+        [str, str, str, str],
         Callable[[Value], tuple[str, ...]],
     ]
 
@@ -524,6 +529,7 @@ def _build_error_behavior(
     _enum_name: str,
     _date_type: str,
     _datetime_type: str,
+    _record_prefix: str,
     /,
 ) -> HeterogeneousBehavior:
     """ERROR strategy: no wrapping, no skipping of checks."""
@@ -534,6 +540,7 @@ def _build_error_preamble(
     _enum_name: str,
     _date_type: str,
     _datetime_type: str,
+    _record_prefix: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
@@ -544,6 +551,7 @@ def _build_tagged_enum_behavior(
     enum_name: str,
     date_type: str,
     datetime_type: str,
+    _record_prefix: str,
     /,
 ) -> HeterogeneousBehavior:
     """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
@@ -576,6 +584,7 @@ def _build_tagged_enum_preamble(
     enum_name: str,
     date_type: str,
     datetime_type: str,
+    _record_prefix: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """TAGGED_ENUM strategy: emit a minimal ``enum`` declaration."""
@@ -610,6 +619,282 @@ def _build_tagged_enum_preamble(
         return tuple(lines)
 
     return _preamble
+
+
+@beartype
+def _rust_record_field_type(  # noqa: PLR0911
+    *,
+    value: Value,
+    date_type: str,
+    datetime_type: str,
+    record_names: "dict[RecordShape, str]",
+) -> str:
+    """Return the Rust struct field type for *value*.
+
+    Scalar fields reuse :func:`_heterogeneous_variant_for_scalar`'s
+    ``inner_type``.  List fields use ``Vec<T>`` over the inferred inner
+    type.  Nested record fields use the corresponding generated struct
+    name (when *record_names* maps a matching shape).
+    """
+    match value:
+        case []:  # pragma: no cover
+            return "Vec<String>"
+        case list():
+            inner_types = [
+                _rust_record_field_type(
+                    value=item,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                    record_names=record_names,
+                )
+                for item in value
+            ]
+            return f"Vec<{_unify_rust_types(types=inner_types)}>"
+        case dict():
+            shape = record_shape_for_dict(value=value)
+            if shape is not None and shape in record_names:
+                return record_names[shape]
+            return "String"  # pragma: no cover
+        case set():  # pragma: no cover
+            return "String"
+        case _:
+            signature = _heterogeneous_variant_for_scalar(
+                value=value,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+            if signature.inner_type is None:
+                return "Option<()>"
+            return signature.inner_type
+
+
+def _build_record_behavior(
+    _enum_name: str,
+    date_type: str,
+    datetime_type: str,
+    record_prefix: str,
+    /,
+) -> HeterogeneousBehavior:
+    """RECORD strategy: render record-shaped dicts as struct literals."""
+    del date_type, datetime_type
+
+    # ``name_cache`` is rebuilt on every ``compute_record_shapes`` call
+    # so concurrent ``literalize`` invocations on the same cached Rust
+    # spec (e.g. variant golden tests reuse one instance) cannot leak
+    # shape -> name assignments from a previous call.
+    name_cache: dict[RecordShape, str] = {}
+
+    def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
+        """Walk *data* and return ``id(dict)`` -> :class:`RecordShape`.
+
+        Re-populates the shared name cache in document order so the
+        preamble's struct names match the rendered literals.
+        """
+        shapes_by_id = collect_record_shapes(data=data)
+        name_cache.clear()
+        ordered = _ordered_record_shapes(
+            data=data,
+            shapes_by_id=shapes_by_id,
+        )
+        for shape in ordered:
+            # ``ordered`` is unique by construction, so the cache always
+            # gets populated on first encounter.
+            name_cache[shape] = f"{record_prefix}{len(name_cache)}"
+        return shapes_by_id
+
+    def _record_name_for(shape: RecordShape) -> str:
+        """Return the struct name assigned by the latest
+        ``_compute_shapes`` call.
+        """
+        if shape not in name_cache:  # pragma: no cover
+            name_cache[shape] = f"{record_prefix}{len(name_cache)}"
+        return name_cache[shape]
+
+    def _render_type(shape: RecordShape) -> str:  # pragma: no cover
+        """Return the Rust struct name for *shape*."""
+        return _record_name_for(shape=shape)
+
+    def _render_literal(
+        shape: RecordShape,
+        fields: Mapping[str, str],
+    ) -> str:
+        """Render a record-shape dict as a Rust struct literal."""
+        name = _record_name_for(shape=shape)
+        body = ", ".join(f"{key}: {fields[key]}" for key in shape.keys)
+        return f"{name} {{ {body} }}"
+
+    return HeterogeneousBehavior(
+        skip_scalar_checks=False,
+        compute_wrap_ids=_empty_wrap_ids,
+        wrap_scalar=None,
+        wrap_non_scalar=None,
+        compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+        render_record_literal=_render_literal,
+        compute_record_shapes=_compute_shapes,
+        render_record_type=_render_type,
+    )
+
+
+def _ordered_record_shapes(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+) -> list[RecordShape]:
+    """Return record shapes in document order, one entry per distinct
+    shape.
+    """
+    ordered: list[RecordShape] = []
+    seen: set[RecordShape] = set()
+    _accumulate_ordered_shapes(
+        data=data,
+        shapes_by_id=shapes_by_id,
+        ordered=ordered,
+        seen=seen,
+    )
+    return ordered
+
+
+def _accumulate_ordered_shapes(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    ordered: list[RecordShape],
+    seen: set[RecordShape],
+) -> None:
+    """Walk *data* and append each newly-seen record shape to
+    *ordered*.
+    """
+    match data:
+        case dict():
+            if id(data) in shapes_by_id:
+                shape = shapes_by_id[id(data)]
+                if shape not in seen:  # pragma: no branch
+                    seen.add(shape)
+                    ordered.append(shape)
+            for value in data.values():
+                _accumulate_ordered_shapes(
+                    data=value,
+                    shapes_by_id=shapes_by_id,
+                    ordered=ordered,
+                    seen=seen,
+                )
+        case list():
+            for item in data:
+                _accumulate_ordered_shapes(
+                    data=item,
+                    shapes_by_id=shapes_by_id,
+                    ordered=ordered,
+                    seen=seen,
+                )
+        case _:
+            return
+
+
+def _empty_wrap_ids(_data: Value, /) -> frozenset[int]:
+    """Return an empty wrap-id set for RECORD (no scalar wrapping)."""
+    return frozenset()
+
+
+def _build_record_preamble(
+    _enum_name: str,
+    date_type: str,
+    datetime_type: str,
+    record_prefix: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """RECORD strategy: emit ``struct`` declarations for each shape."""
+
+    def _preamble(data: Value, /) -> tuple[str, ...]:
+        """Build struct declarations for every record shape in *data*."""
+        shapes_by_id = collect_record_shapes(data=data)
+        if not shapes_by_id:
+            return ()
+        ordered_shapes: list[RecordShape] = []
+        seen: set[RecordShape] = set()
+        field_values: dict[RecordShape, dict[str, Value]] = {}
+        _gather_record_field_values(
+            data=data,
+            shapes_by_id=shapes_by_id,
+            ordered_shapes=ordered_shapes,
+            seen=seen,
+            field_values=field_values,
+        )
+        record_names: dict[RecordShape, str] = {
+            shape: f"{record_prefix}{index}"
+            for index, shape in enumerate(iterable=ordered_shapes)
+        }
+        struct_blocks: list[str] = []
+        for shape in ordered_shapes:
+            block: list[str] = [f"struct {record_names[shape]} {{"]
+            for key in shape.keys:
+                example = field_values[shape].get(key)
+                field_type = _rust_record_field_type(
+                    value=example,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                    record_names=record_names,
+                )
+                block.append(f"    {key}: {field_type},")
+            block.append("}")
+            struct_blocks.append("\n".join(block))
+        return tuple(struct_blocks)
+
+    return _preamble
+
+
+def _gather_record_field_values(  # noqa: C901
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    ordered_shapes: list["RecordShape"],
+    seen: set["RecordShape"],
+    field_values: dict["RecordShape", dict[str, Value]],
+) -> None:
+    """Walk *data* recording the first observed value for each
+    (shape, key) pair, in document order.
+    """
+    match data:
+        case dict() if id(data) in shapes_by_id:
+            shape = shapes_by_id[id(data)]
+            if shape not in seen:  # pragma: no branch
+                seen.add(shape)
+                ordered_shapes.append(shape)
+                field_values[shape] = {}
+            stored = field_values[shape]
+            for key, value in data.items():
+                if not isinstance(key, str):  # pragma: no cover
+                    continue
+                if key in stored:  # pragma: no cover
+                    continue
+                stored[key] = value
+            for value in data.values():
+                _gather_record_field_values(
+                    data=value,
+                    shapes_by_id=shapes_by_id,
+                    ordered_shapes=ordered_shapes,
+                    seen=seen,
+                    field_values=field_values,
+                )
+        case dict():  # pragma: no cover
+            for value in data.values():
+                _gather_record_field_values(
+                    data=value,
+                    shapes_by_id=shapes_by_id,
+                    ordered_shapes=ordered_shapes,
+                    seen=seen,
+                    field_values=field_values,
+                )
+        case list():
+            for item in data:
+                _gather_record_field_values(
+                    data=item,
+                    shapes_by_id=shapes_by_id,
+                    ordered_shapes=ordered_shapes,
+                    seen=seen,
+                    field_values=field_values,
+                )
+        case _:
+            return
 
 
 @beartype
@@ -1276,6 +1561,23 @@ class Rust(metaclass=LanguageCls):
         :attr:`Rust.heterogeneous_value_enum_name`.
         """
 
+        RECORD = _HeterogeneousStrategyConfig(
+            build_behavior=_build_record_behavior,
+            build_preamble=_build_record_preamble,
+        )
+        """Render record-shaped dicts (non-empty, string-keyed) as
+        generated ``struct`` literals.
+
+        Each distinct ordered-key tuple becomes a struct declared in
+        the preamble (``struct Record0 { field: Type, ... }``) and
+        each matching dict in the data renders as a struct literal
+        (``Record0 { field: value, ... }``) rather than a
+        ``HashMap::from([...])`` call.  Useful for inputs whose dict
+        values span multiple Rust scalar types but always share the
+        same field set.  The prefix is configurable via
+        :attr:`Rust.record_struct_name_prefix`.
+        """
+
     heterogeneous_strategies = HeterogeneousStrategies
 
     class VersionFormats(enum.Enum):
@@ -1357,6 +1659,7 @@ class Rust(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_enum_name: str = "Value"
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the ``--edition`` flag in
     # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
@@ -1430,6 +1733,7 @@ class Rust(metaclass=LanguageCls):
             self.heterogeneous_value_enum_name,
             self._heterogeneous_variant_date_type,
             self._heterogeneous_variant_datetime_type,
+            self.record_struct_name_prefix,
         )
 
     @cached_property
@@ -1438,13 +1742,16 @@ class Rust(metaclass=LanguageCls):
 
         For ``HeterogeneousStrategies.TAGGED_ENUM`` emits a minimal
         ``enum`` declaration listing only the variants actually used in
-        heterogeneous positions in the data.  Other strategies produce
-        no preamble.
+        heterogeneous positions in the data.  For
+        ``HeterogeneousStrategies.RECORD`` emits one ``struct``
+        declaration per record shape present in the data.  Other
+        strategies produce no preamble.
         """
         return self.heterogeneous_strategy.value.build_preamble(
             self.heterogeneous_value_enum_name,
             self._heterogeneous_variant_date_type,
             self._heterogeneous_variant_datetime_type,
+            self.record_struct_name_prefix,
         )
 
     @cached_property

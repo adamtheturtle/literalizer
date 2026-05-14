@@ -10,6 +10,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     ListType,
     MixedNumeric,
+    RecordShape,
     WideInt,
     infer_element_type,
 )
@@ -52,6 +53,7 @@ def make_element_to_type(
     dict_type_template: str | None,
     fallback_value_type: str | None,
     wide_int_type: str | None = None,
+    render_record_type: Callable[[RecordShape], str] | None = None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.
@@ -103,6 +105,7 @@ def make_element_to_type(
             list_template=list_template,
             dict_type_template=dict_type_template,
             fallback_value_type=fallback_value_type,
+            render_record_type=render_record_type,
         )
 
     return element_to_type
@@ -143,16 +146,22 @@ def make_narrowed_empty_form(
 
 
 @beartype
-def _resolve_element_to_type(
+def _resolve_element_to_type(  # noqa: PLR0911
     *,
     element_type: type | ListType | DictType,
     scalar_types: dict[type, str],
     list_template: str,
     dict_type_template: str | None,
     fallback_value_type: str | None,
+    render_record_type: Callable[[RecordShape], str] | None = None,
 ) -> str | None:
     """Resolve a Python element type to a language type name."""
     match element_type:
+        case DictType() if (  # pragma: no cover
+            element_type.record_shape is not None
+            and render_record_type is not None
+        ):
+            return render_record_type(element_type.record_shape)
         case DictType():
             if dict_type_template is None:
                 return None
@@ -164,6 +173,7 @@ def _resolve_element_to_type(
                     list_template=list_template,
                     dict_type_template=dict_type_template,
                     fallback_value_type=fallback_value_type,
+                    render_record_type=render_record_type,
                 )
             inner = resolved if resolved is not None else fallback_value_type
             if inner is None:
@@ -176,6 +186,7 @@ def _resolve_element_to_type(
                 list_template=list_template,
                 dict_type_template=dict_type_template,
                 fallback_value_type=fallback_value_type,
+                render_record_type=render_record_type,
             )
             if inner is None:
                 return None

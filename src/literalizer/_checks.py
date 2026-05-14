@@ -188,23 +188,37 @@ def _describe_mixed_type_families(
 
 
 @beartype
-def _has_heterogeneous(*, data: Value) -> bool:
+def _has_heterogeneous(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> bool:
     """Recursively check whether data contains any heterogeneous
     all-scalar collections.
+
+    Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
+    carved out by the active RECORD heterogeneous strategy.
     """
     match data:
         case dict():
             children: list[Value] = list(data.values())
+            own_mixed = id(
+                data
+            ) not in record_dict_ids and _all_scalars_heterogeneous(
+                values=children
+            )
         case list():
             children = data
+            own_mixed = _all_scalars_heterogeneous(values=children)
         case set():
             return _all_scalars_heterogeneous(values=list(data))
         case _:
             return False
 
-    return any(
-        _has_heterogeneous(data=v) for v in children
-    ) or _all_scalars_heterogeneous(values=children)
+    return own_mixed or any(
+        _has_heterogeneous(data=v, record_dict_ids=record_dict_ids)
+        for v in children
+    )
 
 
 @beartype
@@ -311,24 +325,49 @@ def _find_first_mixed_keys(*, data: Value) -> Sequence[Value]:
 
 
 @beartype
-def _has_mixed_dict_values(*, data: Value) -> bool:
+def _has_mixed_dict_values(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> bool:
     """Recursively check whether data contains any dict whose values span
     multiple type families.
+
+    Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
+    carved out by the active RECORD heterogeneous strategy.
     """
     match data:
         case dict():
             values: list[Value] = list(data.values())
-            if _values_mixed_types(values=values):
+            if id(data) not in record_dict_ids and _values_mixed_types(
+                values=values
+            ):
                 return True
-            return any(_has_mixed_dict_values(data=v) for v in values)
+            return any(
+                _has_mixed_dict_values(
+                    data=v,
+                    record_dict_ids=record_dict_ids,
+                )
+                for v in values
+            )
         case list():
-            return any(_has_mixed_dict_values(data=v) for v in data)
+            return any(
+                _has_mixed_dict_values(
+                    data=v,
+                    record_dict_ids=record_dict_ids,
+                )
+                for v in data
+            )
         case _:
             return False
 
 
 @beartype
-def _has_dict_with_unwrappable_value_mix(*, data: Value) -> bool:
+def _has_dict_with_unwrappable_value_mix(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> bool:
     """Recursively check whether data contains any dict whose values span
     multiple type families and at least one value is a container.
 
@@ -339,6 +378,9 @@ def _has_dict_with_unwrappable_value_mix(*, data: Value) -> bool:
     and ``list``) cannot share a single map value type even after the
     wrapping.  The static-typed target rejects the resulting
     heterogeneous map.
+
+    Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
+    carved out by the active RECORD heterogeneous strategy.
     """
     match data:
         case dict():
@@ -346,14 +388,26 @@ def _has_dict_with_unwrappable_value_mix(*, data: Value) -> bool:
             has_container = any(
                 isinstance(v, (list, dict, set)) for v in values
             )
-            if has_container and _values_mixed_types(values=values):
+            if (
+                id(data) not in record_dict_ids
+                and has_container
+                and _values_mixed_types(values=values)
+            ):
                 return True
             return any(
-                _has_dict_with_unwrappable_value_mix(data=v) for v in values
+                _has_dict_with_unwrappable_value_mix(
+                    data=v,
+                    record_dict_ids=record_dict_ids,
+                )
+                for v in values
             )
         case list():
             return any(
-                _has_dict_with_unwrappable_value_mix(data=v) for v in data
+                _has_dict_with_unwrappable_value_mix(
+                    data=v,
+                    record_dict_ids=record_dict_ids,
+                )
+                for v in data
             )
         case _:
             return False
@@ -392,9 +446,13 @@ def _has_heterogeneous_set(*, data: Value) -> bool:
 
 
 @beartype
-def _check_heterogeneous(*, data: Value) -> None:
+def _check_heterogeneous(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> None:
     """Raise if data contains heterogeneous all-scalar collections."""
-    if _has_heterogeneous(data=data):
+    if _has_heterogeneous(data=data, record_dict_ids=record_dict_ids):
         types = _describe_heterogeneous_types(data=data)
         msg = (
             "Collection contains heterogeneous scalar types that cannot "
@@ -445,9 +503,13 @@ def _check_mixed_dict_keys(*, data: Value) -> None:
 
 
 @beartype
-def _check_mixed_dict_values(*, data: Value) -> None:
+def _check_mixed_dict_values(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> None:
     """Raise if any dict has values spanning multiple type families."""
-    if _has_mixed_dict_values(data=data):
+    if _has_mixed_dict_values(data=data, record_dict_ids=record_dict_ids):
         types = _describe_mixed_type_families(
             data=data,
             container_type=dict,
@@ -504,14 +566,25 @@ def check_data(*, data: Value, spec: Language) -> None:
     dict_supports_het = spec.dict_supports_heterogeneous_values
     set_supports_het = spec.set_format_config.supports_heterogeneity
     behavior = spec.heterogeneous_behavior
+    record_dict_ids: frozenset[int] = (
+        frozenset(behavior.compute_record_shapes(data))
+        if behavior.render_record_literal is not None
+        else frozenset()
+    )
     if not dict_supports_het:
         _check_mixed_dict_keys(data=data)
     if not behavior.skip_scalar_checks:
         if not seq_supports_het:
-            _check_heterogeneous(data=data)
+            _check_heterogeneous(
+                data=data,
+                record_dict_ids=record_dict_ids,
+            )
             _check_heterogeneous_sibling_lists(data=data)
         if not dict_supports_het:
-            _check_mixed_dict_values(data=data)
+            _check_mixed_dict_values(
+                data=data,
+                record_dict_ids=record_dict_ids,
+            )
         if not seq_supports_het:
             _check_mixed_list_values(data=data)
         if not set_supports_het:
@@ -524,6 +597,7 @@ def check_data(*, data: Value, spec: Language) -> None:
         # distinct non-scalar families share no map value type either.
         if not dict_supports_het and _has_dict_with_unwrappable_value_mix(
             data=data,
+            record_dict_ids=record_dict_ids,
         ):
             msg = (
                 "Dict has values of mixed type families including a "
