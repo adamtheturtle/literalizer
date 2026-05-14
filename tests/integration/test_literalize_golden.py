@@ -33,6 +33,7 @@ from .case_discovery import (
     build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
+    case_input,
     group_cases_by_language,
     group_combined_cases_by_language,
 )
@@ -68,10 +69,10 @@ def test_golden_file(
     grouped = group_cases_by_language(cases_dir=cases_dir)
     for case_name in grouped.get(lang_cls, []):
         with subtests.test(case_name=case_name):
-            input_path = cases_dir / case_name / "input.yaml"
-            yaml_string = input_path.read_text()
+            input_info = case_input(case_dir=cases_dir / case_name)
+            source_text = input_info.path.read_text(encoding="utf-8")
             golden_path = make_golden_path(
-                parent=input_path.parent,
+                parent=input_info.path.parent,
                 name=lang_name,
                 extension=lang_cls.extension,
                 lang_cls=lang_cls,
@@ -83,8 +84,8 @@ def test_golden_file(
             try:
                 try:
                     result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
+                        source=source_text,
+                        input_format=input_info.input_format,
                         language=spec,
                         pre_indent_level=0,
                         include_delimiters=True,
@@ -93,8 +94,8 @@ def test_golden_file(
                     )
                 except VariableNameNotSupportedError:
                     result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
+                        source=source_text,
+                        input_format=input_info.input_format,
                         language=spec,
                         pre_indent_level=0,
                         include_delimiters=True,
@@ -153,9 +154,11 @@ def test_golden_file_combined_variable_forms(
             case_name=combined_case.case_name,
             golden_file_name=combined_case.golden_file_name,
         ):
-            input_path = cases_dir / combined_case.case_name / "input.yaml"
+            input_info = case_input(
+                case_dir=cases_dir / combined_case.case_name,
+            )
             golden_path = make_golden_path(
-                parent=input_path.parent,
+                parent=input_info.path.parent,
                 name=combined_case.golden_file_name,
                 extension=lang_cls.extension,
                 lang_cls=lang_cls,
@@ -167,11 +170,11 @@ def test_golden_file_combined_variable_forms(
                 ),
                 golden_path=golden_path,
             )
-            yaml_string = input_path.read_text()
+            source_text = input_info.path.read_text(encoding="utf-8")
             try:
                 result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
+                    source=source_text,
+                    input_format=input_info.input_format,
                     language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
@@ -231,7 +234,8 @@ def test_format_variant_golden_file(
         ):
             case_dir = cases_dir / variant_case.case_dir_name
             variant = variant_case.variant
-            yaml_string = (case_dir / "input.yaml").read_text()
+            input_info = case_input(case_dir=case_dir)
+            source_text = input_info.path.read_text(encoding="utf-8")
             golden_path = make_golden_path(
                 parent=case_dir,
                 name=variant_case.variant_name,
@@ -245,8 +249,8 @@ def test_format_variant_golden_file(
             try:
                 try:
                     result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
+                        source=source_text,
+                        input_format=input_info.input_format,
                         language=spec,
                         pre_indent_level=0,
                         include_delimiters=True,
@@ -256,8 +260,8 @@ def test_format_variant_golden_file(
                     )
                 except VariableNameNotSupportedError:
                     result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
+                        source=source_text,
+                        input_format=input_info.input_format,
                         language=spec,
                         pre_indent_level=0,
                         include_delimiters=True,
@@ -298,8 +302,8 @@ def test_statement_terminator_style_combined_variable_forms(
     """Test that combined (declaration + assignment) output with a
     non-default statement terminator matches the golden file.
     """
-    input_path = cases_dir / case.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / case.case_dir_name)
+    source_text = input_info.path.read_text(encoding="utf-8")
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
@@ -309,8 +313,8 @@ def test_statement_terminator_style_combined_variable_forms(
         declaration_style=redef_styles[0],
     )
     result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
+        source=source_text,
+        input_format=input_info.input_format,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -323,7 +327,7 @@ def test_statement_terminator_style_combined_variable_forms(
         extension=spec.extension,
         newline=None,
         golden_path=make_golden_path(
-            parent=input_path.parent,
+            parent=input_info.path.parent,
             name=case.name,
             extension=spec.extension,
             lang_cls=case.lang_cls,
@@ -344,8 +348,8 @@ def test_heterogeneous_strategy_combined_variable_forms(
     """Test that combined (declaration + assignment) output with a
     non-default heterogeneous-scalar strategy matches the golden file.
     """
-    input_path = cases_dir / case.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / case.case_dir_name)
+    source_text = input_info.path.read_text(encoding="utf-8")
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
@@ -355,8 +359,8 @@ def test_heterogeneous_strategy_combined_variable_forms(
         declaration_style=redef_styles[0],
     )
     result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
+        source=source_text,
+        input_format=input_info.input_format,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -369,7 +373,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
         extension=spec.extension,
         newline=None,
         golden_path=make_golden_path(
-            parent=input_path.parent,
+            parent=input_info.path.parent,
             name=case.name,
             extension=spec.extension,
             lang_cls=case.lang_cls,
@@ -395,12 +399,12 @@ def test_pre_indent_level_with_new_variable_golden_file(
     extra spaces between ``=`` and the value and shifting continuation
     lines by an extra indent.
     """
-    input_path = cases_dir / case.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / case.case_dir_name)
+    source_text = input_info.path.read_text(encoding="utf-8")
     spec = make_spec(lang_cls=case.lang_cls)
     result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
+        source=source_text,
+        input_format=input_info.input_format,
         language=spec,
         pre_indent_level=case.pre_indent_level,
         include_delimiters=True,
@@ -416,7 +420,7 @@ def test_pre_indent_level_with_new_variable_golden_file(
         extension=spec.extension,
         newline=None,
         golden_path=make_golden_path(
-            parent=input_path.parent,
+            parent=input_info.path.parent,
             name=case.name,
             extension=spec.extension,
             lang_cls=case.lang_cls,
@@ -443,10 +447,10 @@ def test_no_variable_form_golden_file(
     opt-out languages are rejected upstream with
     :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`.
     """
-    input_path = cases_dir / case.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / case.case_dir_name)
+    source_text = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
-        parent=input_path.parent,
+        parent=input_info.path.parent,
         name=case.name,
         extension=case.lang_cls.extension,
         lang_cls=case.lang_cls,
@@ -456,8 +460,8 @@ def test_no_variable_form_golden_file(
         golden_path=golden_path,
     )
     result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
+        source=source_text,
+        input_format=input_info.input_format,
         language=spec,
         pre_indent_level=0,
         include_delimiters=True,
@@ -492,10 +496,10 @@ def test_indent_golden_file(
     future regression that re-introduces a literal ``"    "`` (or
     two-space, or a tab) cannot pass silently.
     """
-    input_path = cases_dir / case.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / case.case_dir_name)
+    source_text = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
-        parent=input_path.parent,
+        parent=input_info.path.parent,
         name=case.name,
         extension=case.lang_cls.extension,
         lang_cls=case.lang_cls,
@@ -506,8 +510,8 @@ def test_indent_golden_file(
     )
     try:
         result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
+            source=source_text,
+            input_format=input_info.input_format,
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
@@ -516,8 +520,8 @@ def test_indent_golden_file(
         )
     except VariableNameNotSupportedError:
         result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
+            source=source_text,
+            input_format=input_info.input_format,
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,

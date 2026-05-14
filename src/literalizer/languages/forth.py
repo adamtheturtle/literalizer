@@ -15,7 +15,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     format_datetime_epoch,
-    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
@@ -109,6 +108,15 @@ def _format_datetime_forth(value: datetime.datetime) -> str:
 
     Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` ->
     ``s\" 2024-01-15T12:30:00"``.
+    """
+    return f's\\" {value.isoformat()}"'
+
+
+@beartype
+def _format_time_forth(value: datetime.time) -> str:
+    r"""Format a time as a Forth ``s\"`` ISO 8601 string.
+
+    Example: ``datetime.time(9, 30)`` -> ``s\" 09:30:00"``.
     """
     return f's\\" {value.isoformat()}"'
 
@@ -706,7 +714,7 @@ class Forth(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+        return _format_time_forth
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

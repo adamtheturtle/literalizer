@@ -1576,6 +1576,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_dict", suffix="_dict"),
         _ci(case_dir_name="binary", suffix="_binary"),
         _ci(case_dir_name="scalar_string"),
+        _ci(case_dir_name="time_list", suffix="_time"),
     ),
     "string_format_date_cross": (_ci(case_dir_name="scalar_date"),),
     "string_format_datetime_cross": (

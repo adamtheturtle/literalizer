@@ -839,7 +839,12 @@ class ObjectiveC(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+
+        def _format(value: datetime.time) -> str:
+            """Format a time as an Objective-C ``NSString`` literal."""
+            return f"@{format_time_iso(value=value)}"
+
+        return _format
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

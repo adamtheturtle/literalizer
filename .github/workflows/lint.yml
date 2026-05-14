@@ -622,6 +622,8 @@ jobs:
       # fixture. Each fixture re-declares `module Check`; FSI shadows
       # the previous definition, which is fine because the top-level
       # bindings still execute at load time.
+      # ``--langversion:8.0`` matches ``FSharp.language_version`` in
+      # ``src/literalizer/languages/fsharp.py``; keep them in sync.
       - name: Lint FSharp
         run: |-
           find tests/integration/cases \( -name '*.fs' -o -name '*.fsi' \) -print0 > /tmp/files-fs && test -s /tmp/files-fs
@@ -630,7 +632,7 @@ jobs:
             printf '#load "%s"\n' "$(realpath "$f")"
           done < /tmp/files-fs > "$driver"
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
-            dotnet fsi --nologo --exec "$driver"
+            dotnet fsi --nologo --langversion:8.0 --exec "$driver"
 
   lint-sml:
     runs-on: ubuntu-latest
@@ -856,6 +858,8 @@ jobs:
       # suffices; no sed rewriting needed. A generated Main.hs driver
       # imports every fixture qualified and calls its main so one run
       # exercises them all.
+      # ``-XGHC2021`` matches ``Haskell.language_version`` in
+      # ``src/literalizer/languages/haskell.py``; keep them in sync.
       - name: Lint Haskell
         run: |-
           find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell && test -s /tmp/files-haskell
@@ -878,7 +882,7 @@ jobs:
             printf 'main :: IO ()\nmain = do\n'
             cat "$calls"
           } > "$workspace/Main.hs"
-          (cd "$workspace" && ghc -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
+          (cd "$workspace" && ghc -XGHC2021 -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
           "$tmpdir/run"
 
       - name: Lint PureScript
@@ -1118,6 +1122,10 @@ jobs:
       # per fixture. Each fixture already carries a unique object name
       # derived from its case directory and stem, so a plain copy
       # suffices; no sed rewriting needed.
+      #
+      # `-S 3` matches the major version of `Scala.language_version` in
+      # `src/literalizer/languages/scala.py` (`V3`); keep them in sync.
+      # `-S` only accepts the Scala major version, not a point release.
       - name: Run Scala files
         run: |-
           workspace=$(mktemp -d)
@@ -1132,7 +1140,7 @@ jobs:
             printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
-          scala-cli run "$workspace" --main-class __run
+          scala-cli run "$workspace" -S 3 --main-class __run
 
   lint-dart:
     runs-on: ubuntu-latest

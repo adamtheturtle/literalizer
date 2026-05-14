@@ -49,6 +49,7 @@ def make_element_to_type(
     datetime_type: str | None,
     time_type: str | None,
     list_template: str,
+    enable_list_type: bool,
     dict_type_template: str | None,
     fallback_value_type: str | None,
     wide_int_type: str | None = None,
@@ -57,7 +58,10 @@ def make_element_to_type(
     template.
 
     The *list_template* must contain ``{inner}`` which will be replaced
-    with the recursively-resolved inner type name.
+    with the recursively-resolved inner type name.  When
+    *enable_list_type* is ``False`` the resolver returns ``None`` for
+    ``ListType`` so the caller can fall back to a generic value type;
+    *list_template* is then ignored.
 
     When *dict_type_template* is given it must contain ``{inner}``
     and is used to resolve ``DictType`` elements.  *fallback_value_type*
@@ -101,6 +105,7 @@ def make_element_to_type(
             element_type=element_type,
             scalar_types=scalar_types,
             list_template=list_template,
+            enable_list_type=enable_list_type,
             dict_type_template=dict_type_template,
             fallback_value_type=fallback_value_type,
         )
@@ -148,6 +153,7 @@ def _resolve_element_to_type(
     element_type: type | ListType | DictType,
     scalar_types: dict[type, str],
     list_template: str,
+    enable_list_type: bool,
     dict_type_template: str | None,
     fallback_value_type: str | None,
 ) -> str | None:
@@ -162,6 +168,7 @@ def _resolve_element_to_type(
                     element_type=element_type.value_type,
                     scalar_types=scalar_types,
                     list_template=list_template,
+                    enable_list_type=enable_list_type,
                     dict_type_template=dict_type_template,
                     fallback_value_type=fallback_value_type,
                 )
@@ -170,12 +177,17 @@ def _resolve_element_to_type(
                 return None
             return dict_type_template.format(inner=inner)
         case ListType():
-            inner = _resolve_element_to_type(
-                element_type=element_type.inner,
-                scalar_types=scalar_types,
-                list_template=list_template,
-                dict_type_template=dict_type_template,
-                fallback_value_type=fallback_value_type,
+            inner = (
+                _resolve_element_to_type(
+                    element_type=element_type.inner,
+                    scalar_types=scalar_types,
+                    list_template=list_template,
+                    enable_list_type=enable_list_type,
+                    dict_type_template=dict_type_template,
+                    fallback_value_type=fallback_value_type,
+                )
+                if enable_list_type
+                else None
             )
             if inner is None:
                 return None
@@ -415,6 +427,7 @@ class TypedOpenerConfig:
         self,
         *,
         list_template: str | None,
+        enable_list_type: bool,
         date_type: str | None,
         datetime_type: str | None,
         enable_dict_type: bool,
@@ -422,7 +435,10 @@ class TypedOpenerConfig:
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Build an element-to-type resolver.
 
-        If *list_template* is given it overrides the default.
+        If *list_template* is given it overrides the default.  When
+        *enable_list_type* is ``False`` the resolver returns ``None``
+        for ``ListType`` so callers can fall back to a generic value
+        type; *list_template* is then ignored.
         If *date_type* or *datetime_type* is given they override the
         base values.  When *enable_dict_type* is ``False`` the
         resolver will not handle ``DictType``.
@@ -459,6 +475,7 @@ class TypedOpenerConfig:
                 if list_template is not None
                 else self._list_template
             ),
+            enable_list_type=enable_list_type,
             dict_type_template=resolved_template,
             fallback_value_type=(
                 self._fallback_value_type if enable_dict_type else None
@@ -496,6 +513,7 @@ class TypedOpenerConfig:
         """
         seq_resolver = self.element_to_type(
             list_template=None,
+            enable_list_type=True,
             date_type=date_type,
             datetime_type=datetime_type,
             enable_dict_type=True,
@@ -503,6 +521,7 @@ class TypedOpenerConfig:
         )
         dict_set_resolver = self.element_to_type(
             list_template=None,
+            enable_list_type=True,
             date_type=date_type,
             datetime_type=datetime_type,
             enable_dict_type=narrow_dict_values,

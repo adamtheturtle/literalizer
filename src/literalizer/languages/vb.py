@@ -835,6 +835,7 @@ class VisualBasic(metaclass=LanguageCls):
             datetime_type=datetime_type,
             time_type="TimeOnly",
             list_template="{inner}()",
+            enable_list_type=True,
             dict_type_template=None,
             fallback_value_type=None,
         )

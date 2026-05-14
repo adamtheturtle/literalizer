@@ -147,6 +147,7 @@ def _kotlin_list_sequence_open(
     """
     dict_resolver = cfg.element_to_type(
         list_template="List<{inner}>",
+        enable_list_type=True,
         date_type=date_type,
         datetime_type=datetime_type,
         enable_dict_type=True,
@@ -197,6 +198,7 @@ def _kotlin_type_to_opener(
         bytes: "arrayOf(",
         datetime.date: "arrayOf(",
         datetime.datetime: "arrayOf(",
+        datetime.time: "arrayOf(",
     }
     match element_type:
         case DictType():
@@ -997,6 +999,8 @@ class Kotlin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the version flags passed to the Kotlin lint host in
+    # `.github/scripts/lint-kotlin.main.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
 
@@ -1190,6 +1194,7 @@ class Kotlin(metaclass=LanguageCls):
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
                         list_template=None,
+                        enable_list_type=True,
                         date_type=self._date_type_name,
                         datetime_type=self._dt_type_name,
                         enable_dict_type=False,
