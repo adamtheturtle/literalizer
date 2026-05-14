@@ -770,6 +770,26 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         variable_form=literalizer.NewVariable(name="result"),
     ),
     CallCaseConfig(
+        # 27-parameter call exercises the type-variable generators in
+        # languages whose call-stub signatures use one type variable per
+        # parameter past the 26-letter alphabet (Gleam ``a1``, Roc
+        # ``a1``, Rust ``A1``).
+        case_dir_name="call_27_parameters",
+        target_function="process",
+        parameter_names=[f"p{i}" for i in range(27)],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_wrap_in_file_escaped_quote",
         target_function="process",
         parameter_names=["v"],
@@ -849,7 +869,7 @@ class CallCase:
 
 
 @beartype
-def _expected_call_shape_exception(  # noqa: PLR0911
+def _expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseConfig,
@@ -858,30 +878,25 @@ def _expected_call_shape_exception(  # noqa: PLR0911
     this (lang, config) pair, or ``None`` if it should produce output.
     """
     parameter_count = len(config.parameter_names)
-    if parameter_count == 0 and not lang_cls.supports_zero_parameter_calls:
-        return UnsupportedCallShapeError
-    if (
-        config.requires_inline_multiline_dict_args
-        and not lang_cls.supports_inline_multiline_dict_args
-    ):
-        return UnsupportedCallShapeError
-    if (
-        config.requires_call_returns_expression
-        and not lang_cls.call_returns_expression
-    ):
-        return UnsupportedCallShapeError
-    if (
-        config.requires_standalone_wrapped_comments
-        and not lang_cls.supports_standalone_comments_in_wrapped_calls
-    ):
-        return UnsupportedCallShapeError
+    max_params = lang_cls.max_call_parameters
     variable_form_exc = _variable_form_expected_exception(
         lang_cls=lang_cls, variable_form=config.variable_form
     )
     if variable_form_exc is not None:
         return variable_form_exc
     innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
+    unsupported_signals = (
+        parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
+        parameter_count > max_params,
+        config.requires_inline_multiline_dict_args
+        and not lang_cls.supports_inline_multiline_dict_args,
+        config.requires_call_returns_expression
+        and not lang_cls.call_returns_expression,
+        config.requires_standalone_wrapped_comments
+        and not lang_cls.supports_standalone_comments_in_wrapped_calls,
+        innermost_target_function in lang_cls.reserved_identifiers,
+    )
+    if any(unsupported_signals):
         return UnsupportedCallShapeError
     return None
 

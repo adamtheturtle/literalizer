@@ -176,6 +176,9 @@ FORMAT.single-line-if-stmt = false
 MASTER.persistent = true
 # Use multiple processes to speed up Pylint.
 MASTER.jobs = 0
+# Top-level investigation script with intentional ``exec`` and shell
+# fragments in its docstring; not part of the shipped package.
+MASTER.ignore-paths = [ "repro.py" ]
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
 # See https://chezsoi.org/lucas/blog/pylint-strict-base-configuration.html.
@@ -277,6 +280,8 @@ ignore = [
     "CONTRIBUTING.rst",
     "LICENSE",
     "Makefile",
+    "issue.md",
+    "repro.py",
     "ci",
     "ci/**",
     "docs",
@@ -308,6 +313,7 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    "repro.py",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -330,12 +336,14 @@ ignore_errors = true
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
+project-excludes = [ "repro.py" ]
 search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
+    "repro.py",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
@@ -349,6 +357,7 @@ analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
 overrides = []
 environment.extra-paths = [ ".github/scripts" ]
+src.exclude = [ "repro.py" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true

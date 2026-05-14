@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import json
 import re
-import textwrap
 from typing import TYPE_CHECKING, ClassVar
 
 import pytest
@@ -408,45 +407,6 @@ def test_java_list_rejects_null_elements() -> None:
             include_delimiters=True,
             variable_form=None,
         )
-
-
-def test_gleam_call_stub_more_than_26_parameters() -> None:
-    """Gleam type-var generation falls back to numeric suffixes past
-    the 26-letter alphabet.
-
-    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
-    suffix branch, emitting ``z`` for the last single-letter slot and
-    ``a1`` for the next one in the generated stub signature.
-    """
-    parameter_names = [f"p{i}" for i in range(27)]
-    yaml_row = "\n".join(f"  - {i}" for i in range(26))
-    source = f"---\n-\n{yaml_row}\n  - [100]\n"
-    result = literalize_call(
-        source=source,
-        input_format=InputFormat.YAML,
-        language=Gleam(),
-        target_function="process",
-        parameter_names=parameter_names,
-        wrap_in_file=True,
-    )
-    signature_params = ", ".join(
-        f"_p{i}: {chr(ord('a') + i)}" for i in range(26)
-    )
-    int_args = ", ".join(f"GInt({i})" for i in range(26))
-    call_args = f"{int_args}, GList([GInt(100)])"
-    expected = textwrap.dedent(
-        text=f"""\
-        pub type GVal {{
-          GInt(Int)
-          GList(List(GVal))
-        }}
-        pub fn process({signature_params}, _p26: a1) -> Nil {{ Nil }}
-
-        pub fn main() {{
-          process({call_args})
-        }}""",
-    )
-    assert result.code == expected
 
 
 @pytest.mark.parametrize(

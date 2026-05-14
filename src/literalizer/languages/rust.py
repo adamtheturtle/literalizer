@@ -51,6 +51,7 @@ from literalizer._heterogeneous import (
     iter_wrapped_scalars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -591,6 +592,22 @@ def _build_tagged_enum_preamble(
     return _preamble
 
 
+@beartype
+def _rust_type_var(*, index: int) -> str:
+    """Return a unique uppercase identifier for a type parameter.
+
+    Indices ``0``..``25`` map to ``A``..``Z``; higher indices append a
+    numeric suffix (``A1``..``Z1``, ``A2``..``Z2``, ...) so that
+    27-or-more parameter stubs do not overflow the alphabet into
+    non-letter ASCII like ``[``.
+    """
+    letter = chr(ord("A") + index % 26)
+    group = index // 26
+    if group == 0:
+        return letter
+    return f"{letter}{group}"
+
+
 def _rust_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -600,7 +617,7 @@ def _rust_call_stub(
 ) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
     # Use generic type parameters so any argument type is accepted.
-    type_vars = [chr(ord("A") + i) for i in range(len(params))]
+    type_vars = [_rust_type_var(index=i) for i in range(len(params))]
     generic_decl = ", ".join(type_vars)
     if len(parts) == 1:
         param_list = ", ".join(
@@ -700,6 +717,7 @@ class Rust(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_module_name = False

@@ -37,6 +37,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -369,6 +370,22 @@ def _elm_flatten_dotted(parts: Sequence[str]) -> str:
     return first + rest
 
 
+@beartype
+def _elm_type_var(*, index: int) -> str:
+    """Return a unique lowercase identifier for an Elm type variable.
+
+    Indices ``0``..``25`` map to ``a``..``z``; higher indices append a
+    numeric suffix (``a1``..``z1``, ``a2``..``z2``, ...) so that
+    27-or-more parameter stubs do not overflow the alphabet into
+    non-letter ASCII like ``{``.
+    """
+    letter = chr(ord("a") + index % 26)
+    group = index // 26
+    if group == 0:
+        return letter
+    return f"{letter}{group}"
+
+
 def _elm_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -387,7 +404,7 @@ def _elm_call_stub(
     flat_name = _elm_flatten_dotted(parts=parts)
     parameter_count = len(params)
     type_variables = [
-        chr(ord("a") + position) for position in range(parameter_count)
+        _elm_type_var(index=position) for position in range(parameter_count)
     ]
     type_signature = f"{flat_name} : {' -> '.join([*type_variables, '()'])}"
     implementation = f"{flat_name} {' '.join(['_'] * parameter_count)} = ()"
@@ -510,6 +527,7 @@ class Elm(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = False
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
     supports_module_name = False
