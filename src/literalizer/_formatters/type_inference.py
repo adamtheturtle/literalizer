@@ -163,3 +163,18 @@ def infer_element_type(
     if element_types == {int, float}:
         return MixedNumeric
     return None
+
+
+@dataclass(frozen=True)
+class RecordShape:
+    """Immutable signature of a record-shaped dict, suitable for use
+    as a dict key.
+
+    Reserved for the forthcoming ``RECORD`` heterogeneous strategy
+    that will render record-shaped dicts as generated struct literals
+    rather than homogeneous maps.  Two dicts will share a shape when
+    their ordered key tuples are equal; per-key value-type rendering
+    is decided at preamble-build time by each per-language target.
+    """
+
+    keys: tuple[str, ...]
