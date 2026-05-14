@@ -91,6 +91,36 @@ LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
 ]
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CaseInput:
+    """The input file backing a golden-file case."""
+
+    path: Path
+    input_format: literalizer.InputFormat
+
+
+@beartype
+def case_input(*, case_dir: Path) -> _CaseInput:
+    """Return the input file path and its :class:`InputFormat` for a case.
+
+    Cases use ``input.yaml`` by default; cases whose input contains a
+    value the YAML 1.2 spec cannot natively express (currently
+    ``datetime.time``) use ``input.toml`` instead.  A case must carry
+    exactly one of the two: ``test_no_dead_golden_files`` flags a case
+    that carries both because the unused file becomes orphaned.
+    """
+    toml_path = case_dir / "input.toml"
+    if toml_path.exists():
+        return _CaseInput(
+            path=toml_path,
+            input_format=literalizer.InputFormat.TOML,
+        )
+    return _CaseInput(
+        path=case_dir / "input.yaml",
+        input_format=literalizer.InputFormat.YAML,
+    )
+
+
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
     lang_cls: literalizer.LanguageCls,
@@ -154,12 +184,18 @@ def cases_with_non_trivial_dict_keys(
 ) -> frozenset[str]:
     """Return case directory names whose input YAML has dict keys that
     some languages cannot represent (empty or non-printable-ASCII).
+
+    Cases backed by ``input.toml`` are skipped: TOML dict keys are
+    strings only and cannot carry non-printable or empty content.
     """
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
+        input_info = case_input(case_dir=case_dir)
+        if input_info.input_format is not literalizer.InputFormat.YAML:
+            continue
         loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=(case_dir / "input.yaml").read_text(),
+            stream=input_info.path.read_text(),
         )
         if has_non_printable_ascii_dict_keys(data=loaded):
             result.add(case_dir.name)
@@ -188,12 +224,18 @@ def cases_with_special_floats(
 ) -> frozenset[str]:
     """Return case directory names whose input YAML contains a
     non-finite float that some languages cannot produce at runtime.
+
+    Cases backed by ``input.toml`` are skipped: none of the current
+    TOML-backed cases involve non-finite floats.
     """
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
+        input_info = case_input(case_dir=case_dir)
+        if input_info.input_format is not literalizer.InputFormat.YAML:
+            continue
         loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=(case_dir / "input.yaml").read_text(),
+            stream=input_info.path.read_text(),
         )
         if has_special_floats(data=loaded):
             result.add(case_dir.name)

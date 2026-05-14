@@ -13,6 +13,7 @@ from .case_discovery import (
     build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
+    case_input,
     discover_cases,
     discover_combined_cases,
 )
@@ -107,7 +108,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     expected: set[Path] = set()
 
     for case_dir in sorted(cases_dir.iterdir()):
-        expected.add(case_dir / "input.yaml")
+        expected.add(case_input(case_dir=case_dir).path)
 
     for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
         expected.add(

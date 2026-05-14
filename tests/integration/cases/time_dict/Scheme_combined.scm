@@ -1,0 +1,10 @@
+(define my_data (list
+    "morning" "09:30:00"
+    "afternoon" "14:15:00"
+    "evening" "23:59:59"
+))
+(set! my_data (list
+    "morning" "09:30:00"
+    "afternoon" "14:15:00"
+    "evening" "23:59:59"
+))
