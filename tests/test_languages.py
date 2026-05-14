@@ -1071,6 +1071,28 @@ def test_datetime_time_rust_lazy_static_renders() -> None:
     assert "HashMap<&str, &str>" in result.code
 
 
+def test_datetime_time_union_annotation_renders() -> None:
+    """Annotated heterogeneous sequence with a ``datetime.time`` element
+    renders without crashing.
+
+    Covers the ``case datetime.time(): return "time"`` arm of
+    ``_structural_type_id`` in ``_preamble.py``, which only runs when a
+    variable declaration drives ``_has_union_in_type_hints`` to walk a
+    list containing a time scalar.  Delete with the rest of the
+    time-coverage shims once issue #2230 lands.
+    """
+    result = literalize(
+        source="mixed = [[09:30:00], []]\n",
+        input_format=InputFormat.TOML,
+        language=Python(
+            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
+        ),
+        variable_form=NewVariable(name="x"),
+        wrap_in_file=True,
+    )
+    assert result.code
+
+
 def test_format_time_csharp_exact_millisecond_renders() -> None:
     """``new TimeOnly(...)`` handles times whose microseconds are exact ms.
 
