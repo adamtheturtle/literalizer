@@ -24,6 +24,14 @@ Next
   fully qualifies ``System.TimeOnly`` so the rendered output no longer
   emits an ``open System`` line before ``module``.  See #2230.
 
+- :class:`~literalizer.Haskell` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``my_data = make_widget (42)`` without a ``name :: Type``
+  annotation (the call's return type is not known to the renderer).
+  ``wrap_in_file=True`` Haskell scaffolds emit a
+  ``{-# OPTIONS_GHC -Wno-missing-signatures #-}`` pragma so the
+  inferred binding compiles under ``-Wall -Werror``.  See #2244.
+
 - :class:`datetime.time` is now a first-class :type:`Scalar` value.
   Languages with a native time-only type emit native literals
   (Python ``datetime.time(...)``, TOML unquoted ``HH:MM:SS``,

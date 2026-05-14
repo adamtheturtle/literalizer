@@ -593,7 +593,7 @@ class FSharp(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for F#."""
 
-        V6 = enum.auto()
+        V8 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -687,7 +687,9 @@ class FSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    language_version: VersionFormats = VersionFormats.V6
+    # Keep in sync with the `--langversion:` flag passed to the FSharp
+    # linter in `.github/workflows/lint.yml`.
+    language_version: VersionFormats = VersionFormats.V8
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "F"
