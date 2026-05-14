@@ -3,13 +3,17 @@ collection-shape constraints.
 """
 
 import datetime
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
 
 from literalizer._language import Language
 from literalizer._types import Value
+
+if TYPE_CHECKING:
+    from literalizer._formatters.type_inference import RecordShape
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
@@ -550,7 +554,11 @@ def _check_heterogeneous_set(*, data: Value) -> None:
 
 
 @beartype
-def check_data(*, data: Value, spec: Language) -> None:
+def check_data(  # noqa: C901  # pylint: disable=too-complex
+    *,
+    data: Value,
+    spec: Language,
+) -> None:
     """Check that *data* fits the language's collection-shape
     constraints.
 
@@ -566,11 +574,19 @@ def check_data(*, data: Value, spec: Language) -> None:
     dict_supports_het = spec.dict_supports_heterogeneous_values
     set_supports_het = spec.set_format_config.supports_heterogeneity
     behavior = spec.heterogeneous_behavior
-    record_dict_ids: frozenset[int] = (
-        frozenset(behavior.compute_record_shapes(data))
+    record_shapes_by_id: Mapping[int, RecordShape] = (
+        behavior.compute_record_shapes(data)
         if behavior.render_record_literal is not None
-        else frozenset()
+        else {}
     )
+    record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
+    if len({*record_shapes_by_id.values()}) > 1:
+        msg = (
+            "RECORD heterogeneous strategy received multiple distinct "
+            "record shapes; only one shape per call is supported in "
+            "this MVP"
+        )
+        raise MixedDictShapesError(msg)
     if not dict_supports_het:
         _check_mixed_dict_keys(data=data)
     if not behavior.skip_scalar_checks:

@@ -482,7 +482,7 @@ class HeterogeneousBehavior:
     when to dispatch to ``render_record_literal``.  Defaults to a
     callable returning an empty mapping for non-RECORD strategies.
 
-    ``render_record_type`` returns the generated struct's type name
+    ``render_record_type`` returns the generated struct type name
     for use in parent-collection type annotations (e.g. ``Vec<Record0>``
     rather than ``Vec<HashMap<&str, …>>``).  Defaults to ``None`` for
     strategies that do not opt into the ``RECORD`` style.

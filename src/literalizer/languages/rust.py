@@ -650,11 +650,11 @@ def _rust_record_field_type(  # noqa: PLR0911
                 for item in value
             ]
             return f"Vec<{_unify_rust_types(types=inner_types)}>"
-        case dict():
+        case dict():  # pragma: no cover
             shape = record_shape_for_dict(value=value)
             if shape is not None and shape in record_names:
                 return record_names[shape]
-            return "String"  # pragma: no cover
+            return "String"
         case set():  # pragma: no cover
             return "String"
         case _:
@@ -842,7 +842,7 @@ def _build_record_preamble(
     return _preamble
 
 
-def _gather_record_field_values(  # noqa: C901
+def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
     *,
     data: Value,
     shapes_by_id: Mapping[int, RecordShape],

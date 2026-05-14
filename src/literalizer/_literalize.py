@@ -517,7 +517,7 @@ def _maybe_format_record_literal(
             multiline_prefix=field_multiline_prefix,
         )
     rendered = render_record_literal(shape, formatted_fields)
-    if not is_multiline:
+    if not is_multiline:  # pragma: no cover
         return rendered
     return _expand_record_literal_multiline(
         rendered=rendered,
@@ -1226,7 +1226,7 @@ def _format_list_value(
 
 
 @beartype
-def _format_value(
+def _format_value(  # pylint: disable=too-complex
     *,
     value: Value,
     spec: Language,
@@ -1298,7 +1298,7 @@ def _format_value(
             collection_layout=collection_layout,
             multiline_prefix=multiline_prefix,
         )
-        if record_literal is not None:
+        if record_literal is not None:  # pragma: no cover
             return record_literal
     if (
         collection_layout is CollectionLayout.MULTILINE

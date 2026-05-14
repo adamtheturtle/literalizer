@@ -5,6 +5,8 @@ from pathlib import Path
 
 from beartype import beartype
 
+from literalizer.languages.rust import Rust
+
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
@@ -131,8 +133,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         )
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
-
-    from literalizer.languages.rust import Rust  # noqa: PLC0415
 
     for case_dir_name in RUST_RECORD_CASE_DIRS:
         expected.add(

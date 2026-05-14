@@ -290,7 +290,7 @@ class CombinedCase:
 
 @functools.cache
 @beartype
-def discover_combined_cases(  # noqa: C901
+def discover_combined_cases(  # noqa: C901  # pylint: disable=too-complex
     cases_dir: Path,
 ) -> list[CombinedCase]:
     """Return combined test cases for all redefinition-supporting
