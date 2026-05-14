@@ -279,7 +279,15 @@ def _java_common_element_type(
     double_t = "double"
     if unique == {int_type, double_t}:
         return "Double" if boxed else "double"
+    # int + long → long (integer-width widening for mixed-magnitude
+    # int collections, e.g. ``{1, 1099511627776}``)
+    if unique == {"int", "long"}:
+        return "Long" if boxed else "long"
     return "Object"
+
+
+_JAVA_I32_MIN = -(2**31)
+_JAVA_I32_MAX = 2**31 - 1
 
 
 @beartype
@@ -295,7 +303,12 @@ def _java_scalar_hint(
         case bool():
             hint = "boolean"
         case int():
-            hint = int_type
+            if int_type == "int" and not (
+                _JAVA_I32_MIN <= data <= _JAVA_I32_MAX
+            ):
+                hint = "long"
+            else:
+                hint = int_type
         case float():
             hint = "double"
         case str() | bytes():
@@ -1377,6 +1390,19 @@ class Java(metaclass=LanguageCls):
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``L``-suffixed integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        base_int_formatter = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=make_long_suffix_formatter(base=base_int_formatter),
+            fallback=_format_java_biginteger_literal,
+        )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

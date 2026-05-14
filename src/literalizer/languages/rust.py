@@ -289,7 +289,6 @@ def _format_typed_declaration(
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
-    set_format_type_annotation: Callable[[str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
 ) -> str:
@@ -310,13 +309,26 @@ def _format_typed_declaration(
         )
         raise IncompatibleFormatsError(msg)
 
+    def _reject_set(_element_type: str) -> str:
+        """Reject set data for ``CONST`` / ``STATIC``.
+
+        Rust's ``HashSet::from`` and ``BTreeSet::from`` are runtime
+        calls, so neither produces a constant-expression initializer.
+        """
+        msg = (
+            f"Rust {keyword.upper()} requires a constant-expression "
+            f"initializer, but the set format produces a runtime "
+            f"::from([…]) call which is not a constant expression."
+        )
+        raise IncompatibleFormatsError(msg)
+
     type_annotation = _rust_type_annotation(
         data=data,
         date_type=date_type,
         datetime_type=datetime_type,
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
-        set_format_type_annotation=set_format_type_annotation,
+        set_format_type_annotation=_reject_set,
         dict_format_type_annotation=_reject_dict,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
@@ -1025,7 +1037,6 @@ class Rust(metaclass=LanguageCls):
                     sequence_supports_heterogeneity=(
                         sequence_supports_heterogeneity
                     ),
-                    set_format_type_annotation=set_format_type_annotation,
                     default_sequence_element_type=(
                         default_sequence_element_type
                     ),

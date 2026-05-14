@@ -39,6 +39,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    make_long_suffix_formatter,
     make_overflow_fallback_formatter,
     make_unsigned_overflow_fallback,
 )
@@ -679,6 +680,19 @@ class VisualBasic(metaclass=LanguageCls):
         )
 
     @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``L``-suffixed integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        return make_overflow_fallback_formatter(
+            base=make_long_suffix_formatter(base=str),
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_format_vb_ulong_positive,
+                language_name="VB.NET",
+            ),
+        )
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -809,6 +823,7 @@ class VisualBasic(metaclass=LanguageCls):
             str_type="String",
             bool_type="Boolean",
             int_type="Integer",
+            wide_int_type="Long",
             float_type="Double",
             mixed_numeric_type="Double",
             bytes_type="String",

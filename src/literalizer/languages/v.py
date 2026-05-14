@@ -93,6 +93,7 @@ _v_element_to_type = make_element_to_type(
     str_type="string",
     bool_type="bool",
     int_type="int",
+    wide_int_type="i64",
     float_type="f64",
     bytes_type="string",
     mixed_numeric_type="string",
@@ -999,6 +1000,22 @@ class V(metaclass=LanguageCls):
             fallback=i64_or_u64_fallback,
             min_value=_V_I32_MIN,
             max_value=_V_I32_MAX,
+        )
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``i64(...)``-cast integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=_make_v_i64_formatter(base=base),
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_format_v_u64_positive,
+                language_name="V",
+            ),
         )
 
     @cached_property
