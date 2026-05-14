@@ -801,6 +801,7 @@ class Go(metaclass=LanguageCls):
             datetime_type=datetime_type,
             time_type="string",
             list_template="[]{inner}",
+            enable_list_type=True,
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
         )

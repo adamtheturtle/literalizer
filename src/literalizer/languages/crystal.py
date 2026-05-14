@@ -100,6 +100,7 @@ _crystal_narrowed_empty_form = make_narrowed_empty_form(
         datetime_type="String",
         time_type="String",
         list_template="Array({inner})",
+        enable_list_type=True,
         dict_type_template="Hash(String, {inner})",
         fallback_value_type="String",
     ),
