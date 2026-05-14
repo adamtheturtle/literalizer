@@ -1540,16 +1540,21 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # ``test -s`` guards against the version tag drifting from these
+      # patterns and silently dropping every fixture; see the
+      # ``Python.VersionFormats`` enum in
+      # ``src/literalizer/languages/python.py``.
       - name: Find Python 3.8 golden files
         shell: bash
-        run: find tests/integration/cases -name 'Python_version_py38.py' -print0 >
-          /tmp/files-python38
+        run: find tests/integration/cases -name 'Python_version_py38@py38.py' -print0
+          > /tmp/files-python38 && test -s /tmp/files-python38
       - name: Run Python 3.8 golden files
         run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.8 --no-project python <
           /tmp/files-python38
       - name: Find default Python golden files
         shell: bash
-        run: find tests/integration/cases -name 'Python.py' -print0 > /tmp/files-python
+        run: find tests/integration/cases -name 'Python@py39.py' -print0 > /tmp/files-python
+          && test -s /tmp/files-python
       - name: Run default Python golden files
         run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.13 --no-project python <
           /tmp/files-python
