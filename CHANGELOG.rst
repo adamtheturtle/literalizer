@@ -4,13 +4,6 @@ Changelog
 Next
 ----
 
-- Golden-file fixtures under ``tests/integration/cases/`` now embed a
-  ``@<version>`` tag derived from each language's ``VersionFormats``
-  enum member name (e.g. ``Python@py_3_12.py``, ``Gleam@v1.gleam``).
-  The integration tests loop over ``lang_cls.version_formats`` so
-  adding a second member to a language's enum automatically produces a
-  parallel set of golden files.
-
 - :class:`~literalizer.Haskell` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (42)`` without a ``name :: Type``
