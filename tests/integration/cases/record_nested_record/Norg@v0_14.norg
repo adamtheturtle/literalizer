@@ -1,0 +1,7 @@
+* my_data
+@code json
+{
+    "id": 1,
+    "owner": {"name": "Alice", "age": 30}
+}
+@end

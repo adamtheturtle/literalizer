@@ -580,13 +580,15 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
         else {}
     )
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
-    if len({*record_shapes_by_id.values()}) > 1:
+    if behavior.render_record_literal is not None and _has_mixed_dict_shapes(
+        data=data
+    ):
         msg = (
-            "RECORD heterogeneous strategy received multiple distinct "
-            "record shapes; only one shape per call is supported in "
-            "this MVP"
+            "Sibling list contains dicts with different record shapes; "
+            "the RECORD heterogeneous strategy cannot represent a "
+            "heterogeneous sequence of record shapes"
         )
-        raise MixedDictShapesError(msg)
+        raise HeterogeneousSiblingListsError(msg)
     if not dict_supports_het:
         _check_mixed_dict_keys(data=data)
     if not behavior.skip_scalar_checks:

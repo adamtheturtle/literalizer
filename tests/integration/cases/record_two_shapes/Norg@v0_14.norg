@@ -1,0 +1,7 @@
+* my_data
+@code json
+{
+    "metrics": {"count": 100, "rate": 50},
+    "flags": {"retries": 3, "timeout": 30}
+}
+@end
