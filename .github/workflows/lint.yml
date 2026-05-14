@@ -1501,7 +1501,8 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name 'Python.py' -print0 > /tmp/files-python
       - name: Run default Python golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python < /tmp/files-python
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.13 --no-project python <
+          /tmp/files-python
 
   lint-racket:
     runs-on: ubuntu-latest
