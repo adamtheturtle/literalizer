@@ -11,9 +11,6 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._language import Language
 from literalizer._types import Value
-
-if TYPE_CHECKING:
-    from literalizer._formatters.type_inference import RecordShape
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
@@ -23,6 +20,9 @@ from literalizer.exceptions import (
     MixedDictValuesError,
     MixedListValuesError,
 )
+
+if TYPE_CHECKING:
+    from literalizer._formatters.type_inference import RecordShape
 
 
 @beartype
