@@ -963,6 +963,7 @@ def _build_preamble_setup(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
+    integer_format: enum.Enum,
     is_explicit: bool,
     type_name: str,
     constructor_prefix: str,
@@ -985,6 +986,17 @@ def _build_preamble_setup(
             datetime_format=datetime_format,
             extra=str_extra,
         )
+    # Binary integer literals (``0b...``) are not Haskell 2010; require
+    # the ``BinaryLiterals`` extension whenever the BINARY integer
+    # format is selected. Hex (``0x``) and octal (``0o``) are standard.
+    if integer_format.name == "BINARY":
+        scalar_preamble = {
+            **scalar_preamble,
+            int: (
+                *scalar_preamble.get(int, ()),
+                "{-# LANGUAGE BinaryLiterals #-}",
+            ),
+        }
     return _PreambleSetup(
         scalar_preamble=scalar_preamble,
         compute_body_preamble=_build_scalar_body_preamble(
@@ -1769,6 +1781,7 @@ class Haskell(metaclass=LanguageCls):
         return _build_preamble_setup(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            integer_format=self.integer_format,
             is_explicit=self._string_fmts.is_explicit,
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
