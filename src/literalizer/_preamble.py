@@ -315,7 +315,7 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
             assert_never(unreachable)
 
 
-def _has_union_in_type_hints(*, data: Value) -> bool:  # noqa: PLR0911
+def _has_union_in_type_hints(*, data: Value) -> bool:
     """Return ``True`` if the Python type hints for *data* would contain
     a union (``Union[A, B]`` or ``A | B``).
 
@@ -325,8 +325,6 @@ def _has_union_in_type_hints(*, data: Value) -> bool:  # noqa: PLR0911
     """
     match data:
         case list():
-            if not _needs_annotation(val=data):
-                return False  # pragma: no cover
             merged = _list_merge_dicts(elements=data)
             type_ids = list(
                 dict.fromkeys(_structural_type_id(value=e) for e in merged)
@@ -335,8 +333,6 @@ def _has_union_in_type_hints(*, data: Value) -> bool:  # noqa: PLR0911
                 return True
             return any(_has_union_in_type_hints(data=e) for e in merged)
         case dict():
-            if not _needs_annotation(val=data):
-                return False  # pragma: no cover
             if data:
                 val_ids = list(
                     dict.fromkeys(

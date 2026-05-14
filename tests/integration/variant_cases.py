@@ -1622,7 +1622,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             for case_dir_name, _ in discover_cases(cases_dir=_CASES_DIR)
         )
     ),
-    "language_version_cross_dict_type": (_ci(case_dir_name="empty_dict"),),
+    "language_version_cross_dict_type": (
+        _ci(case_dir_name="empty_dict"),
+        _ci(case_dir_name="empty_ordered_map"),
+    ),
 }
 
 

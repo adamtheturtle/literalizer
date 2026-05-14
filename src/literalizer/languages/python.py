@@ -613,7 +613,7 @@ def _build_type_hint_preamble_py38(
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
         if not imports:
-            return ()  # pragma: no cover
+            return ()
         return (f"from typing import {', '.join(sorted(imports))}",)
 
     return _preamble
