@@ -24,7 +24,8 @@ Next
   :class:`~literalizer.VisualBasic`, :class:`~literalizer.FSharp`,
   :class:`~literalizer.Zig`, :class:`~literalizer.Odin`,
   :class:`~literalizer.Nim`, :class:`~literalizer.D`,
-  :class:`~literalizer.TypeScript`), and the languages whose value
+  :class:`~literalizer.TypeScript`,
+  :class:`~literalizer.JavaScript`), and the languages whose value
   ADTs do not currently model non-string keys
   (:class:`~literalizer.OCaml`, :class:`~literalizer.Sml`,
   :class:`~literalizer.R`).

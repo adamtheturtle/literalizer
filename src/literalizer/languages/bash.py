@@ -134,12 +134,9 @@ def _bash_validate_dict_keys(data: Value) -> None:
     match data:
         case dict():
             for raw_key in data:
-                if isinstance(raw_key, str):
-                    rendered_key = raw_key
-                elif isinstance(raw_key, bytes):
-                    rendered_key = ""
-                else:
-                    rendered_key = f"{raw_key}"
+                rendered_key = (
+                    raw_key if isinstance(raw_key, str) else f"{raw_key!r}"
+                )
                 if (
                     not rendered_key
                     or not rendered_key.isprintable()
