@@ -221,6 +221,7 @@ def _make_cpp_element_to_type(
     int_type: str,
     date_type: str | None,
     datetime_type: str | None,
+    time_type: str | None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
@@ -232,6 +233,7 @@ def _make_cpp_element_to_type(
         bytes_type="std::string",
         date_type=date_type,
         datetime_type=datetime_type,
+        time_type=time_type,
         list_template="std::vector<{inner}>",
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
@@ -269,6 +271,7 @@ class _CppTypeCtx:
     int_resolver: _IntTypeResolver
     date_type: str | None
     datetime_type: str | None
+    time_type: str | None
 
     def element_to_type(
         self,
@@ -280,6 +283,7 @@ class _CppTypeCtx:
             int_type=int_type,
             date_type=self.date_type,
             datetime_type=self.datetime_type,
+            time_type=self.time_type,
         )
 
 
@@ -1569,6 +1573,7 @@ class Cpp(metaclass=LanguageCls):
             int_resolver=self.numeric_literal_suffix.int_resolver,
             date_type=self._cpp_date_type,
             datetime_type=self._cpp_datetime_type,
+            time_type="std::string",
         )
 
     @cached_property

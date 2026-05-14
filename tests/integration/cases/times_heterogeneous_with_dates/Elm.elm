@@ -9,5 +9,5 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("vals", EList [EStr "2024-01-15", "09:30:00"])
+    ("vals", EList [EStr "2024-01-15", EStr "09:30:00"])
     ]

@@ -70,7 +70,7 @@ def test_golden_file(
     for case_name in grouped.get(lang_cls, []):
         with subtests.test(case_name=case_name):
             input_info = case_input(case_dir=cases_dir / case_name)
-            source_text = input_info.path.read_text()
+            source_text = input_info.path.read_text(encoding="utf-8")
             golden_path = make_golden_path(
                 parent=input_info.path.parent,
                 name=lang_name,
@@ -170,7 +170,7 @@ def test_golden_file_combined_variable_forms(
                 ),
                 golden_path=golden_path,
             )
-            source_text = input_info.path.read_text()
+            source_text = input_info.path.read_text(encoding="utf-8")
             try:
                 result = literalizer.literalize(
                     source=source_text,
@@ -235,7 +235,7 @@ def test_format_variant_golden_file(
             case_dir = cases_dir / variant_case.case_dir_name
             variant = variant_case.variant
             input_info = case_input(case_dir=case_dir)
-            source_text = input_info.path.read_text()
+            source_text = input_info.path.read_text(encoding="utf-8")
             golden_path = make_golden_path(
                 parent=case_dir,
                 name=variant_case.variant_name,
@@ -303,7 +303,7 @@ def test_statement_terminator_style_combined_variable_forms(
     non-default statement terminator matches the golden file.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
-    source_text = input_info.path.read_text()
+    source_text = input_info.path.read_text(encoding="utf-8")
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
@@ -349,7 +349,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
     non-default heterogeneous-scalar strategy matches the golden file.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
-    source_text = input_info.path.read_text()
+    source_text = input_info.path.read_text(encoding="utf-8")
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
@@ -400,7 +400,7 @@ def test_pre_indent_level_with_new_variable_golden_file(
     lines by an extra indent.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
-    source_text = input_info.path.read_text()
+    source_text = input_info.path.read_text(encoding="utf-8")
     spec = make_spec(lang_cls=case.lang_cls)
     result = literalizer.literalize(
         source=source_text,
@@ -448,7 +448,7 @@ def test_no_variable_form_golden_file(
     :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
-    source_text = input_info.path.read_text()
+    source_text = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
         parent=input_info.path.parent,
         name=case.name,
@@ -497,7 +497,7 @@ def test_indent_golden_file(
     two-space, or a tab) cannot pass silently.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
-    source_text = input_info.path.read_text()
+    source_text = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
         parent=input_info.path.parent,
         name=case.name,

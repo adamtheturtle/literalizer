@@ -7,7 +7,7 @@ Val : [
 
 my_data : Val
 my_data = RDict [
-    ("morning", "09:30:00"),
-    ("afternoon", "14:15:00"),
-    ("evening", "23:59:59"),
+    ("morning", RStr "09:30:00"),
+    ("afternoon", RStr "14:15:00"),
+    ("evening", RStr "23:59:59"),
     ]

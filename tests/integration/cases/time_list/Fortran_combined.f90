@@ -20,7 +20,7 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('times', flist([fval_t :: "09:30:00", "17:45:00", "23:59:59"])) &
+        fentry('times', flist([fval_t :: fstr("09:30:00"), fstr("17:45:00"), fstr("23:59:59")])) &
     ])
 end subroutine main_declaration
 
@@ -29,7 +29,7 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('times', flist([fval_t :: "09:30:00", "17:45:00", "23:59:59"])) &
+        fentry('times', flist([fval_t :: fstr("09:30:00"), fstr("17:45:00"), fstr("23:59:59")])) &
     ])
 end subroutine main_assignment
 

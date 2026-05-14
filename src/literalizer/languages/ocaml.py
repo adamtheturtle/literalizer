@@ -98,6 +98,8 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
             tag = "Str"
         case datetime.datetime() if formatted.lstrip("-").isdigit():
             tag = "Int"
+        case datetime.time() if formatted.startswith('"'):
+            tag = "Str"
         case datetime.date() if formatted.startswith('"'):
             tag = "Str"
         case _:

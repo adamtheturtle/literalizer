@@ -124,6 +124,26 @@ def _build_gleam_date_iso(
 
 
 @beartype
+def _apply_gleam_str_wrapped_time(value: datetime.time, prefix: str) -> str:
+    """Format a time as a Gleam string via ISO 8601."""
+    return f"{prefix}Str({format_time_iso(value=value)})"
+
+
+def _build_gleam_time_iso(
+    prefix: str,
+) -> Callable[[datetime.time], str]:
+    """Build a time formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    def _format(value: datetime.time) -> str:
+        """Delegate to module-level implementation."""
+        return _apply_gleam_str_wrapped_time(value=value, prefix=prefix)
+
+    return _format
+
+
+@beartype
 def _apply_gleam_str_wrapped_datetime(
     value: datetime.datetime, prefix: str
 ) -> str:
@@ -1156,7 +1176,7 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+        return _build_gleam_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

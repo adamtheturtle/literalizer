@@ -401,6 +401,7 @@ class CSharp(metaclass=LanguageCls):
         bytes_type="string",
         date_type="DateOnly",
         datetime_type="DateTime",
+        time_type="TimeOnly",
         list_template="{inner}[]",
         sequence_opener_template="new {type_name}[] {{",
         dict_opener_template="new Dictionary<{key_type}, {type_name}> {{",
@@ -1021,6 +1022,7 @@ class CSharp(metaclass=LanguageCls):
         return cfg.build(
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
+            time_type=None,
             set_opener_template=(
                 self._base_set_format_config.set_opener_template or None
             ),
@@ -1096,6 +1098,7 @@ class CSharp(metaclass=LanguageCls):
                         list_template=None,
                         date_type=cfg.type_name(py_type=self._date_tp),
                         datetime_type=cfg.type_name(py_type=self._dt_tp),
+                        time_type=None,
                         enable_dict_type=False,
                         dict_key_type=self.default_dict_key_type,
                     ),

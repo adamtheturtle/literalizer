@@ -195,7 +195,7 @@ def cases_with_non_trivial_dict_keys(
         if input_info.input_format is not literalizer.InputFormat.YAML:
             continue
         loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=input_info.path.read_text(),
+            stream=input_info.path.read_text(encoding="utf-8"),
         )
         if has_non_printable_ascii_dict_keys(data=loaded):
             result.add(case_dir.name)
@@ -235,7 +235,7 @@ def cases_with_special_floats(
         if input_info.input_format is not literalizer.InputFormat.YAML:
             continue
         loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=input_info.path.read_text(),
+            stream=input_info.path.read_text(encoding="utf-8"),
         )
         if has_special_floats(data=loaded):
             result.add(case_dir.name)

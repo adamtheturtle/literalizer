@@ -12,14 +12,14 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .map = &.{
-        .{ .key = "morning", .val = "09:30:00" },
-        .{ .key = "afternoon", .val = "14:15:00" },
-        .{ .key = "evening", .val = "23:59:59" },
+        .{ .key = "morning", .val = .{ .str = "09:30:00" } },
+        .{ .key = "afternoon", .val = .{ .str = "14:15:00" } },
+        .{ .key = "evening", .val = .{ .str = "23:59:59" } },
     }};
     my_data = .{ .map = &.{
-        .{ .key = "morning", .val = "09:30:00" },
-        .{ .key = "afternoon", .val = "14:15:00" },
-        .{ .key = "evening", .val = "23:59:59" },
+        .{ .key = "morning", .val = .{ .str = "09:30:00" } },
+        .{ .key = "afternoon", .val = .{ .str = "14:15:00" } },
+        .{ .key = "evening", .val = .{ .str = "23:59:59" } },
     }};
     my_data = .nil;
 }

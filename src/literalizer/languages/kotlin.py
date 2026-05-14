@@ -149,6 +149,7 @@ def _kotlin_list_sequence_open(
         list_template="List<{inner}>",
         date_type=date_type,
         datetime_type=datetime_type,
+        time_type=None,
         enable_dict_type=True,
         dict_key_type=dict_key_type,
     )
@@ -546,6 +547,7 @@ class Kotlin(metaclass=LanguageCls):
         mixed_numeric_type=None,
         date_type="LocalDate",
         datetime_type="LocalDateTime",
+        time_type="LocalTime",
         list_template="Array<{inner}>",
         sequence_opener_template="arrayOf(",
         dict_opener_template="mapOf<{key_type}, {type_name}>(",
@@ -1168,6 +1170,7 @@ class Kotlin(metaclass=LanguageCls):
         openers = self._opener_config.build(
             date_type=self._date_type_name,
             datetime_type=self._dt_type_name,
+            time_type=None,
             set_opener_template=base.set_opener_template or None,
             narrow_dict_values=False,
             dict_key_type=self.default_dict_key_type,
@@ -1191,6 +1194,7 @@ class Kotlin(metaclass=LanguageCls):
                         list_template=None,
                         date_type=self._date_type_name,
                         datetime_type=self._dt_type_name,
+                        time_type=None,
                         enable_dict_type=False,
                         dict_key_type=self.default_dict_key_type,
                     ),

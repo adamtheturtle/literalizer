@@ -6,7 +6,7 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
 let my_data : val_t = OMap [
-    ("vals", OList [ODate (2024, 1, 15); "09:30:00"])
+    ("vals", OList [ODate (2024, 1, 15); OStr "09:30:00"])
 ]
 
 end

@@ -20,9 +20,9 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('morning', "09:30:00"), &
-        fentry('afternoon', "14:15:00"), &
-        fentry('evening', "23:59:59") &
+        fentry('morning', fstr("09:30:00")), &
+        fentry('afternoon', fstr("14:15:00")), &
+        fentry('evening', fstr("23:59:59")) &
     ])
 end subroutine main_declaration
 
@@ -31,9 +31,9 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('morning', "09:30:00"), &
-        fentry('afternoon', "14:15:00"), &
-        fentry('evening', "23:59:59") &
+        fentry('morning', fstr("09:30:00")), &
+        fentry('afternoon', fstr("14:15:00")), &
+        fentry('evening', fstr("23:59:59")) &
     ])
 end subroutine main_assignment
 

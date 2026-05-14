@@ -1695,6 +1695,16 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self._string_fmts.is_explicit:
+            _str_pfx = f"{self.constructor_prefix}Str "
+
+            def _explicit_time(value: datetime.time) -> str:
+                """Wrap a bare ISO time literal with the HStr
+                constructor.
+                """
+                return f"{_str_pfx}{format_time_iso(value=value)}"
+
+            return _explicit_time
         return format_time_iso
 
     @cached_property

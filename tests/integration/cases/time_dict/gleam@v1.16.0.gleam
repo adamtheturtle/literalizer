@@ -4,9 +4,9 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
-    #("morning", "09:30:00"),
-    #("afternoon", "14:15:00"),
-    #("evening", "23:59:59"),
+    #("morning", GStr("09:30:00")),
+    #("afternoon", GStr("14:15:00")),
+    #("evening", GStr("23:59:59")),
   ])
   let _ = my_data
 }

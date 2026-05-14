@@ -116,7 +116,7 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             )
         case datetime.datetime() if formatted.startswith(f"{prefix}Int"):
             return formatted
-        case str() | bytes() | datetime.date():
+        case str() | bytes() | datetime.date() | datetime.time():
             return (
                 f"{prefix}Str (string ({formatted}))"
                 if formatted.startswith("System.")
@@ -1006,7 +1006,7 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble."""
-        return {datetime.time: ("open System",)}
+        return {}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
@@ -1036,6 +1036,7 @@ class FSharp(metaclass=LanguageCls):
                 f_str,
                 f"    | {p}Date of System.DateTime",
             ),
+            datetime.time: (header, f_str),
             datetime.datetime: (
                 (header, f"    | {p}Int of int64")
                 if self.datetime_format.value.type_produced is int

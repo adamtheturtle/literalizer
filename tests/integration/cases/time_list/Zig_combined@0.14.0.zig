@@ -12,10 +12,10 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .map = &.{
-        .{ .key = "times", .val = .{ .arr = &.{"09:30:00", "17:45:00", "23:59:59"}} },
+        .{ .key = "times", .val = .{ .arr = &.{.{ .str = "09:30:00" }, .{ .str = "17:45:00" }, .{ .str = "23:59:59" }}} },
     }};
     my_data = .{ .map = &.{
-        .{ .key = "times", .val = .{ .arr = &.{"09:30:00", "17:45:00", "23:59:59"}} },
+        .{ .key = "times", .val = .{ .arr = &.{.{ .str = "09:30:00" }, .{ .str = "17:45:00" }, .{ .str = "23:59:59" }}} },
     }};
     my_data = .nil;
 }

@@ -124,6 +124,7 @@ def _list_sequence_open(
                 list_template="List[{inner}]",
                 date_type=date_type,
                 datetime_type=datetime_type,
+                time_type=None,
                 enable_dict_type=True,
             ),
             opener_template="List[{type_name}](",
@@ -269,6 +270,7 @@ class Scala(metaclass=LanguageCls):
         bytes_type="String",
         date_type="LocalDate",
         datetime_type="ZonedDateTime",
+        time_type="LocalTime",
         list_template="Array[{inner}]",
         sequence_opener_template="Array[{type_name}](",
         dict_opener_template="Map[String, {type_name}](",
@@ -811,6 +813,7 @@ class Scala(metaclass=LanguageCls):
         return self._opener_config.build(
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
+            time_type=None,
             set_opener_template=(
                 self.set_format.value.set_opener_template or None
             ),
@@ -854,6 +857,7 @@ class Scala(metaclass=LanguageCls):
                         list_template=None,
                         date_type=self._date_type_name,
                         datetime_type=self._datetime_type_name,
+                        time_type=None,
                         enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,

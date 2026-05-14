@@ -1,4 +1,3 @@
-open System
 module Main
 
 type Val =
@@ -7,12 +6,12 @@ type Val =
     | FMap of (string * Val) list
 let private _mainDeclaration () =
     let mutable my_data: Val = FMap [
-        ("times", FList [TimeOnly(9, 30, 0); TimeOnly(17, 45, 0); TimeOnly(23, 59, 59)])
+        ("times", FList [FStr (string (System.TimeOnly(9, 30, 0))); FStr (string (System.TimeOnly(17, 45, 0))); FStr (string (System.TimeOnly(23, 59, 59)))])
     ]
     ignore my_data
 
 let private _mainAssignment () =
     let my_data: Val = FMap [
-        ("times", FList [TimeOnly(9, 30, 0); TimeOnly(17, 45, 0); TimeOnly(23, 59, 59)])
+        ("times", FList [FStr (string (System.TimeOnly(9, 30, 0))); FStr (string (System.TimeOnly(17, 45, 0))); FStr (string (System.TimeOnly(23, 59, 59)))])
     ]
     ignore my_data

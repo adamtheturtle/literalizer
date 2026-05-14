@@ -379,6 +379,7 @@ class Dart(metaclass=LanguageCls):
         bytes_type="String",
         date_type="DateTime",
         datetime_type="DateTime",
+        time_type="String",
         list_template="List<{inner}>",
         sequence_opener_template="<{type_name}>[",
         dict_opener_template="<{key_type}, {type_name}>{{",
@@ -990,6 +991,7 @@ class Dart(metaclass=LanguageCls):
         return cfg.build(
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
+            time_type=None,
             set_opener_template=None,
             narrow_dict_values=True,
             dict_key_type=self.default_dict_key_type,

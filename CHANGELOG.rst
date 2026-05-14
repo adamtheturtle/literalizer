@@ -4,6 +4,26 @@ Changelog
 Next
 ----
 
+- The integration golden-file harness now accepts ``input.toml`` next to
+  the existing ``input.yaml`` for cases whose input contains a value
+  YAML 1.2 cannot natively express (currently :class:`datetime.time`).
+  New ``time_list``, ``time_dict``, and ``times_heterogeneous_with_dates``
+  golden cases give every supported language end-to-end coverage of
+  ``datetime.time`` rendering, which surfaced and fixed several
+  preexisting bugs in time emission: tagged-union languages
+  (:class:`~literalizer.Elm`, :class:`~literalizer.OCaml`,
+  :class:`~literalizer.Roc`, :class:`~literalizer.Gleam`,
+  :class:`~literalizer.Haskell`, :class:`~literalizer.Zig`,
+  :class:`~literalizer.Sml`, :class:`~literalizer.Ada`,
+  :class:`~literalizer.Fortran`, :class:`~literalizer.ObjectiveC`)
+  now wrap a fallback ISO 8601 time inside the value-type constructor
+  the same way they wrap other scalars; collection type inference
+  (C++, C#, Java, Kotlin, Scala, Dart, Go, Visual Basic, and others)
+  now knows about :class:`datetime.time` and narrows homogeneous
+  collections to the correct element type; and :class:`~literalizer.FSharp`
+  fully qualifies ``System.TimeOnly`` so the rendered output no longer
+  emits an ``open System`` line before ``module``.  See #2230.
+
 - :class:`datetime.time` is now a first-class :type:`Scalar` value.
   Languages with a native time-only type emit native literals
   (Python ``datetime.time(...)``, TOML unquoted ``HH:MM:SS``,
