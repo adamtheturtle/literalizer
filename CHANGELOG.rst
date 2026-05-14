@@ -13,9 +13,9 @@ Next
   :class:`~literalizer.Java`, :class:`~literalizer.Kotlin`,
   :class:`~literalizer.Scala`, :class:`~literalizer.Groovy`); other
   languages fall back to the existing ISO 8601 quoted-string form.
-  TOML ``time`` inputs now round-trip losslessly through
-  :class:`~literalizer.Toml` instead of being re-emitted as a quoted
-  string.
+  TOML ``time`` inputs now round-trip through
+  :class:`~literalizer.Toml` as native time literals instead of being
+  re-emitted as quoted ISO 8601 strings.
 
 - :class:`~literalizer.Fortran`'s ``language_version`` default is now
   ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the
