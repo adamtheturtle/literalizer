@@ -1108,7 +1108,7 @@ class Haskell(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1760,6 +1760,32 @@ class Haskell(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return self._decl_fmts.format_variable_assignment
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration prepends a ``name :: Type``
+        annotation derived from the bound value's runtime tagged-enum
+        type; a call expression has no such tag, so the annotation is
+        omitted and Haskell infers the call's return type instead.
+        """
+        return self.declaration_style.value.formatter
+
+    @staticmethod
+    def format_call_binding_file_pragmas() -> tuple[str, ...]:
+        """File-level pragmas emitted alongside a ``wrap_in_file``
+        scaffold whose top level contains an inference-bound call
+        result.
+
+        Without an explicit signature the binding trips
+        ``-Wmissing-signatures`` under ``-Wall -Werror``; the
+        literalizer cannot synthesize a signature because the call's
+        return type is not known at render time.
+        """
+        return ("{-# OPTIONS_GHC -Wno-missing-signatures #-}",)
 
     @cached_property
     def _preamble(self) -> _PreambleSetup:
