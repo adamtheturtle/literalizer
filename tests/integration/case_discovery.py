@@ -96,6 +96,7 @@ RUST_RECORD_CASE_DIRS: frozenset[str] = frozenset(
         "rust_record_basic",
         "rust_record_pure_scalars",
         "rust_record_nested_container",
+        "rust_record_sequence",
     },
 )
 """Case directories exercised exclusively by the Rust ``RECORD``

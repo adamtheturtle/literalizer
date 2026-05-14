@@ -636,6 +636,11 @@ def _rust_record_field_type(  # noqa: PLR0911
     type.  Nested record fields use the corresponding generated struct
     name (when *record_names* maps a matching shape).
     """
+    # The ``case []`` / ``case dict()`` / ``case set()`` branches are
+    # reserved for shapes the MVP does not exercise: empty-list fields,
+    # nested records (#2234), and set-valued fields (out of scope for
+    # this issue).  They fall back to ``String`` so the preamble still
+    # type-checks structurally.
     match value:
         case []:  # pragma: no cover
             return "Vec<String>"
@@ -702,26 +707,18 @@ def _build_record_behavior(
             name_cache[shape] = f"{record_prefix}{len(name_cache)}"
         return shapes_by_id
 
-    def _record_name_for(shape: RecordShape) -> str:
-        """Return the struct name assigned by the latest
-        ``_compute_shapes`` call.
-        """
-        if shape not in name_cache:  # pragma: no cover
-            name_cache[shape] = f"{record_prefix}{len(name_cache)}"
-        return name_cache[shape]
-
-    def _render_type(shape: RecordShape) -> str:  # pragma: no cover
-        """Return the Rust struct name for *shape*."""
-        return _record_name_for(shape=shape)
-
     def _render_literal(
         shape: RecordShape,
         fields: Mapping[str, str],
     ) -> str:
-        """Render a record-shape dict as a Rust struct literal."""
-        name = _record_name_for(shape=shape)
+        """Render a record-shape dict as a Rust struct literal.
+
+        ``_compute_shapes`` always runs first via ``check_data`` and
+        populates ``name_cache`` for every shape in the data, so the
+        lookup here cannot miss.
+        """
         body = ", ".join(f"{key}: {fields[key]}" for key in shape.keys)
-        return f"{name} {{ {body} }}"
+        return f"{name_cache[shape]} {{ {body} }}"
 
     return HeterogeneousBehavior(
         skip_scalar_checks=False,
@@ -731,7 +728,6 @@ def _build_record_behavior(
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
-        render_record_type=_render_type,
     )
 
 
@@ -768,7 +764,7 @@ def _accumulate_ordered_shapes(
         case dict():
             if id(data) in shapes_by_id:
                 shape = shapes_by_id[id(data)]
-                if shape not in seen:  # pragma: no branch
+                if shape not in seen:
                     seen.add(shape)
                     ordered.append(shape)
             for value in data.values():
@@ -842,7 +838,7 @@ def _build_record_preamble(
     return _preamble
 
 
-def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
+def _gather_record_field_values(  # pylint: disable=too-complex
     *,
     data: Value,
     shapes_by_id: Mapping[int, RecordShape],
@@ -856,17 +852,20 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
     match data:
         case dict() if id(data) in shapes_by_id:
             shape = shapes_by_id[id(data)]
-            if shape not in seen:  # pragma: no branch
+            if shape not in seen:
                 seen.add(shape)
                 ordered_shapes.append(shape)
                 field_values[shape] = {}
+            # Iterate ``shape.keys`` (guaranteed strings) rather than
+            # ``data.items()`` to keep ``stored``'s ``dict[str, ...]``
+            # type without isinstance narrowing.  First occurrence wins,
+            # so later same-shape siblings don't overwrite the example
+            # values used for type inference.
             stored = field_values[shape]
-            for key, value in data.items():
-                if not isinstance(key, str):  # pragma: no cover
+            for key in shape.keys:
+                if key in stored:
                     continue
-                if key in stored:  # pragma: no cover
-                    continue
-                stored[key] = value
+                stored[key] = data[key]
             for value in data.values():
                 _gather_record_field_values(
                     data=value,
@@ -876,6 +875,8 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
                     field_values=field_values,
                 )
         case dict():  # pragma: no cover
+            # Non-record dicts (empty or non-string-keyed) sitting next
+            # to record dicts are a #2234 / out-of-MVP shape.
             for value in data.values():
                 _gather_record_field_values(
                     data=value,

@@ -28,16 +28,10 @@ class DictType:
     ``values`` is the flattened sequence of dict values used to infer
     ``value_type``; callers can reuse it to derive a language-specific
     type (e.g. ``std::variant``) without re-walking the source items.
-    ``record_shape`` is the shared :class:`RecordShape` of the dicts
-    when every dict in the sequence is record-eligible and shares the
-    same ordered keys.  Languages with a RECORD heterogeneous strategy
-    use this to substitute a generated struct name for the homogeneous
-    map type.
     """
 
     value_type: "type | ListType | DictType | None"
     values: "tuple[Value, ...]" = field(compare=False)
-    record_shape: "RecordShape | None" = field(default=None, compare=False)
 
 
 class MixedNumeric:
@@ -137,33 +131,10 @@ def _resolve_single_type(
         return DictType(
             value_type=value_type,
             values=tuple(all_dict_values),
-            record_shape=_shared_record_shape(items=items),
         )
     if the_type is int and _int_needs_widening(items=items):
         return WideInt
     return the_type
-
-
-@beartype
-def _shared_record_shape(*, items: list[Value]) -> "RecordShape | None":
-    """Return the common :class:`RecordShape` for *items*.
-
-    Returns ``None`` unless every item is a record-eligible dict that
-    shares the same ordered keys.
-    """
-    # Caller (``_resolve_single_type``) only invokes this when the
-    # element type is ``dict``, so every item is a non-ordered dict.
-    shapes: set[RecordShape] = set()
-    for item in items:
-        if not isinstance(item, dict):  # pragma: no cover
-            return None
-        shape = record_shape_for_dict(value=item)
-        if shape is None:
-            return None
-        shapes.add(shape)
-    if len(shapes) != 1:
-        return None
-    return next(iter(shapes))
 
 
 @beartype
@@ -217,12 +188,14 @@ def record_shape_for_dict(
     """Return the :class:`RecordShape` of *value*, or ``None`` if the
     dict is not record-eligible.
 
-    A dict is record-eligible when it is a plain ``dict`` (not a ruamel
-    ordered map), is non-empty, and every key is a ``str``.
+    A dict is record-eligible when it is non-empty and every key is a
+    ``str``.  Callers must filter out ruamel ordered maps before
+    calling this helper.
     """
-    if isinstance(value, _ordereddict):  # pragma: no cover
-        return None
-    if not value:
+    # Defensive branches: every Rust RECORD fixture passes non-empty
+    # string-keyed dicts here, but the walker also calls this helper
+    # on nested dicts of arbitrary shape that may not be record-eligible.
+    if not value:  # pragma: no cover
         return None
     str_keys: list[str] = []
     for key in value:
@@ -250,6 +223,8 @@ def _accumulate_record_shapes(  # pylint: disable=too-complex
     """Recursively add record shapes for record-eligible dicts in
     *data*.
     """
+    # ``Value``-typed sets only contain scalars (see ``literalizer._types``)
+    # so there's no need to walk into them.
     match data:
         case dict() if not isinstance(data, _ordereddict):
             shape = record_shape_for_dict(value=data)
@@ -261,9 +236,6 @@ def _accumulate_record_shapes(  # pylint: disable=too-complex
             for v in data.values():
                 _accumulate_record_shapes(data=v, out=out)
         case list():
-            for v in data:
-                _accumulate_record_shapes(data=v, out=out)
-        case set():  # pragma: no cover
             for v in data:
                 _accumulate_record_shapes(data=v, out=out)
         case _:

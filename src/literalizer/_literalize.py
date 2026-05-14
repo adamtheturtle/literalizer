@@ -499,11 +499,10 @@ def _maybe_format_record_literal(
     is_multiline = collection_layout is CollectionLayout.MULTILINE
     body_prefix = multiline_prefix + spec.indent if is_multiline else ""
     field_multiline_prefix = body_prefix if is_multiline else multiline_prefix
-    formatted_fields: dict[str, str] = {}
-    for key in shape.keys:
-        if key not in value:  # pragma: no cover
-            continue
-        formatted_fields[key] = _format_value(
+    # ``shape.keys`` is built from ``value.keys()`` so every key is
+    # present in *value*.
+    formatted_fields: dict[str, str] = {
+        key: _format_value(
             value=value[key],
             spec=spec,
             dict_open_override=None,
@@ -516,8 +515,10 @@ def _maybe_format_record_literal(
             collection_layout=collection_layout,
             multiline_prefix=field_multiline_prefix,
         )
+        for key in shape.keys
+    }
     rendered = render_record_literal(shape, formatted_fields)
-    if not is_multiline:  # pragma: no cover
+    if not is_multiline:
         return rendered
     return _expand_record_literal_multiline(
         rendered=rendered,
@@ -535,18 +536,15 @@ def _expand_record_literal_multiline(
 ) -> str:
     """Expand a single-line record literal into multiline form.
 
-    Splits ``Name { f1: v1, f2: v2 }`` into one entry per line indented
-    under *body_prefix* with the closing ``}`` on its own line under
-    *close_prefix*.  Returns *rendered* unchanged when it does not
-    match the expected single-line shape.
+    Splits ``Name { f1: v1, f2: v2 }`` (always produced with at least
+    one field by ``render_record_literal`` because record-eligible
+    dicts are non-empty) into one entry per line indented under
+    *body_prefix* with the closing ``}`` on its own line under
+    *close_prefix*.
     """
-    open_idx = rendered.find("{")
-    if not rendered.endswith("}") or open_idx == -1:  # pragma: no cover
-        return rendered
+    open_idx = rendered.index("{")
     head = rendered[: open_idx + 1]
     body = rendered[open_idx + 1 : -1].strip()
-    if not body:  # pragma: no cover
-        return rendered
     entries = _split_record_entries(body=body)
     indented = [f"{body_prefix}{entry.strip()}," for entry in entries]
     return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}}}"
@@ -556,6 +554,11 @@ def _expand_record_literal_multiline(
 def _split_record_entries(*, body: str) -> list[str]:
     """Split a record-literal body on commas that are not inside
     brackets or quotes.
+
+    *body* is the inner text of ``Name { ... }`` for a record with at
+    least one field, so the loop always produces a non-empty trailing
+    entry after the last comma (or the whole body when there are no
+    top-level commas).
     """
     entries: list[str] = []
     depth = 0
@@ -578,9 +581,7 @@ def _split_record_entries(*, body: str) -> list[str]:
                 last = index + 1
             case _:
                 pass
-    tail = body[last:].strip().rstrip(",")
-    if tail:  # pragma: no branch
-        entries.append(tail)
+    entries.append(body[last:].strip().rstrip(","))
     return [e for e in entries if e.strip()]
 
 
@@ -1298,7 +1299,7 @@ def _format_value(  # pylint: disable=too-complex
             collection_layout=collection_layout,
             multiline_prefix=multiline_prefix,
         )
-        if record_literal is not None:  # pragma: no cover
+        if record_literal is not None:
             return record_literal
     if (
         collection_layout is CollectionLayout.MULTILINE

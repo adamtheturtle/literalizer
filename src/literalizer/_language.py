@@ -477,15 +477,8 @@ class HeterogeneousBehavior:
     mapping from ``id(dict)`` to :class:`RecordShape` for every dict
     the strategy will render as a record literal.  Used by
     :func:`~literalizer._checks.check_data` to carve record-eligible
-    dicts out of the heterogeneous-values checks and by the dispatch
-    in :func:`~literalizer._literalize._format_dict_value` to decide
-    when to dispatch to ``render_record_literal``.  Defaults to a
+    dicts out of the heterogeneous-values checks.  Defaults to a
     callable returning an empty mapping for non-RECORD strategies.
-
-    ``render_record_type`` returns the generated struct type name
-    for use in parent-collection type annotations (e.g. ``Vec<Record0>``
-    rather than ``Vec<HashMap<&str, …>>``).  Defaults to ``None`` for
-    strategies that do not opt into the ``RECORD`` style.
 
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
@@ -502,7 +495,6 @@ class HeterogeneousBehavior:
     compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]] = (
         dataclasses.field(default_factory=lambda: _no_compute_record_shapes)
     )
-    render_record_type: Callable[[RecordShape], str] | None = None
 
 
 def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
@@ -511,8 +503,12 @@ def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
 
 
 def _no_compute_record_shapes(_data: Value, /) -> Mapping[int, RecordShape]:
-    """Return an empty record-shape mapping — used by non-RECORD
+    """Return an empty record-shape mapping — default for non-RECORD
     strategies.
+
+    ``check_data`` skips this call when ``render_record_literal`` is
+    ``None`` so the body never runs in practice; it exists to keep the
+    behavior's API uniform.
     """
     return {}  # pragma: no cover
 
