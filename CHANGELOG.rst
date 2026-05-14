@@ -4,16 +4,15 @@ Changelog
 Next
 ----
 
-- Golden-file integration tests now support version-tagged variants:
-  a golden named ``{stem}@{version}{extension}`` (e.g.
-  ``Odin@dev-2026-05.odin``) shadows the base when the active language
-  version registered in ``tests/integration/language_versions.py``
-  matches.  CI lint jobs for the registered languages (Elixir, Erlang,
-  Gleam, Kotlin, Odin, Zig) discover fixtures via
+- Golden files for languages whose compiler version is pinned (Elixir,
+  Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the
+  filename: ``{stem}@{version}{extension}`` (e.g.
+  ``Odin@dev-2026-04.odin``).  Every fixture is explicitly tied to the
+  compiler version it was generated against; the pinned version lives
+  in ``tests/integration/language_versions.py``.  CI lint jobs
+  discover fixtures via
   ``python -m tests.integration.list_fixtures <Language> <.ext>`` so
-  each job only compiles variants valid under the pinned release.
-  Lets one fixture diverge across compiler versions without forking
-  every case.
+  each job only compiles fixtures generated under its pinned release.
 
 - :class:`~literalizer.Fortran`'s ``language_version`` default is now
   ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the

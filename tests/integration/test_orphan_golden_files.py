@@ -176,33 +176,14 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     return expected
 
 
-@beartype
-def _unversioned(path: Path) -> Path:
-    """Strip a ``@version`` suffix from *path*'s stem if present.
-
-    A variant ``Odin@dev-2026-05.odin`` collapses to its base
-    ``Odin.odin`` so the orphan check treats both forms as the same
-    logical fixture.
-    """
-    stem = path.stem
-    at_index = stem.rfind("@")
-    if at_index == -1:
-        return path
-    return path.with_name(name=stem[:at_index] + path.suffix)
-
-
 def test_no_dead_golden_files(cases_dir: Path) -> None:
     """Every file under ``cases/`` must be referenced by a parameterized
     test.  Orphaned golden files silently rot and waste repository space.
     """
-    expected = {
-        _unversioned(path=path)
-        for path in _expected_golden_files(cases_dir=cases_dir)
-    }
+    expected = _expected_golden_files(cases_dir=cases_dir)
     actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
         os.path.relpath(path=path, start=cases_dir)
-        for path in actual
-        if _unversioned(path=path) not in expected
+        for path in actual - expected
     )
     assert not dead_files

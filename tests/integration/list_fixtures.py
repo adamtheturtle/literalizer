@@ -1,12 +1,11 @@
-"""Print null-byte-separated fixture paths for a language, filtered by
-the pinned compiler version.
+"""Print null-byte-terminated fixture paths for a language.
 
 Each CI lint job that compiles per-language fixtures shells out to
 this script instead of ``find``.  When the language is registered in
-:data:`LANGUAGE_VERSIONS` the script keeps a ``{stem}@{version}{ext}``
-variant in place of the base file and drops variants tagged for any
-other version, so the lint job only sees code valid under the pinned
-release.
+:data:`LANGUAGE_VERSIONS` the script keeps only fixtures whose stem
+ends with ``@{pinned-version}`` so the lint job sees exactly the
+fixtures generated against its compiler pin; unregistered languages
+get every fixture with the requested extension.
 
 Lives next to ``language_versions.py`` for natural relative import;
 invoked from CI as
@@ -29,18 +28,12 @@ def main(language: str, extension: str) -> int:
     existed.  The script must be invoked from the repository root.
     """
     version = LANGUAGE_VERSIONS.get(language)
-    paths: list[Path] = []
-    for path in sorted(CASES_DIR.rglob(pattern=f"*{extension}")):
-        stem = path.stem
-        if "@" in stem:
-            if version is None or not stem.endswith(f"@{version}"):
-                continue
-        elif (
-            version is not None
-            and path.with_name(name=f"{stem}@{version}{extension}").is_file()
-        ):
-            continue
-        paths.append(path)
+    suffix = f"@{version}{extension}" if version is not None else extension
+    paths = sorted(
+        path
+        for path in CASES_DIR.rglob(pattern=f"*{extension}")
+        if path.name.endswith(suffix)
+    )
     sys.stdout.buffer.write(b"".join(f"{p}".encode() + b"\0" for p in paths))
     return 0
 

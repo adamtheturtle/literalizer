@@ -168,22 +168,17 @@ def make_golden_path(
     file name is mapped down.
 
     Languages registered in
-    ``language_versions.LANGUAGE_VERSIONS`` prefer a version-tagged
-    variant ``{stem}@{version}{extension}`` when one exists on disk,
-    falling back to the base file otherwise.  This lets a single
-    fixture diverge across compiler versions without forking every
-    case.
+    ``language_versions.LANGUAGE_VERSIONS`` always resolve to a
+    version-tagged path ``{stem}@{version}{extension}`` so every
+    fixture is explicitly tied to the compiler version it was
+    generated against.
     """
-    filename = name + extension
+    version = LANGUAGE_VERSIONS.get(lang_cls.__name__)
+    stem = f"{name}@{version}" if version is not None else name
+    filename = stem + extension
     if lang_cls.__name__ == Gleam.__name__:
         filename = filename.lower()
-    base_path = parent / filename
-    version = LANGUAGE_VERSIONS.get(lang_cls.__name__)
-    if version is not None:
-        versioned = parent / f"{base_path.stem}@{version}{extension}"
-        if versioned.is_file():
-            return versioned
-    return base_path
+    return parent / filename
 
 
 @functools.cache
