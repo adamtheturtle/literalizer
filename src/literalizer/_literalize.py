@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
@@ -550,6 +550,20 @@ def _expand_record_literal_multiline(
     return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}}}"
 
 
+@dataclasses.dataclass(frozen=True)
+class _StringScanStep:
+    r"""One step of scanning inside a string literal.
+
+    *in_string* is the currently-open quote character (or ``None`` if
+    the literal just closed).  *skip_next* is ``True`` when the next
+    char must be skipped because it is the second half of a ``\X``
+    escape sequence.
+    """
+
+    in_string: str | None
+    skip_next: bool
+
+
 @beartype
 def _split_record_entries(*, body: str) -> list[str]:
     """Split a record-literal body on commas that are not inside
@@ -561,35 +575,56 @@ def _split_record_entries(*, body: str) -> list[str]:
     top-level commas).
     """
     entries: list[str] = []
+    last = 0
+    for index in _depth_zero_comma_indices(body=body):
+        entries.append(body[last:index])
+        last = index + 1
+    entries.append(body[last:].strip().rstrip(","))
+    return [e for e in entries if e.strip()]
+
+
+@beartype
+def _depth_zero_comma_indices(*, body: str) -> Iterator[int]:
+    r"""Yield indices of commas in *body* that are at bracket depth zero
+    and outside any string literal.
+
+    Treats ``\\`` inside a string literal as an escape so embedded
+    escaped quotes do not prematurely close string tracking.
+    """
     depth = 0
     in_string: str | None = None
-    last = 0
     skip_next = False
     for index, char in enumerate(iterable=body):
         if skip_next:
             skip_next = False
-            continue
-        if in_string is not None:
-            if char == "\\":
-                skip_next = True
-                continue
-            if char == in_string:
-                in_string = None
-            continue
-        match char:
-            case '"' | "'":
-                in_string = char
-            case "(" | "[" | "{":
-                depth += 1
-            case ")" | "]" | "}":
-                depth -= 1
-            case "," if depth == 0:
-                entries.append(body[last:index])
-                last = index + 1
-            case _:
-                pass
-    entries.append(body[last:].strip().rstrip(","))
-    return [e for e in entries if e.strip()]
+        elif in_string is not None:
+            step = _advance_string_state(char=char, quote=in_string)
+            in_string = step.in_string
+            skip_next = step.skip_next
+        elif char in {'"', "'"}:
+            in_string = char
+        elif char in {"(", "[", "{"}:
+            depth += 1
+        elif char in {")", "]", "}"}:
+            depth -= 1
+        elif char == "," and depth == 0:
+            yield index
+
+
+@beartype
+def _advance_string_state(
+    *,
+    char: str,
+    quote: str,
+) -> _StringScanStep:
+    """Return the next ``(in_string, skip_next)`` state inside a string
+    literal, given the current quote and next char.
+    """
+    if char == "\\":
+        return _StringScanStep(in_string=quote, skip_next=True)
+    if char == quote:
+        return _StringScanStep(in_string=None, skip_next=False)
+    return _StringScanStep(in_string=quote, skip_next=False)
 
 
 @beartype
