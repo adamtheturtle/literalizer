@@ -8,11 +8,11 @@ Next
   Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the
   filename: ``{stem}@{version}{extension}`` (e.g.
   ``Odin@dev-2026-04.odin``).  Every fixture is explicitly tied to the
-  compiler version it was generated against; the pinned version lives
-  in ``tests/integration/language_versions.py``.  CI lint jobs
-  discover fixtures via
-  ``python -m tests.integration.list_fixtures <Language> <.ext>`` so
-  each job only compiles fixtures generated under its pinned release.
+  compiler version it was generated against.  Each ``lint.yml`` job
+  defines the pin once at the job-env level and feeds it to both the
+  install action and ``python -m tests.integration.list_fixtures``;
+  the test code auto-discovers the same version from sibling
+  filenames so no separate registry file is needed.
 
 - :class:`~literalizer.Fortran`'s ``language_version`` default is now
   ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the

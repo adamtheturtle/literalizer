@@ -23,7 +23,31 @@ from literalizer.languages import (
     Scala,
 )
 
-from .language_versions import LANGUAGE_VERSIONS
+
+@functools.cache
+@beartype
+def _language_versions(*, cases_dir: Path) -> dict[str, str]:
+    """Discover ``{LanguageClass.__name__: version}`` from on-disk
+    filenames.
+
+    A fixture named ``{stem}@{version}{extension}`` records the
+    compiler version it was generated against.  The first ``@``-tagged
+    fixture encountered for a language fixes that language's active
+    version; ``test_no_dead_golden_files`` ensures every other fixture
+    for that language agrees.
+    """
+    lookup = {cls.__name__: cls for cls in ALL_LANGUAGES} | {
+        cls.__name__.lower(): cls for cls in ALL_LANGUAGES
+    }
+    versions: dict[str, str] = {}
+    for path in cases_dir.rglob(pattern="*"):
+        stem = path.stem
+        if "@" not in stem:
+            continue
+        lang_part, version = stem.rsplit(sep="@", maxsplit=1)
+        prefix = lang_part.split(sep="_", maxsplit=1)[0]
+        versions[lookup[prefix].__name__] = version
+    return versions
 
 
 @beartype
@@ -167,13 +191,13 @@ def make_golden_path(
     casing in pytest test IDs and error messages; only the on-disk
     file name is mapped down.
 
-    Languages registered in
-    ``language_versions.LANGUAGE_VERSIONS`` always resolve to a
-    version-tagged path ``{stem}@{version}{extension}`` so every
-    fixture is explicitly tied to the compiler version it was
-    generated against.
+    Languages with version-tagged fixtures on disk resolve to a
+    versioned path ``{stem}@{version}{extension}``; the version is
+    discovered from sibling files (see ``_language_versions``)
+    so the workflow's compiler pin remains the single source of truth.
     """
-    version = LANGUAGE_VERSIONS.get(lang_cls.__name__)
+    versions = _language_versions(cases_dir=parent.parent)
+    version = versions.get(lang_cls.__name__)
     stem = f"{name}@{version}" if version is not None else name
     filename = stem + extension
     if lang_cls.__name__ == Gleam.__name__:

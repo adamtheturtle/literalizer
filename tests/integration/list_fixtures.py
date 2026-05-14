@@ -1,34 +1,23 @@
-"""Print null-byte-terminated fixture paths for a language.
+"""Print null-byte-terminated fixture paths for a CI lint job.
 
-Each CI lint job that compiles per-language fixtures shells out to
-this script instead of ``find``.  When the language is registered in
-:data:`LANGUAGE_VERSIONS` the script keeps only fixtures whose stem
-ends with ``@{pinned-version}`` so the lint job sees exactly the
-fixtures generated against its compiler pin; unregistered languages
-get every fixture with the requested extension.
+Each per-language lint workflow shells out to this script instead of
+``find``.  The script keeps only fixtures whose stem ends with
+``@<version>`` so the lint job sees exactly the fixtures generated
+under its compiler pin.
 
-Lives next to ``language_versions.py`` for natural relative import;
-invoked from CI as
-``python -m tests.integration.list_fixtures <Language> <.ext>``.
+Invoked from CI as
+``python -m tests.integration.list_fixtures <.ext> <version>``.
 """
 
 import sys
 from pathlib import Path
 
-from .language_versions import LANGUAGE_VERSIONS
-
 CASES_DIR = Path("tests/integration/cases")
 
 
-def main(language: str, extension: str) -> int:
-    """Emit fixture paths for *language* with *extension*.
-
-    Paths are reported relative to the repository root, matching what
-    ``find tests/integration/cases ...`` produced before this script
-    existed.  The script must be invoked from the repository root.
-    """
-    version = LANGUAGE_VERSIONS.get(language)
-    suffix = f"@{version}{extension}" if version is not None else extension
+def main(extension: str, version: str) -> int:
+    """Emit fixture paths matching *extension* and *version*."""
+    suffix = f"@{version}{extension}"
     paths = sorted(
         path
         for path in CASES_DIR.rglob(pattern=f"*{extension}")
@@ -39,4 +28,4 @@ def main(language: str, extension: str) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(language=sys.argv[1], extension=sys.argv[2]))
+    sys.exit(main(extension=sys.argv[1], version=sys.argv[2]))
