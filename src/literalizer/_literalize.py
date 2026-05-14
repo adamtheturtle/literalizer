@@ -564,8 +564,15 @@ def _split_record_entries(*, body: str) -> list[str]:
     depth = 0
     in_string: str | None = None
     last = 0
+    skip_next = False
     for index, char in enumerate(iterable=body):
+        if skip_next:
+            skip_next = False
+            continue
         if in_string is not None:
+            if char == "\\":
+                skip_next = True
+                continue
             if char == in_string:
                 in_string = None
             continue
