@@ -65,6 +65,12 @@ class MixedDictValuesError(HeterogeneousCollectionError):
     """
 
 
+class MixedDictKeysError(HeterogeneousCollectionError):
+    """Raised when a dict has keys spanning multiple type families
+    and the target language requires homogeneous dict keys.
+    """
+
+
 class MixedListValuesError(HeterogeneousCollectionError):
     """Raised when a list has elements spanning multiple type families
     and the target language requires homogeneous list elements.
