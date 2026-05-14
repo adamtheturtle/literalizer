@@ -6,7 +6,6 @@ Rust's ``TAGGED_ENUM`` strategy on inputs the default ``ERROR``
 strategy rejects).
 """
 
-import dataclasses
 from pathlib import Path
 
 import pytest
@@ -18,7 +17,7 @@ from .call_cases import (
     run_call_golden_case,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
-from .language_specs import make_spec
+from .language_specs import make_spec, spec_with_version
 
 
 @pytest.mark.parametrize(
@@ -96,9 +95,9 @@ def test_call_variant_golden_file(
     lang_cls = call_variant_case.variant.lang_cls
     for version_format in lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):
-            versioned_spec = dataclasses.replace(
-                call_variant_case.variant.spec,
-                language_version=version_format,
+            versioned_spec = spec_with_version(
+                spec=call_variant_case.variant.spec,
+                version=version_format,
             )
             run_call_golden_case(
                 config=call_variant_case.config,

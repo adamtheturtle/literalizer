@@ -240,3 +240,31 @@ def make_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),
     )
+
+
+@beartype
+def spec_with_version(
+    *,
+    spec: literalizer.Language,
+    version: enum.Enum,
+) -> literalizer.Language:
+    """Return *spec* with its ``language_version`` replaced by *version*.
+
+    Wraps :func:`dataclasses.replace` for use on
+    :class:`literalizer.Language` values, whose Protocol type does not
+    statically satisfy the ``DataclassInstance`` constraint that
+    ``dataclasses.replace`` requires.  Every concrete language is a
+    dataclass at runtime, so the call is valid; the helper hides the
+    type-checker noise behind one local cast.
+    """
+    kwargs_dict: dict[str, object] = {
+        field.name: getattr(spec, field.name)
+        for field in dataclasses.fields(spec)  # pyright: ignore[reportArgumentType]
+        if field.init
+    }
+    kwargs_dict["language_version"] = version
+    lang_cls: literalizer.LanguageCls = type(spec)  # pyright: ignore[reportAssignmentType]
+    return cached_spec(
+        lang_cls=lang_cls,
+        kwargs_items=frozenset(kwargs_dict.items()),
+    )

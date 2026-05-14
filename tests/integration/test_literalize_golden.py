@@ -12,7 +12,6 @@ produces a parallel set of golden files; today the enum has a single
 member so the loop runs once per language and case.
 """
 
-import dataclasses
 from pathlib import Path
 
 import pytest
@@ -49,6 +48,7 @@ from .language_specs import (
     make_golden_path,
     make_spec,
     sorted_languages,
+    spec_with_version,
     with_per_fixture_module_name,
 )
 from .variant_cases import (
@@ -263,9 +263,9 @@ def test_format_variant_golden_file(
                     lang_cls=lang_cls,
                     version=version_format,
                 )
-                versioned_spec = dataclasses.replace(
-                    variant.spec,
-                    language_version=version_format,
+                versioned_spec = spec_with_version(
+                    spec=variant.spec,
+                    version=version_format,
                 )
                 spec = with_per_fixture_module_name(
                     spec=versioned_spec,
