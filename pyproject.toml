@@ -37,7 +37,7 @@ dependencies = [
     # not depend on it directly, so we pin it here to guarantee the fast
     # path is available on every platform where a wheel is published.
     "ruamel-yaml-clib>=0.2.15; platform_python_implementation=='CPython'",
-    "tomlkit>=0.12",
+    "tomlkit>=0.15",
     # typing_extensions for ``TypeIs`` (PEP 742), which is in the stdlib
     # ``typing`` module only from Python 3.13.
     "typing-extensions>=4.10",

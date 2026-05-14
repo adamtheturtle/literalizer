@@ -736,6 +736,7 @@ class Odin(metaclass=LanguageCls):
             datetime_type="string",
             time_type="string",
             list_template="[dynamic]{inner}",
+            enable_list_type=True,
             dict_type_template="map[string]{inner}",
             fallback_value_type="string",
         )

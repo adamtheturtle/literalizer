@@ -1,0 +1,7 @@
+from __future__ import annotations
+my_data = [
+    1000000,
+    -1234,
+    255,
+    -10,
+]

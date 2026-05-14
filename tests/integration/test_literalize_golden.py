@@ -251,13 +251,21 @@ def test_format_variant_golden_file(
     """
     for variant_case in group_variant_cases_by_language()[lang_cls]:
         for version_format in lang_cls.VersionFormats:
+            variant = variant_case.variant
+            if variant.spec.language_version is not version_format:
+                # Variants pin a specific ``language_version`` (e.g. PY38
+                # version variants).  Rebuilding the variant under a
+                # different version would require threading the original
+                # variant kwargs through ``make_spec`` again, so for now
+                # only render the iteration that matches the variant's
+                # own version.
+                continue
             with subtests.test(
                 variant_name=variant_case.variant_name,
                 case_dir_name=variant_case.case_dir_name,
                 version=version_format.name,
             ):
                 case_dir = cases_dir / variant_case.case_dir_name
-                variant = variant_case.variant
                 input_info = case_input(case_dir=case_dir)
                 source_text = input_info.path.read_text(encoding="utf-8")
                 golden_path = make_golden_path(

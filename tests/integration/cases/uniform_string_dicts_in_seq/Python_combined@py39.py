@@ -1,0 +1,9 @@
+from __future__ import annotations
+my_data = (
+    {"first": "Alice", "last": "Smith"},
+    {"first": "Bob", "last": "Jones"},
+)
+my_data = (
+    {"first": "Alice", "last": "Smith"},
+    {"first": "Bob", "last": "Jones"},
+)

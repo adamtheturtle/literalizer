@@ -122,6 +122,7 @@ def _list_sequence_open(
         type_to_opener=make_type_to_opener(
             element_to_type=cfg.element_to_type(
                 list_template="List[{inner}]",
+                enable_list_type=True,
                 date_type=date_type,
                 datetime_type=datetime_type,
                 enable_dict_type=True,
@@ -861,6 +862,7 @@ class Scala(metaclass=LanguageCls):
                             is self.sequence_formats.LIST
                             else None
                         ),
+                        enable_list_type=True,
                         date_type=self._date_type_name,
                         datetime_type=self._datetime_type_name,
                         enable_dict_type=False,

@@ -147,6 +147,7 @@ def _kotlin_list_sequence_open(
     """
     dict_resolver = cfg.element_to_type(
         list_template="List<{inner}>",
+        enable_list_type=True,
         date_type=date_type,
         datetime_type=datetime_type,
         enable_dict_type=True,
@@ -1193,6 +1194,7 @@ class Kotlin(metaclass=LanguageCls):
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
                         list_template=None,
+                        enable_list_type=True,
                         date_type=self._date_type_name,
                         datetime_type=self._dt_type_name,
                         enable_dict_type=False,

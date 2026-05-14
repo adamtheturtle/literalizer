@@ -122,6 +122,7 @@ _dhall_narrowed_empty_form = make_narrowed_empty_form(
         datetime_type="Text",
         time_type="Text",
         list_template="(List {inner})",
+        enable_list_type=True,
         dict_type_template=None,
         fallback_value_type="Text",
     ),
