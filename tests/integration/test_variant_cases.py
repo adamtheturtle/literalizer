@@ -13,7 +13,7 @@ from .variant_cases import (
     variant_languages,
 )
 
-_SAMPLE_ENUM = enum.Enum("_SampleEnum", ["FIRST"])
+_SampleEnum = enum.Enum("_SampleEnum", ["FIRST"])
 
 
 def test_enum_member_by_name_raises_for_missing_member() -> None:
@@ -22,7 +22,7 @@ def test_enum_member_by_name_raises_for_missing_member() -> None:
         expected_exception=ValueError,
         match=r"^_SampleEnum has no member named 'SECOND'$",
     ):
-        _enum_member_by_name(enum_cls=_SAMPLE_ENUM, name="SECOND")
+        _enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
 
 
 def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
