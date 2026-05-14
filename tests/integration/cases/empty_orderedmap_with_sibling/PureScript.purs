@@ -3,8 +3,7 @@ module Check where
 
 data Tuple a b = Tuple a b
 data Val
-    = PStr String
-    | PList (Array Val)
+    = PList (Array Val)
     | PDict (Array (Tuple String Val))
 
 

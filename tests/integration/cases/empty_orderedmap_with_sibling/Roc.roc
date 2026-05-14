@@ -1,7 +1,6 @@
 module [my_data]
 
 Val : [
-    RStr Str,
     RList (List Val),
     RDict (List (Str, Val)),
 ]

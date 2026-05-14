@@ -26,7 +26,7 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
             container_type = (
                 ordereddict if isinstance(data, ordereddict) else dict
             )
-            return frozenset({container_type, str}) | child_types
+            return frozenset({container_type}) | child_types
         case set():
             scalar_types: frozenset[type] = frozenset(
                 t
