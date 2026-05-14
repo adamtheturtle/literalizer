@@ -859,6 +859,8 @@ class CSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `LanguageVersion` passed to the C# lint host
+    # in `.github/scripts/lint-csharp/Program.cs`.
     language_version: VersionFormats = VersionFormats.V10
     indent: str = "    "
 

@@ -644,6 +644,8 @@ class Go(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `go` directive in the generated go.mod in
+    # `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V1_18
     indent: str = "\t"
 

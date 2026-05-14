@@ -16,6 +16,8 @@ def main() -> None:
         tmp_src = Path(tmpdir) / "check.adb"
         content: str = src.read_text(encoding="utf-8")
         tmp_src.write_text(data=content, encoding="utf-8")
+        # `-gnat2022` matches `Ada.language_version` in
+        # `src/literalizer/languages/ada.py`; keep them in sync.
         result = subprocess.run(
             args=[gnatmake_path, "-gnat2022", "-gnats", "check.adb"],
             capture_output=True,
