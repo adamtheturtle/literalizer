@@ -1176,6 +1176,8 @@ class Java(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `--release` flag passed to the JavaCompiler
+    # in `CheckJavaSyntax.java`.
     language_version: VersionFormats = VersionFormats.JDK_11
     indent: str = "    "
 

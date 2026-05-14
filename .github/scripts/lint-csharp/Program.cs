@@ -18,7 +18,9 @@ var references = tpa.Split(Path.PathSeparator)
 var options = new CSharpCompilationOptions(OutputKind.ConsoleApplication)
     .WithNullableContextOptions(NullableContextOptions.Disable);
 
-var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+// `LanguageVersion.CSharp10` matches `CSharp.language_version` in
+// `src/literalizer/languages/csharp.py`; keep them in sync.
+var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
 
 var input = Console.In.ReadToEnd();
 var paths = input.Split('\0').Where(p => !string.IsNullOrEmpty(p)).ToList();
