@@ -95,6 +95,7 @@ _mojo_element_to_type = make_element_to_type(
     datetime_type="String",
     time_type="String",
     list_template="List[{inner}]",
+    enable_list_type=True,
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type="String",
 )
@@ -116,6 +117,7 @@ _mojo_call_arg_element_to_type = make_element_to_type(
     datetime_type="String",
     time_type="String",
     list_template="List[{inner}]",
+    enable_list_type=True,
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type=None,
 )
@@ -1486,6 +1488,7 @@ class Mojo(metaclass=LanguageCls):
                     datetime_type=None,
                     time_type=None,
                     list_template="List[{inner}]",
+                    enable_list_type=True,
                     dict_type_template=None,
                     fallback_value_type=None,
                 ),

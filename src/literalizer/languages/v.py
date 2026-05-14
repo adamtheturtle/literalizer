@@ -102,6 +102,7 @@ _v_element_to_type = make_element_to_type(
     datetime_type="string",
     time_type="string",
     list_template="[]{inner}",
+    enable_list_type=True,
     dict_type_template=None,
     fallback_value_type=_V_IFACE_NAME,
 )

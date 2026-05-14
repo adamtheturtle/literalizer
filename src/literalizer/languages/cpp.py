@@ -234,6 +234,7 @@ def _make_cpp_element_to_type(
         datetime_type=datetime_type,
         time_type="std::string",
         list_template="std::vector<{inner}>",
+        enable_list_type=True,
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
     )
