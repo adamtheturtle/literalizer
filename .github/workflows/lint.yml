@@ -212,7 +212,7 @@ jobs:
       # separate `-fsyntax-only` pass would be redundant.
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
-      - name: Run C files
+      - name: Lint C
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c
           cat > /tmp/run-c.sh <<'SCRIPT'
