@@ -411,6 +411,10 @@ ignore_names = [
     # ``RECORD`` heterogeneous strategy; the field is read by the
     # strategy's consumer in a follow-up PR.
     "render_record_literal",
+    # ``Haskell.VersionFormats.HASKELL_2010`` is selected via
+    # ``language_version.name == "HASKELL_2010"`` so vulture can't see
+    # the reference.
+    "HASKELL_2010",
     # pytest configuration
     "pytest_collect_file",
     "pytest_plugins",

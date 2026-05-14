@@ -964,6 +964,7 @@ def _build_preamble_setup(
     date_format: enum.Enum,
     datetime_format: enum.Enum,
     integer_format: enum.Enum,
+    emit_binary_literals_pragma: bool,
     is_explicit: bool,
     type_name: str,
     constructor_prefix: str,
@@ -986,10 +987,10 @@ def _build_preamble_setup(
             datetime_format=datetime_format,
             extra=str_extra,
         )
-    # Binary integer literals (``0b...``) are not Haskell 2010; require
-    # the ``BinaryLiterals`` extension whenever the BINARY integer
-    # format is selected. Hex (``0x``) and octal (``0o``) are standard.
-    if integer_format.name == "BINARY":
+    # Binary integer literals (``0b...``) are not part of Haskell 2010
+    # and need the ``BinaryLiterals`` extension; ``GHC2021`` bundles it
+    # already. Hex (``0x``) and octal (``0o``) are standard either way.
+    if integer_format.name == "BINARY" and emit_binary_literals_pragma:
         scalar_preamble = {
             **scalar_preamble,
             int: (
@@ -1399,6 +1400,7 @@ class Haskell(metaclass=LanguageCls):
         """Version options for Haskell."""
 
         HASKELL_2010 = enum.auto()
+        GHC2021 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -1530,9 +1532,9 @@ class Haskell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `-XHaskell2010` flag passed to the Haskell
+    # Keep in sync with the `-XGHC2021` flag passed to the Haskell
     # linter in `.github/workflows/lint.yml`.
-    language_version: VersionFormats = VersionFormats.HASKELL_2010
+    language_version: VersionFormats = VersionFormats.GHC2021
     indent: str = "    "
     module_name: str = "Check"
     type_name: str = "Val"
@@ -1782,6 +1784,9 @@ class Haskell(metaclass=LanguageCls):
             date_format=self.date_format,
             datetime_format=self.datetime_format,
             integer_format=self.integer_format,
+            emit_binary_literals_pragma=(
+                self.language_version.name == "HASKELL_2010"
+            ),
             is_explicit=self._string_fmts.is_explicit,
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,

@@ -1,4 +1,3 @@
-{-# LANGUAGE BinaryLiterals #-}
 module Fixture_int_list_Haskell_integer_format_binary where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
