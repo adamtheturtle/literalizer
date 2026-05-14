@@ -311,9 +311,14 @@ max_supported_python = "3.14"
 [tool.mypy]
 strict = true
 files = [ "." ]
+# ``@`` in a path stops mypy from forming a module name and triggers an
+# internal error (mypy 2.1.0).  Every golden fixture under
+# ``tests/integration/cases/`` carries a ``@<version>`` tag, so exclude
+# those paths from mypy; ruff and other linters still cover them.
 exclude = [
     "build",
     "repro.py",
+    "tests/integration/cases/.*@.*",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
