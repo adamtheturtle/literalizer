@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_vb,
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
@@ -909,6 +910,11 @@ class VisualBasic(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_vb
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -944,8 +950,8 @@ class VisualBasic(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble (VisualBasic needs none)."""
-        return {}
+        """Per-instance scalar preamble."""
+        return {datetime.time: ("Imports System",)}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:

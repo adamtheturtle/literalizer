@@ -35,6 +35,7 @@ def _scalar_bucket(value: Value) -> type | None:
         bytes,
         datetime.datetime,
         datetime.date,
+        datetime.time,
     )
     for bucket in buckets:
         if isinstance(value, bucket):

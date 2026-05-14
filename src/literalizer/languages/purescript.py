@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -1251,6 +1252,11 @@ class PureScript(metaclass=LanguageCls):
         if self.constructor_prefix == "P":
             return self.datetime_format
         return _build_purescript_datetime_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

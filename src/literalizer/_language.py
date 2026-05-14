@@ -68,7 +68,9 @@ def date_scalar_preamble(
         datetime_format: The datetime format enum member whose ``.value``
             has a ``preamble_lines`` attribute.
         extra: Optional additional type→preamble mappings to include
-            unconditionally (e.g. for C++ ``#include <string>``).
+            unconditionally (e.g. for C++ ``#include <string>`` or the
+            ``datetime.time`` import added by languages that emit native
+            time literals).
 
     Returns:
         A dict mapping Python types to their required preamble lines,
@@ -1031,6 +1033,13 @@ class Language(Protocol):
     @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
+        literal.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a :class:`datetime.time` as a string
         literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis

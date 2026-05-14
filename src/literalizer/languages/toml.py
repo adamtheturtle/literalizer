@@ -79,6 +79,12 @@ from literalizer.exceptions import (
 
 
 @beartype
+def _format_time_toml(value: datetime.time) -> str:
+    """Format a time as an unquoted TOML time literal."""
+    return value.isoformat()
+
+
+@beartype
 def _format_toml_dict_entry(
     key: str,
     _raw_value: Value,
@@ -631,6 +637,11 @@ class Toml(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return _format_time_toml
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

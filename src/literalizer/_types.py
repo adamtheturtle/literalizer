@@ -4,7 +4,15 @@ import datetime
 from collections.abc import Mapping, Sequence
 
 type Scalar = (
-    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
+    str
+    | int
+    | float
+    | bool
+    | None
+    | datetime.date
+    | datetime.datetime
+    | datetime.time
+    | bytes
 )
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
 type ValueInput = (

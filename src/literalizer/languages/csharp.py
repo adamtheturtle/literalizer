@@ -23,6 +23,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_csharp,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -154,6 +155,8 @@ def _csharp_scalar_type(
             return datetime_hint
         case datetime.date():
             return date_hint
+        case datetime.time():
+            return "TimeOnly"
         case bool():
             result = "bool"
         case int():
@@ -1134,6 +1137,11 @@ class CSharp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_csharp
+
+    @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self.string_format
@@ -1229,6 +1237,7 @@ class CSharp(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("using System;",)},
         )
 
     @cached_property

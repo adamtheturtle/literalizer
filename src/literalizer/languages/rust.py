@@ -16,6 +16,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -175,6 +176,8 @@ def _rust_scalar_type(
             result = datetime_type
         case datetime.date():
             result = date_type
+        case datetime.time():
+            result = "&str"
         case None:
             result = "Option<()>"
         case _ as unreachable:
@@ -441,7 +444,7 @@ class _VariantSignature:
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
+def _heterogeneous_variant_for_scalar(  # noqa: C901  # pylint: disable=too-complex
     *,
     value: Scalar,
     date_type: str,
@@ -486,6 +489,11 @@ def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
             )
         case datetime.date():
             signature = _VariantSignature(name="Date", inner_type=date_type)
+        case datetime.time():
+            signature = _VariantSignature(
+                name="Time",
+                inner_type="&'static str",
+            )
         case None:
             signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
@@ -1602,6 +1610,11 @@ class Rust(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

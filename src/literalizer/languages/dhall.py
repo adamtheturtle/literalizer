@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -372,7 +373,9 @@ class _VariantSignature:
 
 
 @beartype
-def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:
+def _dhall_variant_for_scalar(  # pylint: disable=too-complex
+    value: Scalar,
+) -> _VariantSignature:
     """Return the Dhall union-type variant signature for *value*.
 
     Dhall has no per-width integer types, so all integers map to a
@@ -396,6 +399,8 @@ def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:
             signature = _VariantSignature(name="DateTime", inner_type="Text")
         case datetime.date():
             signature = _VariantSignature(name="Date", inner_type="Text")
+        case datetime.time():
+            signature = _VariantSignature(name="Time", inner_type="Text")
         case None:
             signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
@@ -1115,6 +1120,11 @@ class Dhall(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

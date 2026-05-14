@@ -123,6 +123,22 @@ def _format_datetime_python(value: datetime.datetime) -> str:
 
 
 @beartype
+def _format_time_python(value: datetime.time) -> str:
+    """Format a time as a Python ``datetime.time(...)`` constructor
+    call.
+    """
+    parts = [
+        f"hour={value.hour}",
+        f"minute={value.minute}",
+        f"second={value.second}",
+    ]
+    if value.microsecond:
+        parts.append(f"microsecond={value.microsecond}")
+    args = ", ".join(parts)
+    return f"datetime.time({args})"
+
+
+@beartype
 def _format_bytes_python(value: bytes) -> str:
     """Format bytes as a Python ``bytes`` literal."""
     return repr(value)
@@ -160,6 +176,7 @@ def _format_variable_declaration(
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
     sequence_hint: str,
     set_hint: str,
     default_set_element_type: str,
@@ -181,6 +198,7 @@ def _format_variable_declaration(
             bytes_hint=bytes_hint,
             date_hint=date_hint,
             datetime_hint=datetime_hint,
+            time_hint=time_hint,
             sequence_hint=sequence_hint,
             set_hint=set_hint,
             default_set_element_type=default_set_element_type,
@@ -201,6 +219,7 @@ def _format_inline_type_hint_declaration(
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
     sequence_hint: str,
     set_hint: str,
     default_set_element_type: str,
@@ -214,6 +233,7 @@ def _format_inline_type_hint_declaration(
         bytes_hint=bytes_hint,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
+        time_hint=time_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
         default_set_element_type=default_set_element_type,
@@ -297,12 +317,13 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 
 
 @beartype
-def _python_scalar_hint(
+def _python_scalar_hint(  # pylint: disable=too-complex
     *,
     data: Scalar,
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
 ) -> str:
     """Derive a Python type hint for a scalar value."""
     # Order matters: datetime before date (datetime is a date subclass),
@@ -322,6 +343,8 @@ def _python_scalar_hint(
             hint = datetime_hint
         case datetime.date():
             hint = date_hint
+        case datetime.time():
+            hint = time_hint
         case None:
             hint = "None"
         case _ as unreachable:
@@ -336,6 +359,7 @@ def _python_type_hint(
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
     sequence_hint: str,
     set_hint: str,
     default_set_element_type: str,
@@ -351,6 +375,7 @@ def _python_type_hint(
         bytes_hint=bytes_hint,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
+        time_hint=time_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
         default_set_element_type=default_set_element_type,
@@ -403,6 +428,7 @@ def _python_type_hint(
                 bytes_hint=bytes_hint,
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
+                time_hint=time_hint,
             )
     return hint
 
@@ -741,6 +767,7 @@ class Python(metaclass=LanguageCls):
             bytes_hint: str,
             date_hint: str,
             datetime_hint: str,
+            time_hint: str,
             sequence_hint: str,
             set_hint: str,
             default_set_element_type: str,
@@ -770,6 +797,7 @@ class Python(metaclass=LanguageCls):
                         bytes_hint=bytes_hint,
                         date_hint=date_hint,
                         datetime_hint=datetime_hint,
+                        time_hint=time_hint,
                         sequence_hint=sequence_hint,
                         set_hint=set_hint,
                         default_set_element_type=default_set_element_type,
@@ -799,6 +827,7 @@ class Python(metaclass=LanguageCls):
                     bytes_hint=bytes_hint,
                     date_hint=date_hint,
                     datetime_hint=datetime_hint,
+                    time_hint=time_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
                     default_set_element_type=default_set_element_type,
@@ -1237,6 +1266,11 @@ class Python(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return _format_time_python
+
+    @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self.string_format
@@ -1281,6 +1315,7 @@ class Python(metaclass=LanguageCls):
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,
             datetime_hint=self.datetime_format.type_hint,
+            time_hint="datetime.time",
             sequence_hint=self.sequence_format.type_hint,
             set_hint=self.set_format.type_hint,
             default_set_element_type=self.default_set_element_type,
@@ -1295,6 +1330,7 @@ class Python(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("import datetime",)},
         )
 
     @cached_property

@@ -27,6 +27,69 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
+def format_time_iso(value: datetime.time) -> str:
+    """Format a time as an ISO 8601 quoted string literal.
+
+    Example: ``datetime.time(9, 30)`` -> ``"09:30:00"``.
+    """
+    return f'"{value.isoformat()}"'
+
+
+@beartype
+def format_time_local_time_of(value: datetime.time) -> str:
+    """Format a time as a ``LocalTime.of(...)`` call.
+
+    Shared by Java, Kotlin, Scala, and Groovy, which all use the
+    ``java.time.LocalTime`` factory method.
+
+    Example: ``datetime.time(9, 30)`` -> ``LocalTime.of(9, 30)``.
+    """
+    parts = [str(object=value.hour), str(object=value.minute)]
+    nanoseconds = value.microsecond * 1000
+    if value.second or nanoseconds:
+        parts.append(str(object=value.second))
+    if nanoseconds:
+        parts.append(str(object=nanoseconds))
+    return f"LocalTime.of({', '.join(parts)})"
+
+
+@beartype
+def _time_only_args(value: datetime.time) -> str:
+    """Return the comma-separated argument list for a ``TimeOnly``
+    call.
+    """
+    parts = [
+        str(object=value.hour),
+        str(object=value.minute),
+        str(object=value.second),
+    ]
+    if value.microsecond:
+        milliseconds, microseconds = divmod(value.microsecond, 1000)
+        parts.append(str(object=milliseconds))
+        if microseconds:
+            parts.append(str(object=microseconds))
+    return ", ".join(parts)
+
+
+@beartype
+def format_time_csharp(value: datetime.time) -> str:
+    """Format a time as a C# ``new TimeOnly(...)`` expression."""
+    return f"new TimeOnly({_time_only_args(value=value)})"
+
+
+@beartype
+def format_time_fsharp(value: datetime.time) -> str:
+    """Format a time as an F# ``TimeOnly(...)`` expression."""
+    return f"TimeOnly({_time_only_args(value=value)})"
+
+
+@beartype
+def format_time_vb(value: datetime.time) -> str:
+    """Format a time as a VB.NET ``New TimeOnly(...)`` expression."""
+    return f"New TimeOnly({_time_only_args(value=value)})"
+
+
+@beartype
 def datetime_epoch_seconds(value: datetime.datetime) -> int:
     """Return integer Unix epoch seconds for a datetime."""
     if value.tzinfo is None:

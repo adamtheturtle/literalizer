@@ -42,7 +42,15 @@ from .language_specs import (
 from .variant_cases import wrap_variable_form
 
 type _Scalar = (
-    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
+    str
+    | int
+    | float
+    | bool
+    | None
+    | datetime.date
+    | datetime.datetime
+    | datetime.time
+    | bytes
 )
 type _ValueInput = (
     _Scalar

@@ -118,7 +118,7 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
                 microsecond=value.microsecond,
                 tzinfo=value.tzinfo,
             )
-        case datetime.date() | bytes() | None:
+        case datetime.date() | datetime.time() | bytes() | None:
             return value
         case _ as unreachable:
             assert_never(unreachable)
@@ -177,6 +177,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             | str()
             | datetime.datetime()
             | datetime.date()
+            | datetime.time()
             | bytes()
             | None
         ):
@@ -301,6 +302,31 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     )
 
 
+type _TomlData = dict[str, _TomlData] | list[_TomlData] | Scalar
+
+
+@beartype
+def _toml_data_to_value(*, data: _TomlData) -> Value:
+    """Re-shape ``tomlkit`` output as a ``Value``.
+
+    ``tomlkit.TOMLDocument.unwrap`` returns ``dict[str, Any]`` (modeled
+    as ``_TomlData`` here); its dict and list arms have narrower static
+    types than ``Value`` so dicts/lists are rebuilt to widen them.
+    Scalar leaves -- including ``datetime.time`` now that it's part of
+    ``Scalar`` -- are passed through unchanged.
+    """
+    match data:
+        case dict():
+            coerced: dict[Scalar, Value] = {
+                k: _toml_data_to_value(data=v) for k, v in data.items()
+            }
+            return coerced
+        case list():
+            return [_toml_data_to_value(data=item) for item in data]
+        case _:
+            return data
+
+
 @beartype
 def _parse_toml(*, source: str) -> ParsedInput:
     """Parse a TOML string into a ``ParsedInput``."""
@@ -310,8 +336,10 @@ def _parse_toml(*, source: str) -> ParsedInput:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
-    toml_data = _coerce_toml_values(data=unwrapped)
-    return ParsedToml(data=toml_data, toml_doc=toml_doc)
+    return ParsedToml(
+        data=_toml_data_to_value(data=unwrapped),
+        toml_doc=toml_doc,
+    )
 
 
 @beartype
@@ -328,30 +356,3 @@ def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
             return _parse_toml(source=source)
         case _ as unreachable:
             assert_never(unreachable)
-
-
-type _TomlData = (
-    dict[str, _TomlData] | list[_TomlData] | datetime.time | Scalar
-)
-
-
-@beartype
-def _coerce_toml_values(*, data: _TomlData) -> Value:
-    """Recursively convert TOML-specific types to ``Value`` types.
-
-    ``tomlkit`` produces ``datetime.time`` values which cannot be
-    expressed in the ``Value`` type, so they are converted to
-    their ISO-format string form.
-    """
-    match data:
-        case dict():
-            coerced: dict[Scalar, Value] = {
-                k: _coerce_toml_values(data=v) for k, v in data.items()
-            }
-            return coerced
-        case list():
-            return [_coerce_toml_values(data=item) for item in data]
-        case datetime.time():
-            return data.isoformat()
-        case _:
-            return data
