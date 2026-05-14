@@ -997,8 +997,8 @@ class Kotlin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `-language-version`/`-api-version` flags passed
-    # to the Kotlin lint host in `.github/scripts/lint-kotlin.main.kts`.
+    # Keep in sync with the version flags passed to the Kotlin lint host in
+    # `.github/scripts/lint-kotlin.main.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
 
