@@ -7,10 +7,10 @@ Next
 
 - YAML inputs with non-string dict keys (integers, dates, booleans)
   now flow through to the target language's value-formatting path
-  instead of being silently stringified.  Languages that can represent
-  the key natively (Python, Ruby, Clojure, Lua, Bash, and others)
-  produce the corresponding literal; languages whose dict syntax
-  requires string keys or a homogeneous typed map raise
+  instead of being silently converted to string form.  Languages that
+  can represent the key natively (Python, Ruby, Clojure, Lua, Bash,
+  and others) produce the corresponding literal; languages whose dict
+  syntax requires string keys or a homogeneous typed map raise
   :exc:`~literalizer.exceptions.UnrepresentableInputError`.  The
   affected opt-out targets are the JSON family (already
   :class:`~literalizer.Json5`, :class:`~literalizer.Jsonnet`,
@@ -25,8 +25,11 @@ Next
   :class:`~literalizer.Zig`, :class:`~literalizer.Odin`,
   :class:`~literalizer.Nim`, :class:`~literalizer.D`,
   :class:`~literalizer.TypeScript`,
-  :class:`~literalizer.JavaScript`), and the languages whose value
-  ADTs do not currently model non-string keys
+  :class:`~literalizer.JavaScript`), the languages that reject
+  specific non-string key types at the language level
+  (:class:`~literalizer.Php` rejects ``DateTime`` keys,
+  :class:`~literalizer.V` rejects ``bool`` keys), and the languages
+  whose value ADTs do not currently model non-string keys
   (:class:`~literalizer.OCaml`, :class:`~literalizer.Sml`,
   :class:`~literalizer.R`).
 

@@ -1,5 +1,5 @@
 module Fixture_empty_dicts_in_sequence_Haskell_type_hints_safe where
-data Val = HList [Val] | HMap [(String, Val)]
+data Val = HStr String | HList [Val] | HMap [(String, Val)]
 my_data :: Val
 my_data = HList [
     HMap [],

@@ -24,7 +24,13 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
             container_type = (
                 ordereddict if isinstance(data, ordereddict) else dict
             )
-            return frozenset({container_type}) | child_types
+            # ``str`` is included unconditionally because typed-map
+            # languages whose dict opener hard-codes the default key
+            # type (e.g. ``std::map<std::string, ...>`` in C++) still
+            # need the string preamble even when the data has no string
+            # keys or values.  The actual rendered code references
+            # ``std::string`` regardless of payload.
+            return frozenset({container_type, str}) | child_types
         case set():
             scalar_types: frozenset[type] = frozenset(
                 t

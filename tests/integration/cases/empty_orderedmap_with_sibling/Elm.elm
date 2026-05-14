@@ -2,7 +2,8 @@ module Check exposing (..)
 
 
 type Val
-    = EList (List Val)
+    = EStr String
+    | EList (List Val)
     | EDict (List ( String, Val ))
 
 
