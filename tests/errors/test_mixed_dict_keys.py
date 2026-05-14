@@ -3,9 +3,9 @@
 The check runs inside :func:`literalizer._checks.check_data` and rejects
 dicts whose keys span multiple type families when the target language
 sets ``dict_supports_heterogeneous_values = False``.  Today the surface
-parsers stringify non-string keys, so the check is wired but unreachable
-through :func:`literalizer.literalize`; the tests here invoke
-``check_data`` directly to exercise the contract.
+parsers coerce non-string keys to strings, so the check is wired but
+unreachable through :func:`literalizer.literalize`; the tests here
+invoke ``check_data`` directly to exercise the contract.
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ def test_nested_mixed_keys_raise() -> None:
 
 
 def test_mixed_keys_inside_dict_value_raise() -> None:
-    """Mixed-key dicts found by recursing through outer dict values
+    """Mixed-key dicts found by descending through outer dict values
     raise.
     """
     inner: dict[Scalar, Value] = {}
