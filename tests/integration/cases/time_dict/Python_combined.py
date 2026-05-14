@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 my_data = {
     "morning": datetime.time(hour=9, minute=30, second=0),
