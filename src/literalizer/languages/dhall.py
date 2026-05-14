@@ -373,7 +373,9 @@ class _VariantSignature:
 
 
 @beartype
-def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:
+def _dhall_variant_for_scalar(  # pylint: disable=too-complex
+    value: Scalar,
+) -> _VariantSignature:
     """Return the Dhall union-type variant signature for *value*.
 
     Dhall has no per-width integer types, so all integers map to a

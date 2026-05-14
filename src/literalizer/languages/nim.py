@@ -215,7 +215,7 @@ class _VariantSignature:
 
 
 @beartype
-def _nim_variant_for_scalar(
+def _nim_variant_for_scalar(  # pylint: disable=too-complex
     *,
     value: Scalar,
     date_type: str,

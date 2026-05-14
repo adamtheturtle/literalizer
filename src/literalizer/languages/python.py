@@ -317,7 +317,7 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 
 
 @beartype
-def _python_scalar_hint(
+def _python_scalar_hint(  # pylint: disable=too-complex
     *,
     data: Scalar,
     bytes_hint: str,

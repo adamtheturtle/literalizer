@@ -37,7 +37,10 @@ def format_time_iso(value: datetime.time) -> str:
 
 @beartype
 def format_time_local_time_of(value: datetime.time) -> str:
-    """Format a time as a JVM ``LocalTime.of(...)`` call.
+    """Format a time as a ``LocalTime.of(...)`` call.
+
+    Shared by Java, Kotlin, Scala, and Groovy, which all use the
+    ``java.time.LocalTime`` factory method.
 
     Example: ``datetime.time(9, 30)`` -> ``LocalTime.of(9, 30)``.
     """

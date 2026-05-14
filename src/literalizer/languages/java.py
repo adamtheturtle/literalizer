@@ -292,7 +292,7 @@ _JAVA_I32_MAX = 2**31 - 1
 
 
 @beartype
-def _java_scalar_hint(
+def _java_scalar_hint(  # pylint: disable=too-complex
     *,
     data: Scalar,
     int_type: str,
