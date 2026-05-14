@@ -10,5 +10,5 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "times" (PList ["09:30:00", "17:45:00", "23:59:59"]))
+    (Tuple "times" (PList [PStr "09:30:00", PStr "17:45:00", PStr "23:59:59"]))
     ]

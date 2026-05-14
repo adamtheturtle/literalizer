@@ -1,4 +1,5 @@
 pub type GVal {
+  GStr(String)
   GList(List(GVal))
   GDict(List(#(String, GVal)))
 }

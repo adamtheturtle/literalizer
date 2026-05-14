@@ -9,7 +9,7 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "morning" ("09:30:00")),
-    (Tuple "afternoon" ("14:15:00")),
-    (Tuple "evening" ("23:59:59"))
+    (Tuple "morning" (PStr "09:30:00")),
+    (Tuple "afternoon" (PStr "14:15:00")),
+    (Tuple "evening" (PStr "23:59:59"))
     ]
