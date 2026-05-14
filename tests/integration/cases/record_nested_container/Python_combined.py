@@ -1,3 +1,4 @@
+from __future__ import annotations
 my_data = {
     "title": "report",
     "tags": ("draft", "urgent", "review"),

@@ -9,7 +9,7 @@ type Val =
 let private _mainDeclaration () =
     let mutable my_data: Val = FMap [
         ("id", FInt 1L);
-        ("description", FStr "example");
+        ("description", FStr "She said \"hello\", then waved");
         ("is_done", FBool false);
         ("blocks", FList [FInt 1L; FInt 2L; FInt 3L])
     ]
@@ -18,7 +18,7 @@ let private _mainDeclaration () =
 let private _mainAssignment () =
     let my_data: Val = FMap [
         ("id", FInt 1L);
-        ("description", FStr "example");
+        ("description", FStr "She said \"hello\", then waved");
         ("is_done", FBool false);
         ("blocks", FList [FInt 1L; FInt 2L; FInt 3L])
     ]

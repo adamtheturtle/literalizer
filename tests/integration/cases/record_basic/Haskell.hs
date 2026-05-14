@@ -11,7 +11,7 @@ instance Num Val where
 my_data :: Val
 my_data = HMap [
     ("id", 1),
-    ("description", HStr "example"),
+    ("description", HStr "She said \"hello\", then waved"),
     ("is_done", HBool False),
     ("blocks", HList [1, 2, 3])
     ]
