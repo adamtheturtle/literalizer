@@ -13,7 +13,7 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "id" (PInt 1)),
-    (Tuple "description" (PStr "example")),
+    (Tuple "description" (PStr "She said \"hello\", then waved")),
     (Tuple "is_done" (PBool false)),
     (Tuple "blocks" (PList [PInt 1, PInt 2, PInt 3]))
     ]

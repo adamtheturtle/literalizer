@@ -1,12 +1,12 @@
 : my_data
     s\" id" 1
-    s\" description" s\" example"
+    s\" description" s\" She said \"hello\", then waved"
     s\" is_done" false
     s\" blocks" 1 2 3
 ;
 : my_data
     s\" id" 1
-    s\" description" s\" example"
+    s\" description" s\" She said \"hello\", then waved"
     s\" is_done" false
     s\" blocks" 1 2 3
 ;

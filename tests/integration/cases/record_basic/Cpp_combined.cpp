@@ -6,14 +6,14 @@
 int main() {
 auto my_data = std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{
     {"id", 1},
-    {"description", "example"},
+    {"description", "She said \"hello\", then waved"},
     {"is_done", false},
     {"blocks", std::vector<int>{1, 2, 3}},
 };
 (void)my_data;
 my_data = std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{
     {"id", 1},
-    {"description", "example"},
+    {"description", "She said \"hello\", then waved"},
     {"is_done", false},
     {"blocks", std::vector<int>{1, 2, 3}},
 };

@@ -3,7 +3,7 @@ interface IVal {}
 fn main() {
 	my_data := {
 		'id': IVal(1),
-		'description': IVal('example'),
+		'description': IVal('She said "hello", then waved'),
 		'is_done': IVal(false),
 		'blocks': IVal([1, 2, 3]),
 	}
