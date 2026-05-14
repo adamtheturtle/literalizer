@@ -1263,6 +1263,9 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.R' -print0 > /tmp/files-to-lint
+      - name: Install R
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          r-base-core
       - name: Check R syntax
         run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
           < /tmp/files-to-lint
