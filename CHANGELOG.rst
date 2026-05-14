@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.14
+----------
+
+
 
 - :func:`~literalizer.literalize_call` now accepts a ``variable_form``
   argument (``NewVariable`` or ``ExistingVariable``) that wraps the
