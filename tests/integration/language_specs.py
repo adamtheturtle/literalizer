@@ -23,7 +23,7 @@ from literalizer.languages import (
     Scala,
 )
 
-from .language_versions import language_version_for
+from .language_versions import LANGUAGE_VERSIONS
 
 
 @beartype
@@ -164,7 +164,7 @@ def make_golden_path(
     if lang_cls.__name__ == Gleam.__name__:
         filename = filename.lower()
     base_path = parent / filename
-    version = language_version_for(lang_cls=lang_cls)
+    version = LANGUAGE_VERSIONS.get(lang_cls.__name__)
     if version is not None:
         versioned = parent / f"{base_path.stem}@{version}{extension}"
         if versioned.is_file():

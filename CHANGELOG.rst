@@ -8,10 +8,17 @@ Next
   a golden named ``{stem}@{version}{extension}`` (e.g.
   ``Odin@dev-2026-05.odin``) shadows the base when the active language
   version registered in ``tests/integration/language_versions.py``
-  matches.  The ``lint-odin`` CI job picks the matching variant for
-  the pinned compiler version and falls back to the base file
-  otherwise.  Lets one fixture diverge across compiler versions
-  without forking every case.
+  matches.  CI lint jobs for the registered languages (Elixir, Erlang,
+  Gleam, Kotlin, Odin, Zig) discover fixtures via
+  ``python -m tests.integration.list_fixtures <Language> <.ext>`` so
+  each job only compiles variants valid under the pinned release.
+  Lets one fixture diverge across compiler versions without forking
+  every case.
+
+- ``lint-fast`` CI job now syntax-checks and runs the Python fixtures
+  under ``tests/integration/cases``, matching the per-language gate
+  already in place for Bash, Ruby, JavaScript, and other fixture
+  languages.  See #1921.
 
 - ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime
   errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
