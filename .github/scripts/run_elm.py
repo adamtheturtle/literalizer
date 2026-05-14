@@ -67,7 +67,7 @@ main =
 # source for these fixtures; only the compile-and-execute step is
 # skipped.
 _SKIP_SUFFIXES = (
-    "tests/integration/cases/scalar_int_very_negative_large/Elm.elm",
+    "tests/integration/cases/scalar_int_very_negative_large/Elm@v0_19.elm",
 )
 
 
