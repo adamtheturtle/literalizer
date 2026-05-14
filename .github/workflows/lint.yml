@@ -177,17 +177,14 @@ jobs:
   # 2. A serial build segfaulted, then the retry spawned an odin process
   #    that never exited; GitHub Actions later killed it as an orphan.
   #
-  # The matrix puts each shard on a different runner so no two odin
-  # processes share a kernel.  Each shard then builds files serially.
+  # Files are run serially in a single job so no two odin processes
+  # share a kernel.
   lint-odin:
     runs-on: ubuntu-latest
-    # Normal shards finish in seconds.  If the compiler, setup action, or
+    # Normal runs finish in minutes.  If the compiler, setup action, or
     # cleanup hangs, stop this job promptly instead of leaving the
     # completion gate blocked until the workflow-wide timeout.
     timeout-minutes: 10
-    strategy:
-      matrix:
-        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -196,11 +193,16 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Odin files
+          # Pinned: `release: latest` (dev-2026-05) crashes at runtime
+          # under `odin run .`, and the compiler itself segfaults on
+          # some fixtures under `odin build .`.  dev-2026-04 was the
+          # last release known to work with `odin run .`.
+          release: dev-2026-04
+      - name: Run Odin files
         run: |-
           mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
-          build_odin() {
+          run_odin() {
             local src="$1"
             local wd
             wd=$(mktemp -d)
@@ -210,14 +212,14 @@ jobs:
             # transient segfaults, but without this timeout the retry can
             # hang forever and leave only "operation was canceled" plus
             # an orphan odin process in the Actions log.
-            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin build . -out:"$wd/prog" )
+            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin run . -out:"$wd/prog" )
           }
-          for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
+          for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
-            # Print before building so a timeout log identifies the
+            # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
-            printf 'Building %s\n' "$src"
-            build_odin "$src" || build_odin "$src" || exit 1
+            printf 'Running %s\n' "$src"
+            run_odin "$src" || run_odin "$src" || exit 1
           done
 
   lint-roc:
