@@ -12,12 +12,12 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .map = &.{
-        .{ .key = "user", .val = .{ .map = &.{.{ .key = "id", .val = .{ .int = 1 } }, .{ .key = "name", .val = .{ .str = "Alice" } }}} },
-        .{ .key = "project", .val = .{ .map = &.{.{ .key = "title", .val = .{ .str = "report" } }, .{ .key = "tags", .val = .{ .arr = &.{.{ .str = "draft" }, .{ .str = "urgent" }}} }}} },
+        .{ .key = "metrics", .val = .{ .map = &.{.{ .key = "count", .val = .{ .int = 100 } }, .{ .key = "rate", .val = .{ .int = 50 } }}} },
+        .{ .key = "flags", .val = .{ .map = &.{.{ .key = "retries", .val = .{ .int = 3 } }, .{ .key = "timeout", .val = .{ .int = 30 } }}} },
     }};
     my_data = .{ .map = &.{
-        .{ .key = "user", .val = .{ .map = &.{.{ .key = "id", .val = .{ .int = 1 } }, .{ .key = "name", .val = .{ .str = "Alice" } }}} },
-        .{ .key = "project", .val = .{ .map = &.{.{ .key = "title", .val = .{ .str = "report" } }, .{ .key = "tags", .val = .{ .arr = &.{.{ .str = "draft" }, .{ .str = "urgent" }}} }}} },
+        .{ .key = "metrics", .val = .{ .map = &.{.{ .key = "count", .val = .{ .int = 100 } }, .{ .key = "rate", .val = .{ .int = 50 } }}} },
+        .{ .key = "flags", .val = .{ .map = &.{.{ .key = "retries", .val = .{ .int = 3 } }, .{ .key = "timeout", .val = .{ .int = 30 } }}} },
     }};
     my_data = .nil;
 }

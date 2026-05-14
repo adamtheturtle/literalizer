@@ -2,8 +2,8 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    @"user": @{@"id": @1, @"name": @"Alice"},
-    @"project": @{@"title": @"report", @"tags": @[@"draft", @"urgent"]},
+    @"metrics": @{@"count": @100, @"rate": @50},
+    @"flags": @{@"retries": @3, @"timeout": @30},
 };
     (void)my_data;
 }

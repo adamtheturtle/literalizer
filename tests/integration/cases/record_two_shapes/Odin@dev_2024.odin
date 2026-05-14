@@ -3,8 +3,8 @@ package main
 
 main :: proc() {
 my_data := map[string]any{
-	"user" = map[string]any{"id" = 1, "name" = "Alice"},
-	"project" = map[string]any{"title" = "report", "tags" = [dynamic]any{"draft", "urgent"}},
+	"metrics" = map[string]any{"count" = 100, "rate" = 50},
+	"flags" = map[string]any{"retries" = 3, "timeout" = 30},
 }
 _ = my_data
 }

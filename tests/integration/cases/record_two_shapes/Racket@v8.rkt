@@ -1,5 +1,5 @@
 #lang racket
 (define my_data (hash
-    "user" (hash "id" 1 "name" "Alice")
-    "project" (hash "title" "report" "tags" (list "draft" "urgent"))
+    "metrics" (hash "count" 100 "rate" 50)
+    "flags" (hash "retries" 3 "timeout" 30)
 ))

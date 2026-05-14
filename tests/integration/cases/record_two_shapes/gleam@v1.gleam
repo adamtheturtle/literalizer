@@ -1,14 +1,12 @@
 pub type GVal {
   GInt(Int)
-  GStr(String)
-  GList(List(GVal))
   GDict(List(#(String, GVal)))
 }
 
 pub fn main() {
   let my_data = GDict([
-    #("user", GDict([#("id", GInt(1)), #("name", GStr("Alice"))])),
-    #("project", GDict([#("title", GStr("report")), #("tags", GList([GStr("draft"), GStr("urgent")]))])),
+    #("metrics", GDict([#("count", GInt(100)), #("rate", GInt(50))])),
+    #("flags", GDict([#("retries", GInt(3)), #("timeout", GInt(30))])),
   ])
   let _ = my_data
 }

@@ -20,8 +20,8 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('user', fmap([fval_t :: fentry('id', fint(1_int64)), fentry('name', fstr('Alice'))])), &
-        fentry('project', fmap([fval_t :: fentry('title', fstr('report')), fentry('tags', flist([fval_t :: fstr('draft'), fstr('urgent')]))])) &
+        fentry('metrics', fmap([fval_t :: fentry('count', fint(100_int64)), fentry('rate', fint(50_int64))])), &
+        fentry('flags', fmap([fval_t :: fentry('retries', fint(3_int64)), fentry('timeout', fint(30_int64))])) &
     ])
 end subroutine main_declaration
 
@@ -30,8 +30,8 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('user', fmap([fval_t :: fentry('id', fint(1_int64)), fentry('name', fstr('Alice'))])), &
-        fentry('project', fmap([fval_t :: fentry('title', fstr('report')), fentry('tags', flist([fval_t :: fstr('draft'), fstr('urgent')]))])) &
+        fentry('metrics', fmap([fval_t :: fentry('count', fint(100_int64)), fentry('rate', fint(50_int64))])), &
+        fentry('flags', fmap([fval_t :: fentry('retries', fint(3_int64)), fentry('timeout', fint(30_int64))])) &
     ])
 end subroutine main_assignment
 

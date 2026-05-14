@@ -1,8 +1,8 @@
 (defparameter *my_data* (list
-    (cons "user" (list (cons "id" 1) (cons "name" "Alice")))
-    (cons "project" (list (cons "title" "report") (cons "tags" (list "draft" "urgent"))))
+    (cons "metrics" (list (cons "count" 100) (cons "rate" 50)))
+    (cons "flags" (list (cons "retries" 3) (cons "timeout" 30)))
 ))
 (setf *my_data* (list
-    (cons "user" (list (cons "id" 1) (cons "name" "Alice")))
-    (cons "project" (list (cons "title" "report") (cons "tags" (list "draft" "urgent"))))
+    (cons "metrics" (list (cons "count" 100) (cons "rate" 50)))
+    (cons "flags" (list (cons "retries" 3) (cons "timeout" 30)))
 ))

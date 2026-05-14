@@ -1,8 +1,8 @@
 set my_data [dict create \
-    "user" [dict create "id" 1 "name" "Alice"] \
-    "project" [dict create "title" "report" "tags" [list "draft" "urgent"]] \
+    "metrics" [dict create "count" 100 "rate" 50] \
+    "flags" [dict create "retries" 3 "timeout" 30] \
 ]
 set my_data [dict create \
-    "user" [dict create "id" 1 "name" "Alice"] \
-    "project" [dict create "title" "report" "tags" [list "draft" "urgent"]] \
+    "metrics" [dict create "count" 100 "rate" 50] \
+    "flags" [dict create "retries" 3 "timeout" 30] \
 ]

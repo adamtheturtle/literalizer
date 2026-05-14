@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using System;
 var my_data = new Dictionary<string, object> {
-    ["user"] = new Dictionary<string, object> {["id"] = 1, ["name"] = "Alice"},
-    ["project"] = new Dictionary<string, object> {["title"] = "report", ["tags"] = ("draft", "urgent")}
+    ["metrics"] = new Dictionary<string, int> {["count"] = 100, ["rate"] = 50},
+    ["flags"] = new Dictionary<string, int> {["retries"] = 3, ["timeout"] = 30}
 };

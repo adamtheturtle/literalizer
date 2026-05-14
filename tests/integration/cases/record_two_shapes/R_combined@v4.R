@@ -1,8 +1,8 @@
 my_data <- list(
-    "user" = list("id" = 1, "name" = "Alice"),
-    "project" = list("title" = "report", "tags" = list("draft", "urgent"))
+    "metrics" = list("count" = 100, "rate" = 50),
+    "flags" = list("retries" = 3, "timeout" = 30)
 )
 my_data <- list(
-    "user" = list("id" = 1, "name" = "Alice"),
-    "project" = list("title" = "report", "tags" = list("draft", "urgent"))
+    "metrics" = list("count" = 100, "rate" = 50),
+    "flags" = list("retries" = 3, "timeout" = 30)
 )

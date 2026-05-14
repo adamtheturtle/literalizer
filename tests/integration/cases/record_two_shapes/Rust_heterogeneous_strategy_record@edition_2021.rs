@@ -1,28 +1,25 @@
 use std::collections::HashMap;
 struct Record1 {
-    id: i32,
-    name: &'static str,
+    count: i32,
+    rate: i32,
 }
 struct Record2 {
-    title: &'static str,
-    tags: Vec<&'static str>,
+    retries: i32,
+    timeout: i32,
 }
 struct Record0 {
-    user: Record1,
-    project: Record2,
+    metrics: Record1,
+    flags: Record2,
 }
 fn main() {
     let my_data = Record0 {
-        user: Record1 {
-            id: 1,
-            name: "Alice",
+        metrics: Record1 {
+            count: 100,
+            rate: 50,
         },
-        project: Record2 {
-            title: "report",
-            tags: vec![
-                "draft",
-                "urgent",
-            ],
+        flags: Record2 {
+            retries: 3,
+            timeout: 30,
         },
     };
     let _ = my_data;

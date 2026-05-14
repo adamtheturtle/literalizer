@@ -1,4 +1,4 @@
 my_data = struct(
-    'user', struct('id', 1, 'name', "Alice"),
-    'project', struct('title', "report", 'tags', {{"draft", "urgent"}})
+    'metrics', struct('count', 100, 'rate', 50),
+    'flags', struct('retries', 3, 'timeout', 30)
 );

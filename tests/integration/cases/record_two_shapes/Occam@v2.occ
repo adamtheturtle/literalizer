@@ -13,8 +13,8 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "user"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "id"; MOBILE LIT(lit.int; 1)), MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "Alice"))])),
-        MOBILE LIT(lit.pair; MOBILE []BYTE "project"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "title"; MOBILE LIT(lit.str; MOBILE []BYTE "report")), MOBILE LIT(lit.pair; MOBILE []BYTE "tags"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "draft"), MOBILE LIT(lit.str; MOBILE []BYTE "urgent")]))]))
+        MOBILE LIT(lit.pair; MOBILE []BYTE "metrics"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "count"; MOBILE LIT(lit.int; 100)), MOBILE LIT(lit.pair; MOBILE []BYTE "rate"; MOBILE LIT(lit.int; 50))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "flags"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "retries"; MOBILE LIT(lit.int; 3)), MOBILE LIT(lit.pair; MOBILE []BYTE "timeout"; MOBILE LIT(lit.int; 30))]))
     ]):
     SEQ
         SKIP

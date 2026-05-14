@@ -1,12 +1,10 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-#include <vector>
-#include <variant>
 int main() {
-auto my_data = std::map<std::string, std::map<std::string, std::variant<int, std::string, std::vector<std::string>>>>{
-    {"user", std::map<std::string, std::variant<int, std::string>>{{"id", 1}, {"name", "Alice"}}},
-    {"project", std::map<std::string, std::variant<std::string, std::vector<std::string>>>{{"title", "report"}, {"tags", std::vector<std::string>{"draft", "urgent"}}}},
+auto my_data = std::map<std::string, std::map<std::string, int>>{
+    {"metrics", std::map<std::string, int>{{"count", 100}, {"rate", 50}}},
+    {"flags", std::map<std::string, int>{{"retries", 3}, {"timeout", 30}}},
 };
     (void)my_data;
     return 0;

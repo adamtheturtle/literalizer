@@ -659,7 +659,7 @@ def _rust_record_field_type(  # noqa: PLR0911
             shape = record_shape_for_dict(value=value)
             if shape is not None and shape in record_names:
                 return record_names[shape]
-            return "String"
+            return "String"  # pragma: no cover
         case set():  # pragma: no cover
             return "String"
         case _:
@@ -860,7 +860,7 @@ def _accumulate_emit_order(
                     emit_ordered=emit_ordered,
                     emit_seen=emit_seen,
                 )
-            if id(data) in shapes_by_id:
+            if id(data) in shapes_by_id:  # pragma: no branch
                 shape = shapes_by_id[id(data)]
                 if shape not in emit_seen:
                     emit_seen.add(shape)

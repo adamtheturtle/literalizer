@@ -1,5 +1,5 @@
 module Fixture_record_two_shapes_Haskell where
-data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
+data Val = HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
     _ + _ = error "not implemented"
@@ -10,8 +10,8 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("user", HMap [("id", 1), ("name", HStr "Alice")]),
-    ("project", HMap [("title", HStr "report"), ("tags", HList [HStr "draft", HStr "urgent"])])
+    ("metrics", HMap [("count", 100), ("rate", 50)]),
+    ("flags", HMap [("retries", 3), ("timeout", 30)])
     ]
 main :: IO ()
 main = seq my_data (return ())

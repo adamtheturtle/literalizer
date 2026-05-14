@@ -1,4 +1,4 @@
 val my_data = mapOf<String, Any?>(
-    "user" to mapOf<String, Any?>("id" to 1, "name" to "Alice"),
-    "project" to mapOf<String, Any?>("title" to "report", "tags" to arrayOf("draft", "urgent")),
+    "metrics" to mapOf<String, Int>("count" to 100, "rate" to 50),
+    "flags" to mapOf<String, Int>("retries" to 3, "timeout" to 30),
 )

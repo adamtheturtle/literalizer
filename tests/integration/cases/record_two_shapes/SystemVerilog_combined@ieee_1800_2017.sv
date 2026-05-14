@@ -12,12 +12,12 @@ typedef struct {
 module main;
 initial begin
 static _VKV my_data[] = '{
-    _VKV'{k: "user", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"name\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Alice\"}}}"}},
-    _VKV'{k: "project", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"title\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"report\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"draft\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"urgent\\\"}}\"}}}"}}
+    _VKV'{k: "metrics", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"count\", v: _VVal'{tag: _VVAL_INT, i: 100, r: 0.0, s: \"\"}}, _VKV'{k: \"rate\", v: _VVal'{tag: _VVAL_INT, i: 50, r: 0.0, s: \"\"}}}"}},
+    _VKV'{k: "flags", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"retries\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}, _VKV'{k: \"timeout\", v: _VVal'{tag: _VVAL_INT, i: 30, r: 0.0, s: \"\"}}}"}}
 };
 my_data = '{
-    _VKV'{k: "user", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"name\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"Alice\"}}}"}},
-    _VKV'{k: "project", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"title\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"report\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"draft\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"urgent\\\"}}\"}}}"}}
+    _VKV'{k: "metrics", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"count\", v: _VVal'{tag: _VVAL_INT, i: 100, r: 0.0, s: \"\"}}, _VKV'{k: \"rate\", v: _VVal'{tag: _VVAL_INT, i: 50, r: 0.0, s: \"\"}}}"}},
+    _VKV'{k: "flags", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"retries\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}, _VKV'{k: \"timeout\", v: _VVal'{tag: _VVAL_INT, i: 30, r: 0.0, s: \"\"}}}"}}
 };
 end
 endmodule
