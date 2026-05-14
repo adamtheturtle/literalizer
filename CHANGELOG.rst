@@ -5,6 +5,32 @@ Next
 ----
 
 
+- :func:`~literalizer.literalize_call` now accepts a ``variable_form``
+  argument (``NewVariable`` or ``ExistingVariable``) that wraps the
+  rendered call in an idiomatic per-language variable binding (e.g.
+  ``let my_data = make_widget(42);``,
+  ``const my_data = make_widget({ count: 42 });``,
+  ``my_data = make_widget(count=42)``).  Mutability and inference
+  style are controlled by the per-language ``declaration_style`` and
+  ``Modifiers`` enums on the supplied ``Language`` instance.
+  ``BothVariableForms`` is rejected -- emitting both a declaration
+  and an assignment would invoke the target function twice -- as is
+  ``per_element=True`` (no per-element name vector) and any language
+  whose call form is a statement rather than an expression
+  (``call_returns_expression=False``).  All three are surfaced as
+  :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  The same
+  exception is raised for languages whose declaration template wraps
+  or transforms the right-hand side in a way that is only valid for
+  literal values -- Tcl (needs ``[...]`` command substitution), Bash
+  (needs ``$(...)`` command substitution), Objective-C (``@(...)``
+  boxing of primitives), tagged-enum heterogeneous-strategy languages
+  (Roc, Haskell, Elm, SML, OCaml, PureScript, F#), C / SystemVerilog /
+  Fortran / Ada / Zig / D (struct-initializer or constructor wrapping
+  derived from the value's literal type), Elixir (call stubs need
+  module scope, not the variable's function body), Erlang, Forth, and
+  Nim.  Closes
+  `#1961 <https://github.com/adamtheturtle/literalizer/issues/1961>`_.
+
 - The internal :data:`~literalizer._types.Value` and
   :data:`~literalizer._types.ValueInput` aliases now permit any
   :data:`~literalizer._types.Scalar` as a dict key, in preparation for
