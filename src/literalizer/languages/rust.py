@@ -87,6 +87,7 @@ from literalizer._language import (
     never_inhibits_consuming_form,
     no_call_stub,
     no_compute_call_slot_wrap_ids,
+    no_compute_wrap_ids,
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -722,7 +723,7 @@ def _build_record_behavior(
 
     return HeterogeneousBehavior(
         skip_scalar_checks=False,
-        compute_wrap_ids=_empty_wrap_ids,
+        compute_wrap_ids=no_compute_wrap_ids,
         wrap_scalar=None,
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
@@ -784,11 +785,6 @@ def _accumulate_ordered_shapes(
                 )
         case _:
             return
-
-
-def _empty_wrap_ids(_data: Value, /) -> frozenset[int]:
-    """Return an empty wrap-id set for RECORD (no scalar wrapping)."""
-    return frozenset()
 
 
 def _build_record_preamble(
