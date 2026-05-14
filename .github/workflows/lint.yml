@@ -1112,6 +1112,8 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.scala' -print0 > /tmp/files-to-lint
+      - name: Cache Coursier artifacts
+        uses: coursier/cache-action@v6
       - name: Install scala-cli
         uses: VirtusLab/scala-cli-setup@v1
       # Compile every fixture in a single scala-cli invocation to pay
