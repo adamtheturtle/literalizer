@@ -91,21 +91,6 @@ LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
 ]
 
 
-RUST_RECORD_CASE_DIRS: frozenset[str] = frozenset(
-    {
-        "rust_record_basic",
-        "rust_record_pure_scalars",
-        "rust_record_nested_container",
-        "rust_record_sequence",
-    },
-)
-"""Case directories exercised exclusively by the Rust ``RECORD``
-heterogeneous strategy.  Excluded from the per-language golden
-discovery so other languages do not generate goldens for these
-record-shape-focused fixtures.
-"""
-
-
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
     lang_cls: literalizer.LanguageCls,
@@ -240,8 +225,6 @@ def discover_cases(
             continue
         if case_dir.name in default_ref_case_dirs:
             continue
-        if case_dir.name in RUST_RECORD_CASE_DIRS:
-            continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
@@ -291,7 +274,7 @@ class CombinedCase:
 
 @functools.cache
 @beartype
-def discover_combined_cases(  # noqa: C901  # pylint: disable=too-complex
+def discover_combined_cases(  # pylint: disable=too-complex
     cases_dir: Path,
 ) -> list[CombinedCase]:
     """Return combined test cases for all redefinition-supporting
@@ -315,8 +298,6 @@ def discover_combined_cases(  # noqa: C901  # pylint: disable=too-complex
         if case_dir.name in ref_case_dirs:
             continue
         if case_dir.name in default_ref_case_dirs:
-            continue
-        if case_dir.name in RUST_RECORD_CASE_DIRS:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases

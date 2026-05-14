@@ -24,7 +24,6 @@ from literalizer.exceptions import (
 from literalizer.languages.rust import Rust
 
 from .case_discovery import (
-    RUST_RECORD_CASE_DIRS,
     HeterogeneousStrategyCombinedCase,
     IndentCase,
     NoVariableFormCase,
@@ -530,49 +529,6 @@ def test_indent_golden_file(
         file_regression=file_regression,
         contents=result.code + "\n",
         extension=case.lang_cls.extension,
-        newline=None,
-        golden_path=golden_path,
-    )
-
-
-@pytest.mark.parametrize(
-    argnames="case_dir_name",
-    argvalues=sorted(RUST_RECORD_CASE_DIRS),
-)
-def test_rust_record_strategy_golden_file(
-    case_dir_name: str,
-    cases_dir: Path,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Render dedicated record-shape fixtures with Rust's RECORD
-    heterogeneous strategy and compare against the golden file.
-    """
-    record_strategy = next(
-        strategy
-        for strategy in Rust.heterogeneous_strategies
-        if strategy.name == "RECORD"
-    )
-    spec = Rust(heterogeneous_strategy=record_strategy)
-    yaml_string = (cases_dir / case_dir_name / "input.yaml").read_text()
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=literalizer.NewVariable(name="my_data"),
-        wrap_in_file=True,
-    )
-    golden_path = make_golden_path(
-        parent=cases_dir / case_dir_name,
-        name="Rust",
-        extension=spec.extension,
-        lang_cls=Rust,
-    )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=spec.extension,
         newline=None,
         golden_path=golden_path,
     )

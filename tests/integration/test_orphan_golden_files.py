@@ -5,12 +5,9 @@ from pathlib import Path
 
 from beartype import beartype
 
-from literalizer.languages.rust import Rust
-
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
-    RUST_RECORD_CASE_DIRS,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
     build_no_variable_form_cases,
@@ -133,16 +130,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         )
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
-
-    for case_dir_name in RUST_RECORD_CASE_DIRS:
-        expected.add(
-            make_golden_path(
-                parent=cases_dir / case_dir_name,
-                name="Rust",
-                extension=Rust.extension,
-                lang_cls=Rust,
-            )
-        )
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
