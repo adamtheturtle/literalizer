@@ -31,7 +31,7 @@ from literalizer.exceptions import (
 type YamlCoercible = (
     Scalar
     | list[YamlCoercible]
-    | dict[object, YamlCoercible]
+    | dict[Scalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
 )
@@ -125,21 +125,22 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
 
 
 @beartype
-def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
-    """Recursively convert non-string dict keys to their string form.
-
-    YAML allows non-string mapping keys (e.g. integers); ``Value``
-    requires ``dict[str, Value]``, so we normalise before passing
-    loaded YAML data to :func:`_literalize`.
+def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
+    """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
     ``!!omap`` nodes; those are demoted to plain ``ordereddict`` so
     ordered-map detection in :func:`_literalize` still works.  Other
     mappings come through as ``CommentedMap`` and are demoted to plain
     ``dict``.  :class:`CommentedSet` does not subclass :class:`set`, so
-    it is converted as well.  Scalar leaves are unwrapped to plain
-    Python types so type-based dispatch sees ``int`` rather than
-    ``ScalarInt`` and friends.
+    it is converted as well.  Scalar leaves (including dict keys) are
+    unwrapped to plain Python types so type-based dispatch sees
+    ``int`` rather than ``ScalarInt`` and friends.
+
+    Non-string dict keys are preserved as their native scalar type;
+    languages that cannot represent them are gated by
+    :attr:`Language.supports_non_string_dict_keys` in
+    :mod:`literalizer._literalize`.
     """
     # ``CommentedMap`` and ``CommentedSeq`` are subclasses of ``dict``
     # and ``list`` respectively, so their cases collapse into the plain
@@ -148,20 +149,24 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
     # represents ``!!omap`` and must be demoted to ``ordereddict``.
     match data:
         case CommentedOrderedMap():
-            omap_src: dict[object, YamlCoercible] = dict(data)
+            omap_src: dict[Scalar, YamlCoercible] = dict(data)
             return ordereddict(
                 [
-                    (f"{k}", _coerce_yaml_keys(data=v))
+                    (
+                        _unwrap_yaml_scalar(value=k),
+                        _unwrap_yaml_data(data=v),
+                    )
                     for k, v in omap_src.items()
                 ]
             )
         case dict():
-            coerced: dict[Scalar, Value] = {
-                f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()
+            unwrapped: dict[Scalar, Value] = {
+                _unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
+                for k, v in data.items()
             }
-            return coerced
+            return unwrapped
         case list():
-            return [_coerce_yaml_keys(data=item) for item in data]
+            return [_unwrap_yaml_data(data=item) for item in data]
         case CommentedSet():
             members: set[Scalar] = set(data)
             return {_unwrap_yaml_scalar(value=item) for item in members}
@@ -275,7 +280,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         except YAMLError as exc:
             message = f"Invalid YAML: {exc}"
             raise YAMLParseError(message) from exc
-        data = _coerce_yaml_keys(data=raw_data)
+        data = _unwrap_yaml_data(data=raw_data)
         return ParsedYaml(
             data=data,
             raw_data=raw_data,
@@ -288,7 +293,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
-    data = _coerce_yaml_keys(data=plain_data)
+    data = _unwrap_yaml_data(data=plain_data)
     return ParsedYaml(
         data=data,
         raw_data=plain_data,

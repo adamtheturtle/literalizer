@@ -5,6 +5,30 @@ Next
 ----
 
 
+- YAML inputs with non-string dict keys (integers, dates, booleans)
+  now flow through to the target language's value-formatting path
+  instead of being silently stringified.  Languages that can represent
+  the key natively (Python, Ruby, Clojure, Lua, Bash, and others)
+  produce the corresponding literal; languages whose dict syntax
+  requires string keys or a homogeneous typed map raise
+  :exc:`~literalizer.exceptions.UnrepresentableInputError`.  The
+  affected opt-out targets are the JSON family (already
+  :class:`~literalizer.Json5`, :class:`~literalizer.Jsonnet`,
+  :class:`~literalizer.Toml`), the string-keyed attribute-set
+  languages (:class:`~literalizer.Nix`, :class:`~literalizer.Dhall`,
+  :class:`~literalizer.Cobol`), the statically-typed-map languages
+  whose typed-map syntax has not yet been generalized
+  (:class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.CSharp`, :class:`~literalizer.Haskell`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Dart`,
+  :class:`~literalizer.VisualBasic`, :class:`~literalizer.FSharp`,
+  :class:`~literalizer.Zig`, :class:`~literalizer.Odin`,
+  :class:`~literalizer.Nim`, :class:`~literalizer.D`,
+  :class:`~literalizer.TypeScript`), and the languages whose value
+  ADTs do not currently model non-string keys
+  (:class:`~literalizer.OCaml`, :class:`~literalizer.Sml`,
+  :class:`~literalizer.R`).
+
 - The internal :data:`~literalizer._types.Value` and
   :data:`~literalizer._types.ValueInput` aliases now permit any
   :data:`~literalizer._types.Scalar` as a dict key, in preparation for

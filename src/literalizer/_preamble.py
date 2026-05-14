@@ -18,7 +18,10 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
     match data:
         case dict():
             child_types: frozenset[type] = frozenset()
-            for v in data.values():
+            for k, v in data.items():
+                key_type = _preamble_scalar_type(value=k)
+                if key_type is not None:
+                    child_types = child_types | frozenset({key_type})
                 child_types = child_types | _collect_value_types(data=v)
             container_type = (
                 ordereddict if isinstance(data, ordereddict) else dict

@@ -2,10 +2,10 @@
 
 The check runs inside :func:`literalizer._checks.check_data` and rejects
 dicts whose keys span multiple type families when the target language
-sets ``dict_supports_heterogeneous_values = False``.  Today the surface
-parsers coerce non-string keys to strings, so the check is wired but
-unreachable through :func:`literalizer.literalize`; the tests here
-invoke ``check_data`` directly to exercise the contract.
+sets ``dict_supports_heterogeneous_values = False``.  The YAML parser
+preserves non-string keys natively, so this check is reachable through
+:func:`literalizer.literalize`; the tests here invoke ``check_data``
+directly to exercise the helper contract in isolation.
 """
 
 from __future__ import annotations
