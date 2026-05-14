@@ -1434,6 +1434,10 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("heterogeneous_list_with_string", ""),
         ("dict_with_list_value", "_list_val"),
         ("multiline_sibling_list_widening", "_sibling_widening"),
+        ("record_basic", ""),
+        ("record_pure_scalars", ""),
+        ("record_nested_container", ""),
+        ("record_sequence", ""),
     )
 )
 

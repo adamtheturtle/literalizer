@@ -27,6 +27,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     WideInt,
     infer_element_type,
+    record_shape_for_dict,
 )
 from literalizer._language import (
     CallStyle,
@@ -467,6 +468,121 @@ def _format_ordered_map_value(
     joined = spec.element_separator.join(pairs)
     opening = ordered_map_cfg.ordered_map_open(value)
     return opening + joined + ordered_map_cfg.close
+
+
+@beartype
+def _maybe_format_record_literal(
+    *,
+    value: dict[Scalar, Value],
+    spec: Language,
+    wrap_ids: frozenset[int],
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    expand_refs: bool,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    multiline_prefix: str,
+) -> str | None:
+    """Render *value* as a record-struct literal if eligible.
+
+    Returns ``None`` when the language's heterogeneous behavior is not
+    RECORD-enabled or when *value* is not record-shaped (empty,
+    non-string keys, or a ruamel ordered map).
+    """
+    behavior = spec.heterogeneous_behavior
+    render_record_literal = behavior.render_record_literal
+    if render_record_literal is None:
+        return None
+    shape = record_shape_for_dict(value=value)
+    if shape is None:  # pragma: no cover
+        return None
+    is_multiline = collection_layout is CollectionLayout.MULTILINE
+    body_prefix = multiline_prefix + spec.indent if is_multiline else ""
+    field_multiline_prefix = body_prefix if is_multiline else multiline_prefix
+    # ``shape.keys`` is built from ``value.keys()`` so every key is
+    # present in *value*.
+    formatted_fields: dict[str, str] = {
+        key: _format_value(
+            value=value[key],
+            spec=spec,
+            dict_open_override=None,
+            wrap_ids=wrap_ids,
+            sequence_open_override=None,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            expand_refs=expand_refs,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix=field_multiline_prefix,
+        )
+        for key in shape.keys
+    }
+    rendered = render_record_literal(shape, formatted_fields)
+    if not is_multiline:
+        return rendered
+    return _expand_record_literal_multiline(
+        rendered=rendered,
+        body_prefix=body_prefix,
+        close_prefix=multiline_prefix,
+    )
+
+
+@beartype
+def _expand_record_literal_multiline(
+    *,
+    rendered: str,
+    body_prefix: str,
+    close_prefix: str,
+) -> str:
+    """Expand a single-line record literal into multiline form.
+
+    Splits ``Name { f1: v1, f2: v2 }`` (always produced with at least
+    one field by ``render_record_literal`` because record-eligible
+    dicts are non-empty) into one entry per line indented under
+    *body_prefix* with the closing ``}`` on its own line under
+    *close_prefix*.
+    """
+    open_idx = rendered.index("{")
+    head = rendered[: open_idx + 1]
+    body = rendered[open_idx + 1 : -1].strip()
+    entries = _split_record_entries(body=body)
+    indented = [f"{body_prefix}{entry.strip()}," for entry in entries]
+    return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}}}"
+
+
+@beartype
+def _split_record_entries(*, body: str) -> list[str]:
+    """Split a record-literal body on commas that are not inside
+    brackets or quotes.
+
+    *body* is the inner text of ``Name { ... }`` for a record with at
+    least one field, so the loop always produces a non-empty trailing
+    entry after the last comma (or the whole body when there are no
+    top-level commas).
+    """
+    entries: list[str] = []
+    depth = 0
+    in_string: str | None = None
+    last = 0
+    for index, char in enumerate(iterable=body):
+        if in_string is not None:
+            if char == in_string:
+                in_string = None
+            continue
+        match char:
+            case '"' | "'":
+                in_string = char
+            case "(" | "[" | "{":
+                depth += 1
+            case ")" | "]" | "}":
+                depth -= 1
+            case "," if depth == 0:
+                entries.append(body[last:index])
+                last = index + 1
+            case _:
+                pass
+    entries.append(body[last:].strip().rstrip(","))
+    return [e for e in entries if e.strip()]
 
 
 @beartype
@@ -1111,7 +1227,7 @@ def _format_list_value(
 
 
 @beartype
-def _format_value(
+def _format_value(  # pylint: disable=too-complex
     *,
     value: Value,
     spec: Language,
@@ -1171,6 +1287,20 @@ def _format_value(
                 if expand_refs
                 else spec.format_call_ref_identifier(ref_name, ref_value)
             )
+    if isinstance(value, dict) and not isinstance(value, ordereddict):
+        record_literal = _maybe_format_record_literal(
+            value=value,
+            spec=spec,
+            wrap_ids=wrap_ids,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            expand_refs=expand_refs,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix=multiline_prefix,
+        )
+        if record_literal is not None:
+            return record_literal
     if (
         collection_layout is CollectionLayout.MULTILINE
         and isinstance(value, (dict, list, set, ordereddict))
@@ -1609,7 +1739,7 @@ def _format_collection_lines(
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
-def _literalize(
+def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
     *,
     data: Value,
     language: Language,
@@ -1738,6 +1868,25 @@ def _literalize(
             multiline_prefix=line_prefix,
         )
         return f"{line_prefix}{formatted}"
+
+    if (
+        include_delimiters
+        and isinstance(data, dict)
+        and not isinstance(data, ordereddict)
+    ):
+        record_literal = _maybe_format_record_literal(
+            value=data,
+            spec=language,
+            wrap_ids=wrap_ids,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            expand_refs=False,
+            ref_key=ref_key,
+            collection_layout=CollectionLayout.MULTILINE,
+            multiline_prefix=line_prefix,
+        )
+        if record_literal is not None:
+            return f"{line_prefix}{record_literal}"
 
     body_prefix = (
         line_prefix + language.indent if include_delimiters else line_prefix
