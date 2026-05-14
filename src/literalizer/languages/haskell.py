@@ -1767,16 +1767,17 @@ class Haskell(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a declaration binding a call expression.
 
-        The literal-binding declaration prepends a ``name :: Type``
-        annotation derived from the bound value's runtime tagged-enum
-        type; a call expression has no such tag, so the annotation is
-        omitted and Haskell infers the call's return type instead.
+        The literal-binding declaration is prepended with a
+        ``name :: Type`` annotation derived from the bound value's
+        runtime tagged-enum type; a call expression has no such tag,
+        so the annotation is omitted and Haskell infers the call's
+        return type instead.
         """
         return self.declaration_style.value.formatter
 
     @staticmethod
     def format_call_binding_file_pragmas() -> tuple[str, ...]:
-        """File-level pragmas emitted alongside a ``wrap_in_file``
+        """File-level pragma emitted alongside a ``wrap_in_file``
         scaffold whose top level contains an inference-bound call
         result.
 
