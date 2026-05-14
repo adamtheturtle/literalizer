@@ -24,30 +24,19 @@ from literalizer.languages import (
 )
 
 
-@functools.cache
 @beartype
-def _language_versions(*, cases_dir: Path) -> dict[str, str]:
-    """Discover ``{LanguageClass.__name__: version}`` from on-disk
-    filenames.
+def _default_language_version(
+    *, lang_cls: literalizer.LanguageCls
+) -> enum.Enum:
+    """Return the default ``language_version`` enum member for *lang_cls*.
 
-    A fixture named ``{stem}@{version}{extension}`` records the
-    compiler version it was generated against.  The first ``@``-tagged
-    fixture encountered for a language fixes that language's active
-    version; ``test_no_dead_golden_files`` ensures every other fixture
-    for that language agrees.
+    Every language dataclass declares a ``language_version`` field
+    whose default points at the single active member of its
+    ``VersionFormats`` enum.  Reading the default lets the golden-file
+    pipeline tag each fixture with the active version without scanning
+    on-disk filenames.
     """
-    lookup = {cls.__name__: cls for cls in ALL_LANGUAGES} | {
-        cls.__name__.lower(): cls for cls in ALL_LANGUAGES
-    }
-    versions: dict[str, str] = {}
-    for path in cases_dir.rglob(pattern="*"):
-        stem = path.stem
-        if "@" not in stem:
-            continue
-        lang_part, version = stem.rsplit(sep="@", maxsplit=1)
-        prefix = lang_part.split(sep="_", maxsplit=1)[0]
-        versions[lookup[prefix].__name__] = version
-    return versions
+    return make_spec(lang_cls=lang_cls).language_version
 
 
 @beartype
@@ -176,30 +165,38 @@ def make_golden_path(
     name: str,
     extension: str,
     lang_cls: literalizer.LanguageCls,
+    version: enum.Enum | None = None,
 ) -> Path:
     """Return the on-disk path for a golden fixture file.
 
-    For most languages this is just ``parent / (name + extension)``.
-    Gleam is special-cased: the file name is mapped to its lower-case
-    form so it is a valid Gleam module identifier.  The CI Gleam-lint
-    job drops each fixture into a one-shot project as a real module
-    path (e.g. ``binary/gleam_combined``), which fails compilation if
-    the file name starts with a capital letter or contains an
-    upper-case character.
+    Every golden filename embeds a ``@<version>`` tag derived from a
+    member of the language's ``VersionFormats`` enum so adding a second
+    version member automatically produces a parallel set of golden
+    files.  The tag uses the member's lower-cased ``name`` (e.g.
+    ``PY_3_12`` -> ``py_3_12``).
 
-    The name passed in (``Gleam_type_name_JsonVal``) keeps its original
-    casing in pytest test IDs and error messages; only the on-disk
-    file name is mapped down.
+    When *version* is ``None`` the tag is derived from the language's
+    default ``language_version`` field.  Callers that want to loop over
+    every active version (today exactly one per language) pass the
+    explicit member they are rendering.
 
-    Languages with version-tagged fixtures on disk resolve to a
-    versioned path ``{stem}@{version}{extension}``; the version is
-    discovered from sibling files (see ``_language_versions``)
-    so the workflow's compiler pin remains the single source of truth.
+    Gleam is special-cased: the entire file name (including the version
+    tag) is mapped to its lower-case form so it remains a valid Gleam
+    module identifier.  The CI Gleam-lint job drops each fixture into a
+    one-shot project as a real module path (e.g. ``binary/gleam_combined``),
+    which fails compilation if the file name starts with a capital
+    letter or contains an upper-case character.  The name passed in
+    (``Gleam_type_name_JsonVal``) keeps its original casing in pytest
+    test IDs and error messages; only the on-disk file name is mapped
+    down.
     """
-    versions = _language_versions(cases_dir=parent.parent)
-    version = versions.get(lang_cls.__name__)
-    stem = f"{name}@{version}" if version is not None else name
-    filename = stem + extension
+    effective_version = (
+        version
+        if version is not None
+        else _default_language_version(lang_cls=lang_cls)
+    )
+    version_tag = effective_version.name.lower()
+    filename = f"{name}@{version_tag}{extension}"
     if lang_cls.__name__ == Gleam.__name__:
         filename = filename.lower()
     return parent / filename

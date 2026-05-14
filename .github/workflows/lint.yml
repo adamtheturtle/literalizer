@@ -265,8 +265,9 @@ jobs:
     # Pinned: `release: latest` (dev-2026-05) crashes at runtime under
     # `odin run .`, and the compiler itself segfaults on some fixtures
     # under `odin build .`.  dev-2026-04 was the last release known to
-    # work with `odin run .`.  The same value tags every Odin fixture
-    # on disk (e.g. `Odin@dev-2026-04.odin`).
+    # work with `odin run .`.  Every Odin fixture on disk carries the
+    # tag from ``Odin.VersionFormats`` (e.g. `Odin@dev_2024.odin`); the
+    # compiler pin here and that enum member name are reviewed together.
     env:
       ODIN_VERSION: dev-2026-04
     steps:
@@ -662,9 +663,9 @@ jobs:
 
   lint-elixir:
     runs-on: ubuntu-latest
-    # Every Elixir fixture on disk is tagged with this version (e.g.
-    # `Elixir@1.18.ex`); bumping the pin requires regenerating the
-    # fixtures so the tag stays in sync.
+    # Every Elixir fixture on disk carries the tag from
+    # ``Elixir.VersionFormats`` (e.g. `Elixir@v1_14.ex`); bumping the
+    # compiler pin and the enum member name are reviewed together.
     env:
       ELIXIR_VERSION: '1.18'
     steps:
@@ -690,9 +691,9 @@ jobs:
 
   lint-erlang:
     runs-on: ubuntu-latest
-    # Every Erlang fixture on disk is tagged with this OTP version
-    # (e.g. `Erlang@27.erl`); bumping the pin requires regenerating
-    # the fixtures so the tag stays in sync.
+    # Every Erlang fixture on disk carries the tag from
+    # ``Erlang.VersionFormats`` (e.g. `Erlang@otp_25.erl`); bumping the
+    # OTP pin and the enum member name are reviewed together.
     env:
       OTP_VERSION: '27'
     steps:
@@ -745,9 +746,10 @@ jobs:
 
   lint-gleam:
     runs-on: ubuntu-latest
-    # Every Gleam fixture on disk is tagged with this version (e.g.
-    # `gleam_combined@v1.16.0.gleam`); bumping the pin requires
-    # regenerating the fixtures so the tag stays in sync.
+    # Every Gleam fixture on disk carries the tag from
+    # ``Gleam.VersionFormats`` (e.g. `gleam_combined@v1.gleam`);
+    # bumping the compiler pin and the enum member name are reviewed
+    # together.
     env:
       GLEAM_VERSION: v1.16.0
     steps:
@@ -1002,8 +1004,9 @@ jobs:
     # ``ScriptExpectedLocation`` class that is no longer shipped, so
     # ``K2JVMCompiler.exec("-script", ...)`` from inside a
     # ``.main.kts`` host blows up with NoClassDefFoundError.  2.3.20
-    # drops the stale reference.  The same value tags every Kotlin
-    # fixture on disk (e.g. `Kotlin@2.3.20.kts`).
+    # drops the stale reference.  Every Kotlin fixture on disk carries
+    # the tag from ``Kotlin.VersionFormats`` (e.g. `Kotlin@v1_9.kts`);
+    # the compiler pin and that enum member name are reviewed together.
     env:
       KOTLIN_VERSION: 2.3.20
     steps:
@@ -1522,9 +1525,9 @@ jobs:
 
   lint-zig:
     runs-on: ubuntu-latest
-    # Every Zig fixture on disk is tagged with this version (e.g.
-    # `Zig@0.14.0.zig`); bumping the pin requires regenerating the
-    # fixtures so the tag stays in sync.
+    # Every Zig fixture on disk carries the tag from
+    # ``Zig.VersionFormats`` (e.g. `Zig@v0_12.zig`); bumping the
+    # compiler pin and the enum member name are reviewed together.
     env:
       ZIG_VERSION: 0.14.0
     steps:

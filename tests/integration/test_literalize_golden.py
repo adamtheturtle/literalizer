@@ -5,8 +5,14 @@ declaration form, combined declaration + assignment, format-variant
 kwargs, statement-terminator option, heterogeneous-scalar strategy,
 ``pre_indent_level`` — but all share the same shape: render YAML to a
 language and compare against a checked-in golden file.
+
+Every golden test loops over ``lang_cls.VersionFormats`` so adding a
+second member to a language's ``VersionFormats`` enum automatically
+produces a parallel set of golden files; today the enum has a single
+member so the loop runs once per language and case.
 """
 
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -67,70 +73,80 @@ def test_golden_file(
     lang_name = lang_cls.__name__
     grouped = group_cases_by_language(cases_dir=cases_dir)
     for case_name in grouped.get(lang_cls, []):
-        with subtests.test(case_name=case_name):
-            input_path = cases_dir / case_name / "input.yaml"
-            yaml_string = input_path.read_text()
-            golden_path = make_golden_path(
-                parent=input_path.parent,
-                name=lang_name,
-                extension=lang_cls.extension,
-                lang_cls=lang_cls,
-            )
-            spec = with_per_fixture_module_name(
-                spec=make_spec(lang_cls=lang_cls),
-                golden_path=golden_path,
-            )
-            try:
+        for version_format in lang_cls.VersionFormats:
+            with subtests.test(
+                case_name=case_name,
+                version=version_format.name,
+            ):
+                input_path = cases_dir / case_name / "input.yaml"
+                yaml_string = input_path.read_text()
+                golden_path = make_golden_path(
+                    parent=input_path.parent,
+                    name=lang_name,
+                    extension=lang_cls.extension,
+                    lang_cls=lang_cls,
+                    version=version_format,
+                )
+                spec = with_per_fixture_module_name(
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        language_version=version_format,
+                    ),
+                    golden_path=golden_path,
+                )
                 try:
-                    result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
-                        language=spec,
-                        pre_indent_level=0,
-                        include_delimiters=True,
-                        variable_form=wrap_variable_form(),
-                        wrap_in_file=True,
+                    try:
+                        result = literalizer.literalize(
+                            source=yaml_string,
+                            input_format=literalizer.InputFormat.YAML,
+                            language=spec,
+                            pre_indent_level=0,
+                            include_delimiters=True,
+                            variable_form=wrap_variable_form(),
+                            wrap_in_file=True,
+                        )
+                    except VariableNameNotSupportedError:
+                        result = literalizer.literalize(
+                            source=yaml_string,
+                            input_format=literalizer.InputFormat.YAML,
+                            language=spec,
+                            pre_indent_level=0,
+                            include_delimiters=True,
+                            variable_form=None,
+                            wrap_in_file=True,
+                        )
+                except UnrepresentableIntegerError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_name} cannot represent integer in this input",
                     )
-                except VariableNameNotSupportedError:
-                    result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
-                        language=spec,
-                        pre_indent_level=0,
-                        include_delimiters=True,
-                        variable_form=None,
-                        wrap_in_file=True,
+                except HeterogeneousCollectionError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_name} cannot represent this heterogeneous "
+                        "input",
                     )
-            except UnrepresentableIntegerError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_name} cannot represent integer in this input",
+                except NullInCollectionError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_name} cannot represent null in a collection",
+                    )
+                except UnrepresentableInputError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_name} cannot represent this input",
+                    )
+                # newline="" prevents Python text-mode from converting
+                # \r\n to \n on Windows, which would corrupt golden
+                # files containing literal CR bytes (e.g. CommonLisp
+                # string_control_chars).
+                check_golden(
+                    file_regression=file_regression,
+                    contents=result.code + "\n",
+                    extension=lang_cls.extension,
+                    newline="",
+                    golden_path=golden_path,
                 )
-            except HeterogeneousCollectionError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_name} cannot represent this heterogeneous input",
-                )
-            except NullInCollectionError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_name} cannot represent null in a collection",
-                )
-            except UnrepresentableInputError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_name} cannot represent this input",
-                )
-            # newline="" prevents Python text-mode from converting \r\n to
-            # \n on Windows, which would corrupt golden files containing
-            # literal CR bytes (e.g. CommonLisp string_control_chars).
-            check_golden(
-                file_regression=file_regression,
-                contents=result.code + "\n",
-                extension=lang_cls.extension,
-                newline="",
-                golden_path=golden_path,
-            )
 
 
 @pytest.mark.parametrize(
@@ -149,65 +165,71 @@ def test_golden_file_combined_variable_forms(
     """
     grouped = group_combined_cases_by_language(cases_dir=cases_dir)
     for combined_case in grouped.get(lang_cls, []):
-        with subtests.test(
-            case_name=combined_case.case_name,
-            golden_file_name=combined_case.golden_file_name,
-        ):
-            input_path = cases_dir / combined_case.case_name / "input.yaml"
-            golden_path = make_golden_path(
-                parent=input_path.parent,
-                name=combined_case.golden_file_name,
-                extension=lang_cls.extension,
-                lang_cls=lang_cls,
-            )
-            spec = with_per_fixture_module_name(
-                spec=make_spec(
+        for version_format in lang_cls.VersionFormats:
+            with subtests.test(
+                case_name=combined_case.case_name,
+                golden_file_name=combined_case.golden_file_name,
+                version=version_format.name,
+            ):
+                input_path = cases_dir / combined_case.case_name / "input.yaml"
+                golden_path = make_golden_path(
+                    parent=input_path.parent,
+                    name=combined_case.golden_file_name,
+                    extension=lang_cls.extension,
                     lang_cls=lang_cls,
-                    declaration_style=combined_case.declaration_style,
-                ),
-                golden_path=golden_path,
-            )
-            yaml_string = input_path.read_text()
-            try:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=literalizer.BothVariableForms(
-                        name="my_data",
+                    version=version_format,
+                )
+                spec = with_per_fixture_module_name(
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        declaration_style=combined_case.declaration_style,
+                        language_version=version_format,
                     ),
-                    wrap_in_file=True,
+                    golden_path=golden_path,
                 )
-            except UnrepresentableIntegerError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_cls.__name__} cannot represent integer in "
-                    "this input"
+                yaml_string = input_path.read_text()
+                try:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=literalizer.BothVariableForms(
+                            name="my_data",
+                        ),
+                        wrap_in_file=True,
+                    )
+                except UnrepresentableIntegerError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_cls.__name__} cannot represent integer in "
+                        "this input"
+                    )
+                except HeterogeneousCollectionError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_cls.__name__} cannot represent this "
+                        "heterogeneous input"
+                    )
+                except NullInCollectionError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_cls.__name__} cannot represent null in a "
+                        "collection"
+                    )
+                except UnrepresentableInputError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_cls.__name__} cannot represent this input"
+                    )
+                check_golden(
+                    file_regression=file_regression,
+                    contents=result.code + "\n",
+                    extension=lang_cls.extension,
+                    newline="",
+                    golden_path=golden_path,
                 )
-            except HeterogeneousCollectionError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_cls.__name__} cannot represent this "
-                    "heterogeneous input"
-                )
-            except NullInCollectionError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{lang_cls.__name__} cannot represent null in a "
-                    "collection"
-                )
-            except UnrepresentableInputError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(f"{lang_cls.__name__} cannot represent this input")
-            check_golden(
-                file_regression=file_regression,
-                contents=result.code + "\n",
-                extension=lang_cls.extension,
-                newline="",
-                golden_path=golden_path,
-            )
 
 
 @pytest.mark.parametrize(
@@ -225,64 +247,75 @@ def test_format_variant_golden_file(
     against golden files.
     """
     for variant_case in group_variant_cases_by_language()[lang_cls]:
-        with subtests.test(
-            variant_name=variant_case.variant_name,
-            case_dir_name=variant_case.case_dir_name,
-        ):
-            case_dir = cases_dir / variant_case.case_dir_name
-            variant = variant_case.variant
-            yaml_string = (case_dir / "input.yaml").read_text()
-            golden_path = make_golden_path(
-                parent=case_dir,
-                name=variant_case.variant_name,
-                extension=variant.spec.extension,
-                lang_cls=lang_cls,
-            )
-            spec = with_per_fixture_module_name(
-                spec=variant.spec,
-                golden_path=golden_path,
-            )
-            try:
+        for version_format in lang_cls.VersionFormats:
+            with subtests.test(
+                variant_name=variant_case.variant_name,
+                case_dir_name=variant_case.case_dir_name,
+                version=version_format.name,
+            ):
+                case_dir = cases_dir / variant_case.case_dir_name
+                variant = variant_case.variant
+                yaml_string = (case_dir / "input.yaml").read_text()
+                golden_path = make_golden_path(
+                    parent=case_dir,
+                    name=variant_case.variant_name,
+                    extension=variant.spec.extension,
+                    lang_cls=lang_cls,
+                    version=version_format,
+                )
+                versioned_spec = dataclasses.replace(
+                    variant.spec,
+                    language_version=version_format,
+                )
+                spec = with_per_fixture_module_name(
+                    spec=versioned_spec,
+                    golden_path=golden_path,
+                )
                 try:
-                    result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
-                        language=spec,
-                        pre_indent_level=0,
-                        include_delimiters=True,
-                        variable_form=variant_case.variable_form,
-                        wrap_in_file=True,
-                        collection_layout=variant.collection_layout,
+                    try:
+                        result = literalizer.literalize(
+                            source=yaml_string,
+                            input_format=literalizer.InputFormat.YAML,
+                            language=spec,
+                            pre_indent_level=0,
+                            include_delimiters=True,
+                            variable_form=variant_case.variable_form,
+                            wrap_in_file=True,
+                            collection_layout=variant.collection_layout,
+                        )
+                    except VariableNameNotSupportedError:
+                        result = literalizer.literalize(
+                            source=yaml_string,
+                            input_format=literalizer.InputFormat.YAML,
+                            language=spec,
+                            pre_indent_level=0,
+                            include_delimiters=True,
+                            variable_form=None,
+                            wrap_in_file=True,
+                            collection_layout=variant.collection_layout,
+                        )
+                except NullInCollectionError:
+                    pytest.skip("Format rejects null elements in this input")
+                except HeterogeneousCollectionError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        "Format cannot represent this heterogeneous input"
                     )
-                except VariableNameNotSupportedError:
-                    result = literalizer.literalize(
-                        source=yaml_string,
-                        input_format=literalizer.InputFormat.YAML,
-                        language=spec,
-                        pre_indent_level=0,
-                        include_delimiters=True,
-                        variable_form=None,
-                        wrap_in_file=True,
-                        collection_layout=variant.collection_layout,
+                except IncompatibleFormatsError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        "Format combination cannot represent this input"
                     )
-            except NullInCollectionError:
-                pytest.skip("Format rejects null elements in this input")
-            except HeterogeneousCollectionError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format cannot represent this heterogeneous input")
-            except IncompatibleFormatsError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format combination cannot represent this input")
-            except UnrepresentableInputError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format cannot represent this input")
-            check_golden(
-                file_regression=file_regression,
-                contents=result.code + "\n",
-                extension=variant.spec.extension,
-                newline=None,
-                golden_path=golden_path,
-            )
+                except UnrepresentableInputError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip("Format cannot represent this input")
+                check_golden(
+                    file_regression=file_regression,
+                    contents=result.code + "\n",
+                    extension=variant.spec.extension,
+                    newline=None,
+                    golden_path=golden_path,
+                )
 
 
 @pytest.mark.parametrize(
@@ -294,6 +327,7 @@ def test_statement_terminator_style_combined_variable_forms(
     case: StatementTerminatorCombinedCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test that combined (declaration + assignment) output with a
     non-default statement terminator matches the golden file.
@@ -303,32 +337,36 @@ def test_statement_terminator_style_combined_variable_forms(
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
-    spec = make_spec(
-        lang_cls=case.lang_cls,
-        statement_terminator_style=case.statement_terminator_style,
-        declaration_style=redef_styles[0],
-    )
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=literalizer.BothVariableForms(name="my_data"),
-        wrap_in_file=True,
-    )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=spec.extension,
-        newline=None,
-        golden_path=make_golden_path(
-            parent=input_path.parent,
-            name=case.name,
-            extension=spec.extension,
-            lang_cls=case.lang_cls,
-        ),
-    )
+    for version_format in case.lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            spec = make_spec(
+                lang_cls=case.lang_cls,
+                statement_terminator_style=case.statement_terminator_style,
+                declaration_style=redef_styles[0],
+                language_version=version_format,
+            )
+            result = literalizer.literalize(
+                source=yaml_string,
+                input_format=literalizer.InputFormat.YAML,
+                language=spec,
+                pre_indent_level=0,
+                include_delimiters=True,
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+                wrap_in_file=True,
+            )
+            check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=spec.extension,
+                newline=None,
+                golden_path=make_golden_path(
+                    parent=input_path.parent,
+                    name=case.name,
+                    extension=spec.extension,
+                    lang_cls=case.lang_cls,
+                    version=version_format,
+                ),
+            )
 
 
 @pytest.mark.parametrize(
@@ -340,6 +378,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
     case: HeterogeneousStrategyCombinedCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test that combined (declaration + assignment) output with a
     non-default heterogeneous-scalar strategy matches the golden file.
@@ -349,32 +388,36 @@ def test_heterogeneous_strategy_combined_variable_forms(
     base_spec = make_spec(lang_cls=case.lang_cls)
     redef_styles = find_redefinition_styles(spec=base_spec)
     assert redef_styles
-    spec = make_spec(
-        lang_cls=case.lang_cls,
-        heterogeneous_strategy=case.heterogeneous_strategy,
-        declaration_style=redef_styles[0],
-    )
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=literalizer.BothVariableForms(name="my_data"),
-        wrap_in_file=True,
-    )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=spec.extension,
-        newline=None,
-        golden_path=make_golden_path(
-            parent=input_path.parent,
-            name=case.name,
-            extension=spec.extension,
-            lang_cls=case.lang_cls,
-        ),
-    )
+    for version_format in case.lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            spec = make_spec(
+                lang_cls=case.lang_cls,
+                heterogeneous_strategy=case.heterogeneous_strategy,
+                declaration_style=redef_styles[0],
+                language_version=version_format,
+            )
+            result = literalizer.literalize(
+                source=yaml_string,
+                input_format=literalizer.InputFormat.YAML,
+                language=spec,
+                pre_indent_level=0,
+                include_delimiters=True,
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+                wrap_in_file=True,
+            )
+            check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=spec.extension,
+                newline=None,
+                golden_path=make_golden_path(
+                    parent=input_path.parent,
+                    name=case.name,
+                    extension=spec.extension,
+                    lang_cls=case.lang_cls,
+                    version=version_format,
+                ),
+            )
 
 
 @pytest.mark.parametrize(
@@ -386,6 +429,7 @@ def test_pre_indent_level_with_new_variable_golden_file(
     case: PreIndentCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """``pre_indent_level > 0`` with ``NewVariable`` produces uniformly
     indented output.
@@ -397,31 +441,37 @@ def test_pre_indent_level_with_new_variable_golden_file(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    spec = make_spec(lang_cls=case.lang_cls)
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=case.pre_indent_level,
-        include_delimiters=True,
-        variable_form=literalizer.NewVariable(
-            name="my_data",
-            modifiers=case.modifiers,
-        ),
-        wrap_in_file=True,
-    )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=spec.extension,
-        newline=None,
-        golden_path=make_golden_path(
-            parent=input_path.parent,
-            name=case.name,
-            extension=spec.extension,
-            lang_cls=case.lang_cls,
-        ),
-    )
+    for version_format in case.lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            spec = make_spec(
+                lang_cls=case.lang_cls,
+                language_version=version_format,
+            )
+            result = literalizer.literalize(
+                source=yaml_string,
+                input_format=literalizer.InputFormat.YAML,
+                language=spec,
+                pre_indent_level=case.pre_indent_level,
+                include_delimiters=True,
+                variable_form=literalizer.NewVariable(
+                    name="my_data",
+                    modifiers=case.modifiers,
+                ),
+                wrap_in_file=True,
+            )
+            check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=spec.extension,
+                newline=None,
+                golden_path=make_golden_path(
+                    parent=input_path.parent,
+                    name=case.name,
+                    extension=spec.extension,
+                    lang_cls=case.lang_cls,
+                    version=version_format,
+                ),
+            )
 
 
 @pytest.mark.parametrize(
@@ -433,6 +483,7 @@ def test_no_variable_form_golden_file(
     case: NoVariableFormCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """``literalize(wrap_in_file=True, variable_form=None)`` renders to a
     stable per-language golden for every opt-in language.
@@ -445,32 +496,38 @@ def test_no_variable_form_golden_file(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = make_golden_path(
-        parent=input_path.parent,
-        name=case.name,
-        extension=case.lang_cls.extension,
-        lang_cls=case.lang_cls,
-    )
-    spec = with_per_fixture_module_name(
-        spec=make_spec(lang_cls=case.lang_cls),
-        golden_path=golden_path,
-    )
-    result = literalizer.literalize(
-        source=yaml_string,
-        input_format=literalizer.InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-        wrap_in_file=True,
-    )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=case.lang_cls.extension,
-        newline=None,
-        golden_path=golden_path,
-    )
+    for version_format in case.lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            golden_path = make_golden_path(
+                parent=input_path.parent,
+                name=case.name,
+                extension=case.lang_cls.extension,
+                lang_cls=case.lang_cls,
+                version=version_format,
+            )
+            spec = with_per_fixture_module_name(
+                spec=make_spec(
+                    lang_cls=case.lang_cls,
+                    language_version=version_format,
+                ),
+                golden_path=golden_path,
+            )
+            result = literalizer.literalize(
+                source=yaml_string,
+                input_format=literalizer.InputFormat.YAML,
+                language=spec,
+                pre_indent_level=0,
+                include_delimiters=True,
+                variable_form=None,
+                wrap_in_file=True,
+            )
+            check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=case.lang_cls.extension,
+                newline=None,
+                golden_path=golden_path,
+            )
 
 
 @pytest.mark.parametrize(
@@ -482,6 +539,7 @@ def test_indent_golden_file(
     case: IndentCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """A non-default ``indent`` renders to a stable per-language golden.
 
@@ -494,40 +552,47 @@ def test_indent_golden_file(
     """
     input_path = cases_dir / case.case_dir_name / "input.yaml"
     yaml_string = input_path.read_text()
-    golden_path = make_golden_path(
-        parent=input_path.parent,
-        name=case.name,
-        extension=case.lang_cls.extension,
-        lang_cls=case.lang_cls,
-    )
-    spec = with_per_fixture_module_name(
-        spec=make_spec(lang_cls=case.lang_cls, indent=case.indent),
-        golden_path=golden_path,
-    )
-    try:
-        result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=literalizer.NewVariable(name="my_data"),
-            wrap_in_file=True,
-        )
-    except VariableNameNotSupportedError:
-        result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-            wrap_in_file=True,
-        )
-    check_golden(
-        file_regression=file_regression,
-        contents=result.code + "\n",
-        extension=case.lang_cls.extension,
-        newline=None,
-        golden_path=golden_path,
-    )
+    for version_format in case.lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            golden_path = make_golden_path(
+                parent=input_path.parent,
+                name=case.name,
+                extension=case.lang_cls.extension,
+                lang_cls=case.lang_cls,
+                version=version_format,
+            )
+            spec = with_per_fixture_module_name(
+                spec=make_spec(
+                    lang_cls=case.lang_cls,
+                    indent=case.indent,
+                    language_version=version_format,
+                ),
+                golden_path=golden_path,
+            )
+            try:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=literalizer.NewVariable(name="my_data"),
+                    wrap_in_file=True,
+                )
+            except VariableNameNotSupportedError:
+                result = literalizer.literalize(
+                    source=yaml_string,
+                    input_format=literalizer.InputFormat.YAML,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=None,
+                    wrap_in_file=True,
+                )
+            check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=case.lang_cls.extension,
+                newline=None,
+                golden_path=golden_path,
+            )

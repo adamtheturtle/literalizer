@@ -6,6 +6,7 @@ Rust's ``TAGGED_ENUM`` strategy on inputs the default ``ERROR``
 strategy rejects).
 """
 
+import dataclasses
 from pathlib import Path
 
 import pytest
@@ -32,21 +33,36 @@ def test_call_golden_file(
     call_case: CallCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test that literalize_call output matches expected golden file."""
     config = call_case.config
     lang_cls = call_case.lang_cls
-    kwargs: dict[str, object] = {}
-    if config.call_style_type is not None:
-        style = next(
-            s
-            for s in lang_cls.CallStyles
-            if isinstance(s.value, config.call_style_type)
-        )
-        kwargs["call_style"] = style
-    spec = make_spec(lang_cls=lang_cls, **kwargs)
-    if call_case.expected_exception is not None:
-        with pytest.raises(expected_exception=call_case.expected_exception):
+    for version_format in lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            kwargs: dict[str, object] = {"language_version": version_format}
+            if config.call_style_type is not None:
+                style = next(
+                    s
+                    for s in lang_cls.CallStyles
+                    if isinstance(s.value, config.call_style_type)
+                )
+                kwargs["call_style"] = style
+            spec = make_spec(lang_cls=lang_cls, **kwargs)
+            if call_case.expected_exception is not None:
+                with pytest.raises(
+                    expected_exception=call_case.expected_exception,
+                ):
+                    run_call_golden_case(
+                        config=config,
+                        spec=spec,
+                        lang_cls=lang_cls,
+                        golden_name=f"{lang_cls.__name__}_call",
+                        cases_dir=cases_dir,
+                        file_regression=file_regression,
+                        version=version_format,
+                    )
+                continue
             run_call_golden_case(
                 config=config,
                 spec=spec,
@@ -54,16 +70,8 @@ def test_call_golden_file(
                 golden_name=f"{lang_cls.__name__}_call",
                 cases_dir=cases_dir,
                 file_regression=file_regression,
+                version=version_format,
             )
-        return
-    run_call_golden_case(
-        config=config,
-        spec=spec,
-        lang_cls=lang_cls,
-        golden_name=f"{lang_cls.__name__}_call",
-        cases_dir=cases_dir,
-        file_regression=file_regression,
-    )
 
 
 @pytest.mark.parametrize(
@@ -78,17 +86,26 @@ def test_call_variant_golden_file(
     call_variant_case: CallVariantCase,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
     """Test ``literalize_call`` for a non-default language spec.
 
     Covers call inputs that need a non-default language option, such as
     statement terminators or heterogeneous strategies.
     """
-    run_call_golden_case(
-        config=call_variant_case.config,
-        spec=call_variant_case.variant.spec,
-        lang_cls=call_variant_case.variant.lang_cls,
-        golden_name=f"{call_variant_case.variant.name}_call",
-        cases_dir=cases_dir,
-        file_regression=file_regression,
-    )
+    lang_cls = call_variant_case.variant.lang_cls
+    for version_format in lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            versioned_spec = dataclasses.replace(
+                call_variant_case.variant.spec,
+                language_version=version_format,
+            )
+            run_call_golden_case(
+                config=call_variant_case.config,
+                spec=versioned_spec,
+                lang_cls=lang_cls,
+                golden_name=f"{call_variant_case.variant.name}_call",
+                cases_dir=cases_dir,
+                file_regression=file_regression,
+                version=version_format,
+            )
