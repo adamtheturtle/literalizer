@@ -89,6 +89,14 @@ jobs:
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          # Pinned to ``Python.language_version`` (``PY_3_12``) in
+          # ``src/literalizer/languages/python.py``; keep this version
+          # in sync with that default so the Python fixture gate runs
+          # under the declared minimum interpreter.
+          python-version: '3.12'
 
       - name: Lint Bash
         run: |-
@@ -129,6 +137,12 @@ jobs:
       # The run step reuses the same trick: one pwsh process iterates
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
+      - name: Lint Python
+        run: |-
+          find tests/integration/cases -name '*.py' -print0 > /tmp/files-python
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m py_compile < /tmp/files-python
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python < /tmp/files-python
+
       - name: Lint PowerShell
         run: |-
           find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1 && test -s /tmp/files-ps1
