@@ -637,11 +637,10 @@ def _rust_record_field_type(  # noqa: PLR0911
     type.  Nested record fields use the corresponding generated struct
     name (when *record_names* maps a matching shape).
     """
-    # The ``case []`` / ``case dict()`` / ``case set()`` branches are
-    # reserved for shapes the MVP does not exercise: empty-list fields,
-    # nested records (#2234), and set-valued fields (out of scope for
-    # this issue).  They fall back to ``String`` so the preamble still
-    # type-checks structurally.
+    # The ``case []`` / ``case set()`` branches are reserved for shapes
+    # not exercised by current fixtures: empty-list fields and
+    # set-valued fields.  They fall back to ``String`` so the preamble
+    # still type-checks structurally.
     match value:
         case []:  # pragma: no cover
             return "Vec<String>"
@@ -656,7 +655,7 @@ def _rust_record_field_type(  # noqa: PLR0911
                 for item in value
             ]
             return f"Vec<{_unify_rust_types(types=inner_types)}>"
-        case dict():  # pragma: no cover
+        case dict():
             shape = record_shape_for_dict(value=value)
             if shape is not None and shape in record_names:
                 return record_names[shape]
@@ -815,8 +814,16 @@ def _build_record_preamble(
             shape: f"{record_prefix}{index}"
             for index, shape in enumerate(iterable=ordered_shapes)
         }
+        emit_order: list[RecordShape] = []
+        emit_seen: set[RecordShape] = set()
+        _accumulate_emit_order(
+            data=data,
+            shapes_by_id=shapes_by_id,
+            emit_ordered=emit_order,
+            emit_seen=emit_seen,
+        )
         struct_blocks: list[str] = []
-        for shape in ordered_shapes:
+        for shape in emit_order:
             block: list[str] = [f"struct {record_names[shape]} {{"]
             for key in shape.keys:
                 example = field_values[shape].get(key)
@@ -832,6 +839,42 @@ def _build_record_preamble(
         return tuple(struct_blocks)
 
     return _preamble
+
+
+def _accumulate_emit_order(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    emit_ordered: list[RecordShape],
+    emit_seen: set[RecordShape],
+) -> None:
+    """Walk *data* post-order to emit each shape after its
+    dependencies.
+    """
+    match data:
+        case dict():
+            for value in data.values():
+                _accumulate_emit_order(
+                    data=value,
+                    shapes_by_id=shapes_by_id,
+                    emit_ordered=emit_ordered,
+                    emit_seen=emit_seen,
+                )
+            if id(data) in shapes_by_id:
+                shape = shapes_by_id[id(data)]
+                if shape not in emit_seen:
+                    emit_seen.add(shape)
+                    emit_ordered.append(shape)
+        case list():
+            for item in data:
+                _accumulate_emit_order(
+                    data=item,
+                    shapes_by_id=shapes_by_id,
+                    emit_ordered=emit_ordered,
+                    emit_seen=emit_seen,
+                )
+        case _:
+            return
 
 
 def _gather_record_field_values(  # pylint: disable=too-complex
