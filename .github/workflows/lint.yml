@@ -183,10 +183,10 @@ jobs:
   # share a kernel.
   lint-odin:
     runs-on: ubuntu-latest
-    # Normal runs finish in a couple of minutes.  If the compiler, setup
-    # action, or cleanup hangs, stop this job promptly instead of leaving
-    # the completion gate blocked until the workflow-wide timeout.
-    timeout-minutes: 15
+    # Normal runs finish in minutes.  If the compiler, setup action, or
+    # cleanup hangs, stop this job promptly instead of leaving the
+    # completion gate blocked until the workflow-wide timeout.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
         with:
