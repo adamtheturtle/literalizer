@@ -4,6 +4,11 @@ Changelog
 Next
 ----
 
+- ``lint-fast`` CI job now syntax-checks and runs the Python fixtures
+  under ``tests/integration/cases``, matching the per-language gate
+  already in place for Bash, Ruby, JavaScript, and other fixture
+  languages.  See #1921.
+
 - ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime
   errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
   The ``laytan/setup-odin`` action is pinned to ``dev-2026-04``, the
