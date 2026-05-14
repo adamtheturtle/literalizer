@@ -204,25 +204,17 @@ jobs:
         env:
           ODIN_VERSION: dev-2026-04
         run: |-
-          # Pick the right golden per stem: prefer `Foo@${ODIN_VERSION}.odin`
-          # over `Foo.odin`, and drop variants for other versions.  Keeps
-          # this in sync with `tests/integration/language_versions.py`.
-          mapfile -d '' -t all < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
-          declare -A keep
-          for f in "${all[@]}"; do
-            base="${f%.odin}"
-            stem="${base##*/}"
-            dir="${f%/*}"
-            if [[ "$stem" == *"@"* ]]; then
-              variant_version="${stem##*@}"
-              [[ "$variant_version" == "$ODIN_VERSION" ]] || continue
-              unversioned_stem="${stem%@*}"
-              keep["$dir/$unversioned_stem"]="$f"
-            else
-              keep["$dir/$stem"]="${keep[$dir/$stem]:-$f}"
-            fi
-          done
-          mapfile -d '' -t files < <(printf '%s\0' "${keep[@]}" | sort -z)
+          # Prefer `Foo@${ODIN_VERSION}.odin` over `Foo.odin`, and skip
+          # variants for other versions.  Keeps this in sync with
+          # `tests/integration/language_versions.py`.
+          files=()
+          while IFS= read -r -d '' f; do
+            case "$f" in
+              *@*.odin) [[ "$f" == *"@$ODIN_VERSION.odin" ]] || continue ;;
+              *) [[ -f "${f%.odin}@$ODIN_VERSION.odin" ]] && continue ;;
+            esac
+            files+=("$f")
+          done < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
           n=${#files[@]}
           run_odin() {
             local src="$1"
