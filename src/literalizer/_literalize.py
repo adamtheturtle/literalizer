@@ -3173,12 +3173,14 @@ def _validate_parameter_count(
 def _validate_call_variable_form(
     *,
     language: Language,
-    variable_form: VariableForm,
+    variable_form: NewVariable | ExistingVariable,
     per_element: bool,
-    wrap_in_file: bool,
 ) -> None:
     """Raise typed errors for unsupported ``variable_form``
     combinations.
+
+    ``BothVariableForms`` is rejected upstream by ``literalize_call``
+    itself, so the ``variable_form`` parameter here is narrower.
     """
     if per_element:
         raise UnsupportedCallShapeError(
@@ -3210,17 +3212,6 @@ def _validate_call_variable_form(
                 "valid for literal values, not call expressions"
             ),
         )
-    if isinstance(variable_form, BothVariableForms):
-        if not wrap_in_file:
-            msg = "BothVariableForms requires wrap_in_file=True"
-            raise ValueError(msg)
-        if not language.declaration_style.value.supports_redefinition:
-            msg = (
-                "BothVariableForms requires a declaration_style that "
-                "supports redefinition; "
-                f"{language.declaration_style.name!r} does not."
-            )
-            raise ValueError(msg)
 
 
 @beartype
@@ -3234,9 +3225,8 @@ def _validate_call_preconditions(
     ref_key: str,
     ref_case: IdentifierCase | None,
     call_transform: Callable[[str], str] | None,
-    variable_form: VariableForm | None,
+    variable_form: NewVariable | ExistingVariable | None,
     per_element: bool,
-    wrap_in_file: bool,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
     _validate_parameter_count(
@@ -3247,7 +3237,6 @@ def _validate_call_preconditions(
             language=language,
             variable_form=variable_form,
             per_element=per_element,
-            wrap_in_file=wrap_in_file,
         )
     if (
         not language.supports_inline_multiline_dict_args
@@ -3331,8 +3320,7 @@ def _wrap_call_in_file(
     *,
     language: Language,
     result: str,
-    combined_assignment: str | None,
-    variable_form: VariableForm | None,
+    variable_form: NewVariable | ExistingVariable | None,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
     arg_values: Sequence[Value],
@@ -3359,24 +3347,14 @@ def _wrap_call_in_file(
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, arg_values
     )
-    if combined_assignment is not None and isinstance(
-        variable_form, BothVariableForms
-    ):
-        wrapped = language.wrap_combined_in_file(
-            declaration=result,
-            assignment=combined_assignment,
-            variable_name=variable_form.name,
-            body_preamble=body_stubs + computed_body,
-        )
-    else:
-        wrap_variable_name = (
-            variable_form.name if variable_form is not None else ""
-        )
-        wrapped = language.wrap_in_file(
-            content=result,
-            variable_name=wrap_variable_name,
-            body_preamble=body_stubs + computed_body,
-        )
+    wrap_variable_name = (
+        variable_form.name if variable_form is not None else ""
+    )
+    wrapped = language.wrap_in_file(
+        content=result,
+        variable_name=wrap_variable_name,
+        body_preamble=body_stubs + computed_body,
+    )
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
     full_preamble = preamble + preamble_stubs
@@ -3495,17 +3473,19 @@ def literalize_call(
             ``format_variable_assignment`` hook (the same machinery
             used by :func:`literalize`).  Pass :class:`NewVariable` for
             an idiomatic declaration (``let p2 = Playlist::new();``,
-            ``const p2 = new Playlist();``, ``p2 = Playlist()``),
+            ``const p2 = new Playlist();``, ``p2 = Playlist()``) or
             :class:`ExistingVariable` for an assignment to an existing
-            name, or :class:`BothVariableForms` to produce both halves
-            combined via the language's ``wrap_combined_in_file``
-            (requires *wrap_in_file*).  Mutability and inference are
-            controlled by the per-language ``declaration_style`` and
-            ``Modifiers`` enums on the supplied ``Language`` instance,
-            not by extra arguments here.  Incompatible with
-            ``per_element=True`` (no per-element name vector is
-            provided); incompatible with languages whose call form is
-            not an expression (``call_returns_expression=False``).
+            name.  :class:`BothVariableForms` is rejected with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`
+            because emitting both a declaration and an assignment
+            would invoke the target function twice.  Mutability and
+            inference are controlled by the per-language
+            ``declaration_style`` and ``Modifiers`` enums on the
+            supplied ``Language`` instance, not by extra arguments
+            here.  Incompatible with ``per_element=True`` (no
+            per-element name vector is provided); incompatible with
+            languages whose call form is not an expression
+            (``call_returns_expression=False``).
 
     .. note::
 
@@ -3523,6 +3503,19 @@ def literalize_call(
         emitting the file.  The "Composing declarations and calls"
         section of :doc:`/function-call-use-case` shows a worked example.
     """
+    if isinstance(variable_form, BothVariableForms):
+        # Rendering both halves would invoke the call twice -- a silent
+        # side-effect bug for any non-pure target.  Reject up front so
+        # the rest of the function can narrow ``variable_form`` to
+        # ``NewVariable | ExistingVariable | None``.
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "BothVariableForms is not supported for literalize_call: "
+                "rendering both a declaration and an assignment would "
+                "invoke the target function twice"
+            ),
+        )
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
     contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
@@ -3563,7 +3556,6 @@ def literalize_call(
         call_transform=call_transform,
         variable_form=variable_form,
         per_element=per_element,
-        wrap_in_file=wrap_in_file,
     )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,
@@ -3584,15 +3576,6 @@ def literalize_call(
         ref_values=materialized_ref_values,
     )
 
-    combined_assignment: str | None = None
-    inner_variable_form: NewVariable | ExistingVariable | None
-    if isinstance(variable_form, BothVariableForms):
-        inner_variable_form = NewVariable(
-            name=variable_form.name,
-            modifiers=variable_form.modifiers,
-        )
-    else:
-        inner_variable_form = variable_form
     if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
@@ -3630,29 +3613,12 @@ def literalize_call(
             ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
-            variable_form=inner_variable_form,
+            variable_form=variable_form,
         )
-        if isinstance(variable_form, BothVariableForms):
-            combined_assignment = _render_call_whole(
-                data=data,
-                language=language,
-                style=style,
-                target_function=target_function,
-                parameter_names=parameter_names,
-                call_transform=call_transform,
-                ref_case=ref_case,
-                consumable_ref_names=consumable_refs,
-                ref_values=materialized_ref_values,
-                ref_key=ref_key,
-                collection_layout=collection_layout,
-                variable_form=ExistingVariable(name=variable_form.name),
-            )
     computed = compute_preamble(
         data=data_for_preamble,
         language=language,
-        has_variable_declaration=isinstance(
-            variable_form, NewVariable | BothVariableForms
-        ),
+        has_variable_declaration=isinstance(variable_form, NewVariable),
     )
     preamble = deduplicate_preamble_entries(
         entries=(
@@ -3666,7 +3632,6 @@ def literalize_call(
         wrapped = _wrap_call_in_file(
             language=language,
             result=result,
-            combined_assignment=combined_assignment,
             variable_form=variable_form,
             target_function_parts=target_function_parts,
             parameter_names=parameter_names,

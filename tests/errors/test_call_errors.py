@@ -569,13 +569,18 @@ def test_literalize_call_variable_form_unsupported_variable_names_raises() -> (
         )
 
 
-def test_literalize_call_both_variable_forms_without_wrap_in_file_raises() -> (
-    None
-):
-    """``BothVariableForms`` without ``wrap_in_file=True`` raises."""
+def test_literalize_call_both_variable_forms_unsupported_raises() -> None:
+    """``BothVariableForms`` is unconditionally rejected for
+    ``literalize_call`` because rendering both halves would invoke the
+    target function twice.
+    """
     with pytest.raises(
-        expected_exception=ValueError,
-        match=r"^BothVariableForms requires wrap_in_file=True$",
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"BothVariableForms is not supported for literalize_call: "
+            r"rendering both a declaration and an assignment would "
+            r"invoke the target function twice"
+        ),
     ):
         literalize_call(
             source="42",

@@ -1,2 +1,2 @@
 sub make_widget(*@a, *%kw) {}
-my $result = make_widget(42);
+my $my_data = make_widget(42);

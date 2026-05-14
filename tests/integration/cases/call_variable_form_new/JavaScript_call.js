@@ -1,2 +1,2 @@
 function make_widget() {}
-const result = make_widget({ count: 42 });
+const my_data = make_widget({ count: 42 });

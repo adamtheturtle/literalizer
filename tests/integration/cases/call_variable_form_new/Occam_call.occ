@@ -15,7 +15,7 @@ MOBILE LIT FUNCTION make_widget (VAL MOBILE LIT count)
     RESULT MOBILE LIT(lit.null)
 :
 PROC main ()
-    VAL MOBILE LIT result IS make_widget(MOBILE LIT(lit.int; 42)):
+    VAL MOBILE LIT my_data IS make_widget(MOBILE LIT(lit.int; 42)):
     SEQ
         SKIP
 :

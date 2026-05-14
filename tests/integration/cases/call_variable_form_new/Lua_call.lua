@@ -1,2 +1,2 @@
 function make_widget(...) end
-local result = make_widget(42)
+local my_data = make_widget(42)

@@ -1,2 +1,2 @@
 def make_widget(Map _args) { null }
-def result = make_widget(count: 42)
+def my_data = make_widget(count: 42)

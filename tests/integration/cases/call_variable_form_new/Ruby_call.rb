@@ -1,2 +1,2 @@
 def make_widget(*a); end
-result = make_widget(count: 42)
+my_data = make_widget(count: 42)

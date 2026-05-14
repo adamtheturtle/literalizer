@@ -6,17 +6,18 @@ Next
 
 
 - :func:`~literalizer.literalize_call` now accepts a ``variable_form``
-  argument (``NewVariable`` / ``ExistingVariable`` / ``BothVariableForms``,
-  the same union :func:`~literalizer.literalize` already takes) that
-  wraps the rendered call in an idiomatic per-language variable
-  binding (e.g. ``let result = make_widget(42);``,
-  ``const result = make_widget({ count: 42 });``,
-  ``result = make_widget(count=42)``).  Mutability and inference style
-  are controlled by the per-language ``declaration_style`` and
+  argument (``NewVariable`` or ``ExistingVariable``) that wraps the
+  rendered call in an idiomatic per-language variable binding (e.g.
+  ``let my_data = make_widget(42);``,
+  ``const my_data = make_widget({ count: 42 });``,
+  ``my_data = make_widget(count=42)``).  Mutability and inference
+  style are controlled by the per-language ``declaration_style`` and
   ``Modifiers`` enums on the supplied ``Language`` instance.
-  Incompatible with ``per_element=True`` and with languages whose
-  call form is a statement rather than an expression
-  (``call_returns_expression=False``); both combinations raise
+  ``BothVariableForms`` is rejected -- emitting both a declaration
+  and an assignment would invoke the target function twice -- as is
+  ``per_element=True`` (no per-element name vector) and any language
+  whose call form is a statement rather than an expression
+  (``call_returns_expression=False``).  All three are surfaced as
   :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  The same
   exception is raised for languages whose declaration template wraps
   or transforms the right-hand side in a way that is only valid for

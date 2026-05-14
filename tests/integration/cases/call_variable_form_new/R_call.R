@@ -1,2 +1,2 @@
 make_widget <- function(...) NULL
-result <- make_widget(count = 42)
+my_data <- make_widget(count = 42)

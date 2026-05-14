@@ -767,7 +767,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
-        variable_form=literalizer.NewVariable(name="result"),
+        variable_form=literalizer.NewVariable(name="my_data"),
     ),
     CallCaseConfig(
         # 27-parameter call exercises the type-variable generators in
