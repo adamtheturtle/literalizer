@@ -833,6 +833,7 @@ class VisualBasic(metaclass=LanguageCls):
             bytes_type="String",
             date_type="String",
             datetime_type=datetime_type,
+            time_type="TimeOnly",
             list_template="{inner}()",
             dict_type_template=None,
             fallback_value_type=None,

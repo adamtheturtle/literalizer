@@ -100,6 +100,7 @@ _v_element_to_type = make_element_to_type(
     mixed_numeric_type="string",
     date_type="string",
     datetime_type="string",
+    time_type="string",
     list_template="[]{inner}",
     dict_type_template=None,
     fallback_value_type=_V_IFACE_NAME,

@@ -15,7 +15,13 @@ Next
   languages fall back to the existing ISO 8601 quoted-string form.
   TOML ``time`` inputs now round-trip through
   :class:`~literalizer.Toml` as native time literals instead of being
-  re-emitted as quoted ISO 8601 strings.
+  re-emitted as quoted ISO 8601 strings.  Typed collection openers in
+  languages such as :class:`~literalizer.CSharp`,
+  :class:`~literalizer.Java`, :class:`~literalizer.Kotlin`, and
+  :class:`~literalizer.Scala` now narrow uniform time-only sequences
+  to the language's time type (e.g. ``TimeOnly[]`` /
+  ``Array<LocalTime>``) instead of falling back to a generic
+  ``Object``/``Any`` opener.
 - Golden files for languages whose compiler version is pinned (Elixir,
   Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the
   filename: ``{stem}@{version}{extension}`` (e.g.
