@@ -270,6 +270,7 @@ jobs:
     # compiler pin here and that enum member name are reviewed together.
     env:
       ODIN_VERSION: dev-2026-04
+      ODIN_FIXTURE_TAG: dev_2024
     steps:
       - uses: actions/checkout@v6
         with:
@@ -281,7 +282,7 @@ jobs:
           release: ${{ env.ODIN_VERSION }}
       - name: Run Odin files
         run: |-
-          mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_VERSION")
+          mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
           run_odin() {
@@ -668,6 +669,7 @@ jobs:
     # compiler pin and the enum member name are reviewed together.
     env:
       ELIXIR_VERSION: '1.18'
+      ELIXIR_FIXTURE_TAG: v1_14
     steps:
       - uses: actions/checkout@v6
         with:
@@ -686,7 +688,7 @@ jobs:
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
-          python3 -m tests.integration.list_fixtures .ex "$ELIXIR_VERSION" > /tmp/files-elixir && test -s /tmp/files-elixir
+          python3 -m tests.integration.list_fixtures .ex "$ELIXIR_FIXTURE_TAG" > /tmp/files-elixir && test -s /tmp/files-elixir
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
   lint-erlang:
@@ -696,6 +698,7 @@ jobs:
     # OTP pin and the enum member name are reviewed together.
     env:
       OTP_VERSION: '27'
+      ERLANG_FIXTURE_TAG: otp_25
     steps:
       - uses: actions/checkout@v6
         with:
@@ -713,7 +716,7 @@ jobs:
         env:
           ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
-          python3 -m tests.integration.list_fixtures .erl "$OTP_VERSION" > /tmp/files-erlang && test -s /tmp/files-erlang
+          python3 -m tests.integration.list_fixtures .erl "$ERLANG_FIXTURE_TAG" > /tmp/files-erlang && test -s /tmp/files-erlang
           mkdir -p "$ERLANG_FIXTURE_DIR"
           while IFS= read -r -d '' f; do
             dir=${f%/*}; dir=${dir##*/}
@@ -752,6 +755,7 @@ jobs:
     # together.
     env:
       GLEAM_VERSION: v1.16.0
+      GLEAM_FIXTURE_TAG: v1
     steps:
       - uses: actions/checkout@v6
         with:
@@ -783,7 +787,7 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_VERSION" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
+          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
           uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
@@ -793,7 +797,7 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_VERSION" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
+          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
           uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
   # Small JVM-based lints that each do a quick action install.
@@ -1009,14 +1013,15 @@ jobs:
     # the compiler pin and that enum member name are reviewed together.
     env:
       KOTLIN_VERSION: 2.3.20
+      KOTLIN_FIXTURE_TAG: v1_9
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_VERSION" > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_FIXTURE_TAG"
+          > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Kotlin
         uses: fwilhe2/setup-kotlin@v1
         with:
@@ -1270,8 +1275,14 @@ jobs:
           test -n "$chrono_rlib"
           # ``--edition 2021`` matches ``Rust.language_version`` in
           # ``src/literalizer/languages/rust.py``; keep them in sync.
+          # rustc infers a crate name from the source filename and
+          # rejects ``@`` in that name, so pass ``--crate-name`` with
+          # the ``@<version>`` suffix sanitized to an underscore.
           while IFS= read -r -d '' f; do
+            stem=$(basename "$f" .rs)
+            crate_name=${stem//@/_}
             rustc --edition 2021 \
+              --crate-name "$crate_name" \
               -L "dependency=$deps" \
               --extern "chrono=$chrono_rlib" \
               "$f" -o "$tmpdir/out" 2>&1 || exit 1
@@ -1555,14 +1566,15 @@ jobs:
     # compiler pin and the enum member name are reviewed together.
     env:
       ZIG_VERSION: 0.14.0
+      ZIG_FIXTURE_TAG: v0_12
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: python3 -m tests.integration.list_fixtures .zig "$ZIG_VERSION" > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: python3 -m tests.integration.list_fixtures .zig "$ZIG_FIXTURE_TAG" >
+          /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
