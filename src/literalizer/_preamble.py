@@ -11,7 +11,7 @@ from ruamel.yaml.compat import ordereddict
 
 from literalizer._checks import scalar_type_bucket
 from literalizer._language import Language
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 class HeterogeneousElements:
@@ -235,15 +235,15 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
                 non_dict.append(elem)
     merged: list[Value] = list(non_dict)
     if has_plain:
-        merged.append(
-            {str(object=i): v for i, v in enumerate(iterable=plain_vals)}
-        )
+        merged_plain: dict[Scalar, Value] = {
+            str(object=i): v for i, v in enumerate(iterable=plain_vals)
+        }
+        merged.append(merged_plain)
     if has_ordered:
-        merged.append(
-            ordereddict(
-                {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
-            )
+        merged_ordered: dict[Scalar, Value] = ordereddict(
+            {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
         )
+        merged.append(merged_ordered)
     return merged
 
 
