@@ -903,10 +903,16 @@ def _expected_call_shape_exception(
 
 _LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING: frozenset[str] = frozenset(
     {
+        "Ada",
+        "Bash",
+        "C",
+        "D",
+        "Elixir",
         "Elm",
         "Erlang",
         "FSharp",
         "Forth",
+        "Fortran",
         "Haskell",
         "Nim",
         "OCaml",
@@ -914,7 +920,9 @@ _LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING: frozenset[str] = frozenset(
         "PureScript",
         "Roc",
         "Sml",
+        "SystemVerilog",
         "Tcl",
+        "Zig",
     }
 )
 

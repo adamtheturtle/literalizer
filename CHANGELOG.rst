@@ -20,10 +20,14 @@ Next
   :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  The same
   exception is raised for languages whose declaration template wraps
   or transforms the right-hand side in a way that is only valid for
-  literal values -- Tcl (needs ``[...]`` command substitution),
-  Objective-C (``@(...)`` boxing of primitives), tagged-enum
-  heterogeneous-strategy languages (Roc, Haskell, Elm, SML, OCaml,
-  PureScript, F#), Erlang, Forth, and Nim.  Closes
+  literal values -- Tcl (needs ``[...]`` command substitution), Bash
+  (needs ``$(...)`` command substitution), Objective-C (``@(...)``
+  boxing of primitives), tagged-enum heterogeneous-strategy languages
+  (Roc, Haskell, Elm, SML, OCaml, PureScript, F#), C / SystemVerilog /
+  Fortran / Ada / Zig / D (struct-initializer or constructor wrapping
+  derived from the value's literal type), Elixir (call stubs need
+  module scope, not the variable's function body), Erlang, Forth, and
+  Nim.  Closes
   `#1961 <https://github.com/adamtheturtle/literalizer/issues/1961>`_.
 
 - The internal :data:`~literalizer._types.Value` and
