@@ -687,6 +687,8 @@ class FSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `--langversion:` flag passed to the FSharp
+    # linter in `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V6
     indent: str = "    "
     type_name: str = "Val"
