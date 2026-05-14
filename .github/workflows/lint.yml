@@ -1515,6 +1515,8 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install Raku
         uses: Raku/setup-raku@v1
+        with:
+          raku-version: '2024.10'
       - name: Check Raku syntax
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
       - name: Run Raku files
