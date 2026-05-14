@@ -243,6 +243,8 @@ def _format_scalar(
             result = spec.format_bytes(value)
         case datetime.datetime():
             result = spec.format_datetime(value)
+        case datetime.time():
+            result = spec.format_time(value)
         case _:
             result = spec.format_date(value)
     return result
@@ -273,6 +275,7 @@ _SCALAR_TYPES: Final = (
     type(None),
     datetime.date,
     datetime.datetime,
+    datetime.time,
     bytes,
 )
 
@@ -1685,6 +1688,7 @@ def _literalize(
         bool,
         datetime.datetime,
         datetime.date,
+        datetime.time,
     )
     if isinstance(data, scalar_types) or data is None:
         return f"{line_prefix}{_format_scalar(value=data, spec=language)}"

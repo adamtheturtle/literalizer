@@ -26,6 +26,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_local_time_of,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -236,6 +237,8 @@ def _kotlin_scalar_hint(
             hint = datetime_hint
         case datetime.date():
             hint = date_hint
+        case datetime.time():
+            hint = "LocalTime"
         case None:
             hint = "Nothing?"
         case _ as unreachable:
@@ -1229,6 +1232,11 @@ class Kotlin(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_local_time_of
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -1323,6 +1331,7 @@ class Kotlin(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("import java.time.LocalTime",)},
         )
 
     @cached_property

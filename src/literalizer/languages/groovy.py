@@ -16,6 +16,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_local_time_of,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -655,6 +656,11 @@ class Groovy(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_local_time_of
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -697,8 +703,8 @@ class Groovy(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble (Groovy needs none)."""
-        return {}
+        """Per-instance scalar preamble."""
+        return {datetime.time: ("import java.time.LocalTime",)}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:

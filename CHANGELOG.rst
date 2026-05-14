@@ -4,6 +4,19 @@ Changelog
 Next
 ----
 
+- :class:`datetime.time` is now a first-class :type:`Scalar` value.
+  Languages with a native time-only type emit native literals
+  (Python ``datetime.time(...)``, TOML unquoted ``HH:MM:SS``,
+  .NET ``new TimeOnly(...)`` / ``TimeOnly(...)`` / ``New TimeOnly(...)``
+  for :class:`~literalizer.CSharp`, :class:`~literalizer.FSharp`,
+  :class:`~literalizer.VisualBasic`, and ``LocalTime.of(...)`` for
+  :class:`~literalizer.Java`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Groovy`); other
+  languages fall back to the existing ISO 8601 quoted-string form.
+  TOML ``time`` inputs now round-trip losslessly through
+  :class:`~literalizer.Toml` instead of being re-emitted as a quoted
+  string.
+
 2026.05.14.1
 ------------
 

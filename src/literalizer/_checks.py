@@ -37,6 +37,7 @@ def scalar_type_bucket(*, value: Value) -> type | None:
         str,
         bytes,
         datetime.date,
+        datetime.time,
     )
     for bucket in _buckets:
         if isinstance(value, bucket):
@@ -87,6 +88,7 @@ def _value_type_family(*, value: Value) -> str:
         (bytes, "bytes"),
         (datetime.datetime, "datetime"),
         (datetime.date, "date"),
+        (datetime.time, "time"),
         (list, "list"),
         (ordereddict, "dict"),
         (dict, "dict"),
