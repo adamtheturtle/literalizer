@@ -1065,6 +1065,10 @@ class Python(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep this in sync with the ``python-version`` pinned on the
+    # ``Install uv`` step of the ``lint-fast`` job in
+    # ``.github/workflows/lint.yml``; the CI gate must run under an
+    # interpreter at least as new as this default.
     language_version: VersionFormats = VersionFormats.PY_3_12
     indent: str = "    "
 
