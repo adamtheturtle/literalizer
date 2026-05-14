@@ -24,6 +24,46 @@ from literalizer.languages import (
 )
 
 
+@functools.cache
+@beartype
+def _language_versions(*, cases_dir: Path) -> dict[str, str]:
+    """Discover ``{LanguageClass.__name__: version}`` from on-disk
+    filenames.
+
+    A fixture named ``{stem}@{version}{extension}`` records the
+    compiler version it was generated against.  The first ``@``-tagged
+    fixture encountered for a language fixes that language's active
+    version; ``test_no_dead_golden_files`` ensures every other fixture
+    for that language agrees.
+    """
+    lookup = {cls.__name__: cls for cls in ALL_LANGUAGES} | {
+        cls.__name__.lower(): cls for cls in ALL_LANGUAGES
+    }
+    versions: dict[str, str] = {}
+    for path in cases_dir.rglob(pattern="*"):
+        stem = path.stem
+        if "@" not in stem:
+            continue
+        lang_part, version = stem.rsplit(sep="@", maxsplit=1)
+        prefix = lang_part.split(sep="_", maxsplit=1)[0]
+        versions[lookup[prefix].__name__] = version
+    return versions
+
+
+@beartype
+def _logical_stem(*, path: Path) -> str:
+    """Return *path*'s stem with any ``@version`` suffix removed.
+
+    Per-fixture module names embed the stem in the generated source
+    file (``-module(...)``, ``module Fixture_...``).  Version-tagged
+    variants live alongside the base file but identifiers must remain
+    stable across both forms so the same source can resolve to either
+    path.
+    """
+    stem = path.stem
+    return stem.rsplit(sep="@", maxsplit=1)[0] if "@" in stem else stem
+
+
 @beartype
 def erlang_module_name(*, golden_path: Path) -> str:
     """Return the Erlang module name for *golden_path*.
@@ -33,7 +73,7 @@ def erlang_module_name(*, golden_path: Path) -> str:
     ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"fixture_{dir_name}_{stem}".lower()
 
 
@@ -46,7 +86,7 @@ def scala_module_name(*, golden_path: Path) -> str:
     ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"Fixture_{dir_name}_{stem}"
 
 
@@ -59,7 +99,7 @@ def crystal_module_name(*, golden_path: Path) -> str:
     shell-level wrapping or ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"Fixture_{dir_name}_{stem}"
 
 
@@ -72,7 +112,7 @@ def haskell_module_name(*, golden_path: Path) -> str:
     ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"Fixture_{dir_name}_{stem}"
 
 
@@ -150,8 +190,16 @@ def make_golden_path(
     The name passed in (``Gleam_type_name_JsonVal``) keeps its original
     casing in pytest test IDs and error messages; only the on-disk
     file name is mapped down.
+
+    Languages with version-tagged fixtures on disk resolve to a
+    versioned path ``{stem}@{version}{extension}``; the version is
+    discovered from sibling files (see ``_language_versions``)
+    so the workflow's compiler pin remains the single source of truth.
     """
-    filename = name + extension
+    versions = _language_versions(cases_dir=parent.parent)
+    version = versions.get(lang_cls.__name__)
+    stem = f"{name}@{version}" if version is not None else name
+    filename = stem + extension
     if lang_cls.__name__ == Gleam.__name__:
         filename = filename.lower()
     return parent / filename

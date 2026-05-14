@@ -262,6 +262,13 @@ jobs:
     # cleanup hangs, stop this job promptly instead of leaving the
     # completion gate blocked until the workflow-wide timeout.
     timeout-minutes: 10
+    # Pinned: `release: latest` (dev-2026-05) crashes at runtime under
+    # `odin run .`, and the compiler itself segfaults on some fixtures
+    # under `odin build .`.  dev-2026-04 was the last release known to
+    # work with `odin run .`.  The same value tags every Odin fixture
+    # on disk (e.g. `Odin@dev-2026-04.odin`).
+    env:
+      ODIN_VERSION: dev-2026-04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -270,14 +277,10 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Pinned: `release: latest` (dev-2026-05) crashes at runtime
-          # under `odin run .`, and the compiler itself segfaults on
-          # some fixtures under `odin build .`.  dev-2026-04 was the
-          # last release known to work with `odin run .`.
-          release: dev-2026-04
+          release: ${{ env.ODIN_VERSION }}
       - name: Run Odin files
         run: |-
-          mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
+          mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_VERSION")
           n=${#files[@]}
           test "$n" -gt 0
           run_odin() {
@@ -657,6 +660,11 @@ jobs:
 
   lint-elixir:
     runs-on: ubuntu-latest
+    # Every Elixir fixture on disk is tagged with this version (e.g.
+    # `Elixir@1.18.ex`); bumping the pin requires regenerating the
+    # fixtures so the tag stays in sync.
+    env:
+      ELIXIR_VERSION: '1.18'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -664,7 +672,7 @@ jobs:
       - name: Install Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.18'
+          elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: '27'
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
@@ -675,11 +683,16 @@ jobs:
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
-          find tests/integration/cases -name '*.ex' -print0 > /tmp/files-elixir && test -s /tmp/files-elixir
+          python3 -m tests.integration.list_fixtures .ex "$ELIXIR_VERSION" > /tmp/files-elixir && test -s /tmp/files-elixir
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
   lint-erlang:
     runs-on: ubuntu-latest
+    # Every Erlang fixture on disk is tagged with this OTP version
+    # (e.g. `Erlang@27.erl`); bumping the pin requires regenerating
+    # the fixtures so the tag stays in sync.
+    env:
+      OTP_VERSION: '27'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -687,7 +700,7 @@ jobs:
       - name: Install Erlang
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '27'
+          otp-version: ${{ env.OTP_VERSION }}
 
       # Compile every fixture in a single erlc invocation to pay the
       # BEAM VM startup cost once. Each fixture already carries a unique
@@ -697,11 +710,12 @@ jobs:
         env:
           ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
-          find tests/integration/cases -name '*.erl' -print0 > /tmp/files-erlang && test -s /tmp/files-erlang
+          python3 -m tests.integration.list_fixtures .erl "$OTP_VERSION" > /tmp/files-erlang && test -s /tmp/files-erlang
           mkdir -p "$ERLANG_FIXTURE_DIR"
           while IFS= read -r -d '' f; do
             dir=${f%/*}; dir=${dir##*/}
             stem=$(basename "$f" .erl)
+            stem="${stem%@*}"  # strip @version so filename matches -module(...)
             name="fixture_${dir,,}_${stem,,}"
             cp "$f" "$ERLANG_FIXTURE_DIR/$name.erl"
           done < /tmp/files-erlang
@@ -729,6 +743,11 @@ jobs:
 
   lint-gleam:
     runs-on: ubuntu-latest
+    # Every Gleam fixture on disk is tagged with this version (e.g.
+    # `gleam_combined@v1.16.0.gleam`); bumping the pin requires
+    # regenerating the fixtures so the tag stays in sync.
+    env:
+      GLEAM_VERSION: v1.16.0
     steps:
       - uses: actions/checkout@v6
         with:
@@ -736,7 +755,7 @@ jobs:
       - name: Install Gleam
         uses: erlef/setup-beam@v1
         with:
-          gleam-version: v1.16.0
+          gleam-version: ${{ env.GLEAM_VERSION }}
           otp-version: '27'
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
@@ -760,7 +779,7 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          find tests/integration/cases -name '*.gleam' > /tmp/files-gleam && test -s /tmp/files-gleam
+          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_VERSION" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
           uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
@@ -770,7 +789,7 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          find tests/integration/cases -name '*.gleam' > /tmp/files-gleam && test -s /tmp/files-gleam
+          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_VERSION" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
           uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
   # Small JVM-based lints that each do a quick action install.
@@ -975,23 +994,26 @@ jobs:
 
   lint-kotlin:
     runs-on: ubuntu-latest
+    # 2.3.10's kotlin-scripting-jvm references a legacy
+    # ``ScriptExpectedLocation`` class that is no longer shipped, so
+    # ``K2JVMCompiler.exec("-script", ...)`` from inside a
+    # ``.main.kts`` host blows up with NoClassDefFoundError.  2.3.20
+    # drops the stale reference.  The same value tags every Kotlin
+    # fixture on disk (e.g. `Kotlin@2.3.20.kts`).
+    env:
+      KOTLIN_VERSION: 2.3.20
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.kts' -print0 > /tmp/files-to-lint
+        run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_VERSION" > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Kotlin
         uses: fwilhe2/setup-kotlin@v1
         with:
-          # 2.3.10's kotlin-scripting-jvm references a legacy
-          # ``ScriptExpectedLocation`` class that is no longer shipped,
-          # so ``K2JVMCompiler.exec("-script", ...)`` from inside a
-          # ``.main.kts`` host blows up with NoClassDefFoundError.
-          # 2.3.20 drops the stale reference.
-          version: 2.3.20
+          version: ${{ env.KOTLIN_VERSION }}
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
@@ -1492,18 +1514,23 @@ jobs:
 
   lint-zig:
     runs-on: ubuntu-latest
+    # Every Zig fixture on disk is tagged with this version (e.g.
+    # `Zig@0.14.0.zig`); bumping the pin requires regenerating the
+    # fixtures so the tag stays in sync.
+    env:
+      ZIG_VERSION: 0.14.0
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.zig' -print0 > /tmp/files-to-lint
+        run: python3 -m tests.integration.list_fixtures .zig "$ZIG_VERSION" > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.14.0
+          version: ${{ env.ZIG_VERSION }}
       # Compile every fixture in a single `zig run` invocation to pay
       # the Zig compiler + std parse cost once instead of per fixture.
       # Fixtures all declare `pub fn main() void`, renamed to a unique
