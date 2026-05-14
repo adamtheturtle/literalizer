@@ -1517,8 +1517,6 @@ class Haskell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `-XHaskell2010` flag passed to ghc in
-    # `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.HASKELL_2010
     indent: str = "    "
     module_name: str = "Check"

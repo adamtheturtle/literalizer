@@ -582,7 +582,7 @@ class Ada(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.KEYWORD
-    # Keep in sync with the `-gnat2022` flag passed to gnatmake in
+    # Keep in sync with the `-gnat2022` flag passed to the Ada linter in
     # `.github/scripts/check_ada_syntax.py` and `.github/scripts/run_ada.py`.
     language_version: VersionFormats = VersionFormats.ADA_2022
     indent: str = "    "
