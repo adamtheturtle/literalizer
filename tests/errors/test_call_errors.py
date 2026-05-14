@@ -13,6 +13,7 @@ from literalizer import (
     BothVariableForms,
     IdentifierCase,
     InputFormat,
+    NewVariable,
     literalize,
     literalize_call,
 )
@@ -32,14 +33,17 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import (
     Bash,
+    Cobol,
     Dhall,
     Elm,
     Haskell,
     Hcl,
     JavaScript,
+    Jsonnet,
     Nix,
     Python,
     Racket,
+    Tcl,
     Wren,
     Yaml,
 )
@@ -496,4 +500,119 @@ def test_literalize_wrap_in_file_without_variable_not_supported_raises() -> (
             language=Haskell(),
             variable_form=None,
             wrap_in_file=True,
+        )
+
+
+def test_literalize_call_variable_form_per_element_raises() -> None:
+    """``variable_form`` with ``per_element=True`` is rejected.
+
+    The API does not provide a name vector per element, so this
+    combination cannot be made to render a binding for each call.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(r"variable_form is incompatible with per_element=True"),
+    ):
+        literalize_call(
+            source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            per_element=True,
+            variable_form=NewVariable(name="result"),
+        )
+
+
+def test_literalize_call_variable_form_statement_language_raises() -> None:
+    """``variable_form`` on a language whose call form is a statement
+    rather than an expression is rejected.
+
+    Cobol's ``CALL`` is a statement: there is no expression to bind to
+    a variable.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"calls in this language are statements, not expressions, "
+            r"so the call result cannot be bound to a variable"
+        ),
+    ):
+        literalize_call(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Cobol(),
+            target_function="MAKE-WIDGET",
+            parameter_names=["count"],
+            per_element=False,
+            variable_form=NewVariable(name="RESULT"),
+        )
+
+
+def test_literalize_call_variable_form_unsupported_variable_names_raises() -> (
+    None
+):
+    """``variable_form`` on a language without ``supports_variable_names``
+    raises ``VariableNameNotSupportedError``.
+    """
+    with pytest.raises(
+        expected_exception=VariableNameNotSupportedError,
+    ):
+        literalize_call(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Jsonnet(),
+            target_function="make_widget",
+            parameter_names=["count"],
+            per_element=False,
+            variable_form=NewVariable(name="result"),
+        )
+
+
+def test_literalize_call_both_variable_forms_unsupported_raises() -> None:
+    """``BothVariableForms`` is unconditionally rejected for
+    ``literalize_call`` because rendering both halves would invoke the
+    target function twice.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"BothVariableForms is not supported for literalize_call: "
+            r"rendering both a declaration and an assignment would "
+            r"invoke the target function twice"
+        ),
+    ):
+        literalize_call(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="make_widget",
+            parameter_names=["count"],
+            per_element=False,
+            variable_form=BothVariableForms(name="result"),
+        )
+
+
+def test_literalize_call_variable_form_template_incompatible_raises() -> None:
+    """``variable_form`` is rejected for languages whose declaration
+    template wraps the right-hand side incompatibly with call expressions
+    (Tcl needs ``[...]`` substitution; Objective-C wraps primitives in
+    ``@(...)``; tagged-enum heterogeneous languages prepend a
+    constructor; etc.).
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"this language's variable-declaration template wraps or "
+            r"transforms the right-hand side"
+        ),
+    ):
+        literalize_call(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Tcl(),
+            target_function="make_widget",
+            parameter_names=["count"],
+            per_element=False,
+            variable_form=NewVariable(name="result"),
         )
