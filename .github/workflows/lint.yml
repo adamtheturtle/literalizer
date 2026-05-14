@@ -74,6 +74,21 @@ jobs:
           luaVersion: '5.4'
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+      - name: Install apt packages
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: tcl gforth guile-3.0
+          version: 1.0
+      - name: Install Dhall
+        run: |-
+          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
+            | tar -xj
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+      - name: Install Wren CLI
+        run: |
+          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+          unzip -o /tmp/wren.zip -d /tmp/wren
+          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
 
       - name: Lint Bash
         run: |-
@@ -160,6 +175,54 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
+      - name: Lint Tcl
+        run: |-
+          find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl
+          xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
+
+      - name: Lint Forth
+        run: |-
+          find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
+          xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
+
+      # Invoke ``guile-3.0`` directly rather than ``guile`` because
+      # cache-apt-pkgs-action does not replay the package's
+      # ``update-alternatives`` postinst on cache hit, so ``/usr/bin/guile``
+      # is missing.
+      - name: Lint Scheme
+        run: |-
+          find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
+          xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
+
+      - name: Lint Dhall
+        run: |-
+          find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall
+          cat > /tmp/check-dhall.sh <<'SCRIPT'
+          dhall < "$1" > /dev/null
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
+
+      - name: Lint Wren
+        run: |-
+          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
+          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
+
+      # Each fixture defines its own main, so compile and run directly.
+      # The build-and-run step also surfaces any syntax errors, so a
+      # separate `-fsyntax-only` pass would be redundant.
+      # ``-std=c99`` matches ``C.language_version`` in
+      # ``src/literalizer/languages/c.py``; keep them in sync.
+      - name: Lint C
+        run: |-
+          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c
+          cat > /tmp/run-c.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
+
   # Keep Odin isolated.  This fixture set is good at finding compiler
   # instability because many generated files combine [dynamic]any,
   # map[string]any, nested literals, and variadic proc(..any) stubs.
@@ -241,61 +304,6 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
-
-  lint-forth:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install gforth
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: gforth
-          version: 1.0
-      - name: Lint Forth
-        run: |-
-          find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
-          xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
-
-  lint-tcl:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install tcl
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: tcl
-          version: 1.0
-      - name: Lint Tcl
-        run: |-
-          find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl
-          xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
-
-  lint-scheme:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install guile
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: guile-3.0
-          version: 1.0
-      # Invoke ``guile-3.0`` directly rather than ``guile`` because
-      # cache-apt-pkgs-action does not replay the package's
-      # ``update-alternatives`` postinst on cache hit, so ``/usr/bin/guile``
-      # is missing.
-      - name: Lint Scheme
-        run: |-
-          find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
-          xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
@@ -634,43 +642,6 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
 
-  lint-dhall:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Dhall
-        run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
-          echo "$PWD/bin" >> "$GITHUB_PATH"
-
-      - name: Lint Dhall
-        run: |-
-          find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall
-          cat > /tmp/check-dhall.sh <<'SCRIPT'
-          dhall < "$1" > /dev/null
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
-
-  lint-wren:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Wren CLI
-        run: |
-          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
-          unzip -o /tmp/wren.zip -d /tmp/wren
-          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
-
-      - name: Lint Wren
-        run: |-
-          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
-          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
-
   lint-elixir:
     runs-on: ubuntu-latest
     steps:
@@ -952,30 +923,6 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
-
-  lint-c:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
-      # Each fixture defines its own main, so compile and run directly.
-      # The build-and-run step also surfaces any syntax errors, so a
-      # separate `-fsyntax-only` pass would be redundant.
-      # ``-std=c99`` matches ``C.language_version`` in
-      # ``src/literalizer/languages/c.py``; keep them in sync.
-      - name: Run C files
-        run: |-
-          cat > /tmp/run-c.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -1644,9 +1591,6 @@ jobs:
       - pre-commit
       - lint-fast
       - lint-odin
-      - lint-forth
-      - lint-tcl
-      - lint-scheme
       - lint-matlab
       - lint-perl
       - lint-go-installed
@@ -1657,8 +1601,6 @@ jobs:
       - lint-uv-scripts
       - lint-dotnet
       - lint-sml
-      - lint-dhall
-      - lint-wren
       - lint-elixir
       - lint-erlang
       - lint-gleam
@@ -1666,7 +1608,6 @@ jobs:
       - lint-haskell-family
       - lint-c-tidy
       - lint-cpp-tidy
-      - lint-c
       - lint-cobol
       - lint-cpp
       - lint-kotlin
