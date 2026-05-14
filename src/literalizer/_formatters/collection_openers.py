@@ -51,7 +51,6 @@ def make_element_to_type(
     dict_type_template: str | None,
     fallback_value_type: str | None,
     wide_int_type: str | None = None,
-    time_type: str | None = None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.
@@ -88,7 +87,6 @@ def make_element_to_type(
             ),
             (datetime.date, date_type),
             (datetime.datetime, datetime_type),
-            (datetime.time, time_type),
         )
         if name is not None
     }
@@ -361,7 +359,6 @@ class TypedOpenerConfig:
         dict_type_template: str | None,
         fallback_value_type: str | None,
         wide_int_type: str | None = None,
-        time_type: str | None = None,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._str_type = str_type
@@ -372,7 +369,6 @@ class TypedOpenerConfig:
         self._mixed_numeric_type = mixed_numeric_type
         self._date_type = date_type
         self._datetime_type = datetime_type
-        self._time_type = time_type
         self._list_template = list_template
         self._sequence_opener_template = sequence_opener_template
         self._dict_opener_template = dict_opener_template
@@ -405,7 +401,6 @@ class TypedOpenerConfig:
                 ),
                 (datetime.date, self._date_type),
                 (datetime.datetime, self._datetime_type),
-                (datetime.time, self._time_type),
             )
             if name is not None
         }
@@ -462,7 +457,6 @@ class TypedOpenerConfig:
             fallback_value_type=(
                 self._fallback_value_type if enable_dict_type else None
             ),
-            time_type=self._time_type,
         )
 
     @beartype
