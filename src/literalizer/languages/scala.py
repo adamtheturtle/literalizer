@@ -657,6 +657,9 @@ class Scala(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `-S` flag passed to `scala-cli run` in
+    # `.github/workflows/lint.yml` (which only accepts the Scala major
+    # version, so `V3` maps to `-S 3`).
     language_version: VersionFormats = VersionFormats.V3
     indent: str = "    "
 
