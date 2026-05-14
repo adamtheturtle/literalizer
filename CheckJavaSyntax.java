@@ -39,11 +39,13 @@ public class CheckJavaSyntax {
                 final Path classDir = Files.createTempDirectory("javac");
                 final Iterable<? extends JavaFileObject> units =
                         fileManager.getJavaFileObjectsFromStrings(List.of(filename));
+                // `--release 11` matches `Java.language_version` in
+                // `src/literalizer/languages/java.py`; keep them in sync.
                 final JavaCompiler.CompilationTask task = compiler.getTask(
                         null,
                         fileManager,
                         null,
-                        List.of("-d", classDir.toString(), "-proc:none"),
+                        List.of("-d", classDir.toString(), "-proc:none", "--release", "11"),
                         null,
                         units);
                 if (!task.call()) {

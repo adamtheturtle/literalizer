@@ -4,6 +4,12 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Fortran`'s ``language_version`` default is now
+  ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the
+  Fortran 2008 features the generator actually emits (e.g. ``int64``
+  from ``iso_fortran_env``). ``V2003`` has been removed from
+  ``Fortran.VersionFormats``.
+
 - ``lint-fast`` CI job now syntax-checks and runs the Python fixtures
   under ``tests/integration/cases``, matching the per-language gate
   already in place for Bash, Ruby, JavaScript, and other fixture
