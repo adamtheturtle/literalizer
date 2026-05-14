@@ -45,6 +45,7 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    WideInt,
     infer_element_type,
 )
 from literalizer._language import (
@@ -141,7 +142,7 @@ def _collect_int_leaves(
     """Collect int values that would occupy the int leaf of
     *element_type* when *items* is resolved to its C++ type.
     """
-    if element_type is int:
+    if element_type is int or element_type is WideInt:
         return [
             item
             for item in items
