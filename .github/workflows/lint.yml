@@ -131,10 +131,8 @@ jobs:
       # current file. Compile each file from inside a private tmpdir so
       # the stale .mod is not on the module search path and parallel
       # runs cannot clobber each other's output.
-      # The Fortran generator emits Fortran 2008 features (e.g. ``int64``
-      # from ``iso_fortran_env``) even though ``Fortran.language_version``
-      # in ``src/literalizer/languages/fortran.py`` is ``V2003``; tracked
-      # in https://github.com/adamtheturtle/literalizer/issues/1919.
+      # ``-std=f2008`` matches ``Fortran.language_version`` in
+      # ``src/literalizer/languages/fortran.py``; keep them in sync.
       - name: Lint Fortran
         run: |-
           find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran
@@ -872,7 +870,9 @@ jobs:
             printf 'main :: IO ()\nmain = do\n'
             cat "$calls"
           } > "$workspace/Main.hs"
-          (cd "$workspace" && ghc -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
+          # `-XHaskell2010` matches `Haskell.language_version` in
+          # `src/literalizer/languages/haskell.py`; keep them in sync.
+          (cd "$workspace" && ghc -XHaskell2010 -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
           "$tmpdir/run"
 
       - name: Lint PureScript
@@ -1046,17 +1046,22 @@ jobs:
         uses: SwiftyLab/setup-swift@v1
         with:
           cache-snapshot: true
+      # `-swift-version 5` matches the major version of
+      # `Swift.language_version` in `src/literalizer/languages/swift.py`
+      # (`V5_9`); keep them in sync. `-swift-version` only accepts the
+      # language mode (4/4.2/5/6), not a point release.
       - name: Check Swift syntax
         run: |-
           cat > /tmp/check-swift.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          swiftc -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        run: xargs -0 -P "$(nproc)" -n1 swift -warnings-as-errors < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 swift -swift-version 5 -warnings-as-errors
+          < /tmp/files-to-lint
 
   lint-ocaml:
     runs-on: ubuntu-latest
@@ -1221,10 +1226,21 @@ jobs:
         run: find tests/integration/cases -name '*.go' -print0 > /tmp/files-to-lint
       - name: Check Go syntax
         run: xargs -0 gofmt -e < /tmp/files-to-lint
-      - name: Check Go compilation
-        run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
-      - name: Run Go files
-        run: xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-to-lint
+      # `go 1.18` in the generated go.mod matches `Go.language_version`
+      # in `src/literalizer/languages/go.py`; keep them in sync. `go vet`
+      # and `go run` honour the module's `go` directive when invoked on
+      # a file inside a module, so wrap each fixture in a tmpdir module.
+      - name: Check Go compilation and run
+        run: |-
+          cat > /tmp/run-go.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/main.go"
+          { printf 'module fixture\n\ngo 1.18\n'; } > "$tmpdir/go.mod"
+          (cd "$tmpdir" && go vet ./...) || exit 1
+          (cd "$tmpdir" && go run ./...) || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-go.sh < /tmp/files-to-lint
 
   lint-rust:
     runs-on: ubuntu-latest

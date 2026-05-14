@@ -33,6 +33,11 @@ var options = new VisualBasicCompilationOptions(OutputKind.DynamicallyLinkedLibr
     .WithOptionExplicit(true)
     .WithOptionStrict(OptionStrict.Off);
 
+// `VisualBasic16_9` is the VB compiler version that ships with .NET 6
+// and matches `Vb.language_version` in
+// `src/literalizer/languages/vb.py`; keep them in sync.
+var parseOptions = new VisualBasicParseOptions(LanguageVersion.VisualBasic16_9);
+
 var input = Console.In.ReadToEnd();
 var paths = input.Split('\0').Where(p => !string.IsNullOrEmpty(p)).ToList();
 
@@ -41,7 +46,7 @@ for (var i = 0; i < paths.Count; i++)
 {
     var path = paths[i];
     var source = File.ReadAllText(path);
-    var tree = VisualBasicSyntaxTree.ParseText(source, path: path);
+    var tree = VisualBasicSyntaxTree.ParseText(source, parseOptions, path: path);
     var compilation = VisualBasicCompilation.Create(
         assemblyName: $"fixture_{i}",
         syntaxTrees: new[] { tree },

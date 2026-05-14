@@ -647,6 +647,8 @@ class VisualBasic(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `LanguageVersion` passed to the VB lint host
+    # in `.github/scripts/lint-vb/Program.cs`.
     language_version: VersionFormats = VersionFormats.DOTNET_6
     indent: str = "    "
 

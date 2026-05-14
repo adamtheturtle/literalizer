@@ -866,6 +866,9 @@ class Swift(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `-swift-version` flag passed to swiftc/swift
+    # in `.github/workflows/lint.yml` (which only accepts the major
+    # language mode, so `V5_9` maps to `-swift-version 5`).
     language_version: VersionFormats = VersionFormats.V5_9
     indent: str = "    "
 

@@ -557,7 +557,7 @@ class Fortran(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Fortran."""
 
-        V2003 = enum.auto()
+        V2008 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -679,7 +679,9 @@ class Fortran(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    language_version: VersionFormats = VersionFormats.V2003
+    # Keep in sync with the `-std=` flag passed to gfortran in
+    # `.github/workflows/lint.yml`.
+    language_version: VersionFormats = VersionFormats.V2008
     indent: str = "    "
     null_name: str = "fnull"
     bool_name: str = "fbool"
