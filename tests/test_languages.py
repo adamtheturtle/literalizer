@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import json
 import re
+import textwrap
 from typing import TYPE_CHECKING, ClassVar
 
 import pytest
@@ -16,7 +17,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer._language import Language, LanguageCls
+from literalizer._language import Language, LanguageCls, StubReturn
 from literalizer.exceptions import (
     NullInCollectionError,
     UnrepresentableSpecialFloatError,
@@ -27,13 +28,18 @@ from literalizer.languages import (
     CSharp,
     Dart,
     Dhall,
+    Fortran,
+    FSharp,
     Gleam,
+    Go,
     Haskell,
     Java,
+    Jsonnet,
     Kotlin,
     Matlab,
     Nim,
     Python,
+    R,
     Raku,
     Rust,
     Sml,
@@ -52,6 +58,14 @@ COBOL = Cobol(
     bytes_format=Cobol.bytes_formats.HEX,
     sequence_format=Cobol.sequence_formats.SEQUENCE,
 )
+FORTRAN = Fortran(
+    date_format=Fortran.date_formats.ISO,
+    datetime_format=Fortran.datetime_formats.ISO,
+    bytes_format=Fortran.bytes_formats.HEX,
+    sequence_format=Fortran.sequence_formats.LIST,
+    module_name="check",
+)
+FSHARP = FSharp(module_name="check")
 
 
 def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
@@ -82,6 +96,18 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
         ")"
         ")"
     )
+
+
+def test_r_formats_named_dict_entries() -> None:
+    """R dict entries with names are formatted without raising."""
+    result = literalize(
+        source="{name: value}",
+        input_format=InputFormat.YAML,
+        language=R(empty_dict_key=R.empty_dict_keys.ERROR),
+        variable_form=None,
+    )
+
+    assert result.code == 'list(\n    "name" = "value"\n)'
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
@@ -373,6 +399,43 @@ def test_cobol_level_number_cap() -> None:
     )
 
 
+def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
+    """Line continuation handles escaped quotes before inline comments."""
+    yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
+    result = literalize(
+        source=yaml_string,
+        input_format=InputFormat.YAML,
+        language=FORTRAN,
+        pre_indent_level=0,
+        variable_form=NewVariable(name="cfg"),
+        include_delimiters=True,
+    )
+
+    assert result.code == (
+        "type(fval_t) :: cfg\n"
+        "cfg = fmap([fval_t :: &\n"
+        "    fentry('host', fstr('it''s here')), &  ! a comment\n"
+        "    fentry('port', fint(80_int64)) &  ! another\n"
+        "])"
+    )
+
+
+def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
+    """Bare F# scalar integers above i64 range use the ``I`` suffix."""
+    result = literalize(
+        source="9223372036854775808",
+        input_format=InputFormat.JSON,
+        language=FSHARP,
+        pre_indent_level=0,
+        include_delimiters=False,
+        variable_form=None,
+    )
+
+    assert result.code == (
+        "type Val =\n    | FInt of bigint\n9223372036854775808I"
+    )
+
+
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     """COBOL data names must not end with a hyphen after truncation."""
     long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
@@ -416,6 +479,179 @@ def test_java_list_rejects_null_elements() -> None:
         )
 
 
+def test_python_no_any_import_when_all_defaults_overridden() -> None:
+    """When all Python default collection types are non-Any, the
+    ``from typing import Any`` import is not emitted.
+    """
+    spec = Python(
+        default_set_element_type="str",
+        default_sequence_element_type="str",
+        default_dict_value_type="str",
+        default_dict_key_type="str",
+    )
+    result = literalize(
+        source="{}\n",
+        input_format=InputFormat.YAML,
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_data"),
+    )
+    assert result.code == "my_data: dict[str, str] = {}"
+    assert result.preamble == ("from __future__ import annotations",)
+
+
+def test_literalize_call_wrap_in_file_emits_stubs() -> None:
+    """``wrap_in_file=True`` produces a self-contained file that
+    defines the ``target_function`` so the output compiles on its own.
+    """
+    go_result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Go(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        wrap_in_file=True,
+    )
+    expected_go = textwrap.dedent(
+        text="""\
+        package main
+        func process(args ...any) any { return nil }
+
+        func main() {
+        process(1, 2)
+        }""",
+    )
+    assert go_result.code == expected_go
+    assert not go_result.preamble
+    assert not go_result.body_preamble
+
+    py_result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        wrap_in_file=True,
+    )
+    expected_py = textwrap.dedent(
+        text="""\
+        from __future__ import annotations
+        def process(*_args: object, **_kwargs: object) -> object: ...
+        process(a=1, b=2)""",
+    )
+    assert py_result.code == expected_py
+    assert not py_result.preamble
+
+
+def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
+    """When ``call_transform`` consumes the call result, the stub
+    returns a value instead of ``void``.
+    """
+    result = literalize_call(
+        source="[[1, 2]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=lambda c: f"emit({c})",
+        wrap_in_file=True,
+    )
+    expected = textwrap.dedent(
+        text="""\
+        from __future__ import annotations
+        def process(*_args: object, **_kwargs: object) -> object: ...
+        emit(process(a=1, b=2))""",
+    )
+    assert result.code == expected
+
+
+def test_gleam_call_preamble_stub_many_parameters() -> None:
+    """Gleam call stubs handle more than 26 parameters.
+
+    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
+    suffix branch, emitting ``z`` for the last single-letter slot and
+    ``a1`` for the next one in the generated stub signature.
+    """
+    params = [f"p{i}" for i in range(27)]
+    (line,) = Gleam().format_call_preamble_stub(
+        ("target",),
+        params,
+        StubReturn.VOID,
+        (),
+    )
+    assert line == (
+        "pub fn target("
+        "_p0: a, "
+        "_p1: b, "
+        "_p2: c, "
+        "_p3: d, "
+        "_p4: e, "
+        "_p5: f, "
+        "_p6: g, "
+        "_p7: h, "
+        "_p8: i, "
+        "_p9: j, "
+        "_p10: k, "
+        "_p11: l, "
+        "_p12: m, "
+        "_p13: n, "
+        "_p14: o, "
+        "_p15: p, "
+        "_p16: q, "
+        "_p17: r, "
+        "_p18: s, "
+        "_p19: t, "
+        "_p20: u, "
+        "_p21: v, "
+        "_p22: w, "
+        "_p23: x, "
+        "_p24: y, "
+        "_p25: z, "
+        "_p26: a1"
+        ") -> Nil { Nil }"
+    )
+
+
+def test_gleam_call_stub_more_than_26_parameters() -> None:
+    """Gleam type-var generation falls back to numeric suffixes past
+    the 26-letter alphabet.
+
+    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
+    suffix branch, emitting ``z`` for the last single-letter slot and
+    ``a1`` for the next one in the generated stub signature.
+    """
+    parameter_names = [f"p{i}" for i in range(27)]
+    yaml_row = "\n".join(f"  - {i}" for i in range(26))
+    source = f"---\n-\n{yaml_row}\n  - [100]\n"
+    result = literalize_call(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=Gleam(),
+        target_function="process",
+        parameter_names=parameter_names,
+        wrap_in_file=True,
+    )
+    signature_params = ", ".join(
+        f"_p{i}: {chr(ord('a') + i)}" for i in range(26)
+    )
+    int_args = ", ".join(f"GInt({i})" for i in range(26))
+    call_args = f"{int_args}, GList([GInt(100)])"
+    expected = textwrap.dedent(
+        text=f"""\
+        pub type GVal {{
+          GInt(Int)
+          GList(List(GVal))
+        }}
+        pub fn process({signature_params}, _p26: a1) -> Nil {{ Nil }}
+
+        pub fn main() {{
+          process({call_args})
+        }}""",
+    )
+    assert result.code == expected
+
+
 @pytest.mark.parametrize(
     argnames="yaml_value",
     argvalues=[".inf", "-.inf", ".nan"],
@@ -435,6 +671,23 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
             input_format=InputFormat.YAML,
             language=Gleam(),
         )
+
+
+def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
+    """Non-empty declarations are placed before the wrapped call
+    expression.
+
+    Jsonnet ``local`` bindings are invalid inside an array literal, so
+    ``wrap_calls_with_declarations`` emits them before the
+    ``wrap_in_file`` output rather than splicing them inside the array.
+    """
+    spec = Jsonnet()
+    result = spec.wrap_calls_with_declarations(
+        ("local x = 1;",),
+        "[x]",
+        (),
+    )
+    assert result == "local x = 1;\n[x]"
 
 
 def test_dhall_quoted_dict_key() -> None:
@@ -627,7 +880,7 @@ def test_python_variable_names_supported_renders() -> None:
         variable_form=BothVariableForms(name="x"),
         wrap_in_file=True,
     )
-    assert result.code == "x = 42\nx = 42"
+    assert result.code == "from __future__ import annotations\nx = 42\nx = 42"
 
 
 _TIME_COVERAGE_SOURCES = (
@@ -816,6 +1069,28 @@ def test_datetime_time_rust_lazy_static_renders() -> None:
         wrap_in_file=True,
     )
     assert "HashMap<&str, &str>" in result.code
+
+
+def test_datetime_time_union_annotation_renders() -> None:
+    """Annotated heterogeneous sequence with a ``datetime.time`` element
+    renders without crashing.
+
+    Covers the ``case datetime.time(): return "time"`` arm of
+    ``_structural_type_id`` in ``_preamble.py``, which only runs when a
+    variable declaration drives ``_has_union_in_type_hints`` to walk a
+    list containing a time scalar.  Delete with the rest of the
+    time-coverage shims once issue #2230 lands.
+    """
+    result = literalize(
+        source="mixed = [[09:30:00], []]\n",
+        input_format=InputFormat.TOML,
+        language=Python(
+            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
+        ),
+        variable_form=NewVariable(name="x"),
+        wrap_in_file=True,
+    )
+    assert result.code
 
 
 def test_format_time_csharp_exact_millisecond_renders() -> None:

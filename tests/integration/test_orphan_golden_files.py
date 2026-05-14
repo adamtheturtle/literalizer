@@ -5,6 +5,8 @@ from pathlib import Path
 
 from beartype import beartype
 
+from literalizer.languages import Python
+
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
@@ -22,7 +24,7 @@ from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
 )
-from .variant_cases import build_variant_cases
+from .variant_cases import build_language_version_variants, build_variant_cases
 
 
 @beartype
@@ -101,6 +103,20 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
 
 
 @beartype
+def _expected_default_ref_variant_golden_files(
+    cases_dir: Path,
+) -> set[Path]:
+    """Return expected default-ref golden files for version variants."""
+    return {
+        cases_dir
+        / "literalize_ref_default_whole"
+        / (variant.name + variant.spec.extension)
+        for variant in build_language_version_variants()
+        if variant.lang_cls is Python
+    }
+
+
+@beartype
 def _expected_golden_files(cases_dir: Path) -> set[Path]:
     """Return the set of all golden files that parameterized tests
     cover.
@@ -173,6 +189,10 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
                 lang_cls=default_ref_case.lang_cls,
             )
         )
+
+    expected.update(
+        _expected_default_ref_variant_golden_files(cases_dir=cases_dir)
+    )
 
     return expected
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 def process(*_args: object, **_kwargs: object) -> object: ...
 process(value=1, count=42)
 process(value=2, count=100)
