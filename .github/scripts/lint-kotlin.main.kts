@@ -15,7 +15,17 @@ var allOk = true
 for (path in files) {
     val out = java.nio.file.Files.createTempDirectory("kotlin-lint-").toFile()
     try {
-        val exit = compiler.exec(System.err, "-script", "-d", out.absolutePath, path)
+        // `-language-version 1.9` and `-api-version 1.9` match
+        // `Kotlin.language_version` in `src/literalizer/languages/kotlin.py`;
+        // keep them in sync.
+        val exit = compiler.exec(
+            System.err,
+            "-script",
+            "-language-version", "1.9",
+            "-api-version", "1.9",
+            "-d", out.absolutePath,
+            path,
+        )
         if (exit != ExitCode.OK) {
             System.err.println("Failed: $path")
             allOk = false
