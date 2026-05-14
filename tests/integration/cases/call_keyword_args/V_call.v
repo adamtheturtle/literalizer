@@ -1,4 +1,3 @@
-interface IVal {}
 interface ICallArg_ {}
 struct ThrottlerType_ {}
 fn (r ThrottlerType_) check(args ...ICallArg_) ICallArg_ { return 0 }

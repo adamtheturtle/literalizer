@@ -13,11 +13,14 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    make_element_to_type,
+    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -45,6 +48,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._heterogeneous import collect_heterogeneous_container_ids
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -86,6 +90,28 @@ _V_IFACE_NAME = "IVal"
 _V_IFACE_DECL = f"interface {_V_IFACE_NAME} {{}}"
 _V_NULL_WRAPPED = f"{_V_IFACE_NAME}(unsafe {{ nil }})"
 
+_v_element_to_type = make_element_to_type(
+    str_type="string",
+    bool_type="bool",
+    int_type="int",
+    wide_int_type="i64",
+    float_type="f64",
+    bytes_type="string",
+    mixed_numeric_type="string",
+    date_type="string",
+    datetime_type="string",
+    time_type="string",
+    list_template="[]{inner}",
+    dict_type_template=None,
+    fallback_value_type=_V_IFACE_NAME,
+)
+
+_v_narrowed_empty_form = make_narrowed_empty_form(
+    element_to_type=_v_element_to_type,
+    template="[]{type}{{}}",
+    fallback_type=_V_IFACE_NAME,
+)
+
 
 @beartype
 def _format_v_u64_positive(value: int) -> str:
@@ -113,16 +139,7 @@ def _make_v_i64_formatter(
     return _format
 
 
-def _is_ref_value(v: Value) -> bool:
-    """Return True if *v* looks like a ``{ref_key: name}`` ref marker."""
-    return (
-        isinstance(v, dict)
-        and len(v) == 1
-        and isinstance(next(iter(v.values())), str)
-    )
-
-
-def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex  # noqa: C901
+def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
     data: Value,
 ) -> frozenset[int]:
     """Return container ids that need interface-type wrapping in V.
@@ -134,8 +151,6 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex  # noqa: C901
     * Containers with any ``None`` values (V cannot store ``none`` in
       typed collections).
     * Sets with mixed Python types.
-    * Lists that mix ref markers with non-ref elements (refs expand to
-      maps, which are heterogeneous with primitive types in V arrays).
     * Containers whose children have mixed V types because some
       children are in wrap_ids and others are not.
     """
@@ -160,15 +175,7 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex  # noqa: C901
         if not children or any(v is None for v in children):
             wrap_ids.add(id(item))
             return
-        non_ref_children = [v for v in children if not _is_ref_value(v=v)]
-        if (
-            isinstance(item, list)
-            and len(non_ref_children) < len(children)
-            and non_ref_children
-        ):
-            wrap_ids.add(id(item))
-            return
-        python_types = {type(v) for v in non_ref_children if v is not None}
+        python_types = {type(v) for v in children if v is not None}
         if len(python_types) > 1:
             wrap_ids.add(id(item))
             return
@@ -376,7 +383,9 @@ class V(metaclass=LanguageCls):
     pygments_name = "v"
     supports_special_floats = True
     supports_variable_names = True
-    dict_supports_heterogeneous_values = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
+    dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -384,10 +393,18 @@ class V(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -438,7 +455,7 @@ class V(metaclass=LanguageCls):
         ARRAY = SequenceFormatConfig(
             sequence_open=fixed_open(open_str="["),
             close="]",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
             single_element_trailing_comma=False,
             supports_trailing_comma=True,
             empty_sequence=f"[]{_V_IFACE_NAME}{{}}",
@@ -448,7 +465,7 @@ class V(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
-            narrowed_empty_form=None,
+            narrowed_empty_form=_v_narrowed_empty_form,
         )
 
     class SetFormats(enum.Enum):
@@ -460,7 +477,7 @@ class V(metaclass=LanguageCls):
             empty_set=f"[]{_V_IFACE_NAME}{{}}",
             preamble_lines=(),
             set_opener_template="",
-            supports_heterogeneity=True,
+            supports_heterogeneity=False,
             supports_trailing_comma=True,
         )
 
@@ -639,6 +656,11 @@ class V(metaclass=LanguageCls):
         )
         """Raise on heterogeneous scalar collections (default).
 
+        V is statically typed and rejects unwrapped heterogeneous
+        collections, so the default refuses to render them rather than
+        emit code the V compiler will not accept.  Callers that want
+        to materialize such data must opt in to ``INTERFACE``.
+
         Still emits ``interface IVal {}`` when the data contains an
         empty list, dict, or set, because the empty-literal rendering
         (``[]IVal{}`` / ``map[string]IVal{}``) references it regardless
@@ -740,7 +762,7 @@ class V(metaclass=LanguageCls):
         StatementTerminatorStyles.NEWLINE
     )
     heterogeneous_strategy: HeterogeneousStrategies = (
-        HeterogeneousStrategies.INTERFACE
+        HeterogeneousStrategies.ERROR
     )
     language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "\t"
@@ -837,23 +859,37 @@ class V(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``.clone()`` to the ref identifier.
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Append ``.clone()`` to the ref identifier, except for scalars.
 
-        V maps cannot be copied by direct assignment; the caller must
-        explicitly clone the value.  ``$ref`` markers appear on the
-        right-hand side of an assignment emitted by
-        :func:`~literalizer.literalize`, so ``.clone()`` is required.
+        V's container types (arrays, maps) are not copied by direct
+        assignment, so a ``$ref`` marker appearing on the right-hand
+        side of an emitted assignment must be cloned to satisfy the
+        V compiler.  V's primitive scalars (``int``, ``bool``,
+        ``f64``, …) have no ``.clone()`` method - ``int.clone()`` is a
+        hard error - so we emit the bare identifier and let V's
+        automatic primitive copy do the right thing.  When the caller
+        did not supply ``ref_values`` we cannot tell which case applies
+        and fall back to ``.clone()``, which is correct for V's
+        original use case (map/array refs).
         """
 
-        def _clone(name: str, /) -> str:
-            """Return *name* with ``.clone()`` appended."""
+        def _clone(name: str, value: Value | None, /) -> str:
+            """Return *name* with ``.clone()`` appended unless *value*
+            is a register-trivial scalar that V auto-copies.
+            """
+            if isinstance(value, bool | int | float):
+                return name
             return f"{name}.clone()"
 
         return _clone
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Return the ref identifier unchanged in a call-argument context.
 
         When a ``$ref`` is passed as a function argument (directly or
@@ -866,7 +902,7 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -939,6 +975,11 @@ class V(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -967,6 +1008,22 @@ class V(metaclass=LanguageCls):
             fallback=i64_or_u64_fallback,
             min_value=_V_I32_MIN,
             max_value=_V_I32_MAX,
+        )
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``i64(...)``-cast integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=_make_v_i64_formatter(base=base),
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_format_v_u64_positive,
+                language_name="V",
+            ),
         )
 
     @cached_property

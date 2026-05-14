@@ -4,6 +4,245 @@ Changelog
 Next
 ----
 
+- :class:`datetime.time` is now a first-class :type:`Scalar` value.
+  Languages with a native time-only type emit native literals
+  (Python ``datetime.time(...)``, TOML unquoted ``HH:MM:SS``,
+  .NET ``new TimeOnly(...)`` / ``TimeOnly(...)`` / ``New TimeOnly(...)``
+  for :class:`~literalizer.CSharp`, :class:`~literalizer.FSharp`,
+  :class:`~literalizer.VisualBasic`, and ``LocalTime.of(...)`` for
+  :class:`~literalizer.Java`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Groovy`); other
+  languages fall back to the existing ISO 8601 quoted-string form.
+  TOML ``time`` inputs now round-trip through
+  :class:`~literalizer.Toml` as native time literals instead of being
+  re-emitted as quoted ISO 8601 strings.  Typed collection openers in
+  languages such as :class:`~literalizer.CSharp`,
+  :class:`~literalizer.Java`, :class:`~literalizer.Kotlin`, and
+  :class:`~literalizer.Scala` now narrow uniform time-only sequences
+  to the language's time type (e.g. ``TimeOnly[]`` /
+  ``Array<LocalTime>``) instead of falling back to a generic
+  ``Object``/``Any`` opener.
+- Golden files for languages whose compiler version is pinned (Elixir,
+  Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the
+  filename: ``{stem}@{version}{extension}`` (e.g.
+  ``Odin@dev-2026-04.odin``).  Every fixture is explicitly tied to
+  the compiler version it was generated against.  Each ``lint.yml``
+  job sets a job-scoped environment variable once and feeds it to
+  both the install action and
+  ``python -m tests.integration.list_fixtures``; the test code
+  auto-discovers the same version from sibling filenames so no
+  separate registry file is needed.
+
+- :class:`~literalizer.Fortran`'s ``language_version`` default is now
+  ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the
+  Fortran 2008 features the generator actually emits (e.g. ``int64``
+  from ``iso_fortran_env``). ``V2003`` has been removed from
+  ``Fortran.VersionFormats``.
+
+- ``lint-fast`` CI job now syntax-checks and runs the Python fixtures
+  under ``tests/integration/cases``, matching the per-language gate
+  already in place for Bash, Ruby, JavaScript, and other fixture
+  languages.  See #1921.
+
+- ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime
+  errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
+  The ``laytan/setup-odin`` action is pinned to ``dev-2026-04``, the
+  last Odin release where ``odin run .`` did not segfault on these
+  fixtures; ``release: latest`` (``dev-2026-05``) crashes at runtime, and
+  the compiler itself segfaults on some fixtures under
+  ``odin build .``.  See #1745.
+
+2026.05.14.1
+------------
+
+
+2026.05.14
+----------
+
+
+
+- YAML inputs with non-string dict keys (integers, dates, booleans)
+  now flow through to the target language's value-formatting path
+  instead of being silently converted to string form.  Languages that
+  can represent the key natively (Python, Ruby, Clojure, Lua, Bash,
+  and others) produce the corresponding literal; languages whose dict
+  syntax requires string keys or a homogeneous typed map raise
+  :exc:`~literalizer.exceptions.UnrepresentableInputError`.  The
+  affected opt-out targets are the JSON family (already
+  :class:`~literalizer.Json5`, :class:`~literalizer.Jsonnet`,
+  :class:`~literalizer.Toml`), the string-keyed attribute-set
+  languages (:class:`~literalizer.Nix`, :class:`~literalizer.Dhall`,
+  :class:`~literalizer.Cobol`), the statically-typed-map languages
+  whose typed-map syntax has not yet been generalized
+  (:class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.CSharp`, :class:`~literalizer.Haskell`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Dart`,
+  :class:`~literalizer.VisualBasic`, :class:`~literalizer.FSharp`,
+  :class:`~literalizer.Zig`, :class:`~literalizer.Odin`,
+  :class:`~literalizer.Nim`, :class:`~literalizer.D`,
+  :class:`~literalizer.TypeScript`,
+  :class:`~literalizer.JavaScript`), the languages that reject
+  specific non-string key types at the language level
+  (:class:`~literalizer.Php` rejects ``DateTime`` keys,
+  :class:`~literalizer.V` rejects ``bool`` keys), and the languages
+  whose value ADTs do not currently model non-string keys
+  (:class:`~literalizer.OCaml`, :class:`~literalizer.Sml`,
+  :class:`~literalizer.R`).
+
+- :func:`~literalizer.literalize_call` now accepts a ``variable_form``
+  argument (``NewVariable`` or ``ExistingVariable``) that wraps the
+  rendered call in an idiomatic per-language variable binding (e.g.
+  ``let my_data = make_widget(42);``,
+  ``const my_data = make_widget({ count: 42 });``,
+  ``my_data = make_widget(count=42)``).  Mutability and inference
+  style are controlled by the per-language ``declaration_style`` and
+  ``Modifiers`` enums on the supplied ``Language`` instance.
+  ``BothVariableForms`` is rejected -- emitting both a declaration
+  and an assignment would invoke the target function twice -- as is
+  ``per_element=True`` (no per-element name vector) and any language
+  whose call form is a statement rather than an expression
+  (``call_returns_expression=False``).  All three are surfaced as
+  :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  The same
+  exception is raised for languages whose declaration template wraps
+  or transforms the right-hand side in a way that is only valid for
+  literal values -- Tcl (needs ``[...]`` command substitution), Bash
+  (needs ``$(...)`` command substitution), Objective-C (``@(...)``
+  boxing of primitives), tagged-enum heterogeneous-strategy languages
+  (Roc, Haskell, Elm, SML, OCaml, PureScript, F#), C / SystemVerilog /
+  Fortran / Ada / Zig / D (struct-initializer or constructor wrapping
+  derived from the value's literal type), Elixir (call stubs need
+  module scope, not the variable's function body), Erlang, Forth, and
+  Nim.  Closes
+  `#1961 <https://github.com/adamtheturtle/literalizer/issues/1961>`_.
+
+- The internal :data:`~literalizer._types.Value` and
+  :data:`~literalizer._types.ValueInput` aliases now permit any
+  :data:`~literalizer._types.Scalar` as a dict key, in preparation for
+  surface formats that admit non-string dict keys.  A new
+  :exc:`~literalizer.exceptions.UnrepresentableInputError` and a
+  ``supports_non_string_dict_keys`` class attribute on
+  :class:`~literalizer.Language` (defaulting to ``True``; overridden to
+  ``False`` on :class:`~literalizer.Json5`,
+  :class:`~literalizer.Jsonnet`, and :class:`~literalizer.Toml`) wire a
+  centralized guard at the dict-formatting boundary.  The surface
+  parsers still produce only string-keyed dicts, so behavior is
+  unchanged.
+
+- :func:`~literalizer.literalize` now accepts a ``ref_values`` mapping
+  from ref identifier to the value declared elsewhere for that ref.
+  Languages whose ``$ref`` rendering depends on the referenced type
+  (V's ``.clone()`` for arrays and maps, Mojo's ``^`` for non-trivial
+  values, C++'s ``std::move`` for non-trivially-copyable values)
+  consult it to choose the right form; when omitted these languages
+  keep their type-agnostic default.  ``V`` now emits a bare identifier
+  for scalar refs (``int``, ``bool``, ``f64``) because ``int.clone()``
+  is rejected by the V compiler; ``Mojo`` drops ``^`` for
+  register-trivial scalars where it is a hard error under ``--Werror``;
+  ``Cpp`` drops ``std::move`` for trivially-copyable scalars where
+  clang-tidy's ``hicpp-move-const-arg`` rejects it.  Preamble inference
+  also walks the resolved ``ref_values`` so sum-type body declarations
+  (Haskell's ``data Val``, OCaml's ``val_t``, Roc's ``Val``, …) include
+  the variants needed by the referenced types.
+  ``SystemVerilog``'s :func:`literalize` rejects scalar ``$ref`` markers
+  via :exc:`~literalizer.exceptions.CallArgNotSupportedError`: SV keys
+  the variable declaration off the marker dict's shape (``_VKV name[]``)
+  and cannot produce a coherent declaration for a scalar referent.
+
+- The
+  :attr:`~literalizer._language.Language.format_call_ref_identifier`,
+  :attr:`~literalizer._language.Language.format_call_arg_ref_identifier`,
+  and
+  :attr:`~literalizer._language.Language.format_call_arg_ref_identifier_consumable`
+  hooks now receive a second positional argument: the ``Value`` behind
+  the ref (or ``None`` when the caller did not supply ``ref_values``).
+  This is a breaking change for custom :class:`~literalizer.Language`
+  implementations that override these hooks; most overrides ignore the
+  new argument.
+
+- :class:`~literalizer.V` now defaults
+  ``heterogeneous_strategy`` to
+  ``V.heterogeneous_strategies.ERROR`` and reports
+  ``dict_supports_heterogeneous_values=False`` and
+  ``supports_heterogeneity=False`` on its sequence and set formats.
+  V is statically typed and rejects unwrapped heterogeneous
+  collections, so rendering them now raises rather than emitting
+  code the V compiler will not accept.  Callers that want to
+  materialize heterogeneous data must opt in to
+  ``V.heterogeneous_strategies.INTERFACE``, which wraps values with
+  ``IVal(...)`` and emits the ``interface IVal {}`` declaration as
+  before.
+
+2026.05.13.1
+------------
+
+
+- :class:`~literalizer._language.LanguageCls` now exposes
+  ``supports_empty_dict_key``, ``supports_call_style``,
+  ``supports_default_dict_key_type``, ``supports_default_dict_value_type``,
+  ``supports_default_sequence_element_type``,
+  ``supports_default_set_element_type``, and
+  ``supports_default_ordered_map_value_type`` flags alongside the existing
+  ``supports_module_name``.  Runtime-dispatched callers that look up a
+  language by name can use these to decide whether to pass the matching
+  constructor keyword argument without inspecting dataclass fields or the
+  ``__init__`` signature.
+
+2026.05.13
+----------
+
+
+- :class:`~literalizer.Haskell` ``CURRIED``
+  :class:`~literalizer.CallStyle` now emits a thunk binding
+  (``process :: IO Val`` / ``process = ...``) for zero-parameter
+  calls instead of a malformed signature with an empty argument
+  type (``process ::  -> IO Val``).
+- :func:`~literalizer.literalize` now raises
+  :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`
+  when ``wrap_in_file=True`` is combined with ``variable_form=None`` for
+  a target language that cannot represent a bare value at file-statement
+  scope.  Each :class:`~literalizer._language.Language` declares its
+  ability to render this shape via a new
+  ``supports_no_variable_wrap_in_file`` flag.  Strict-typed compiled
+  languages (Rust, C, C++, Haskell, OCaml, Swift, Ada, D, Dart, C#, Elm,
+  Mojo, Nim, Objective-C, Odin, SML, V, Zig, Go, Java, Kotlin, F#,
+  Scala, Erlang, Gleam, Roc, PureScript, Tcl, Bash, VB, SystemVerilog,
+  Occam) opt out, along with Cobol, Fortran, Php, Lua, Toml, and Dhall
+  — each of which produced a file whose linter rejected the resulting
+  bare-value rendering even though the issue text initially listed them
+  as opt-in.  The renderer no longer silently emits invalid output for
+  any of these.
+
+- :class:`~literalizer.Haskell`, :class:`~literalizer.FSharp`,
+  :class:`~literalizer.OCaml`, and :class:`~literalizer.Sml` now expose
+  a ``CURRIED`` :class:`~literalizer.CallStyle` alongside the existing
+  ``POSITIONAL`` member.  Selecting it emits curried application calls
+  (``process arg1 arg2``) with curried stubs in place of the tuple
+  form.  :class:`~literalizer.Haskell` defaults to ``CURRIED`` since
+  curried application is the idiomatic call form in Haskell; F#, OCaml,
+  and SML keep ``POSITIONAL`` as the default.
+
+- :class:`~literalizer.Elm` :func:`~literalizer.literalize_call` now
+  emits curried-application calls (``process (EInt 1) (EInt 2)``) with
+  curried type stubs (``process : a -> b -> ()``) in place of the prior
+  tuple-form (``process (EInt 1, EInt 2)``).  Elm tuple literals cap at
+  three elements, so the tuple form had no representation for calls
+  with four or more parameters; the curried form composes naturally
+  with ``|>`` and matches the convention used by ``elm-format`` and the
+  standard library.
+
+- The ``Language.max_call_parameters`` attribute has been removed.  No
+  remaining language sets a maximum parameter count, so the
+  upstream ``UnsupportedCallShapeError`` check in
+  :func:`~literalizer.literalize_call` and the corresponding
+  ``language_cls.max_call_parameters`` introspection no longer have a
+  load-bearing caller.
+
+- The ``supports_commented_dict_call_args`` flag has been removed from
+  ``Language``.  Every (language, shape) pair previously dropped by the
+  test-discovery filter on this flag is either already short-circuited
+  by an earlier exception path or now renders cleanly, leaving the flag
+  with no load-bearing callers.
+
 - :func:`~literalizer.literalize_call` now raises
   :class:`~literalizer.exceptions.UnsupportedCallShapeError` when the
   innermost segment of ``target_function`` collides with one of the

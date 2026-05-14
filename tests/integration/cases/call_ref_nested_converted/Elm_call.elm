@@ -14,7 +14,7 @@ main =
     let
         myVar : Val
         myVar = EInt 42
-        _ = process(EList [myVar, EInt 42, EStr "static"])
+        _ = process (EList [myVar, EInt 42, EStr "static"])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

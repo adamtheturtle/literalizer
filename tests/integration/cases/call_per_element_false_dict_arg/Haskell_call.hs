@@ -12,5 +12,5 @@ process :: Val -> IO ()
 process _ = return ()
 main :: IO ()
 main = do
-    _ <- process(HMap [("a", 1), ("b", HStr "x")])
+    _ <- process (HMap [("a", 1), ("b", HStr "x")])
     pure ()

@@ -2,5 +2,5 @@ from __future__ import annotations
 from collections import OrderedDict
 my_data = OrderedDict([
     ("name", "Alice"),
-    ("scores", {"1": "first", "2": "second"}),
+    ("scores", {1: "first", 2: "second"}),
 ])

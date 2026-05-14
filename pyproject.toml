@@ -38,6 +38,9 @@ dependencies = [
     # path is available on every platform where a wheel is published.
     "ruamel-yaml-clib>=0.2.15; platform_python_implementation=='CPython'",
     "tomlkit>=0.12",
+    # typing_extensions for ``TypeIs`` (PEP 742), which is in the stdlib
+    # ``typing`` module only from Python 3.13.
+    "typing-extensions>=4.10",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.12.24",
@@ -56,12 +59,12 @@ optional-dependencies.dev = [
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.1",
     "pyproject-fmt==2.21.2",
-    "pyrefly==0.64.1",
+    "pyrefly==1.0.0",
     "pyright==1.1.409",
     "pyroma==5.0.1",
     "pytest==9.0.3",
     "pytest-beartype-tests==2026.4.26",
-    "pytest-codspeed==4.5.0",
+    "pytest-codspeed==5.0.1",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.10.0",
     "pytest-xdist==3.8.0",
@@ -70,7 +73,7 @@ optional-dependencies.dev = [
     # but also because having it installed means that ``actionlint-py`` will
     # use it to lint shell commands in GitHub workflow files.
     "shellcheck-py==0.11.0.1",
-    "shfmt-py==3.12.0.2",
+    "shfmt-py==4.0.0",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
     "sphinx-lint==1.0.2",
@@ -133,6 +136,10 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow print() in docs for output-illustrating examples.
     "T201",
 ]
+lint.per-file-ignores."tests/**/test_*.py" = [
+    # Allow 'assert' as we use it for tests.
+    "S101",
+]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
     # unused-import checks (F401) so we catch stale imports.
@@ -151,14 +158,14 @@ lint.per-file-ignores."tests/integration/test_*.py" = [
     # FileRegressionFixture must be imported at runtime for beartype.
     "TC002",
 ]
-lint.per-file-ignores."tests/test_*.py" = [
-    # Allow 'assert' as we use it for tests.
-    "S101",
-]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
+lint.flake8-tidy-imports.banned-api."builtins.getattr".msg = "getattr is banned: declare a typed protocol and use isinstance narrowing, or access the attribute directly."
+lint.flake8-tidy-imports.banned-api."builtins.hasattr".msg = "hasattr is banned: declare a typed protocol and use isinstance narrowing instead."
+lint.flake8-tidy-imports.banned-api."builtins.setattr".msg = "setattr is banned: assign through a typed attribute or constructor instead."
+lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: use explicit type narrowing or a typed variable instead."
 lint.pydocstyle.convention = "google"
 
 [tool.pylint]
@@ -169,6 +176,9 @@ FORMAT.single-line-if-stmt = false
 MASTER.persistent = true
 # Use multiple processes to speed up Pylint.
 MASTER.jobs = 0
+# Top-level investigation script with intentional ``exec`` and shell
+# fragments in its docstring; not part of the shipped package.
+MASTER.ignore-paths = [ "repro.py" ]
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
 # See https://chezsoi.org/lucas/blog/pylint-strict-base-configuration.html.
@@ -270,6 +280,8 @@ ignore = [
     "CONTRIBUTING.rst",
     "LICENSE",
     "Makefile",
+    "issue.md",
+    "repro.py",
     "ci",
     "ci/**",
     "docs",
@@ -301,6 +313,7 @@ strict = true
 files = [ "." ]
 exclude = [
     "build",
+    "repro.py",
 ]
 plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
@@ -323,17 +336,20 @@ ignore_errors = true
 disable-project-excludes-heuristics = true
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
+project-excludes = [ "repro.py" ]
 search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
 enableTypeIgnoreComments = false
 exclude = [
     ".venv",
+    "repro.py",
 ]
 reportUnnecessaryTypeIgnoreComment = true
 typeCheckingMode = "strict"
 executionEnvironments = [
     { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
+    { root = "tests/errors/test_non_string_dict_key_guard.py", reportPrivateUsage = false },
 ]
 
 [tool.ty]
@@ -341,16 +357,19 @@ analysis.respect-type-ignore-comments = false
 terminal.error-on-warning = true
 overrides = []
 environment.extra-paths = [ ".github/scripts" ]
+src.exclude = [ "repro.py" ]
 
 [tool.pytest]
 ini_options.xfail_strict = true
 ini_options.log_cli = true
+ini_options.addopts = "-n auto"
 
 [tool.coverage]
 run.branch = true
 run.omit = [
     "tests/benchmarks/**/*.py",
     "tests/integration/cases/**/*.py",
+    "tests/integration/list_fixtures.py",
 ]
 report.exclude_also = [
     "case _ as unreachable:\n\\s*assert_never\\(",
@@ -388,6 +407,10 @@ linewrap-full-docstring = true
 # Ideally we would limit the paths to the source code where we want to ignore names,
 # but Vulture does not enable this.
 ignore_names = [
+    # Reserved slot on ``HeterogeneousBehavior`` for the forthcoming
+    # ``RECORD`` heterogeneous strategy; the field is read by the
+    # strategy's consumer in a follow-up PR.
+    "render_record_literal",
     # pytest configuration
     "pytest_collect_file",
     "pytest_plugins",
@@ -433,6 +456,7 @@ ignore_names = [
     "BTREE_SET",
     "call_styles",
     "heterogeneous_strategies",
+    "INTERFACE",
     "OBJECT_VARIANT",
     "TAGGED_ENUM",
     "UNION_TYPE",
@@ -484,14 +508,19 @@ ignore_names = [
     "ZONED",
     # Used by downstream consumers
     "supports_module_name",
+    "supports_empty_dict_key",
+    "supports_call_style",
+    "supports_default_dict_key_type",
+    "supports_default_dict_value_type",
+    "supports_default_sequence_element_type",
+    "supports_default_set_element_type",
+    "supports_default_ordered_map_value_type",
     # Used in documentation code examples
     "custom",
     "result",
     # ruamel.yaml configuration attributes
     "default_flow_style",
     "sort_base_mapping_type_on_output",
-    # Used by _lang_satisfies_config_constraints once issue #1828 is resolved
-    "reserved_identifiers",
 ]
 # Duplicate some of .gitignore
 exclude = [

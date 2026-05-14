@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -43,9 +44,11 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -92,11 +95,34 @@ def _haskell_call_preamble_stub(
 
 
 @beartype
+def _haskell_arg_type_str(
+    *, params: Sequence[str], type_name: str, curried: bool
+) -> str | None:
+    """Return the Haskell argument-type string for a call signature.
+
+    Curried: ``Val -> Val -> Val``, or ``None`` for the zero-parameter case
+    (which is a thunk binding ``f :: IO Val`` with no arrow).
+    Positional: ``Val`` for one param, or a tuple ``(Val, ...)`` for
+    many (including ``()`` for zero, since :class:`PositionalCallStyle`
+    emits ``f()`` at the call site).
+    """
+    if curried:
+        if not params:
+            return None
+        return " -> ".join(type_name for _ in params)
+    if len(params) == 1:
+        return type_name
+    return "(" + ", ".join(type_name for _ in params) + ")"
+
+
+@beartype
 def _build_haskell_call_stub_lines(
+    *,
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     type_name: str,
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return Haskell stub declarations for a call name."""
     if stub_return is StubReturn.VALUE:
@@ -110,30 +136,35 @@ def _build_haskell_call_stub_lines(
     # another call. Declare them with a polymorphic argument so GHC
     # never needs to default the wrapped expression's type.
     is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
+    effective_curried = curried and not is_wrapper_stub
+    arg_type = _haskell_arg_type_str(
+        params=params, type_name=type_name, curried=effective_curried
+    )
+    lhs_wildcards = " ".join("_" for _ in params) if effective_curried else "_"
+    lambda_wildcards = lhs_wildcards
     if len(parts) == 1:
         if is_wrapper_stub:
             sig = f"{parts[0]} :: a -> IO ()"
-        else:
-            if len(params) == 1:
-                arg_type = type_name
-            else:
-                arg_type = "(" + ", ".join(type_name for _ in params) + ")"
-            sig = f"{parts[0]} :: {arg_type} -> {ret}"
-        return (sig, f"{parts[0]} _ = {body}")
+            return (sig, f"{parts[0]} _ = {body}")
+        if arg_type is None:
+            return (f"{parts[0]} :: {ret}", f"{parts[0]} = {body}")
+        sig = f"{parts[0]} :: {arg_type} -> {ret}"
+        return (sig, f"{parts[0]} {lhs_wildcards} = {body}")
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if len(params) == 1:
-        arg_type = type_name
+    if arg_type is None:
+        field_type = ret
+        construction_lambda = body
     else:
-        arg_type = "(" + ", ".join(type_name for _ in params) + ")"
-    field_type = f"{arg_type} -> {ret}"
+        field_type = f"{arg_type} -> {ret}"
+        construction_lambda = f"\\{lambda_wildcards} -> {body}"
     if not fields:
         cls = root.capitalize() + "Type_"
         return (
             f"data {cls} = {cls} {{ {method} :: {field_type} }}",
             f"{root} :: {cls}",
-            f"{root} = {cls} {{ {method} = \\_ -> {body} }}",
+            f"{root} = {cls} {{ {method} = {construction_lambda} }}",
         )
     lines: list[str] = []
     inner_cls = fields[-1].capitalize() + "Type_"
@@ -151,7 +182,7 @@ def _build_haskell_call_stub_lines(
     lines.append(
         f"data {root_cls} = {root_cls} {{ {fields[0]} :: {prev_cls} }}",
     )
-    construction = f"{inner_cls} {{ {method} = \\_ -> {body} }}"
+    construction = f"{inner_cls} {{ {method} = {construction_lambda} }}"
     for i in range(len(fields) - 2, -1, -1):
         cls = fields[i].capitalize() + "Type_"
         construction = f"{cls} {{ {fields[i + 1]} = {construction} }}"
@@ -162,7 +193,9 @@ def _build_haskell_call_stub_lines(
 
 
 def _build_haskell_call_stub(
+    *,
     type_name: str,
+    curried: bool,
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
@@ -184,9 +217,18 @@ def _build_haskell_call_stub(
             params=params,
             stub_return=stub_return,
             type_name=type_name,
+            curried=curried,
         )
 
     return _haskell_call_stub
+
+
+@beartype
+def _haskell_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted Haskell value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
 
 
 @beartype
@@ -486,10 +528,9 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
             return bool(data.microsecond)
         case datetime.date():
             return False
-        case ordereddict() | dict():
+        case dict():
             return any(
-                _has_microsecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                _has_microsecond_datetime(data=v) for v in data.values()
             )
         case list() | set():
             return any(_has_microsecond_datetime(data=v) for v in data)
@@ -506,10 +547,9 @@ def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
             return not data.microsecond
         case datetime.date():
             return False
-        case ordereddict() | dict():
+        case dict():
             return any(
-                _has_nonmicrosecond_datetime(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+                _has_nonmicrosecond_datetime(data=v) for v in data.values()
             )
         case list() | set():
             return any(_has_nonmicrosecond_datetime(data=v) for v in data)
@@ -540,8 +580,207 @@ def _datetime_import_items(
     return items
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _HaskellPreambleConfig:
+    """Captured configuration for the Haskell body preamble
+    computation.
+    """
+
+    include_hdate: bool
+    include_hdatetime: bool
+    datetime_produces_int: bool
+    date_needs_is_string: bool
+    datetime_needs_is_string: bool
+    date_needs_str_explicit: bool
+    datetime_needs_str_explicit: bool
+    is_string_import: str
+    is_string_instance: str
+    type_name: str
+    constructor_prefix: str
+    emit_is_string: bool
+    emit_num: bool
+    indent: str
+
+
 @beartype
-def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
+def _haskell_base_constructors(
+    *,
+    types: frozenset[type],
+    constructor_prefix: str,
+    type_name: str,
+) -> list[str]:
+    """Return base data-type constructors for the types present in
+    data.
+    """
+    p = constructor_prefix
+    return [
+        constructor
+        for type_set, constructor in (
+            (frozenset({type(None)}), f"{p}Null"),
+            (frozenset({bool}), f"{p}Bool Bool"),
+            (frozenset({int}), f"{p}Int Integer"),
+            (frozenset({float}), f"{p}Float Double"),
+            (frozenset({str, bytes}), f"{p}Str String"),
+            (frozenset({list}), f"{p}List [{type_name}]"),
+            (
+                frozenset({dict, ordereddict}),
+                f"{p}Map [(String, {type_name})]",
+            ),
+            (frozenset({set}), f"{p}Set [{type_name}]"),
+        )
+        if types & type_set
+    ]
+
+
+@beartype
+def _haskell_extend_for_dates(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+    data: Value,
+    data_val_parts: list[str],
+) -> list[str]:
+    """Append date/datetime constructors and return the import-item
+    list.
+    """
+    p = cfg.constructor_prefix
+    import_items: list[str] = []
+    if cfg.include_hdate and datetime.date in types:
+        data_val_parts.append(f"{p}Date Day")
+        import_items.extend(["Day", "fromGregorian"])
+    if cfg.include_hdatetime and datetime.datetime in types:
+        data_val_parts.append(f"{p}Datetime UTCTime")
+        import_items.extend(
+            _datetime_import_items(
+                has_from_gregorian="fromGregorian" in import_items,
+                has_microsecond=_has_microsecond_datetime(data=data),
+                has_nonmicrosecond=_has_nonmicrosecond_datetime(data=data),
+            ),
+        )
+    if (
+        cfg.datetime_produces_int
+        and datetime.datetime in types
+        and f"{p}Int Integer" not in data_val_parts
+    ):
+        data_val_parts.append(f"{p}Int Integer")
+    return import_items
+
+
+@beartype
+def _haskell_needs_str_constructor(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+) -> bool:
+    """Return True if an ``HStr String`` constructor must be present."""
+    return (
+        bool(types & {str, bytes})
+        or (cfg.date_needs_is_string and datetime.date in types)
+        or (cfg.datetime_needs_is_string and datetime.datetime in types)
+        or (cfg.date_needs_str_explicit and datetime.date in types)
+        or (cfg.datetime_needs_str_explicit and datetime.datetime in types)
+    )
+
+
+@beartype
+def _haskell_num_instances(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+    data_val_parts: list[str],
+) -> list[str]:
+    """Return ``Num``/``Fractional`` instance lines for the data types."""
+    if not cfg.emit_num:
+        return []
+    p = cfg.constructor_prefix
+    has_float = float in types
+    has_int = int in types or (
+        cfg.datetime_produces_int and datetime.datetime in types
+    )
+    instances: list[str] = []
+    if has_float or has_int:
+        # The numeric catch-all for ``negate`` is redundant when ``Val``
+        # has only numeric constructors, because the specific
+        # ``HInt`` / ``HFloat`` clauses cover the type.
+        num_constructor_count = (1 if has_int else 0) + (1 if has_float else 0)
+        needs_catchall = len(data_val_parts) > num_constructor_count
+        instances.append(
+            _num_instance(
+                has_int=has_int,
+                has_float=has_float,
+                needs_catchall=needs_catchall,
+                type_name=cfg.type_name,
+                constructor_prefix=cfg.constructor_prefix,
+                indent=cfg.indent,
+            ),
+        )
+    if has_float:
+        instances.append(
+            f"instance Fractional {cfg.type_name} where\n"
+            f"{cfg.indent}fromRational r = {p}Float (realToFrac r)\n"
+            f'{cfg.indent}_ / _ = error "not implemented"'
+        )
+    return instances
+
+
+@beartype
+def _haskell_compute_preamble(
+    *,
+    cfg: _HaskellPreambleConfig,
+    types: frozenset[type],
+    data: Value,
+) -> tuple[str, ...]:
+    """Return body-preamble lines for the given *types* and *data*."""
+    p = cfg.constructor_prefix
+    data_val_parts = _haskell_base_constructors(
+        types=types,
+        constructor_prefix=p,
+        type_name=cfg.type_name,
+    )
+    import_items = _haskell_extend_for_dates(
+        cfg=cfg,
+        types=types,
+        data=data,
+        data_val_parts=data_val_parts,
+    )
+
+    needs_is_string = cfg.emit_is_string and (
+        bool(types & {str, bytes})
+        or (cfg.date_needs_is_string and datetime.date in types)
+        or (cfg.datetime_needs_is_string and datetime.datetime in types)
+    )
+    if (
+        _haskell_needs_str_constructor(cfg=cfg, types=types)
+        and f"{p}Str String" not in data_val_parts
+    ):
+        data_val_parts.append(f"{p}Str String")
+
+    # Emit imports first, then data declaration, then instances.
+    imports: list[str] = []
+    if import_items:
+        imports.append("import Data.Time (" + ", ".join(import_items) + ")")
+    if needs_is_string:
+        imports.append(cfg.is_string_import)
+
+    instances: list[str] = []
+    if needs_is_string:
+        instances.append(cfg.is_string_instance)
+    instances.extend(
+        _haskell_num_instances(
+            cfg=cfg,
+            types=types,
+            data_val_parts=data_val_parts,
+        ),
+    )
+
+    lines: list[str] = imports
+    lines.append(f"data {cfg.type_name} = " + " | ".join(data_val_parts))
+    lines.extend(instances)
+    return tuple(lines)
+
+
+@beartype
+def _build_scalar_body_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
@@ -568,129 +807,38 @@ def _build_scalar_body_preamble(  # pylint: disable=too-complex  # noqa: C901
     When *emit_num* is ``False``, the ``Num`` and ``Fractional``
     instances are suppressed (used by the ``EXPLICIT`` numeric style).
     """
-    include_hdate = date_format.value.type_produced is datetime.date
-    include_hdatetime = (
-        datetime_format.value.type_produced is datetime.datetime
-    )
-    datetime_produces_int = datetime_format.value.type_produced is int
-    date_needs_is_string = bool(
-        emit_is_string and date_format.value.preamble_lines
-    )
-    datetime_needs_is_string = bool(
-        emit_is_string and datetime_format.value.preamble_lines
-    )
-    # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped strings,
-    # so HStr String must appear in the data type.
-    date_needs_str_explicit = bool(
-        not emit_is_string and date_format.value.type_produced is str
-    )
-    datetime_needs_str_explicit = bool(
-        not emit_is_string and datetime_format.value.type_produced is str
+    cfg = _HaskellPreambleConfig(
+        include_hdate=date_format.value.type_produced is datetime.date,
+        include_hdatetime=(
+            datetime_format.value.type_produced is datetime.datetime
+        ),
+        datetime_produces_int=datetime_format.value.type_produced is int,
+        date_needs_is_string=bool(
+            emit_is_string and date_format.value.preamble_lines
+        ),
+        datetime_needs_is_string=bool(
+            emit_is_string and datetime_format.value.preamble_lines
+        ),
+        # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped
+        # strings, so HStr String must appear in the data type.
+        date_needs_str_explicit=bool(
+            not emit_is_string and date_format.value.type_produced is str
+        ),
+        datetime_needs_str_explicit=bool(
+            not emit_is_string and datetime_format.value.type_produced is str
+        ),
+        is_string_import=is_string_import,
+        is_string_instance=is_string_instance,
+        type_name=type_name,
+        constructor_prefix=constructor_prefix,
+        emit_is_string=emit_is_string,
+        emit_num=emit_num,
+        indent=indent,
     )
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
-        p = constructor_prefix
-        data_val_parts = [
-            constructor
-            for type_set, constructor in (
-                (frozenset({type(None)}), f"{p}Null"),
-                (frozenset({bool}), f"{p}Bool Bool"),
-                (frozenset({int}), f"{p}Int Integer"),
-                (frozenset({float}), f"{p}Float Double"),
-                (frozenset({str, bytes}), f"{p}Str String"),
-                (frozenset({list}), f"{p}List [{type_name}]"),
-                (
-                    frozenset({dict, ordereddict}),
-                    f"{p}Map [(String, {type_name})]",
-                ),
-                (frozenset({set}), f"{p}Set [{type_name}]"),
-            )
-            if types & type_set
-        ]
-        import_items: list[str] = []
-        if include_hdate and datetime.date in types:
-            data_val_parts.append(f"{p}Date Day")
-            import_items.extend(["Day", "fromGregorian"])
-        if include_hdatetime and datetime.datetime in types:
-            data_val_parts.append(f"{p}Datetime UTCTime")
-            import_items.extend(
-                _datetime_import_items(
-                    has_from_gregorian="fromGregorian" in import_items,
-                    has_microsecond=_has_microsecond_datetime(data=data),
-                    has_nonmicrosecond=_has_nonmicrosecond_datetime(
-                        data=data,
-                    ),
-                ),
-            )
-        if (
-            datetime_produces_int
-            and datetime.datetime in types
-            and f"{p}Int Integer" not in data_val_parts
-        ):
-            data_val_parts.append(f"{p}Int Integer")
-
-        needs_is_string = emit_is_string and (
-            bool(types & {str, bytes})
-            or (date_needs_is_string and datetime.date in types)
-            or (datetime_needs_is_string and datetime.datetime in types)
-        )
-        needs_str_constructor = (
-            bool(types & {str, bytes})
-            or (date_needs_is_string and datetime.date in types)
-            or (datetime_needs_is_string and datetime.datetime in types)
-            or (date_needs_str_explicit and datetime.date in types)
-            or (datetime_needs_str_explicit and datetime.datetime in types)
-        )
-        if needs_str_constructor and f"{p}Str String" not in data_val_parts:
-            data_val_parts.append(f"{p}Str String")
-
-        # Emit imports first, then data declaration, then instances.
-        imports: list[str] = []
-        if import_items:
-            imports.append(
-                "import Data.Time (" + ", ".join(import_items) + ")"
-            )
-        if needs_is_string:
-            imports.append(is_string_import)
-
-        instances: list[str] = []
-        if needs_is_string:
-            instances.append(is_string_instance)
-
-        has_float = float in types
-        has_int = int in types or (
-            datetime_produces_int and datetime.datetime in types
-        )
-        if emit_num and (has_float or has_int):
-            # The numeric catch-all for ``negate`` is redundant when
-            # ``Val`` has only numeric constructors, because the
-            # specific ``HInt`` / ``HFloat`` clauses cover the type.
-            num_constructor_count = (1 if has_int else 0) + (
-                1 if has_float else 0
-            )
-            needs_catchall = len(data_val_parts) > num_constructor_count
-            instances.append(
-                _num_instance(
-                    has_int=has_int,
-                    has_float=has_float,
-                    needs_catchall=needs_catchall,
-                    type_name=type_name,
-                    constructor_prefix=constructor_prefix,
-                    indent=indent,
-                ),
-            )
-        if emit_num and has_float:
-            instances.append(
-                f"instance Fractional {type_name} where\n"
-                f"{indent}fromRational r = {p}Float (realToFrac r)\n"
-                f'{indent}_ / _ = error "not implemented"'
-            )
-
-        lines: list[str] = imports
-        lines.append(f"data {type_name} = " + " | ".join(data_val_parts))
-        lines.extend(instances)
-        return tuple(lines)
+        return _haskell_compute_preamble(cfg=cfg, types=types, data=data)
 
     return _compute
 
@@ -959,6 +1107,8 @@ class Haskell(metaclass=LanguageCls):
     pygments_name = "haskell"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -967,17 +1117,18 @@ class Haskell(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
-    supports_commented_dict_call_args = True
     supports_module_name = True
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Haskell."""
@@ -1210,6 +1361,10 @@ class Haskell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Haskell call style options."""
 
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
         POSITIONAL = PositionalCallStyle()
 
     call_styles = CallStyles
@@ -1359,7 +1514,7 @@ class Haskell(metaclass=LanguageCls):
     statement_terminator_style: StatementTerminatorStyles = (
         StatementTerminatorStyles.SEMICOLON
     )
-    call_style: CallStyles = CallStyles.POSITIONAL
+    call_style: CallStyles = CallStyles.CURRIED
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -1538,6 +1693,11 @@ class Haskell(metaclass=LanguageCls):
         return self._date_fmts.format_datetime
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         if self.numeric_style.name == "EXPLICIT":
@@ -1634,7 +1794,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config
 
     @cached_property
     def format_call_stub(
@@ -1644,7 +1805,22 @@ class Haskell(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Callable that returns Haskell stub declarations for a call."""
-        return _build_haskell_call_stub(type_name=self.type_name)
+        return _build_haskell_call_stub(
+            type_name=self.type_name,
+            curried=isinstance(self.call_style.value, CommandCallStyle),
+        )
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications (``HInt 1``) are not parsed as additional arguments
+        to the outer call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _haskell_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
@@ -1664,14 +1840,18 @@ class Haskell(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1683,7 +1863,7 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override

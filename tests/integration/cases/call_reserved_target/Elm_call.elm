@@ -11,7 +11,7 @@ op _ = ()
 main : Program () () Never
 main =
     let
-        _ = op(EStr "hello")
+        _ = op (EStr "hello")
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

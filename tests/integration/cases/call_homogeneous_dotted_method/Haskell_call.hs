@@ -7,6 +7,6 @@ app :: AppType_
 app = AppType_ { client = ClientType_ { fetch = \_ -> return () } }
 main :: IO ()
 main = do
-    _ <- app.client.fetch(HStr "hello")
-    _ <- app.client.fetch(HStr "world")
+    _ <- app.client.fetch (HStr "hello")
+    _ <- app.client.fetch (HStr "world")
     pure ()

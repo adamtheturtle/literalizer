@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -36,6 +37,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._language import (
     ALL_REF_CASES,
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     CallStyle,
     CommandCallStyle,
@@ -331,6 +333,8 @@ class Cobol(metaclass=LanguageCls):
     pygments_name = "cobol"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -339,10 +343,18 @@ class Cobol(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = False
     supports_zero_parameter_calls = False
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = False
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = False
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Cobol."""
@@ -593,21 +605,14 @@ class Cobol(metaclass=LanguageCls):
                 Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if body_preamble:
-            stubs = "\n".join(body_preamble)
-            return (
-                Cobol._PROGRAM_PREFIX
-                + "PROCEDURE DIVISION.\n"
-                + f"{indented}\n"
-                + f"{self.indent}STOP RUN.\n"
-                + f"{stubs}\n"
-                + "END PROGRAM CHECK."
-            )
-        return (  # pragma: no cover
+        stubs = "\n".join(body_preamble)
+        return (
             Cobol._PROGRAM_PREFIX
             + "PROCEDURE DIVISION.\n"
             + f"{indented}\n"
-            + f"{self.indent}STOP RUN."
+            + f"{self.indent}STOP RUN.\n"
+            + f"{stubs}\n"
+            + "END PROGRAM CHECK."
         )
 
     @staticmethod
@@ -774,14 +779,16 @@ class Cobol(metaclass=LanguageCls):
         return _cobol_call_statement
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Raise for any ``{"$ref": "name"}`` identifier.
 
         COBOL DATA DIVISION VALUE clauses only accept literals, not
         identifier references, so refs are not supported.
         """
 
-        def _raise_for_cobol_ref(name: str, /) -> str:
+        def _raise_for_cobol_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
                 language_name="COBOL",
@@ -794,7 +801,9 @@ class Cobol(metaclass=LanguageCls):
         return _raise_for_cobol_ref
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -806,7 +815,7 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -877,6 +886,11 @@ class Cobol(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

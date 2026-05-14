@@ -1,0 +1,6 @@
+const my_data = {
+  "first": "one",
+  "second": "two",
+  "third": "three",
+};
+export {};

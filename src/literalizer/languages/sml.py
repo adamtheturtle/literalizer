@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     declaration_formatter_ignoring_modifiers,
@@ -43,9 +44,11 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -137,7 +140,7 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
-def _apply_sml_entry_formatter(  # noqa: PLR0911
+def _apply_sml_entry_formatter(
     original: Value, formatted: str, prefix: str
 ) -> str:
     """Wrap a formatted entry in the appropriate SML ``datatype``
@@ -145,35 +148,36 @@ def _apply_sml_entry_formatter(  # noqa: PLR0911
     """
     match original:
         case bool():
-            return formatted
+            result = formatted
         case int():
             negative = formatted.startswith("~")
-            return (
+            result = (
                 f"{prefix}Int ({formatted})"
                 if negative
                 else f"{prefix}Int {formatted}"
             )
         case float():
             negative = formatted.startswith(("~", "("))
-            return (
+            result = (
                 f"{prefix}Real ({formatted})"
                 if negative
                 else f"{prefix}Real {formatted}"
             )
         case str() | bytes():
-            return f"{prefix}Str {formatted}"
+            result = f"{prefix}Str {formatted}"
         case datetime.datetime() if formatted.lstrip("-").isdigit():
             negative = formatted.startswith("-")
             literal = f"~{formatted[1:]}" if negative else formatted
-            return (
+            result = (
                 f"{prefix}Int ({literal})"
                 if negative
                 else f"{prefix}Int {literal}"
             )
         case datetime.date() if formatted.startswith('"'):
-            return f"{prefix}Str {formatted}"
+            result = f"{prefix}Str {formatted}"
         case _:
-            return formatted
+            result = formatted
+    return result
 
 
 def _build_sml_entry_formatter(
@@ -253,12 +257,12 @@ def _format_sml_preamble_lines(
     )
 
 
-def _sml_call_stub(
+@beartype
+def _build_sml_call_stub_lines(
+    *,
     parts: Sequence[str],
-    _params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
+    params: Sequence[str],
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return SML stub declarations for a call name.
 
@@ -266,12 +270,55 @@ def _sml_call_stub(
     are emitted so that ``app.client.fetch arg`` is valid at the call
     site.  The innermost name becomes a ``fun`` declaration that accepts
     any argument and returns unit.
+
+    Under curried calling, each parameter is bound separately
+    (``fun f _ _ = ()``); under positional calling, a single placeholder
+    accepts the whole tuple (``fun f _ = ()``).
     """
     method = parts[-1]
-    lines: list[str] = [f"fun {method} _ = ()"]
+    if curried:
+        if not params:
+            lines: list[str] = [f"val {method} = ()"]
+        else:
+            wildcards = " ".join("_" for _ in params)
+            lines = [f"fun {method} {wildcards} = ()"]
+    else:
+        lines = [f"fun {method} _ = ()"]
     for part in reversed(parts[:-1]):
         lines = [f"structure {part} = struct", *lines, "end"]
     return tuple(lines)
+
+
+def _sml_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return SML positional (tuple-form) stub declarations."""
+    return _build_sml_call_stub_lines(
+        parts=parts, params=params, curried=False
+    )
+
+
+def _sml_curried_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return SML curried stub declarations."""
+    return _build_sml_call_stub_lines(parts=parts, params=params, curried=True)
+
+
+@beartype
+def _sml_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted SML value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
 
 
 @beartype
@@ -306,6 +353,8 @@ class Sml(metaclass=LanguageCls):
     pygments_name = "sml"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -314,17 +363,18 @@ class Sml(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Standard ML."""
@@ -541,6 +591,10 @@ class Sml(metaclass=LanguageCls):
         """Sml call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -693,7 +747,8 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config
 
     @cached_property
     def format_call_stub(
@@ -703,7 +758,21 @@ class Sml(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _sml_curried_call_stub
         return _sml_call_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications are not parsed as additional arguments to the outer
+        call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _sml_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
@@ -730,14 +799,18 @@ class Sml(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -749,7 +822,7 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -870,6 +943,11 @@ class Sml(metaclass=LanguageCls):
                 ),
             )
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -41,6 +42,7 @@ from literalizer._heterogeneous import (
     iter_wrapped_scalars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -118,6 +120,7 @@ _dhall_narrowed_empty_form = make_narrowed_empty_form(
         bytes_type="Text",
         date_type="Text",
         datetime_type="Text",
+        time_type="Text",
         list_template="(List {inner})",
         dict_type_template=None,
         fallback_value_type="Text",
@@ -308,39 +311,39 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
     prev_is_word = False
     for c in sanitized:
         next_prev_is_word = False
-        if c == "(":
-            if prev_is_word:
+        match c:
+            case "(":
+                if prev_is_word:
+                    raise CallArgNotSupportedError(
+                        language_name="Dhall",
+                        reason=(
+                            "call_transform produces a function application "
+                            "without the whitespace Dhall requires before '(' "
+                            f"(in: {call_expr!r})"
+                        ),
+                    )
+                depths["paren"] += 1
+            case "," if (
+                depths["paren"] >= 1
+                and depths["brace"] == 0
+                and depths["bracket"] == 0
+            ):
                 raise CallArgNotSupportedError(
                     language_name="Dhall",
                     reason=(
-                        "call_transform produces a function application "
-                        "without the whitespace Dhall requires before '(' "
-                        f"(in: {call_expr!r})"
+                        "Dhall has no tuple type; PositionalCallStyle cannot "
+                        "represent calls with more than one argument"
                     ),
                 )
-            depths["paren"] += 1
-        elif c in _DHALL_BRACKET_DELTA:
-            key, delta = _DHALL_BRACKET_DELTA[c]
-            depths[key] += delta
-        elif (
-            c == ","
-            and depths["paren"] >= 1
-            and depths["brace"] == 0
-            and depths["bracket"] == 0
-        ):
-            raise CallArgNotSupportedError(
-                language_name="Dhall",
-                reason=(
-                    "Dhall has no tuple type; PositionalCallStyle cannot "
-                    "represent calls with more than one argument"
-                ),
-            )
-        else:
-            next_prev_is_word = c.isalnum() or c == "_"
+            case _ if c in _DHALL_BRACKET_DELTA:
+                key, delta = _DHALL_BRACKET_DELTA[c]
+                depths[key] += delta
+            case _:
+                next_prev_is_word = c.isalnum() or c == "_"
         prev_is_word = next_prev_is_word
 
 
-def _dhall_reject_ref_identifier(name: str) -> str:
+def _dhall_reject_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     any ``$ref`` argument.
 
@@ -371,7 +374,9 @@ class _VariantSignature:
 
 
 @beartype
-def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:  # noqa: PLR0911
+def _dhall_variant_for_scalar(  # pylint: disable=too-complex
+    value: Scalar,
+) -> _VariantSignature:
     """Return the Dhall union-type variant signature for *value*.
 
     Dhall has no per-width integer types, so all integers map to a
@@ -382,23 +387,26 @@ def _dhall_variant_for_scalar(value: Scalar) -> _VariantSignature:  # noqa: PLR0
     """
     match value:
         case bool():
-            return _VariantSignature(name="Bool", inner_type="Bool")
+            signature = _VariantSignature(name="Bool", inner_type="Bool")
         case int():
-            return _VariantSignature(name="Int", inner_type="Integer")
+            signature = _VariantSignature(name="Int", inner_type="Integer")
         case float():
-            return _VariantSignature(name="Double", inner_type="Double")
+            signature = _VariantSignature(name="Double", inner_type="Double")
         case str():
-            return _VariantSignature(name="Str", inner_type="Text")
+            signature = _VariantSignature(name="Str", inner_type="Text")
         case bytes():
-            return _VariantSignature(name="Bytes", inner_type="Text")
+            signature = _VariantSignature(name="Bytes", inner_type="Text")
         case datetime.datetime():
-            return _VariantSignature(name="DateTime", inner_type="Text")
+            signature = _VariantSignature(name="DateTime", inner_type="Text")
         case datetime.date():
-            return _VariantSignature(name="Date", inner_type="Text")
+            signature = _VariantSignature(name="Date", inner_type="Text")
+        case datetime.time():
+            signature = _VariantSignature(name="Time", inner_type="Text")
         case None:
-            return _VariantSignature(name="Null", inner_type=None)
+            signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
             assert_never(unreachable)
+    return signature
 
 
 @dataclasses.dataclass(frozen=True)
@@ -520,6 +528,8 @@ class Dhall(metaclass=LanguageCls):
     pygments_name = None
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -528,10 +538,18 @@ class Dhall(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = False
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = False
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Dhall."""
@@ -1007,7 +1025,9 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_format_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Raise for any ``$ref`` argument.
 
         Dhall's stub parameter type is ``DVal``; a ref variable holds a
@@ -1016,7 +1036,9 @@ class Dhall(metaclass=LanguageCls):
         return _dhall_reject_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1028,7 +1050,7 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1099,6 +1121,11 @@ class Dhall(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

@@ -12,7 +12,6 @@ import datetime
 from collections.abc import Sequence
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._types import Scalar, Value
 
@@ -36,6 +35,7 @@ def _scalar_bucket(value: Value) -> type | None:
         bytes,
         datetime.datetime,
         datetime.date,
+        datetime.time,
     )
     for bucket in buckets:
         if isinstance(value, bucket):
@@ -79,18 +79,26 @@ def _siblings_mixed_ids(
 
 
 @beartype
-def _collect_from_dict(data: dict[str, Value]) -> frozenset[int]:
-    """Return container ids for a dict and its descendants."""
+def _collect_from_dict(data: dict[Scalar, Value]) -> frozenset[int]:
+    """Return container ids for a dict, its sibling-list values, and
+    descendants.
+    """
     values: list[Value] = list(data.values())
     own: frozenset[int] = (
         frozenset({id(data)})
         if _all_scalars_mixed_buckets(values=values)
         else frozenset()
     )
+    sublists: list[list[Value]] = [v for v in values if isinstance(v, list)]
+    sublist_ids = _siblings_mixed_ids(
+        siblings=sublists,
+        total=len(values),
+        combined=[e for sublist in sublists for e in sublist],
+    )
     descendants = frozenset[int]().union(
         *(collect_heterogeneous_container_ids(data=v) for v in values)
     )
-    return own | descendants
+    return own | sublist_ids | descendants
 
 
 @beartype
@@ -109,7 +117,9 @@ def _collect_from_list(data: list[Value]) -> frozenset[int]:
         total=len(data),
         combined=[e for sublist in sublists for e in sublist],
     )
-    subdicts: list[dict[str, Value]] = [v for v in data if isinstance(v, dict)]
+    subdicts: list[dict[Scalar, Value]] = [
+        v for v in data if isinstance(v, dict)
+    ]
     subdict_ids = _siblings_mixed_ids(
         siblings=subdicts,
         total=len(data),
@@ -136,7 +146,7 @@ def collect_heterogeneous_container_ids(*, data: Value) -> frozenset[int]:
       values are heterogeneous (sibling-dict heterogeneity).
     """
     match data:
-        case ordereddict() | dict():
+        case dict():
             return _collect_from_dict(data=data)
         case list():
             return _collect_from_list(data=data)
@@ -156,8 +166,8 @@ def iter_wrapped_scalars(
     appears in *wrap_ids*.
     """
     match data:
-        case ordereddict() | dict():
-            children: list[Value] = list(data.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+        case dict():
+            children: list[Value] = list(data.values())
         case list():
             children = list(data)
         case _:

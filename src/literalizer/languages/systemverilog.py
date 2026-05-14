@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -35,6 +36,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -68,6 +70,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+from literalizer.exceptions import CallArgNotSupportedError
 
 _INT32_MIN = -(2**31)
 _INT32_MAX = 2**31 - 1
@@ -104,24 +107,25 @@ def _escape_nested(text: str) -> str:
 
 
 @beartype
-def _format_sv_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
+def _format_sv_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in a named ``_VVal`` struct literal."""
     match original:
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            return f'_VVal\'{{tag: _VVAL_INT, i: {formatted}, r: 0.0, s: ""}}'
-        case str() | bytes() | datetime.date():
-            return f"_VVal'{{tag: _VVAL_STR, i: 0, r: 0.0, s: {formatted}}}"
         case bool():
             return formatted
+        case datetime.datetime() if formatted.lstrip("-").isdigit():
+            payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
         case int():
-            return f'_VVal\'{{tag: _VVAL_INT, i: {formatted}, r: 0.0, s: ""}}'
+            payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
         case float():
-            return f'_VVal\'{{tag: _VVAL_REAL, i: 0, r: {formatted}, s: ""}}'
+            payload = f'_VVAL_REAL, i: 0, r: {formatted}, s: ""'
+        case str() | bytes() | datetime.date():
+            payload = f"_VVAL_STR, i: 0, r: 0.0, s: {formatted}"
         case list() | dict() | set():
             escaped = _escape_nested(text=formatted)
-            return f'_VVal\'{{tag: _VVAL_STR, i: 0, r: 0.0, s: "{escaped}"}}'
+            payload = f'_VVAL_STR, i: 0, r: 0.0, s: "{escaped}"'
         case _:
             return formatted
+    return f"_VVal'{{tag: {payload}}}"
 
 
 @beartype
@@ -234,6 +238,8 @@ class SystemVerilog(metaclass=LanguageCls):
     pygments_name = "systemverilog"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -242,10 +248,18 @@ class SystemVerilog(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for SystemVerilog."""
@@ -671,26 +685,56 @@ class SystemVerilog(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
+        language's call expression syntax, rejecting scalar refs.
+
+        SystemVerilog's variable declarations key the type off the
+        marker mapping shape (``_VKV name[]``), so a top-level ref
+        pointing to a scalar produces a typed declaration that does
+        not match the referenced ``_VVal`` variable.  Refuse those
+        cases so the renderer fails fast instead of emitting code that
+        the SystemVerilog compiler rejects with "types are not
+        assignment compatible".
+        """
+
+        def _sv_format_ref_identifier(
+            name: str, value: Value | None, /
+        ) -> str:
+            """Reject scalar refs; emit any other ref unchanged."""
+            if value is not None and not isinstance(value, (list, dict, set)):
+                raise CallArgNotSupportedError(
+                    language_name="SystemVerilog",
+                    reason=(
+                        f"SystemVerilog cannot reference a scalar value "
+                        f"behind a ``$ref`` (got {name!r}); the variable "
+                        f"declaration shape is keyed off the ref marker "
+                        f"and does not match the scalar's ``_VVal`` type."
+                    ),
+                )
+            return name
+
+        return _sv_format_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Emit a call-argument ``$ref`` as the bare identifier.
+
+        Call arguments have their type fixed by the function signature,
+        so the scalar/dict shape mismatch that affects
+        :attr:`format_call_ref_identifier` (top-level ``$ref`` in
+        :func:`literalize`) does not arise here.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
-
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
-        """
-        return self.format_call_ref_identifier
-
-    @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -771,6 +815,11 @@ class SystemVerilog(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

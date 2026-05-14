@@ -16,6 +16,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -48,6 +49,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -83,7 +85,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -196,7 +198,83 @@ def _swift_call_stub(
 
 
 @beartype
-def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _swift_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Swift annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "Bool"
+        case int():
+            hint = "Int"
+        case float():
+            hint = "Double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = "String"
+        case None:
+            hint = "Any?"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _swift_collapse(types: list[str]) -> str:
+    """Return a single Swift element type or ``Any`` / ``Any?``
+    fallback.
+    """
+    unique = list(dict.fromkeys(types))
+    match unique:
+        case [single]:
+            return single
+        case _ if "Any?" in unique:
+            return "Any?"
+        case _:
+            return "Any"
+
+
+@beartype
+def _swift_dict_hint(
+    *,
+    val_types: list[str],
+    is_empty: bool,
+    default_dict_value_type: str,
+) -> str:
+    """Derive a Swift dictionary type annotation."""
+    if is_empty:
+        return f"[String: {default_dict_value_type}]"
+    return f"[String: {_swift_collapse(types=val_types)}]"
+
+
+@beartype
+def _swift_list_hint(
+    *,
+    elem_types: list[str],
+    is_empty: bool,
+    sequence_is_tuple: bool,
+    default_sequence_element_type: str,
+) -> str:
+    """Derive a Swift array/tuple type annotation."""
+    if is_empty:
+        return (
+            "()" if sequence_is_tuple else f"[{default_sequence_element_type}]"
+        )
+    if sequence_is_tuple:
+        return f"({', '.join(elem_types)})"
+    return f"[{_swift_collapse(types=elem_types)}]"
+
+
+@beartype
+def _swift_type_hint(
     *,
     data: Value,
     date_hint: str,
@@ -217,57 +295,28 @@ def _swift_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: 
         sequence_is_tuple=sequence_is_tuple,
     )
     match data:
-        case bool():
-            return "Bool"
-        case int():
-            return "Int"
-        case float():
-            return "Double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Any?"
         case dict():
-            if not data:
-                return f"[String: {default_dict_value_type}]"
-            val_types = [recurse(data=v) for v in data.values()]
-            unique = list(dict.fromkeys(val_types))
-            match unique:
-                case [single]:
-                    val_type = single
-                case _ if "Any?" in unique:
-                    val_type = "Any?"
-                case _:
-                    val_type = "Any"
-            return f"[String: {val_type}]"
+            hint = _swift_dict_hint(
+                val_types=[recurse(data=v) for v in data.values()],
+                is_empty=not data,
+                default_dict_value_type=default_dict_value_type,
+            )
         case set():
-            return f"Set<{default_set_element_type}>"
+            hint = f"Set<{default_set_element_type}>"
         case list():
-            if not data:
-                if sequence_is_tuple:
-                    return "()"
-                return f"[{default_sequence_element_type}]"
-            if sequence_is_tuple:
-                elem_types = [recurse(data=e) for e in data]
-                return f"({', '.join(elem_types)})"
-            elem_types = [recurse(data=e) for e in data]
-            unique = list(dict.fromkeys(elem_types))
-            match unique:
-                case [single]:
-                    elem_type = single
-                case _ if "Any?" in unique:
-                    elem_type = "Any?"
-                case _:
-                    elem_type = "Any"
-            return f"[{elem_type}]"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = _swift_list_hint(
+                elem_types=[recurse(data=e) for e in data],
+                is_empty=not data,
+                sequence_is_tuple=sequence_is_tuple,
+                default_sequence_element_type=default_sequence_element_type,
+            )
+        case _:
+            hint = _swift_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype
@@ -355,6 +404,8 @@ class Swift(metaclass=LanguageCls):
     pygments_name = "swift"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -363,10 +414,18 @@ class Swift(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = True
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -810,6 +869,9 @@ class Swift(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `-swift-version` flag passed to the Swift
+    # linter in `.github/workflows/lint.yml` (which only accepts the
+    # major language mode, so `V5_9` maps to `-swift-version 5`).
     language_version: VersionFormats = VersionFormats.V5_9
     indent: str = "    "
 
@@ -902,14 +964,18 @@ class Swift(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -921,7 +987,7 @@ class Swift(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -988,6 +1054,11 @@ class Swift(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

@@ -23,6 +23,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_csharp,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -56,6 +57,7 @@ from literalizer._formatters.format_strings import (
     format_string_verbatim_csharp,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -153,6 +155,8 @@ def _csharp_scalar_type(
             return datetime_hint
         case datetime.date():
             return date_hint
+        case datetime.time():
+            return "TimeOnly"
         case bool():
             result = "bool"
         case int():
@@ -357,6 +361,8 @@ class CSharp(metaclass=LanguageCls):
     pygments_name = "csharp"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -365,10 +371,18 @@ class CSharp(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = True
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -381,11 +395,13 @@ class CSharp(metaclass=LanguageCls):
         str_type="string",
         bool_type="bool",
         int_type="int",
+        wide_int_type="long",
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="string",
         date_type="DateOnly",
         datetime_type="DateTime",
+        time_type="TimeOnly",
         list_template="{inner}[]",
         sequence_opener_template="new {type_name}[] {{",
         dict_opener_template="new Dictionary<{key_type}, {type_name}> {{",
@@ -844,6 +860,8 @@ class CSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `LanguageVersion` passed to the C# lint host
+    # in `.github/scripts/lint-csharp/Program.cs`.
     language_version: VersionFormats = VersionFormats.V10
     indent: str = "    "
 
@@ -936,14 +954,18 @@ class CSharp(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -955,7 +977,7 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1116,6 +1138,11 @@ class CSharp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_csharp
+
+    @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self.string_format
@@ -1211,6 +1238,7 @@ class CSharp(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("using System;",)},
         )
 
     @cached_property

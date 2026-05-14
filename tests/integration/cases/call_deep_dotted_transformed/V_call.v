@@ -1,4 +1,3 @@
-interface IVal {}
 interface ICallArg_ {}
 struct ClientType_ {}
 fn (r ClientType_) fetch(args ...ICallArg_) ICallArg_ { return 0 }

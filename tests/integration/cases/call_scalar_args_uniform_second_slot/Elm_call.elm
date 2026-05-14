@@ -6,16 +6,16 @@ type Val
     | EInt Int
     | EStr String
     | EList (List Val)
-process : ( a, b ) -> ()
-process _ = ()
+process : a -> b -> ()
+process _ _ = ()
 
 
 main : Program () () Never
 main =
     let
-        _ = process(EStr "hello", EStr "a")
-        _ = process(EInt 42, EStr "b")
-        _ = process(EBool True, EStr "c")
+        _ = process (EStr "hello") (EStr "a")
+        _ = process (EInt 42) (EStr "b")
+        _ = process (EBool True) (EStr "c")
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

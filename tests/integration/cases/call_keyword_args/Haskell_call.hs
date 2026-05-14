@@ -12,13 +12,13 @@ instance Num Val where
 instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     _ / _ = error "not implemented"
-data ThrottlerType_ = ThrottlerType_ { check :: (Val, Val) -> IO Val }
+data ThrottlerType_ = ThrottlerType_ { check :: Val -> Val -> IO Val }
 throttler :: ThrottlerType_
-throttler = ThrottlerType_ { check = \_ -> return undefined }
+throttler = ThrottlerType_ { check = \_ _ -> return undefined }
 emit :: a -> IO ()
 emit _ = return ()
 main :: IO ()
 main = do
-    _ <- emit(throttler.check(HStr "user_1", 1000.0))
-    _ <- emit(throttler.check(HStr "user_2", 2000.5))
+    _ <- emit (throttler.check (HStr "user_1") (1000.0))
+    _ <- emit (throttler.check (HStr "user_2") (2000.5))
     pure ()

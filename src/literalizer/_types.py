@@ -1,27 +1,20 @@
 """Type aliases used across the literalizer package."""
 
 import datetime
-import enum
+from collections.abc import Mapping, Sequence
 
 type Scalar = (
-    str | int | float | bool | None | datetime.date | datetime.datetime | bytes
+    str
+    | int
+    | float
+    | bool
+    | None
+    | datetime.date
+    | datetime.datetime
+    | datetime.time
+    | bytes
 )
-type Value = Scalar | list[Value] | dict[str, Value] | set[Scalar]
-
-
-class ValueKind(enum.Enum):
-    """Classifies a formatted value for variable declaration purposes.
-
-    Passed to declaration/assignment formatters so they can choose the
-    correct type keyword without inspecting the formatted string.
-    """
-
-    STRING_LITERAL = "string_literal"
-    """C-style string literal (``"..."``).  Relevant for C++ where
-    ``readability-qualified-auto`` requires ``const auto*``.
-    """
-
-    TYPED_EXPRESSION = "typed_expression"
-    """Expression with an explicit type (``std::vector<int>{...}``,
-    ``42``, ``true``, etc.).
-    """
+type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
+type ValueInput = (
+    Scalar | Sequence[ValueInput] | Mapping[Scalar, ValueInput] | set[Scalar]
+)

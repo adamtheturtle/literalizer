@@ -4,8 +4,8 @@ module Check exposing (..)
 type Val
     = EInt Int
     | EList (List Val)
-process : ( a, b ) -> ()
-process _ = ()
+process : a -> b -> ()
+process _ _ = ()
 
 
 main : Program () () Never
@@ -23,8 +23,8 @@ main =
             EInt 5,
             EInt 6
             ]
-        _ = process(myVar, EInt 42)
-        _ = process(myOther, EInt 7)
+        _ = process myVar (EInt 42)
+        _ = process myOther (EInt 7)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

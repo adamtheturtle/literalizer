@@ -23,6 +23,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_local_time_of,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -48,6 +49,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -81,7 +83,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
 
@@ -278,11 +280,55 @@ def _java_common_element_type(
     double_t = "double"
     if unique == {int_type, double_t}:
         return "Double" if boxed else "double"
+    # int + long → long (integer-width widening for mixed-magnitude
+    # int collections, e.g. ``{1, 1099511627776}``)
+    if unique == {"int", "long"}:
+        return "Long" if boxed else "long"
     return "Object"
 
 
+_JAVA_I32_MIN = -(2**31)
+_JAVA_I32_MAX = 2**31 - 1
+
+
 @beartype
-def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _java_scalar_hint(  # pylint: disable=too-complex
+    *,
+    data: Scalar,
+    int_type: str,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Java annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "boolean"
+        case int():
+            if int_type == "int" and not (
+                _JAVA_I32_MIN <= data <= _JAVA_I32_MAX
+            ):
+                hint = "long"
+            else:
+                hint = int_type
+        case float():
+            hint = "double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = "LocalTime"
+        case None:
+            hint = "Object"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _java_type_hint(
     *,
     data: Value,
     int_type: str,
@@ -293,82 +339,45 @@ def _java_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C
     set_outer: str,
 ) -> str:
     """Derive a Java type from *data*."""
+    common = functools.partial(
+        _java_common_element_type,
+        int_type=int_type,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+        seq_is_array=seq_is_array,
+        dict_outer=dict_outer,
+        set_outer=set_outer,
+    )
     match data:
-        case bool():
-            return "boolean"
-        case int():
-            return int_type
-        case float():
-            return "double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Object"
         case dict():
-            val_type = _java_common_element_type(
-                elements=list(data.values()),
-                boxed=True,
-                int_type=int_type,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
-            )
+            val_type = common(elements=list(data.values()), boxed=True)
             outer = (
-                dict_outer
-                if not isinstance(data, (ordereddict, OrderedDict))
-                else "Map"
+                "Map"
+                if isinstance(data, (ordereddict, OrderedDict))
+                else dict_outer
             )
-            return f"{outer}<String, {val_type}>"
+            hint = f"{outer}<String, {val_type}>"
         case set():
-            elem_type = _java_common_element_type(
-                elements=list(data),
-                boxed=True,
-                int_type=int_type,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
-            )
-            return f"{set_outer}<{elem_type}>"
+            elem_type = common(elements=list(data), boxed=True)
+            hint = f"{set_outer}<{elem_type}>"
+        case list() if seq_is_array:
+            elem_type = common(elements=data, boxed=False)
+            # Java cannot create arrays of generic types, so fall back
+            # to Object[] when the element type is generic.
+            if "<" in elem_type:
+                elem_type = "Object"
+            hint = f"{elem_type}[]"
         case list():
-            if seq_is_array:
-                elem_type = _java_common_element_type(
-                    elements=data,
-                    boxed=False,
-                    int_type=int_type,
-                    date_hint=date_hint,
-                    datetime_hint=datetime_hint,
-                    seq_is_array=seq_is_array,
-                    dict_outer=dict_outer,
-                    set_outer=set_outer,
-                )
-                # Java cannot create arrays of generic types, so fall
-                # back to Object[] when the element type is generic.
-                if "<" in elem_type:
-                    elem_type = "Object"
-                return f"{elem_type}[]"
-            elem_type = _java_common_element_type(
-                elements=data,
-                boxed=True,
+            elem_type = common(elements=data, boxed=True)
+            hint = f"List<{elem_type}>"
+        case _:
+            hint = _java_scalar_hint(
+                data=data,
                 int_type=int_type,
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
-                seq_is_array=seq_is_array,
-                dict_outer=dict_outer,
-                set_outer=set_outer,
             )
-            return f"List<{elem_type}>"
-        case _ as unreachable:
-            assert_never(unreachable)
+    return hint
 
 
 @beartype
@@ -589,6 +598,8 @@ class Java(metaclass=LanguageCls):
     pygments_name = "java"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -597,10 +608,18 @@ class Java(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -618,6 +637,7 @@ class Java(metaclass=LanguageCls):
         bytes_type="String",
         date_type="LocalDate",
         datetime_type=None,
+        time_type="LocalTime",
         list_template="{inner}[]",
         sequence_opener_template="new {type_name}[]{{",
         dict_opener_template="new {type_name}[]{{",
@@ -635,6 +655,7 @@ class Java(metaclass=LanguageCls):
         bytes_type="String",
         date_type="LocalDate",
         datetime_type=None,
+        time_type="LocalTime",
         list_template="{inner}[]",
         sequence_opener_template="new {type_name}[]{{",
         dict_opener_template="new {type_name}[]{{",
@@ -1160,6 +1181,8 @@ class Java(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `--release` flag passed to the JavaCompiler
+    # in `CheckJavaSyntax.java`.
     language_version: VersionFormats = VersionFormats.JDK_11
     indent: str = "    "
 
@@ -1249,14 +1272,18 @@ class Java(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1268,7 +1295,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1368,9 +1395,27 @@ class Java(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_local_time_of
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``L``-suffixed integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        base_int_formatter = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=make_long_suffix_formatter(base=base_int_formatter),
+            fallback=_format_java_biginteger_literal,
+        )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
@@ -1454,6 +1499,7 @@ class Java(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("import java.time.LocalTime;",)},
         )
 
     @cached_property

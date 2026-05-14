@@ -1,0 +1,8 @@
+(define my_data (list
+    "0a" "first"
+    "1b" "second"
+))
+(set! my_data (list
+    "0a" "first"
+    "1b" "second"
+))

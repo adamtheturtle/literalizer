@@ -17,7 +17,7 @@ main =
             EInt 2,
             EInt 3
             ]
-        _ = process(myVar)
+        _ = process myVar
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

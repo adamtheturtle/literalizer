@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -41,6 +42,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -365,8 +367,41 @@ _format_purescript_string = _build_purescript_str_formatter(prefix="P")
 _purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
+def _purescript_negative_float(val: float) -> bool:
+    """Return True if *val* is a float requiring ``import Prelude``."""
+    return math.copysign(1, val) < 0 or math.isinf(val) or math.isnan(val)
+
+
 @beartype
-def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C901
+def _purescript_needs_prelude(val: Value) -> bool:
+    """Return True if *val* needs ``import Prelude``.
+
+    Prelude is required for ``negate`` (any negative int or float)
+    and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
+    """
+    if isinstance(val, bool):
+        result = False
+    elif isinstance(val, float):
+        result = _purescript_negative_float(val=val)
+    elif isinstance(val, int):
+        result = val < 0
+    elif isinstance(val, list):
+        result = any(_purescript_needs_prelude(val=v) for v in val)
+    elif isinstance(val, dict):
+        result = any(_purescript_needs_prelude(val=v) for v in val.values())
+    elif isinstance(val, set):
+        result = any(
+            _purescript_needs_prelude(val=v)
+            for v in val
+            if isinstance(v, (int, float)) and not isinstance(v, bool)
+        )
+    else:
+        result = False
+    return result
+
+
+@beartype
+def _build_purescript_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
@@ -378,32 +413,6 @@ def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C90
     the type declaration with only the constructors that are actually
     needed, plus any necessary imports.
     """
-
-    def _needs_prelude(val: Value) -> bool:
-        """Return True if *val* needs ``import Prelude``.
-
-        Prelude is required for ``negate`` (any negative int or float)
-        and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
-        """
-        if isinstance(val, (int, float)) and not isinstance(val, bool):
-            if isinstance(val, float):
-                return (
-                    math.copysign(1, val) < 0
-                    or math.isinf(val)
-                    or math.isnan(val)
-                )
-            return val < 0
-        if isinstance(val, list):
-            return any(_needs_prelude(val=v) for v in val)
-        if isinstance(val, dict):
-            return any(_needs_prelude(val=v) for v in val.values())
-        if isinstance(val, set):
-            return any(
-                _needs_prelude(val=v)
-                for v in val
-                if isinstance(v, (int, float)) and not isinstance(v, bool)
-            )
-        return False
 
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
@@ -440,7 +449,9 @@ def _build_purescript_body_preamble(  # pylint: disable=too-complex  # noqa: C90
                 if c == f"{p}Int Int"
             )
             constructors.insert(int_idx + 1, f"{p}Long Number")
-        needs_prelude = bool(types & {int, float}) and _needs_prelude(val=data)
+        needs_prelude = bool(
+            types & {int, float}
+        ) and _purescript_needs_prelude(val=data)
         lines: list[str] = ["import Prelude"] if needs_prelude else []
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
@@ -489,11 +500,13 @@ def _build_purescript_call_stub_lines(
     if is_wrapper_stub:
         func_type = "forall a. a -> Unit"
         func_body = "\\_ -> unit"
+    elif not params:
+        func_type = "Unit"
+        func_body = "unit"
     else:
-        n = len(params)
-        arg_types = " -> ".join(type_name for _ in range(n))
+        arg_types = " -> ".join(type_name for _ in params)
         func_type = f"{arg_types} -> Unit"
-        wildcards = " ".join("_" for _ in range(n))
+        wildcards = " ".join("_" for _ in params)
         func_body = f"\\{wildcards} -> unit"
 
     inner_type = f"{{ {method} :: {func_type} }}"
@@ -658,6 +671,8 @@ class PureScript(metaclass=LanguageCls):
     pygments_name = None
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -666,10 +681,18 @@ class PureScript(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for PureScript."""
@@ -1084,14 +1107,18 @@ class PureScript(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1103,7 +1130,7 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1225,6 +1252,11 @@ class PureScript(metaclass=LanguageCls):
         if self.constructor_prefix == "P":
             return self.datetime_format
         return _build_purescript_datetime_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
@@ -39,6 +40,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CommentConfig,
@@ -74,7 +76,7 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_format_c_entry(  # noqa: PLR0911
+def _apply_format_c_entry(
     *,
     original: Value,
     formatted: str,
@@ -86,22 +88,23 @@ def _apply_format_c_entry(  # noqa: PLR0911
     """Wrap a formatted entry in the appropriate union literal."""
     match original:
         case datetime.datetime() if formatted.lstrip("-").isdigit():
-            return f"((CVal){{.{int_field} = {formatted}}})"
+            field = int_field
         case str() | bytes() | datetime.date():
-            return f"((CVal){{.{string_field} = {formatted}}})"
+            field = string_field
         case bool():
             return formatted
+        # Values above ``LLONG_MAX`` cannot be assigned to the signed
+        # ``long long`` field without an implementation-defined
+        # narrowing conversion; route them to the unsigned field.
+        case int() if original > I64_MAX:
+            field = uint_field
         case int():
-            # Values above ``LLONG_MAX`` cannot be assigned to the signed
-            # ``long long`` field without an implementation-defined
-            # narrowing conversion; route them to the unsigned field.
-            if original > I64_MAX:
-                return f"((CVal){{.{uint_field} = {formatted}}})"
-            return f"((CVal){{.{int_field} = {formatted}}})"
+            field = int_field
         case float():
-            return f"((CVal){{.{float_field} = {formatted}}})"
+            field = float_field
         case _:
             return formatted
+    return f"((CVal){{.{field} = {formatted}}})"
 
 
 @beartype
@@ -128,6 +131,11 @@ def _make_format_c_entry(
         )
 
     return _format_c_entry
+
+
+# Maximum parameter count of any existing call case; stubs above this
+# get a ``// NOLINTNEXTLINE`` for ``bugprone-easily-swappable-parameters``.
+_SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
 
 
 def _c_call_stub(
@@ -161,9 +169,21 @@ def _c_call_stub(
     return_stmt = " return (CVal){0};" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
+    # Long uniform-typed parameter lists trip clang-tidy's
+    # ``bugprone-easily-swappable-parameters`` check past its
+    # name-suffix-dissimilarity silencing heuristic.  The stub is
+    # generated, so the warning is not actionable.  Suppress it on
+    # stubs whose parameter count exceeds anything the existing call
+    # cases use, to avoid touching shorter-stub golden files.
+    nolint = (
+        ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
+        if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD
+        else ()
+    )
     match parts:
         case [single]:
             return (
+                *nolint,
                 f"static {return_keyword} {single}({stub_signature}) "
                 f"{stub_body}",
             )
@@ -171,6 +191,7 @@ def _c_call_stub(
             stub_fn = f"{root}_{method}_stub_"
             type_name = f"{root}Type_"
             return (
+                *nolint,
                 f"static {return_keyword} {stub_fn}({stub_signature}) "
                 f"{stub_body}",
                 f"struct {type_name} "
@@ -185,6 +206,7 @@ def _c_call_stub(
     fields = parts[1:-1]
     stub_fn = "_".join((*parts, "stub_"))
     lines: list[str] = [
+        *nolint,
         f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
     inner_type = f"{fields[-1]}Type_"
@@ -220,6 +242,8 @@ class C(metaclass=LanguageCls):
     pygments_name = "c"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -228,10 +252,18 @@ class C(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for C."""
@@ -623,14 +655,18 @@ class C(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -642,7 +678,7 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -788,6 +824,11 @@ class C(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

@@ -17,6 +17,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -35,6 +36,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -134,15 +136,22 @@ def _fortran_comment_pos(line: str) -> int | None:
     i = 0
     while i < len(line):
         c = line[i]
-        if c == "'" and not in_double_quote:
-            if in_single_quote and i + 1 < len(line) and line[i + 1] == "'":
-                i += 2
-                continue
-            in_single_quote = not in_single_quote
-        elif c == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
-        elif c == "!" and not in_single_quote and not in_double_quote:
-            return i
+        match c:
+            case "'" if not in_double_quote:
+                if (
+                    in_single_quote
+                    and i + 1 < len(line)
+                    and line[i + 1] == "'"
+                ):
+                    i += 2
+                    continue
+                in_single_quote = not in_single_quote
+            case '"' if not in_single_quote:
+                in_double_quote = not in_double_quote
+            case "!" if not in_single_quote and not in_double_quote:
+                return i
+            case _:
+                pass
         i += 1
     return None
 
@@ -321,6 +330,8 @@ class Fortran(metaclass=LanguageCls):
     pygments_name = "fortran"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -329,10 +340,18 @@ class Fortran(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Fortran."""
@@ -539,7 +558,7 @@ class Fortran(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Fortran."""
 
-        V2003 = enum.auto()
+        V2008 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -588,25 +607,15 @@ class Fortran(metaclass=LanguageCls):
                 f"end program {self.module_name}"
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if body_preamble:
-            stubs_str = "\n".join(body_preamble)
-            indented_stubs = textwrap.indent(
-                text=stubs_str, prefix=self.indent
-            )
-            return (
-                f"program {self.module_name}\n"
-                f"{self.indent}use fval_m\n"
-                f"{self.indent}implicit none\n"
-                f"{indented}\n"
-                f"contains\n"
-                f"{indented_stubs}\n"
-                f"end program {self.module_name}"
-            )
+        stubs_str = "\n".join(body_preamble)
+        indented_stubs = textwrap.indent(text=stubs_str, prefix=self.indent)
         return (
             f"program {self.module_name}\n"
             f"{self.indent}use fval_m\n"
             f"{self.indent}implicit none\n"
             f"{indented}\n"
+            f"contains\n"
+            f"{indented_stubs}\n"
             f"end program {self.module_name}"
         )
 
@@ -671,7 +680,9 @@ class Fortran(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    language_version: VersionFormats = VersionFormats.V2003
+    # Keep in sync with the `-std=` flag passed to the Fortran linter in
+    # `.github/workflows/lint.yml`.
+    language_version: VersionFormats = VersionFormats.V2008
     indent: str = "    "
     null_name: str = "fnull"
     bool_name: str = "fbool"
@@ -772,14 +783,18 @@ class Fortran(metaclass=LanguageCls):
         return _fortran_call_statement
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -791,7 +806,7 @@ class Fortran(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -953,6 +968,11 @@ class Fortran(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

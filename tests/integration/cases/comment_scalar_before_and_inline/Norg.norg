@@ -1,0 +1,5 @@
+* my_data
+@code json
+% before%
+"plain"  % inline%
+@end

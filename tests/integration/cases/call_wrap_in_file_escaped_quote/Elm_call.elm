@@ -11,7 +11,7 @@ type Val
 main : Program () () Never
 main =
     let
-        _ = process(EStr "a\"b")
+        _ = process (EStr "a\"b")
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

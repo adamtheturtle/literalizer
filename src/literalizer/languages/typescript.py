@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
@@ -49,6 +50,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -83,7 +85,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 def _ts_call_stub(
@@ -121,7 +123,82 @@ def _ts_element_union(*, types: list[str]) -> str:
 
 
 @beartype
-def _ts_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _ts_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive a TypeScript annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "boolean"
+        case int() | float():
+            hint = "number"
+        case str() | bytes():
+            hint = "string"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = "string"
+        case None:
+            hint = "null"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _ts_dict_hint(
+    *,
+    is_ordered: bool,
+    is_empty: bool,
+    val_types: list[str],
+    dict_hint_template: str,
+) -> str:
+    """Derive a TypeScript type annotation for a dict value."""
+    template = "Record<string, {val}>" if is_ordered else dict_hint_template
+    # The MAP opener always uses ``unknown`` as the value type, so
+    # the annotation must match.
+    if is_empty or "Map<" in template:
+        return template.format(val="unknown")
+    return template.format(val=_ts_element_union(types=val_types))
+
+
+@beartype
+def _ts_set_hint(
+    *,
+    data: set[Scalar],
+    recurse: Callable[..., str],
+) -> str:
+    """Derive a TypeScript type annotation for a set value."""
+    if not data:
+        return "Set<unknown>"
+    elem_types = sorted(recurse(data=e) for e in data)
+    return f"Set<{_ts_element_union(types=elem_types)}>"
+
+
+@beartype
+def _ts_list_hint(
+    *,
+    data: list[Value],
+    recurse: Callable[..., str],
+    sequence_is_tuple: bool,
+) -> str:
+    """Derive a TypeScript type annotation for a list value."""
+    if not data:
+        return "readonly []" if sequence_is_tuple else "unknown[]"
+    elem_types = [recurse(data=e) for e in data]
+    if sequence_is_tuple:
+        return f"readonly [{', '.join(elem_types)}]"
+    elem_union = _ts_element_union(types=elem_types)
+    return f"({elem_union})[]" if " | " in elem_union else f"{elem_union}[]"
+
+
+@beartype
+def _ts_type_hint(
     *,
     data: Value,
     date_hint: str,
@@ -138,54 +215,28 @@ def _ts_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C90
         sequence_is_tuple=sequence_is_tuple,
     )
     match data:
-        case bool():
-            return "boolean"
-        case int():
-            return "number"
-        case float():
-            return "number"
-        case str():
-            return "string"
-        case bytes():
-            return "string"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "null"
         case dict():
-            template = (
-                "Record<string, {val}>"
-                if isinstance(data, (ordereddict, OrderedDict))
-                else dict_hint_template
+            hint = _ts_dict_hint(
+                is_ordered=isinstance(data, (ordereddict, OrderedDict)),
+                is_empty=not data,
+                val_types=[recurse(data=v) for v in data.values()],
+                dict_hint_template=dict_hint_template,
             )
-            # The MAP opener always uses ``unknown`` as the value
-            # type, so the annotation must match.
-            if not data or "Map<" in template:
-                return template.format(val="unknown")
-            val_types = [recurse(data=v) for v in data.values()]  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType,reportUnknownVariableType]
-            val_union = _ts_element_union(types=val_types)
-            return template.format(val=val_union)
         case set():
-            if not data:
-                return "Set<unknown>"
-            elem_types = sorted(recurse(data=e) for e in data)
-            elem_union = _ts_element_union(types=elem_types)
-            return f"Set<{elem_union}>"
+            hint = _ts_set_hint(data=data, recurse=recurse)
         case list():
-            if not data:
-                return "readonly []" if sequence_is_tuple else "unknown[]"
-            if sequence_is_tuple:
-                elem_types = [recurse(data=e) for e in data]
-                return f"readonly [{', '.join(elem_types)}]"
-            elem_types = [recurse(data=e) for e in data]
-            elem_union = _ts_element_union(types=elem_types)
-            if " | " in elem_union:
-                return f"({elem_union})[]"
-            return f"{elem_union}[]"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = _ts_list_hint(
+                data=data,
+                recurse=recurse,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+        case _:
+            hint = _ts_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype
@@ -262,6 +313,8 @@ class TypeScript(metaclass=LanguageCls):
     pygments_name = "typescript"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = True
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -270,10 +323,18 @@ class TypeScript(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -835,14 +896,18 @@ class TypeScript(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -854,7 +919,7 @@ class TypeScript(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -914,6 +979,11 @@ class TypeScript(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

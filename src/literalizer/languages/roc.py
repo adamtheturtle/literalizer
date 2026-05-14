@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -41,6 +42,7 @@ from literalizer._formatters.format_strings import (
     escape_control_chars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -419,13 +421,20 @@ def _roc_format_call_target(parts: Sequence[str]) -> str:
     return "_".join(parts)
 
 
-def _roc_type_var(index: int) -> str:
-    """Return a unique lowercase identifier for a Roc type variable."""
+@beartype
+def _roc_type_var(*, index: int) -> str:
+    """Return a unique lowercase identifier for a Roc type variable.
+
+    Indices ``0``..``25`` map to ``a``..``z``; higher indices append a
+    numeric suffix (``a1``..``z1``, ``a2``..``z2``, ...) so that
+    27-or-more parameter stubs do not overflow the alphabet into
+    non-letter ASCII like ``{``.
+    """
     letter = chr(ord("a") + index % 26)
     group = index // 26
     if group == 0:
         return letter
-    return f"{letter}{group}"  # pragma: no cover
+    return f"{letter}{group}"
 
 
 def _roc_call_body_stub(
@@ -444,7 +453,7 @@ def _roc_call_body_stub(
     """
     flat_name = _roc_format_call_target(parts=parts)
     n = len(params)
-    if n == 0:  # pragma: no cover
+    if n == 0:
         sig = f"{flat_name} : {{}}"
         impl = f"{flat_name} = {{}}"
     else:
@@ -518,6 +527,8 @@ class Roc(metaclass=LanguageCls):
     extension = ".roc"
     pygments_name = "text"
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -526,10 +537,18 @@ class Roc(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
     supports_special_floats = True
 
     class DateFormats(enum.Enum):
@@ -990,14 +1009,18 @@ class Roc(metaclass=LanguageCls):
         return _roc_format_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1009,7 +1032,7 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1124,6 +1147,11 @@ class Roc(metaclass=LanguageCls):
         if self.constructor_prefix == "R":
             return self.datetime_format
         return _build_roc_datetime_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

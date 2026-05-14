@@ -30,6 +30,16 @@ class InvalidDictKeyError(Exception):
     """
 
 
+class UnrepresentableInputError(Exception):
+    """Raised when an input value cannot be represented in the target
+    language.
+
+    Used as the centralized error for shape-level rejections at the
+    formatting boundary, e.g. when a dict carries a non-string key for
+    a language whose surface syntax only admits string-typed keys.
+    """
+
+
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.
@@ -52,6 +62,12 @@ class HeterogeneousSiblingListsError(HeterogeneousCollectionError):
 class MixedDictValuesError(HeterogeneousCollectionError):
     """Raised when a dict has values spanning multiple type families
     and the target language requires homogeneous dict values.
+    """
+
+
+class MixedDictKeysError(HeterogeneousCollectionError):
+    """Raised when a dict has keys spanning multiple type families
+    and the target language requires homogeneous dict keys.
     """
 
 
@@ -263,6 +279,30 @@ class VariableNameNotSupportedError(Exception):
         )
         self.language_name = language_name
         self.variable_name = variable_name
+
+
+class WrapInFileWithoutVariableNotSupportedError(Exception):
+    """Raised when ``literalize`` is called with ``wrap_in_file=True``
+    and ``variable_form=None`` for a target language that cannot
+    represent a bare value at file-statement scope.
+
+    Most strict-typed compiled languages (Rust, C, C++, Haskell, Swift,
+    OCaml, Ada, D, Dart, C#, Elm, Mojo, Nim, Objective-C, Odin, SML, V,
+    Zig, etc.) require every top-level item to be a declaration; a bare
+    expression at file scope is a syntax error.  Such languages opt out
+    of the shape by setting
+    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+    to ``False``, and ``literalize`` rejects the combination at the
+    boundary instead of silently emitting invalid code.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``WrapInFileWithoutVariableNotSupportedError``."""
+        super().__init__(
+            f"{language_name} cannot wrap a bare value (without a "
+            f"variable_form) at file scope"
+        )
+        self.language_name = language_name
 
 
 class UnsupportedCallShapeError(Exception):

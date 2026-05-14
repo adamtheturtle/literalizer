@@ -9,6 +9,7 @@ from typing import Final, assert_never
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from ruamel.yaml.compat import ordereddict
+from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
 from literalizer._comments import (
@@ -24,6 +25,7 @@ from literalizer._comments_resolve import (
 )
 from literalizer._formatters.type_inference import (
     DictType,
+    WideInt,
     infer_element_type,
 )
 from literalizer._language import (
@@ -40,12 +42,18 @@ from literalizer._language import (
     PrefixCallStyle,
     StubReturn,
 )
-from literalizer._parsing import InputFormat, parse_input
+from literalizer._parsing import (
+    InputFormat,
+    ParsedInput,
+    ParsedToml,
+    ParsedYaml,
+    parse_input,
+)
 from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import Scalar, Value, ValueInput
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -54,9 +62,11 @@ from literalizer.exceptions import (
     FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnrepresentableInputError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
+    WrapInFileWithoutVariableNotSupportedError,
 )
 
 _DISABLED_REF_KEY = ""
@@ -200,15 +210,31 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 
 
 @beartype
-def _format_scalar(*, value: Scalar, spec: Language) -> str:
-    """Format a scalar JSON value as a native language literal."""
+def _format_scalar(
+    *,
+    value: Scalar,
+    spec: Language,
+    int_formatter: Callable[[int], str] | None = None,
+) -> str:
+    """Format a scalar JSON value as a native language literal.
+
+    *int_formatter* overrides ``spec.format_integer`` when given; the
+    collection formatter passes a widened formatter (e.g. one that
+    always appends an ``L`` suffix) when the surrounding collection's
+    inferred element type required widening for some other element.
+    """
     match value:
         case None:
             result = spec.null_literal
         case bool():
             result = spec.true_literal if value else spec.false_literal
         case int():
-            result = spec.format_integer(value)
+            format_int = (
+                int_formatter
+                if int_formatter is not None
+                else spec.format_integer
+            )
+            result = format_int(value)
         case float():
             result = spec.format_float(value)
         case str():
@@ -217,9 +243,28 @@ def _format_scalar(*, value: Scalar, spec: Language) -> str:
             result = spec.format_bytes(value)
         case datetime.datetime():
             result = spec.format_datetime(value)
+        case datetime.time():
+            result = spec.format_time(value)
         case _:
             result = spec.format_date(value)
     return result
+
+
+@beartype
+def _widened_int_formatter(
+    *,
+    items: list[Value],
+    spec: Language,
+) -> Callable[[int], str] | None:
+    """Return a widened integer formatter for *items* or ``None``.
+
+    Returns ``None`` when *items* do not require widening (no
+    out-of-i32 integer present) or when the language does not expose a
+    ``format_integer_widened`` override.
+    """
+    if infer_element_type(items=items) is not WideInt:
+        return None
+    return getattr(spec, "format_integer_widened", None)
 
 
 _SCALAR_TYPES: Final = (
@@ -230,6 +275,7 @@ _SCALAR_TYPES: Final = (
     type(None),
     datetime.date,
     datetime.datetime,
+    datetime.time,
     bytes,
 )
 
@@ -299,7 +345,11 @@ def _format_set_value(
     sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
     items_as_values: list[Value] = list(sorted_items)
     parent_id = id(value)
-    formatted = [_format_scalar(value=v, spec=spec) for v in sorted_items]
+    int_formatter = _widened_int_formatter(items=items_as_values, spec=spec)
+    formatted = [
+        _format_scalar(value=v, spec=spec, int_formatter=int_formatter)
+        for v in sorted_items
+    ]
     entries = [
         spec.format_set_entry(
             v,
@@ -318,18 +368,40 @@ def _format_set_value(
 
 
 @beartype
+def _guard_dict_keys_supported(
+    *,
+    value: Mapping[Scalar, Value],
+    spec: Language,
+) -> None:
+    """Reject non-string dict keys for languages that cannot represent
+    them.
+    """
+    if spec.supports_non_string_dict_keys:
+        return
+    for key in value:
+        if not isinstance(key, str):
+            msg = (
+                f"{type(spec).__name__} cannot represent dict key of "
+                f"type {type(key).__name__}"
+            )
+            raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _format_ordered_map_value(
     *,
     value: ordereddict,
     spec: Language,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
     """Format an ordered map as a native language literal."""
+    _guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
     ordered_map_items: list[tuple[str, Value]] = [
@@ -363,6 +435,7 @@ def _format_ordered_map_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=CollectionLayout.COMPACT,
@@ -380,6 +453,7 @@ def _format_ordered_map_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
@@ -398,20 +472,22 @@ def _format_ordered_map_value(
 @beartype
 def _format_dict_value(
     *,
-    value: dict[str, Value],
+    value: dict[Scalar, Value],
     spec: Language,
     open_override: str | None,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
     multiline_prefix: str,
 ) -> str:
     """Format a dict as a native language literal."""
+    _guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
-    dict_items: dict[str, Value] = {
+    dict_items: dict[Scalar, Value] = {
         k: v
         for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
@@ -444,6 +520,7 @@ def _format_dict_value(
                 wrap_ids=wrap_ids,
                 sequence_open_override=None,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=CollectionLayout.COMPACT,
@@ -461,6 +538,7 @@ def _format_dict_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
@@ -504,6 +582,7 @@ def _format_dict_entry_value(
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -527,6 +606,7 @@ def _format_dict_entry_value(
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=expand_refs,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -539,6 +619,7 @@ def _format_dict_entry_value(
         wrap_ids=wrap_ids,
         sequence_open_override=None,
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=expand_refs,
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -556,7 +637,7 @@ def _compute_dict_open_override(
     different value types, or ``None`` when no widening is needed.
     """
     dict_open = spec.dict_format_config.dict_open
-    dicts: list[dict[str, Value]] = [
+    dicts: list[dict[Scalar, Value]] = [
         item
         for item in items
         if isinstance(item, dict) and not isinstance(item, ordereddict)
@@ -585,7 +666,7 @@ def _compute_dict_open_override(
     # "unknown type" to the widening — otherwise a dict that filters
     # to ``{}`` would narrow the widened type to the other dicts'
     # concrete value type, losing the null slot's uncertainty.
-    combined: dict[str, Value] = {}
+    combined: dict[Scalar, Value] = {}
     idx = 0
     for d in dicts:
         for v in d.values():
@@ -852,6 +933,7 @@ def _format_sequence_child(
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -907,6 +989,7 @@ def _format_sequence_child(
             parent_override if parent_override is not None else sibling_open
         ),
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=expand_refs,
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -923,6 +1006,7 @@ def _format_list_value(
     sequence_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -959,6 +1043,7 @@ def _format_list_value(
             line_prefix=multiline_prefix,
             wrap_ids=wrap_ids,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=expand_refs,
             ref_key=ref_key,
             sequence_open_override=sequence_open_override,
@@ -986,6 +1071,7 @@ def _format_list_value(
                         child_sequence_open_overrides
                     ),
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=expand_refs,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
@@ -1033,10 +1119,12 @@ def _format_value(
     wrap_ids: frozenset[int],
     sequence_open_override: str | None,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
     multiline_prefix: str,
+    int_formatter: Callable[[int], str] | None = None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -1066,14 +1154,22 @@ def _format_value(
     first.
     """
     if ref_key and isinstance(value, dict):
-        ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-        if ref_name is not None:
-            if ref_case is not None:
-                ref_name = ref_case.convert(name=ref_name)
+        raw_ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+        if raw_ref_name is not None:
+            ref_name = (
+                ref_case.convert(name=raw_ref_name)
+                if ref_case is not None
+                else raw_ref_name
+            )
+            ref_value = (
+                ref_values.get(raw_ref_name)
+                if ref_values is not None
+                else None
+            )
             return (
-                spec.format_call_arg_ref_identifier(ref_name)
+                spec.format_call_arg_ref_identifier(ref_name, ref_value)
                 if expand_refs
-                else spec.format_call_ref_identifier(ref_name)
+                else spec.format_call_ref_identifier(ref_name, ref_value)
             )
     if (
         collection_layout is CollectionLayout.MULTILINE
@@ -1086,6 +1182,7 @@ def _format_value(
             line_prefix=multiline_prefix,
             wrap_ids=wrap_ids,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=expand_refs,
             ref_key=ref_key,
             dict_open_override=dict_open_override,
@@ -1098,6 +1195,7 @@ def _format_value(
                 spec=spec,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=collection_layout,
@@ -1110,6 +1208,7 @@ def _format_value(
                 open_override=dict_open_override,
                 wrap_ids=wrap_ids,
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=collection_layout,
@@ -1129,13 +1228,16 @@ def _format_value(
                 sequence_open_override=sequence_open_override,
                 child_sequence_open_overrides=(),
                 ref_case=ref_case,
+                ref_values=ref_values,
                 expand_refs=expand_refs,
                 ref_key=ref_key,
                 collection_layout=collection_layout,
                 multiline_prefix=multiline_prefix,
             )
         case _:
-            result = _format_scalar(value=value, spec=spec)
+            result = _format_scalar(
+                value=value, spec=spec, int_formatter=int_formatter
+            )
     return result
 
 
@@ -1144,7 +1246,7 @@ def _wrap_body(
     *,
     body: str,
     is_ordered_map: bool,
-    data: list[Value] | dict[str, Value] | set[Scalar],
+    data: list[Value] | dict[Scalar, Value] | set[Scalar],
     spec: Language,
     line_prefix: str,
 ) -> str:
@@ -1178,7 +1280,7 @@ def _wrap_body(
 @beartype
 def _collection_open_for_multiline_value(
     *,
-    data: dict[str, Value] | set[Scalar] | list[Value],
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
     spec: Language,
     is_ordered_map: bool,
     dict_open_override: str | None,
@@ -1230,11 +1332,12 @@ def _collection_open_for_multiline_value(
 @beartype
 def _format_multiline_collection_value(
     *,
-    value: dict[str, Value] | set[Scalar] | list[Value],
+    value: dict[Scalar, Value] | set[Scalar] | list[Value],
     spec: Language,
     line_prefix: str,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     dict_open_override: str | None = None,
@@ -1258,6 +1361,7 @@ def _format_multiline_collection_value(
         is_ordered_map=is_ordered_map,
         wrap_ids=wrap_ids,
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=expand_refs,
         ref_key=ref_key,
         collection_layout=CollectionLayout.MULTILINE,
@@ -1312,13 +1416,14 @@ def _append_entries(
 @beartype
 def _format_collection_lines(
     *,
-    data: dict[str, Value] | set[Scalar] | list[Value],
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
     spec: Language,
     body_prefix: str,
     trailing_comma: bool,
     is_ordered_map: bool,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     expand_refs: bool,
     ref_key: str,
     collection_layout: CollectionLayout,
@@ -1328,6 +1433,7 @@ def _format_collection_lines(
     parent_id = id(data)
     match data:
         case dict() as dict_data:
+            _guard_dict_keys_supported(value=dict_data, spec=spec)
             entries = [
                 (k, v)
                 for k, v in dict_data.items()
@@ -1353,6 +1459,7 @@ def _format_collection_lines(
                     wrap_ids=wrap_ids,
                     sequence_open_override=None,
                     ref_case=ref_case,
+                    ref_values=ref_values,
                     expand_refs=False,
                     ref_key=ref_key,
                     collection_layout=CollectionLayout.COMPACT,
@@ -1369,6 +1476,7 @@ def _format_collection_lines(
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ref_case=ref_case,
+                        ref_values=ref_values,
                         expand_refs=expand_refs,
                         ref_key=ref_key,
                         collection_layout=collection_layout,
@@ -1406,6 +1514,10 @@ def _format_collection_lines(
                 key=lambda v: (type(v).__name__, repr(v)),
             )
             set_parent_id = id(set_data)
+            set_int_formatter = _widened_int_formatter(
+                items=list(sorted_items),
+                spec=spec,
+            )
             formatted_entries = [
                 spec.format_set_entry(
                     item,
@@ -1420,10 +1532,12 @@ def _format_collection_lines(
                             wrap_ids=wrap_ids,
                             sequence_open_override=None,
                             ref_case=ref_case,
+                            ref_values=ref_values,
                             expand_refs=expand_refs,
                             ref_key=ref_key,
                             collection_layout=collection_layout,
                             multiline_prefix=body_prefix,
+                            int_formatter=set_int_formatter,
                         ),
                         spec=spec,
                     ),
@@ -1466,6 +1580,7 @@ def _format_collection_lines(
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
                             ref_case=ref_case,
+                            ref_values=ref_values,
                             expand_refs=expand_refs,
                             ref_key=ref_key,
                             collection_layout=collection_layout,
@@ -1501,6 +1616,7 @@ def _literalize(
     line_prefix: str,
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> str:
@@ -1530,16 +1646,31 @@ def _literalize(
             Ignored for scalar values.
         ref_case: When set, ref identifiers are converted to this case
             before rendering.
+        ref_values: Optional mapping from ref identifier to the value
+            declared elsewhere for that ref.  Forwarded to the
+            language's ``format_call_ref_identifier`` /
+            ``format_call_arg_ref_identifier`` hooks so type-sensitive
+            languages can pick the right form.
         ref_key: The key used to identify ref markers in the input.
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
     if ref_key and isinstance(data, dict):
-        ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
-        if ref_name is not None:
-            if ref_case is not None:
-                ref_name = ref_case.convert(name=ref_name)
-            identifier = language.format_call_ref_identifier(ref_name)
+        raw_ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
+        if raw_ref_name is not None:
+            ref_name = (
+                ref_case.convert(name=raw_ref_name)
+                if ref_case is not None
+                else raw_ref_name
+            )
+            ref_value = (
+                ref_values.get(raw_ref_name)
+                if ref_values is not None
+                else None
+            )
+            identifier = language.format_call_ref_identifier(
+                ref_name, ref_value
+            )
             return f"{line_prefix}{identifier}"
 
     check_data(data=data, spec=language)
@@ -1557,6 +1688,7 @@ def _literalize(
         bool,
         datetime.datetime,
         datetime.date,
+        datetime.time,
     )
     if isinstance(data, scalar_types) or data is None:
         return f"{line_prefix}{_format_scalar(value=data, spec=language)}"
@@ -1572,6 +1704,7 @@ def _literalize(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=False,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -1588,7 +1721,7 @@ def _literalize(
         and all(v is None for v in data.values())
     ):
         is_ordered_map = isinstance(data, ordereddict)
-        empty_value: ordereddict | dict[str, Value] = (
+        empty_value: ordereddict | dict[Scalar, Value] = (
             ordereddict() if is_ordered_map else {}
         )
         formatted = _format_value(
@@ -1598,6 +1731,7 @@ def _literalize(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=False,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -1619,6 +1753,7 @@ def _literalize(
         is_ordered_map=is_ordered_map,
         wrap_ids=wrap_ids,
         ref_case=ref_case,
+        ref_values=ref_values,
         expand_refs=False,
         ref_key=ref_key,
         collection_layout=collection_layout,
@@ -1687,9 +1822,17 @@ def _apply_variable_wrapper(
 class _PreFormState:
     """Variable-form-independent results of
     :func:`_literalize_pre_form`.
+
+    ``data`` is the parsed input with ``$ref`` markers left intact so
+    the renderer can emit them as bare identifiers.  ``data_for_preamble``
+    is the same tree with each ref marker resolved against the caller's
+    ``ref_values`` (or stripped when the value is not supplied), so
+    preamble inference sees the types actually flowing through the
+    rendered code -- not the marker's ``{str: str}`` shape.
     """
 
     data: Value
+    data_for_preamble: Value
     result: str
     resolved: ResolvedComments | None
     line_prefix: str
@@ -1704,6 +1847,7 @@ def _literalize_pre_form(
     pre_indent_level: int,
     include_delimiters: bool,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> _PreFormState:
@@ -1730,6 +1874,7 @@ def _literalize_pre_form(
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
+        ref_values=ref_values,
         ref_key=active_ref_key,
         collection_layout=collection_layout,
     )
@@ -1739,8 +1884,8 @@ def _literalize_pre_form(
     )
 
     resolved: ResolvedComments | None = None
-    match input_format:
-        case InputFormat.YAML if parsed.yaml_needs_comment_resolve:
+    match parsed:
+        case ParsedYaml() if parsed.needs_comment_resolve:
             comment_cfg = language.comment_config
             cp = comment_cfg.prefix
             cs = comment_cfg.suffix
@@ -1756,10 +1901,10 @@ def _literalize_pre_form(
                 include_delimiters=include_delimiters,
             )
             result = resolved.result
-        case InputFormat.TOML:
+        case ParsedToml():
             comment_cfg = language.comment_config
             resolved = resolve_toml_comments(
-                toml_doc=parsed.raw_data,
+                toml_doc=parsed.toml_doc,
                 base=result,
                 language=language,
                 comment_prefix=comment_cfg.prefix,
@@ -1771,8 +1916,18 @@ def _literalize_pre_form(
         case _:
             pass
 
+    data_for_preamble: Value = data
+    if ref_values:
+        resolution = _resolve_ref_for_preamble(
+            value=data,
+            ref_values=ref_values,
+            ref_key=active_ref_key,
+        )
+        data_for_preamble = resolution.value if resolution.include else []
+
     return _PreFormState(
         data=data,
+        data_for_preamble=data_for_preamble,
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
@@ -1815,7 +1970,7 @@ def _literalize_apply_form(
     variable_name = variable_form.name if variable_form is not None else None
     is_declaration = isinstance(variable_form, NewVariable)
     computed = compute_preamble(
-        data=pre_form.data,
+        data=pre_form.data_for_preamble,
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
@@ -1823,7 +1978,7 @@ def _literalize_apply_form(
         entries=(
             tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(pre_form.data)
+            + language.data_dependent_preamble(pre_form.data_for_preamble)
         )
     )
 
@@ -1845,7 +2000,7 @@ def _literalize_apply_form(
             preamble=(),
             body_preamble=(),
             types_present=computed.types_present,
-            source_data=pre_form.data,
+            source_data=pre_form.data_for_preamble,
         )
 
     return LiteralizeResult(
@@ -1854,7 +2009,7 @@ def _literalize_apply_form(
         body_preamble=computed.body,
         pre_declaration_comments=pre_decl,
         types_present=computed.types_present,
-        source_data=pre_form.data,
+        source_data=pre_form.data_for_preamble,
     )
 
 
@@ -1868,6 +2023,7 @@ def _literalize_both_forms(
     include_delimiters: bool,
     variable_form: BothVariableForms,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
@@ -1879,6 +2035,7 @@ def _literalize_both_forms(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
+        ref_values=ref_values,
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
@@ -1929,6 +2086,7 @@ def literalize(
     variable_form: VariableForm | None = None,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
+    ref_values: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
@@ -1979,6 +2137,15 @@ def literalize(
             hook.  When ``None`` (default), ref names are emitted
             verbatim.  When set, the identifier name is converted to
             *ref_case* first.
+        ref_values: Optional mapping from ref identifier to the value
+            declared elsewhere for that ref.  Some languages render a
+            ref differently depending on the type behind it (V emits
+            ``name`` for primitive scalars but ``name.clone()`` for
+            arrays and maps); supplying *ref_values* lets those
+            languages pick the right form.  When omitted, a ref's type
+            is unknown and languages fall back to their type-agnostic
+            default.  Keys should match the identifiers used in *source*
+            before any *ref_case* conversion.
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
@@ -2012,16 +2179,38 @@ def literalize(
             but the target language sets
             :attr:`~literalizer._language.Language.supports_variable_names`
             to ``False``.
+        WrapInFileWithoutVariableNotSupportedError: If *wrap_in_file*
+            is ``True`` and *variable_form* is ``None`` but the target
+            language sets
+            :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+            to ``False`` (i.e. it cannot represent a bare value at
+            file-statement scope).
     """
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
+    materialized_ref_values: Mapping[str, Value] | None = (
+        {
+            name: _materialize_value_input(value=value)
+            for name, value in ref_values.items()
+        }
+        if ref_values is not None
+        else None
+    )
     if variable_form is not None and not language.supports_variable_names:
         raise VariableNameNotSupportedError(
             language_name=type(language).__name__,
             variable_name=variable_form.name,
+        )
+    if (
+        wrap_in_file
+        and variable_form is None
+        and not language.supports_no_variable_wrap_in_file
+    ):
+        raise WrapInFileWithoutVariableNotSupportedError(
+            language_name=type(language).__name__,
         )
     if isinstance(variable_form, BothVariableForms):
         if not wrap_in_file:
@@ -2042,6 +2231,7 @@ def literalize(
             include_delimiters=include_delimiters,
             variable_form=variable_form,
             ref_case=ref_case,
+            ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
@@ -2053,6 +2243,7 @@ def literalize(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
+        ref_values=materialized_ref_values,
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
@@ -2188,7 +2379,7 @@ def _resolve_ref_for_preamble(
                 resolved_list.append(resolved.value)
         return _PreambleRefResolution(include=True, value=resolved_list)
     if isinstance(value, dict):
-        resolved_dict: dict[str, Value] = {}
+        resolved_dict: dict[Scalar, Value] = {}
         for key, item in value.items():
             resolved = _resolve_ref_for_preamble(
                 value=item,
@@ -2341,6 +2532,7 @@ def _format_single_call_arg(
     wrap_arg: Callable[[Value, str], str],
     dict_open_override: str | None,
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
     consume_inhibited_ref_names: frozenset[str],
@@ -2381,9 +2573,14 @@ def _format_single_call_arg(
             and raw_ref_name in single_use_ref_names
             and raw_ref_name not in consume_inhibited_ref_names
         )
+        ref_value = (
+            ref_values.get(raw_ref_name) if ref_values is not None else None
+        )
         if is_consumable:
-            return language.format_call_arg_ref_identifier_consumable(ref_name)
-        return language.format_call_arg_ref_identifier(ref_name)
+            return language.format_call_arg_ref_identifier_consumable(
+                ref_name, ref_value
+            )
+        return language.format_call_arg_ref_identifier(ref_name, ref_value)
     formatted = wrap_arg(
         value,
         _format_value(
@@ -2393,6 +2590,7 @@ def _format_single_call_arg(
             wrap_ids=wrap_ids,
             sequence_open_override=None,
             ref_case=ref_case,
+            ref_values=ref_values,
             expand_refs=True,
             ref_key=ref_key,
             collection_layout=collection_layout,
@@ -2445,6 +2643,7 @@ def _format_call_args(
     style: CallStyle,
     dict_open_overrides: Sequence[str | None],
     ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
     consumable_ref_names: frozenset[str],
     single_use_ref_names: frozenset[str],
     consume_inhibited_ref_names: frozenset[str],
@@ -2480,6 +2679,7 @@ def _format_call_args(
             wrap_arg=wrap_arg,
             dict_open_override=dict_open_overrides[slot_index],
             ref_case=ref_case,
+            ref_values=ref_values,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
             consume_inhibited_ref_names=consume_inhibited_ref_names,
@@ -2760,6 +2960,7 @@ def _render_call_per_element(
             style=style,
             dict_open_overrides=slot_overrides,
             ref_case=ref_case,
+            ref_values=ref_values,
             consumable_ref_names=consumable_ref_names,
             single_use_ref_names=single_use_ref_names,
             consume_inhibited_ref_names=consume_inhibited_ref_names,
@@ -2802,11 +3003,18 @@ def _render_call_whole(
     ref_values: Mapping[str, Value],
     ref_key: str,
     collection_layout: CollectionLayout,
+    variable_form: NewVariable | ExistingVariable | None,
 ) -> str:
     """Render a single call from the whole parsed value.
 
     A single top-level ref marker renders as just the identifier; in
     that case shape validation and wrap-id computation are skipped.
+
+    When *variable_form* is supplied, the assembled call expression is
+    wrapped via the language's ``format_variable_declaration`` /
+    ``format_variable_assignment`` hook (instead of being routed through
+    ``format_call_statement`` and the language's statement terminator),
+    producing an idiomatic binding such as ``let p2 = Playlist::new();``.
     """
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is None:
         stripped_data = _strip_refs_from_value(value=data, ref_key=ref_key)
@@ -2824,6 +3032,7 @@ def _render_call_whole(
         style=style,
         dict_open_overrides=[None],
         ref_case=ref_case,
+        ref_values=ref_values,
         consumable_ref_names=consumable_ref_names,
         single_use_ref_names=_compute_call_arg_ref_single_use_names(
             elements=[[data]],
@@ -2840,14 +3049,29 @@ def _render_call_whole(
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
-    return language.format_call_statement(
-        _assemble_call(
-            target_function=target_function,
-            args_str=args_str,
-            call_transform=call_transform,
-            statement_terminator=language.statement_terminator,
-            style=style,
+    if variable_form is None:
+        return language.format_call_statement(
+            _assemble_call(
+                target_function=target_function,
+                args_str=args_str,
+                call_transform=call_transform,
+                statement_terminator=language.statement_terminator,
+                style=style,
+            )
         )
+    call_expr = _assemble_call(
+        target_function=target_function,
+        args_str=args_str,
+        call_transform=call_transform,
+        statement_terminator="",
+        style=style,
+    )
+    return _apply_variable_wrapper(
+        result=call_expr,
+        language=language,
+        data=data,
+        variable_form=variable_form,
+        line_prefix="",
     )
 
 
@@ -2879,7 +3103,7 @@ def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
 
 
 @beartype
-def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
+def _yaml_has_standalone_comments(*, parsed: ParsedInput) -> bool:
     """Return ``True`` when the YAML source carries standalone comments.
 
     Standalone comments are comments that appear on their own line —
@@ -2889,9 +3113,13 @@ def _yaml_has_standalone_comments(*, raw_data: object) -> bool:
     scalar; ``ruamel.yaml`` only attaches collection-comment metadata
     to :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`.
     """
-    if not isinstance(raw_data, CommentedSeq | CommentedMap | CommentedSet):
+    if not isinstance(parsed, ParsedYaml):
         return False
-    collection_comments = extract_yaml_comments(ruamel_data=raw_data)
+    if not isinstance(
+        parsed.raw_data, CommentedSeq | CommentedMap | CommentedSet
+    ):
+        return False
+    collection_comments = extract_yaml_comments(ruamel_data=parsed.raw_data)
     if collection_comments.trailing:
         return True
     return any(element.before for element in collection_comments.elements)
@@ -2922,6 +3150,80 @@ def _validate_wrap_in_file_supports_standalone_comments(
 
 
 @beartype
+def _validate_parameter_count(
+    *,
+    language: Language,
+    parameter_names: Sequence[str],
+) -> None:
+    """Raise ``UnsupportedCallShapeError`` if the parameter count is out
+    of range for ``language``.
+    """
+    if (
+        len(parameter_names) == 0
+        and not language.supports_zero_parameter_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "zero-parameter calls have no representation in this language"
+            ),
+        )
+    max_params = language.max_call_parameters
+    if len(parameter_names) > max_params:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"call exceeds this language's {max_params}-parameter limit"
+            ),
+        )
+
+
+@beartype
+def _validate_call_variable_form(
+    *,
+    language: Language,
+    variable_form: NewVariable | ExistingVariable,
+    per_element: bool,
+) -> None:
+    """Raise typed errors for unsupported ``variable_form``
+    combinations.
+
+    ``BothVariableForms`` is rejected upstream by ``literalize_call``
+    itself, so the ``variable_form`` parameter here is narrower.
+    """
+    if per_element:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "variable_form is incompatible with per_element=True; "
+                "the API does not provide a name per element"
+            ),
+        )
+    if not language.supports_variable_names:
+        raise VariableNameNotSupportedError(
+            language_name=type(language).__name__,
+            variable_name=variable_form.name,
+        )
+    if not language.call_returns_expression:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "calls in this language are statements, not expressions, "
+                "so the call result cannot be bound to a variable"
+            ),
+        )
+    if not language.supports_call_variable_binding:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "this language's variable-declaration template wraps or "
+                "transforms the right-hand side in a way that is only "
+                "valid for literal values, not call expressions"
+            ),
+        )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -2932,17 +3234,18 @@ def _validate_call_preconditions(
     ref_key: str,
     ref_case: IdentifierCase | None,
     call_transform: Callable[[str], str] | None,
+    variable_form: NewVariable | ExistingVariable | None,
+    per_element: bool,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs."""
-    if (
-        len(parameter_names) == 0
-        and not language.supports_zero_parameter_calls
-    ):
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                "zero-parameter calls have no representation in this language"
-            ),
+    _validate_parameter_count(
+        language=language, parameter_names=parameter_names
+    )
+    if variable_form is not None:
+        _validate_call_variable_form(
+            language=language,
+            variable_form=variable_form,
+            per_element=per_element,
         )
     if (
         not language.supports_inline_multiline_dict_args
@@ -3007,6 +3310,83 @@ def _validate_call_preconditions(
         )
 
 
+def _is_value_mapping(
+    value: ValueInput, /
+) -> TypeIs[Mapping[Scalar, ValueInput]]:
+    """Narrow ``value`` to the ``Mapping`` arm of ``ValueInput``."""
+    return isinstance(value, Mapping)
+
+
+def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
+    """Narrow ``value`` to the ``Sequence`` arm of ``ValueInput``,
+    excluding the ``str``/``bytes`` scalars that are also sequences.
+    """
+    return isinstance(value, Sequence) and not isinstance(value, str | bytes)
+
+
+@beartype
+def _wrap_call_in_file(
+    *,
+    language: Language,
+    result: str,
+    variable_form: NewVariable | ExistingVariable | None,
+    target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
+    arg_values: Sequence[Value],
+    call_transform: Callable[[str], str] | None,
+    preamble: tuple[str, ...],
+    computed_body: tuple[str, ...],
+) -> str:
+    """Wrap a rendered ``literalize_call`` result in a complete file.
+
+    Emits a no-op stub for the target function so the wrapped file
+    compiles on its own.  ``StubReturn.VALUE`` is used whenever the
+    call's return value is consumed -- either by a ``call_transform``
+    or by binding it to a ``variable_form``; otherwise the call result
+    is discarded and a void stub suffices.
+    """
+    stub_return = (
+        StubReturn.VALUE
+        if call_transform is not None or variable_form is not None
+        else StubReturn.VOID
+    )
+    body_stubs = language.format_call_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
+    preamble_stubs = language.format_call_preamble_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
+    wrap_variable_name = (
+        variable_form.name if variable_form is not None else ""
+    )
+    wrapped = language.wrap_in_file(
+        content=result,
+        variable_name=wrap_variable_name,
+        body_preamble=body_stubs + computed_body,
+    )
+    # Stubs follow the language's static preamble (e.g. Go's
+    # ``package main`` must come first).
+    full_preamble = preamble + preamble_stubs
+    if full_preamble:
+        wrapped = "\n".join(full_preamble) + "\n" + wrapped
+    return wrapped
+
+
+def _materialize_value_input(*, value: ValueInput) -> Value:
+    """Convert a user-supplied ``ValueInput`` into the internal ``Value``
+    form, replacing any non-``list`` ``Sequence`` and non-``dict``
+    ``Mapping`` with concrete ``list`` / ``dict`` instances.
+    """
+    if _is_value_mapping(value):
+        return {
+            key: _materialize_value_input(value=item)
+            for key, item in value.items()
+        }
+    if _is_value_sequence(value):
+        return [_materialize_value_input(value=item) for item in value]
+    return value
+
+
 @beartype
 def literalize_call(
     *,
@@ -3020,9 +3400,10 @@ def literalize_call(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     consumable_refs: frozenset[str] = frozenset(),
-    ref_values: Mapping[str, Value] | None = None,
+    ref_values: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    variable_form: VariableForm | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -3095,6 +3476,25 @@ def literalize_call(
             preserves the existing one-line nested rendering, while
             ``CollectionLayout.MULTILINE`` expands non-empty nested
             collections with one element per line.
+        variable_form: When supplied, wrap the call expression in a
+            variable binding using the language's
+            ``format_variable_declaration`` /
+            ``format_variable_assignment`` hook (the same machinery
+            used by :func:`literalize`).  Pass :class:`NewVariable` for
+            an idiomatic declaration (``let p2 = Playlist::new();``,
+            ``const p2 = new Playlist();``, ``p2 = Playlist()``) or
+            :class:`ExistingVariable` for an assignment to an existing
+            name.  :class:`BothVariableForms` is rejected with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`
+            because emitting both a declaration and an assignment
+            would invoke the target function twice.  Mutability and
+            inference are controlled by the per-language
+            ``declaration_style`` and ``Modifiers`` enums on the
+            supplied ``Language`` instance, not by extra arguments
+            here.  Incompatible with ``per_element=True`` (no
+            per-element name vector is provided); incompatible with
+            languages whose call form is not an expression
+            (``call_returns_expression=False``).
 
     .. note::
 
@@ -3112,11 +3512,22 @@ def literalize_call(
         emitting the file.  The "Composing declarations and calls"
         section of :doc:`/function-call-use-case` shows a worked example.
     """
+    if isinstance(variable_form, BothVariableForms):
+        # Rendering both halves would invoke the call twice -- a silent
+        # side-effect bug for any non-pure target.  Reject up front so
+        # the rest of the function can narrow ``variable_form`` to
+        # ``NewVariable | ExistingVariable | None``.
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "BothVariableForms is not supported for literalize_call: "
+                "rendering both a declaration and an assignment would "
+                "invoke the target function twice"
+            ),
+        )
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
-    contains_standalone_comments = _yaml_has_standalone_comments(
-        raw_data=parsed.raw_data,
-    )
+    contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
             raise CallsNotSupportedByLanguageError(
@@ -3152,6 +3563,8 @@ def literalize_call(
         ref_key=ref_key,
         ref_case=ref_case,
         call_transform=call_transform,
+        variable_form=variable_form,
+        per_element=per_element,
     )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,
@@ -3160,18 +3573,23 @@ def literalize_call(
     )
     target_function = language.format_call_target(target_function_parts)
 
+    materialized_ref_values: Mapping[str, Value] = {
+        name: _materialize_value_input(value=value)
+        for name, value in (ref_values or {}).items()
+    }
+
     data_for_preamble = _strip_call_arg_refs_for_preamble(
         data=data,
         per_element_data=per_element_data,
         ref_key=ref_key,
-        ref_values=ref_values or {},
+        ref_values=materialized_ref_values,
     )
 
     if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
-            input_format is InputFormat.YAML
-            and parsed.yaml_needs_comment_resolve
+            isinstance(parsed, ParsedYaml)
+            and parsed.needs_comment_resolve
             and isinstance(parsed.raw_data, CommentedSeq)
         ):
             collection_comments = extract_yaml_comments(
@@ -3186,7 +3604,7 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
-            ref_values=ref_values or {},
+            ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
@@ -3201,14 +3619,15 @@ def literalize_call(
             call_transform=call_transform,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
-            ref_values=ref_values or {},
+            ref_values=materialized_ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
+            variable_form=variable_form,
         )
     computed = compute_preamble(
         data=data_for_preamble,
         language=language,
-        has_variable_declaration=False,
+        has_variable_declaration=isinstance(variable_form, NewVariable),
     )
     preamble = deduplicate_preamble_entries(
         entries=(
@@ -3219,29 +3638,17 @@ def literalize_call(
     )
 
     if wrap_in_file:
-        # Emit a no-op stub for ``target_function`` so the wrapped file
-        # compiles on its own.  ``StubReturn.VALUE`` is used whenever a
-        # ``call_transform`` consumes the call's return value; otherwise
-        # the call result is discarded and a void stub suffices.
-        stub_return = (
-            StubReturn.VALUE if call_transform is not None else StubReturn.VOID
+        wrapped = _wrap_call_in_file(
+            language=language,
+            result=result,
+            variable_form=variable_form,
+            target_function_parts=target_function_parts,
+            parameter_names=parameter_names,
+            arg_values=arg_values,
+            call_transform=call_transform,
+            preamble=preamble,
+            computed_body=computed.body,
         )
-        body_stubs = language.format_call_stub(
-            target_function_parts, parameter_names, stub_return, arg_values
-        )
-        preamble_stubs = language.format_call_preamble_stub(
-            target_function_parts, parameter_names, stub_return, arg_values
-        )
-        wrapped = language.wrap_in_file(
-            content=result,
-            variable_name="",
-            body_preamble=body_stubs + computed.body,
-        )
-        # Stubs follow the language's static preamble (e.g. Go's
-        # ``package main`` must come first).
-        full_preamble = preamble + preamble_stubs
-        if full_preamble:
-            wrapped = "\n".join(full_preamble) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
             preamble=(),

@@ -6,7 +6,7 @@ import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict
@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
@@ -45,16 +46,17 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    WideInt,
     infer_element_type,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
-    DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -80,7 +82,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value, ValueKind
+from literalizer._types import Scalar, Value
 
 
 class _CppModifiers(enum.Enum):
@@ -142,7 +144,7 @@ def _collect_int_leaves(
     """Collect int values that would occupy the int leaf of
     *element_type* when *items* is resolved to its C++ type.
     """
-    if element_type is int:
+    if element_type is int or element_type is WideInt:
         return [
             item
             for item in items
@@ -230,6 +232,7 @@ def _make_cpp_element_to_type(
         bytes_type="std::string",
         date_type=date_type,
         datetime_type=datetime_type,
+        time_type="std::string",
         list_template="std::vector<{inner}>",
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
@@ -559,13 +562,6 @@ def _needs_variant_type(
                 items=sorted_items,
                 element_to_type=element_to_type,
             )
-        case ordereddict():
-            omap_vals = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            values: list[Value] = list(omap_vals)  # pyright: ignore[reportUnknownArgumentType]
-            return _items_need_variant(
-                items=values,
-                element_to_type=element_to_type,
-            )
         case list():
             return _items_need_variant(
                 items=data,
@@ -592,12 +588,9 @@ def _has_empty_collection(data: Value) -> bool:
             return True
         case list():
             return any(_has_empty_collection(data=v) for v in data)
-        case ordereddict() | dict():
-            mapping_values = data.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            return any(
-                _has_empty_collection(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in mapping_values  # pyright: ignore[reportUnknownVariableType]
-            )
+        case dict():
+            mapping_values = data.values()
+            return any(_has_empty_collection(data=v) for v in mapping_values)
         case _:
             return False
 
@@ -638,7 +631,7 @@ def _apply_cpp_variant_sequence_open(
 @beartype
 def _apply_cpp_variant_dict_open(
     *,
-    items: dict[str, Value],
+    items: dict[Scalar, Value],
     type_ctx: _CppTypeCtx,
     opener_template: str,
 ) -> str:
@@ -667,7 +660,7 @@ def _apply_cpp_variant_set_open(
 @beartype
 def _apply_cpp_variant_ordered_map_open(
     *,
-    data: dict[str, Value],
+    data: dict[Scalar, Value],
     type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ordered-map opener."""
@@ -700,12 +693,12 @@ def _build_variant_dict_open(
     *,
     type_ctx: _CppTypeCtx,
     opener_template: str,
-) -> Callable[[dict[str, Value]], str]:
+) -> Callable[[dict[Scalar, Value]], str]:
     """Build a dict opener that uses ``std::variant`` for
     heterogeneous dict values.
     """
 
-    def _open(items: dict[str, Value]) -> str:
+    def _open(items: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_dict_open(
             items=items,
@@ -734,12 +727,12 @@ def _build_variant_set_open(
 def _build_variant_ordered_map_open(
     *,
     type_ctx: _CppTypeCtx,
-) -> Callable[[dict[str, Value]], str]:
+) -> Callable[[dict[Scalar, Value]], str]:
     """Build an ordered-map opener that uses
     ``std::vector<std::pair<...>>``.
     """
 
-    def _open(data: dict[str, Value]) -> str:
+    def _open(data: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_ordered_map_open(
             data=data,
@@ -778,41 +771,79 @@ def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     return " ".join(keywords) + " "
 
 
+@dataclasses.dataclass(frozen=True)
+class _CppDeclarationStyleConfig:
+    """Configuration for a Cpp declaration style.
+
+    Unlike :class:`DeclarationStyleConfig`, this carries no
+    ``formatter`` slot: Cpp builds its declaration formatter
+    per-instance in :attr:`Cpp.format_variable_declaration` so it can
+    close over the chosen date/datetime ``type_produced``.
+    """
+
+    supports_redefinition: bool
+
+
 @beartype
 def _format_variable_declaration(
+    *,
     name: str,
     value: str,
-    _data: Value,
+    data: Value,
     modifiers: frozenset[enum.Enum],
+    date_type: type,
+    datetime_type: type,
 ) -> str:
     """Format a C++ variable declaration.
 
     * ``const auto*`` — string literal (``"..."``), required by
-      ``readability-qualified-auto``.
+      ``readability-qualified-auto``.  Driven by the parsed *data*
+      together with the chosen date/datetime ``type_produced``: bytes
+      and strings always render as quoted strings, and dates/datetimes
+      do so when their format produces a :class:`str`.
     * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
     When *modifiers* is non-empty, applicable modifier keywords
     (``static``, ``const``) are prepended.  ``const`` is not duplicated
     against the built-in ``const auto*`` for string literals.
     """
-    match _infer_value_kind(value=value):
-        case ValueKind.STRING_LITERAL:
-            type_keyword = "const auto*"
-            extra = modifiers - {_CppModifiers.CONST}
-        case ValueKind.TYPED_EXPRESSION:
-            type_keyword = "auto"
-            extra = modifiers
-        case _ as unreachable:
-            assert_never(unreachable)  # pyrefly: ignore[bad-argument-type]
+    if _renders_as_string_literal(
+        data=data,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    ):
+        type_keyword = "const auto*"
+        extra = modifiers - {_CppModifiers.CONST}
+    else:
+        type_keyword = "auto"
+        extra = modifiers
     prefix = _cpp_modifier_prefix(modifiers=extra)
     return f"{prefix}{type_keyword} {name} = {value};"
 
 
-def _infer_value_kind(*, value: str) -> ValueKind:
-    """Classify a formatted C++ value string."""
-    if value.startswith('"'):
-        return ValueKind.STRING_LITERAL
-    return ValueKind.TYPED_EXPRESSION
+@beartype
+def _renders_as_string_literal(
+    *,
+    data: Value,
+    date_type: type,
+    datetime_type: type,
+) -> bool:
+    """Return whether *data* renders as a C string literal.
+
+    ``bytes`` and ``str`` always render as quoted strings in C++.
+    ``datetime.datetime`` and ``datetime.date`` do so only when their
+    format's ``type_produced`` is :class:`str` (the ISO variants);
+    other variants render as ``std::chrono`` or numeric expressions.
+    """
+    match data:
+        case bytes() | str():
+            return True
+        case datetime.datetime():
+            return datetime_type is str
+        case datetime.date():
+            return date_type is str
+        case _:
+            return False
 
 
 def _cpp_call_stub(
@@ -893,6 +924,8 @@ class Cpp(metaclass=LanguageCls):
     pygments_name = "cpp"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -901,10 +934,18 @@ class Cpp(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -1034,10 +1075,7 @@ class Cpp(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        AUTO = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
-            supports_redefinition=True,
-        )
+        AUTO = _CppDeclarationStyleConfig(supports_redefinition=True)
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -1433,23 +1471,41 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``.
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
+        except for trivially-copyable scalars.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
-        the variable is never modified.  Using ``std::move`` avoids the
-        copy and satisfies the linter.
+        the variable is never modified, so ``std::move`` is used for
+        container-typed refs to satisfy the linter.  Applying
+        ``std::move`` to a trivially-copyable scalar (``int``, ``bool``,
+        ``float``) is itself a clang-tidy
+        ``hicpp-move-const-arg`` / ``performance-move-const-arg``
+        warning ("has no effect; remove std::move()"), so we drop the
+        wrapper when the caller's ``ref_values`` identifies the ref as
+        one of those types.  When the value is unknown we keep the
+        historical ``std::move`` form.
         """
 
-        def _format_cpp_ref_identifier(name: str, /) -> str:
-            """Wrap the identifier in ``std::move()``."""
+        def _format_cpp_ref_identifier(
+            name: str, value: Value | None, /
+        ) -> str:
+            """Wrap the identifier in ``std::move()`` unless *value* is
+            a trivially-copyable scalar.
+            """
+            if isinstance(value, bool | int | float):
+                return name
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Emit a call-argument ``$ref`` as the bare identifier.
 
         ``std::move`` would consume the variable, which is unsafe when
@@ -1465,7 +1521,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Wrap a consumable call-argument ``$ref`` in ``std::move()``.
 
         Used only for refs the caller declared as consumable on
@@ -1473,7 +1529,9 @@ class Cpp(metaclass=LanguageCls):
         one call argument, so the move cannot strand a later use.
         """
 
-        def _format_cpp_ref_identifier_consumable(name: str, /) -> str:
+        def _format_cpp_ref_identifier_consumable(
+            name: str, _value: Value | None, /
+        ) -> str:
             """Wrap the identifier in ``std::move()``."""
             return f"std::move({name})"
 
@@ -1550,6 +1608,11 @@ class Cpp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -1605,8 +1668,34 @@ class Cpp(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        """Callable that formats a new variable declaration.
+
+        Closes over the chosen date/datetime ``type_produced`` so the
+        ``const auto*`` vs ``auto`` decision can be driven by the parsed
+        :class:`Value` rather than the rendered text.
+        """
+        date_type = self.date_format.value.type_produced
+        datetime_type = self.datetime_format.value.type_produced
+
+        def _formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Adapt :func:`_format_variable_declaration` to the
+            positional formatter interface.
+            """
+            return _format_variable_declaration(
+                name=name,
+                value=value,
+                data=data,
+                modifiers=modifiers,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+
+        return _formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

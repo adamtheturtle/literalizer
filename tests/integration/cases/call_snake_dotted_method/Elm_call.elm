@@ -13,9 +13,9 @@ my_appHttp_clientFetch _ = ()
 main : Program () () Never
 main =
     let
-        _ = my_appHttp_clientFetch(EStr "hello")
-        _ = my_appHttp_clientFetch(EInt 42)
-        _ = my_appHttp_clientFetch(EBool True)
+        _ = my_appHttp_clientFetch (EStr "hello")
+        _ = my_appHttp_clientFetch (EInt 42)
+        _ = my_appHttp_clientFetch (EBool True)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

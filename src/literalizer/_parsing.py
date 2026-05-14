@@ -18,6 +18,7 @@ from ruamel.yaml.comments import (
 from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
+from tomlkit.toml_document import TOMLDocument
 
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
@@ -30,7 +31,7 @@ from literalizer.exceptions import (
 type YamlCoercible = (
     Scalar
     | list[YamlCoercible]
-    | dict[object, YamlCoercible]
+    | dict[Scalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
 )
@@ -46,23 +47,40 @@ class InputFormat(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
-class _ParsedInput:
-    """Result of parsing an input string."""
+class ParsedPlain:
+    """Result of parsing a comment-free input (JSON or JSON5)."""
+
+    data: Value
+
+
+@dataclasses.dataclass(frozen=True)
+class ParsedYaml:
+    """Result of parsing a YAML input string."""
 
     data: Value
     raw_data: object
-    yaml_needs_comment_resolve: bool
+    needs_comment_resolve: bool
     """Whether the YAML comment-resolution phase must run.
 
-    False for non-YAML inputs and for the YAML fast path (no comment
-    or tag markers in the source).  When False, ``raw_data`` carries
-    no round-trip metadata and must not be passed to
-    ``resolve_yaml_comments``.
+    False for the YAML fast path (no comment or tag markers in the
+    source).  When False, ``raw_data`` carries no round-trip metadata
+    and must not be passed to ``resolve_yaml_comments``.
     """
 
 
+@dataclasses.dataclass(frozen=True)
+class ParsedToml:
+    """Result of parsing a TOML input string."""
+
+    data: Value
+    toml_doc: TOMLDocument
+
+
+ParsedInput = ParsedPlain | ParsedYaml | ParsedToml
+
+
 @beartype
-def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
+def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
@@ -100,32 +118,29 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:  # noqa: PLR0911
                 microsecond=value.microsecond,
                 tzinfo=value.tzinfo,
             )
-        case datetime.date():
-            return value
-        case bytes():
-            return value
-        case None:
+        case datetime.date() | datetime.time() | bytes() | None:
             return value
         case _ as unreachable:
             assert_never(unreachable)
 
 
 @beartype
-def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
-    """Recursively convert non-string dict keys to their string form.
-
-    YAML allows non-string mapping keys (e.g. integers); ``Value``
-    requires ``dict[str, Value]``, so we normalise before passing
-    loaded YAML data to :func:`_literalize`.
+def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
+    """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
     ``!!omap`` nodes; those are demoted to plain ``ordereddict`` so
     ordered-map detection in :func:`_literalize` still works.  Other
     mappings come through as ``CommentedMap`` and are demoted to plain
     ``dict``.  :class:`CommentedSet` does not subclass :class:`set`, so
-    it is converted as well.  Scalar leaves are unwrapped to plain
-    Python types so type-based dispatch sees ``int`` rather than
-    ``ScalarInt`` and friends.
+    it is converted as well.  Scalar leaves (including dict keys) are
+    unwrapped to plain Python types so type-based dispatch sees
+    ``int`` rather than ``ScalarInt`` and friends.
+
+    Non-string dict keys are preserved as their native scalar type;
+    languages that cannot represent them are gated by
+    :attr:`Language.supports_non_string_dict_keys` in
+    :mod:`literalizer._literalize`.
     """
     # ``CommentedMap`` and ``CommentedSeq`` are subclasses of ``dict``
     # and ``list`` respectively, so their cases collapse into the plain
@@ -134,17 +149,24 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
     # represents ``!!omap`` and must be demoted to ``ordereddict``.
     match data:
         case CommentedOrderedMap():
-            omap_src: dict[object, YamlCoercible] = dict(data)
+            omap_src: dict[Scalar, YamlCoercible] = dict(data)
             return ordereddict(
                 [
-                    (f"{k}", _coerce_yaml_keys(data=v))
+                    (
+                        _unwrap_yaml_scalar(value=k),
+                        _unwrap_yaml_data(data=v),
+                    )
                     for k, v in omap_src.items()
                 ]
             )
         case dict():
-            return {f"{k}": _coerce_yaml_keys(data=v) for k, v in data.items()}
+            unwrapped: dict[Scalar, Value] = {
+                _unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
+                for k, v in data.items()
+            }
+            return unwrapped
         case list():
-            return [_coerce_yaml_keys(data=item) for item in data]
+            return [_unwrap_yaml_data(data=item) for item in data]
         case CommentedSet():
             members: set[Scalar] = set(data)
             return {_unwrap_yaml_scalar(value=item) for item in members}
@@ -155,6 +177,7 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
             | str()
             | datetime.datetime()
             | datetime.date()
+            | datetime.time()
             | bytes()
             | None
         ):
@@ -164,8 +187,8 @@ def _coerce_yaml_keys(*, data: YamlCoercible) -> Value:
 
 
 @beartype
-def _parse_json(*, source: str) -> _ParsedInput:
-    """Parse a JSON string into a ``_ParsedInput``."""
+def _parse_json(*, source: str) -> ParsedInput:
+    """Parse a JSON string into a ``ParsedInput``."""
     try:
         data = json.loads(s=source)
     except json.JSONDecodeError as exc:
@@ -173,26 +196,18 @@ def _parse_json(*, source: str) -> _ParsedInput:
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
         raise JSONParseError(message) from exc
-    return _ParsedInput(
-        data=data,
-        raw_data=data,
-        yaml_needs_comment_resolve=False,
-    )
+    return ParsedPlain(data=data)
 
 
 @beartype
-def _parse_json5(*, source: str) -> _ParsedInput:
-    """Parse a JSON5 string into a ``_ParsedInput``."""
+def _parse_json5(*, source: str) -> ParsedInput:
+    """Parse a JSON5 string into a ``ParsedInput``."""
     try:
         data = pyjson5.decode(data=source)  # pylint: disable=no-member
     except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
         message = f"Invalid JSON5: {exc}"
         raise JSON5ParseError(message) from exc
-    return _ParsedInput(
-        data=data,
-        raw_data=data,
-        yaml_needs_comment_resolve=False,
-    )
+    return ParsedPlain(data=data)
 
 
 @functools.cache
@@ -248,8 +263,8 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
 
 
 @beartype
-def _parse_yaml(*, source: str) -> _ParsedInput:
-    """Parse a YAML string into a ``_ParsedInput``.
+def _parse_yaml(*, source: str) -> ParsedInput:
+    """Parse a YAML string into a ``ParsedInput``.
 
     When the source contains no comments or other round-trip-only
     constructs, uses a C-backed safe loader and marks the result with
@@ -266,11 +281,11 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
         except YAMLError as exc:
             message = f"Invalid YAML: {exc}"
             raise YAMLParseError(message) from exc
-        data = _coerce_yaml_keys(data=raw_data)
-        return _ParsedInput(
+        data = _unwrap_yaml_data(data=raw_data)
+        return ParsedYaml(
             data=data,
             raw_data=raw_data,
-            yaml_needs_comment_resolve=True,
+            needs_comment_resolve=True,
         )
 
     safe_yaml = _get_safe_yaml()
@@ -279,33 +294,56 @@ def _parse_yaml(*, source: str) -> _ParsedInput:
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
         raise YAMLParseError(message) from exc
-    data = _coerce_yaml_keys(data=plain_data)
-    return _ParsedInput(
+    data = _unwrap_yaml_data(data=plain_data)
+    return ParsedYaml(
         data=data,
         raw_data=plain_data,
-        yaml_needs_comment_resolve=False,
+        needs_comment_resolve=False,
     )
 
 
+type _TomlData = dict[str, _TomlData] | list[_TomlData] | Scalar
+
+
 @beartype
-def _parse_toml(*, source: str) -> _ParsedInput:
-    """Parse a TOML string into a ``_ParsedInput``."""
+def _toml_data_to_value(*, data: _TomlData) -> Value:
+    """Re-shape ``tomlkit`` output as a ``Value``.
+
+    ``tomlkit.TOMLDocument.unwrap`` returns ``dict[str, Any]`` (modeled
+    as ``_TomlData`` here); its dict and list arms have narrower static
+    types than ``Value`` so dicts/lists are rebuilt to widen them.
+    Scalar leaves -- including ``datetime.time`` now that it's part of
+    ``Scalar`` -- are passed through unchanged.
+    """
+    match data:
+        case dict():
+            coerced: dict[Scalar, Value] = {
+                k: _toml_data_to_value(data=v) for k, v in data.items()
+            }
+            return coerced
+        case list():
+            return [_toml_data_to_value(data=item) for item in data]
+        case _:
+            return data
+
+
+@beartype
+def _parse_toml(*, source: str) -> ParsedInput:
+    """Parse a TOML string into a ``ParsedInput``."""
     try:
         toml_doc = tomlkit.parse(string=source)
     except TOMLKitError as exc:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
-    toml_data = _coerce_toml_values(data=unwrapped)
-    return _ParsedInput(
-        data=toml_data,
-        raw_data=toml_doc,
-        yaml_needs_comment_resolve=False,
+    return ParsedToml(
+        data=_toml_data_to_value(data=unwrapped),
+        toml_doc=toml_doc,
     )
 
 
 @beartype
-def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
+def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
     """Parse and coerce an input string according to its format."""
     match input_format:
         case InputFormat.JSON:
@@ -318,27 +356,3 @@ def parse_input(*, source: str, input_format: InputFormat) -> _ParsedInput:
             return _parse_toml(source=source)
         case _ as unreachable:
             assert_never(unreachable)
-
-
-type _TomlData = (
-    dict[str, _TomlData] | list[_TomlData] | datetime.time | Scalar
-)
-
-
-@beartype
-def _coerce_toml_values(*, data: _TomlData) -> Value:
-    """Recursively convert TOML-specific types to ``Value`` types.
-
-    ``tomlkit`` produces ``datetime.time`` values which cannot be
-    expressed in the ``Value`` type, so they are converted to
-    their ISO-format string form.
-    """
-    match data:
-        case dict():
-            return {k: _coerce_toml_values(data=v) for k, v in data.items()}
-        case list():
-            return [_coerce_toml_values(data=item) for item in data]
-        case datetime.time():
-            return data.isoformat()
-        case _:
-            return data

@@ -29,10 +29,18 @@ from .language_specs import (
 class LiteralizeRefCaseConfig:
     """Configuration for a ``literalize`` ``$ref`` golden-file test
     case.
+
+    When *ref_value_sources* is supplied, each entry maps a
+    ``{ref_key: name}`` marker in ``input.yaml`` to a JSON source whose
+    value seeds ``ref_values`` on the :func:`literalize` call and the
+    matching ref stub.  Without it the harness keeps its historical
+    behavior: refs render with no value-type knowledge and stubs are
+    dict shaped.
     """
 
     case_dir_name: str
     ref_key: str
+    ref_value_sources: tuple[tuple[str, str], ...] = ()
 
 
 LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
@@ -63,6 +71,11 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_deep_nesting",
         ref_key="$ref",
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_scalar",
+        ref_key="$ref",
+        ref_value_sources=(("my_int", "42"),),
     ),
 ]
 
@@ -100,26 +113,35 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     return False
 
 
-@beartype
-def has_non_printable_ascii_dict_keys(data: object) -> bool:
+type YamlData = (
+    dict[object, "YamlData"]
+    | list["YamlData"]
+    | str
+    | int
+    | float
+    | bool
+    | None
+)
+
+
+def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
     """
     match data:
         case dict():
-            for key in data:  # pyright: ignore[reportUnknownVariableType]
+            for key in data:
                 if isinstance(key, str) and (
                     not key or not key.isprintable() or not key.isascii()
                 ):
                     return True
             return any(
-                has_non_printable_ascii_dict_keys(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownVariableType]
+                has_non_printable_ascii_dict_keys(data=v)
+                for v in data.values()
             )
         case list():
             return any(
-                has_non_printable_ascii_dict_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
-                for item in data  # pyright: ignore[reportUnknownVariableType]
+                has_non_printable_ascii_dict_keys(data=item) for item in data
             )
         case _:
             return False
@@ -136,7 +158,7 @@ def cases_with_non_trivial_dict_keys(
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=(case_dir / "input.yaml").read_text(),
         )
         if has_non_printable_ascii_dict_keys(data=loaded):
@@ -144,8 +166,7 @@ def cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
-@beartype
-def has_special_floats(data: object) -> bool:
+def has_special_floats(data: YamlData) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
     """
@@ -153,15 +174,9 @@ def has_special_floats(data: object) -> bool:
         case float():
             return not math.isfinite(data)
         case dict():
-            return any(
-                has_special_floats(data=v)  # pyright: ignore[reportUnknownArgumentType]
-                for v in data.values()  # pyright: ignore[reportUnknownVariableType]
-            )
+            return any(has_special_floats(data=v) for v in data.values())
         case list():
-            return any(
-                has_special_floats(data=item)  # pyright: ignore[reportUnknownArgumentType]
-                for item in data  # pyright: ignore[reportUnknownVariableType]
-            )
+            return any(has_special_floats(data=item) for item in data)
         case _:
             return False
 
@@ -177,7 +192,7 @@ def cases_with_special_floats(
     yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
-        loaded: object = yaml.load(  # pyright: ignore[reportUnknownMemberType]
+        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
             stream=(case_dir / "input.yaml").read_text(),
         )
         if has_special_floats(data=loaded):
@@ -464,6 +479,43 @@ class IndentCase:
     indent: str
 
 
+@dataclasses.dataclass(frozen=True)
+class NoVariableFormCase:
+    """A ``wrap_in_file=True, variable_form=None`` golden-file case.
+
+    Exercises the shape on every language whose
+    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+    is ``True`` (i.e. the language can represent a bare value at
+    file-statement scope).  Languages that opt out are covered by a
+    separate error-raising test.
+    """
+
+    name: str
+    lang_cls: literalizer.LanguageCls
+    case_dir_name: str
+
+
+@functools.cache
+@beartype
+def build_no_variable_form_cases() -> list[NoVariableFormCase]:
+    """Build one ``no_variable_form`` case per opt-in language.
+
+    Uses the ``scalar_int`` fixture (``42``) because it is the
+    minimum input that exercises the bare-value-at-file-scope shape
+    and matches every opt-in language's value vocabulary.
+    """
+    case_dir_name = "scalar_int"
+    return [
+        NoVariableFormCase(
+            name=f"{lang_cls.__name__}_no_variable_form",
+            lang_cls=lang_cls,
+            case_dir_name=case_dir_name,
+        )
+        for lang_cls in sorted_languages()
+        if lang_cls.supports_no_variable_wrap_in_file
+    ]
+
+
 @functools.cache
 @beartype
 def build_indent_cases() -> list[IndentCase]:
@@ -499,18 +551,43 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
     that is both syntactically valid and visually demonstrates the
     fix: the declaration line carries the indent, the value sits flush
     against ``=``, and continuation lines keep their relative offsets.
+
+    ``simple_dict`` exercises a multi-line container value at indent
+    across every language with class-field modifiers.  Cpp additionally
+    gets a ``comment_scalar_before_and_inline`` case to exercise a
+    scalar whose formatted value is preceded by ``//`` comment lines
+    that carry the same ``line_prefix`` indent: the scenario that
+    previously caused Cpp to misclassify a string scalar as a typed
+    expression.  Java and CSharp cannot share that case because their
+    ``wrap_in_file`` class-field detection runs off the first token of
+    *content*, which is the leading comment rather than the modifier
+    once before-comments are prepended; fixing that latent issue is
+    out of scope for this case.
     """
     cases: list[PreIndentCase] = []
-    case_dir_name = "simple_dict"
     for lang_cls in sorted_languages():
         cases.extend(
             PreIndentCase(
                 name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}",
                 lang_cls=lang_cls,
-                case_dir_name=case_dir_name,
+                case_dir_name="simple_dict",
                 pre_indent_level=1,
                 modifiers=combo.modifiers,
             )
             for combo in lang_cls.modifier_combinations
         )
+    cpp_cls = next(c for c in sorted_languages() if c.__name__ == "Cpp")
+    cases.extend(
+        PreIndentCase(
+            name=(
+                f"{cpp_cls.__name__}_pre_indent_1_{combo.name}"
+                "_comment_scalar_before_and_inline"
+            ),
+            lang_cls=cpp_cls,
+            case_dir_name="comment_scalar_before_and_inline",
+            pre_indent_level=1,
+            modifiers=combo.modifiers,
+        )
+        for combo in cpp_cls.modifier_combinations
+    )
     return cases

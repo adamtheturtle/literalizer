@@ -10,15 +10,16 @@ from literalizer._formatters.type_inference import (
     DictType,
     ListType,
     MixedNumeric,
+    WideInt,
     infer_element_type,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
 def fixed_open(
     *, open_str: str
-) -> Callable[[list[Value] | dict[str, Value]], str]:
+) -> Callable[[list[Value] | dict[Scalar, Value]], str]:
     """Return an opener callable that always returns *open_str*.
 
     Use this as ``sequence_open``, ``set_open``, ``dict_open``, or
@@ -28,7 +29,7 @@ def fixed_open(
     Example: ``fixed_open(open_str="[")([1, 2, 3])`` -> ``"["``.
     """
 
-    def _open(_items: list[Value] | dict[str, Value], /) -> str:
+    def _open(_items: list[Value] | dict[Scalar, Value], /) -> str:
         """Return the fixed opening delimiter, ignoring *_items*."""
         return open_str
 
@@ -46,9 +47,11 @@ def make_element_to_type(
     mixed_numeric_type: str | None,
     date_type: str | None,
     datetime_type: str | None,
+    time_type: str | None,
     list_template: str,
     dict_type_template: str | None,
     fallback_value_type: str | None,
+    wide_int_type: str | None = None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.
@@ -79,8 +82,13 @@ def make_element_to_type(
             (float, float_type),
             (bytes, bytes_type),
             (MixedNumeric, mixed_numeric_type),
+            (
+                WideInt,
+                wide_int_type if wide_int_type is not None else int_type,
+            ),
             (datetime.date, date_type),
             (datetime.datetime, datetime_type),
+            (datetime.time, time_type),
         )
         if name is not None
     }
@@ -271,7 +279,7 @@ def typed_collection_open(
 
 @beartype
 def _typed_dict_open_impl(
-    items: dict[str, Value],
+    items: dict[Scalar, Value],
     type_to_opener: Callable[[type | ListType | DictType], str | None],
     fallback: str,
 ) -> str:
@@ -287,7 +295,7 @@ def typed_dict_open(
     *,
     type_to_opener: Callable[[type | ListType | DictType], str | None],
     fallback: str,
-) -> Callable[[dict[str, Value]], str]:
+) -> Callable[[dict[Scalar, Value]], str]:
     """Return a ``dict_open`` callable that infers a common value type
     and delegates to *type_to_opener*.
 
@@ -307,7 +315,7 @@ def typed_dict_open(
         )
     """
 
-    def _open(items: dict[str, Value]) -> str:
+    def _open(items: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _typed_dict_open_impl(
             items=items, type_to_opener=type_to_opener, fallback=fallback
@@ -346,12 +354,14 @@ class TypedOpenerConfig:
         mixed_numeric_type: str | None,
         date_type: str | None,
         datetime_type: str | None,
+        time_type: str | None,
         list_template: str,
         sequence_opener_template: str,
         dict_opener_template: str,
         set_opener_template: str,
         dict_type_template: str | None,
         fallback_value_type: str | None,
+        wide_int_type: str | None = None,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._str_type = str_type
@@ -362,12 +372,14 @@ class TypedOpenerConfig:
         self._mixed_numeric_type = mixed_numeric_type
         self._date_type = date_type
         self._datetime_type = datetime_type
+        self._time_type = time_type
         self._list_template = list_template
         self._sequence_opener_template = sequence_opener_template
         self._dict_opener_template = dict_opener_template
         self._set_opener_template = set_opener_template
         self._dict_type_template = dict_type_template
         self._fallback_value_type = fallback_value_type
+        self._wide_int_type = wide_int_type
 
     @beartype
     def type_name(self, py_type: type) -> str | None:
@@ -385,8 +397,15 @@ class TypedOpenerConfig:
                 (float, self._float_type),
                 (bytes, self._bytes_type),
                 (MixedNumeric, self._mixed_numeric_type),
+                (
+                    WideInt,
+                    self._wide_int_type
+                    if self._wide_int_type is not None
+                    else self._int_type,
+                ),
                 (datetime.date, self._date_type),
                 (datetime.datetime, self._datetime_type),
+                (datetime.time, self._time_type),
             )
             if name is not None
         }
@@ -422,6 +441,7 @@ class TypedOpenerConfig:
             str_type=self._str_type,
             bool_type=self._bool_type,
             int_type=self._int_type,
+            wide_int_type=self._wide_int_type,
             float_type=self._float_type,
             bytes_type=self._bytes_type,
             mixed_numeric_type=self._mixed_numeric_type,
@@ -433,6 +453,7 @@ class TypedOpenerConfig:
                 if datetime_type is not None
                 else self._datetime_type
             ),
+            time_type=self._time_type,
             list_template=(
                 list_template
                 if list_template is not None

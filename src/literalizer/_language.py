@@ -4,14 +4,19 @@ import dataclasses
 import datetime
 import enum
 import math
-from collections.abc import Callable, Sequence
-from typing import Protocol, assert_never, runtime_checkable
+import sys
+from collections.abc import Callable, Mapping, Sequence
+from typing import Final, Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
-from literalizer._formatters.type_inference import DictType, ListType
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    RecordShape,
+)
 from literalizer._types import Scalar, Value
 
 
@@ -67,7 +72,9 @@ def date_scalar_preamble(
         datetime_format: The datetime format enum member whose ``.value``
             has a ``preamble_lines`` attribute.
         extra: Optional additional type→preamble mappings to include
-            unconditionally (e.g. for C++ ``#include <string>``).
+            unconditionally (e.g. for C++ ``#include <string>`` or the
+            ``datetime.time`` import added by languages that emit native
+            time literals).
 
     Returns:
         A dict mapping Python types to their required preamble lines,
@@ -130,7 +137,7 @@ class CommentConfig:
 class DictFormatConfig:
     """Configuration for dict formatting."""
 
-    dict_open: Callable[[dict[str, Value]], str]
+    dict_open: Callable[[dict[Scalar, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
     empty_dict: str | None
@@ -143,7 +150,7 @@ class DictFormatConfig:
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
 
-    ordered_map_open: Callable[[dict[str, Value]], str]
+    ordered_map_open: Callable[[dict[Scalar, Value]], str]
     close: str
     preamble_lines: tuple[str, ...]
 
@@ -461,6 +468,12 @@ class HeterogeneousBehavior:
     Languages that do not need cross-call top-level wrapping return
     an empty ``frozenset``.
 
+    ``render_record_literal`` renders a record-shaped dict as a
+    generated struct literal given its :class:`RecordShape` and a
+    mapping of pre-formatted field values.  Defaults to ``None`` for
+    strategies that do not opt into the ``RECORD`` style — the
+    detection and walking helpers land alongside the first consumer.
+
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
     """
@@ -470,6 +483,9 @@ class HeterogeneousBehavior:
     wrap_scalar: Callable[[Scalar, str], str] | None
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
+    render_record_literal: (
+        Callable[[RecordShape, Mapping[str, str]], str] | None
+    ) = None
 
 
 def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
@@ -504,6 +520,22 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.
+"""
+
+
+NO_CALL_PARAMETER_LIMIT: Final = sys.maxsize
+"""Sentinel for ``Language.max_call_parameters`` meaning "no fixed
+parameter limit".
+
+Cannot be ``None``: when an attribute's value in a class's
+``__dict__`` is ``None``, CPython's ``_proto_hook`` returns
+``NotImplemented`` (the PEP 544 "this attribute is not implemented"
+signal).  ``NotImplemented`` prevents the ABC subclass cache from
+warming, so every subsequent ``isinstance(_, Language)`` falls into
+an O(N)-in-protocol-member-count walk in
+``_ProtocolMeta.__instancecheck__``.  With our ~110-member protocol
+that turned a 1.3 ms ``literalize()`` call into a 305 ms one.  Using
+``sys.maxsize`` as the "unlimited" sentinel keeps the cache warm.
 """
 
 
@@ -596,6 +628,8 @@ class LanguageCls(type):
     version_formats: type[enum.Enum]
     supports_special_floats: bool
     supports_variable_names: bool
+    supports_no_variable_wrap_in_file: bool
+    supports_call_variable_binding: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
@@ -603,10 +637,18 @@ class LanguageCls(type):
     supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_zero_parameter_calls: bool
+    max_call_parameters: int
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
-    supports_commented_dict_call_args: bool
     supports_module_name: bool
+    supports_empty_dict_key: bool
+    supports_call_style: bool
+    supports_default_dict_key_type: bool
+    supports_non_string_dict_keys: bool
+    supports_default_dict_value_type: bool
+    supports_default_sequence_element_type: bool
+    supports_default_set_element_type: bool
+    supports_default_ordered_map_value_type: bool
     dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
@@ -887,6 +929,42 @@ class Language(Protocol):
     :class:`~literalizer.exceptions.VariableNameNotSupportedError`.
     """
 
+    supports_no_variable_wrap_in_file: bool
+    """Whether the language can represent a bare value (no variable
+    binding) at file-statement scope.  When ``False``,
+    :func:`~literalizer.literalize` rejects ``wrap_in_file=True`` with
+    ``variable_form=None`` with
+    :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedEr
+    ror`,
+    rather than silently emitting a file whose top-level item is a bare
+    expression (a syntax error in strict-typed languages like Rust, C,
+    Haskell, Swift, Ada, D, Dart, C#, Elm, Mojo, Nim, Objective-C, Odin,
+    SML, V, Zig, etc.).
+
+    Languages with no variable-name syntax at all
+    (:attr:`supports_variable_names` is ``False``) must set this to
+    ``True``: their ``wrap_in_file`` output has no other shape.
+    """
+
+    supports_call_variable_binding: bool
+    """Whether the language's ``format_variable_declaration`` /
+    ``format_variable_assignment`` template can safely host a *call
+    expression* on the right-hand side.
+
+    When ``False``, the language's binding template wraps or
+    transforms the right-hand side in a way that is only valid for
+    *literal* values (e.g. Tcl's bare command words that need
+    ``[...]`` substitution; Objective-C's ``@(...)`` boxing of
+    primitives; tagged-enum heterogeneous-strategy languages that
+    prepend a value-type constructor; languages whose declaration
+    template encodes the value's literal type as a struct-initializer
+    field).  ``literalize_call`` rejects ``variable_form`` for such
+    languages with
+    :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+    Ignored by :func:`~literalizer.literalize`, whose right-hand side
+    is always a literal value.
+    """
+
     dict_supports_heterogeneous_values: bool
     """Whether the language's dict format can represent values spanning
     multiple type families (e.g. Python's ``dict``, JavaScript's object
@@ -969,6 +1047,13 @@ class Language(Protocol):
     @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
+        literal.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a :class:`datetime.time` as a string
         literal.
         """
         ...  # pylint: disable=unnecessary-ellipsis
@@ -1363,6 +1448,17 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def max_call_parameters(self) -> int:
+        """Maximum parameter count the language's call syntax accepts.
+
+        :data:`NO_CALL_PARAMETER_LIMIT` for languages with no fixed
+        limit.  When :func:`~literalizer.literalize_call` is given more
+        ``parameter_names`` than this, it raises
+        :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def call_returns_expression(self) -> bool:
         """Whether a function call in this language is an expression
         whose value can be consumed by an enclosing expression.  When
@@ -1371,6 +1467,18 @@ class Language(Protocol):
         with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
+
+    supports_non_string_dict_keys: bool
+    """Whether the language can represent a dict whose keys include
+    values that are not strings.  When ``False``,
+    :func:`~literalizer.literalize` rejects such inputs at the
+    formatting boundary with
+    :class:`~literalizer.exceptions.UnrepresentableInputError`.
+
+    Most languages allow scalar dict keys natively; pure data formats
+    whose surface syntax only admits string keys (JSON-family, TOML)
+    set this to ``False``.
+    """
 
     @property
     def supports_inline_multiline_dict_args(self) -> bool:
@@ -1386,13 +1494,6 @@ class Language(Protocol):
     def supports_standalone_comments_in_wrapped_calls(self) -> bool:
         """Whether manually wrapped call output can contain standalone
         comment lines between call statements.
-        """
-        ...  # pylint: disable=unnecessary-ellipsis
-
-    @property
-    def supports_commented_dict_call_args(self) -> bool:
-        """Whether manually wrapped call output can pass commented dict
-        literals as call arguments.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -1506,7 +1607,7 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(self) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the form
         required by this language's call expression syntax.
 
@@ -1518,15 +1619,20 @@ class Language(Protocol):
 
         Called after :func:`~literalizer.literalize_call`'s ``ref_case``
         normalization, so *name* is already in the requested identifier
-        case.  Most languages emit ref identifiers bare and use
-        :data:`identity_call_ref_identifier`.  Languages where variable
-        references carry a sigil (e.g. PHP ``$name``, Perl ``$name``)
-        override this to prepend the sigil.
+        case.  The second positional argument is the ``Value`` declared
+        elsewhere for that ref (taken from the caller's ``ref_values``
+        mapping), or ``None`` when the caller did not supply the value.
+        Most languages emit ref identifiers bare and use
+        :data:`identity_call_ref_identifier`; languages that wrap the
+        identifier in a type-sensitive way (V's ``.clone()`` for
+        non-scalars) inspect the value to choose the right form.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier used as a direct
         call argument (via :func:`~literalizer.literalize_call`).
 
@@ -1545,7 +1651,7 @@ class Language(Protocol):
     @property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` call-argument identifier the
         caller authorized as consumable on
         :func:`~literalizer.literalize_call`.
@@ -1660,18 +1766,29 @@ identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
 
 
-def _identity_call_ref_identifier(name: str, /) -> str:
-    """Return *name* unchanged."""
+def _identity_call_ref_identifier(name: str, value: Value | None, /) -> str:
+    """Return *name* unchanged.
+
+    Accepts but ignores *value*; only languages whose ref rendering
+    depends on the referenced type (e.g. V's ``.clone()`` on non-scalar
+    values) inspect it.
+    """
+    del value
     return name
 
 
-identity_call_ref_identifier: Callable[[str], str] = (
+identity_call_ref_identifier: Callable[[str, Value | None], str] = (
     _identity_call_ref_identifier
 )
 """Shared callable for languages that need no ``$ref`` identifier
 rewriting.  Languages that decorate ref identifiers (e.g. PHP's
 ``$name`` or Perl's ``$name``) override
 :attr:`Language.format_call_ref_identifier` instead.
+
+The callable receives both the (already case-converted) ref name and the
+``Value`` declared elsewhere for that ref (or ``None`` when the caller
+did not pass ``ref_values``).  Most languages ignore the value; V uses
+it to skip ``.clone()`` for scalars.
 """
 
 

@@ -17,6 +17,7 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     NullInCollectionError,
+    UnrepresentableInputError,
     UnrepresentableIntegerError,
     VariableNameNotSupportedError,
 )
@@ -24,10 +25,12 @@ from literalizer.exceptions import (
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
     IndentCase,
+    NoVariableFormCase,
     PreIndentCase,
     StatementTerminatorCombinedCase,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
+    build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     group_cases_by_language,
@@ -78,25 +81,26 @@ def test_golden_file(
                 golden_path=golden_path,
             )
             try:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=wrap_variable_form(),
-                    wrap_in_file=True,
-                )
-            except VariableNameNotSupportedError:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=None,
-                    wrap_in_file=True,
-                )
+                try:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=wrap_variable_form(),
+                        wrap_in_file=True,
+                    )
+                except VariableNameNotSupportedError:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=None,
+                        wrap_in_file=True,
+                    )
             except UnrepresentableIntegerError:
                 golden_path.unlink(missing_ok=True)
                 pytest.skip(
@@ -111,6 +115,11 @@ def test_golden_file(
                 golden_path.unlink(missing_ok=True)
                 pytest.skip(
                     f"{lang_name} cannot represent null in a collection",
+                )
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_name} cannot represent this input",
                 )
             # newline="" prevents Python text-mode from converting \r\n to
             # \n on Windows, which would corrupt golden files containing
@@ -189,6 +198,9 @@ def test_golden_file_combined_variable_forms(
                     f"{lang_cls.__name__} cannot represent null in a "
                     "collection"
                 )
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(f"{lang_cls.__name__} cannot represent this input")
             check_golden(
                 file_regression=file_regression,
                 contents=result.code + "\n",
@@ -231,27 +243,28 @@ def test_format_variant_golden_file(
                 golden_path=golden_path,
             )
             try:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=variant_case.variable_form,
-                    wrap_in_file=True,
-                    collection_layout=variant.collection_layout,
-                )
-            except VariableNameNotSupportedError:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=None,
-                    wrap_in_file=True,
-                    collection_layout=variant.collection_layout,
-                )
+                try:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=variant_case.variable_form,
+                        wrap_in_file=True,
+                        collection_layout=variant.collection_layout,
+                    )
+                except VariableNameNotSupportedError:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=None,
+                        wrap_in_file=True,
+                        collection_layout=variant.collection_layout,
+                    )
             except NullInCollectionError:
                 pytest.skip("Format rejects null elements in this input")
             except HeterogeneousCollectionError:
@@ -260,6 +273,9 @@ def test_format_variant_golden_file(
             except IncompatibleFormatsError:
                 golden_path.unlink(missing_ok=True)
                 pytest.skip("Format combination cannot represent this input")
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent this input")
             check_golden(
                 file_regression=file_regression,
                 contents=result.code + "\n",
@@ -405,6 +421,55 @@ def test_pre_indent_level_with_new_variable_golden_file(
             extension=spec.extension,
             lang_cls=case.lang_cls,
         ),
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="case",
+    argvalues=build_no_variable_form_cases(),
+    ids=[c.name for c in build_no_variable_form_cases()],
+)
+def test_no_variable_form_golden_file(
+    case: NoVariableFormCase,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """``literalize(wrap_in_file=True, variable_form=None)`` renders to a
+    stable per-language golden for every opt-in language.
+
+    Locks in issue #2138: languages whose
+    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
+    is ``True`` must produce valid file-scope output for a bare value;
+    opt-out languages are rejected upstream with
+    :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`.
+    """
+    input_path = cases_dir / case.case_dir_name / "input.yaml"
+    yaml_string = input_path.read_text()
+    golden_path = make_golden_path(
+        parent=input_path.parent,
+        name=case.name,
+        extension=case.lang_cls.extension,
+        lang_cls=case.lang_cls,
+    )
+    spec = with_per_fixture_module_name(
+        spec=make_spec(lang_cls=case.lang_cls),
+        golden_path=golden_path,
+    )
+    result = literalizer.literalize(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+        wrap_in_file=True,
+    )
+    check_golden(
+        file_regression=file_regression,
+        contents=result.code + "\n",
+        extension=case.lang_cls.extension,
+        newline=None,
+        golden_path=golden_path,
     )
 
 

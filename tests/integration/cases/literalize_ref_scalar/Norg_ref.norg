@@ -1,0 +1,8 @@
+* my_int
+@code json
+42
+@end
+* my_data
+@code json
+my_int
+@end

@@ -30,6 +30,8 @@ def main() -> None:
         )
         for stub_name in _STUB_SOURCES:
             shutil.copy(src=_REPO_ROOT / stub_name, dst=tmpdir / stub_name)
+        # `-gnat2022` matches `Ada.language_version` in
+        # `src/literalizer/languages/ada.py`; keep them in sync.
         compile_result = subprocess.run(
             args=[gnatmake_path, "-gnat2022", "check.adb"],
             capture_output=True,

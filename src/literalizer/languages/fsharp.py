@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_fsharp,
 )
 from literalizer._formatters.format_entries import (
     declaration_formatter_ignoring_modifiers,
@@ -45,9 +46,11 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -82,9 +85,7 @@ from literalizer._types import Value
 
 
 @beartype
-def _apply_fsharp_entry(  # noqa: PLR0911
-    original: Value, formatted: str, prefix: str
-) -> str:
+def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
     """
@@ -116,9 +117,11 @@ def _apply_fsharp_entry(  # noqa: PLR0911
         case datetime.datetime() if formatted.startswith(f"{prefix}Int"):
             return formatted
         case str() | bytes() | datetime.date():
-            if formatted.startswith("System."):
-                return f"{prefix}Str (string ({formatted}))"
-            return f"{prefix}Str {formatted}"
+            return (
+                f"{prefix}Str (string ({formatted}))"
+                if formatted.startswith("System.")
+                else f"{prefix}Str {formatted}"
+            )
         case _:
             return formatted
 
@@ -212,32 +215,35 @@ def _build_fsharp_declaration(
     return _format
 
 
-def _fsharp_call_stub(
+@beartype
+def _build_fsharp_call_stub_lines(
+    *,
     parts: Sequence[str],
     params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
+    curried: bool,
 ) -> tuple[str, ...]:
     """Return F# stub declarations for a call name."""
+    if curried:
+        param_list = " " + " ".join(f"(_{p}: obj)" for p in params)
+    else:
+        param_list = "(" + ", ".join(f"_{p}: obj" for p in params) + ")"
+    let_param_list = param_list if curried else f" {param_list}"
     if len(parts) == 1:
-        param_list = ", ".join(f"_{p}: obj" for p in params)
-        return (f"let {parts[0]} ({param_list}) : obj = null",)
+        return (f"let {parts[0]}{let_param_list} : obj = null",)
     root = parts[0]
     method = parts[-1]
-    param_list = ", ".join(f"_{p}: obj" for p in params)
     fields = parts[1:-1]
     if not fields:
         cls = f"{root.title()}Type_"
         return (
             f"type {cls}() =",
-            f"    member _.{method}({param_list}) : obj = null",
+            f"    member _.{method}{param_list} : obj = null",
             f"let {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"{fields[-1].title()}Type_"
     lines.append(f"type {inner_cls}() =")
-    lines.append(f"    member _.{method}({param_list}) : obj = null")
+    lines.append(f"    member _.{method}{param_list} : obj = null")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = f"{fields[i].title()}Type_"
@@ -249,6 +255,40 @@ def _fsharp_call_stub(
     lines.append(f"    member _.{fields[0]} = {prev_cls}()")
     lines.append(f"let {root} = {root_cls}()")
     return tuple(lines)
+
+
+def _fsharp_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return F# positional (tuple-form) stub declarations."""
+    return _build_fsharp_call_stub_lines(
+        parts=parts, params=params, curried=False
+    )
+
+
+def _fsharp_curried_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return F# curried stub declarations."""
+    return _build_fsharp_call_stub_lines(
+        parts=parts, params=params, curried=True
+    )
+
+
+@beartype
+def _fsharp_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted F# value in parentheses for curried
+    application.
+    """
+    return f"({formatted})"
 
 
 @beartype
@@ -281,6 +321,8 @@ class FSharp(metaclass=LanguageCls):
     pygments_name = "fsharp"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -289,17 +331,18 @@ class FSharp(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = True
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for FSharp."""
@@ -526,6 +569,10 @@ class FSharp(metaclass=LanguageCls):
         """FSharp call style options."""
 
         POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -693,7 +740,21 @@ class FSharp(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _fsharp_curried_call_stub
         return _fsharp_call_stub
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Curried calls parenthesize each argument so that constructor
+        applications are not parsed as additional arguments to the outer
+        call.
+        """
+        if isinstance(self.call_style.value, CommandCallStyle):
+            return _fsharp_format_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_preamble_stub(
@@ -713,14 +774,18 @@ class FSharp(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -732,7 +797,7 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -845,6 +910,11 @@ class FSharp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_fsharp
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -935,8 +1005,8 @@ class FSharp(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble (FSharp needs none)."""
-        return {}
+        """Per-instance scalar preamble."""
+        return {datetime.time: ("open System",)}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
@@ -1015,4 +1085,5 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
-        return self.call_style.value
+        config: CallStyle = self.call_style.value
+        return config

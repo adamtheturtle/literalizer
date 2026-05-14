@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -43,13 +44,13 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
-    DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -99,17 +100,39 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
     return str(object=int(value.timestamp()))
 
 
+@dataclasses.dataclass(frozen=True)
+class _ZigDeclarationStyleConfig:
+    """Configuration for a Zig declaration style.
+
+    Unlike :class:`DeclarationStyleConfig`, this carries no
+    ``formatter`` slot: Zig builds its declaration formatter
+    per-instance in :attr:`Zig.format_variable_declaration` so it can
+    close over the chosen date/datetime ``type_produced``.
+    """
+
+    keyword: str
+    supports_redefinition: bool
+
+
 @beartype
-def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
+def _format_zig_entry(
+    *,
+    original: Value,
+    formatted: str,
+    date_type: type,
+    datetime_type: type,
+) -> str:
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
     tag.
+
+    The ``str`` vs ``int`` choice for dates/datetimes is driven by the
+    parsed :class:`Value` together with the chosen date/datetime
+    format's ``type_produced``, rather than by sniffing *formatted*.
     """
     match original:
         case bool():
             return formatted
         case int():
-            if original > I64_MAX:
-                return f".{{ .uint = {formatted} }}"
             if original < I64_MIN:
                 msg = (
                     f"Zig cannot represent negative integer {original} "
@@ -117,47 +140,18 @@ def _format_zig_entry(original: Value, formatted: str) -> str:  # noqa: PLR0911
                     "union's unsigned variant."
                 )
                 raise UnrepresentableIntegerError(msg)
-            return f".{{ .int = {formatted} }}"
+            tag = "uint" if original > I64_MAX else "int"
         case float():
-            return f".{{ .float = {formatted} }}"
+            tag = "float"
         case str() | bytes():
-            return f".{{ .str = {formatted} }}"
+            tag = "str"
+        case datetime.datetime():
+            tag = "str" if datetime_type is str else "int"
         case datetime.date():
-            tag = "str" if formatted.startswith('"') else "int"
-            return f".{{ .{tag} = {formatted} }}"
+            tag = "str" if date_type is str else "int"
         case _:
             return formatted
-
-
-@beartype
-def _format_const_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format a Zig ``const`` declaration with explicit ``ZVal`` type."""
-    wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"const {name}: ZVal = {wrapped};"
-
-
-@beartype
-def _format_var_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format a Zig ``var`` declaration with explicit ``ZVal`` type."""
-    wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"var {name}: ZVal = {wrapped};"
-
-
-@beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a Zig assignment to an existing ``ZVal`` variable."""
-    wrapped = _format_zig_entry(original=data, formatted=value)
-    return f"{name} = {wrapped};"
+    return f".{{ .{tag} = {formatted} }}"
 
 
 @beartype
@@ -233,6 +227,8 @@ class Zig(metaclass=LanguageCls):
     pygments_name = "zig"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -241,15 +237,26 @@ class Zig(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Zig."""
 
-        ZIG = DateFormatConfig(formatter=_format_date_zig)
+        ZIG = DateFormatConfig(
+            formatter=_format_date_zig,
+            type_produced=int,
+        )
         ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -259,7 +266,10 @@ class Zig(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Zig."""
 
-        ZIG = DatetimeFormatConfig(formatter=_format_datetime_zig)
+        ZIG = DatetimeFormatConfig(
+            formatter=_format_datetime_zig,
+            type_produced=int,
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -327,12 +337,12 @@ class Zig(metaclass=LanguageCls):
     class DeclarationStyles(enum.Enum):
         """Declaration style options."""
 
-        CONST = DeclarationStyleConfig(
-            formatter=_format_const_declaration,
+        CONST = _ZigDeclarationStyleConfig(
+            keyword="const",
             supports_redefinition=False,
         )
-        VAR = DeclarationStyleConfig(
-            formatter=_format_var_declaration,
+        VAR = _ZigDeclarationStyleConfig(
+            keyword="var",
             supports_redefinition=True,
         )
 
@@ -612,19 +622,51 @@ class Zig(metaclass=LanguageCls):
         return self.call_style.value
 
     @cached_property
+    def _format_entry(self) -> Callable[[Value, str], str]:
+        """Shared entry formatter closing over date/datetime
+        ``type_produced``.
+        """
+        date_type = self.date_format.value.type_produced
+        datetime_type = self.datetime_format.value.type_produced
+
+        @beartype
+        def _formatter(original: Value, formatted: str) -> str:
+            """Adapt :func:`_format_zig_entry` to the positional
+            entry-formatter interface.
+            """
+            return _format_zig_entry(
+                original=original,
+                formatted=formatted,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+
+        return _formatter
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_zig_entry
+        return self._format_entry
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_zig_entry
+        return self._format_entry
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return _format_variable_assignment
+        format_entry = self._format_entry
+
+        @beartype
+        def _format_assign(name: str, value: str, data: Value) -> str:
+            """Format a Zig assignment to an existing ``ZVal``
+            variable.
+            """
+            wrapped = format_entry(data, value)
+            return f"{name} = {wrapped};"
+
+        return _format_assign
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -681,7 +723,7 @@ class Zig(metaclass=LanguageCls):
         match the parameter shape emitted by
         :func:`_zig_call_preamble_stub`.
         """
-        return _format_zig_entry
+        return self._format_entry
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -691,14 +733,18 @@ class Zig(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -710,7 +756,7 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -754,7 +800,7 @@ class Zig(metaclass=LanguageCls):
             close="}}",
             format_entry=dict_entry_with_template(
                 template=".{{ .key = {key}, .val = {value} }}",
-                format_value=_format_zig_entry,
+                format_value=self._format_entry,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -781,6 +827,11 @@ class Zig(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -826,15 +877,34 @@ class Zig(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_template(
             template=".{{ .key = {key}, .val = {value} }}",
-            format_value=_format_zig_entry,
+            format_value=self._format_entry,
         )
 
     @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        """Callable that formats a new variable declaration.
+
+        Closes over the chosen date/datetime ``type_produced`` so the
+        ``ZVal`` tag selection can be driven by the parsed
+        :class:`Value` rather than the rendered text.
+        """
+        keyword = self.declaration_style.value.keyword
+        format_entry = self._format_entry
+
+        @beartype
+        def _format_decl(
+            name: str,
+            value: str,
+            data: Value,
+            _modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Format a Zig declaration with explicit ``ZVal`` type."""
+            wrapped = format_entry(data, value)
+            return f"{keyword} {name}: ZVal = {wrapped};"
+
+        return _format_decl
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

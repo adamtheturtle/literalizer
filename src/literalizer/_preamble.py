@@ -30,16 +30,21 @@ class HeterogeneousElements:
 def _collect_value_types(*, data: Value) -> frozenset[type]:
     """Return the set of Python types present in *data*."""
     match data:
-        case ordereddict():
-            child_types: frozenset[type] = frozenset()
-            for v in data.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                child_types = child_types | _collect_value_types(data=v)  # pyright: ignore[reportUnknownArgumentType]
-            return frozenset({ordereddict, str}) | child_types
         case dict():
-            child_types = frozenset()
-            for v in data.values():
+            child_types: frozenset[type] = frozenset()
+            for k, v in data.items():
+                child_types = child_types | _collect_value_types(data=k)
                 child_types = child_types | _collect_value_types(data=v)
-            return frozenset({dict, str}) | child_types
+            container_type = (
+                ordereddict if isinstance(data, ordereddict) else dict
+            )
+            # ``str`` is included unconditionally because typed-map
+            # languages whose dict opener hard-codes the default key
+            # type (e.g. ``std::map<std::string, ...>`` in C++) still
+            # need the string preamble even when the data has no string
+            # keys or values.  The actual rendered code references
+            # ``std::string`` regardless of payload.
+            return frozenset({container_type, str}) | child_types
         case set():
             scalar_types: frozenset[type] = frozenset(
                 t
@@ -270,6 +275,8 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
             return "bytes"
         case datetime.datetime():
             return "datetime"
+        case datetime.time():
+            return "time"
         case datetime.date():
             return "date"
         case None:

@@ -16,6 +16,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -51,6 +52,7 @@ from literalizer._heterogeneous import (
     iter_wrapped_scalars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -154,7 +156,7 @@ def _unify_rust_types(types: Sequence[str]) -> str:
 
 
 @beartype
-def _rust_scalar_type(  # noqa: PLR0911
+def _rust_scalar_type(
     *,
     data: Scalar,
     date_type: str,
@@ -163,23 +165,24 @@ def _rust_scalar_type(  # noqa: PLR0911
     """Return the Rust type annotation for a scalar value."""
     match data:
         case bool():
-            return "bool"
+            result = "bool"
         case int():
-            return _rust_integer_type(value=data)
+            result = _rust_integer_type(value=data)
         case float():
-            return "f64"
-        case str():
-            return "&str"
-        case bytes():
-            return "&str"
+            result = "f64"
+        case str() | bytes():
+            result = "&str"
         case datetime.datetime():
-            return datetime_type
+            result = datetime_type
         case datetime.date():
-            return date_type
+            result = date_type
+        case datetime.time():
+            result = "&str"
         case None:
-            return "Option<()>"
+            result = "Option<()>"
         case _ as unreachable:
             assert_never(unreachable)
+    return result
 
 
 @beartype
@@ -289,7 +292,6 @@ def _format_typed_declaration(
     datetime_type: str,
     sequence_format_type_annotation: Callable[[str, int], str],
     sequence_supports_heterogeneity: bool,
-    set_format_type_annotation: Callable[[str], str],
     default_sequence_element_type: str,
     default_set_element_type: str,
 ) -> str:
@@ -310,13 +312,26 @@ def _format_typed_declaration(
         )
         raise IncompatibleFormatsError(msg)
 
+    def _reject_set(_element_type: str) -> str:
+        """Reject set data for ``CONST`` / ``STATIC``.
+
+        Rust's ``HashSet::from`` and ``BTreeSet::from`` are runtime
+        calls, so neither produces a constant-expression initializer.
+        """
+        msg = (
+            f"Rust {keyword.upper()} requires a constant-expression "
+            f"initializer, but the set format produces a runtime "
+            f"::from([…]) call which is not a constant expression."
+        )
+        raise IncompatibleFormatsError(msg)
+
     type_annotation = _rust_type_annotation(
         data=data,
         date_type=date_type,
         datetime_type=datetime_type,
         sequence_format_type_annotation=(sequence_format_type_annotation),
         sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
-        set_format_type_annotation=set_format_type_annotation,
+        set_format_type_annotation=_reject_set,
         dict_format_type_annotation=_reject_dict,
         default_sequence_element_type=default_sequence_element_type,
         default_set_element_type=default_set_element_type,
@@ -429,7 +444,7 @@ class _VariantSignature:
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex  # noqa: PLR0911
+def _heterogeneous_variant_for_scalar(  # noqa: C901  # pylint: disable=too-complex
     *,
     value: Scalar,
     date_type: str,
@@ -443,41 +458,47 @@ def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex  # noqa: P
     """
     match value:
         case bool():
-            return _VariantSignature(name="Bool", inner_type="bool")
+            signature = _VariantSignature(name="Bool", inner_type="bool")
         case int():
             int_type = _rust_integer_type(value=value)
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name=int_type.upper(),
                 inner_type=int_type,
             )
         case float():
-            return _VariantSignature(name="F64", inner_type="f64")
+            signature = _VariantSignature(name="F64", inner_type="f64")
         case str():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name="Str",
                 inner_type="&'static str",
             )
         case bytes():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name="Bytes",
                 inner_type="&'static str",
             )
         case datetime.datetime() if datetime_type in {"i32", "i64", "i128"}:
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name=datetime_type.upper(),
                 inner_type=datetime_type,
             )
         case datetime.datetime():
-            return _VariantSignature(
+            signature = _VariantSignature(
                 name="DateTime",
                 inner_type=datetime_type,
             )
         case datetime.date():
-            return _VariantSignature(name="Date", inner_type=date_type)
+            signature = _VariantSignature(name="Date", inner_type=date_type)
+        case datetime.time():
+            signature = _VariantSignature(
+                name="Time",
+                inner_type="&'static str",
+            )
         case None:
-            return _VariantSignature(name="Null", inner_type=None)
+            signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
             assert_never(unreachable)
+    return signature
 
 
 @dataclasses.dataclass(frozen=True)
@@ -591,6 +612,22 @@ def _build_tagged_enum_preamble(
     return _preamble
 
 
+@beartype
+def _rust_type_var(*, index: int) -> str:
+    """Return a unique uppercase identifier for a type parameter.
+
+    Indices ``0``..``25`` map to ``A``..``Z``; higher indices append a
+    numeric suffix (``A1``..``Z1``, ``A2``..``Z2``, ...) so that
+    27-or-more parameter stubs do not overflow the alphabet into
+    non-letter ASCII like ``[``.
+    """
+    letter = chr(ord("A") + index % 26)
+    group = index // 26
+    if group == 0:
+        return letter
+    return f"{letter}{group}"
+
+
 def _rust_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -600,7 +637,7 @@ def _rust_call_stub(
 ) -> tuple[str, ...]:
     """Return Rust stub declarations for a call name."""
     # Use generic type parameters so any argument type is accepted.
-    type_vars = [chr(ord("A") + i) for i in range(len(params))]
+    type_vars = [_rust_type_var(index=i) for i in range(len(params))]
     generic_decl = ", ".join(type_vars)
     if len(parts) == 1:
         param_list = ", ".join(
@@ -691,6 +728,8 @@ class Rust(metaclass=LanguageCls):
     pygments_name = "rust"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -699,10 +738,18 @@ class Rust(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = True
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -999,7 +1046,6 @@ class Rust(metaclass=LanguageCls):
                     sequence_supports_heterogeneity=(
                         sequence_supports_heterogeneity
                     ),
-                    set_format_type_annotation=set_format_type_annotation,
                     default_sequence_element_type=(
                         default_sequence_element_type
                     ),
@@ -1443,14 +1489,18 @@ class Rust(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1462,7 +1512,7 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1560,6 +1610,11 @@ class Rust(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

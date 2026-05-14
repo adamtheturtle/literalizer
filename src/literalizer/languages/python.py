@@ -48,6 +48,7 @@ from literalizer._formatters.format_strings import (
     format_string_raw_python,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -84,7 +85,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._preamble import HeterogeneousElements
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -128,6 +129,22 @@ def _format_datetime_python(
 
 
 @beartype
+def _format_time_python(value: datetime.time) -> str:
+    """Format a time as a Python ``datetime.time(...)`` constructor
+    call.
+    """
+    parts = [
+        f"hour={value.hour}",
+        f"minute={value.minute}",
+        f"second={value.second}",
+    ]
+    if value.microsecond:
+        parts.append(f"microsecond={value.microsecond}")
+    args = ", ".join(parts)
+    return f"datetime.time({args})"
+
+
+@beartype
 def _format_bytes_python(value: bytes) -> str:
     """Format bytes as a Python ``bytes`` literal."""
     return repr(value)
@@ -165,6 +182,7 @@ def _format_variable_declaration(
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
     sequence_hint: str,
     set_hint: str,
     dict_hint: str,
@@ -188,6 +206,7 @@ def _format_variable_declaration(
             bytes_hint=bytes_hint,
             date_hint=date_hint,
             datetime_hint=datetime_hint,
+            time_hint=time_hint,
             sequence_hint=sequence_hint,
             set_hint=set_hint,
             dict_hint=dict_hint,
@@ -210,6 +229,7 @@ def _format_inline_type_hint_declaration(
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
     sequence_hint: str,
     set_hint: str,
     dict_hint: str,
@@ -225,6 +245,7 @@ def _format_inline_type_hint_declaration(
         bytes_hint=bytes_hint,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
+        time_hint=time_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
         dict_hint=dict_hint,
@@ -298,35 +319,74 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
     has_ordered = False
     for elem in elements:
         match elem:
-            case ordereddict() | OrderedDict():
-                has_ordered = True
-                ordered_vals.extend(elem.values())  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
             case dict():
-                has_plain = True
-                plain_vals.extend(elem.values())
+                is_ordered = isinstance(elem, (ordereddict, OrderedDict))
+                target = ordered_vals if is_ordered else plain_vals
+                target.extend(elem.values())
+                if is_ordered:
+                    has_ordered = True
+                else:
+                    has_plain = True
             case _:
                 non_dict.append(elem)
     merged: list[Value] = list(non_dict)
     if has_plain:
-        merged.append(
-            {str(object=i): v for i, v in enumerate(iterable=plain_vals)}
-        )
+        plain_repr: dict[Scalar, Value] = {
+            str(object=i): v for i, v in enumerate(iterable=plain_vals)
+        }
+        merged.append(plain_repr)
     if has_ordered:
-        merged.append(
-            OrderedDict(
-                {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
-            )
-        )
+        ordered_repr: dict[Scalar, Value] = {
+            str(object=i): v for i, v in enumerate(iterable=ordered_vals)
+        }
+        merged.append(OrderedDict(ordered_repr))
     return merged
 
 
 @beartype
-def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _python_scalar_hint(  # pylint: disable=too-complex
+    *,
+    data: Scalar,
+    bytes_hint: str,
+    date_hint: str,
+    datetime_hint: str,
+    time_hint: str,
+) -> str:
+    """Derive a Python type hint for a scalar value."""
+    # Order matters: datetime before date (datetime is a date subclass),
+    # bool before int (bool is an int subclass).
+    match data:
+        case bool():
+            hint = "bool"
+        case int():
+            hint = "int"
+        case float():
+            hint = "float"
+        case str():
+            hint = "str"
+        case bytes():
+            hint = bytes_hint
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = time_hint
+        case None:
+            hint = "None"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _python_type_hint(
     *,
     data: Value,
     bytes_hint: str,
     date_hint: str,
     datetime_hint: str,
+    time_hint: str,
     sequence_hint: str,
     set_hint: str,
     dict_hint: str,
@@ -344,6 +404,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         bytes_hint=bytes_hint,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
+        time_hint=time_hint,
         sequence_hint=sequence_hint,
         set_hint=set_hint,
         dict_hint=dict_hint,
@@ -354,25 +415,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         join_union=join_union,
     )
 
-    # Order matters: datetime before date (datetime is a date subclass),
-    # bool before int (bool is an int subclass).
     match data:
-        case bool():
-            return "bool"
-        case int():
-            return "int"
-        case float():
-            return "float"
-        case str():
-            return "str"
-        case bytes():
-            return bytes_hint
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "None"
         case dict():
             outer = (
                 "OrderedDict"
@@ -388,7 +431,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 default_type=default_dict_value_type,
                 join_union=join_union,
             )
-            return f"{outer}[{key_hint}, {val_union}]"
+            hint = f"{outer}[{key_hint}, {val_union}]"
         case set():
             elem_union = _collection_element_union(
                 elements=list(data),
@@ -398,7 +441,7 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 default_type=default_set_element_type,
                 join_union=join_union,
             )
-            return f"{set_hint}[{elem_union}]"
+            hint = f"{set_hint}[{elem_union}]"
         case list():
             elem_union = _collection_element_union(
                 elements=data,
@@ -408,11 +451,20 @@ def _python_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
                 default_type=default_sequence_element_type,
                 join_union=join_union,
             )
-            if sequence_hint.casefold() == "tuple":
-                return f"{sequence_hint}[{elem_union}, ...]"
-            return f"{sequence_hint}[{elem_union}]"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = (
+                f"{sequence_hint}[{elem_union}, ...]"
+                if sequence_hint.casefold() == "tuple"
+                else f"{sequence_hint}[{elem_union}]"
+            )
+        case _:
+            hint = _python_scalar_hint(
+                data=data,
+                bytes_hint=bytes_hint,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                time_hint=time_hint,
+            )
+    return hint
 
 
 @beartype
@@ -645,6 +697,8 @@ class Python(metaclass=LanguageCls):
     pygments_name = "python"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = True
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -653,10 +707,18 @@ class Python(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = True
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -808,6 +870,7 @@ class Python(metaclass=LanguageCls):
             bytes_hint: str,
             date_hint: str,
             datetime_hint: str,
+            time_hint: str,
             sequence_hint: str,
             set_hint: str,
             dict_hint: str,
@@ -839,6 +902,7 @@ class Python(metaclass=LanguageCls):
                         bytes_hint=bytes_hint,
                         date_hint=date_hint,
                         datetime_hint=datetime_hint,
+                        time_hint=time_hint,
                         sequence_hint=sequence_hint,
                         set_hint=set_hint,
                         dict_hint=dict_hint,
@@ -870,6 +934,7 @@ class Python(metaclass=LanguageCls):
                     bytes_hint=bytes_hint,
                     date_hint=date_hint,
                     datetime_hint=datetime_hint,
+                    time_hint=time_hint,
                     sequence_hint=sequence_hint,
                     set_hint=set_hint,
                     dict_hint=dict_hint,
@@ -1214,14 +1279,18 @@ class Python(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1233,7 +1302,7 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1314,6 +1383,11 @@ class Python(metaclass=LanguageCls):
                 utc_tzinfo_expr="datetime.timezone.utc",
             )
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return _format_time_python
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -1397,6 +1471,7 @@ class Python(metaclass=LanguageCls):
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,
             datetime_hint=self.datetime_format.type_hint,
+            time_hint="datetime.time",
             sequence_hint=sequence_hint,
             set_hint=set_hint,
             dict_hint=dict_hint,
@@ -1413,6 +1488,7 @@ class Python(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("import datetime",)},
         )
 
     @cached_property

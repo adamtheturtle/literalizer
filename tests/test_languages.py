@@ -5,26 +5,29 @@ import datetime
 import json
 import re
 import textwrap
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import pytest
 
 from literalizer import (
+    BothVariableForms,
+    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
     literalize_call,
 )
-from literalizer._language import (
-    StubReturn,
-)
+from literalizer._language import Language, LanguageCls, StubReturn
 from literalizer.exceptions import (
     NullInCollectionError,
     UnrepresentableSpecialFloatError,
 )
 from literalizer.languages import (
+    ALL_LANGUAGES,
     Cobol,
+    CSharp,
     Dart,
+    Dhall,
     Fortran,
     FSharp,
     Gleam,
@@ -32,12 +35,22 @@ from literalizer.languages import (
     Haskell,
     Java,
     Jsonnet,
+    Kotlin,
     Matlab,
+    Nim,
     Python,
     R,
+    Raku,
     Rust,
     Sml,
+    Swift,
+    TypeScript,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from literalizer._types import Scalar, ValueInput
 
 COBOL = Cobol(
     date_format=Cobol.date_formats.ISO,
@@ -170,32 +183,22 @@ def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
     )
 
 
-_COLLAPSED_DART_MAP_COUNT = 2
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _DartSkipNulls(Dart):
-    """Dart subclass that skips null dict values.
-
-    The widening bug in
-    :func:`~literalizer._literalize._compute_dict_open_override` only
-    manifests when a language combines a value-type-sensitive
-    ``dict_open`` (produced by
-    :func:`~literalizer._formatters.collection_openers.typed_dict_open`)
-    with ``skip_null_dict_values=True``.  No production language pairs
-    those two today — the ``typed_dict_open`` languages (Dart, CSharp,
-    Kotlin, Scala, Go) all keep nulls, while the
-    ``skip_null_dict_values=True`` languages (Java, Lua, Toml, Wren)
-    all use ``fixed_dict_open`` whose constant opener never triggers
-    widening.
-
-    That is also why these tests live here rather than in the
-    ``tests/integration/cases/`` golden-file suite, which iterates over
-    :data:`~literalizer.languages.ALL_LANGUAGES` and has no way to
-    inject a test-only language.
-    """
-
-    skip_null_dict_values: ClassVar[bool] = True
+# The widening branch in
+# :func:`~literalizer._literalize._compute_dict_open_override` only
+# fires when a language combines a value-type-sensitive ``dict_open``
+# (from
+# :func:`~literalizer._formatters.collection_openers.typed_dict_open`)
+# with ``skip_null_dict_values=True``. No production language pairs
+# those two: the ``typed_dict_open`` languages (Dart, CSharp, Kotlin,
+# Scala, Go) all keep nulls, while the ``skip_null_dict_values=True``
+# languages (Java, Lua, Toml, Wren) all use ``fixed_dict_open`` whose
+# constant opener never triggers widening. Each test below therefore
+# defines a Dart subclass inline rather than reusing a production
+# language or a shared test helper; that is also why these tests live
+# here rather than in the ``tests/integration/cases/`` golden-file
+# suite, which iterates over
+# :data:`~literalizer.languages.ALL_LANGUAGES` and has no way to
+# inject a test-only language.
 
 
 def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
@@ -206,11 +209,18 @@ def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
     dicts whose remaining value types diverge (``int`` vs. ``String``).
     The override must widen so both dicts share a ``dynamic`` opener.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null, "b": 1}, {"a": "hello", "b": null}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
@@ -233,11 +243,18 @@ def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
     override must widen both to the fallback so the sequence is
     consistent.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null}, {"x": 1}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
@@ -260,18 +277,28 @@ def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
     fallback ``<String, dynamic>{`` opener on their own, so widening
     would be a no-op.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null}, {"b": null}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
     )
 
-    assert (
-        result.code.count("<String, dynamic>{}") == _COLLAPSED_DART_MAP_COUNT
+    assert result.code == (
+        "<Map<String, dynamic>>[\n"
+        "    <String, dynamic>{},\n"
+        "    <String, dynamic>{},\n"
+        "]"
     )
 
 
@@ -279,14 +306,21 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
     """No override is needed when filtered dicts all share one opener.
 
     Null masks hide keys ``a`` and ``b`` in each dict, leaving only
-    ``{"n": 1}`` and ``{"n": 2}`` — both ``<String, int>``.  Widening
+    ``{"n": 1}`` and ``{"n": 2}``, both ``<String, int>``.  Widening
     would be redundant; each dict renders with its own inferred opener.
     """
+
+    @dataclasses.dataclass(frozen=True, kw_only=True)
+    class DartSkipNulls(Dart):
+        """Dart variant that drops null dict values."""
+
+        skip_null_dict_values: ClassVar[bool] = True
+
     source = '[{"a": null, "n": 1}, {"b": null, "n": 2}]'
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=_DartSkipNulls(),
+        language=DartSkipNulls(),
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=None,
@@ -383,54 +417,6 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
         "    fentry('host', fstr('it''s here')), &  ! a comment\n"
         "    fentry('port', fint(80_int64)) &  ! another\n"
         "])"
-    )
-
-
-def test_fortran_wrap_in_file_no_variable_form() -> None:
-    """``literalize(wrap_in_file=True)`` without a variable form omits
-    the program's ``contains`` section so the Fortran output stays
-    valid.
-    """
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=Fortran(module_name="main"),
-        wrap_in_file=True,
-        variable_form=None,
-    )
-    assert result.code == (
-        "module fval_m\n"
-        "  use, intrinsic :: iso_fortran_env, only: int64\n"
-        "  implicit none\n"
-        "  type :: fval_t\n"
-        "    integer :: t = 0\n"
-        "  end type fval_t\n"
-        "contains\n"
-        "  function fnull() result(v); type(fval_t) :: v; end function\n"
-        "  function fbool(b) result(v); logical, intent(in) :: b;"
-        " type(fval_t) :: v; end function\n"
-        "  function fint(n) result(v); integer(kind=int64), intent(in) :: n;"
-        " type(fval_t) :: v; end function\n"
-        "  function freal(x) result(v); real, intent(in) :: x;"
-        " type(fval_t) :: v; end function\n"
-        "  function fstr(s) result(v); character(len=*), intent(in) :: s;"
-        " type(fval_t) :: v; end function\n"
-        "  function flist(a) result(v); type(fval_t), intent(in) :: a(:);"
-        " type(fval_t) :: v; end function\n"
-        "  function fmap(a) result(v); type(fval_t), intent(in) :: a(:);"
-        " type(fval_t) :: v; end function\n"
-        "  function fset(a) result(v); type(fval_t), intent(in) :: a(:);"
-        " type(fval_t) :: v; end function\n"
-        "  function fentry(k, u) result(v);"
-        " character(len=*), intent(in) :: k;"
-        " type(fval_t), intent(in) :: u;"
-        " type(fval_t) :: v; end function\n"
-        "end module fval_m\n"
-        "program main\n"
-        "    use fval_m\n"
-        "    implicit none\n"
-        "    42_int64\n"
-        "end program main"
     )
 
 
@@ -702,3 +688,416 @@ def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
         (),
     )
     assert result == "local x = 1;\n[x]"
+
+
+def test_dhall_quoted_dict_key() -> None:
+    """Dhall backtick-label validation decodes simple escapes."""
+    result = literalize(
+        source='{"a\\"b": 1}\n',
+        input_format=InputFormat.YAML,
+        language=Dhall(),
+        pre_indent_level=0,
+        include_delimiters=True,
+    )
+
+    assert result.code == '{\n  `a"b` = +1,\n}'
+
+
+def test_python_dotted_target_function_renders() -> None:
+    """Dotted ``target_function`` succeeds when the language supports
+    it.
+    """
+    result = literalize_call(
+        source="[[1]]",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="module.fn",
+        parameter_names=["a"],
+    )
+    assert result.code == "module.fn(a=1)"
+
+
+def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
+    """Cases legal in the language but absent from the idiomatic
+    preference list are accepted and rendered.
+
+    Python's ``identifier_cases`` lists only ``SNAKE``, ``UPPER_SNAKE``,
+    and ``PASCAL``; ``CAMEL`` is non-idiomatic but still a syntactically
+    legal Python identifier.  Validation uses ``supported_ref_cases``,
+    which exposes ``CAMEL``.
+    """
+    assert Python().identifier_cases == (
+        IdentifierCase.SNAKE,
+        IdentifierCase.UPPER_SNAKE,
+        IdentifierCase.PASCAL,
+    )
+    assert Python().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+        },
+    )
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_case=IdentifierCase.CAMEL,
+    )
+
+    assert result.declaration_code == "userObj"
+
+
+def test_raku_kebab_ref_case_renders() -> None:
+    """Kebab-friendly languages render kebab-form refs as legal
+    symbols.
+    """
+    assert Raku().supported_ref_cases == frozenset(
+        {
+            IdentifierCase.SNAKE,
+            IdentifierCase.UPPER_SNAKE,
+            IdentifierCase.PASCAL,
+            IdentifierCase.CAMEL,
+            IdentifierCase.KEBAB,
+        },
+    )
+
+    result = literalize(
+        source='{"$ref": "user_obj"}',
+        input_format=InputFormat.JSON,
+        language=Raku(),
+        ref_case=IdentifierCase.KEBAB,
+    )
+
+    assert result.declaration_code == "$user-obj"
+
+
+def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
+    """Haskell unknown refs do not contribute marker dict types."""
+    result = literalize_call(
+        source='[[{"$ref": "myList"}]]',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        ref_values={},
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
+    """Haskell strips unknown top-level refs even when ref_values is
+    set.
+    """
+    result = literalize_call(
+        source='{"$ref": "myList"}',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        per_element=False,
+        ref_values={"other": 1},
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
+    """Haskell unknown nested refs do not shape preamble type
+    inference.
+    """
+    inner_arg: Mapping[Scalar, ValueInput] = {"nested": "value"}
+    known_arg: list[ValueInput] = [1, inner_arg]
+    ref_values: dict[str, ValueInput] = {"known": known_arg}
+    result = literalize_call(
+        source=(
+            '[[{"$ref": "known"}, {"$ref": "missing"}, '
+            '{"inner": {"$ref": "missing"}}]]'
+        ),
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["a", "b", "c"],
+        ref_values=ref_values,
+    )
+
+    assert result.body_preamble == (
+        "data Val = HInt Integer | HStr String | HList [Val] | HMap "
+        "[(String, Val)]",
+        "instance Num Val where\n"
+        "    fromInteger = HInt\n"
+        '    _ + _ = error "not implemented"\n'
+        '    _ * _ = error "not implemented"\n'
+        '    abs _ = error "not implemented"\n'
+        '    signum _ = error "not implemented"\n'
+        "    negate (HInt n) = HInt (negate n)\n"
+        '    negate _ = error "not implemented"',
+    )
+
+
+def test_haskell_without_ref_values_strips_top_level_ref() -> None:
+    """Haskell's historical top-level ref strip behavior is retained."""
+    result = literalize_call(
+        source='{"$ref": "myList"}',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+        per_element=False,
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_haskell_without_ref_values_strips_per_element_ref() -> None:
+    """Haskell per-element preamble inference skips ref marker
+    elements.
+    """
+    result = literalize_call(
+        source='[{"$ref": "myList"}]',
+        input_format=InputFormat.JSON,
+        language=Haskell(),
+        target_function="process",
+        parameter_names=["data"],
+    )
+
+    assert result.types_present == frozenset({list})
+    assert result.body_preamble == ("data Val = HList [Val]",)
+
+
+def test_python_variable_names_supported_renders() -> None:
+    """``variable_form`` succeeds for Python's variable-name support."""
+    result = literalize(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=BothVariableForms(name="x"),
+        wrap_in_file=True,
+    )
+    assert result.code == "x = 42\nx = 42"
+
+
+_TIME_COVERAGE_SOURCES = (
+    "starts_at = 09:30:00\n",
+    "starts_at = 09:30:15.123456\n",
+)
+
+
+_SORTED_LANGUAGES: list[LanguageCls] = sorted(
+    ALL_LANGUAGES,
+    key=lambda c: c.__name__,
+)
+
+
+@pytest.mark.parametrize(
+    argnames="lang_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+@pytest.mark.parametrize(argnames="source", argvalues=_TIME_COVERAGE_SOURCES)
+def test_datetime_time_renders(lang_cls: LanguageCls, source: str) -> None:
+    """Every language renders a ``datetime.time`` value without crashing.
+
+    Coverage shim for the per-language ``format_time`` and
+    ``datetime.time`` scalar-hint arms.  Delete once issue #2230 lands
+    per-language golden-file cases for time scalars.
+    """
+    spec = lang_cls()
+    variable_form = (
+        NewVariable(name="my_data") if spec.supports_variable_names else None
+    )
+    wrap_in_file = (
+        variable_form is not None or spec.supports_no_variable_wrap_in_file
+    )
+    result = literalize(
+        source=source,
+        input_format=InputFormat.TOML,
+        language=spec,
+        variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
+    )
+    assert result.code
+
+
+def test_datetime_time_csharp_typed_decl_renders() -> None:
+    """C# emits ``TimeOnly`` in a typed declaration for a
+    ``datetime.time``.
+
+    Covers the ``case datetime.time(): return "TimeOnly"`` arm of
+    ``_csharp_scalar_type``, which only runs when modifiers force a
+    typed declaration.  Delete with the rest of the time-coverage
+    shims once issue #2230 lands.
+    """
+    result = literalize(
+        source="starts_at = 09:30:00\n",
+        input_format=InputFormat.TOML,
+        language=CSharp(),
+        variable_form=NewVariable(
+            name="x",
+            modifiers=frozenset({CSharp.modifiers.PUBLIC}),
+        ),
+        wrap_in_file=True,
+    )
+    assert "TimeOnly" in result.code
+
+
+_ALWAYS_TYPE_HINT_LANGUAGES: tuple[tuple[str, Language], ...] = (
+    (
+        "Dart",
+        Dart(
+            variable_type_hints=Dart.variable_type_hints_formats.ALWAYS,
+        ),
+    ),
+    (
+        "Java",
+        Java(
+            variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
+        ),
+    ),
+    (
+        "Kotlin",
+        Kotlin(
+            variable_type_hints=Kotlin.variable_type_hints_formats.ALWAYS,
+        ),
+    ),
+    (
+        "Python",
+        Python(
+            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
+        ),
+    ),
+    (
+        "Swift",
+        Swift(
+            variable_type_hints=Swift.variable_type_hints_formats.ALWAYS,
+        ),
+    ),
+    (
+        "TypeScript",
+        TypeScript(
+            variable_type_hints=(
+                TypeScript.variable_type_hints_formats.ALWAYS
+            ),
+        ),
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    argnames="spec",
+    argvalues=[s for _, s in _ALWAYS_TYPE_HINT_LANGUAGES],
+    ids=[name for name, _ in _ALWAYS_TYPE_HINT_LANGUAGES],
+)
+def test_datetime_time_always_type_hint_renders(spec: Language) -> None:
+    """Languages with ALWAYS variable_type_hints render time scalars.
+
+    Covers the ``case datetime.time():`` arm of each language's
+    scalar-hint match (and Python's ``time_hint`` propagation).
+    Delete with the rest of the time-coverage shims once issue #2230
+    lands.
+    """
+    result = literalize(
+        source="starts_at = 09:30:00\n",
+        input_format=InputFormat.TOML,
+        language=spec,
+        variable_form=NewVariable(name="x"),
+        wrap_in_file=True,
+    )
+    assert result.code
+
+
+_HETEROGENEOUS_VARIANT_LANGUAGES: tuple[tuple[str, Language], ...] = (
+    (
+        "Rust",
+        Rust(heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM),
+    ),
+    (
+        "Dhall",
+        Dhall(
+            heterogeneous_strategy=Dhall.heterogeneous_strategies.UNION_TYPE,
+        ),
+    ),
+    (
+        "Nim",
+        Nim(
+            heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
+        ),
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    argnames="spec",
+    argvalues=[s for _, s in _HETEROGENEOUS_VARIANT_LANGUAGES],
+    ids=[name for name, _ in _HETEROGENEOUS_VARIANT_LANGUAGES],
+)
+def test_datetime_time_heterogeneous_variant_renders(spec: Language) -> None:
+    """Wrap-as-variant strategies emit a Time variant for
+    ``datetime.time``.
+
+    Covers the ``case datetime.time():`` arm of each language's
+    heterogeneous-variant signature builder.  Delete with the rest of
+    the time-coverage shims once issue #2230 lands.
+    """
+    result = literalize(
+        source='mixed = [09:30:00, "hello"]\n',
+        input_format=InputFormat.TOML,
+        language=spec,
+    )
+    assert "Time" in result.code
+
+
+def test_datetime_time_rust_lazy_static_renders() -> None:
+    """Rust LAZY_STATIC infers ``&str`` for a ``datetime.time`` value.
+
+    Covers the ``case datetime.time():`` arm of ``_rust_scalar_type``,
+    which only runs when a typed declaration walks scalar values.
+    Delete with the rest of the time-coverage shims once issue #2230
+    lands.
+    """
+    result = literalize(
+        source="val = 09:30:00\n",
+        input_format=InputFormat.TOML,
+        language=Rust(declaration_style=Rust.declaration_styles.LAZY_STATIC),
+        variable_form=NewVariable(name="X"),
+        wrap_in_file=True,
+    )
+    assert "HashMap<&str, &str>" in result.code
+
+
+def test_format_time_csharp_exact_millisecond_renders() -> None:
+    """``new TimeOnly(...)`` handles times whose microseconds are exact ms.
+
+    Covers the millisecond-only branch of ``_time_only_args`` where
+    ``microsecond % 1000 == 0``.  Delete with the rest of the
+    time-coverage shims once issue #2230 lands.
+    """
+    result = literalize(
+        source="starts_at = 09:30:15.123000\n",
+        input_format=InputFormat.TOML,
+        language=CSharp(),
+    )
+    assert "new TimeOnly(9, 30, 15, 123)" in result.code
+
+
+def test_format_time_local_time_of_with_microseconds_exact_ms() -> None:
+    """``LocalTime.of(...)`` handles times whose microseconds are exact ms.
+
+    Covers the ``microseconds`` branch of ``_time_only_args`` and the
+    nanosecond-output branch of ``format_time_local_time_of``.  Delete
+    with the rest of the time-coverage shims once issue #2230 lands.
+    """
+    result = literalize(
+        source="starts_at = 09:30:15.123000\n",
+        input_format=InputFormat.TOML,
+        language=Java(),
+        variable_form=NewVariable(name="x"),
+        wrap_in_file=True,
+    )
+    assert "LocalTime.of(9, 30, 15, 123000000)" in result.code

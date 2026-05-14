@@ -74,22 +74,45 @@ jobs:
           luaVersion: '5.4'
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+      - name: Install apt packages
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: tcl gforth guile-3.0
+          version: 1.0
+      - name: Install Dhall
+        run: |-
+          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
+            | tar -xj
+          echo "$PWD/bin" >> "$GITHUB_PATH"
+      - name: Install Wren CLI
+        run: |
+          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+          unzip -o /tmp/wren.zip -d /tmp/wren
+          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          # Pinned to ``Python.language_version`` (``PY_3_12``) in
+          # ``src/literalizer/languages/python.py``; keep this version
+          # in sync with that default so the Python fixture gate runs
+          # under the declared minimum interpreter.
+          python-version: '3.12'
 
       - name: Lint Bash
         run: |-
-          find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash
+          find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
           xargs -0 bash -n < /tmp/files-bash
           xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-bash
 
       - name: Lint Ruby
         run: |-
-          find tests/integration/cases -name '*.rb' -print0 > /tmp/files-ruby
+          find tests/integration/cases -name '*.rb' -print0 > /tmp/files-ruby && test -s /tmp/files-ruby
           xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-ruby
           xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-ruby
 
       - name: Lint JavaScript
         run: |-
-          find tests/integration/cases -name '*.js' -print0 > /tmp/files-js
+          find tests/integration/cases -name '*.js' -print0 > /tmp/files-js && test -s /tmp/files-js
           xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-js
           xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
 
@@ -100,12 +123,12 @@ jobs:
       # both fail here.
       - name: Lint Java
         run: |-
-          find tests/integration/cases -name '*.java' -print0 > /tmp/files-java
+          find tests/integration/cases -name '*.java' -print0 > /tmp/files-java && test -s /tmp/files-java
           xargs -0 java CheckJavaSyntax.java < /tmp/files-java
 
       - name: Lint Php
         run: |-
-          find tests/integration/cases -name '*.php' -print0 > /tmp/files-php
+          find tests/integration/cases -name '*.php' -print0 > /tmp/files-php && test -s /tmp/files-php
           xargs -0 php -l < /tmp/files-php
           xargs -0 -P "$(nproc)" -n1 php < /tmp/files-php
 
@@ -114,9 +137,15 @@ jobs:
       # The run step reuses the same trick: one pwsh process iterates
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
+      - name: Lint Python
+        run: |-
+          find tests/integration/cases -name '*.py' -print0 > /tmp/files-python
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m py_compile < /tmp/files-python
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python < /tmp/files-python
+
       - name: Lint PowerShell
         run: |-
-          find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1
+          find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1 && test -s /tmp/files-ps1
           pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1 < /tmp/files-ps1
 
       - name: Run PowerShell files
@@ -131,13 +160,11 @@ jobs:
       # current file. Compile each file from inside a private tmpdir so
       # the stale .mod is not on the module search path and parallel
       # runs cannot clobber each other's output.
-      # The Fortran generator emits Fortran 2008 features (e.g. ``int64``
-      # from ``iso_fortran_env``) even though ``Fortran.language_version``
-      # in ``src/literalizer/languages/fortran.py`` is ``V2003``; tracked
-      # in https://github.com/adamtheturtle/literalizer/issues/1919.
+      # ``-std=f2008`` matches ``Fortran.language_version`` in
+      # ``src/literalizer/languages/fortran.py``; keep them in sync.
       - name: Lint Fortran
         run: |-
-          find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran
+          find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran && test -s /tmp/files-fortran
           xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
@@ -151,14 +178,62 @@ jobs:
 
       - name: Lint Lua
         run: |-
-          find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua
+          find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua && test -s /tmp/files-lua
           xargs -0 luac -p < /tmp/files-lua
           xargs -0 -P "$(nproc)" -n1 lua < /tmp/files-lua
 
       - name: Lint Nix
         run: |-
-          find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix
+          find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix && test -s /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
+
+      - name: Lint Tcl
+        run: |-
+          find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl && test -s /tmp/files-tcl
+          xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
+
+      - name: Lint Forth
+        run: |-
+          find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth && test -s /tmp/files-forth
+          xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
+
+      # Invoke ``guile-3.0`` directly rather than ``guile`` because
+      # cache-apt-pkgs-action does not replay the package's
+      # ``update-alternatives`` postinst on cache hit, so ``/usr/bin/guile``
+      # is missing.
+      - name: Lint Scheme
+        run: |-
+          find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme && test -s /tmp/files-scheme
+          xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
+
+      - name: Lint Dhall
+        run: |-
+          find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall && test -s /tmp/files-dhall
+          cat > /tmp/check-dhall.sh <<'SCRIPT'
+          dhall < "$1" > /dev/null
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
+
+      - name: Lint Wren
+        run: |-
+          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren && test -s /tmp/files-wren
+          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
+
+      # Each fixture defines its own main, so compile and run directly.
+      # The build-and-run step also surfaces any syntax errors, so a
+      # separate `-fsyntax-only` pass would be redundant.
+      # ``-std=c99`` matches ``C.language_version`` in
+      # ``src/literalizer/languages/c.py``; keep them in sync.
+      - name: Lint C
+        run: |-
+          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c && test -s /tmp/files-c
+          cat > /tmp/run-c.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
+          "$tmpdir/run" || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
 
   # Keep Odin isolated.  This fixture set is good at finding compiler
   # instability because many generated files combine [dynamic]any,
@@ -179,17 +254,21 @@ jobs:
   # 2. A serial build segfaulted, then the retry spawned an odin process
   #    that never exited; GitHub Actions later killed it as an orphan.
   #
-  # The matrix puts each shard on a different runner so no two odin
-  # processes share a kernel.  Each shard then builds files serially.
+  # Files are run serially in a single job so no two odin processes
+  # share a kernel.
   lint-odin:
     runs-on: ubuntu-latest
-    # Normal shards finish in seconds.  If the compiler, setup action, or
+    # Normal runs finish in minutes.  If the compiler, setup action, or
     # cleanup hangs, stop this job promptly instead of leaving the
     # completion gate blocked until the workflow-wide timeout.
     timeout-minutes: 10
-    strategy:
-      matrix:
-        shard: [0, 1, 2, 3]
+    # Pinned: `release: latest` (dev-2026-05) crashes at runtime under
+    # `odin run .`, and the compiler itself segfaults on some fixtures
+    # under `odin build .`.  dev-2026-04 was the last release known to
+    # work with `odin run .`.  The same value tags every Odin fixture
+    # on disk (e.g. `Odin@dev-2026-04.odin`).
+    env:
+      ODIN_VERSION: dev-2026-04
     steps:
       - uses: actions/checkout@v6
         with:
@@ -198,11 +277,13 @@ jobs:
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Odin files
+          release: ${{ env.ODIN_VERSION }}
+      - name: Run Odin files
         run: |-
-          mapfile -d '' -t files < <(find tests/integration/cases -name '*.odin' -print0 | sort -z)
+          mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_VERSION")
           n=${#files[@]}
-          build_odin() {
+          test "$n" -gt 0
+          run_odin() {
             local src="$1"
             local wd
             wd=$(mktemp -d)
@@ -212,14 +293,14 @@ jobs:
             # transient segfaults, but without this timeout the retry can
             # hang forever and leave only "operation was canceled" plus
             # an orphan odin process in the Actions log.
-            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin build . -out:"$wd/prog" )
+            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin run . -out:"$wd/prog" )
           }
-          for (( i=${{ matrix.shard }}; i<n; i+=4 )); do
+          for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
-            # Print before building so a timeout log identifies the
+            # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
-            printf 'Building %s\n' "$src"
-            build_odin "$src" || build_odin "$src" || exit 1
+            printf 'Running %s\n' "$src"
+            run_odin "$src" || run_odin "$src" || exit 1
           done
 
   lint-roc:
@@ -237,65 +318,8 @@ jobs:
           sudo install /tmp/roc-nightly/roc /usr/local/bin/roc
       - name: Lint Roc
         run: |-
-          find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc
+          find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc && test -s /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
-
-  lint-forth:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install gforth
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gforth
-      - name: Lint Forth
-        run: |-
-          find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth
-          xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
-
-  lint-tcl:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install tcl
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends tcl
-      - name: Lint Tcl
-        run: |-
-          find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl
-          xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
-
-  lint-scheme:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install guile
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends guile-3.0
-      - name: Lint Scheme
-        run: |-
-          find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme
-          xargs -0 -P "$(nproc)" -I{} guile --no-auto-compile -s {} < /tmp/files-scheme
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
@@ -304,20 +328,19 @@ jobs:
   lint-matlab:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Use a prebuilt Octave image instead of `apt-get install octave`, which
+    # is slow (the Ubuntu package pulls a large dependency tree) and which
+    # cache-apt-pkgs-action could not reliably restore (liblapack.so.3 kept
+    # going missing even with the package listed explicitly).
+    container:
+      image: gnuoctave/octave:9.2.0
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install octave
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends octave
       - name: Lint Matlab
         run: |-
-          find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab
+          find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab && test -s /tmp/files-matlab
           xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
   lint-perl:
@@ -327,17 +350,16 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install Perl deps
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends cpanminus
-          sudo cpanm --notest DateTime
+      - name: Install cpanminus
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: cpanminus
+          version: 1.0
+      - name: Install Perl DateTime
+        run: sudo cpanm --notest DateTime
       - name: Lint Perl
         run: |-
-          find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl
+          find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl && test -s /tmp/files-perl
           xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-perl
           xargs -0 -P "$(nproc)" -n1 perl < /tmp/files-perl
 
@@ -356,12 +378,12 @@ jobs:
 
       - name: Lint Jsonnet
         run: |-
-          find tests/integration/cases -name '*.jsonnet' -print0 > /tmp/files-jsonnet
+          find tests/integration/cases -name '*.jsonnet' -print0 > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
           xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-jsonnet > /dev/null
 
       - name: Lint Hcl
         run: |-
-          find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl
+          find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl && test -s /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
 
   # Json5 + Norg + TypeScript syntax check. The Run-TypeScript and Elm
@@ -393,17 +415,17 @@ jobs:
 
       - name: Lint Json5
         run: |-
-          find tests/integration/cases -name '*.json5' -print0 > /tmp/files-json5
+          find tests/integration/cases -name '*.json5' -print0 > /tmp/files-json5 && test -s /tmp/files-json5
           xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-json5 > /dev/null
 
       - name: Lint Norg
         run: |-
-          find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg
+          find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg && test -s /tmp/files-norg
           xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
 
       - name: Lint TypeScript
         run: |-
-          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
+          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-ts
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
@@ -426,7 +448,7 @@ jobs:
 
       - name: Run TypeScript files
         run: |-
-          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts
+          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
 
   # Elm format + syntax check. Split from `lint-elm-run` so the two
@@ -456,7 +478,7 @@ jobs:
 
       - name: Lint Elm
         run: |-
-          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm
+          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
@@ -486,7 +508,7 @@ jobs:
 
       - name: Run Elm
         run: |-
-          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm
+          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           xargs -0 uv run --no-project python .github/scripts/run_elm.py < /tmp/files-elm
 
   # Fixture languages whose check is a small `uv run python ...` helper.
@@ -497,12 +519,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install apt packages for Ada
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends gnat
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: gnat
+          version: 1.0
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -511,7 +531,7 @@ jobs:
 
       - name: Lint Ada
         run: |-
-          find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada
+          find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada && test -s /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_ada_syntax.py < /tmp/files-ada
       - name: Run Ada files
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_ada.py
@@ -543,17 +563,17 @@ jobs:
       # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
         run: |-
-          find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam
+          find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam && test -s /tmp/files-occam
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_occam_syntax.py < /tmp/files-occam
 
       - name: Lint Toml
         run: |-
-          find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml
+          find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml && test -s /tmp/files-toml
           xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python .github/scripts/check_toml_syntax.py < /tmp/files-toml
 
       - name: Lint Yaml
         run: |-
-          find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0 > /tmp/files-yaml
+          find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0 > /tmp/files-yaml && test -s /tmp/files-yaml
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
 
   # .NET-hosted linters. Run host builds in parallel-looking sequential
@@ -588,12 +608,12 @@ jobs:
       # (e.g. undefined members on an unstubbed object) both fail here.
       - name: Lint CSharp
         run: |-
-          find tests/integration/cases -name '*.cs' -print0 > /tmp/files-cs
+          find tests/integration/cases -name '*.cs' -print0 > /tmp/files-cs && test -s /tmp/files-cs
           dotnet /tmp/lint-csharp/lint-csharp.dll < /tmp/files-cs
 
       - name: Lint VisualBasic
         run: |-
-          find tests/integration/cases -name '*.vb' -print0 > /tmp/files-vb
+          find tests/integration/cases -name '*.vb' -print0 > /tmp/files-vb && test -s /tmp/files-vb
           dotnet /tmp/lint-vb/lint-vb.dll < /tmp/files-vb
 
       # Generate an FSX driver that `#load`s every fixture, then
@@ -604,7 +624,7 @@ jobs:
       # bindings still execute at load time.
       - name: Lint FSharp
         run: |-
-          find tests/integration/cases \( -name '*.fs' -o -name '*.fsi' \) -print0 > /tmp/files-fs
+          find tests/integration/cases \( -name '*.fs' -o -name '*.fsi' \) -print0 > /tmp/files-fs && test -s /tmp/files-fs
           driver=$(mktemp -d)/driver.fsx
           while IFS= read -r -d '' f; do
             printf '#load "%s"\n' "$(realpath "$f")"
@@ -628,7 +648,7 @@ jobs:
       # so parallel builds don't clobber each other's output binary.
       - name: Lint Sml
         run: |-
-          find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml
+          find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml && test -s /tmp/files-sml
           cat > /tmp/run-sml.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -638,45 +658,13 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
 
-  lint-dhall:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Dhall
-        run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
-          echo "$PWD/bin" >> "$GITHUB_PATH"
-
-      - name: Lint Dhall
-        run: |-
-          find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall
-          cat > /tmp/check-dhall.sh <<'SCRIPT'
-          dhall < "$1" > /dev/null
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
-
-  lint-wren:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Install Wren CLI
-        run: |
-          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
-          unzip -o /tmp/wren.zip -d /tmp/wren
-          sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
-
-      - name: Lint Wren
-        run: |-
-          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren
-          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
-
   lint-elixir:
     runs-on: ubuntu-latest
+    # Every Elixir fixture on disk is tagged with this version (e.g.
+    # `Elixir@1.18.ex`); bumping the pin requires regenerating the
+    # fixtures so the tag stays in sync.
+    env:
+      ELIXIR_VERSION: '1.18'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -684,7 +672,7 @@ jobs:
       - name: Install Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.18'
+          elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: '27'
 
       # Fixtures only declare `defmodule Check` with a `def x` body, so
@@ -695,11 +683,16 @@ jobs:
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
-          find tests/integration/cases -name '*.ex' -print0 > /tmp/files-elixir
+          python3 -m tests.integration.list_fixtures .ex "$ELIXIR_VERSION" > /tmp/files-elixir && test -s /tmp/files-elixir
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
   lint-erlang:
     runs-on: ubuntu-latest
+    # Every Erlang fixture on disk is tagged with this OTP version
+    # (e.g. `Erlang@27.erl`); bumping the pin requires regenerating
+    # the fixtures so the tag stays in sync.
+    env:
+      OTP_VERSION: '27'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -707,7 +700,7 @@ jobs:
       - name: Install Erlang
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '27'
+          otp-version: ${{ env.OTP_VERSION }}
 
       # Compile every fixture in a single erlc invocation to pay the
       # BEAM VM startup cost once. Each fixture already carries a unique
@@ -717,11 +710,12 @@ jobs:
         env:
           ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
-          find tests/integration/cases -name '*.erl' -print0 > /tmp/files-erlang
+          python3 -m tests.integration.list_fixtures .erl "$OTP_VERSION" > /tmp/files-erlang && test -s /tmp/files-erlang
           mkdir -p "$ERLANG_FIXTURE_DIR"
           while IFS= read -r -d '' f; do
             dir=${f%/*}; dir=${dir##*/}
             stem=$(basename "$f" .erl)
+            stem="${stem%@*}"  # strip @version so filename matches -module(...)
             name="fixture_${dir,,}_${stem,,}"
             cp "$f" "$ERLANG_FIXTURE_DIR/$name.erl"
           done < /tmp/files-erlang
@@ -737,6 +731,7 @@ jobs:
           ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
         run: |-
           modules=$(find "$ERLANG_FIXTURE_DIR" -maxdepth 1 -name '*.beam' -printf '%f\n' | sed 's|\.beam$||' | paste -sd, -)
+          test -n "$modules"
           erl -noshell -pa "$ERLANG_FIXTURE_DIR" -eval "
             Run = fun(M) ->
                 try M:x(), ok
@@ -748,6 +743,11 @@ jobs:
 
   lint-gleam:
     runs-on: ubuntu-latest
+    # Every Gleam fixture on disk is tagged with this version (e.g.
+    # `gleam_combined@v1.16.0.gleam`); bumping the pin requires
+    # regenerating the fixtures so the tag stays in sync.
+    env:
+      GLEAM_VERSION: v1.16.0
     steps:
       - uses: actions/checkout@v6
         with:
@@ -755,7 +755,7 @@ jobs:
       - name: Install Gleam
         uses: erlef/setup-beam@v1
         with:
-          gleam-version: v1.16.0
+          gleam-version: ${{ env.GLEAM_VERSION }}
           otp-version: '27'
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
@@ -779,8 +779,8 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          find tests/integration/cases -name '*.gleam' \
-            | uv run --no-project python .github/scripts/check_gleam_syntax.py
+          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_VERSION" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
+          uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
@@ -789,8 +789,8 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          find tests/integration/cases -name '*.gleam' \
-            | uv run --no-project python .github/scripts/run_gleam.py
+          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_VERSION" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
+          uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
@@ -805,16 +805,14 @@ jobs:
           clj-kondo: latest
           bb: latest
       - name: Install Groovy
-        run: |-
-          # Drop third-party apt sources (Microsoft, GitHub CLI, etc.) before
-          # update so we only refresh the Ubuntu archive we actually install from.
-          sudo rm -f /etc/apt/sources.list.d/*.list
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends groovy
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: groovy
+          version: 1.0
 
       - name: Lint Clojure
         run: |-
-          find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj
+          find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj && test -s /tmp/files-clj
           xargs -0 clj-kondo --lint < /tmp/files-clj
       - name: Run Clojure files
         run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
@@ -824,10 +822,14 @@ jobs:
       # instead of cold-starting groovyc/groovy per file. A fresh
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
+      # Invoke the wrapper at /usr/share/groovy/bin/groovy directly rather
+      # than ``groovy`` because cache-apt-pkgs-action does not replay the
+      # package's ``update-alternatives`` postinst on cache hit, so
+      # ``/usr/bin/groovy`` is missing.
       - name: Lint Groovy
         run: |-
-          find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy
-          groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
+          find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
+          /usr/share/groovy/bin/groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
@@ -856,7 +858,7 @@ jobs:
       # exercises them all.
       - name: Lint Haskell
         run: |-
-          find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell
+          find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell && test -s /tmp/files-haskell
           workspace=$(mktemp -d)
           tmpdir=$(mktemp -d)
           imports=$(mktemp)
@@ -881,7 +883,7 @@ jobs:
 
       - name: Lint PureScript
         run: |-
-          find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript
+          find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript && test -s /tmp/files-purescript
           xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
       - name: Run PureScript files
         run: xargs -0 uv run --no-project python .github/scripts/run_purescript.py
@@ -909,7 +911,7 @@ jobs:
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
         run: |-
-          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy
+          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   lint-cpp-tidy:
@@ -929,7 +931,7 @@ jobs:
       # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Run clang-tidy on C++ files
         run: |-
-          find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy
+          find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy && test -s /tmp/files-cpp-tidy
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c++20 < /tmp/files-cpp-tidy
 
   lint-cobol:
@@ -941,6 +943,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cob' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install GnuCOBOL
         uses: fabasoad/setup-cobol-action@v1.6.2
       - name: Check COBOL syntax
@@ -955,30 +958,6 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
 
-  lint-c:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.c' -print0 > /tmp/files-to-lint
-      # Each fixture defines its own main, so compile and run directly.
-      # The build-and-run step also surfaces any syntax errors, so a
-      # separate `-fsyntax-only` pass would be redundant.
-      # ``-std=c99`` matches ``C.language_version`` in
-      # ``src/literalizer/languages/c.py``; keep them in sync.
-      - name: Run C files
-        run: |-
-          cat > /tmp/run-c.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-to-lint
-
   lint-cpp:
     runs-on: ubuntu-latest
     steps:
@@ -988,6 +967,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers 269 times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
@@ -1014,22 +994,26 @@ jobs:
 
   lint-kotlin:
     runs-on: ubuntu-latest
+    # 2.3.10's kotlin-scripting-jvm references a legacy
+    # ``ScriptExpectedLocation`` class that is no longer shipped, so
+    # ``K2JVMCompiler.exec("-script", ...)`` from inside a
+    # ``.main.kts`` host blows up with NoClassDefFoundError.  2.3.20
+    # drops the stale reference.  The same value tags every Kotlin
+    # fixture on disk (e.g. `Kotlin@2.3.20.kts`).
+    env:
+      KOTLIN_VERSION: 2.3.20
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.kts' -print0 > /tmp/files-to-lint
+        run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_VERSION" > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Kotlin
         uses: fwilhe2/setup-kotlin@v1
         with:
-          # 2.3.10's kotlin-scripting-jvm references a legacy
-          # ``ScriptExpectedLocation`` class that is no longer shipped,
-          # so ``K2JVMCompiler.exec("-script", ...)`` from inside a
-          # ``.main.kts`` host blows up with NoClassDefFoundError.
-          # 2.3.20 drops the stale reference.
-          version: 2.3.20
+          version: ${{ env.KOTLIN_VERSION }}
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
@@ -1046,21 +1030,27 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.swift' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Swift
         uses: SwiftyLab/setup-swift@v1
         with:
           cache-snapshot: true
+      # `-swift-version 5` matches the major version of
+      # `Swift.language_version` in `src/literalizer/languages/swift.py`
+      # (`V5_9`); keep them in sync. `-swift-version` only accepts the
+      # language mode (4/4.2/5/6), not a point release.
       - name: Check Swift syntax
         run: |-
           cat > /tmp/check-swift.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          swiftc -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        run: xargs -0 -P "$(nproc)" -n1 swift -warnings-as-errors < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 swift -swift-version 5 -warnings-as-errors
+          < /tmp/files-to-lint
 
   lint-ocaml:
     runs-on: ubuntu-latest
@@ -1071,6 +1061,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.ml' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install OCaml
         uses: ocaml/setup-ocaml@v3
         with:
@@ -1097,6 +1088,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.lisp' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install SBCL
         uses: 40ants/setup-lisp@v4
       - name: Check Common Lisp syntax
@@ -1116,6 +1108,9 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.scala' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
+      - name: Cache Coursier artifacts
+        uses: coursier/cache-action@v6
       - name: Install scala-cli
         uses: VirtusLab/scala-cli-setup@v1
       # Compile every fixture in a single scala-cli invocation to pay
@@ -1148,6 +1143,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.dart' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Dart
         uses: dart-lang/setup-dart@v1
       # Each fixture is its own implicit Dart library (no `library`
@@ -1201,6 +1197,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.jl' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Julia
         uses: julia-actions/setup-julia@v3
       - name: Set up Julia project
@@ -1221,12 +1218,24 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.go' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Check Go syntax
         run: xargs -0 gofmt -e < /tmp/files-to-lint
-      - name: Check Go compilation
-        run: xargs -0 -P "$(nproc)" -n1 go vet < /tmp/files-to-lint
-      - name: Run Go files
-        run: xargs -0 -P "$(nproc)" -n1 go run < /tmp/files-to-lint
+      # `go 1.18` in the generated go.mod matches `Go.language_version`
+      # in `src/literalizer/languages/go.py`; keep them in sync. `go vet`
+      # and `go run` honour the module's `go` directive when invoked on
+      # a file inside a module, so wrap each fixture in a tmpdir module.
+      - name: Check Go compilation and run
+        run: |-
+          cat > /tmp/run-go.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/main.go"
+          { printf 'module fixture\n\ngo 1.18\n'; } > "$tmpdir/go.mod"
+          (cd "$tmpdir" && go vet ./...) || exit 1
+          (cd "$tmpdir" && go run ./...) || exit 1
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-go.sh < /tmp/files-to-lint
 
   lint-rust:
     runs-on: ubuntu-latest
@@ -1237,6 +1246,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Check Rust syntax and run binaries
         run: |-
           tmpdir=$(mktemp -d)
@@ -1246,6 +1256,7 @@ jobs:
           cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
           deps="$tmpdir/chrono-check/target/debug/deps"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
+          test -n "$chrono_rlib"
           # ``--edition 2021`` matches ``Rust.language_version`` in
           # ``src/literalizer/languages/rust.py``; keep them in sync.
           while IFS= read -r -d '' f; do
@@ -1265,6 +1276,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.R' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install R
         uses: r-lib/actions/setup-r@v2
         with:
@@ -1284,6 +1296,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.d' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install DMD
         uses: dlang-community/setup-dlang@v2
         with:
@@ -1313,6 +1326,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
         with:
@@ -1355,6 +1369,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1450,6 +1465,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.nim' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Nim
         uses: jiro4989/setup-nim-action@v2
       - name: Run Nim files
@@ -1496,6 +1512,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.rkt' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - uses: Bogdanp/setup-racket@v1.15
       - name: Check Racket syntax
         run: xargs -0 raco make < /tmp/files-to-lint
@@ -1511,6 +1528,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.raku' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Raku
         uses: Raku/setup-raku@v1
       - name: Check Raku syntax
@@ -1520,17 +1538,23 @@ jobs:
 
   lint-zig:
     runs-on: ubuntu-latest
+    # Every Zig fixture on disk is tagged with this version (e.g.
+    # `Zig@0.14.0.zig`); bumping the pin requires regenerating the
+    # fixtures so the tag stays in sync.
+    env:
+      ZIG_VERSION: 0.14.0
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.zig' -print0 > /tmp/files-to-lint
+        run: python3 -m tests.integration.list_fixtures .zig "$ZIG_VERSION" > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.14.0
+          version: ${{ env.ZIG_VERSION }}
       # Compile every fixture in a single `zig run` invocation to pay
       # the Zig compiler + std parse cost once instead of per fixture.
       # Fixtures all declare `pub fn main() void`, renamed to a unique
@@ -1572,6 +1596,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.sv' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install Verilator
         uses: veryl-lang/setup-verilator@v2
       - name: Check SystemVerilog syntax
@@ -1587,6 +1612,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name '*.v' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       - name: Install V
         run: |
           git clone --depth=1 https://github.com/vlang/v /tmp/vlang
@@ -1601,23 +1627,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_v_syntax.py
           < /tmp/files-to-lint
       - name: Run V files
-        run: |
-          # ``call_ref_args_reused`` declares a scalar ``int`` ref so
-          # the rendered Rust still compiles when the ref is reused;
-          # V's ``format_call_ref_identifier`` always appends
-          # ``.clone()``, and ``int.clone()`` is rejected by V.
-          # Tracked in https://github.com/adamtheturtle/literalizer/issues/1823.
-          # ``multiline_sibling_list_widening`` has sibling lists with
-          # heterogeneous element types (int vs string) inside a dict,
-          # which V rejects because V infers a single element type
-          # per array; the rendered output is shape-correct but does
-          # not compile.
-          # Tracked in https://github.com/adamtheturtle/literalizer/issues/2105.
-          grep -z -v -e 'heterogeneous_strategy_error' \
-            -e 'call_ref_args_reused' \
-            -e 'multiline_sibling_list_widening' /tmp/files-to-lint \
-            > /tmp/files-to-run || true
-          xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-run
+        run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
 
   lint-objectivec:
     runs-on: macos-latest
@@ -1628,6 +1638,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       # Every fixture `#import`s `<Foundation/Foundation.h>`, whose parse
       # cost dominates each tiny TU. Precompile Foundation once and
       # preload it in the syntax-check and build-and-run steps so the
@@ -1663,6 +1674,7 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula. The PyPI clang-tidy (used in the
       # Ubuntu jobs) doesn't work here: it can't find Apple's Foundation
@@ -1684,9 +1696,6 @@ jobs:
       - pre-commit
       - lint-fast
       - lint-odin
-      - lint-forth
-      - lint-tcl
-      - lint-scheme
       - lint-matlab
       - lint-perl
       - lint-go-installed
@@ -1697,8 +1706,6 @@ jobs:
       - lint-uv-scripts
       - lint-dotnet
       - lint-sml
-      - lint-dhall
-      - lint-wren
       - lint-elixir
       - lint-erlang
       - lint-gleam
@@ -1706,7 +1713,6 @@ jobs:
       - lint-haskell-family
       - lint-c-tidy
       - lint-cpp-tidy
-      - lint-c
       - lint-cobol
       - lint-cpp
       - lint-kotlin

@@ -26,6 +26,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_local_time_of,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -47,6 +48,7 @@ from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_long_suffix_formatter,
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
@@ -57,6 +59,7 @@ from literalizer._formatters.type_inference import (
     ListType,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -92,7 +95,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -205,8 +208,139 @@ def _kotlin_type_to_opener(
             return scalar_openers.get(element_type)
 
 
+_KOTLIN_I32_MIN = -(2**31)
+_KOTLIN_I32_MAX = 2**31 - 1
+
+
 @beartype
-def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa: C901, PLR0911, PLR0912
+def _kotlin_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Kotlin annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "Boolean"
+        case int():
+            hint = (
+                "Long"
+                if not _KOTLIN_I32_MIN <= data <= _KOTLIN_I32_MAX
+                else "Int"
+            )
+        case float():
+            hint = "Double"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = "LocalTime"
+        case None:
+            hint = "Nothing?"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _kotlin_dict_hint(
+    *,
+    is_empty: bool,
+    is_ordered: bool,
+    val_types: list[str],
+    default_dict_key_type: str,
+    default_dict_value_type: str,
+    dict_outer: str,
+) -> str:
+    """Derive a Kotlin map type annotation."""
+    outer = "LinkedHashMap" if is_ordered else dict_outer
+    if is_empty:
+        return f"{outer}<{default_dict_key_type}, {default_dict_value_type}>"
+    unique = list(dict.fromkeys(val_types))
+    val_type = unique[0] if len(unique) == 1 else "Any?"
+    return f"{outer}<{default_dict_key_type}, {val_type}>"
+
+
+@beartype
+def _kotlin_set_hint(
+    *,
+    elem_types_sorted: list[str],
+    is_empty: bool,
+    default_set_element_type: str,
+    set_outer: str,
+) -> str:
+    """Derive a Kotlin set type annotation."""
+    if is_empty:
+        return f"{set_outer}<{default_set_element_type}>"
+    unique = set(elem_types_sorted)
+    if unique == {"Int", "Long"}:
+        elem_type = "Long"
+    elif len(unique) == 1:
+        elem_type = elem_types_sorted[0]
+    else:
+        elem_type = "Any?"
+    return f"{set_outer}<{elem_type}>"
+
+
+@beartype
+def _kotlin_tuple_hint(*, elem_types: list[str]) -> str:
+    """Derive a Kotlin tuple-shaped annotation."""
+    match elem_types:
+        case [_, _]:
+            return f"Pair<{', '.join(elem_types)}>"
+        case [_, _, _]:
+            return f"Triple<{', '.join(elem_types)}>"
+        case _:
+            return "List<Any?>"
+
+
+@beartype
+def _kotlin_array_or_list_hint(*, elem_types: list[str]) -> str:
+    """Derive a Kotlin array/list annotation for the ``LIST`` format."""
+    unique = list(dict.fromkeys(elem_types))
+    if len(unique) != 1:
+        return "List<Any?>"
+    elem_type = unique[0]
+    kotlin_prim = {
+        "Boolean": "BooleanArray",
+        "Int": "IntArray",
+        "Double": "DoubleArray",
+    }
+    if elem_type in kotlin_prim:
+        return kotlin_prim[elem_type]
+    # Generic element types (e.g. Map<…>) use listOf, not arrayOf, so
+    # the container type is List, not Array.
+    if "<" in elem_type:
+        return f"List<{elem_type}>"
+    return f"Array<{elem_type}>"
+
+
+@beartype
+def _kotlin_list_hint(
+    *,
+    data: list[Value],
+    recurse: Callable[..., str],
+    sequence_format_name: str,
+) -> str:
+    """Derive a Kotlin sequence type annotation."""
+    if not data:
+        return (
+            "Array<Any?>" if sequence_format_name == "ARRAY" else "List<Any?>"
+        )
+    if sequence_format_name == "ARRAY":
+        return "Array<Any?>"
+    elem_types = [recurse(data=e) for e in data]
+    if sequence_format_name == "TUPLE":
+        return _kotlin_tuple_hint(elem_types=elem_types)
+    return _kotlin_array_or_list_hint(elem_types=elem_types)
+
+
+@beartype
+def _kotlin_type_hint(
     *,
     data: Value,
     date_hint: str,
@@ -231,92 +365,35 @@ def _kotlin_type_hint(  # pylint: disable=too-complex,too-many-branches  # noqa:
         sequence_format_name=sequence_format_name,
     )
     match data:
-        case bool():
-            return "Boolean"
-        case int():
-            return "Int"
-        case float():
-            return "Double"
-        case str():
-            return "String"
-        case bytes():
-            return "String"
-        case datetime.datetime():
-            return datetime_hint
-        case datetime.date():
-            return date_hint
-        case None:
-            return "Nothing?"
         case dict():
-            if not data:
-                outer = (
-                    dict_outer
-                    if not isinstance(data, (ordereddict, OrderedDict))
-                    else "LinkedHashMap"
-                )
-                return (
-                    f"{outer}<{default_dict_key_type}"
-                    f", {default_dict_value_type}>"
-                )
-            val_types = [recurse(data=v) for v in data.values()]
-            unique = list(dict.fromkeys(val_types))
-            match unique:
-                case [single]:
-                    val_type = single
-                case _:
-                    val_type = "Any?"
-            outer = (
-                dict_outer
-                if not isinstance(data, (ordereddict, OrderedDict))
-                else "LinkedHashMap"
+            hint = _kotlin_dict_hint(
+                is_empty=not data,
+                is_ordered=isinstance(data, (ordereddict, OrderedDict)),
+                val_types=[recurse(data=v) for v in data.values()],
+                default_dict_key_type=default_dict_key_type,
+                default_dict_value_type=default_dict_value_type,
+                dict_outer=dict_outer,
             )
-            return f"{outer}<{default_dict_key_type}, {val_type}>"
         case set():
-            if not data:
-                return f"{set_outer}<{default_set_element_type}>"
-            elem_types = sorted({recurse(data=e) for e in data})
-            match elem_types:
-                case [single]:
-                    elem_type = single
-                case _:
-                    elem_type = "Any?"
-            return f"{set_outer}<{elem_type}>"
+            hint = _kotlin_set_hint(
+                elem_types_sorted=sorted({recurse(data=e) for e in data}),
+                is_empty=not data,
+                default_set_element_type=default_set_element_type,
+                set_outer=set_outer,
+            )
         case list():
-            if not data:
-                if sequence_format_name == "ARRAY":
-                    return "Array<Any?>"
-                return "List<Any?>"
-            if sequence_format_name == "TUPLE":
-                elem_types = [recurse(data=e) for e in data]
-                match data:
-                    case [_, _]:
-                        return f"Pair<{', '.join(elem_types)}>"
-                    case [_, _, _]:
-                        return f"Triple<{', '.join(elem_types)}>"
-                    case _:
-                        return "List<Any?>"
-            if sequence_format_name == "ARRAY":
-                return "Array<Any?>"
-            # LIST format — use typed arrays matching the opener
-            elem_types = [recurse(data=e) for e in data]
-            unique = list(dict.fromkeys(elem_types))
-            if len(unique) != 1:
-                return "List<Any?>"
-            elem_type = unique[0]
-            kotlin_prim = {
-                "Boolean": "BooleanArray",
-                "Int": "IntArray",
-                "Double": "DoubleArray",
-            }
-            if elem_type in kotlin_prim:
-                return kotlin_prim[elem_type]
-            # Generic element types (e.g. Map<…>) use listOf, not
-            # arrayOf, so the container type is List, not Array.
-            if "<" in elem_type:
-                return f"List<{elem_type}>"
-            return f"Array<{elem_type}>"
-        case _ as unreachable:
-            assert_never(unreachable)
+            hint = _kotlin_list_hint(
+                data=data,
+                recurse=recurse,
+                sequence_format_name=sequence_format_name,
+            )
+        case _:
+            hint = _kotlin_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+    return hint
 
 
 @beartype
@@ -429,6 +506,8 @@ class Kotlin(metaclass=LanguageCls):
     pygments_name = "kotlin"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -437,10 +516,18 @@ class Kotlin(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -453,11 +540,13 @@ class Kotlin(metaclass=LanguageCls):
         str_type="String",
         bool_type="Boolean",
         int_type="Int",
+        wide_int_type="Long",
         float_type="Double",
         bytes_type="String",
         mixed_numeric_type=None,
         date_type="LocalDate",
         datetime_type="LocalDateTime",
+        time_type="LocalTime",
         list_template="Array<{inner}>",
         sequence_opener_template="arrayOf(",
         dict_opener_template="mapOf<{key_type}, {type_name}>(",
@@ -997,14 +1086,18 @@ class Kotlin(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -1016,7 +1109,7 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1140,6 +1233,11 @@ class Kotlin(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_local_time_of
+
+    @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
@@ -1151,6 +1249,19 @@ class Kotlin(metaclass=LanguageCls):
             base=self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
             ),
+            fallback=_format_kotlin_biginteger_literal,
+        )
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Always-``L``-suffixed integer formatter for widened
+        collections (mixed-magnitude int sets/lists).
+        """
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=make_long_suffix_formatter(base=base),
             fallback=_format_kotlin_biginteger_literal,
         )
 
@@ -1221,6 +1332,7 @@ class Kotlin(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra={datetime.time: ("import java.time.LocalTime",)},
         )
 
     @cached_property

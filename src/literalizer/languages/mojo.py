@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -45,6 +46,7 @@ from literalizer._heterogeneous import (
     iter_wrapped_scalars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -91,6 +93,7 @@ _mojo_element_to_type = make_element_to_type(
     bytes_type="String",
     date_type="String",
     datetime_type="String",
+    time_type="String",
     list_template="List[{inner}]",
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type="String",
@@ -111,6 +114,7 @@ _mojo_call_arg_element_to_type = make_element_to_type(
     bytes_type="String",
     date_type="String",
     datetime_type="String",
+    time_type="String",
     list_template="List[{inner}]",
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type=None,
@@ -537,7 +541,7 @@ class _VariantSignature:
 
 
 @beartype
-def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PLR0911
+def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:
     """Return the Mojo Variant alternative for *value*.
 
     Strings, bytes, dates, and datetimes all map to ``String`` because
@@ -547,10 +551,6 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
     ``Variant`` constructor in Mojo cannot infer ``NoneType`` from the
     bare ``None`` literal.
     """
-    _string_signature = _VariantSignature(
-        type_name="String",
-        payload_template="String({value})",
-    )
     match value:
         case bool():
             return _VariantSignature(
@@ -567,14 +567,17 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:  # noqa: PL
                 type_name="Float64",
                 payload_template="Float64({value})",
             )
-        case str():
-            return _string_signature
-        case bytes():
-            return _string_signature
-        case datetime.datetime():
-            return _string_signature
-        case datetime.date():
-            return _string_signature
+        case (
+            str()
+            | bytes()
+            | datetime.datetime()
+            | datetime.date()
+            | datetime.time()
+        ):
+            return _VariantSignature(
+                type_name="String",
+                payload_template="String({value})",
+            )
         case None:
             return _VariantSignature(
                 type_name="NoneType",
@@ -882,6 +885,8 @@ class Mojo(metaclass=LanguageCls):
     pygments_name = "mojo"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -890,10 +895,18 @@ class Mojo(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
-    supports_commented_dict_call_args = True
     supports_module_name = False
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = True
+    supports_default_dict_value_type = True
+    supports_default_sequence_element_type = True
+    supports_default_set_element_type = True
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -1364,22 +1377,37 @@ class Mojo(metaclass=LanguageCls):
         return identity_call_target
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
-        """Append ``^`` to trigger move/transfer semantics in Mojo.
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Append ``^`` to trigger move/transfer semantics in Mojo,
+        except for register-trivial scalars.
 
         Mojo ``Dict`` does not implement ``Copyable``, so a bare
-        variable reference fails to compile.  Using ``^`` transfers
-        ownership instead of copying.
+        variable reference fails to compile and ``^`` transfers
+        ownership instead.  Applying ``^`` to a register-trivial scalar
+        (``Int``, ``Bool``, ``Float64``) is a hard error under
+        ``--Werror``, so we drop the operator when the caller's
+        ``ref_values`` identifies the ref as one of those types.  When
+        the value is unknown we keep the historical ``^`` form.
         """
 
-        def _format_mojo_ref_identifier(name: str, /) -> str:
-            """Append ``^`` for the Mojo transfer operator."""
+        def _format_mojo_ref_identifier(
+            name: str, value: Value | None, /
+        ) -> str:
+            """Append ``^`` unless *value* is register-trivial."""
+            if value is not None and _mojo_value_inhibits_consuming_form(
+                value
+            ):
+                return name
             return f"{name}^"
 
         return _format_mojo_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Emit a call-argument ``$ref`` as the bare identifier.
 
         The Mojo transfer operator ``^`` consumes the variable, which
@@ -1395,7 +1423,7 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Append ``^`` to a consumable call-argument ``$ref``.
 
         Used only for refs the caller declared as consumable on
@@ -1456,6 +1484,7 @@ class Mojo(metaclass=LanguageCls):
                     bytes_type=None,
                     date_type=None,
                     datetime_type=None,
+                    time_type=None,
                     list_template="List[{inner}]",
                     dict_type_template=None,
                     fallback_value_type=None,
@@ -1497,6 +1526,11 @@ class Mojo(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

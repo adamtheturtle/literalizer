@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import enum
 import math
-import string
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -19,6 +18,7 @@ from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
     format_date_iso,
     format_datetime_iso,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     format_bytes_base64,
@@ -38,9 +38,11 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
+    CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -52,12 +54,10 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
-    PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     never_inhibits_consuming_form,
@@ -371,6 +371,22 @@ def _elm_flatten_dotted(parts: Sequence[str]) -> str:
     return first + rest
 
 
+@beartype
+def _elm_type_var(*, index: int) -> str:
+    """Return a unique lowercase identifier for an Elm type variable.
+
+    Indices ``0``..``25`` map to ``a``..``z``; higher indices append a
+    numeric suffix (``a1``..``z1``, ``a2``..``z2``, ...) so that
+    27-or-more parameter stubs do not overflow the alphabet into
+    non-letter ASCII like ``{``.
+    """
+    letter = chr(ord("a") + index % 26)
+    group = index // 26
+    if group == 0:
+        return letter
+    return f"{letter}{group}"
+
+
 def _elm_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -381,54 +397,29 @@ def _elm_call_stub(
     """Return Elm top-level stub declarations for a call target.
 
     Dotted names are flattened (the first character of each part after
-    the first is upper-cased).  For a single parameter the stub is
-    polymorphic (``a -> ()``); for 2 or 3 parameters the stub takes a
-    tuple (``( a, b ) -> ()`` or ``( a, b, c ) -> ()``), matching the
-    tuple that ``PositionalCallStyle`` emits at the call site.  Elm
-    tuples cap at 3 elements, so 4+ parameters cannot produce
-    valid Elm; the curried fallback exists for completeness only.
+    the first is upper-cased).  Elm calls are curried, so the stub
+    chains its type variables with ``->`` (``a -> ()``,
+    ``a -> b -> ()``, ``a -> b -> c -> d -> ()``) and the
+    implementation takes one ``_`` per parameter.
     """
     flat_name = _elm_flatten_dotted(parts=parts)
-    n = len(params)
-    _max_elm_tuple_size = len(("a", "b", "c"))
-    match n:
-        case 1:
-            type_sig = f"{flat_name} : a -> ()"
-            impl = f"{flat_name} _ = ()"
-        case _ if n <= _max_elm_tuple_size:
-            _alphabet_size = len(string.ascii_lowercase)
-            type_vars = ", ".join(
-                chr(ord("a") + (i % _alphabet_size))
-                + (
-                    str(object=i // _alphabet_size)
-                    if i >= _alphabet_size
-                    else ""
-                )
-                for i in range(n)
-            )
-            type_sig = f"{flat_name} : ( {type_vars} ) -> ()"
-            impl = f"{flat_name} _ = ()"
-        case _:  # pragma: no cover
-            # Elm tuples cap at 3 elements, and PositionalCallStyle
-            # emits a tuple at the call site, so n > 3 cannot produce
-            # valid Elm.  A curried stub is emitted as a best
-            # effort, but the call site will still be rejected by
-            # ``elm make``; no integration case exercises this branch
-            # for that reason.
-            _alphabet_size = len(string.ascii_lowercase)
-            type_vars = " -> ".join(
-                chr(ord("a") + (i % _alphabet_size))
-                + (
-                    str(object=i // _alphabet_size)
-                    if i >= _alphabet_size
-                    else ""
-                )
-                for i in range(n)
-            )
-            wildcards = " ".join("_" for _ in range(n))
-            type_sig = f"{flat_name} : {type_vars} -> ()"
-            impl = f"{flat_name} {wildcards} = ()"
-    return (type_sig, impl)
+    parameter_count = len(params)
+    type_variables = [
+        _elm_type_var(index=position) for position in range(parameter_count)
+    ]
+    type_signature = f"{flat_name} : {' -> '.join([*type_variables, '()'])}"
+    implementation = f"{flat_name} {' '.join(['_'] * parameter_count)} = ()"
+    return (type_signature, implementation)
+
+
+def _elm_format_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a formatted Elm value in parentheses for curried application.
+
+    Every literal Elm value is a constructor application (``EInt 1``,
+    ``EList […]``), so each argument must be parenthesized to avoid
+    being parsed as additional arguments to the outer call.
+    """
+    return f"({formatted})"
 
 
 _INT_BASE: dict[str, Callable[[int], str]] = {
@@ -528,6 +519,8 @@ class Elm(metaclass=LanguageCls):
     pygments_name = "elm"
     supports_special_floats = True
     supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -536,17 +529,18 @@ class Elm(metaclass=LanguageCls):
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = False
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = False
-    supports_commented_dict_call_args = True
     supports_module_name = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
         """Date format options for Elm."""
@@ -741,7 +735,10 @@ class Elm(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Elm call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        CURRIED = CommandCallStyle(
+            arg_separator=" ",
+            wrapped_call_template="{wrapper} ({inner})",
+        )
 
     call_styles = CallStyles
 
@@ -776,6 +773,11 @@ class Elm(metaclass=LanguageCls):
     )
 
     validate_spec_for_data = no_validate_spec_for_data
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Wrap each formatted call argument in parentheses."""
+        return _elm_format_call_arg
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -885,7 +887,7 @@ class Elm(metaclass=LanguageCls):
     statement_terminator_style: StatementTerminatorStyles = (
         StatementTerminatorStyles.SEMICOLON
     )
-    call_style: CallStyles = CallStyles.POSITIONAL
+    call_style: CallStyles = CallStyles.CURRIED
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
@@ -975,14 +977,18 @@ class Elm(metaclass=LanguageCls):
         return _elm_flatten_dotted
 
     @cached_property
-    def format_call_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier into the
         language's call expression syntax.
         """
         return identity_call_ref_identifier
 
     @cached_property
-    def format_call_arg_ref_identifier(self) -> Callable[[str], str]:
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
         """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
         context.
 
@@ -994,7 +1000,7 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
-    ) -> Callable[[str], str]:
+    ) -> Callable[[str, Value | None], str]:
         """Format a ``$ref`` the caller authorized as consumable.
 
         Delegates to :attr:`format_call_arg_ref_identifier`.  Override
@@ -1109,6 +1115,11 @@ class Elm(metaclass=LanguageCls):
         if self.constructor_prefix == "E":
             return self.datetime_format
         return _build_elm_datetime_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
