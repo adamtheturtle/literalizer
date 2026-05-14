@@ -21,6 +21,7 @@ from literalizer.exceptions import (
     UnrepresentableIntegerError,
     VariableNameNotSupportedError,
 )
+from literalizer.languages.rust import Rust
 
 from .case_discovery import (
     HeterogeneousStrategyCombinedCase,
@@ -535,3 +536,30 @@ def test_indent_golden_file(
         newline=None,
         golden_path=golden_path,
     )
+
+
+def test_rust_record_strategy_error_path(cases_dir: Path) -> None:
+    """RECORD requested with non-record-eligible data still raises.
+
+    The carve-out only skips record-shaped dicts; a heterogeneous list
+    nested inside a record still fails the standard heterogeneous-list
+    check because Rust ``vec![]`` cannot represent mixed scalar types.
+    """
+    del cases_dir
+    record_strategy = next(
+        strategy
+        for strategy in Rust.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    spec = Rust(heterogeneous_strategy=record_strategy)
+    yaml_string = 'items:\n  - 1\n  - "two"\n'
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalizer.literalize(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=literalizer.NewVariable(name="my_data"),
+            wrap_in_file=True,
+        )

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict as _ordereddict
 
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @dataclass(frozen=True)
@@ -170,11 +170,73 @@ class RecordShape:
     """Immutable signature of a record-shaped dict, suitable for use
     as a dict key.
 
-    Reserved for the forthcoming ``RECORD`` heterogeneous strategy
-    that will render record-shaped dicts as generated struct literals
-    rather than homogeneous maps.  Two dicts will share a shape when
-    their ordered key tuples are equal; per-key value-type rendering
-    is decided at preamble-build time by each per-language target.
+    Used by the ``RECORD`` heterogeneous strategy to render
+    record-shaped dicts as generated struct literals rather than
+    homogeneous maps.  Two dicts share a shape when their ordered key
+    tuples are equal; per-key value-type rendering is decided at
+    preamble-build time by each per-language target.
     """
 
     keys: tuple[str, ...]
+
+
+@beartype
+def record_shape_for_dict(
+    *,
+    value: dict[Scalar, Value],
+) -> RecordShape | None:
+    """Return the :class:`RecordShape` of *value*, or ``None`` if the
+    dict is not record-eligible.
+
+    A dict is record-eligible when it is non-empty and every key is a
+    ``str``.  Callers must filter out ruamel ordered maps before
+    calling this helper.
+    """
+    # Defensive branches: every Rust RECORD fixture passes non-empty
+    # string-keyed dicts here, but the walker also calls this helper
+    # on nested dicts of arbitrary shape that may not be record-eligible.
+    if not value:  # pragma: no cover
+        return None
+    str_keys: list[str] = []
+    for key in value:
+        if not isinstance(key, str):  # pragma: no cover
+            return None
+        str_keys.append(key)
+    return RecordShape(keys=tuple(str_keys))
+
+
+@beartype
+def collect_record_shapes(*, data: Value) -> dict[int, RecordShape]:
+    """Walk *data* and return a mapping from ``id(dict)`` to its
+    :class:`RecordShape` for every record-eligible dict.
+    """
+    result: dict[int, RecordShape] = {}
+    _accumulate_record_shapes(data=data, out=result)
+    return result
+
+
+def _accumulate_record_shapes(
+    *,
+    data: Value,
+    out: dict[int, RecordShape],
+) -> None:
+    """Recursively add record shapes for record-eligible dicts in
+    *data*.
+    """
+    # ``Value``-typed sets only contain scalars (see ``literalizer._types``)
+    # so there's no need to walk into them.
+    match data:
+        case dict() if not isinstance(data, _ordereddict):
+            shape = record_shape_for_dict(value=data)
+            if shape is not None:  # pragma: no branch
+                out[id(data)] = shape
+            for v in data.values():
+                _accumulate_record_shapes(data=v, out=out)
+        case dict():
+            for v in data.values():
+                _accumulate_record_shapes(data=v, out=out)
+        case list():
+            for v in data:
+                _accumulate_record_shapes(data=v, out=out)
+        case _:
+            return
