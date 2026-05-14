@@ -989,9 +989,9 @@ def _build_preamble_setup(
     # Binary integer literals (``0b...``) are not part of Haskell 2010
     # and need the ``BinaryLiterals`` extension. ``GHC2021`` bundles
     # it already, so the pragma is redundant under that base, but
-    # emitting it unconditionally keeps generated code compilable on
-    # both bases without ceremony. Hex (``0x``) and octal (``0o``) are
-    # standard either way.
+    # emitting it unconditionally lets the generated code build under
+    # either base without ceremony. Hex (``0x``) and octal (``0o``)
+    # are standard either way.
     if integer_format.name == "BINARY":
         scalar_preamble = {
             **scalar_preamble,
