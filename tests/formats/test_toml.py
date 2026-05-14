@@ -1,7 +1,5 @@
 """Tests for literalizer TOML conversion."""
 
-import datetime
-
 import pytest
 
 from literalizer import (
@@ -78,25 +76,3 @@ def test_toml_table_entries_literalize() -> None:
     )
 
     assert result.code == '"section": {"value": 1},'
-
-
-def test_toml_time_values_literalize() -> None:
-    """TOML ``time`` values flow through as native :class:`datetime.time`.
-
-    Delete this test once issue #2230 lands and per-language golden-file
-    cases cover ``datetime.time`` end-to-end -- this is a string-assertion
-    placeholder that exists only because the integration harness can't
-    yet express a ``datetime.time`` value in its YAML inputs.
-    """
-    source = f"starts_at = {datetime.time(hour=9, minute=30).isoformat()}\n"
-    result = literalize(
-        source=source,
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-    )
-
-    assert result.code == (
-        '"starts_at": datetime.time(hour=9, minute=30, second=0),'
-    )

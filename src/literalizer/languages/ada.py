@@ -128,7 +128,7 @@ def _format_ada_entry(original: Value, formatted: str) -> str:
             return f"AInt ({formatted})"
         case float():
             return f"AFloat ({formatted})"
-        case str() | bytes() | datetime.date():
+        case str() | bytes() | datetime.date() | datetime.time():
             return f"AStr ({formatted})"
         case _:
             return formatted

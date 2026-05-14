@@ -855,7 +855,12 @@ class Scala(metaclass=LanguageCls):
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
-                        list_template=None,
+                        list_template=(
+                            "List[{inner}]"
+                            if self.sequence_format
+                            is self.sequence_formats.LIST
+                            else None
+                        ),
                         date_type=self._date_type_name,
                         datetime_type=self._datetime_type_name,
                         enable_dict_type=False,

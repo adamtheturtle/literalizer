@@ -197,6 +197,7 @@ def _kotlin_type_to_opener(
         bytes: "arrayOf(",
         datetime.date: "arrayOf(",
         datetime.datetime: "arrayOf(",
+        datetime.time: "arrayOf(",
     }
     match element_type:
         case DictType():

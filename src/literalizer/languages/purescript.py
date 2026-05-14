@@ -100,6 +100,26 @@ def _build_purescript_date_iso(
 
 
 @beartype
+def _apply_purescript_time_iso(value: datetime.time, prefix: str) -> str:
+    """Format a time as a PureScript string via ISO 8601."""
+    return f"{prefix}Str {format_time_iso(value=value)}"
+
+
+def _build_purescript_time_iso(
+    prefix: str,
+) -> Callable[[datetime.time], str]:
+    """Build a time formatter that produces ``{prefix}Str``
+    constructors.
+    """
+
+    def _format(value: datetime.time) -> str:
+        """Delegate to module-level implementation."""
+        return _apply_purescript_time_iso(value=value, prefix=prefix)
+
+    return _format
+
+
+@beartype
 def _apply_purescript_datetime_iso(
     value: datetime.datetime, prefix: str
 ) -> str:
@@ -420,7 +440,7 @@ def _build_purescript_body_preamble(
         needs_tuple = bool(types & {dict, ordereddict})
         has_large_int = int in types and _purescript_has_large_int(val=data)
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, datetime.date}
+        str_types: set[type] = {str, bytes, datetime.date, datetime.time}
         if datetime_type_produced is int:
             int_types.add(datetime.datetime)
         else:
@@ -1256,7 +1276,7 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+        return _build_purescript_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
