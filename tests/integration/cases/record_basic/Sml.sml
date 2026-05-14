@@ -6,7 +6,7 @@ datatype val_t =
   | SMap of (string * val_t) list
 val my_data : val_t = SMap [
     ("id", SInt 1),
-    ("description", SStr "example"),
+    ("description", SStr "She said \"hello\", then waved"),
     ("is_done", SBool false),
     ("blocks", SList [SInt 1, SInt 2, SInt 3])
 ]

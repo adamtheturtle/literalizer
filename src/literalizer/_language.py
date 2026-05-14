@@ -497,7 +497,7 @@ class HeterogeneousBehavior:
     )
 
 
-def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
+def no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     """Return an empty wrap-id set — used by non-wrapping languages."""
     return frozenset()
 
@@ -533,7 +533,7 @@ wrapping (every non-Mojo VARIANT-style behavior).
 
 NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     skip_scalar_checks=False,
-    compute_wrap_ids=_no_compute_wrap_ids,
+    compute_wrap_ids=no_compute_wrap_ids,
     wrap_scalar=None,
     wrap_non_scalar=None,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,

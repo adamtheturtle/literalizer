@@ -8,7 +8,7 @@ struct Record0 {
 fn main() {
     let my_data = Record0 {
         id: 1,
-        description: "example",
+        description: "She said \"hello\", then waved",
         is_done: false,
         blocks: vec![
             1,

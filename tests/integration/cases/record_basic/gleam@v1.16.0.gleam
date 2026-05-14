@@ -9,7 +9,7 @@ pub type GVal {
 pub fn main() {
   let my_data = GDict([
     #("id", GInt(1)),
-    #("description", GStr("example")),
+    #("description", GStr("She said \"hello\", then waved")),
     #("is_done", GBool(False)),
     #("blocks", GList([GInt(1), GInt(2), GInt(3)])),
   ])

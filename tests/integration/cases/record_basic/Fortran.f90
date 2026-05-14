@@ -21,7 +21,7 @@ program main
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
         fentry('id', fint(1_int64)), &
-        fentry('description', fstr('example')), &
+        fentry('description', fstr('She said "hello", then waved')), &
         fentry('is_done', fbool(.false.)), &
         fentry('blocks', flist([fval_t :: fint(1_int64), fint(2_int64), fint(3_int64)])) &
     ])
