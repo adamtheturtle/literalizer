@@ -58,35 +58,34 @@ def date_scalar_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
-    time_format: enum.Enum | None = None,
     extra: dict[type, tuple[str, ...]] | None = None,
 ) -> dict[type, tuple[str, ...]]:
-    """Build the ``scalar_preamble`` dict for date/datetime/time formats.
+    """Build the ``scalar_preamble`` dict for date/datetime formats.
 
     Args:
         date_format: The date format enum member whose ``.value`` has
             a ``preamble_lines`` attribute.
         datetime_format: The datetime format enum member whose ``.value``
             has a ``preamble_lines`` attribute.
-        time_format: Optional time format enum member whose ``.value``
-            has a ``preamble_lines`` attribute.  When omitted, no time
-            preamble is contributed.
         extra: Optional additional type→preamble mappings to include
-            unconditionally (e.g. for C++ ``#include <string>``).
+            unconditionally (e.g. for C++ ``#include <string>`` or the
+            ``datetime.time`` import added by languages that emit native
+            time literals).
 
     Returns:
         A dict mapping Python types to their required preamble lines,
         omitting entries whose preamble is empty.
     """
-    pairs: list[tuple[type, tuple[str, ...]]] = [
-        (datetime.date, date_format.value.preamble_lines),
-        (datetime.datetime, datetime_format.value.preamble_lines),
-    ]
-    if time_format is not None:
-        pairs.append((datetime.time, time_format.value.preamble_lines))
     return {
         **(extra or {}),
-        **{t: p for t, p in pairs if p},
+        **{
+            t: p
+            for t, p in (
+                (datetime.date, date_format.value.preamble_lines),
+                (datetime.datetime, datetime_format.value.preamble_lines),
+            )
+            if p
+        },
     }
 
 
