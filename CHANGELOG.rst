@@ -4,6 +4,17 @@ Changelog
 Next
 ----
 
+- Golden files for languages whose compiler version is pinned (Elixir,
+  Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the
+  filename: ``{stem}@{version}{extension}`` (e.g.
+  ``Odin@dev-2026-04.odin``).  Every fixture is explicitly tied to
+  the compiler version it was generated against.  Each ``lint.yml``
+  job sets a job-scoped environment variable once and feeds it to
+  both the install action and
+  ``python -m tests.integration.list_fixtures``; the test code
+  auto-discovers the same version from sibling filenames so no
+  separate registry file is needed.
+
 - :class:`~literalizer.Fortran`'s ``language_version`` default is now
   ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the
   Fortran 2008 features the generator actually emits (e.g. ``int64``

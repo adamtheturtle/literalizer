@@ -369,6 +369,7 @@ run.branch = true
 run.omit = [
     "tests/benchmarks/**/*.py",
     "tests/integration/cases/**/*.py",
+    "tests/integration/list_fixtures.py",
 ]
 report.exclude_also = [
     "case _ as unreachable:\n\\s*assert_never\\(",
