@@ -41,7 +41,7 @@ def main(language: str, extension: str) -> int:
         ):
             continue
         paths.append(path)
-    sys.stdout.buffer.write(b"\0".join(f"{p}".encode() for p in paths))
+    sys.stdout.buffer.write(b"".join(f"{p}".encode() + b"\0" for p in paths))
     return 0
 
 
