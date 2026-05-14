@@ -417,7 +417,6 @@ class TypedOpenerConfig:
         list_template: str | None,
         date_type: str | None,
         datetime_type: str | None,
-        time_type: str | None,
         enable_dict_type: bool,
         dict_key_type: str = "",
     ) -> Callable[[type | ListType | DictType], str | None]:
@@ -454,9 +453,7 @@ class TypedOpenerConfig:
                 if datetime_type is not None
                 else self._datetime_type
             ),
-            time_type=(
-                time_type if time_type is not None else self._time_type
-            ),
+            time_type=self._time_type,
             list_template=(
                 list_template
                 if list_template is not None
@@ -474,7 +471,6 @@ class TypedOpenerConfig:
         *,
         date_type: str | None,
         datetime_type: str | None,
-        time_type: str | None,
         set_opener_template: str | None,
         narrow_dict_values: bool,
         dict_key_type: str = "",
@@ -502,7 +498,6 @@ class TypedOpenerConfig:
             list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
-            time_type=time_type,
             enable_dict_type=True,
             dict_key_type=dict_key_type,
         )
@@ -510,7 +505,6 @@ class TypedOpenerConfig:
             list_template=None,
             date_type=date_type,
             datetime_type=datetime_type,
-            time_type=time_type,
             enable_dict_type=narrow_dict_values,
             dict_key_type=dict_key_type,
         )

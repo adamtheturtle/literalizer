@@ -1022,7 +1022,6 @@ class CSharp(metaclass=LanguageCls):
         return cfg.build(
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
-            time_type=None,
             set_opener_template=(
                 self._base_set_format_config.set_opener_template or None
             ),
@@ -1098,7 +1097,6 @@ class CSharp(metaclass=LanguageCls):
                         list_template=None,
                         date_type=cfg.type_name(py_type=self._date_tp),
                         datetime_type=cfg.type_name(py_type=self._dt_tp),
-                        time_type=None,
                         enable_dict_type=False,
                         dict_key_type=self.default_dict_key_type,
                     ),

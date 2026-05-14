@@ -124,7 +124,6 @@ def _list_sequence_open(
                 list_template="List[{inner}]",
                 date_type=date_type,
                 datetime_type=datetime_type,
-                time_type=None,
                 enable_dict_type=True,
             ),
             opener_template="List[{type_name}](",
@@ -658,6 +657,9 @@ class Scala(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `-S` flag passed to `scala-cli run` in
+    # `.github/workflows/lint.yml` (which only accepts the Scala major
+    # version, so `V3` maps to `-S 3`).
     language_version: VersionFormats = VersionFormats.V3
     indent: str = "    "
 
@@ -813,7 +815,6 @@ class Scala(metaclass=LanguageCls):
         return self._opener_config.build(
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
-            time_type=None,
             set_opener_template=(
                 self.set_format.value.set_opener_template or None
             ),
@@ -857,7 +858,6 @@ class Scala(metaclass=LanguageCls):
                         list_template=None,
                         date_type=self._date_type_name,
                         datetime_type=self._datetime_type_name,
-                        time_type=None,
                         enable_dict_type=False,
                     ),
                     opener_template=dict_spec.opener_template,

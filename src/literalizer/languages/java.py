@@ -1361,7 +1361,6 @@ class Java(metaclass=LanguageCls):
                     py_type=self.datetime_format.value.type_produced,
                 )
             ),
-            time_type=None,
             set_opener_template=None,
             narrow_dict_values=False,
         )
