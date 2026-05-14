@@ -134,10 +134,13 @@ def _bash_validate_dict_keys(data: Value) -> None:
     match data:
         case dict():
             for raw_key in data:
-                if not isinstance(raw_key, str) or (
-                    not raw_key
-                    or not raw_key.isprintable()
-                    or not raw_key.isascii()
+                rendered_key = (
+                    raw_key if isinstance(raw_key, str) else f"{raw_key!r}"
+                )
+                if (
+                    not rendered_key
+                    or not rendered_key.isprintable()
+                    or not rendered_key.isascii()
                 ):
                     msg = (
                         f"Bash does not support the dict key {raw_key!r}. "

@@ -17,6 +17,7 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     NullInCollectionError,
+    UnrepresentableInputError,
     UnrepresentableIntegerError,
     VariableNameNotSupportedError,
 )
@@ -80,25 +81,26 @@ def test_golden_file(
                 golden_path=golden_path,
             )
             try:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=wrap_variable_form(),
-                    wrap_in_file=True,
-                )
-            except VariableNameNotSupportedError:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=None,
-                    wrap_in_file=True,
-                )
+                try:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=wrap_variable_form(),
+                        wrap_in_file=True,
+                    )
+                except VariableNameNotSupportedError:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=None,
+                        wrap_in_file=True,
+                    )
             except UnrepresentableIntegerError:
                 golden_path.unlink(missing_ok=True)
                 pytest.skip(
@@ -113,6 +115,11 @@ def test_golden_file(
                 golden_path.unlink(missing_ok=True)
                 pytest.skip(
                     f"{lang_name} cannot represent null in a collection",
+                )
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{lang_name} cannot represent this input",
                 )
             # newline="" prevents Python text-mode from converting \r\n to
             # \n on Windows, which would corrupt golden files containing
@@ -191,6 +198,9 @@ def test_golden_file_combined_variable_forms(
                     f"{lang_cls.__name__} cannot represent null in a "
                     "collection"
                 )
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(f"{lang_cls.__name__} cannot represent this input")
             check_golden(
                 file_regression=file_regression,
                 contents=result.code + "\n",
@@ -233,27 +243,28 @@ def test_format_variant_golden_file(
                 golden_path=golden_path,
             )
             try:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=variant_case.variable_form,
-                    wrap_in_file=True,
-                    collection_layout=variant.collection_layout,
-                )
-            except VariableNameNotSupportedError:
-                result = literalizer.literalize(
-                    source=yaml_string,
-                    input_format=literalizer.InputFormat.YAML,
-                    language=spec,
-                    pre_indent_level=0,
-                    include_delimiters=True,
-                    variable_form=None,
-                    wrap_in_file=True,
-                    collection_layout=variant.collection_layout,
-                )
+                try:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=variant_case.variable_form,
+                        wrap_in_file=True,
+                        collection_layout=variant.collection_layout,
+                    )
+                except VariableNameNotSupportedError:
+                    result = literalizer.literalize(
+                        source=yaml_string,
+                        input_format=literalizer.InputFormat.YAML,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=None,
+                        wrap_in_file=True,
+                        collection_layout=variant.collection_layout,
+                    )
             except NullInCollectionError:
                 pytest.skip("Format rejects null elements in this input")
             except HeterogeneousCollectionError:
@@ -262,6 +273,9 @@ def test_format_variant_golden_file(
             except IncompatibleFormatsError:
                 golden_path.unlink(missing_ok=True)
                 pytest.skip("Format combination cannot represent this input")
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent this input")
             check_golden(
                 file_regression=file_regression,
                 contents=result.code + "\n",

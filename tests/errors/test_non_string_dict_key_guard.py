@@ -2,10 +2,12 @@
 
 The guard runs inside ``_format_dict_value`` and
 ``_format_ordered_map_value`` and rejects non-string dict keys when the
-target language sets ``supports_non_string_dict_keys = False``.  Today
-the surface parsers only produce string-keyed dicts, so the guard is
-wired but unreachable through :func:`literalizer.literalize`; the tests
-here invoke the helper directly to exercise the contract.
+target language sets ``supports_non_string_dict_keys = False``.  The
+YAML parser produces non-string dict keys natively, so the guard is
+reachable through :func:`literalizer.literalize`; the helper-level tests
+here exercise the contract directly.  Integration coverage for
+end-to-end rejection lives in
+``tests/errors/test_non_string_dict_key_literalize.py``.
 """
 
 import re

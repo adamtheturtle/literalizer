@@ -1430,6 +1430,7 @@ def _format_collection_lines(
     parent_id = id(data)
     match data:
         case dict() as dict_data:
+            _guard_dict_keys_supported(value=dict_data, spec=spec)
             entries = [
                 (k, v)
                 for k, v in dict_data.items()
