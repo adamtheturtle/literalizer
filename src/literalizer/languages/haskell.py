@@ -963,6 +963,7 @@ def _build_preamble_setup(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
+    integer_format: enum.Enum,
     is_explicit: bool,
     type_name: str,
     constructor_prefix: str,
@@ -985,6 +986,20 @@ def _build_preamble_setup(
             datetime_format=datetime_format,
             extra=str_extra,
         )
+    # Binary integer literals (``0b...``) are not part of Haskell 2010
+    # and need the ``BinaryLiterals`` extension. ``GHC2021`` bundles
+    # it already, so the pragma is redundant under that base, but
+    # emitting it unconditionally lets the generated code build under
+    # either base without ceremony. Hex (``0x``) and octal (``0o``)
+    # are standard either way.
+    if integer_format.name == "BINARY":
+        scalar_preamble = {
+            **scalar_preamble,
+            int: (
+                *scalar_preamble.get(int, ()),
+                "{-# LANGUAGE BinaryLiterals #-}",
+            ),
+        }
     return _PreambleSetup(
         scalar_preamble=scalar_preamble,
         compute_body_preamble=_build_scalar_body_preamble(
@@ -1386,7 +1401,7 @@ class Haskell(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Haskell."""
 
-        HASKELL_2010 = enum.auto()
+        GHC2021 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -1518,7 +1533,9 @@ class Haskell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    language_version: VersionFormats = VersionFormats.HASKELL_2010
+    # Keep in sync with the `-XGHC2021` flag passed to the Haskell
+    # linter in `.github/workflows/lint.yml`.
+    language_version: VersionFormats = VersionFormats.GHC2021
     indent: str = "    "
     module_name: str = "Check"
     type_name: str = "Val"
@@ -1794,6 +1811,7 @@ class Haskell(metaclass=LanguageCls):
         return _build_preamble_setup(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            integer_format=self.integer_format,
             is_explicit=self._string_fmts.is_explicit,
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,

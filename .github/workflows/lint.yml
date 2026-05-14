@@ -858,6 +858,8 @@ jobs:
       # suffices; no sed rewriting needed. A generated Main.hs driver
       # imports every fixture qualified and calls its main so one run
       # exercises them all.
+      # ``-XGHC2021`` matches ``Haskell.language_version`` in
+      # ``src/literalizer/languages/haskell.py``; keep them in sync.
       - name: Lint Haskell
         run: |-
           find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell && test -s /tmp/files-haskell
@@ -880,7 +882,7 @@ jobs:
             printf 'main :: IO ()\nmain = do\n'
             cat "$calls"
           } > "$workspace/Main.hs"
-          (cd "$workspace" && ghc -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
+          (cd "$workspace" && ghc -XGHC2021 -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
           "$tmpdir/run"
 
       - name: Lint PureScript
