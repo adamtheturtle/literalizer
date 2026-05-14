@@ -5,14 +5,18 @@ import datetime
 import enum
 import math
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Final, Protocol, assert_never, runtime_checkable
 
 import humps
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import typed_collection_open
-from literalizer._formatters.type_inference import DictType, ListType
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    RecordShape,
+)
 from literalizer._types import Scalar, Value
 
 
@@ -462,6 +466,12 @@ class HeterogeneousBehavior:
     Languages that do not need cross-call top-level wrapping return
     an empty ``frozenset``.
 
+    ``render_record_literal`` renders a record-shaped dict as a
+    generated struct literal given its :class:`RecordShape` and a
+    mapping of pre-formatted field values.  Defaults to ``None`` for
+    strategies that do not opt into the ``RECORD`` style — the
+    detection and walking helpers land alongside the first consumer.
+
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
     """
@@ -471,6 +481,9 @@ class HeterogeneousBehavior:
     wrap_scalar: Callable[[Scalar, str], str] | None
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
+    render_record_literal: (
+        Callable[[RecordShape, Mapping[str, str]], str] | None
+    ) = None
 
 
 def _no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
