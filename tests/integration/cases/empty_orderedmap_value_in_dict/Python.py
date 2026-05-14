@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import OrderedDict
 from typing import Any
 my_data: dict[str, OrderedDict[str, Any] | int] = {
