@@ -258,6 +258,7 @@ class Scala(metaclass=LanguageCls):
         str_type="String",
         bool_type="Boolean",
         int_type="Int",
+        wide_int_type="Long",
         float_type="Double",
         mixed_numeric_type="Double",
         bytes_type="String",
