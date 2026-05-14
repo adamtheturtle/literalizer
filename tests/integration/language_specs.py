@@ -27,6 +27,20 @@ from .language_versions import LANGUAGE_VERSIONS
 
 
 @beartype
+def _logical_stem(*, path: Path) -> str:
+    """Return *path*'s stem with any ``@version`` suffix removed.
+
+    Per-fixture module names embed the stem in the generated source
+    file (``-module(...)``, ``module Fixture_...``).  Version-tagged
+    variants live alongside the base file but identifiers must remain
+    stable across both forms so the same source can resolve to either
+    path.
+    """
+    stem = path.stem
+    return stem.rsplit(sep="@", maxsplit=1)[0] if "@" in stem else stem
+
+
+@beartype
 def erlang_module_name(*, golden_path: Path) -> str:
     """Return the Erlang module name for *golden_path*.
 
@@ -35,7 +49,7 @@ def erlang_module_name(*, golden_path: Path) -> str:
     ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"fixture_{dir_name}_{stem}".lower()
 
 
@@ -48,7 +62,7 @@ def scala_module_name(*, golden_path: Path) -> str:
     ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"Fixture_{dir_name}_{stem}"
 
 
@@ -61,7 +75,7 @@ def crystal_module_name(*, golden_path: Path) -> str:
     shell-level wrapping or ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"Fixture_{dir_name}_{stem}"
 
 
@@ -74,7 +88,7 @@ def haskell_module_name(*, golden_path: Path) -> str:
     ``sed`` rewriting.
     """
     dir_name = golden_path.parent.name
-    stem = golden_path.stem
+    stem = _logical_stem(path=golden_path)
     return f"Fixture_{dir_name}_{stem}"
 
 
