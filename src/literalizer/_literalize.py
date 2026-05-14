@@ -70,48 +70,6 @@ from literalizer.exceptions import (
 
 _DISABLED_REF_KEY = ""
 
-# Languages whose ``format_variable_declaration`` /
-# ``format_variable_assignment`` templates wrap or transform the
-# right-hand side in a way that is only valid for *literal* values, so
-# splicing a call expression in produces invalid output; ``Tcl`` /
-# ``Bash`` need command substitution (``[...]`` / ``$(...)``);
-# ``Objective-C`` boxes primitives with ``@(...)``; ``C``,
-# ``SystemVerilog``, ``Fortran``, ``Ada``, ``Zig``, and ``D`` wrap the
-# value in a struct initializer or constructor whose field type comes
-# from the value's literal type, not the call's return type; ``Roc``,
-# ``Haskell``, ``Elm``, ``SML``, ``OCaml``, ``PureScript``, and
-# ``F#`` prepend a tagged-enum value-type constructor or attach a
-# value-derived type annotation that doesn't match the call's return
-# type; ``Elixir`` nests ``def`` stubs inside the variable's function
-# body instead of module scope; ``Erlang``, ``Forth``, and ``Nim``
-# declaration syntax doesn't compose with call expressions at all.
-# ``literalize_call`` rejects ``variable_form`` for these languages
-# with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
-_LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING: Final[frozenset[str]] = frozenset(
-    {
-        "Ada",
-        "Bash",
-        "C",
-        "D",
-        "Elixir",
-        "Elm",
-        "Erlang",
-        "FSharp",
-        "Forth",
-        "Fortran",
-        "Haskell",
-        "Nim",
-        "OCaml",
-        "ObjectiveC",
-        "PureScript",
-        "Roc",
-        "Sml",
-        "SystemVerilog",
-        "Tcl",
-        "Zig",
-    }
-)
-
 
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
@@ -3203,7 +3161,7 @@ def _validate_call_variable_form(
                 "so the call result cannot be bound to a variable"
             ),
         )
-    if type(language).__name__ in _LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING:
+    if not language.supports_call_variable_binding:
         raise UnsupportedCallShapeError(
             language_name=type(language).__name__,
             reason=(

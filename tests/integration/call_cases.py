@@ -901,32 +901,6 @@ def _expected_call_shape_exception(
     return None
 
 
-_LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING: frozenset[str] = frozenset(
-    {
-        "Ada",
-        "Bash",
-        "C",
-        "D",
-        "Elixir",
-        "Elm",
-        "Erlang",
-        "FSharp",
-        "Forth",
-        "Fortran",
-        "Haskell",
-        "Nim",
-        "OCaml",
-        "ObjectiveC",
-        "PureScript",
-        "Roc",
-        "Sml",
-        "SystemVerilog",
-        "Tcl",
-        "Zig",
-    }
-)
-
-
 @beartype
 def _variable_form_expected_exception(
     *,
@@ -940,7 +914,7 @@ def _variable_form_expected_exception(
         return VariableNameNotSupportedError
     if not lang_cls.call_returns_expression:
         return UnsupportedCallShapeError
-    if lang_cls.__name__ in _LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING:
+    if not lang_cls.supports_call_variable_binding:
         return UnsupportedCallShapeError
     return None
 

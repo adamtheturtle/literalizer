@@ -613,6 +613,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
+    supports_call_variable_binding: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
@@ -927,6 +928,25 @@ class Language(Protocol):
     Languages with no variable-name syntax at all
     (:attr:`supports_variable_names` is ``False``) must set this to
     ``True``: their ``wrap_in_file`` output has no other shape.
+    """
+
+    supports_call_variable_binding: bool
+    """Whether the language's ``format_variable_declaration`` /
+    ``format_variable_assignment`` template can safely host a *call
+    expression* on the right-hand side.
+
+    When ``False``, the language's binding template wraps or
+    transforms the right-hand side in a way that is only valid for
+    *literal* values (e.g. Tcl's bare command words that need
+    ``[...]`` substitution; Objective-C's ``@(...)`` boxing of
+    primitives; tagged-enum heterogeneous-strategy languages that
+    prepend a value-type constructor; languages whose declaration
+    template encodes the value's literal type as a struct-initializer
+    field).  ``literalize_call`` rejects ``variable_form`` for such
+    languages with
+    :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+    Ignored by :func:`~literalizer.literalize`, whose right-hand side
+    is always a literal value.
     """
 
     dict_supports_heterogeneous_values: bool
