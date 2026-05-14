@@ -901,6 +901,24 @@ def _expected_call_shape_exception(
     return None
 
 
+_LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING: frozenset[str] = frozenset(
+    {
+        "Elm",
+        "Erlang",
+        "FSharp",
+        "Forth",
+        "Haskell",
+        "Nim",
+        "OCaml",
+        "ObjectiveC",
+        "PureScript",
+        "Roc",
+        "Sml",
+        "Tcl",
+    }
+)
+
+
 @beartype
 def _variable_form_expected_exception(
     *,
@@ -913,6 +931,8 @@ def _variable_form_expected_exception(
     if not lang_cls.supports_variable_names:
         return VariableNameNotSupportedError
     if not lang_cls.call_returns_expression:
+        return UnsupportedCallShapeError
+    if lang_cls.__name__ in _LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING:
         return UnsupportedCallShapeError
     return None
 

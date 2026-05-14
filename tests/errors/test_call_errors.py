@@ -43,6 +43,7 @@ from literalizer.languages import (
     Nix,
     Python,
     Racket,
+    Tcl,
     Wren,
     Yaml,
 )
@@ -584,4 +585,29 @@ def test_literalize_call_both_variable_forms_without_wrap_in_file_raises() -> (
             parameter_names=["count"],
             per_element=False,
             variable_form=BothVariableForms(name="result"),
+        )
+
+
+def test_literalize_call_variable_form_template_incompatible_raises() -> None:
+    """``variable_form`` is rejected for languages whose declaration
+    template wraps the right-hand side incompatibly with call expressions
+    (Tcl needs ``[...]`` substitution; Objective-C wraps primitives in
+    ``@(...)``; tagged-enum heterogeneous languages prepend a
+    constructor; etc.).
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"this language's variable-declaration template wraps or "
+            r"transforms the right-hand side"
+        ),
+    ):
+        literalize_call(
+            source="42",
+            input_format=InputFormat.JSON,
+            language=Tcl(),
+            target_function="make_widget",
+            parameter_names=["count"],
+            per_element=False,
+            variable_form=NewVariable(name="result"),
         )

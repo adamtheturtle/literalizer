@@ -17,7 +17,13 @@ Next
   Incompatible with ``per_element=True`` and with languages whose
   call form is a statement rather than an expression
   (``call_returns_expression=False``); both combinations raise
-  :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  Closes
+  :exc:`~literalizer.exceptions.UnsupportedCallShapeError`.  The same
+  exception is raised for languages whose declaration template wraps
+  or transforms the right-hand side in a way that is only valid for
+  literal values -- Tcl (needs ``[...]`` command substitution),
+  Objective-C (``@(...)`` boxing of primitives), tagged-enum
+  heterogeneous-strategy languages (Roc, Haskell, Elm, SML, OCaml,
+  PureScript, F#), Erlang, Forth, and Nim.  Closes
   `#1961 <https://github.com/adamtheturtle/literalizer/issues/1961>`_.
 
 - The internal :data:`~literalizer._types.Value` and

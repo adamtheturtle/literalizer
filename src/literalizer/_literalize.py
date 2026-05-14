@@ -70,6 +70,33 @@ from literalizer.exceptions import (
 
 _DISABLED_REF_KEY = ""
 
+# Languages whose ``format_variable_declaration`` /
+# ``format_variable_assignment`` templates wrap or transform the
+# right-hand side in a way that is only valid for *literal* values, so
+# splicing a call expression in produces invalid output (e.g. Tcl needs
+# ``[...]`` command substitution; Objective-C wraps primitives in
+# ``@(...)``; tagged-enum heterogeneous-strategy languages prepend a
+# constructor or attach a value-derived type annotation that doesn't
+# match the call's actual return type).  ``literalize_call`` rejects
+# ``variable_form`` for these languages with
+# :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+_LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING: Final[frozenset[str]] = frozenset(
+    {
+        "Elm",
+        "Erlang",
+        "FSharp",
+        "Forth",
+        "Haskell",
+        "Nim",
+        "OCaml",
+        "ObjectiveC",
+        "PureScript",
+        "Roc",
+        "Sml",
+        "Tcl",
+    }
+)
+
 
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
@@ -3157,6 +3184,15 @@ def _validate_call_variable_form(
             reason=(
                 "calls in this language are statements, not expressions, "
                 "so the call result cannot be bound to a variable"
+            ),
+        )
+    if type(language).__name__ in _LANGUAGES_WITHOUT_CALL_VARIABLE_BINDING:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "this language's variable-declaration template wraps or "
+                "transforms the right-hand side in a way that is only "
+                "valid for literal values, not call expressions"
             ),
         )
     if isinstance(variable_form, BothVariableForms):
