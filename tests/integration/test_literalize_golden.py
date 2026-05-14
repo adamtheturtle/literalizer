@@ -50,7 +50,6 @@ from .language_specs import (
     make_golden_path,
     make_spec,
     sorted_languages,
-    spec_with_version,
     with_per_fixture_module_name,
 )
 from .variant_cases import (
@@ -251,84 +250,72 @@ def test_format_variant_golden_file(
     against golden files.
     """
     for variant_case in group_variant_cases_by_language()[lang_cls]:
-        for version_format in lang_cls.VersionFormats:
-            variant = variant_case.variant
-            if variant.spec.language_version is not version_format:
-                # Variants pin a specific ``language_version`` (e.g. PY38
-                # version variants).  Rebuilding the variant under a
-                # different version would require threading the original
-                # variant kwargs through ``make_spec`` again, so for now
-                # only render the iteration that matches the variant's
-                # own version.
-                continue
-            with subtests.test(
-                variant_name=variant_case.variant_name,
-                case_dir_name=variant_case.case_dir_name,
-                version=version_format.name,
-            ):
-                case_dir = cases_dir / variant_case.case_dir_name
-                input_info = case_input(case_dir=case_dir)
-                source_text = input_info.path.read_text(encoding="utf-8")
-                golden_path = make_golden_path(
-                    parent=case_dir,
-                    name=variant_case.variant_name,
-                    extension=variant.spec.extension,
-                    lang_cls=lang_cls,
-                    version=version_format,
-                )
-                versioned_spec = spec_with_version(
-                    spec=variant.spec,
-                    version=version_format,
-                )
-                spec = with_per_fixture_module_name(
-                    spec=versioned_spec,
-                    golden_path=golden_path,
-                )
+        variant = variant_case.variant
+        # Each variant pins a specific ``language_version`` (e.g. PY38
+        # version variants), so render only that one version.
+        # ``lang_cls.VersionFormats`` is iterated by other tests where
+        # the spec is rebuilt per version.
+        version_format = variant.spec.language_version
+        with subtests.test(
+            variant_name=variant_case.variant_name,
+            case_dir_name=variant_case.case_dir_name,
+            version=version_format.name,
+        ):
+            case_dir = cases_dir / variant_case.case_dir_name
+            input_info = case_input(case_dir=case_dir)
+            source_text = input_info.path.read_text(encoding="utf-8")
+            golden_path = make_golden_path(
+                parent=case_dir,
+                name=variant_case.variant_name,
+                extension=variant.spec.extension,
+                lang_cls=lang_cls,
+                version=version_format,
+            )
+            spec = with_per_fixture_module_name(
+                spec=variant.spec,
+                golden_path=golden_path,
+            )
+            try:
                 try:
-                    try:
-                        result = literalizer.literalize(
-                            source=source_text,
-                            input_format=input_info.input_format,
-                            language=spec,
-                            pre_indent_level=0,
-                            include_delimiters=True,
-                            variable_form=variant_case.variable_form,
-                            wrap_in_file=True,
-                            collection_layout=variant.collection_layout,
-                        )
-                    except VariableNameNotSupportedError:
-                        result = literalizer.literalize(
-                            source=source_text,
-                            input_format=input_info.input_format,
-                            language=spec,
-                            pre_indent_level=0,
-                            include_delimiters=True,
-                            variable_form=None,
-                            wrap_in_file=True,
-                            collection_layout=variant.collection_layout,
-                        )
-                except NullInCollectionError:
-                    pytest.skip("Format rejects null elements in this input")
-                except HeterogeneousCollectionError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        "Format cannot represent this heterogeneous input"
+                    result = literalizer.literalize(
+                        source=source_text,
+                        input_format=input_info.input_format,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=variant_case.variable_form,
+                        wrap_in_file=True,
+                        collection_layout=variant.collection_layout,
                     )
-                except IncompatibleFormatsError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        "Format combination cannot represent this input"
+                except VariableNameNotSupportedError:
+                    result = literalizer.literalize(
+                        source=source_text,
+                        input_format=input_info.input_format,
+                        language=spec,
+                        pre_indent_level=0,
+                        include_delimiters=True,
+                        variable_form=None,
+                        wrap_in_file=True,
+                        collection_layout=variant.collection_layout,
                     )
-                except UnrepresentableInputError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip("Format cannot represent this input")
-                check_golden(
-                    file_regression=file_regression,
-                    contents=result.code + "\n",
-                    extension=variant.spec.extension,
-                    newline=None,
-                    golden_path=golden_path,
-                )
+            except NullInCollectionError:
+                pytest.skip("Format rejects null elements in this input")
+            except HeterogeneousCollectionError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent this heterogeneous input")
+            except IncompatibleFormatsError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format combination cannot represent this input")
+            except UnrepresentableInputError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent this input")
+            check_golden(
+                file_regression=file_regression,
+                contents=result.code + "\n",
+                extension=variant.spec.extension,
+                newline=None,
+                golden_path=golden_path,
+            )
 
 
 @pytest.mark.parametrize(

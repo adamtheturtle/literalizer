@@ -25,21 +25,6 @@ from literalizer.languages import (
 
 
 @beartype
-def _default_language_version(
-    *, lang_cls: literalizer.LanguageCls
-) -> enum.Enum:
-    """Return the default ``language_version`` enum member for *lang_cls*.
-
-    Every language dataclass declares a ``language_version`` field
-    whose default points at the single active member of its
-    ``VersionFormats`` enum.  Reading the default lets the golden-file
-    pipeline tag each fixture with the active version without scanning
-    on-disk filenames.
-    """
-    return make_spec(lang_cls=lang_cls).language_version
-
-
-@beartype
 def _logical_stem(*, path: Path) -> str:
     """Return *path*'s stem with any ``@version`` suffix removed.
 
@@ -165,7 +150,7 @@ def make_golden_path(
     name: str,
     extension: str,
     lang_cls: literalizer.LanguageCls,
-    version: enum.Enum | None = None,
+    version: enum.Enum,
 ) -> Path:
     """Return the on-disk path for a golden fixture file.
 
@@ -173,12 +158,7 @@ def make_golden_path(
     member of the language's ``VersionFormats`` enum so adding a second
     version member automatically produces a parallel set of golden
     files.  The tag uses the member's lower-cased ``name`` (e.g.
-    ``PY_3_12`` -> ``py_3_12``).
-
-    When *version* is ``None`` the tag is derived from the language's
-    default ``language_version`` field.  Callers that want to loop over
-    every active version (today exactly one per language) pass the
-    explicit member they are rendering.
+    ``PY39`` -> ``py39``).
 
     Gleam is special-cased: the entire file name (including the version
     tag) is mapped to its lower-case form so it remains a valid Gleam
@@ -190,12 +170,7 @@ def make_golden_path(
     test IDs and error messages; only the on-disk file name is mapped
     down.
     """
-    effective_version = (
-        version
-        if version is not None
-        else _default_language_version(lang_cls=lang_cls)
-    )
-    version_tag = effective_version.name.lower()
+    version_tag = version.name.lower()
     filename = f"{name}@{version_tag}{extension}"
     if lang_cls.__name__ == Gleam.__name__:
         filename = filename.lower()
@@ -240,29 +215,3 @@ def make_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),
     )
-
-
-@beartype
-def spec_with_version(
-    *,
-    spec: literalizer.Language,
-    version: enum.Enum,
-) -> literalizer.Language:
-    """Return *spec* with its ``language_version`` set to *version*.
-
-    Today every language exposes a single :class:`VersionFormats` member,
-    so the spec's existing ``language_version`` necessarily matches
-    *version*; callers iterate ``lang_cls.VersionFormats`` purely so a
-    second member added in future automatically multiplies the
-    parameter space.  When that day comes, swap this helper for a real
-    rebuild (e.g. extending the variant builders to thread
-    ``language_version`` through their own ``make_spec`` calls).
-    """
-    if spec.language_version is not version:
-        msg = (
-            "Multi-version specs are not yet supported on this code path; "
-            f"{type(spec).__name__} default is "
-            f"{spec.language_version.name!r}, asked for {version.name!r}."
-        )
-        raise NotImplementedError(msg)
-    return spec

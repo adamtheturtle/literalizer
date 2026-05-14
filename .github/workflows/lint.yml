@@ -876,6 +876,7 @@ jobs:
           while IFS= read -r -d '' f; do
             dir=$(basename "$(dirname "$f")")
             stem=$(basename "$f" .hs)
+            stem="${stem%@*}"  # strip @version so Main.hs imports a valid module
             mod="Fixture_${dir}_${stem}"
             cp "$f" "$workspace/${mod}.hs"
             printf '%s.hs <- %s\n' "$mod" "$f"
@@ -956,14 +957,25 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install GnuCOBOL
         uses: fabasoad/setup-cobol-action@v1.6.2
+      # GnuCOBOL caps the file base name length and rejects ``@``-laden
+      # names that exceed it, so copy each fixture to a fixed short
+      # filename before invoking ``cobc``.
       - name: Check COBOL syntax
-        run: xargs -0 -P "$(nproc)" -n1 cobc -free -fsyntax-only < /tmp/files-to-lint
+        run: |-
+          cat > /tmp/check-cobol.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.cob"
+          cobc -free -fsyntax-only "$tmpdir/check.cob"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-cobol.sh < /tmp/files-to-lint
       - name: Run COBOL files
         run: |-
           cat > /tmp/run-cobol.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          cobc -x -free "$1" -o "$tmpdir/run" || exit 1
+          cp "$1" "$tmpdir/check.cob"
+          cobc -x -free "$tmpdir/check.cob" -o "$tmpdir/run" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
@@ -1142,6 +1154,7 @@ jobs:
           while IFS= read -r -d '' f; do
             dir=$(basename "$(dirname "$f")")
             stem=$(basename "$f" .scala)
+            stem="${stem%@*}"  # strip @version so the Scala object name is a valid identifier
             name="Fixture_${dir}_${stem}"
             cp "$f" "$workspace/${name}.scala"
             printf '%s.scala <- %s\n' "$name" "$f"
@@ -1323,8 +1336,18 @@ jobs:
         uses: dlang-community/setup-dlang@v2
         with:
           compiler: dmd-latest
+      # D derives the module name from the source filename and rejects
+      # ``@`` as a non-identifier character, so copy each fixture to a
+      # sanitized name before invoking ``dmd``.
       - name: Check D syntax
-        run: xargs -0 -P "$(nproc)" -n1 dmd -o- -c < /tmp/files-to-lint
+        run: |-
+          cat > /tmp/check-d.sh <<'SCRIPT'
+          tmpdir=$(mktemp -d)
+          trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.d"
+          dmd -o- -c "$tmpdir/check.d"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-d.sh < /tmp/files-to-lint
       # Each fixture defines its own main, so compile and run directly.
       # Each invocation gets a private tmpdir so parallel builds don't
       # clobber each other's intermediate object files or output binary.
@@ -1369,6 +1392,7 @@ jobs:
           while IFS= read -r -d '' f; do
             dir=$(basename "$(dirname "$f")")
             stem=$(basename "$f" .cr)
+            stem="${stem%@*}"  # strip @version so the Crystal module name is a valid identifier
             name="Fixture_${dir}_${stem}"
             cp "$f" "$workspace/${name}.cr"
             printf 'require "./%s"\n' "$name" >> "$driver"
@@ -1490,14 +1514,18 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install Nim
         uses: jiro4989/setup-nim-action@v2
+      # Nim derives the module name from the source filename and
+      # rejects ``@`` as a non-identifier character, so copy each
+      # fixture to a sanitized name before invoking ``nim c -r``.
       - name: Run Nim files
         run: |-
           cat > /tmp/run-nim.sh <<'SCRIPT'
           read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
+          cp "$1" "$tmpdir/check.nim"
           nim c -r --hints:off "${warning_flags[@]}" \
-            --nimcache:"$tmpdir" "$1"
+            --nimcache:"$tmpdir" "$tmpdir/check.nim"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-nim.sh < /tmp/files-to-lint
 

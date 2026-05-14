@@ -17,7 +17,7 @@ from .call_cases import (
     run_call_golden_case,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
-from .language_specs import make_spec, spec_with_version
+from .language_specs import make_spec
 
 
 @pytest.mark.parametrize(
@@ -93,18 +93,17 @@ def test_call_variant_golden_file(
     statement terminators or heterogeneous strategies.
     """
     lang_cls = call_variant_case.variant.lang_cls
-    for version_format in lang_cls.VersionFormats:
-        with subtests.test(version=version_format.name):
-            versioned_spec = spec_with_version(
-                spec=call_variant_case.variant.spec,
-                version=version_format,
-            )
-            run_call_golden_case(
-                config=call_variant_case.config,
-                spec=versioned_spec,
-                lang_cls=lang_cls,
-                golden_name=f"{call_variant_case.variant.name}_call",
-                cases_dir=cases_dir,
-                file_regression=file_regression,
-                version=version_format,
-            )
+    # Each variant pins a specific ``language_version``, so render only
+    # that one version.  ``lang_cls.VersionFormats`` is iterated by other
+    # tests where the spec is rebuilt per version.
+    version_format = call_variant_case.variant.spec.language_version
+    with subtests.test(version=version_format.name):
+        run_call_golden_case(
+            config=call_variant_case.config,
+            spec=call_variant_case.variant.spec,
+            lang_cls=lang_cls,
+            golden_name=f"{call_variant_case.variant.name}_call",
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+            version=version_format,
+        )
