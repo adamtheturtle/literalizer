@@ -8,10 +8,10 @@ Next
   ``heterogeneous_strategy`` now raises
   :class:`~literalizer.exceptions.UnrepresentableInputError` for a
   set-valued record field, and for a record field whose value is a
-  dict that is not record-eligible (empty or non-string-keyed),
-  instead of emitting a struct whose declared field type disagrees
-  with the rendered ``HashSet``/``BTreeSet``/``HashMap`` literal and
-  fails to compile.
+  dict that is not record-eligible (empty, non-string-keyed, or an
+  ordered map), instead of emitting a struct whose declared field
+  type disagrees with the rendered ``HashSet``/``BTreeSet``/``HashMap``
+  literal and fails to compile.
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
   emit output that fails to compile for a post-2038
   :class:`~datetime.datetime`

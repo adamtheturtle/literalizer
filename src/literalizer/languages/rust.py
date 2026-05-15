@@ -667,9 +667,10 @@ def _rust_record_field_type(
     # An empty-list field has no element type to infer, so it falls
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
     # this).  A set-valued field, and a dict-valued field whose dict is
-    # not record-eligible (empty or non-string-keyed), have no struct
-    # field type that matches the ``HashSet``/``BTreeSet``/``HashMap``
-    # literal rendered for the value, so the ``case set()`` and the
+    # not record-eligible (empty, non-string-keyed, or an ordered map),
+    # have no struct field type that matches the
+    # ``HashSet``/``BTreeSet``/``HashMap`` literal rendered for the
+    # value, so the ``case set()`` and the
     # non-record ``case dict()`` paths reject the input instead of
     # emitting a struct that fails to compile.
     match value:
@@ -706,9 +707,9 @@ def _rust_record_field_type(
             if shape is not None and shape in record_names:
                 return record_names[shape]
             msg = (
-                "Rust cannot represent a non-record dict (empty or "
-                "non-string-keyed) as a field under the RECORD "
-                "heterogeneous strategy"
+                "Rust cannot represent a non-record dict (empty, "
+                "non-string-keyed, or an ordered map) as a field "
+                "under the RECORD heterogeneous strategy"
             )
             raise UnrepresentableInputError(msg)
         case set():
@@ -1095,9 +1096,13 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
                     seen=seen,
                     field_values=field_values,
                 )
-        case dict():  # pragma: no cover
-            # Non-record dicts (empty or non-string-keyed) sitting next
-            # to record dicts are a #2234 / out-of-MVP shape.
+        case dict():
+            # Non-record dicts (empty, non-string-keyed, or an ordered
+            # map) sitting next to record dicts are a #2234 /
+            # out-of-MVP shape.  Still recurse so a record dict nested
+            # deeper inside one is found, even though
+            # :func:`_rust_record_field_type` later rejects such a dict
+            # when it is itself a record field.
             for value in data.values():
                 _gather_record_field_values(
                     data=value,
