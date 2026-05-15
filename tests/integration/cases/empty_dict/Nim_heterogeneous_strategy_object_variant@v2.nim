@@ -1,2 +1,2 @@
 import tables
-var my_data = {}.toTable
+var my_data = initTable[string, string]()
