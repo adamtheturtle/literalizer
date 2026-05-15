@@ -65,6 +65,7 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
+    ZipSourceWithoutInputFormatError,
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
 )
@@ -80,8 +81,8 @@ class CallContext:
     A ``call_transform`` is invoked once per generated call as
     ``call_transform(context)`` and returns the transformed call
     string.  The context carries the call's positional identity so a
-    transform can pair it with data from a parallel sequence (see
-    :func:`literalize_call`'s ``zip_values``).
+    transform can pair it with data from a parallel source (see
+    :func:`literalize_call`'s ``zip_source``).
     """
 
     call: str
@@ -100,8 +101,8 @@ class CallContext:
     """
 
     zipped: str | None
-    """The ``zip_values`` entry paired with this call, rendered as a
-    language-native literal, or ``None`` when no ``zip_values`` were
+    """The ``zip_source`` element paired with this call, rendered as a
+    language-native literal, or ``None`` when no ``zip_source`` was
     supplied.
     """
 
@@ -3765,7 +3766,7 @@ def _materialize_value_input(*, value: ValueInput) -> Value:
 @beartype
 @dataclasses.dataclass(frozen=True)
 class _ZipResolution:
-    """Resolved ``zip_values``: rendered literals plus the materialized
+    """Resolved ``zip_source``: rendered literals plus the parsed
     values (the latter feed preamble/body-type inference so languages
     with generated value types declare the zip literal's type).
     """
@@ -3780,7 +3781,8 @@ def _preamble_data_with_zip(
     data_for_preamble: Value,
     zip_resolution: "_ZipResolution | None",
 ) -> Value:
-    """Fold ``zip_values`` into the data used for preamble inference.
+    """Fold the parsed ``zip_source`` values into the data used for
+    preamble inference.
 
     The rendered zip literals reference whatever type machinery the
     language uses for a value (e.g. Haskell's ``data Val`` constructors,
@@ -3800,42 +3802,67 @@ def _preamble_data_with_zip(
 @beartype
 def _resolve_zip_literals(
     *,
-    zip_values: Sequence[ValueInput] | None,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
     call_transform: Callable[[CallContext], str] | None,
+    per_element: bool,
     call_count: int,
     language: Language,
     collection_layout: CollectionLayout,
 ) -> _ZipResolution | None:
-    """Render each ``zip_values`` entry to a language-native literal.
+    """Parse ``zip_source`` and render each paired value to a
+    language-native literal.
 
-    Returns ``None`` when no ``zip_values`` were supplied.  Otherwise a
-    ``call_transform`` is required (the values are only reachable
-    through it) and the sequence must hold exactly one entry per
-    generated call; violations raise
-    :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`
-    or :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
+    Returns ``None`` when no ``zip_source`` was supplied.  Otherwise
+    ``zip_input_format`` and a ``call_transform`` are required (the
+    paired values are only reachable through the transform).
+    ``zip_source`` is parsed with the same parser as the primary
+    ``source``; when ``per_element`` is ``True`` it must parse to a
+    list whose top-level elements pair element-by-element with the
+    generated calls, otherwise the whole parsed value pairs with the
+    single call.  Violations raise
+    :class:`~literalizer.exceptions.ZipSourceWithoutInputFormatError`,
+    :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`,
+    :class:`~literalizer.exceptions.PerElementNotListError`, or
+    :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
     Each entry is rendered the same way :func:`literalize` renders a
     whole value, so the paired literal matches the target language
     (``True`` in Python, ``true`` in TypeScript, ...).
     """
-    if zip_values is None:
+    if zip_source is None:
         return None
+    if zip_input_format is None:
+        raise ZipSourceWithoutInputFormatError
     if call_transform is None:
         raise ZipValuesWithoutCallTransformError
+    zip_data = parse_input(
+        source=zip_source,
+        input_format=zip_input_format,
+    ).data
+    zip_values: Sequence[Value]
+    if per_element:
+        if not isinstance(zip_data, list):
+            msg = (
+                "per_element=True requires zip_source to parse to a "
+                f"top-level list, got {type(zip_data).__name__}"
+            )
+            raise PerElementNotListError(msg)
+        zip_values = zip_data
+    else:
+        zip_values = [zip_data]
     if len(zip_values) != call_count:
         raise ZipValuesLengthMismatchError(
             call_count=call_count,
             zip_count=len(zip_values),
         )
     literals: list[str] = []
-    materialized_values: list[Value] = []
+    values: list[Value] = []
     for value in zip_values:
-        materialized = _materialize_value_input(value=value)
-        language.validate_spec_for_data(data=materialized)
-        materialized_values.append(materialized)
+        language.validate_spec_for_data(data=value)
+        values.append(value)
         literals.append(
             _literalize(
-                data=materialized,
+                data=value,
                 language=language,
                 line_prefix="",
                 include_delimiters=True,
@@ -3845,7 +3872,7 @@ def _resolve_zip_literals(
                 collection_layout=collection_layout,
             )
         )
-    return _ZipResolution(literals=literals, values=materialized_values)
+    return _ZipResolution(literals=literals, values=values)
 
 
 @beartype
@@ -3857,7 +3884,8 @@ def literalize_call(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[CallContext], str] | None = None,
-    zip_values: Sequence[ValueInput] | None = None,
+    zip_source: str | None = None,
+    zip_input_format: InputFormat | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
@@ -3896,20 +3924,31 @@ def literalize_call(
             object call style); prefix/postfix/command-style languages
             reject it with
             :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
-        zip_values: Optional sequence paired positionally with the
-            generated calls.  Each entry is rendered to a
-            language-native literal (via the same machinery as
-            :func:`literalize`) and exposed on
+        zip_source: Optional companion source whose parsed top-level
+            elements pair positionally with the generated calls.  It is
+            parsed with the *same* parser as *source* (so YAML
+            ``!!omap``, datetime/bytes coercion, JSON5, TOML, ...
+            behave identically by construction), each paired value is
+            rendered to a language-native literal (via the same
+            machinery as :func:`literalize`) and exposed on
             :attr:`CallContext.zipped` for the matching call, enabling
             patterns like printing an expected value beside each call's
-            actual return value.  Must have exactly one entry per
-            generated call (one per top-level element when
-            *per_element* is ``True``, otherwise one); a length
-            mismatch raises
+            actual return value.  When *per_element* is ``True`` it
+            must parse to a list whose top-level elements pair
+            element-by-element with the calls (a non-list raises
+            :class:`~literalizer.exceptions.PerElementNotListError`);
+            otherwise the whole parsed value pairs with the single
+            call.  A length mismatch raises
             :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
-            Requires *call_transform* (the values are only reachable
-            through it); supplying *zip_values* without one raises
-            :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`.
+            Requires *zip_input_format* (supplying *zip_source* without
+            it raises
+            :class:`~literalizer.exceptions.ZipSourceWithoutInputFormatError`)
+            and *call_transform* (the values are only reachable through
+            it; supplying *zip_source* without one raises
+            :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`).
+        zip_input_format: The serialization format of *zip_source*.
+            Required whenever *zip_source* is supplied and ignored
+            otherwise.
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
@@ -4053,8 +4092,10 @@ def literalize_call(
         per_element=per_element,
     )
     zip_resolution = _resolve_zip_literals(
-        zip_values=zip_values,
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
         call_transform=call_transform,
+        per_element=per_element,
         call_count=len(arg_values),
         language=language,
         collection_layout=collection_layout,

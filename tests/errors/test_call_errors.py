@@ -28,6 +28,7 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
+    ZipSourceWithoutInputFormatError,
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
 )
@@ -340,12 +341,12 @@ def test_literalize_call_transform_rejected_for_non_substitution_style() -> (
         )
 
 
-def test_literalize_call_zip_values_length_mismatch_raises() -> None:
-    """``zip_values`` must have one entry per generated call."""
+def test_literalize_call_zip_source_length_mismatch_raises() -> None:
+    """``zip_source`` must parse to one element per generated call."""
     with pytest.raises(
         expected_exception=ZipValuesLengthMismatchError,
         match=(
-            r"^zip_values has 3 element\(s\) but 2 call\(s\) were "
+            r"^zip_source parsed to 3 element\(s\) but 2 call\(s\) were "
             r"generated; the lengths must match$"
         ),
     ):
@@ -356,16 +357,19 @@ def test_literalize_call_zip_values_length_mismatch_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
-            zip_values=[True, False, True],
+            zip_source="[true, false, true]",
+            zip_input_format=InputFormat.JSON,
         )
 
 
-def test_literalize_call_zip_values_without_transform_raises() -> None:
-    """``zip_values`` are only reachable through ``call_transform``."""
+def test_literalize_call_zip_source_without_transform_raises() -> None:
+    """``zip_source`` values are only reachable through
+    ``call_transform``.
+    """
     with pytest.raises(
         expected_exception=ZipValuesWithoutCallTransformError,
         match=(
-            r"^zip_values were supplied without a call_transform; the "
+            r"^zip_source was supplied without a call_transform; the "
             r"paired values would be unused$"
         ),
     ):
@@ -375,7 +379,49 @@ def test_literalize_call_zip_values_without_transform_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["value"],
-            zip_values=[True, False],
+            zip_source="[true, false]",
+            zip_input_format=InputFormat.JSON,
+        )
+
+
+def test_literalize_call_zip_source_without_input_format_raises() -> None:
+    """``zip_source`` cannot be parsed without a ``zip_input_format``."""
+    with pytest.raises(
+        expected_exception=ZipSourceWithoutInputFormatError,
+        match=(
+            r"^zip_source was supplied without a zip_input_format; the "
+            r"companion source cannot be parsed without its format$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+            zip_source="[true, false]",
+        )
+
+
+def test_literalize_call_zip_source_per_element_non_list_raises() -> None:
+    """``per_element=True`` requires ``zip_source`` to parse to a list."""
+    with pytest.raises(
+        expected_exception=PerElementNotListError,
+        match=(
+            r"^per_element=True requires zip_source to parse to a "
+            r"top-level list, got str$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+            zip_source='"not a list"',
+            zip_input_format=InputFormat.JSON,
         )
 
 
