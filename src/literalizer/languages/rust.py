@@ -1805,7 +1805,7 @@ class Rust(metaclass=LanguageCls):
         ``struct Record0 { call: &'static str, args: (i32, &'static str,
         &'static str, i32) }``).  Heterogeneous arrays nested inside
         another list, or containing a non-scalar element, are out of
-        scope and still raise.  Rust has no tuple-arity limit.
+        scope and still raise.  Rust tuples have no length limit.
         """
 
     heterogeneous_strategies = HeterogeneousStrategies
