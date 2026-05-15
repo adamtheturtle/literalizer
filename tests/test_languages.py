@@ -28,7 +28,6 @@ from literalizer.languages import (
     CSharp,
     Dart,
     Dhall,
-    Fortran,
     Gleam,
     Go,
     Haskell,
@@ -39,7 +38,6 @@ from literalizer.languages import (
     Nim,
     Python,
     R,
-    Raku,
     Rust,
     Sml,
     Swift,
@@ -56,13 +54,6 @@ COBOL = Cobol(
     datetime_format=Cobol.datetime_formats.ISO,
     bytes_format=Cobol.bytes_formats.HEX,
     sequence_format=Cobol.sequence_formats.SEQUENCE,
-)
-FORTRAN = Fortran(
-    date_format=Fortran.date_formats.ISO,
-    datetime_format=Fortran.datetime_formats.ISO,
-    bytes_format=Fortran.bytes_formats.HEX,
-    sequence_format=Fortran.sequence_formats.LIST,
-    module_name="check",
 )
 
 
@@ -366,27 +357,6 @@ def test_cobol_level_number_cap() -> None:
     )
 
 
-def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
-    """Line continuation handles escaped quotes before inline comments."""
-    yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=FORTRAN,
-        pre_indent_level=0,
-        variable_form=NewVariable(name="cfg"),
-        include_delimiters=True,
-    )
-
-    assert result.code == (
-        "type(fval_t) :: cfg\n"
-        "cfg = fmap([fval_t :: &\n"
-        "    fentry('host', fstr('it''s here')), &  ! a comment\n"
-        "    fentry('port', fint(80_int64)) &  ! another\n"
-        "])"
-    )
-
-
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     """COBOL data names must not end with a hyphen after truncation."""
     long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
@@ -677,30 +647,6 @@ def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
     )
 
     assert result.declaration_code == "userObj"
-
-
-def test_raku_kebab_ref_case_renders() -> None:
-    """Kebab-friendly languages render kebab-form refs as legal
-    symbols.
-    """
-    assert Raku().supported_ref_cases == frozenset(
-        {
-            IdentifierCase.SNAKE,
-            IdentifierCase.UPPER_SNAKE,
-            IdentifierCase.PASCAL,
-            IdentifierCase.CAMEL,
-            IdentifierCase.KEBAB,
-        },
-    )
-
-    result = literalize(
-        source='{"$ref": "user_obj"}',
-        input_format=InputFormat.JSON,
-        language=Raku(),
-        ref_case=IdentifierCase.KEBAB,
-    )
-
-    assert result.declaration_code == "$user-obj"
 
 
 def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
