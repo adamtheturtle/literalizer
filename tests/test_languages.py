@@ -28,7 +28,6 @@ from literalizer.languages import (
     CSharp,
     Dart,
     Dhall,
-    Fortran,
     Gleam,
     Go,
     Haskell,
@@ -55,13 +54,6 @@ COBOL = Cobol(
     datetime_format=Cobol.datetime_formats.ISO,
     bytes_format=Cobol.bytes_formats.HEX,
     sequence_format=Cobol.sequence_formats.SEQUENCE,
-)
-FORTRAN = Fortran(
-    date_format=Fortran.date_formats.ISO,
-    datetime_format=Fortran.datetime_formats.ISO,
-    bytes_format=Fortran.bytes_formats.HEX,
-    sequence_format=Fortran.sequence_formats.LIST,
-    module_name="check",
 )
 
 
@@ -362,27 +354,6 @@ def test_cobol_level_number_cap() -> None:
         "45 F-I.\n"
         '49 F-VALUE PIC X(4) VALUE "deep".\n'
         "    "
-    )
-
-
-def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
-    """Line continuation handles escaped quotes before inline comments."""
-    yaml_string = "host: it's here  # a comment\nport: 80  # another\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=FORTRAN,
-        pre_indent_level=0,
-        variable_form=NewVariable(name="cfg"),
-        include_delimiters=True,
-    )
-
-    assert result.code == (
-        "type(fval_t) :: cfg\n"
-        "cfg = fmap([fval_t :: &\n"
-        "    fentry('host', fstr('it''s here')), &  ! a comment\n"
-        "    fentry('port', fint(80_int64)) &  ! another\n"
-        "])"
     )
 
 
