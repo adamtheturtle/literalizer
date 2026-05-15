@@ -16,15 +16,15 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
-    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 1})}, {"label", ((CVal){.s = "first"})}}}),
-    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 2})}, {"label", ((CVal){.s = "second"})}}}),
-    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 3})}, {"label", ((CVal){.s = "third"})}}}),
+    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 1})}, {"label", ((CVal){.s = "first"})}, {"tags", ((CVal){.a = (CVal[]){}})}}}),
+    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 2})}, {"label", ((CVal){.s = "second"})}, {"tags", ((CVal){.a = (CVal[]){}})}}}),
+    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 3})}, {"label", ((CVal){.s = "third"})}, {"tags", ((CVal){.a = (CVal[]){}})}}}),
 }});
 (void)my_data;
 my_data = ((CVal){.a = (CVal[]){
-    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 1})}, {"label", ((CVal){.s = "first"})}}}),
-    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 2})}, {"label", ((CVal){.s = "second"})}}}),
-    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 3})}, {"label", ((CVal){.s = "third"})}}}),
+    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 1})}, {"label", ((CVal){.s = "first"})}, {"tags", ((CVal){.a = (CVal[]){}})}}}),
+    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 2})}, {"label", ((CVal){.s = "second"})}, {"tags", ((CVal){.a = (CVal[]){}})}}}),
+    ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 3})}, {"label", ((CVal){.s = "third"})}, {"tags", ((CVal){.a = (CVal[]){}})}}}),
 }});
     (void)my_data;
     return 0;
