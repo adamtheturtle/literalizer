@@ -6,11 +6,16 @@ imports from this module to enumerate every expected golden filename.
 """
 
 import dataclasses
+import datetime
 import enum
 import functools
+import json
 import math
+import tomllib
 from pathlib import Path
+from typing import Any, assert_never
 
+import pyjson5
 from beartype import beartype
 from ruamel.yaml import YAML
 
@@ -105,6 +110,24 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         ref_value_sources=(),
         ref_case_override=literalizer.IdentifierCase.KEBAB,
     ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_json_escaped_key",
+        ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_toml_table",
+        ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_json5_unquoted_key",
+        ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
+    ),
 ]
 
 LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
@@ -135,12 +158,26 @@ class _CaseInput:
 def case_input(*, case_dir: Path) -> _CaseInput:
     """Return the input file path and its :class:`InputFormat` for a case.
 
-    Cases use ``input.yaml`` by default; cases whose input contains a
-    value the YAML 1.2 spec cannot natively express (currently
-    ``datetime.time``) use ``input.toml`` instead.  A case must carry
-    exactly one of the two: ``test_no_dead_golden_files`` flags a case
-    that carries both because the unused file becomes orphaned.
+    Cases use ``input.yaml`` by default.  Cases whose behavior depends on
+    format-specific parsing (e.g. JSON unicode escapes) or whose input
+    contains a value the YAML 1.2 spec cannot natively express (currently
+    ``datetime.time``) use ``input.json``, ``input.json5``, or
+    ``input.toml`` instead.  A case must carry exactly one input file:
+    ``test_no_dead_golden_files`` flags a case that carries more than one
+    because the unused file becomes orphaned.
     """
+    json_path = case_dir / "input.json"
+    if json_path.exists():
+        return _CaseInput(
+            path=json_path,
+            input_format=literalizer.InputFormat.JSON,
+        )
+    json5_path = case_dir / "input.json5"
+    if json5_path.exists():
+        return _CaseInput(
+            path=json5_path,
+            input_format=literalizer.InputFormat.JSON5,
+        )
     toml_path = case_dir / "input.toml"
     if toml_path.exists():
         return _CaseInput(
@@ -175,18 +212,74 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     return False
 
 
-type YamlData = (
-    dict[object, "YamlData"]
-    | list["YamlData"]
-    | str
+# Every scalar a parser can yield: JSON/JSON5 -> str/int/float/bool/
+# None; TOML adds date/datetime/time; YAML via ruamel adds those plus
+# bytes (``!!binary``).  Mirrors ``literalizer._types.Scalar`` but is
+# spelled out so strict pyright keeps it fully known (the ruamel
+# library ships no type stubs).
+type _CaseScalar = (
+    str
     | int
     | float
     | bool
     | None
+    | datetime.date
+    | datetime.datetime
+    | datetime.time
+    | bytes
+)
+# Parsed case data.  ``load_case_data`` parses YAML with the ``safe``
+# loader (and JSON/JSON5/TOML natively), so containers are plain
+# ``dict``/``list``/``set`` rather than the ruamel comment-tracking
+# subclasses; a precise model keeps ``@beartype`` accurate and strict
+# pyright/ty fully resolved.
+type CaseData = (
+    _CaseScalar
+    | list[CaseData]
+    | dict[object, CaseData]
+    | set[_CaseScalar]
+    | frozenset[_CaseScalar]
 )
 
 
-def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
+@beartype
+def load_case_data(*, input_info: _CaseInput) -> CaseData:
+    """Parse a case input file according to its declared format.
+
+    Dispatches on :attr:`_CaseInput.input_format` so discovery code can
+    inspect any case's data without knowing which serialization backs
+    it.  ``tomllib``/``json``/``pyjson5`` yield plain containers and
+    ``ruamel`` yields its comment-tracking mappings; both are walked
+    structurally by the ``has_*`` predicates.
+    """
+    source = input_info.path.read_text(encoding="utf-8")
+    parsed: CaseData
+    match input_info.input_format:
+        case literalizer.InputFormat.JSON:
+            parsed = json.loads(s=source)
+        case literalizer.InputFormat.JSON5:
+            parsed = pyjson5.decode(data=source)  # pylint: disable=no-member
+        case literalizer.InputFormat.YAML:
+            # ``safe`` (not round-trip): yields plain ``dict``/``list``/
+            # ``set`` instead of the ruamel comment-tracking subclasses,
+            # so the result matches ``CaseData`` exactly.  Comments are
+            # irrelevant to the key/float predicates.
+            parsed = YAML(typ="safe").load(  # pyright: ignore[reportUnknownMemberType]
+                stream=source,
+            )
+        case literalizer.InputFormat.TOML:
+            # Unlike the other parsers (which return ``Any``),
+            # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``
+            # keys are invariant, so route it through an ``Any`` so it
+            # widens to ``CaseData`` like the rest.
+            toml_parsed: Any = tomllib.loads(source)
+            parsed = toml_parsed
+        case _ as unreachable:
+            assert_never(unreachable)
+    return parsed
+
+
+def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
     """
@@ -214,27 +307,22 @@ def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
 def cases_with_non_trivial_dict_keys(
     cases_dir: Path,
 ) -> frozenset[str]:
-    """Return case directory names whose input YAML has dict keys that
-    some languages cannot represent (empty or non-printable-ASCII).
+    """Return case directory names whose input has dict keys that some
+    languages cannot represent (empty or non-printable-ASCII).
 
-    Cases backed by ``input.toml`` are skipped: TOML dict keys are
-    strings only and cannot carry non-printable or empty content.
+    Every case is parsed by its declared format, so a JSON/JSON5/TOML
+    case carrying such keys is detected the same as a YAML one.
     """
-    yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
         input_info = case_input(case_dir=case_dir)
-        if input_info.input_format is not literalizer.InputFormat.YAML:
-            continue
-        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=input_info.path.read_text(encoding="utf-8"),
-        )
+        loaded = load_case_data(input_info=input_info)
         if has_non_printable_ascii_dict_keys(data=loaded):
             result.add(case_dir.name)
     return frozenset(result)
 
 
-def has_special_floats(data: YamlData) -> bool:
+def has_special_floats(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
     """
@@ -254,21 +342,16 @@ def has_special_floats(data: YamlData) -> bool:
 def cases_with_special_floats(
     cases_dir: Path,
 ) -> frozenset[str]:
-    """Return case directory names whose input YAML contains a
-    non-finite float that some languages cannot produce at runtime.
+    """Return case directory names whose input contains a non-finite
+    float that some languages cannot produce at runtime.
 
-    Cases backed by ``input.toml`` are skipped: none of the current
-    TOML-backed cases involve non-finite floats.
+    Every case is parsed by its declared format, so a JSON5/TOML case
+    expressing ``inf``/``nan`` is detected the same as a YAML one.
     """
-    yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
         input_info = case_input(case_dir=case_dir)
-        if input_info.input_format is not literalizer.InputFormat.YAML:
-            continue
-        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=input_info.path.read_text(encoding="utf-8"),
-        )
+        loaded = load_case_data(input_info=input_info)
         if has_special_floats(data=loaded):
             result.add(case_dir.name)
     return frozenset(result)
