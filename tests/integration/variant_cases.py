@@ -1698,14 +1698,16 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
 )
 
 # The ``heterogeneous_strategy`` axis additionally covers
-# ``int_key_dict`` so the RECORD strategy walks a non-string-keyed
-# (non-record-eligible) dict through ``record_shape_for_dict`` /
-# ``_maybe_format_record_literal``.  Languages that cannot represent
+# ``int_key_dict`` and ``empty_dict`` so the RECORD strategy walks the
+# two non-record-eligible dict shapes through ``record_shape_for_dict``:
+# ``int_key_dict`` exercises the non-string-key branch and ``empty_dict``
+# exercises the empty-dict branch.  Languages that cannot represent
 # integer keys raise ``UnrepresentableInputError`` and are skipped; the
-# rest render it as a plain map, identical to the default output.
+# rest render both as plain maps, identical to the default output.
 HETEROGENEOUS_STRATEGY_INPUTS: tuple[CaseInput, ...] = (
     *HETEROGENEOUS_INPUTS,
     _ci(case_dir_name="int_key_dict"),
+    _ci(case_dir_name="empty_dict"),
 )
 
 DICT_FORMAT_INPUTS: tuple[CaseInput, ...] = (

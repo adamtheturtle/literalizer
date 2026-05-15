@@ -209,7 +209,7 @@ def record_shape_for_dict(
     # non-string-keyed dict is a plain map, not a record (the
     # ``int_key_dict`` heterogeneous-strategy variant exercises the
     # latter).
-    if not value:  # pragma: no cover
+    if not value:
         return None
     str_keys: list[str] = []
     for key in value:
