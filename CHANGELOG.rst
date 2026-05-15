@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.15.2
+------------
+
+
 - :class:`~literalizer.Rust` gains the ``TUPLE`` ``heterogeneous_strategy``.
   A fixed-length heterogeneous **scalar** array that is a dict value, a
   record field value, or the document root (every element scalar,
