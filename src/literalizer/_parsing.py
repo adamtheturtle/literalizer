@@ -130,7 +130,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
     ``!!omap`` nodes; those are converted to literalizer's own
     :class:`OrderedMap` so ordered-map detection in :func:`_literalize`
-    does not depend on ruamel's class hierarchy.  Other mappings come
+    does not depend on the ruamel class hierarchy.  Other mappings come
     through as ``CommentedMap`` and are demoted to plain ``dict``.
     :class:`CommentedSet` does not subclass :class:`set`, so
     it is converted as well.  Scalar leaves (including dict keys) are
