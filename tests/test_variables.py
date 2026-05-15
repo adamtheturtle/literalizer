@@ -15,7 +15,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Nim, Rust
+from literalizer.languages import CSharp, Java, Nim, Rust
 
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
@@ -243,4 +243,38 @@ def test_nim_object_variant_const_raises() -> None:
                 Nim.heterogeneous_strategies.OBJECT_VARIANT
             ),
             declaration_style=Nim.declaration_styles.CONST,
+        )
+
+
+def test_java_record_non_array_sequence_raises() -> None:
+    """Java ``RECORD`` rejects a non-ARRAY ``sequence_format``.
+
+    A list-valued record component is typed from the array opener
+    (``new <type>[]{``) the value formatter emits; ``LIST`` renders
+    ``List.of(...)``, whose opener carries no element type, so the
+    combination would emit an uncompilable ``record`` and is rejected.
+    """
+    expected_msg = (
+        "Java heterogeneous_strategy=RECORD requires "
+        "sequence_format=ARRAY: a list-valued record component "
+        "is typed from the array opener the value formatter "
+        "emits, and other sequence formats (e.g. LIST -> "
+        "List.of(...)) carry no element type. "
+        "Use sequence_format=ARRAY."
+    )
+    java_record_list = Java(
+        heterogeneous_strategy=Java.heterogeneous_strategies.RECORD,
+        sequence_format=Java.sequence_formats.LIST,
+    )
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match=f"^{re.escape(pattern=expected_msg)}$",
+    ):
+        literalize(
+            source='{"name": "Alice", "scores": [1, 2, 3]}',
+            input_format=InputFormat.JSON,
+            language=java_record_list,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=NewVariable(name="my_var"),
         )
