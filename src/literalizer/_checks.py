@@ -7,10 +7,9 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._language import Language
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
@@ -94,7 +93,7 @@ def _value_type_family(*, value: Value) -> str:
         (datetime.date, "date"),
         (datetime.time, "time"),
         (list, "list"),
-        (ordereddict, "dict"),
+        (OrderedMap, "dict"),
         (dict, "dict"),
     ):
         if isinstance(value, check_type):

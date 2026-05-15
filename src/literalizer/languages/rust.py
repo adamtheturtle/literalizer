@@ -74,6 +74,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -742,7 +743,7 @@ def _build_record_behavior(
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
-    ) -> str:
+    ) -> RenderedRecordLiteral:
         """Render a record-shape dict as a Rust struct literal.
 
         Looks up *value*'s (possibly unified) shape from the
@@ -750,6 +751,9 @@ def _build_record_behavior(
         ``check_data``.  Iterates the unified shape's keys: keys
         missing from this instance render as ``None``; keys marked
         optional render as ``Some(value)``; required keys render bare.
+        Returns the structured pieces (``Name {``, one entry per
+        field, ``}``, single-space compact padding) the shared
+        record-layout code assembles into compact or multiline form.
         """
         shape = id_to_shape[id(value)]
         parts: list[str] = []
@@ -762,8 +766,12 @@ def _build_record_behavior(
                     parts.append(f"{key}: {formatted}")
             else:
                 parts.append(f"{key}: None")
-        body = ", ".join(parts)
-        return f"{name_cache[shape]} {{ {body} }}"
+        return RenderedRecordLiteral(
+            head=f"{name_cache[shape]} {{",
+            entries=tuple(parts),
+            closer="}",
+            compact_pad=" ",
+        )
 
     return HeterogeneousBehavior(
         skip_scalar_checks=False,

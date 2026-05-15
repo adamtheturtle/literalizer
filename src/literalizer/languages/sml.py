@@ -9,7 +9,6 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -78,7 +77,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
@@ -1057,7 +1056,7 @@ class Sml(metaclass=LanguageCls):
             datetime.datetime: (_h, _datetime_constructor),
             list: (_h, f"{p}List of {self.type_name} list"),
             dict: (_h, f"{p}Map of (string * {self.type_name}) list"),
-            ordereddict: (
+            OrderedMap: (
                 _h,
                 f"{p}Map of (string * {self.type_name}) list",
             ),

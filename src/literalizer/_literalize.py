@@ -3,12 +3,11 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
-from ruamel.yaml.compat import ordereddict
 from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
@@ -54,7 +53,7 @@ from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
 )
-from literalizer._types import Scalar, Value, ValueInput
+from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -425,7 +424,7 @@ def _guard_dict_keys_supported(
 @beartype
 def _format_ordered_map_value(
     *,
-    value: ordereddict,
+    value: OrderedMap,
     spec: Language,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
@@ -439,9 +438,9 @@ def _format_ordered_map_value(
     _guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
-    ordered_map_items: list[tuple[str, Value]] = [
+    ordered_map_items: list[tuple[Scalar, Value]] = [
         (k, v)
-        for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
     ]
     if (
@@ -521,7 +520,7 @@ def _maybe_format_record_literal(
 
     Returns ``None`` when the language's heterogeneous behavior is not
     RECORD-enabled or when *value* is not record-shaped (empty,
-    non-string keys, or a ruamel ordered map).
+    non-string keys, or an ordered map).
     """
     behavior = spec.heterogeneous_behavior
     render_record_literal = behavior.render_record_literal
@@ -558,118 +557,13 @@ def _maybe_format_record_literal(
     }
     rendered = render_record_literal(value, formatted_fields)
     if not is_multiline:
-        return rendered
-    return _expand_record_literal_multiline(
-        rendered=rendered,
-        body_prefix=body_prefix,
-        close_prefix=multiline_prefix,
-    )
-
-
-@beartype
-def _expand_record_literal_multiline(
-    *,
-    rendered: str,
-    body_prefix: str,
-    close_prefix: str,
-) -> str:
-    """Expand a single-line record literal into multiline form.
-
-    Splits ``Name { f1: v1, f2: v2 }`` (brace-delimited, e.g. Rust and
-    Go) or ``Name(f1 = v1, f2 = v2)`` (paren-delimited, e.g. Kotlin,
-    Scala, Java) into one entry per line indented under *body_prefix*
-    with the closing delimiter on its own line under *close_prefix*.
-    The opening delimiter is whichever of ``{`` or ``(`` appears first;
-    its matching closer is the literal's final character.  The literal
-    always has at least one field because ``render_record_literal`` is
-    only called for record-eligible (non-empty) dicts.
-    """
-    open_idx = min(
-        index for index, char in enumerate(iterable=rendered) if char in "{("
-    )
-    closer = {"{": "}", "(": ")"}[rendered[open_idx]]
-    head = rendered[: open_idx + 1]
-    body = rendered[open_idx + 1 : -1].strip()
-    entries = _split_record_entries(body=body)
-    indented = [f"{body_prefix}{entry.strip()}," for entry in entries]
-    return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}{closer}"
-
-
-@dataclasses.dataclass(frozen=True)
-class _StringScanStep:
-    r"""One step of scanning inside a string literal.
-
-    *in_string* is the currently-open quote character (or ``None`` if
-    the literal just closed).  *skip_next* is ``True`` when the next
-    char must be skipped because it is the second half of a ``\X``
-    escape sequence.
-    """
-
-    in_string: str | None
-    skip_next: bool
-
-
-@beartype
-def _split_record_entries(*, body: str) -> list[str]:
-    """Split a record-literal body on commas that are not inside
-    brackets or quotes.
-
-    *body* is the inner text of ``Name { ... }`` for a record with at
-    least one field, so the loop always produces a non-empty trailing
-    entry after the last comma (or the whole body when there are no
-    top-level commas).
-    """
-    entries: list[str] = []
-    last = 0
-    for index in _depth_zero_comma_indices(body=body):
-        entries.append(body[last:index])
-        last = index + 1
-    entries.append(body[last:].strip().rstrip(","))
-    return [e for e in entries if e.strip()]
-
-
-@beartype
-def _depth_zero_comma_indices(*, body: str) -> Iterator[int]:
-    r"""Yield indices of commas in *body* that are at bracket depth zero
-    and outside any string literal.
-
-    Treats ``\\`` inside a string literal as an escape so embedded
-    escaped quotes do not prematurely close string tracking.
-    """
-    depth = 0
-    in_string: str | None = None
-    skip_next = False
-    for index, char in enumerate(iterable=body):
-        if skip_next:
-            skip_next = False
-        elif in_string is not None:
-            step = _advance_string_state(char=char, quote=in_string)
-            in_string = step.in_string
-            skip_next = step.skip_next
-        elif char in {'"', "'"}:
-            in_string = char
-        elif char in {"(", "[", "{"}:
-            depth += 1
-        elif char in {")", "]", "}"}:
-            depth -= 1
-        elif char == "," and depth == 0:
-            yield index
-
-
-@beartype
-def _advance_string_state(
-    *,
-    char: str,
-    quote: str,
-) -> _StringScanStep:
-    """Return the next ``(in_string, skip_next)`` state inside a string
-    literal, given the current quote and next char.
-    """
-    if char == "\\":
-        return _StringScanStep(in_string=quote, skip_next=True)
-    if char == quote:
-        return _StringScanStep(in_string=None, skip_next=False)
-    return _StringScanStep(in_string=quote, skip_next=False)
+        joined = ", ".join(rendered.entries)
+        return (
+            f"{rendered.head}{rendered.compact_pad}{joined}"
+            f"{rendered.compact_pad}{rendered.closer}"
+        )
+    body = "\n".join(f"{body_prefix}{entry}," for entry in rendered.entries)
+    return f"{rendered.head}\n{body}\n{multiline_prefix}{rendered.closer}"
 
 
 @beartype
@@ -843,7 +737,7 @@ def _compute_dict_open_override(
     dicts: list[dict[Scalar, Value]] = [
         item
         for item in items
-        if isinstance(item, dict) and not isinstance(item, ordereddict)
+        if isinstance(item, dict) and not isinstance(item, OrderedMap)
     ]
     # Widening compares openers across dicts, so we need at least two
     # to have anything to compare.
@@ -1374,7 +1268,7 @@ def _format_value(  # pylint: disable=too-complex
                 if expand_refs
                 else spec.format_call_ref_identifier(ref_name, ref_value)
             )
-    if isinstance(value, dict) and not isinstance(value, ordereddict):
+    if isinstance(value, dict) and not isinstance(value, OrderedMap):
         record_literal = _maybe_format_record_literal(
             value=value,
             spec=spec,
@@ -1390,7 +1284,7 @@ def _format_value(  # pylint: disable=too-complex
             return record_literal
     if (
         collection_layout is CollectionLayout.MULTILINE
-        and isinstance(value, (dict, list, set, ordereddict))
+        and isinstance(value, (dict, list, set, OrderedMap))
         and value
     ):
         return _format_multiline_collection_value(
@@ -1406,7 +1300,7 @@ def _format_value(  # pylint: disable=too-complex
             sequence_open_override=sequence_open_override,
         )
     match value:
-        case ordereddict():
+        case OrderedMap():
             result = _format_ordered_map_value(
                 value=value,
                 spec=spec,
@@ -1567,7 +1461,7 @@ def _format_multiline_collection_value(
     lines and the closing delimiter are prefixed here so nested layouts align
     under that entry.
     """
-    is_ordered_map = isinstance(value, ordereddict)
+    is_ordered_map = isinstance(value, OrderedMap)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
     body_prefix = line_prefix + spec.indent
     lines = _format_collection_lines(
@@ -1937,9 +1831,9 @@ def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
         and language.skip_null_dict_values
         and all(v is None for v in data.values())
     ):
-        is_ordered_map = isinstance(data, ordereddict)
-        empty_value: ordereddict | dict[Scalar, Value] = (
-            ordereddict() if is_ordered_map else {}
+        is_ordered_map = isinstance(data, OrderedMap)
+        empty_value: OrderedMap | dict[Scalar, Value] = (
+            OrderedMap() if is_ordered_map else {}
         )
         formatted = _format_value(
             value=empty_value,
@@ -1959,7 +1853,7 @@ def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
     if (
         include_delimiters
         and isinstance(data, dict)
-        and not isinstance(data, ordereddict)
+        and not isinstance(data, OrderedMap)
     ):
         record_literal = _maybe_format_record_literal(
             value=data,
@@ -1979,7 +1873,7 @@ def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
         line_prefix + language.indent if include_delimiters else line_prefix
     )
 
-    is_ordered_map = isinstance(data, ordereddict)
+    is_ordered_map = isinstance(data, OrderedMap)
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
     lines: list[str] = _format_collection_lines(
         data=data,
@@ -2325,6 +2219,225 @@ def _literalize_both_forms(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class _BoundRefComposition:
+    """Per-ref declaration results paired with the main binding."""
+
+    declarations: tuple[LiteralizeResult, ...]
+    main_result: LiteralizeResult
+    main_variable_name: str
+
+
+@beartype
+def _literalize_bound_refs(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    pre_indent_level: int,
+    include_delimiters: bool,
+    variable_form: NewVariable | ExistingVariable,
+    ref_case: IdentifierCase | None,
+    explicit_ref_values: Mapping[str, Value] | None,
+    bound_refs: Mapping[str, Value],
+    ref_key: str,
+    collection_layout: CollectionLayout,
+) -> LiteralizeResult:
+    """Emit a binding for each supplied ref before its first use.
+
+    Renders one per-ref declaration (via :func:`literalize` with no
+    ``bound_refs`` and no file wrapping) for every name in *bound_refs*,
+    in *bound_refs* iteration order, then renders the main binding with
+    the bound values folded into ``ref_values``.  Callers supply
+    ``bound_refs`` already ordered by the ref's first use in *source*
+    (and containing only refs that appear there), so the bindings are
+    emitted before their first use.  The pieces are composed by
+    sequencing every binding's declaration text per language (Nix
+    nested ``let``, Fortran two-phase) and wrapping the result in
+    variable mode so the language's binding epilogue (Go ``_ = name``,
+    Haskell ``seq name``) is preserved.
+    """
+    ordered_names = list(bound_refs)
+    decl_results: list[LiteralizeResult] = []
+    for name in ordered_names:
+        converted_name = (
+            ref_case.convert(name=name) if ref_case is not None else name
+        )
+        decl_results.append(
+            _literalize_value_binding(
+                value=bound_refs[name],
+                language=language,
+                variable_form=NewVariable(name=converted_name),
+            )
+        )
+    effective_ref_values: dict[str, Value] = dict(explicit_ref_values or {})
+    for name in ordered_names:
+        effective_ref_values[name] = bound_refs[name]
+    pre_form = _literalize_pre_form(
+        source=source,
+        input_format=input_format,
+        language=language,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=include_delimiters,
+        ref_case=ref_case,
+        ref_values=effective_ref_values or None,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+    )
+    main_result = _literalize_apply_form(
+        pre_form=pre_form,
+        language=language,
+        variable_form=variable_form,
+        wrap_in_file=False,
+    )
+    composition = _BoundRefComposition(
+        declarations=tuple(decl_results),
+        main_result=main_result,
+        main_variable_name=variable_form.name,
+    )
+    return _compose_bound_refs(
+        language=language,
+        composition=composition,
+    )
+
+
+@beartype
+def _literalize_value_binding(
+    *,
+    value: Value,
+    language: Language,
+    variable_form: NewVariable,
+) -> LiteralizeResult:
+    """Render *value* as a variable binding without file wrapping.
+
+    Mirrors the ``literalize`` declaration path for an already-parsed
+    value (a bound ref's materialized value), so it carries no source
+    comments and needs no parsing.
+    """
+    result_text = _literalize(
+        data=value,
+        language=language,
+        line_prefix="",
+        include_delimiters=True,
+        ref_case=None,
+        ref_values=None,
+        ref_key=_DISABLED_REF_KEY,
+        collection_layout=CollectionLayout.COMPACT,
+    )
+    wrapped = _apply_variable_wrapper(
+        result=result_text,
+        language=language,
+        data=value,
+        variable_form=variable_form,
+        line_prefix="",
+        is_call_binding=False,
+    )
+    computed = compute_preamble(
+        data=value,
+        language=language,
+        has_variable_declaration=True,
+    )
+    preamble = deduplicate_preamble_entries(
+        entries=(
+            tuple(language.static_preamble)
+            + computed.header
+            + language.data_dependent_preamble(value)
+        )
+    )
+    return LiteralizeResult(
+        declaration_code=wrapped,
+        preamble=preamble,
+        body_preamble=computed.body,
+        types_present=computed.types_present,
+        source_data=value,
+    )
+
+
+@beartype
+def _compose_bound_refs(
+    *,
+    language: Language,
+    composition: _BoundRefComposition,
+) -> LiteralizeResult:
+    """Compose per-ref declarations and the main binding into a file.
+
+    Recomputes the body preamble across the union of types observed in
+    every declaration and the main binding, sequences every binding's
+    declaration text (the last entry is the main binding), then wraps
+    the sequenced content in variable mode through
+    :meth:`Language.wrap_in_file` so the language's variable-binding
+    epilogue (e.g. Go's ``_ = name`` or Haskell's ``seq name``) is
+    emitted exactly as for a single-binding ``wrap_in_file=True`` call.
+
+    Declaration sequencing defaults to a plain newline join, which is
+    correct for every language whose bindings can simply precede one
+    another at statement scope.  Languages that need declaration-level
+    reordering (the Fortran rule that specification statements precede
+    executable statements) or structural nesting (the Nix chained
+    ``let``) provide an optional ``sequence_binding_declarations``
+    hook.  Preamble lines are deduplicated in first-seen order.
+    """
+    decl_results = composition.declarations
+    main_result = composition.main_result
+    empty_types: frozenset[type] = frozenset()
+    union_types = empty_types.union(
+        *(d.types_present for d in decl_results),
+        main_result.types_present,
+    )
+    combined_source_data: list[Value] = [
+        *(d.source_data for d in decl_results),
+        main_result.source_data,
+    ]
+    unified_body_preamble = language.compute_body_preamble(
+        union_types, combined_source_data
+    )
+    binding_bare_codes = (
+        *(d.bare_code for d in decl_results),
+        main_result.bare_code,
+    )
+    sequence_hook = getattr(language, "sequence_binding_declarations", None)
+    if sequence_hook is not None:
+        sequenced_content = sequence_hook(binding_bare_codes)
+    else:
+        sequenced_content = "\n".join(binding_bare_codes)
+    wrapped = language.wrap_in_file(
+        content=sequenced_content,
+        variable_name=composition.main_variable_name,
+        body_preamble=unified_body_preamble,
+    )
+    # The main binding's preamble was computed with every bound ref
+    # resolved into its data, so its multi-line data-dependent block
+    # (e.g. Gleam's ``pub type GVal {...}``) already covers every type
+    # across the declarations and the main binding.  Each declaration's
+    # own multi-line block, by contrast, was computed from that
+    # declaration's data alone and would conflict with the unified
+    # version once duplicate lines are dropped.  Drop the multi-line
+    # entries from declaration preambles and keep their single-line
+    # entries (imports, package lines); dropping repeated lines in
+    # first-seen order handles the rest.
+    decl_preamble_lines = tuple(
+        entry
+        for d in decl_results
+        for entry in d.preamble
+        if "\n" not in entry
+    )
+    seen: set[str] = set()
+    all_preamble: tuple[str, ...] = ()
+    for entry in decl_preamble_lines + main_result.preamble:
+        if entry not in seen:
+            seen.add(entry)
+            all_preamble += (entry,)
+    if all_preamble:
+        wrapped = "\n".join(all_preamble) + "\n" + wrapped
+    return LiteralizeResult(
+        declaration_code=wrapped,
+        preamble=(),
+        body_preamble=(),
+        types_present=union_types,
+        source_data=main_result.source_data,
+    )
+
+
 @beartype
 def literalize(
     *,
@@ -2337,6 +2450,7 @@ def literalize(
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
     ref_values: Mapping[str, ValueInput] | None = None,
+    bound_refs: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
@@ -2396,6 +2510,30 @@ def literalize(
             is unknown and languages fall back to their type-agnostic
             default.  Keys should match the identifiers used in *source*
             before any *ref_case* conversion.
+        bound_refs: Optional mapping from ref identifier to the value
+            that ref should be bound to.  Unlike *ref_values* (which
+            only feeds type knowledge to the ref site, leaving the ref
+            as a free external identifier), each name in *bound_refs*
+            additionally has a binding emitted for it, in *bound_refs*
+            iteration order, so a single ``literalize`` call with
+            ``wrap_in_file=True`` produces a complete, valid file with
+            per-language declaration sequencing (Nix nested ``let``,
+            Fortran two-phase declarations, and so on).  Supply
+            *bound_refs* ordered by each ref's first use in *source*
+            (and limited to refs that appear there) so every binding
+            precedes its first use and no unused binding is emitted.
+            Binding
+            emission only happens when *wrap_in_file* is ``True`` and
+            *variable_form* is a :class:`NewVariable` or
+            :class:`ExistingVariable` (a binding the refs can precede);
+            otherwise *bound_refs* degrades to type information only,
+            exactly like *ref_values*, and the refs stay free
+            identifiers.  Entries also act as *ref_values* for their
+            names, so a name need not be repeated in both mappings.
+            Keys should match the identifiers used in *source* before
+            any *ref_case* conversion.  Defaults to ``None`` (no
+            bindings emitted; behavior is byte-identical to omitting
+            this argument).
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
@@ -2441,13 +2579,28 @@ def literalize(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
-    materialized_ref_values: Mapping[str, Value] | None = (
+    explicit_ref_values: dict[str, Value] = (
         {
             name: _materialize_value_input(value=value)
             for name, value in ref_values.items()
         }
         if ref_values is not None
-        else None
+        else {}
+    )
+    materialized_bound_refs: dict[str, Value] = (
+        {
+            name: _materialize_value_input(value=value)
+            for name, value in bound_refs.items()
+        }
+        if bound_refs is not None
+        else {}
+    )
+    # ``bound_refs`` entries double as ``ref_values`` so a name need not
+    # be repeated in both mappings; an explicit ``ref_values`` entry for
+    # the same name wins (it is the caller's stated type intent).
+    combined_ref_values = {**materialized_bound_refs, **explicit_ref_values}
+    materialized_ref_values: Mapping[str, Value] | None = (
+        combined_ref_values or None
     )
     if variable_form is not None and not language.supports_variable_names:
         raise VariableNameNotSupportedError(
@@ -2482,6 +2635,25 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_values=materialized_ref_values,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+        )
+
+    if (
+        materialized_bound_refs
+        and wrap_in_file
+        and isinstance(variable_form, NewVariable | ExistingVariable)
+    ):
+        return _literalize_bound_refs(
+            source=source,
+            input_format=input_format,
+            language=language,
+            pre_indent_level=pre_indent_level,
+            include_delimiters=include_delimiters,
+            variable_form=variable_form,
+            ref_case=ref_case,
+            explicit_ref_values=explicit_ref_values or None,
+            bound_refs=materialized_bound_refs,
             ref_key=ref_key,
             collection_layout=collection_layout,
         )

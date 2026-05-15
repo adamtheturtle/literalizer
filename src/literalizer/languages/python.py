@@ -4,14 +4,12 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -85,7 +83,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._preamble import HeterogeneousElements
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 @beartype
@@ -320,7 +318,7 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
     for elem in elements:
         match elem:
             case dict():
-                is_ordered = isinstance(elem, (ordereddict, OrderedDict))
+                is_ordered = isinstance(elem, OrderedMap)
                 target = ordered_vals if is_ordered else plain_vals
                 target.extend(elem.values())
                 if is_ordered:
@@ -339,7 +337,7 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
         ordered_repr: dict[Scalar, Value] = {
             str(object=i): v for i, v in enumerate(iterable=ordered_vals)
         }
-        merged.append(OrderedDict(ordered_repr))
+        merged.append(OrderedMap(ordered_repr))
     return merged
 
 
@@ -418,13 +416,11 @@ def _python_type_hint(
     match data:
         case dict():
             outer = (
-                "OrderedDict"
-                if isinstance(data, (ordereddict, OrderedDict))
-                else dict_hint
+                "OrderedDict" if isinstance(data, OrderedMap) else dict_hint
             )
             key_hint = default_dict_key_type if not data else "str"
             val_union = _collection_element_union(
-                elements=list(data.values()),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                elements=list(data.values()),
                 recurse=recurse,
                 sort=False,
                 merge_dicts=False,
@@ -491,7 +487,7 @@ def _build_type_hint_preamble(
                 or default_dict_key_type == "Any",
             ),
             (
-                ordereddict,
+                OrderedMap,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
@@ -586,7 +582,7 @@ def _build_type_hint_preamble_py38(
                 or default_dict_key_type == "Any",
             ),
             (
-                ordereddict,
+                OrderedMap,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),

@@ -9,7 +9,6 @@ from functools import cached_property
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -72,7 +71,7 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableIntegerError,
     WrapCombinedInFileNotSupportedError,
@@ -437,7 +436,7 @@ def _build_purescript_body_preamble(
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         p = constructor_prefix
-        needs_tuple = bool(types & {dict, ordereddict})
+        needs_tuple = bool(types & {dict, OrderedMap})
         has_large_int = int in types and _purescript_has_large_int(val=data)
         int_types: set[type] = {int}
         str_types: set[type] = {str, bytes, datetime.date, datetime.time}
@@ -455,7 +454,7 @@ def _build_purescript_body_preamble(
                 (frozenset(str_types), f"{p}Str String"),
                 (frozenset({list}), f"{p}List (Array {type_name})"),
                 (
-                    frozenset({dict, ordereddict}),
+                    frozenset({dict, OrderedMap}),
                     f"{p}Dict (Array (Tuple String {type_name}))",
                 ),
                 (frozenset({set}), f"{p}Set (Array {type_name})"),

@@ -9,7 +9,6 @@ from functools import cached_property
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -71,7 +70,7 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
@@ -418,7 +417,7 @@ def _build_roc_body_preamble(
                 (frozenset(str_types), f"{p}Str Str"),
                 (frozenset({list}), f"{p}List (List {type_name})"),
                 (
-                    frozenset({dict, ordereddict}),
+                    frozenset({dict, OrderedMap}),
                     f"{p}Dict (List (Str, {type_name}))",
                 ),
                 (frozenset({set}), f"{p}Set (List {type_name})"),

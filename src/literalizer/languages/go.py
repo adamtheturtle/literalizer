@@ -74,6 +74,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -210,12 +211,18 @@ def _go_record_literal(
     name: str,
     fields: Sequence[RecordLiteralField],
     /,
-) -> str:
-    """Render a single-line Go ``Name{Field: value, ...}`` literal."""
-    body = ", ".join(
-        f"{field.identifier}: {field.formatted}" for field in fields
+) -> RenderedRecordLiteral:
+    """Render a Go ``Name{Field: value, ...}`` literal as structured
+    pieces for the shared compact/multiline layout code.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}{{",
+        entries=tuple(
+            f"{field.identifier}: {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad="",
     )
-    return f"{name}{{{body}}}"
 
 
 @beartype
