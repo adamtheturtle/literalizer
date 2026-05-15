@@ -12,14 +12,14 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .arr = &.{
-        .{ .map = &.{.{ .key = "id", .val = .{ .int = 1 } }, .{ .key = "label", .val = .{ .str = "first" } }}},
-        .{ .map = &.{.{ .key = "id", .val = .{ .int = 2 } }, .{ .key = "label", .val = .{ .str = "second" } }}},
-        .{ .map = &.{.{ .key = "id", .val = .{ .int = 3 } }, .{ .key = "label", .val = .{ .str = "third" } }}},
+        .{ .map = &.{.{ .key = "id", .val = .{ .int = 1 } }, .{ .key = "label", .val = .{ .str = "first" } }, .{ .key = "tags", .val = .{ .arr = &.{}} }}},
+        .{ .map = &.{.{ .key = "id", .val = .{ .int = 2 } }, .{ .key = "label", .val = .{ .str = "second" } }, .{ .key = "tags", .val = .{ .arr = &.{}} }}},
+        .{ .map = &.{.{ .key = "id", .val = .{ .int = 3 } }, .{ .key = "label", .val = .{ .str = "third" } }, .{ .key = "tags", .val = .{ .arr = &.{}} }}},
     }};
     my_data = .{ .arr = &.{
-        .{ .map = &.{.{ .key = "id", .val = .{ .int = 1 } }, .{ .key = "label", .val = .{ .str = "first" } }}},
-        .{ .map = &.{.{ .key = "id", .val = .{ .int = 2 } }, .{ .key = "label", .val = .{ .str = "second" } }}},
-        .{ .map = &.{.{ .key = "id", .val = .{ .int = 3 } }, .{ .key = "label", .val = .{ .str = "third" } }}},
+        .{ .map = &.{.{ .key = "id", .val = .{ .int = 1 } }, .{ .key = "label", .val = .{ .str = "first" } }, .{ .key = "tags", .val = .{ .arr = &.{}} }}},
+        .{ .map = &.{.{ .key = "id", .val = .{ .int = 2 } }, .{ .key = "label", .val = .{ .str = "second" } }, .{ .key = "tags", .val = .{ .arr = &.{}} }}},
+        .{ .map = &.{.{ .key = "id", .val = .{ .int = 3 } }, .{ .key = "label", .val = .{ .str = "third" } }, .{ .key = "tags", .val = .{ .arr = &.{}} }}},
     }};
     my_data = .nil;
 }

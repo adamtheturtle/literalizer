@@ -11,7 +11,7 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "id" (PInt 1)), (Tuple "label" (PStr "first"))],
-    PDict [(Tuple "id" (PInt 2)), (Tuple "label" (PStr "second"))],
-    PDict [(Tuple "id" (PInt 3)), (Tuple "label" (PStr "third"))]
+    PDict [(Tuple "id" (PInt 1)), (Tuple "label" (PStr "first")), (Tuple "tags" (PList []))],
+    PDict [(Tuple "id" (PInt 2)), (Tuple "label" (PStr "second")), (Tuple "tags" (PList []))],
+    PDict [(Tuple "id" (PInt 3)), (Tuple "label" (PStr "third")), (Tuple "tags" (PList []))]
     ]

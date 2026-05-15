@@ -1,11 +1,11 @@
 let my_data = [
-  {"id": 1, "label": "first"},
-  {"id": 2, "label": "second"},
-  {"id": 3, "label": "third"},
+  {"id": 1, "label": "first", "tags": []},
+  {"id": 2, "label": "second", "tags": []},
+  {"id": 3, "label": "third", "tags": []},
 ];
 my_data = [
-  {"id": 1, "label": "first"},
-  {"id": 2, "label": "second"},
-  {"id": 3, "label": "third"},
+  {"id": 1, "label": "first", "tags": []},
+  {"id": 2, "label": "second", "tags": []},
+  {"id": 3, "label": "third", "tags": []},
 ];
 export {};
