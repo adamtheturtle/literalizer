@@ -18,7 +18,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer._types import Value, ValueInput
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -90,9 +90,12 @@ class CallCaseConfig:
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
     variable_form: literalizer.VariableForm | None = None
-    # Paired positionally with the generated calls and exposed on
-    # ``CallContext.zipped``.  Requires ``call_transform``.
-    zip_values: Sequence[ValueInput] | None = None
+    # Companion source whose parsed top-level elements pair
+    # positionally with the generated calls and are exposed on
+    # ``CallContext.zipped``.  Requires ``call_transform``.  Parsed
+    # with ``zip_input_format``.
+    zip_source: str | None = None
+    zip_input_format: literalizer.InputFormat | None = None
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
     # so a transform that calls the wrapper with the call *and* the
@@ -356,12 +359,37 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
-        zip_values=[True, False],
+        zip_source="---\n- true\n- false\n",
+        zip_input_format=literalizer.InputFormat.YAML,
         transform_stub_param_names=["_call", "_zip"],
         # Zig types the 2-parameter wrapper stub strongly while the
         # call stub returns ``void``; Groovy stubs the wrapper
         # object-style (``Map``) and rejects the positional 2-arg
         # call.  Neither can host this fixture, so skip them.
+        skip_lang_names=frozenset({"Zig", "Groovy"}),
+    ),
+    CallCaseConfig(
+        # Companion to ``call_zip_values`` exercising the
+        # ``per_element=False`` path: the whole parsed ``zip_source``
+        # value pairs with the single generated call.
+        case_dir_name="call_zip_source_whole",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+        transform_stub_names=["emit"],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        zip_source="--- true\n",
+        zip_input_format=literalizer.InputFormat.YAML,
+        transform_stub_param_names=["_call", "_zip"],
+        # Same wrapper-stub limitations as ``call_zip_values``.
         skip_lang_names=frozenset({"Zig", "Groovy"}),
     ),
     CallCaseConfig(
@@ -1116,7 +1144,8 @@ def _run_wrap_in_file_case(
             target_function=config.target_function,
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
-            zip_values=config.zip_values,
+            zip_source=config.zip_source,
+            zip_input_format=config.zip_input_format,
             per_element=config.per_element,
             wrap_in_file=True,
             ref_case=effective_ref_case,
@@ -1180,7 +1209,8 @@ def _run_call_with_declarations(
             target_function=config.target_function,
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
-            zip_values=config.zip_values,
+            zip_source=config.zip_source,
+            zip_input_format=config.zip_input_format,
             per_element=config.per_element,
             ref_case=effective_ref_case,
             consumable_refs=config.consumable_refs,

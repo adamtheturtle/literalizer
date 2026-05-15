@@ -234,8 +234,8 @@ class DottedCallTargetNotSupportedError(Exception):
 
 
 class ZipValuesLengthMismatchError(Exception):
-    """Raised when ``literalize_call`` is given a ``zip_values``
-    sequence whose length differs from the number of generated calls.
+    """Raised when ``literalize_call`` is given a ``zip_source`` whose
+    parsed top-level elements differ in number from the generated calls.
     """
 
     def __init__(
@@ -246,16 +246,16 @@ class ZipValuesLengthMismatchError(Exception):
     ) -> None:
         """Create a ``ZipValuesLengthMismatchError``."""
         super().__init__(
-            f"zip_values has {zip_count} element(s) but {call_count} "
-            f"call(s) were generated; the lengths must match"
+            f"zip_source parsed to {zip_count} element(s) but "
+            f"{call_count} call(s) were generated; the lengths must match"
         )
         self.call_count = call_count
         self.zip_count = zip_count
 
 
 class ZipValuesWithoutCallTransformError(Exception):
-    """Raised when ``literalize_call`` is given ``zip_values`` but no
-    ``call_transform`` to consume them.
+    """Raised when ``literalize_call`` is given a ``zip_source`` but no
+    ``call_transform`` to consume the paired values.
 
     The paired values are only reachable through
     :attr:`~literalizer.CallContext.zipped`, so supplying them without
@@ -265,8 +265,24 @@ class ZipValuesWithoutCallTransformError(Exception):
     def __init__(self) -> None:
         """Create a ``ZipValuesWithoutCallTransformError``."""
         super().__init__(
-            "zip_values were supplied without a call_transform; the "
+            "zip_source was supplied without a call_transform; the "
             "paired values would be unused"
+        )
+
+
+class ZipSourceWithoutInputFormatError(Exception):
+    """Raised when ``literalize_call`` is given a ``zip_source`` but no
+    ``zip_input_format`` describing how to parse it.
+
+    The companion source can only be parsed once its serialization
+    format is known, so the two arguments must be supplied together.
+    """
+
+    def __init__(self) -> None:
+        """Create a ``ZipSourceWithoutInputFormatError``."""
+        super().__init__(
+            "zip_source was supplied without a zip_input_format; the "
+            "companion source cannot be parsed without its format"
         )
 
 

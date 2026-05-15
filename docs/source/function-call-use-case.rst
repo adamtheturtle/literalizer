@@ -320,8 +320,9 @@ Pairing each call with a value
 ``call_transform`` receives a :class:`~literalizer.CallContext`, not just
 the call string.  Alongside ``ctx.call`` (the rendered call expression)
 it carries the call's zero-based ``ctx.index``, its input ``ctx.row``,
-and -- when ``zip_values`` is supplied -- ``ctx.zipped``: the matching
-entry of a second, equal-length sequence rendered as a language-native
+and -- when ``zip_source`` is supplied -- ``ctx.zipped``: the matching
+top-level element of a second, equal-length companion source, parsed
+with the same parser as ``source`` and rendered as a language-native
 literal.  This lets you print an expected value beside each call's
 actual return value:
 
@@ -338,13 +339,20 @@ actual return value:
    - [Solaris, 1961]
    """
 
+   in_print_yaml = """\
+   ---
+   - true
+   - false
+   """
+
    result = literalize_call(
        source=books_yaml,
        input_format=InputFormat.YAML,
        language=Python(),
        target_function="catalog.lookup",
        parameter_names=["title", "year"],
-       zip_values=[True, False],
+       zip_source=in_print_yaml,
+       zip_input_format=InputFormat.YAML,
        call_transform=lambda ctx: (
            f'print("in_print?", {ctx.zipped}, "->", {ctx.call})'
        ),
@@ -357,8 +365,11 @@ actual return value:
        'catalog.lookup(title="Solaris", year=1961))'
    )
 
-``zip_values`` must have exactly one entry per generated call and
-requires a ``call_transform``.  ``call_transform`` is only supported for
+``zip_source`` is parsed with the same parser as ``source``; when
+``per_element`` is ``True`` it must parse to a list whose top-level
+elements pair one-for-one with the generated calls.  It requires
+``zip_input_format`` and a ``call_transform``.  ``call_transform`` is
+only supported for
 languages whose call form is an expression that can be wrapped
 (positional, keyword, or object call style); prefix-, postfix-, and
 command-style languages reject it with
