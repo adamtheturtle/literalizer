@@ -281,7 +281,7 @@ class OCaml(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -970,6 +970,21 @@ class OCaml(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return self._ocaml_declaration
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration annotates the binding with the
+        custom type and wraps the value in a tag constructor derived
+        from its runtime type (``let x : val_t = OInt 42``); a call
+        expression has no such tag, so both the annotation and the tag
+        are omitted and OCaml infers the call's return type instead
+        (``let x = make_widget(42)``).
+        """
+        return self.declaration_style.value.formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
