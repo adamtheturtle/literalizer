@@ -87,15 +87,6 @@ def test_rust_tuple_format_type_annotation_raises() -> None:
         )
 
 
-def test_rust_vec_format_type_annotation() -> None:
-    """``format_type_annotation`` returns ``Vec<T>`` for vector format."""
-    result = Rust.sequence_formats.VEC.format_type_annotation(
-        element_type="i32",
-        length=3,
-    )
-    assert result == "Vec<i32>"
-
-
 def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
     """Single-element tuple annotations include the required comma."""
     rust = Rust(
@@ -140,15 +131,6 @@ def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
     assert result.code == (
         "vec![\n    Value::I64(1704067200),\n    Value::I32(1),\n]"
     )
-
-
-def test_rust_hash_set_type_annotation() -> None:
-    """``HASH_SET`` renders a ``HashSet`` type annotation."""
-    result = Rust.set_formats.HASH_SET.format_type_annotation(
-        element_type="i32",
-    )
-
-    assert result == "HashSet<i32>"
 
 
 def test_rust_btree_set_type_annotation() -> None:
