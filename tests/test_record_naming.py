@@ -1,11 +1,11 @@
-"""Validation tests for Rust ``record_struct_name_prefix`` and
+"""Validation tests for the ``record_struct_name_prefix`` and
 ``record_shape_names`` constructor parameters.
 """
 
 import pytest
 
 from literalizer.exceptions import InvalidRecordNameError
-from literalizer.languages import Rust
+from literalizer.languages import Go, Rust
 
 
 @pytest.mark.parametrize(
@@ -57,6 +57,41 @@ def test_duplicate_shape_names_raises() -> None:
     """Two distinct key-sets cannot map to the same struct name."""
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Rust(
+            record_shape_names={
+                frozenset({"id", "name"}): "Task",
+                frozenset({"id", "title"}): "Task",
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="name",
+    argvalues=["task", "My-Task", "9Task"],
+)
+def test_go_invalid_shape_name_raises(name: str) -> None:
+    """Values in Go's ``record_shape_names`` must be PascalCase
+    identifiers.
+
+    Go has no PascalCase reserved keyword (every Go keyword is
+    lowercase), so the PascalCase check is the only name-shape gate.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Go(record_shape_names={frozenset({"id", "name"}): name})
+
+
+def test_go_shape_name_collides_with_auto_generated_raises() -> None:
+    """A mapped struct name that matches the auto-generated
+    ``{prefix}{N}`` pattern is rejected because the user-named record
+    would clash with an index-named record at render time.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Go(record_shape_names={frozenset({"id", "name"}): "Record0"})
+
+
+def test_go_duplicate_shape_names_raises() -> None:
+    """Two distinct key-sets cannot map to the same Go struct name."""
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Go(
             record_shape_names={
                 frozenset({"id", "name"}): "Task",
                 frozenset({"id", "title"}): "Task",

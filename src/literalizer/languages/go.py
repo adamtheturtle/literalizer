@@ -3,7 +3,8 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -96,6 +97,9 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
+from literalizer.exceptions import InvalidRecordNameError
+
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 @beartype
@@ -320,6 +324,7 @@ class Go(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = True
     supports_record_struct_name_prefix = True
+    supports_record_shape_names = True
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -687,6 +692,10 @@ class Go(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     record_struct_name_prefix: str = "Record"
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     # Keep in sync with the `go` directive in the generated go.mod in
     # `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V1_18
@@ -704,6 +713,51 @@ class Go(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ("package main",)
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ('import "math"',)
+
+    def __post_init__(self) -> None:
+        """Validate ``record_shape_names`` after construction."""
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate ``record_shape_names`` for PascalCase identifier
+        shape, collisions with the auto-generated ``{prefix}{N}``
+        struct names, and duplicate target names.
+
+        Ported from
+        :meth:`literalizer.languages.Rust._validate_record_naming`.  Go
+        has no ``heterogeneous_value_enum_name`` so that collision
+        check does not apply, and Rust's reserved-keyword check is
+        unnecessary here: every Go keyword and built-in identifier is
+        lowercase, so the PascalCase requirement already rejects every
+        one of them.
+        """
+        prefix = self.record_struct_name_prefix
+        auto_name_pattern = re.compile(
+            pattern=rf"^{re.escape(pattern=prefix)}\d+$",
+        )
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase Go "
+                    f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated {prefix!r}-prefixed struct names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    f"record_shape_names maps multiple key-sets to "
+                    f"{name!r}; struct names must be unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -776,6 +830,7 @@ class Go(metaclass=LanguageCls):
         """Go syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
+            record_shape_names=self.record_shape_names,
             field_identifier=_go_record_field_identifier,
             field_type=self._go_record_field_type,
             render_declaration=self._go_render_declaration,

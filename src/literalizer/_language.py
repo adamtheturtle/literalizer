@@ -731,6 +731,7 @@ class LanguageCls(type):
     supports_default_set_element_type: bool
     supports_default_ordered_map_value_type: bool
     supports_record_struct_name_prefix: bool
+    supports_record_shape_names: bool
     dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
