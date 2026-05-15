@@ -89,11 +89,13 @@ from literalizer._language import (
     no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    NullInCollectionError,
+)
 
 
 class _JavaModifiers(enum.Enum):
@@ -577,25 +579,6 @@ def _java_record_field_identifier(key: str, /) -> str:
 
 
 @beartype
-def _java_opener_field_type(opener: str, /) -> str:
-    """Return the Java component type for a container field from the
-    very collection opener the value formatter uses.
-
-    A record field is formatted with no sibling override, so the opener
-    a language returns for the field's value is exactly the one it
-    emitted.  Every Java container opener starts ``new <type>`` and the
-    type ends at the first ``{`` (array initializer), ``(`` (factory
-    call) or ``<`` (a diamond, which is illegal in a type position):
-    ``new int[]{`` -> ``int[]``, ``new Object[]{`` -> ``Object[]``,
-    ``new java.util.ArrayList<>(java.util.Arrays.asList(`` ->
-    ``java.util.ArrayList``.
-    """
-    rest = opener[len("new ") :]
-    ends = [pos for pos in (rest.find(c) for c in "{(<") if pos != -1]
-    return rest[: min(ends)]
-
-
-@beartype
 def _java_record_literal(
     name: str,
     fields: Sequence[RecordLiteralField],
@@ -688,6 +671,7 @@ class Java(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     supports_record_struct_name_prefix = True
+    supports_record_shape_names = False
     supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -1068,7 +1052,37 @@ class Java(metaclass=LanguageCls):
         ):
             object.__setattr__(self, "language_version", jdk_16)
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Under the ``RECORD`` heterogeneous strategy a list-valued
+        record component is typed from the array opener
+        (``new <type>[]{``) the value formatter emits, so its declared
+        type matches the rendered literal.  Only
+        ``sequence_format=ARRAY`` produces that opener; every other
+        sequence format (e.g. ``LIST`` -> ``List.of(...)``) carries no
+        element type in its opener and is outside the ``RECORD``
+        strategy's MVP (cf. the set / non-record-dict boundary in
+        #2317), so the combination is rejected here rather than
+        emitting a ``record`` declaration that fails to compile.  This
+        check is spec-only; *data* is unused.
+        """
+        del data
+        strategies = type(self.heterogeneous_strategy)
+        formats = type(self.sequence_format)
+        if (
+            self.heterogeneous_strategy is strategies.RECORD
+            and self.sequence_format is not formats.ARRAY
+        ):
+            msg = (
+                "Java heterogeneous_strategy=RECORD requires "
+                "sequence_format=ARRAY: a list-valued record component "
+                "is typed from the array opener the value formatter "
+                "emits, and other sequence formats (e.g. LIST -> "
+                "List.of(...)) carry no element type. "
+                "Use sequence_format=ARRAY."
+            )
+            raise IncompatibleFormatsError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1371,21 +1385,27 @@ class Java(metaclass=LanguageCls):
 
         Derives the type from the raw value (and any resolved
         nested-record name), mirroring Go's structural port rather than
-        re-parsing the formatted literal.  A list or ordered-map field
-        is typed from the very collection opener the value formatter
-        uses for it (a record field is formatted with no sibling
-        override, so the opener equals the one emitted).  ``int``
-        magnitude (``int`` vs ``long``) and the format-dependent
-        ``datetime`` type (``Instant`` / ``ZonedDateTime`` /
-        ``String`` / epoch ``int``) are value- and spec-driven, so
-        they are resolved explicitly; every other scalar (including
-        ``date`` -> ``LocalDate``) goes through the shared type-only
-        resolver.
+        re-parsing the formatted literal.  ``int`` magnitude (``int``
+        vs ``long``) and the format-dependent ``datetime`` type
+        (``Instant`` / ``ZonedDateTime`` / ``String`` / epoch ``int``)
+        are value- and spec-driven, so they are resolved explicitly;
+        every other scalar (including ``date`` -> ``LocalDate``) goes
+        through the shared type-only resolver.
+
+        An ordered-map field is the concrete ``java.util.ArrayList``
+        the ordered-map opener constructs.  A list field is typed from
+        the array opener ``self.sequence_open`` emits for it (no
+        sibling override, so the opener equals the one rendered):
+        ``new int[]{`` -> ``int[]``, ``new Object[]{`` -> ``Object[]``.
+        Only ``sequence_format=ARRAY`` produces that opener;
+        :meth:`validate_spec_for_data` rejects ``RECORD`` with any
+        other sequence format up front, so no opener without an
+        encoded element type (e.g. ``List.of(``) reaches this branch.
 
         A set or a non-record dict (an empty or non-string-keyed dict)
         as a record field is outside the ``RECORD`` strategy's MVP --
         the same shapes Rust's ``_rust_record_field_type`` is imprecise
-        for (#2234) -- so it folds into the ``Object`` top type, which
+        for (#2317) -- so it folds into the ``Object`` top type, which
         the rendered literal still assigns into.
         """
         if request.record_name is not None:
@@ -1401,22 +1421,26 @@ class Java(metaclass=LanguageCls):
             case datetime.datetime():
                 return self._java_record_datetime_hint
             case OrderedMap():
-                opener = self.ordered_map_format_config.ordered_map_open(
-                    value,
-                )
+                field_type = "java.util.ArrayList"
             case list():
                 opener = self.sequence_open(value)
+                field_type = opener.removeprefix("new ").removesuffix("{")
             case _:
                 return self._java_record_scalar_resolver(type(value)) or (
                     "Object"
                 )
-        return _java_opener_field_type(opener)
+        return field_type
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
         """Java syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
+            # Java does not yet expose a ``record_shape_names``
+            # constructor field (ported with its own RECORD work); an
+            # empty mapping keeps every shape on the auto
+            # ``{prefix}{N}`` names.
+            record_shape_names=MappingProxyType(mapping={}),
             field_identifier=_java_record_field_identifier,
             field_type=self._java_record_field_type,
             render_declaration=_java_render_declaration,

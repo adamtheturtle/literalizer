@@ -24,6 +24,19 @@ Next
   that does not parse to a list raises
   :class:`~literalizer.exceptions.PerElementNotListError`.  See #2340.
 
+- :class:`~literalizer.Go` gains the ``record_shape_names`` constructor
+  parameter (already on :class:`~literalizer.Rust`), a
+  ``Mapping[frozenset[str], str]`` from a record shape's key-set to a
+  custom struct name.  A mapped shape is declared and rendered with the
+  given name instead of the auto-generated ``RecordN``; the
+  ``record_struct_name_prefix`` counter advances only for the shapes
+  with no custom name.  Names are validated as PascalCase Go
+  identifiers that do not
+  collide with the auto ``{prefix}{N}`` pattern or each other, raising
+  :class:`~literalizer.exceptions.InvalidRecordNameError`.  A new
+  ``supports_record_shape_names`` language-class flag mirrors the
+  constructor.  See #2324.
+
 2026.05.15.1
 ------------
 

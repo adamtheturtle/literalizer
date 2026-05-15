@@ -593,6 +593,7 @@ class Kotlin(metaclass=LanguageCls):
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
     supports_record_struct_name_prefix = True
+    supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -1190,6 +1191,10 @@ class Kotlin(metaclass=LanguageCls):
         """Kotlin syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
+            # Kotlin does not yet expose a ``record_shape_names``
+            # constructor field (ported separately); an empty mapping
+            # keeps every shape on the auto ``{prefix}{N}`` names.
+            record_shape_names=MappingProxyType(mapping={}),
             field_identifier=_kotlin_record_field_identifier,
             field_type=self._kotlin_record_field_type_request,
             render_declaration=_kotlin_render_declaration,

@@ -1,6 +1,7 @@
 """Language-wide metadata and protocol checks."""
 
 import enum
+from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
 
 import pytest
@@ -178,6 +179,40 @@ def test_supports_record_struct_name_prefix_matches_constructor(
     spec = language_cls()
     accepts_kwarg = isinstance(spec, _HasRecordStructNamePrefix)
     assert language_cls.supports_record_struct_name_prefix == accepts_kwarg
+
+
+@runtime_checkable
+class _HasRecordShapeNames(Protocol):
+    """Structural type for languages that expose a
+    ``record_shape_names`` constructor field.
+
+    Used to narrow a generic :class:`literalizer.Language` to one with
+    the field without introspecting ``__dataclass_fields__`` or casting
+    to ``Any``.
+    """
+
+    record_shape_names: Mapping[frozenset[str], str]
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_supports_record_shape_names_matches_constructor(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """The flag is ``True`` exactly when the constructor accepts
+    ``record_shape_names``.
+
+    Runtime-dispatched callers rely on this flag instead of inspecting
+    dataclass fields, so it must stay in lock-step with the actual
+    constructor keyword arguments.
+    """
+    spec = language_cls()
+    accepts_kwarg = isinstance(spec, _HasRecordShapeNames)
+    assert language_cls.supports_record_shape_names == accepts_kwarg
 
 
 def test_supported_ref_cases_independent_of_identifier_cases() -> None:
