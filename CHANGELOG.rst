@@ -81,6 +81,13 @@ Next
   ``supports_record_shape_names`` language-class flag is now ``True``.
   See #2324.
 
+- :class:`~literalizer.Kotlin` now declares a ``data class`` field
+  whose value is a custom-named nested record with that nested
+  record's ``record_shape_names`` name (e.g. ``Task``).  Previously
+  such a field fell through to ``Double`` because the custom name does
+  not match the auto-generated ``{prefix}{N}`` head, so the generated
+  Kotlin did not compile.  See #2348.
+
 2026.05.15.1
 ------------
 
