@@ -486,9 +486,9 @@ def _kotlin_call_stub(
 
 
 # Kotlin collection-constructor call names mapped to the declared type
-# they produce, used to derive a ``RECORD`` field's type from its
-# already-formatted generic literal (e.g. ``linkedMapOf<String, Any?>(``
-# -> ``LinkedHashMap<String, Any?>``).
+# they produce, used to derive a ``RECORD`` field's type from the
+# generic collection opener the value formatter emits (e.g.
+# ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
 _KOTLIN_COLLECTION_TYPE: dict[str, str] = {
     "listOf": "List",
     "mapOf": "Map",
@@ -496,6 +496,24 @@ _KOTLIN_COLLECTION_TYPE: dict[str, str] = {
     "linkedMapOf": "LinkedHashMap",
     "setOf": "Set",
 }
+
+
+@beartype
+def _kotlin_opener_to_type(opener: str, /) -> str:
+    """Map a Kotlin collection opener to its declared field type.
+
+    ``intArrayOf(`` is the primitive ``IntArray``; every other opener
+    is a generic constructor call whose ``<...>`` segment is the
+    declared type (``listOf<Any?>(`` -> ``List<Any?>``,
+    ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
+    ``arrayOf(`` carries no element type in the opener and is handled
+    by the caller.
+    """
+    if opener == "intArrayOf(":
+        return "IntArray"
+    name = opener[: opener.index("<")]
+    generics = opener[opener.index("<") : opener.rindex(">") + 1]
+    return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
 
 
 @beartype
@@ -1165,79 +1183,97 @@ class Kotlin(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
-    def _kotlin_record_field_type(self, formatted: str, /) -> str:
-        """Return the Kotlin ``data class`` field type for an
-        already-formatted value.
-
-        The declared type is read off the formatted literal so it
-        always matches what the value formatter emitted.  Scalars and
-        homogeneous typed-array literals have a fixed prefix; richer
-        shapes (string arrays, generic collections, nested records,
-        numbers) are resolved by :meth:`_kotlin_record_composite_type`.
-        """
-        exact = {
-            self.null_literal: "Any?",
-            self.true_literal: "Boolean",
-            self.false_literal: "Boolean",
-        }
-        if formatted in exact:
-            return exact[formatted]
-        prefixes = (
-            ('"', "String"),
-            ("LocalDateTime.of(", "LocalDateTime"),
-            ("LocalDate.of(", "LocalDate"),
-            ("intArrayOf(", "IntArray"),
-        )
-        for prefix, type_name in prefixes:
-            if formatted.startswith(prefix):
-                return type_name
-        return self._kotlin_record_composite_type(formatted=formatted)
-
-    def _kotlin_record_composite_type(self, *, formatted: str) -> str:
-        """Return the field type for a non-scalar formatted value.
-
-        Generic collection literals carry their type in the ``<...>``
-        segment of the constructor call (``linkedMapOf<String, Any?>(``
-        -> ``LinkedHashMap<String, Any?>``); a nested record-shaped dict
-        formats as its own ``RecordN(...)`` literal, whose name is the
-        declared type; everything else is an ``Int``/``Long``/``Double``
-        number.
-        """
-        if formatted.startswith("arrayOf("):
-            body = formatted[len("arrayOf(") :].lstrip()
-            element = body[: body.index('"', 1) + 1]
-            return f"Array<{self._kotlin_record_field_type(element)}>"
-        if "<" in formatted:
-            name = formatted[: formatted.index("<")]
-            generics = formatted[
-                formatted.index("<") : formatted.index(">") + 1
-            ]
-            return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
-        prefix = self.record_struct_name_prefix
-        head = formatted.split(sep="(", maxsplit=1)[0]
-        if head.startswith(prefix) and head[len(prefix) :].isdigit():
-            return head
-        if formatted.lstrip("-").isdigit():
-            value = int(formatted)
-            in_int = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
-            return "Int" if in_int else "Long"
-        return "Double"
-
-    def _kotlin_record_field_type_request(
+    @cached_property
+    def _kotlin_record_scalar_resolver(
         self,
-        request: RecordFieldType,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Type-only scalar resolver (the mapping the typed openers are
+        built on); returns ``None`` for a type it does not cover so
+        callers can fall back to the ``Any?`` top type.
+        """
+        return self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=None,
+            datetime_type=None,
+            enable_dict_type=False,
+        )
+
+    @cached_property
+    def _kotlin_record_datetime_type(self) -> str:
+        """Kotlin type for a :class:`datetime.datetime` record field.
+
+        A record component must match the value the formatter emits, so
+        it is driven by the chosen datetime format: ``ISO`` renders a
+        quoted string (``String``), ``EPOCH`` a bare integer that, for
+        every datetime the corpus exercises, fits ``Int``, and the
+        default ``KOTLIN`` format a ``LocalDateTime.of(...)`` call.
+        """
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "String"
+        if produced is int:
+            return "Int"
+        return "LocalDateTime"
+
+    def _kotlin_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Kotlin ``data class`` field type for a record
+        field, derived structurally from the raw value.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  A list or ordered-map field
+        derives its type from the very collection opener the value
+        formatter uses for that value (a record field is formatted with
+        no sibling override, so the opener equals the one emitted),
+        resolved by :func:`_kotlin_opener_to_type`.  ``Int`` magnitude
+        (``Int`` vs ``Long``) and the format-dependent ``datetime`` type
+        are value- and spec-driven, so they are resolved explicitly;
+        every other scalar (including ``date`` -> ``LocalDate`` and
+        ``bytes`` -> ``String``) goes through the shared type-only
+        resolver.
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field is outside the ``RECORD`` strategy's MVP --
+        the same shapes Rust's ``_rust_record_field_type`` is imprecise
+        for (#2234) -- so it folds into Kotlin's ``Any?`` top type,
+        which the rendered literal still assigns into.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        return self._kotlin_value_field_type(request.value)
+
+    def _kotlin_value_field_type(  # noqa: PLR0911
+        self,
+        value: Value,
         /,
     ) -> str:
-        """Adapt the structured :class:`RecordFieldType` hook to
-        Kotlin's still-formatted-string field typing.
-
-        Kotlin's ``field_type`` has not yet been ported off the
-        formatted-string contract (unlike Go), so it reads
-        ``request.formatted``.  Porting it to derive the type from
-        ``request.value`` via Kotlin's own openers is tracked
-        separately.
+        """Resolve the Kotlin field type for a raw (non-nested-record)
+        value, descending into an ``arrayOf(`` element type.
         """
-        return self._kotlin_record_field_type(request.formatted)
+        match value:
+            case None:
+                return "Any?"
+            case bool():
+                return "Boolean"
+            case int():
+                in_i32 = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
+                return "Int" if in_i32 else "Long"
+            case datetime.datetime():
+                return self._kotlin_record_datetime_type
+            case OrderedMap():
+                return _kotlin_opener_to_type(
+                    self.ordered_map_format_config.ordered_map_open(value),
+                )
+            case list():
+                opener = self.sequence_open(value)
+                if opener == "arrayOf(":
+                    element = self._kotlin_value_field_type(value[0])
+                    return f"Array<{element}>"
+                return _kotlin_opener_to_type(opener)
+            case _:
+                return self._kotlin_record_scalar_resolver(type(value)) or (
+                    "Any?"
+                )
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
@@ -1246,7 +1282,7 @@ class Kotlin(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
             field_identifier=_kotlin_record_field_identifier,
-            field_type=self._kotlin_record_field_type_request,
+            field_type=self._kotlin_record_field_type,
             render_declaration=_kotlin_render_declaration,
             render_literal=_kotlin_record_literal,
         )
