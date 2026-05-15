@@ -321,7 +321,7 @@ class FSharp(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1004,6 +1004,21 @@ class FSharp(metaclass=LanguageCls):
             scalar_declared_type=self.type_name,
             entry_formatter=self._entry_formatter,
         )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration prepends a ``name: Val`` type
+        annotation and wraps the value in a tagged-enum constructor
+        (``FInt``, ``FStr``, …) derived from the bound value's runtime
+        type; a call expression has no such tag, so both the annotation
+        and the constructor wrapper are omitted and F# infers the
+        call's return type instead.
+        """
+        return self.declaration_style.value.formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

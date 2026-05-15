@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.FSharp` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``let my_data = make_widget(42)`` without the ``name: Val``
+  type annotation or tagged-enum constructor wrapper that literal
+  bindings use (the call's return type is not known to the renderer).
+  Existing literal-binding output for F# is unchanged.  See #2249.
+
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
   emit output that fails to compile for a post-2038
   :class:`~datetime.datetime`
