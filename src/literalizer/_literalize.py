@@ -526,19 +526,18 @@ def _maybe_format_record_literal(
     render_record_literal = behavior.render_record_literal
     if render_record_literal is None:
         return None
-    if record_shape_for_dict(value=value) is None:
+    record_shape = record_shape_for_dict(value=value)
+    if record_shape is None:
         return None
     is_multiline = collection_layout is CollectionLayout.MULTILINE
     body_prefix = multiline_prefix + spec.indent if is_multiline else ""
     field_multiline_prefix = body_prefix if is_multiline else multiline_prefix
-    # Iterate over *value*'s own keys; missing-from-this-dict keys are
-    # filled in by the strategy's render callable using whatever
-    # unified shape it has cached.
-    str_keys: list[str] = []
-    for key in value:
-        if not isinstance(key, str):  # pragma: no cover
-            return None
-        str_keys.append(key)
+    # ``record_shape.keys`` holds *value*'s own keys in insertion order
+    # (``record_shape_for_dict`` already guaranteed they are all
+    # strings); missing-from-this-dict keys are filled in by the
+    # strategy's render callable using whatever unified shape it has
+    # cached.
+    str_keys = list(record_shape.keys)
     formatted_fields: dict[str, str] = {
         key: _format_value(
             value=value[key],
