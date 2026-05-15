@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Kotlin` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
+  :class:`~literalizer.Go`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated ``data class RecordN(val ...)``
+  declared in the preamble plus a matching ``RecordN(field = value,
+  ...)`` literal, so a dict whose values mix scalars and containers is
+  representable instead of raising.  Field names keep the original
+  dict keys and the data-class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter.  See #2298.
+
 - :class:`~literalizer.Go` gains the ``RECORD`` ``heterogeneous_strategy``
   (already on :class:`~literalizer.Rust`).  Each record-shaped dict
   (non-empty, string-keyed) becomes a generated ``type RecordN struct
