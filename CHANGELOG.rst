@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.15
+----------
+
+
 - :func:`~literalizer.literalize` now accepts an opt-in ``bound_refs``
   mapping.  Unlike ``ref_values`` (which only informs a ref's type and
   leaves it as a free external identifier), each name in ``bound_refs``
