@@ -817,6 +817,11 @@ class TypeScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `tsc` syntax-check call in
+    # `.github/workflows/lint.yml`, which parses `.ts` fixtures, and with
+    # `JavaScript.language_version` in
+    # `src/literalizer/languages/javascript.py` (the shared ECMAScript
+    # target).
     language_version: VersionFormats = VersionFormats.V5
     indent: str = "  "
 

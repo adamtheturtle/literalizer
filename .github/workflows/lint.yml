@@ -434,10 +434,16 @@ jobs:
           find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg && test -s /tmp/files-norg
           xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
 
+      # ``tsc`` parses these ``.ts`` fixtures at
+      # ``TypeScript.language_version`` (``V5``) in
+      # ``src/literalizer/languages/typescript.py``; ``--target es2015
+      # --lib es2015`` matches ``JavaScript.language_version`` (``ES2015``)
+      # in ``src/literalizer/languages/javascript.py``. Keep all three in
+      # sync.
       - name: Lint TypeScript
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --lib es2015 < /tmp/files-ts
+          xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --target es2015 --lib es2015 < /tmp/files-ts
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
   # so the per-fixture tsx startups run in parallel with the tsc syntax
