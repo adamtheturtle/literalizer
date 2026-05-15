@@ -94,9 +94,9 @@ class CallContext:
 
     row: Sequence[Value]
     """The input values for this row, in source order.  For
-    ``per_element=True`` this is the i-th top-level element's argument
-    values; for ``per_element=False`` it is the whole parsed value
-    wrapped in a single-element sequence.
+    ``per_element=True`` this is the top-level element at position
+    ``index``, as its argument values; for ``per_element=False`` it is
+    the whole parsed value wrapped in a single-element sequence.
     """
 
     zipped: str | None
