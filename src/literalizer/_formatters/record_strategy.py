@@ -33,6 +33,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._language import (
     HeterogeneousBehavior,
+    RenderedRecordLiteral,
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
 )
@@ -69,9 +70,10 @@ class RecordRenderer:
     PascalCase for Go).  ``field_type`` maps a field's already-formatted
     literal value to its declared type.  ``render_declaration`` builds
     one declaration block from the resolved fields, and
-    ``render_literal`` builds the single-line literal (the shared
-    multiline expansion in :mod:`literalizer._literalize` re-flows it
-    when the surrounding layout is multiline).
+    ``render_literal`` builds the literal as a
+    :class:`RenderedRecordLiteral` (structured pieces; the shared code
+    in :mod:`literalizer._literalize` assembles the compact or multiline
+    form from them, so no language flattens then re-parses).
     """
 
     name_prefix: str
@@ -81,7 +83,10 @@ class RecordRenderer:
         [str, Sequence[RecordDeclarationField]],
         str,
     ]
-    render_literal: Callable[[str, Sequence[RecordLiteralField]], str]
+    render_literal: Callable[
+        [str, Sequence[RecordLiteralField]],
+        RenderedRecordLiteral,
+    ]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -235,7 +240,7 @@ def build_record_strategy(
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
-    ) -> str:
+    ) -> RenderedRecordLiteral:
         """Render a record-shape dict as a language-specific literal,
         caching the first-seen formatted fields for its shape.
         """
