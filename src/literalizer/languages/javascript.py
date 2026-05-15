@@ -547,6 +547,10 @@ class JavaScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `tsc --target es2015 --lib es2015` flags in
+    # `.github/workflows/lint.yml` and `TypeScript.language_version` in
+    # `src/literalizer/languages/typescript.py` (TypeScript fixtures share
+    # this ECMAScript target).
     language_version: VersionFormats = VersionFormats.ES2015
     indent: str = "  "
 
