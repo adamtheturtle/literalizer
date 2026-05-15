@@ -20,6 +20,8 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_formatter,
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -810,9 +812,12 @@ class Scala(metaclass=LanguageCls):
 
         Built from the same scalar mapping the collection openers use,
         with the date/datetime names resolved from the configured
-        formats (so an ``EPOCH`` datetime field is typed ``Int`` and an
-        ``ISO`` one ``String``, matching the rendered literal).
-        ``WideInt`` resolves to ``Long``.
+        formats (so an ``ISO`` datetime field is typed ``String``,
+        matching the rendered literal).  ``WideInt`` resolves to
+        ``Long``.  An ``EPOCH`` datetime field bypasses the datetime
+        mapping here: :meth:`_scala_record_field_type` routes it
+        through :meth:`_scala_int_magnitude_field_type` so its width
+        tracks the epoch value.
         """
         return self._opener_config.element_to_type(
             list_template=None,
@@ -821,6 +826,23 @@ class Scala(metaclass=LanguageCls):
             datetime_type=self._datetime_type_name,
             enable_dict_type=False,
         )
+
+    def _scala_int_magnitude_field_type(self, value: int, /) -> str:
+        """Resolve an integer's ``case class`` field type by 32-bit
+        magnitude.
+
+        An ``Int``-range value stays ``Int``; a wider one maps via
+        :class:`WideInt` to ``Long``, matching the ``L``-suffixed
+        literal :attr:`format_integer` emits.  Shared by the plain
+        integer arm and the ``EPOCH`` datetime arm (epoch seconds after
+        2038-01-19 leave 32-bit range) so the declared field type
+        always matches the rendered literal; it is therefore
+        value-driven, not a pure ``cached_property``.
+        """
+        element_type: type = (
+            int if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX else WideInt
+        )
+        return self._scalar_field_type_resolver(element_type) or "Any"
 
     def _scala_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Scala ``case class`` field type for a record
@@ -838,7 +860,9 @@ class Scala(metaclass=LanguageCls):
         whose element type Scala infers from the declared field type
         (see :data:`_SCALA_UNTYPED_OPENERS`), not by collection
         variance.  A scalar field uses the same scalar mapping the
-        openers are built on (a wide ``int`` -> ``Long``).
+        openers are built on (a wide ``int`` -> ``Long``); an ``EPOCH``
+        datetime is sized like the epoch integer it renders as
+        (``Int``, or ``Long`` once it leaves 32-bit range past 2038).
 
         A set or a non-record dict (an empty or non-string-keyed dict)
         as a record field is outside the ``RECORD`` strategy's MVP --
@@ -849,6 +873,15 @@ class Scala(metaclass=LanguageCls):
         if request.record_name is not None:
             return request.record_name
         value = request.value
+        # An ``EPOCH`` datetime renders as its epoch integer, so size
+        # the field exactly like that integer (``Int`` or, past 2038,
+        # ``Long``); other datetime formats stay datetime-typed via the
+        # scalar resolver below.
+        if (
+            isinstance(value, datetime.datetime)
+            and self.datetime_format.value.type_produced is int
+        ):
+            value = datetime_epoch_seconds(value=value)
         match value:
             case None:
                 return "Any"
@@ -861,12 +894,7 @@ class Scala(metaclass=LanguageCls):
             case bool():
                 return self._scalar_field_type_resolver(bool) or "Any"
             case int():
-                element_type: type = (
-                    int
-                    if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX
-                    else WideInt
-                )
-                return self._scalar_field_type_resolver(element_type) or "Any"
+                return self._scala_int_magnitude_field_type(value)
             case _:
                 return self._scalar_field_type_resolver(type(value)) or "Any"
         head = opener[: -len("(")]
@@ -1134,7 +1162,18 @@ class Scala(metaclass=LanguageCls):
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        ``EPOCH`` seconds are routed through :attr:`format_integer` so
+        a post-2038 value carries the ``L`` suffix Scala requires for
+        an integer literal outside 32-bit range: a bare ``4085195400``
+        is rejected by the compiler as "number too large" even when
+        the target type is ``Long``.  In-range epoch seconds format
+        identically to the plain integer, so every checked-in golden
+        file stays byte-identical.
+        """
+        if self.datetime_format.name == "EPOCH":
+            return datetime_epoch_formatter(format_integer=self.format_integer)
         return self.datetime_format
 
     @cached_property

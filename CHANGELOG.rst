@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
+  emit uncompilable output for a post-2038 :class:`~datetime.datetime`
+  under the ``RECORD`` ``heterogeneous_strategy`` with
+  ``datetime_format=EPOCH``.  The epoch seconds now carry the language's
+  wide-integer suffix and the record component widens accordingly
+  (``long`` / ``Long``) once the value leaves signed 32-bit range, so
+  the declared component type always matches the rendered literal.
+  In-range epochs are unaffected.  See #2338.
+
 - :class:`~literalizer.Go` gains the ``record_shape_names`` constructor
   parameter (already on :class:`~literalizer.Rust`), a
   ``Mapping[frozenset[str], str]`` from a record shape's key-set to a
