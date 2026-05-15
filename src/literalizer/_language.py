@@ -243,17 +243,11 @@ class CommandCallStyle:
     surrounding parentheses.  *arg_separator* is the string between
     the target and each argument (typically a single space).
 
-    When a ``call_transform`` like ``lambda c: f"emit({c})"`` is
-    supplied, the wrapper word is extracted and the inner call is
-    formatted using *wrapped_call_template*, a ``str.format``-style
-    template with ``{wrapper}`` and ``{inner}`` placeholders (e.g.
-    the default ``'{wrapper} "$({inner})"'`` produces
-    ``emit "$(target arg1 arg2)"`` for Bash; Tcl uses
-    ``'{wrapper} [{inner}]'`` instead).
+    ``call_transform`` is not supported for this style (see
+    :func:`~literalizer.literalize_call`).
     """
 
     arg_separator: str
-    wrapped_call_template: str = '{wrapper} "$({inner})"'
 
 
 CallStyle = (
@@ -650,10 +644,8 @@ class LanguageCls(type):
     supports_no_variable_wrap_in_file: bool
     supports_call_variable_binding: bool
     supports_dotted_calls: bool
-    has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
     allows_empty_call_parens: bool
-    supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_zero_parameter_calls: bool
     max_call_parameters: int
@@ -911,22 +903,6 @@ class Language(Protocol):
     :func:`~literalizer.literalize_call`.  When ``False``, dotted
     targets are rejected with
     :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
-    """
-
-    supports_dotted_call_stub: bool
-    """Whether the language can declare a stub for a dotted call wrapper
-    name (e.g. ``tracer.emit``) produced by ``call_transform``.  When
-    ``False``, a dotted ``call_transform`` wrapper is rejected by
-    :func:`~literalizer.literalize_call` with
-    :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`.
-    """
-
-    has_free_function_calls: bool
-    """Whether the language has a free function call syntax (i.e. the
-    ability to call a function by a bare name with no dot).  When
-    ``False``, a ``call_transform`` whose wrapper is a bare name with
-    no dot is rejected by :func:`~literalizer.literalize_call` with
-    :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
     """
 
     @property

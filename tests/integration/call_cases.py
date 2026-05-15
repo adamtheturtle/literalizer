@@ -18,12 +18,10 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer._types import Value
+from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
-    DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
-    FreeFunctionCallNotSupportedError,
     HeterogeneousCollectionError,
     UnsupportedCallShapeError,
     VariableNameNotSupportedError,
@@ -71,7 +69,7 @@ class CallCaseConfig:
     case_dir_name: str
     target_function: str
     parameter_names: list[str]
-    call_transform: Callable[[str], str] | None
+    call_transform: Callable[[literalizer.CallContext], str] | None
     transform_stub_names: list[str]
     per_element: bool
     call_style_type: type[literalizer.CallStyle] | None
@@ -92,6 +90,17 @@ class CallCaseConfig:
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
     variable_form: literalizer.VariableForm | None = None
+    # Paired positionally with the generated calls and exposed on
+    # ``CallContext.zipped``.  Requires ``call_transform``.
+    zip_values: Sequence[ValueInput] | None = None
+    # Parameter names used when stubbing each ``transform_stub_names``
+    # wrapper.  The length sets how many parameters the wrapper takes,
+    # so transforms that call the wrapper with more than one argument
+    # (e.g. a zipped value alongside the call) compile in languages
+    # with a fixed parameter count.
+    transform_stub_param_names: list[str] = dataclasses.field(
+        default_factory=lambda: ["_arg"],
+    )
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -107,7 +116,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_keyword_args",
         target_function="throttler.check",
         parameter_names=["user_id", "ts"],
-        call_transform=lambda c: f"emit({c})",
+        call_transform=lambda ctx: f"emit({ctx.call})",
         transform_stub_names=["emit"],
         per_element=True,
         call_style_type=None,
@@ -300,7 +309,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_deep_dotted_transformed",
         target_function="app.client.fetch",
         parameter_names=["payload"],
-        call_transform=lambda c: f"emit({c})",
+        call_transform=lambda ctx: f"emit({ctx.call})",
         transform_stub_names=["emit"],
         per_element=True,
         call_style_type=None,
@@ -316,7 +325,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_dotted_transform_stub",
         target_function="process",
         parameter_names=["value"],
-        call_transform=lambda c: f"tracer.emit({c})",
+        call_transform=lambda ctx: f"tracer.emit({ctx.call})",
         transform_stub_names=["tracer.emit"],
         per_element=True,
         call_style_type=None,
@@ -327,6 +336,24 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_zip_values",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+        transform_stub_names=["emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        zip_values=[True, False],
+        transform_stub_param_names=["_call", "_zip"],
     ),
     CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -364,7 +391,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         case_dir_name="call_no_params_transform",
         target_function="process",
         parameter_names=[],
-        call_transform=lambda c: f"emit({c})",
+        call_transform=lambda ctx: f"emit({ctx.call})",
         transform_stub_names=["emit"],
         per_element=True,
         call_style_type=None,
@@ -843,7 +870,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             case_dir_name=f"call_{name}",
             target_function="throttler.check",
             parameter_names=["user_id", "ts"],
-            call_transform=lambda c: f"emit({c})",
+            call_transform=lambda ctx: f"emit({ctx.call})",
             transform_stub_names=["emit"],
             per_element=True,
             call_style_type=cls,
@@ -867,6 +894,37 @@ class CallCase:
     config: CallCaseConfig
     lang_cls: literalizer.LanguageCls
     expected_exception: type[Exception] | None = None
+
+
+_SUBSTITUTION_CALL_STYLES = (
+    literalizer.PositionalCallStyle,
+    literalizer.KeywordCallStyle,
+    literalizer.ObjectCallStyle,
+)
+
+
+@beartype
+def _call_transform_style_unsupported(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> bool:
+    """Mirror ``_validate_call_preconditions``'s rejection of
+    ``call_transform`` for non-substitution call styles.
+
+    ``call_transform`` is only supported when the effective call style
+    is positional, keyword, or object.  When ``call_style_type`` is set
+    the test pins that style; otherwise the language's default
+    (first-listed) style applies.
+    """
+    if config.call_transform is None:
+        return False
+    if config.call_style_type is not None:
+        return not issubclass(
+            config.call_style_type, _SUBSTITUTION_CALL_STYLES
+        )
+    default_style = next(iter(lang_cls.CallStyles)).value
+    return not isinstance(default_style, _SUBSTITUTION_CALL_STYLES)
 
 
 @beartype
@@ -896,6 +954,7 @@ def _expected_call_shape_exception(
         config.requires_standalone_wrapped_comments
         and not lang_cls.supports_standalone_comments_in_wrapped_calls,
         innermost_target_function in lang_cls.reserved_identifiers,
+        _call_transform_style_unsupported(lang_cls=lang_cls, config=config),
     )
     if any(unsupported_signals):
         return UnsupportedCallShapeError
@@ -980,6 +1039,7 @@ def _run_wrap_in_file_case(
             target_function=config.target_function,
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
+            zip_values=config.zip_values,
             per_element=config.per_element,
             wrap_in_file=True,
             ref_case=effective_ref_case,
@@ -1043,6 +1103,7 @@ def _run_call_with_declarations(
             target_function=config.target_function,
             parameter_names=config.parameter_names,
             call_transform=config.call_transform,
+            zip_values=config.zip_values,
             per_element=config.per_element,
             ref_case=effective_ref_case,
             consumable_refs=config.consumable_refs,
@@ -1062,12 +1123,6 @@ def _run_call_with_declarations(
     except DottedCallTargetNotSupportedError:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} does not support dotted call targets")
-    except DottedCallStubNotSupportedError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} does not support dotted call stubs")
-    except FreeFunctionCallNotSupportedError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} has no free function call syntax")
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
@@ -1195,13 +1250,16 @@ def run_call_golden_case(
             f"{lang_cls.__name__} cannot represent this heterogeneous "
             "input in its typed call stub",
         )
-    # Stubs for transform function names (single argument).
+    # Stubs for transform function names.  The parameter count matches
+    # ``transform_stub_param_names`` so wrappers called with more than
+    # one argument (e.g. a zipped value beside the call) compile in
+    # languages with a fixed parameter count.
     for wrapper_name in config.transform_stub_names:
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(
             spec.format_call_stub(
                 wrapper_name_parts,
-                ["_arg"],
+                config.transform_stub_param_names,
                 StubReturn.VOID,
                 (),
             ),
@@ -1209,7 +1267,7 @@ def run_call_golden_case(
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
                 wrapper_name_parts,
-                ["_arg"],
+                config.transform_stub_param_names,
                 StubReturn.VOID,
                 (),
             ),

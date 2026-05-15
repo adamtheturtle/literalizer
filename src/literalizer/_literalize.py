@@ -58,9 +58,7 @@ from literalizer._types import Scalar, Value, ValueInput
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
-    DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
-    FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnrepresentableInputError,
@@ -68,9 +66,45 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
+    ZipValuesLengthMismatchError,
+    ZipValuesWithoutCallTransformError,
 )
 
 _DISABLED_REF_KEY = ""
+
+
+@dataclasses.dataclass(frozen=True)
+class CallContext:
+    """Per-row context passed to a :func:`literalize_call`
+    ``call_transform``.
+
+    A ``call_transform`` is invoked once per generated call as
+    ``call_transform(context)`` and returns the transformed call
+    string.  The context carries the call's positional identity so a
+    transform can pair it with data from a parallel sequence (see
+    :func:`literalize_call`'s ``zip_values``).
+    """
+
+    call: str
+    """The rendered language-native call expression
+    (e.g. ``catalog.lookup("Dune", 1965)``).
+    """
+
+    index: int
+    """Zero-based position of this call among the generated calls."""
+
+    row: Sequence[Value]
+    """The input values for this row, in source order.  For
+    ``per_element=True`` this is the i-th top-level element's argument
+    values; for ``per_element=False`` it is the whole parsed value
+    wrapped in a single-element sequence.
+    """
+
+    zipped: str | None
+    """The ``zip_values`` entry paired with this call, rendered as a
+    language-native literal, or ``None`` when no ``zip_values`` were
+    supplied.
+    """
 
 
 @dataclasses.dataclass(frozen=True)
@@ -2948,104 +2982,44 @@ def _format_call_args(
 
 
 @beartype
-def _extract_call_transform_wrapper(
-    *,
-    call_transform: Callable[[str], str],
-) -> str:
-    """Extract the wrapper word from a Python-style *call_transform*.
-
-    Used by call styles that build the call expression by adding the
-    wrapper before or after the inner call rather than substituting
-    it into the transform's parenthesized template.  Probes
-    *call_transform* with a sentinel and returns the prefix preceding
-    the sentinel, stripped of the trailing ``(`` and any whitespace
-    (e.g. ``lambda c: f"emit({c})"`` yields ``"emit"``).
-    """
-    sentinel = "\x00"
-    wrapped = call_transform(sentinel)
-    idx = wrapped.index(sentinel)
-    return wrapped[:idx].rstrip("(").strip()
-
-
-@beartype
-def _assemble_postfix_call(
+def _assemble_bare_call_expr(
     *,
     target_function: str,
     args_str: str,
-    call_transform: Callable[[str], str] | None,
+    style: CallStyle,
 ) -> str:
-    """Build ``args target`` for :class:`PostfixCallStyle`.
+    """Build the bare call expression (no transform, no terminator).
 
-    With a wrapper transform the wrapper word is appended postfix,
-    so the result is e.g. ``args target emit``.
+    ``call_transform`` is only valid for the substitution call styles
+    (:class:`PositionalCallStyle`, :class:`KeywordCallStyle`,
+    :class:`ObjectCallStyle`); the prefix/postfix/command styles never
+    receive one (:func:`_validate_call_preconditions` rejects it), so
+    each style here just renders the language-native call form.
     """
-    call_expr = (
-        f"{args_str} {target_function}" if args_str else target_function
-    )
-    if call_transform is not None:
-        wrapper = _extract_call_transform_wrapper(
-            call_transform=call_transform,
-        )
-        call_expr = f"{call_expr} {wrapper}"
-    return call_expr
-
-
-@beartype
-def _assemble_prefix_call(
-    *,
-    target_function: str,
-    args_str: str,
-    call_transform: Callable[[str], str] | None,
-    arg_separator: str,
-) -> str:
-    """Build ``(target args)`` for :class:`PrefixCallStyle`.
-
-    With a wrapper transform the result is e.g.
-    ``(emit (target args))``.
-    """
-    inside = (
-        f"{target_function}{arg_separator}{args_str}"
-        if args_str
-        else target_function
-    )
-    call_expr = f"({inside})"
-    if call_transform is not None:
-        wrapper = _extract_call_transform_wrapper(
-            call_transform=call_transform,
-        )
-        call_expr = f"({wrapper}{arg_separator}{call_expr})"
-    return call_expr
-
-
-@beartype
-def _assemble_command_call(
-    *,
-    target_function: str,
-    args_str: str,
-    call_transform: Callable[[str], str] | None,
-    arg_separator: str,
-    wrapped_call_template: str,
-) -> str:
-    """Build ``target arg1 arg2`` for :class:`CommandCallStyle`.
-
-    With a wrapper transform the inner call is formatted using
-    *wrapped_call_template* (e.g. ``emit "$(target arg1 arg2)"`` for
-    Bash or ``emit [target arg1 arg2]`` for Tcl).
-    """
-    call_expr = (
-        f"{target_function}{arg_separator}{args_str}"
-        if args_str
-        else target_function
-    )
-    if call_transform is not None:
-        wrapper = _extract_call_transform_wrapper(
-            call_transform=call_transform,
-        )
-        call_expr = wrapped_call_template.format(
-            wrapper=wrapper,
-            inner=call_expr,
-        )
-    return call_expr
+    match style:
+        case PostfixCallStyle():
+            return (
+                f"{args_str} {target_function}"
+                if args_str
+                else target_function
+            )
+        case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
+            return f"{target_function}{args_str}"
+        case PrefixCallStyle(arg_separator=sep):
+            inside = (
+                f"{target_function}{sep}{args_str}"
+                if args_str
+                else target_function
+            )
+            return f"({inside})"
+        case CommandCallStyle(arg_separator=sep):
+            return (
+                f"{target_function}{sep}{args_str}"
+                if args_str
+                else target_function
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -3053,46 +3027,34 @@ def _assemble_call(
     *,
     target_function: str,
     args_str: str,
-    call_transform: Callable[[str], str] | None,
+    call_transform: Callable[[CallContext], str] | None,
     statement_terminator: str,
     style: CallStyle,
+    index: int,
+    row: Sequence[Value],
+    zipped: str | None,
 ) -> str:
     """Build one complete call statement.
 
-    Dispatches to a per-style helper and appends the language's
-    statement terminator.
+    Renders the bare call expression and, when a *call_transform* is
+    supplied, threads it through :class:`CallContext` so the transform
+    can pair the call with per-row data.  The language's statement
+    terminator is appended last.
     """
-    match style:
-        case PostfixCallStyle():
-            call_expr = _assemble_postfix_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
+    call_expr = _assemble_bare_call_expr(
+        target_function=target_function,
+        args_str=args_str,
+        style=style,
+    )
+    if call_transform is not None:
+        call_expr = call_transform(
+            CallContext(
+                call=call_expr,
+                index=index,
+                row=row,
+                zipped=zipped,
             )
-        case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
-            call_expr = f"{target_function}{args_str}"
-            if call_transform is not None:
-                call_expr = call_transform(call_expr)
-        case PrefixCallStyle(arg_separator=sep):
-            call_expr = _assemble_prefix_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
-                arg_separator=sep,
-            )
-        case CommandCallStyle(
-            arg_separator=sep,
-            wrapped_call_template=wrapped_call_template,
-        ):
-            call_expr = _assemble_command_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
-                arg_separator=sep,
-                wrapped_call_template=wrapped_call_template,
-            )
-        case _ as unreachable:
-            assert_never(unreachable)
+        )
     return f"{call_expr}{statement_terminator}"
 
 
@@ -3104,7 +3066,8 @@ def _render_call_per_element(
     style: CallStyle,
     target_function: str,
     parameter_names: Sequence[str],
-    call_transform: Callable[[str], str] | None,
+    call_transform: Callable[[CallContext], str] | None,
+    zip_literals: Sequence[str] | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     ref_values: Mapping[str, Value],
@@ -3151,7 +3114,7 @@ def _render_call_per_element(
         )
     )
     rendered_elements: list[str] = []
-    for element in data:
+    for index, element in enumerate(iterable=data):
         arg_values = element if isinstance(element, list) else [element]
         non_ref_args = [
             v
@@ -3191,6 +3154,13 @@ def _render_call_per_element(
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
                     style=style,
+                    index=index,
+                    row=arg_values,
+                    zipped=(
+                        zip_literals[index]
+                        if zip_literals is not None
+                        else None
+                    ),
                 )
             )
         )
@@ -3213,7 +3183,8 @@ def _render_call_whole(
     style: CallStyle,
     target_function: str,
     parameter_names: Sequence[str],
-    call_transform: Callable[[str], str] | None,
+    call_transform: Callable[[CallContext], str] | None,
+    zip_literal: str | None,
     ref_case: IdentifierCase | None,
     consumable_ref_names: frozenset[str],
     ref_values: Mapping[str, Value],
@@ -3273,6 +3244,9 @@ def _render_call_whole(
                 call_transform=call_transform,
                 statement_terminator=language.statement_terminator,
                 style=style,
+                index=0,
+                row=[data],
+                zipped=zip_literal,
             )
         )
     call_expr = _assemble_call(
@@ -3281,6 +3255,9 @@ def _render_call_whole(
         call_transform=call_transform,
         statement_terminator="",
         style=style,
+        index=0,
+        row=[data],
+        zipped=zip_literal,
     )
     return _apply_variable_wrapper(
         result=call_expr,
@@ -3450,7 +3427,8 @@ def _validate_call_preconditions(
     arg_values: Sequence[Value],
     ref_key: str,
     ref_case: IdentifierCase | None,
-    call_transform: Callable[[str], str] | None,
+    call_transform: Callable[[CallContext], str] | None,
+    style: CallStyle,
     variable_form: NewVariable | ExistingVariable | None,
     per_element: bool,
 ) -> None:
@@ -3482,8 +3460,21 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             reason=(
                 "calls in this language are statements, not expressions, "
-                "so a call_transform wrapper cannot consume the call as a "
-                "value"
+                "so a call_transform cannot consume the call as a value"
+            ),
+        )
+    if call_transform is not None and not isinstance(
+        style, PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "call_transform is only supported for languages whose "
+                "call form is an expression that can be wrapped "
+                "(positional, keyword, or object call style); this "
+                "language uses a prefix, postfix, or command call "
+                "style whose language-native wrapper cannot be built "
+                "from a context-aware transform"
             ),
         )
     if target_function_parts[-1] in language.reserved_identifiers:
@@ -3499,27 +3490,6 @@ def _validate_call_preconditions(
             language_name=type(language).__name__,
             target_function=target_function,
         )
-    if call_transform is not None and (
-        not language.supports_dotted_call_stub
-        or not language.has_free_function_calls
-    ):
-        wrapper = _extract_call_transform_wrapper(
-            call_transform=call_transform,
-        )
-        if "." in wrapper and not language.supports_dotted_call_stub:
-            raise DottedCallStubNotSupportedError(
-                language_name=type(language).__name__,
-                transform_stub_name=wrapper,
-            )
-        if (
-            wrapper
-            and "." not in wrapper
-            and not language.has_free_function_calls
-        ):
-            raise FreeFunctionCallNotSupportedError(
-                language_name=type(language).__name__,
-                transform_stub_name=wrapper,
-            )
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
@@ -3550,7 +3520,7 @@ def _wrap_call_in_file(
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
     arg_values: Sequence[Value],
-    call_transform: Callable[[str], str] | None,
+    call_transform: Callable[[CallContext], str] | None,
     preamble: tuple[str, ...],
     computed_body: tuple[str, ...],
 ) -> str:
@@ -3612,6 +3582,55 @@ def _materialize_value_input(*, value: ValueInput) -> Value:
 
 
 @beartype
+def _resolve_zip_literals(
+    *,
+    zip_values: Sequence[ValueInput] | None,
+    call_transform: Callable[[CallContext], str] | None,
+    call_count: int,
+    language: Language,
+    collection_layout: CollectionLayout,
+) -> list[str] | None:
+    """Render each ``zip_values`` entry to a language-native literal.
+
+    Returns ``None`` when no ``zip_values`` were supplied.  Otherwise a
+    ``call_transform`` is required (the values are only reachable
+    through it) and the sequence must hold exactly one entry per
+    generated call; violations raise
+    :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`
+    or :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
+    Each entry is rendered the same way :func:`literalize` renders a
+    whole value, so the paired literal matches the target language
+    (``True`` in Python, ``true`` in TypeScript, ...).
+    """
+    if zip_values is None:
+        return None
+    if call_transform is None:
+        raise ZipValuesWithoutCallTransformError
+    if len(zip_values) != call_count:
+        raise ZipValuesLengthMismatchError(
+            call_count=call_count,
+            zip_count=len(zip_values),
+        )
+    literals: list[str] = []
+    for value in zip_values:
+        materialized = _materialize_value_input(value=value)
+        language.validate_spec_for_data(data=materialized)
+        literals.append(
+            _literalize(
+                data=materialized,
+                language=language,
+                line_prefix="",
+                include_delimiters=True,
+                ref_case=None,
+                ref_values=None,
+                ref_key=_DISABLED_REF_KEY,
+                collection_layout=collection_layout,
+            )
+        )
+    return literals
+
+
+@beartype
 def literalize_call(
     *,
     source: str,
@@ -3619,7 +3638,8 @@ def literalize_call(
     language: Language,
     target_function: str,
     parameter_names: Sequence[str],
-    call_transform: Callable[[str], str] | None = None,
+    call_transform: Callable[[CallContext], str] | None = None,
+    zip_values: Sequence[ValueInput] | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
@@ -3646,9 +3666,32 @@ def literalize_call(
             element in each row.  For :class:`PositionalCallStyle`
             languages these are unused in the output but still
             determine how many values to expect per row.
-        call_transform: Optional callable transforming each call expression.
-            Receives the bare call string and returns the transformed
-            version (e.g. ``lambda c: f"print({c})"``).
+        call_transform: Optional callable transforming each generated
+            call.  Invoked once per call as ``call_transform(context)``
+            with a :class:`CallContext` and returns the transformed
+            string (e.g. ``lambda ctx: f"print({ctx.call})"``).  The
+            context also exposes the call's zero-based ``index``, its
+            input ``row``, and the paired ``zipped`` literal, so a
+            transform can render data from a parallel sequence beside
+            each call.  Only supported for languages whose call form is
+            an expression that can be wrapped (positional, keyword, or
+            object call style); prefix/postfix/command-style languages
+            reject it with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        zip_values: Optional sequence paired positionally with the
+            generated calls.  Each entry is rendered to a
+            language-native literal (via the same machinery as
+            :func:`literalize`) and exposed on
+            :attr:`CallContext.zipped` for the matching call, enabling
+            patterns like printing an expected value beside each call's
+            actual return value.  Must have exactly one entry per
+            generated call (one per top-level element when
+            *per_element* is ``True``, otherwise one); a length
+            mismatch raises
+            :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
+            Requires *call_transform* (the values are only reachable
+            through it); supplying *zip_values* without one raises
+            :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`.
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
@@ -3787,8 +3830,16 @@ def literalize_call(
         ref_key=ref_key,
         ref_case=ref_case,
         call_transform=call_transform,
+        style=style,
         variable_form=variable_form,
         per_element=per_element,
+    )
+    zip_literals = _resolve_zip_literals(
+        zip_values=zip_values,
+        call_transform=call_transform,
+        call_count=len(arg_values),
+        language=language,
+        collection_layout=collection_layout,
     )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,
@@ -3826,6 +3877,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            zip_literals=zip_literals,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
             ref_values=materialized_ref_values,
@@ -3841,6 +3893,7 @@ def literalize_call(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            zip_literal=zip_literals[0] if zip_literals is not None else None,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
             ref_values=materialized_ref_values,

@@ -233,46 +233,41 @@ class DottedCallTargetNotSupportedError(Exception):
         self.target_function = target_function
 
 
-class DottedCallStubNotSupportedError(Exception):
-    """Raised when ``literalize_call`` is given a ``call_transform``
-    whose wrapper is dotted (e.g. ``tracer.emit``) but the target
-    language does not support dotted call stub names.
+class ZipValuesLengthMismatchError(Exception):
+    """Raised when ``literalize_call`` is given a ``zip_values``
+    sequence whose length differs from the number of generated calls.
     """
 
     def __init__(
         self,
         *,
-        language_name: str,
-        transform_stub_name: str,
+        call_count: int,
+        zip_count: int,
     ) -> None:
-        """Create a ``DottedCallStubNotSupportedError``."""
+        """Create a ``ZipValuesLengthMismatchError``."""
         super().__init__(
-            f"{language_name} does not support dotted call stubs: "
-            f"{transform_stub_name!r}"
+            f"zip_values has {zip_count} element(s) but {call_count} "
+            f"call(s) were generated; the lengths must match"
         )
-        self.language_name = language_name
-        self.transform_stub_name = transform_stub_name
+        self.call_count = call_count
+        self.zip_count = zip_count
 
 
-class FreeFunctionCallNotSupportedError(Exception):
-    """Raised when ``literalize_call`` is given a ``call_transform``
-    whose wrapper is a bare name with no dot (e.g. ``emit``) but the
-    target language has no free function call syntax.
+class ZipValuesWithoutCallTransformError(Exception):
+    """Raised when ``literalize_call`` is given ``zip_values`` but no
+    ``call_transform`` to consume them.
+
+    The paired values are only reachable through
+    :attr:`~literalizer.CallContext.zipped`, so supplying them without
+    a transform would silently discard them.
     """
 
-    def __init__(
-        self,
-        *,
-        language_name: str,
-        transform_stub_name: str,
-    ) -> None:
-        """Create a ``FreeFunctionCallNotSupportedError``."""
+    def __init__(self) -> None:
+        """Create a ``ZipValuesWithoutCallTransformError``."""
         super().__init__(
-            f"{language_name} has no free function call syntax for "
-            f"call stub: {transform_stub_name!r}"
+            "zip_values were supplied without a call_transform; the "
+            "paired values would be unused"
         )
-        self.language_name = language_name
-        self.transform_stub_name = transform_stub_name
 
 
 class VariableNameNotSupportedError(Exception):

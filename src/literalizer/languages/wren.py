@@ -170,10 +170,8 @@ class Wren(metaclass=LanguageCls):
     supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
-    has_free_function_calls = False
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     allows_empty_call_parens = True
-    supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
     # The Wren compiler rejects methods with more than 16 parameters

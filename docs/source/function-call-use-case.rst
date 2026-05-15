@@ -45,7 +45,7 @@ parameters (``user_id`` and ``ts``) and wrap each call in ``print()``:
        ),
        target_function="throttler.check",
        parameter_names=["user_id", "ts"],
-       call_transform=lambda c: f"print({c})",
+       call_transform=lambda ctx: f"print({ctx.call})",
    )
 
    assert result.code == textwrap.dedent(
@@ -313,3 +313,53 @@ language-specific sigil is applied (e.g. ``$timeout_secs`` in PHP).
 Refs can appear at any depth -- nested inside dicts, inside lists, or as
 the top-level value -- and can be mixed freely with ordinary literals in
 the same structure.
+
+Pairing each call with a value
+------------------------------
+
+``call_transform`` receives a :class:`~literalizer.CallContext`, not just
+the call string.  Alongside ``ctx.call`` (the rendered call expression)
+it carries the call's zero-based ``ctx.index``, its input ``ctx.row``,
+and -- when ``zip_values`` is supplied -- ``ctx.zipped``: the matching
+entry of a second, equal-length sequence rendered as a language-native
+literal.  This lets you print an expected value beside each call's
+actual return value:
+
+.. code-block:: python
+
+   """Pair each generated call with a value from a parallel sequence."""
+
+   from literalizer import InputFormat, literalize_call
+   from literalizer.languages import Python
+
+   books_yaml = """\
+   ---
+   - [Dune, 1965]
+   - [Solaris, 1961]
+   """
+
+   result = literalize_call(
+       source=books_yaml,
+       input_format=InputFormat.YAML,
+       language=Python(),
+       target_function="catalog.lookup",
+       parameter_names=["title", "year"],
+       zip_values=[True, False],
+       call_transform=lambda ctx: (
+           f'print("in_print?", {ctx.zipped}, "->", {ctx.call})'
+       ),
+   )
+
+   assert result.code == (
+       'print("in_print?", True, "->", '
+       'catalog.lookup(title="Dune", year=1965))\n'
+       'print("in_print?", False, "->", '
+       'catalog.lookup(title="Solaris", year=1961))'
+   )
+
+``zip_values`` must have exactly one entry per generated call and
+requires a ``call_transform``.  ``call_transform`` is only supported for
+languages whose call form is an expression that can be wrapped
+(positional, keyword, or object call style); prefix-, postfix-, and
+command-style languages reject it with
+:class:`~literalizer.exceptions.UnsupportedCallShapeError`.
