@@ -393,7 +393,7 @@ def _accumulate_record_shapes(
     match data:
         case dict() if not isinstance(data, OrderedMap):
             shape = record_shape_for_dict(value=data)
-            if shape is not None:  # pragma: no branch
+            if shape is not None:
                 out[id(data)] = shape
             for v in data.values():
                 _accumulate_record_shapes(data=v, out=out)

@@ -939,6 +939,54 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
+    """Build a ``RECORD`` + ``EPOCH`` variant for every language whose
+    spec exposes both a ``RECORD`` heterogeneous strategy and an
+    ``EPOCH`` datetime format.
+
+    A post-2038 ``datetime`` rendered as ``EPOCH`` seconds exceeds
+    32-bit range, so a language whose record component for an epoch is
+    a fixed-width integer must widen it (and suffix the literal) for
+    the output to compile.  Driven generically off spec capabilities
+    rather than naming a language so the matrix stays
+    language-agnostic.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        record_strategy = next(
+            (
+                strategy
+                for strategy in default_spec.heterogeneous_strategies
+                if strategy.name == "RECORD"
+            ),
+            None,
+        )
+        epoch = next(
+            (
+                fmt
+                for fmt in default_spec.datetime_formats
+                if fmt.name == "EPOCH"
+            ),
+            None,
+        )
+        if record_strategy is None or epoch is None:
+            continue
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_record_epoch_i32_overflow",
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=record_strategy,
+                    datetime_format=epoch,
+                ),
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
+
+
+@beartype
 def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-enum-name variants for languages that
     generate a named type for their heterogeneous strategy (e.g. Rust's
@@ -1626,6 +1674,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "record_unify_optional_fields": (
         build_record_unify_optional_fields_variants
     ),
+    "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
@@ -1692,6 +1741,8 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("record_two_shapes", ""),
         ("record_nested_record", ""),
         ("tuple_record_field", ""),
+        ("tuple_record_seq_sibling", ""),
+        ("tuple_int_key_dict_value", ""),
         ("tuple_top_level", ""),
         ("tuple_record_sequence", ""),
     )
@@ -1895,6 +1946,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (
         _ci(case_dir_name="record_optional_unify"),
+    ),
+    "record_epoch_i32_overflow": (
+        _ci(case_dir_name="record_epoch_datetime_i32_overflow"),
     ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name)

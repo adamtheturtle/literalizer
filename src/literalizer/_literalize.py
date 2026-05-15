@@ -797,6 +797,20 @@ def _format_dict_entry_value(
     across sibling entries share a widened type).
     """
     if isinstance(value, list):
+        tuple_literal = _maybe_format_tuple_literal(
+            value=value,
+            spec=spec,
+            wrap_ids=wrap_ids,
+            tuple_list_ids=tuple_list_ids,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            expand_refs=expand_refs,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            multiline_prefix=multiline_prefix,
+        )
+        if tuple_literal is not None:
+            return tuple_literal
         return _format_list_value(
             value=value,
             spec=spec,

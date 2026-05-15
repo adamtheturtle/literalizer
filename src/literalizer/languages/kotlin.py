@@ -21,6 +21,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -1199,21 +1200,30 @@ class Kotlin(metaclass=LanguageCls):
             enable_dict_type=False,
         )
 
-    @cached_property
-    def _kotlin_record_datetime_type(self) -> str:
+    def _kotlin_record_datetime_type(
+        self,
+        value: datetime.datetime,
+        /,
+    ) -> str:
         """Kotlin type for a :class:`datetime.datetime` record field.
 
-        A record component must match the value the formatter emits, so
-        it is driven by the chosen datetime format: ``ISO`` renders a
-        quoted string (``String``), ``EPOCH`` a bare integer that, for
-        every datetime the corpus exercises, fits ``Int``, and the
-        default ``KOTLIN`` format a ``LocalDateTime.of(...)`` call.
+        A record component must match the literal the formatter emits,
+        so it is driven by the chosen datetime format: ``ISO`` renders a
+        quoted string (``String``); ``EPOCH`` renders the epoch seconds
+        as a bare integer that overflows Kotlin's signed 32-bit ``Int``
+        after 2038-01-19, so the component widens to ``Long`` exactly
+        when the value leaves that range (the same ``Int``/``Long``
+        formula a plain integer field uses); the default ``KOTLIN``
+        format renders a ``LocalDateTime.of(...)`` call.  It stays
+        value-driven rather than a pure ``cached_property``.
         """
         produced = self.datetime_format.value.type_produced
         if produced is str:
             return "String"
         if produced is int:
-            return "Int"
+            epoch = datetime_epoch_seconds(value=value)
+            in_i32 = _KOTLIN_I32_MIN <= epoch <= _KOTLIN_I32_MAX
+            return "Int" if in_i32 else "Long"
         return "LocalDateTime"
 
     def _kotlin_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -1259,7 +1269,7 @@ class Kotlin(metaclass=LanguageCls):
                 in_i32 = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
                 return "Int" if in_i32 else "Long"
             case datetime.datetime():
-                return self._kotlin_record_datetime_type
+                return self._kotlin_record_datetime_type(value)
             case OrderedMap():
                 return _kotlin_opener_to_type(
                     self.ordered_map_format_config.ordered_map_open(value),

@@ -18,6 +18,8 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_formatter,
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -1346,20 +1348,29 @@ class Java(metaclass=LanguageCls):
         """Java integer type for a record-component scalar."""
         return "long" if self._suffix_is_auto else "int"
 
-    @cached_property
-    def _java_record_datetime_hint(self) -> str:
+    def _java_record_datetime_type(self, value: datetime.datetime, /) -> str:
         """Java type for a :class:`datetime.datetime` record component.
 
-        Unlike a top-level variable annotation (which widens an epoch
-        datetime to ``long``), a record component must match the value
-        the formatter emits: ``EPOCH`` renders a bare integer literal
-        that, for every datetime the corpus exercises, fits ``int``.
+        Unlike a top-level variable annotation, a record component must
+        match the literal :meth:`format_datetime` emits.  ``ISO``
+        renders a quoted string (``String``); ``EPOCH`` renders the
+        epoch seconds through :attr:`format_integer`, which appends an
+        ``L`` (so the type is ``long``) once the value leaves Java's
+        32-bit ``int`` range -- epoch seconds after 2038-01-19 overflow
+        it.  The component type therefore reuses the exact plain
+        ``int`` record-field formula (``AUTO`` suffix forces ``long``
+        for every epoch); it stays value-driven rather than a pure
+        ``cached_property``.  Otherwise the type is format-driven
+        (``ZonedDateTime`` / ``Instant``).
         """
         produced = self.datetime_format.value.type_produced
         if produced is str:
             return "String"
         if produced is int:
-            return "int"
+            epoch = datetime_epoch_seconds(value=value)
+            int_type = self._java_record_int_type
+            in_i32 = _JAVA_I32_MIN <= epoch <= _JAVA_I32_MAX
+            return "long" if int_type == "int" and not in_i32 else int_type
         if self.datetime_format.name == "ZONED":
             return "ZonedDateTime"
         return "Instant"
@@ -1387,8 +1398,9 @@ class Java(metaclass=LanguageCls):
         nested-record name), mirroring Go's structural port rather than
         re-parsing the formatted literal.  ``int`` magnitude (``int``
         vs ``long``) and the format-dependent ``datetime`` type
-        (``Instant`` / ``ZonedDateTime`` / ``String`` / epoch ``int``)
-        are value- and spec-driven, so they are resolved explicitly;
+        (``Instant`` / ``ZonedDateTime`` / ``String`` / magnitude-aware
+        epoch ``int`` or ``long``) are value- and spec-driven, so they
+        are resolved explicitly;
         every other scalar (including ``date`` -> ``LocalDate``) goes
         through the shared type-only resolver.
 
@@ -1419,7 +1431,7 @@ class Java(metaclass=LanguageCls):
                 in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
                 return "long" if int_type == "int" and not in_i32 else int_type
             case datetime.datetime():
-                return self._java_record_datetime_hint
+                return self._java_record_datetime_type(value)
             case OrderedMap():
                 field_type = "java.util.ArrayList"
             case list():
@@ -1642,7 +1654,18 @@ class Java(metaclass=LanguageCls):
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        ``EPOCH`` seconds are routed through :attr:`format_integer` so
+        a post-2038 value carries the ``L`` suffix Java requires for an
+        integer literal outside 32-bit range: a bare ``4085195400``
+        fails to compile as an ``int`` literal even when assigned to a
+        ``long``.  In-range epoch seconds format identically to the
+        plain integer, so every checked-in golden file stays
+        byte-identical.
+        """
+        if self.datetime_format.name == "EPOCH":
+            return datetime_epoch_formatter(format_integer=self.format_integer)
         return self.datetime_format
 
     @cached_property

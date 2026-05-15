@@ -1028,11 +1028,10 @@ def _accumulate_emit_order(
                     emit_ordered=emit_ordered,
                     emit_seen=emit_seen,
                 )
-            if id(data) in shapes_by_id:  # pragma: no branch
-                shape = shapes_by_id[id(data)]
-                if shape not in emit_seen:
-                    emit_seen.add(shape)
-                    emit_ordered.append(shape)
+            shape = shapes_by_id.get(id(data))
+            if shape is not None and shape not in emit_seen:
+                emit_seen.add(shape)
+                emit_ordered.append(shape)
         case list():
             for item in data:
                 _accumulate_emit_order(
