@@ -48,6 +48,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
+    RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
     RecordStrategy,
@@ -1329,13 +1330,31 @@ class Java(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return _format_java_assignment
 
+    def _java_record_field_type_request(
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
+        """Adapt the structured :class:`RecordFieldType` hook to Java's
+        still-formatted-string field typing.
+
+        Java's ``field_type`` has not yet been ported off the
+        formatted-string contract (unlike Go), so it reads
+        ``request.formatted``.  Porting it to derive the type from
+        ``request.value`` via Java's own openers / scalar mapping --
+        which must keep the magnitude-dependent ``int``/``long`` epoch
+        and the ISO-string date/datetime cases byte-identical -- is
+        tracked separately, exactly as for Kotlin.
+        """
+        return _java_field_type(request.formatted)
+
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
         """Java syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             field_identifier=_java_record_field_identifier,
-            field_type=_java_field_type,
+            field_type=self._java_record_field_type_request,
             render_declaration=_java_render_declaration,
             render_literal=_java_record_literal,
         )
