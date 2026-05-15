@@ -1,0 +1,21 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "within_i32"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15T12:00:00")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "beyond_i32"; MOBILE LIT(lit.str; MOBILE []BYTE "2099-06-15T08:30:00"))
+    ]):
+    SEQ
+        SKIP
+:
