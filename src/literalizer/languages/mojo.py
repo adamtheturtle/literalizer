@@ -542,16 +542,32 @@ class _VariantSignature:
     payload_template: str
 
 
+_INT_VARIANT_SIGNATURE = _VariantSignature(
+    type_name="Int",
+    payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
+)
+_STRING_VARIANT_SIGNATURE = _VariantSignature(
+    type_name="String",
+    payload_template="String({value})",
+)
+
+
 @beartype
-def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:
+def _mojo_variant_for_scalar(
+    value: Scalar,
+    /,
+    *,
+    datetime_type_produced: type,
+) -> _VariantSignature:
     """Return the Mojo Variant alternative for *value*.
 
-    Strings, bytes, dates, and datetimes all map to ``String`` because
-    the default Mojo date / datetime formats produce ISO strings and
-    the bytes formats produce hex or base64 strings.  ``None`` maps to
-    ``NoneType`` and renders as ``Value(NoneType())`` because the
-    ``Variant`` constructor in Mojo cannot infer ``NoneType`` from the
-    bare ``None`` literal.
+    Strings, bytes, dates, and times all map to ``String`` because
+    those formatters produce ISO strings or hex/base64 strings.
+    Datetimes follow the configured datetime format: ISO-rendered
+    datetimes map to ``String`` while ``EPOCH`` datetimes map to
+    ``Int``.  ``None`` maps to ``NoneType`` and renders as
+    ``Value(NoneType())`` because the ``Variant`` constructor in Mojo
+    cannot infer ``NoneType`` from the bare ``None`` literal.
     """
     match value:
         case bool():
@@ -560,15 +576,14 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:
                 payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
             )
         case int():
-            return _VariantSignature(
-                type_name="Int",
-                payload_template=_VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
-            )
+            return _INT_VARIANT_SIGNATURE
         case float():
             return _VariantSignature(
                 type_name="Float64",
                 payload_template="Float64({value})",
             )
+        case datetime.datetime() if datetime_type_produced is int:
+            return _INT_VARIANT_SIGNATURE
         case (
             str()
             | bytes()
@@ -576,10 +591,7 @@ def _mojo_variant_for_scalar(value: Scalar, /) -> _VariantSignature:
             | datetime.date()
             | datetime.time()
         ):
-            return _VariantSignature(
-                type_name="String",
-                payload_template="String({value})",
-            )
+            return _STRING_VARIANT_SIGNATURE
         case None:
             return _VariantSignature(
                 type_name="NoneType",
@@ -599,7 +611,9 @@ hard error under ``--Werror`` in Mojo 0.26.1.0+.
 
 
 @beartype
-def _mojo_value_inhibits_consuming_form(value: Value, /) -> bool:
+def _mojo_value_inhibits_consuming_form(
+    value: Value, /, *, datetime_type_produced: type
+) -> bool:
     """Return ``True`` when ``^`` is illegal for *value*'s Mojo type.
 
     Non-scalar values (lists, dicts, sets) and scalars that map to
@@ -608,7 +622,9 @@ def _mojo_value_inhibits_consuming_form(value: Value, /) -> bool:
     """
     if isinstance(value, (list, dict, set)):
         return False
-    signature = _mojo_variant_for_scalar(value)
+    signature = _mojo_variant_for_scalar(
+        value, datetime_type_produced=datetime_type_produced
+    )
     return signature.type_name in _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES
 
 
@@ -624,17 +640,20 @@ class _HeterogeneousStrategyConfig:
     resulting functions can close over it.
     """
 
-    build_behavior: Callable[[str], HeterogeneousBehavior]
-    build_preamble: Callable[[str], Callable[[Value], tuple[str, ...]]]
+    build_behavior: Callable[[str, type], HeterogeneousBehavior]
+    build_preamble: Callable[[str, type], Callable[[Value], tuple[str, ...]]]
 
 
-def _build_error_behavior(_variant_name: str, /) -> HeterogeneousBehavior:
+def _build_error_behavior(
+    _variant_name: str, _datetime_type_produced: type, /
+) -> HeterogeneousBehavior:
     """ERROR strategy: no wrapping, no skipping of checks."""
     return NO_HETEROGENEOUS_BEHAVIOR
 
 
 def _build_error_preamble(
     _variant_name: str,
+    _datetime_type_produced: type,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
@@ -646,6 +665,7 @@ _VARIANT_IMPORT_LINE = "from std.utils.variant import Variant"
 
 def _build_variant_behavior(
     variant_name: str,
+    datetime_type_produced: type,
     /,
 ) -> HeterogeneousBehavior:
     """VARIANT strategy: wrap scalars and skip scalar checks."""
@@ -659,7 +679,9 @@ def _build_variant_behavior(
         payload comes from the signature's ``payload_template`` (with
         ``{value}`` substituted by the formatted scalar).
         """
-        signature = _mojo_variant_for_scalar(raw_value)
+        signature = _mojo_variant_for_scalar(
+            raw_value, datetime_type_produced=datetime_type_produced
+        )
         payload = signature.payload_template.replace(
             _VARIANT_PAYLOAD_VALUE_PLACEHOLDER,
             formatted,
@@ -676,7 +698,9 @@ def _build_variant_behavior(
 
 
 @beartype
-def _collect_variant_alternatives_from_data(data: Value, /) -> tuple[str, ...]:
+def _collect_variant_alternatives_from_data(
+    data: Value, /, *, datetime_type_produced: type
+) -> tuple[str, ...]:
     """Return Mojo ``Variant`` alternative type names found in *data*.
 
     The result is order-preserving and deduplicated.  Returns an empty
@@ -689,7 +713,9 @@ def _collect_variant_alternatives_from_data(data: Value, /) -> tuple[str, ...]:
     type_names: list[str] = []
     seen: set[str] = set()
     for scalar in scalars:
-        signature = _mojo_variant_for_scalar(scalar)
+        signature = _mojo_variant_for_scalar(
+            scalar, datetime_type_produced=datetime_type_produced
+        )
         if signature.type_name in seen:
             continue
         seen.add(signature.type_name)
@@ -767,6 +793,7 @@ def _render_variant_preamble(
 
 def _build_variant_preamble(
     variant_name: str,
+    datetime_type_produced: type,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """VARIANT strategy: emit the ``Variant`` declaration preamble."""
@@ -778,7 +805,9 @@ def _build_variant_preamble(
         arguments carry diverging list or mixed shapes contribute their
         slot types (e.g. ``List[Int]``, ``List[String]``) to the alias.
         """
-        data_alternatives = _collect_variant_alternatives_from_data(data)
+        data_alternatives = _collect_variant_alternatives_from_data(
+            data, datetime_type_produced=datetime_type_produced
+        )
         slot_alternatives = _collect_variant_alternatives_from_slots(
             data,
             heterogeneous_value_type=variant_name,
@@ -1318,6 +1347,7 @@ class Mojo(metaclass=LanguageCls):
         """
         return self.heterogeneous_strategy.value.build_preamble(
             self.heterogeneous_value_variant_name,
+            self.datetime_format.value.type_produced,
         )
 
     @cached_property
@@ -1325,6 +1355,7 @@ class Mojo(metaclass=LanguageCls):
         """Return the behavior for the chosen heterogeneous strategy."""
         return self.heterogeneous_strategy.value.build_behavior(
             self.heterogeneous_value_variant_name,
+            self.datetime_format.value.type_produced,
         )
 
     @cached_property
@@ -1393,13 +1424,14 @@ class Mojo(metaclass=LanguageCls):
         ``ref_values`` identifies the ref as one of those types.  When
         the value is unknown we keep the historical ``^`` form.
         """
+        datetime_type_produced = self.datetime_format.value.type_produced
 
         def _format_mojo_ref_identifier(
             name: str, value: Value | None, /
         ) -> str:
             """Append ``^`` unless *value* is register-trivial."""
             if value is not None and _mojo_value_inhibits_consuming_form(
-                value
+                value, datetime_type_produced=datetime_type_produced
             ):
                 return name
             return f"{name}^"
@@ -1452,7 +1484,15 @@ class Mojo(metaclass=LanguageCls):
         :func:`_mojo_variant_for_scalar` so the formatter layer avoids
         hard-coded Mojo type-name strings.
         """
-        return _mojo_value_inhibits_consuming_form
+        datetime_type_produced = self.datetime_format.value.type_produced
+
+        def _inhibits(value: Value, /) -> bool:
+            """Closure binding the configured datetime type."""
+            return _mojo_value_inhibits_consuming_form(
+                value, datetime_type_produced=datetime_type_produced
+            )
+
+        return _inhibits
 
     @cached_property
     def call_style_config(self) -> CallStyle:

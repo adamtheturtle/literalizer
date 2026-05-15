@@ -8,7 +8,7 @@ def main():
         "b": Value(True),
         "n": Value(NoneType()),
         "d": Value(String("2024-01-15")),
-        "dt": Value(String(1705320000)),
+        "dt": Value(1705320000),
         "by": Value(String("48656c6c6f")),
     }
     _ = my_data
