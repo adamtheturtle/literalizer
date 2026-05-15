@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Roc` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``my_data = make_widget (RInt 42i128)`` without a
+  ``my_data : Val`` annotation (the call's return type is not known to
+  the renderer, and Roc infers it).  The ``Val`` tag-union alias is
+  omitted from such scaffolds because nothing annotates with ``: Val``;
+  existing literal-binding output is unchanged.  See #2250.
+
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
   emit output that fails to compile for a post-2038
   :class:`~datetime.datetime`
