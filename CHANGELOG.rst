@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor
+  parameter — a mapping from each record's key-set
+  (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name —
+  so the ``RECORD`` heterogeneous strategy can emit
+  ``struct Task { ... }`` instead of the auto-generated ``Record0``,
+  ``Record1``, ... names.  Shape names that are not PascalCase Rust
+  identifiers, that collide with ``heterogeneous_value_enum_name``,
+  that duplicate another mapped name, or that match a Rust reserved
+  keyword raise the new :class:`~literalizer.exceptions.InvalidRecordNameError`.
+  The existing ``record_struct_name_prefix`` is validated the same way.
+  See #2236.
+
 - The integration golden-file harness now accepts ``input.toml`` next to
   the existing ``input.yaml`` for cases whose input contains a value
   YAML 1.2 cannot natively express (currently :class:`datetime.time`).

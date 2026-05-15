@@ -8,7 +8,7 @@ with one of the input case directories under ``tests/integration/cases``.
 import dataclasses
 import enum
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -859,6 +859,57 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
     return variants
 
 
+@runtime_checkable
+class _HasRecordShapeNames(Protocol):
+    """Structural type for languages that expose a
+    ``record_shape_names`` constructor field.
+
+    Used by :func:`build_record_shape_names_variants` to narrow a
+    generic :class:`literalizer.Language` to one with the field, without
+    introspecting ``__dataclass_fields__`` or casting to ``Any``.
+    """
+
+    record_shape_names: Mapping[frozenset[str], str]
+
+
+@beartype
+def build_record_shape_names_variants() -> Iterable[Variant]:
+    """Build ``record_shape_names`` variants for every language whose
+    spec exposes a ``record_shape_names`` field and a ``RECORD``
+    heterogeneous strategy.
+
+    Bypasses :func:`make_spec` caching because the user-facing
+    ``record_shape_names`` parameter is a ``Mapping``, which cannot be
+    stored in the cache key's :class:`frozenset` of kwargs.
+    """
+    variants: list[Variant] = []
+    shape_keys = frozenset({"id", "description", "is_done", "blocks"})
+    custom_name = "Task"
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(default_spec, _HasRecordShapeNames):
+            continue
+        # A spec exposing ``record_shape_names`` always also exposes the
+        # RECORD strategy the field configures, so ``next`` cannot miss.
+        record_strategy = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
+        )
+        spec = lang_cls(
+            heterogeneous_strategy=record_strategy,
+            record_shape_names={shape_keys: custom_name},
+        )
+        variants.append(
+            Variant(
+                name=(f"{lang_cls.__name__}_record_shape_names_{custom_name}"),
+                spec=spec,
+                lang_cls=lang_cls,
+            )
+        )
+    return variants
+
+
 @beartype
 def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
     """Build the Rust ``record_unify_optional_fields`` variant.
@@ -1565,6 +1616,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "constructor_name": build_constructor_name_variants,
     "c_field_name": build_c_field_name_variants,
     "heterogeneous_value_enum_name": build_heterogeneous_value_name_variants,
+    "record_shape_names": build_record_shape_names_variants,
     "heterogeneous_value_union_name": (
         build_heterogeneous_value_union_name_variants
     ),
@@ -1824,6 +1876,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="dict_all_scalar_types"),
     ),
     "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
+    "record_shape_names": (_ci(case_dir_name="record_named_shape"),),
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (
