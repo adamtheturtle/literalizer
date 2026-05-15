@@ -697,6 +697,7 @@ class PureScript(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    supports_record_struct_name_prefix = False
     supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
