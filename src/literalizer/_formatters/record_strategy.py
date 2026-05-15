@@ -9,12 +9,16 @@ parts that are the same for every target language (document-order
 shape naming, post-order declaration emission) and delegates the
 language-specific syntax to a :class:`RecordRenderer`.
 
-Declaration field types are derived from the already-formatted literal
-value (not re-inferred from the raw value) so a field's declared type
-always matches the value the normal formatter emitted, including when
-that value was widened by sibling context.  The behavior caches the
-first-seen formatted fields per shape during literal rendering; the
-preamble (assembled after all literals are formatted) reads that cache.
+Declaration field types are derived from the raw field value through
+the language's own collection openers (the same opener functions the
+value formatter uses), not by re-parsing the formatted literal.
+Because a record field is formatted with no sibling override, the
+opener a language returns for the field's value is exactly the one it
+emitted (including a widening to an ``any``-typed container), so the
+declared type still matches the rendered literal.  The behavior caches
+the first-seen :class:`RecordFieldType` request per shape during
+literal rendering; the preamble (assembled after all literals are
+formatted) reads that cache.
 
 Rust keeps its own copy of this logic because it additionally supports
 ``record_shape_names`` and optional-field unification; this module
@@ -61,14 +65,33 @@ class RecordLiteralField:
 
 
 @dataclasses.dataclass(frozen=True)
+class RecordFieldType:
+    """The structured input to :attr:`RecordRenderer.field_type`.
+
+    ``value`` is the raw field value (first-seen for its shape); the
+    language maps it to a declared type through its own collection
+    openers / scalar mapping rather than prefix-matching a formatted
+    literal.  ``record_name`` is the generated declaration name when
+    ``value`` is itself a nested record-shaped dict (resolved here, the
+    one piece a language cannot recover from the value alone), and
+    ``None`` otherwise.
+    """
+
+    value: Value
+    record_name: str | None
+
+
+@dataclasses.dataclass(frozen=True)
 class RecordRenderer:
     """Per-language syntax hooks for the ``RECORD`` strategy.
 
     ``name_prefix`` is the auto-naming prefix (``Record`` -> ``Record0``,
     ``Record1``, ...).  ``field_identifier`` maps an original dict key
     to the language's field identifier (identity for most languages,
-    PascalCase for Go).  ``field_type`` maps a field's already-formatted
-    literal value to its declared type.  ``render_declaration`` builds
+    PascalCase for Go).  ``field_type`` maps a :class:`RecordFieldType`
+    (raw field value plus any resolved nested-record name) to its
+    declared type, using the language's own collection openers rather
+    than re-parsing the formatted literal.  ``render_declaration`` builds
     one declaration block from the resolved fields, and
     ``render_literal`` builds the literal as a
     :class:`RenderedRecordLiteral` (structured pieces; the shared code
@@ -78,7 +101,7 @@ class RecordRenderer:
 
     name_prefix: str
     field_identifier: Callable[[str], str]
-    field_type: Callable[[str], str]
+    field_type: Callable[[RecordFieldType], str]
     render_declaration: Callable[
         [str, Sequence[RecordDeclarationField]],
         str,
@@ -211,13 +234,14 @@ def build_record_strategy(
 
     The two share per-pass caches: ``compute_record_shapes`` (run first,
     during data checking) assigns the document-order names, and
-    ``render_record_literal`` records the first-seen formatted fields
-    per shape so the preamble can derive each field's declared type
-    from the value the formatter actually emitted.
+    ``render_record_literal`` records the first-seen
+    :class:`RecordFieldType` request per shape so the preamble can
+    derive each field's declared type from the raw value through the
+    language's own collection openers.
     """
     name_by_shape: dict[RecordShape, str] = {}
     id_to_shape: dict[int, RecordShape] = {}
-    formatted_by_shape: dict[RecordShape, dict[str, str]] = {}
+    request_by_shape: dict[RecordShape, dict[str, RecordFieldType]] = {}
 
     def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
         """Walk *data*, assign names in document order, and reset the
@@ -226,7 +250,7 @@ def build_record_strategy(
         shapes_by_id = collect_record_shapes(data=data)
         name_by_shape.clear()
         id_to_shape.clear()
-        formatted_by_shape.clear()
+        request_by_shape.clear()
         id_to_shape.update(shapes_by_id)
         ordered = _ordered_record_shapes(
             data=data,
@@ -237,15 +261,35 @@ def build_record_strategy(
         )
         return shapes_by_id
 
+    def _field_type_request(field_value: Value) -> RecordFieldType:
+        """Build the structured field-type request for *field_value*.
+
+        ``record_name`` is set only when *field_value* is itself a
+        nested record-shaped dict (the one piece a language cannot
+        recover from the raw value); every other value, including a
+        list of record-shaped dicts, is typed by the language from the
+        value via its own collection openers.
+        """
+        nested_name = (
+            name_by_shape.get(id_to_shape[id(field_value)])
+            if isinstance(field_value, dict) and id(field_value) in id_to_shape
+            else None
+        )
+        return RecordFieldType(value=field_value, record_name=nested_name)
+
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
     ) -> RenderedRecordLiteral:
         """Render a record-shape dict as a language-specific literal,
-        caching the first-seen formatted fields for its shape.
+        caching the first-seen field-type requests for its shape.
         """
         shape = id_to_shape[id(value)]
-        formatted_by_shape.setdefault(shape, dict(fields))
+        if shape not in request_by_shape:
+            request_by_shape[shape] = {
+                key: _field_type_request(field_value=value[key])
+                for key in shape.keys
+            }
         literal_fields = [
             RecordLiteralField(
                 identifier=renderer.field_identifier(key),
@@ -267,7 +311,8 @@ def build_record_strategy(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build one declaration block per record shape, in dependency
-        order, typing each field from its first-seen formatted value.
+        order, typing each field from its first-seen
+        :class:`RecordFieldType` request.
         """
         shapes_by_id = collect_record_shapes(data=data)
         if not shapes_by_id:
@@ -282,11 +327,11 @@ def build_record_strategy(
         )
         blocks: list[str] = []
         for shape in emit_order:
-            formatted = formatted_by_shape[shape]
+            requests = request_by_shape[shape]
             fields = [
                 RecordDeclarationField(
                     identifier=renderer.field_identifier(key),
-                    type_name=renderer.field_type(formatted[key]),
+                    type_name=renderer.field_type(requests[key]),
                 )
                 for key in shape.keys
             ]
