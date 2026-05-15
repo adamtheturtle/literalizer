@@ -1692,6 +1692,8 @@ HETEROGENEOUS_INPUTS: tuple[CaseInput, ...] = tuple(
         ("record_two_shapes", ""),
         ("record_nested_record", ""),
         ("tuple_record_field", ""),
+        ("tuple_record_seq_sibling", ""),
+        ("tuple_int_key_dict_value", ""),
         ("tuple_top_level", ""),
         ("tuple_record_sequence", ""),
     )
