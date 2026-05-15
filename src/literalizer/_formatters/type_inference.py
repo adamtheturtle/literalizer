@@ -204,14 +204,16 @@ def record_shape_for_dict(
     ``str``.  Callers must filter out ordered maps before
     calling this helper.
     """
-    # Defensive branches: every Rust RECORD fixture passes non-empty
-    # string-keyed dicts here, but the walker also calls this helper
-    # on nested dicts of arbitrary shape that may not be record-eligible.
+    # The walker calls this helper on dicts of arbitrary shape that may
+    # not be record-eligible.  An empty dict has no fields to infer; a
+    # non-string-keyed dict is a plain map, not a record (the
+    # ``int_key_dict`` heterogeneous-strategy variant exercises the
+    # latter).
     if not value:  # pragma: no cover
         return None
     str_keys: list[str] = []
     for key in value:
-        if not isinstance(key, str):  # pragma: no cover
+        if not isinstance(key, str):
             return None
         str_keys.append(key)
     return RecordShape(keys=tuple(str_keys))
