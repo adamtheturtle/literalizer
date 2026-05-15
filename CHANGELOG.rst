@@ -12,6 +12,36 @@ Next
   (``long`` / ``Long``) once the value leaves signed 32-bit range, so
   the declared component type always matches the rendered literal.
   In-range epochs are unaffected.  See #2338.
+- :class:`~literalizer.Rust` gains the ``TUPLE`` ``heterogeneous_strategy``.
+  A fixed-length heterogeneous **scalar** array that is a dict value, a
+  record field value, or the document root (every element scalar,
+  spanning at least two scalar buckets) is rendered as a native tuple
+  ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` instead of raising.  It
+  composes with ``RECORD``: a record field whose value is such an array
+  becomes a tuple-typed struct field.  Heterogeneous arrays nested
+  inside another list, or containing a non-scalar element, stay out of
+  scope and still raise.  This lands the shared, language-agnostic
+  machinery with Rust as the reference implementation; one
+  language port follows per PR.  See #2327.
+- :func:`~literalizer.literalize_call`'s ``zip_values`` parameter is
+  replaced by a ``zip_source`` / ``zip_input_format`` pair, mirroring
+  the primary ``source`` / ``input_format``.  ``zip_source`` is parsed
+  internally with the *same* parser as ``source`` (so YAML ``!!omap``,
+  datetime/bytes coercion, JSON5, TOML, ... behave identically by
+  construction); its parsed top-level elements pair positionally with
+  the generated calls (element-by-element when ``per_element`` is
+  ``True``, otherwise the whole parsed value pairs with the single
+  call) and are surfaced on :attr:`~literalizer.CallContext.zipped`
+  exactly as before.  Callers no longer need to parse a companion file
+  themselves or reach into private parsing internals.  Supplying
+  ``zip_source`` without ``zip_input_format`` raises the new
+  :class:`~literalizer.exceptions.ZipSourceWithoutInputFormatError`;
+  the existing
+  :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`
+  and :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`
+  contracts are unchanged, and a ``per_element=True`` ``zip_source``
+  that does not parse to a list raises
+  :class:`~literalizer.exceptions.PerElementNotListError`.  See #2340.
 
 - :class:`~literalizer.Go` gains the ``record_shape_names`` constructor
   parameter (already on :class:`~literalizer.Rust`), a

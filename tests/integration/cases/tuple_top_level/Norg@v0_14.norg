@@ -1,0 +1,9 @@
+* my_data
+@code json
+[
+    1,
+    "email",
+    "a@gmail.com",
+    100
+]
+@end
