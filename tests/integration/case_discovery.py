@@ -6,6 +6,7 @@ imports from this module to enumerate every expected golden filename.
 """
 
 import dataclasses
+import datetime
 import enum
 import functools
 import json
@@ -173,29 +174,45 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     return False
 
 
-type CaseData = (
-    dict[object, "CaseData"]
-    | list["CaseData"]
-    | str
+# Every scalar a parser can yield: JSON/JSON5 -> str/int/float/bool/
+# None; TOML adds date/datetime/time; YAML via ruamel adds those plus
+# bytes (``!!binary``).  Mirrors ``literalizer._types.Scalar`` but is
+# spelled out so strict pyright keeps it fully known (the ruamel
+# library ships no type stubs).
+type _CaseScalar = (
+    str
     | int
     | float
     | bool
     | None
+    | datetime.date
+    | datetime.datetime
+    | datetime.time
+    | bytes
+)
+# Parsed case data.  ``load_case_data`` parses YAML with the ``safe``
+# loader (and JSON/JSON5/TOML natively), so containers are plain
+# ``dict``/``list``/``set`` rather than the ruamel comment-tracking
+# subclasses; a precise model keeps ``@beartype`` accurate and strict
+# pyright/ty fully resolved.
+type CaseData = (
+    _CaseScalar
+    | list[CaseData]
+    | dict[object, CaseData]
+    | set[_CaseScalar]
+    | frozenset[_CaseScalar]
 )
 
 
+@beartype
 def load_case_data(*, input_info: _CaseInput) -> CaseData:
     """Parse a case input file according to its declared format.
 
     Dispatches on :attr:`_CaseInput.input_format` so discovery code can
     inspect any case's data without knowing which serialization backs
     it.  ``tomllib``/``json``/``pyjson5`` yield plain containers and
-    ``ruamel`` yields its comment-tracking mappings; both shapes are
-    walked structurally by the ``has_*`` predicates, which ignore
-    scalar types (dates, times) outside :data:`CaseData`.
-
-    Not ``@beartype``-decorated: real inputs carry ``datetime``/``date``
-    values that the predicates deliberately do not model.
+    ``ruamel`` yields its comment-tracking mappings; both are walked
+    structurally by the ``has_*`` predicates.
     """
     source = input_info.path.read_text(encoding="utf-8")
     parsed: CaseData
@@ -205,7 +222,11 @@ def load_case_data(*, input_info: _CaseInput) -> CaseData:
         case literalizer.InputFormat.JSON5:
             parsed = pyjson5.decode(data=source)  # pylint: disable=no-member
         case literalizer.InputFormat.YAML:
-            parsed = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+            # ``safe`` (not round-trip): yields plain ``dict``/``list``/
+            # ``set`` instead of the ruamel comment-tracking subclasses,
+            # so the result matches ``CaseData`` exactly.  Comments are
+            # irrelevant to the key/float predicates.
+            parsed = YAML(typ="safe").load(  # pyright: ignore[reportUnknownMemberType]
                 stream=source,
             )
         case literalizer.InputFormat.TOML:
