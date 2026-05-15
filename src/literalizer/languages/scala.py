@@ -233,11 +233,12 @@ def _scala_call_stub(
     return tuple(lines)
 
 
-# Untyped fallback openers carry no element type in the formatted
-# literal (Scala infers it for a ``val``, but a ``case class`` field
-# needs an explicit annotation).  Widen each to a covariant ``[Any]``
-# form: ``List``/``Map``/``ListMap`` are covariant in their value
-# parameter, so the precisely-typed literal still type-checks.
+# A fallback opener carries no element type in the formatted literal
+# (Scala infers it for a ``val``, but a ``case class`` field needs an
+# explicit annotation).  Widen each to a covariant ``[Any]`` form: the
+# Scala ``List`` / ``Map`` / ordered-map collections are covariant in
+# their value parameter, so the precisely-typed literal still
+# type-checks.
 _SCALA_UNTYPED_OPENERS: dict[str, str] = {
     "List": "List[Any]",
     "Seq": "Seq[Any]",
@@ -254,8 +255,8 @@ _SCALA_UNTYPED_OPENERS: dict[str, str] = {
 # formatted with an ``L`` suffix and is therefore a ``Long`` field
 # (mapped via :class:`WideInt`).  Keep these bounds in sync with
 # ``_I32_MIN`` / ``_I32_MAX`` in
-# :mod:`literalizer._formatters.type_inference` (the value formatter's
-# own widening threshold, which has a back-reference to here).
+# :mod:`literalizer._formatters.type_inference` (the widening threshold
+# the value formatter uses, which has a back-reference to here).
 _SCALA_INT32_MIN = -(2**31)
 _SCALA_INT32_MAX = 2**31 - 1
 
@@ -320,7 +321,7 @@ class Scala(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -807,11 +808,11 @@ class Scala(metaclass=LanguageCls):
         derives its type from the very collection opener the value
         formatter uses for that value (a record field is formatted with
         no sibling override, so the opener equals the one emitted); the
-        opener's trailing ``(`` is dropped, and an untyped fallback
-        opener (``List(``, the ordered-map ``ListMap(``) widens to its
-        covariant ``...[Any]`` form so the precisely-typed literal
-        still type-checks.  A scalar field uses the same scalar mapping
-        the openers are built on (a wide ``int`` -> ``Long``).
+        opener's trailing ``(`` is dropped, and a bare fallback opener
+        (``List(``, or the ordered-map opener) widens to its covariant
+        ``...[Any]`` form so the precisely-typed literal still
+        type-checks.  A scalar field uses the same scalar mapping the
+        openers are built on (a wide ``int`` -> ``Long``).
 
         A set or a non-record dict (an empty or non-string-keyed dict)
         as a record field is outside the ``RECORD`` strategy's MVP --
@@ -1031,7 +1032,7 @@ class Scala(metaclass=LanguageCls):
 
         Under the ``RECORD`` strategy a list whose elements are
         record-shaped dicts is opened with the format's plain,
-        untyped opener (``List(``) so the elements render as
+        element-type-free opener (``List(``) so the elements render as
         ``RecordN(...)`` literals and Scala infers ``List[RecordN]``;
         the typed opener would otherwise infer a ``Map[String, ...]``
         element type that the struct literals do not satisfy.
@@ -1195,10 +1196,10 @@ class Scala(metaclass=LanguageCls):
         Scala compiles every fixture in one invocation, so a
         file-scope ``case class Record0`` would collide across cases.
         Emitting the declarations into the body preamble (which
-        :meth:`wrap_in_file` prepends inside the per-fixture
-        ``object``) scopes each ``RecordN`` to its own fixture; the
-        declarations precede the scalar body lines so a record type is
-        in scope before its literal.
+        :meth:`wrap_in_file` places inside the per-fixture ``object``,
+        ahead of the value) scopes each ``RecordN`` to its own fixture;
+        the declarations precede the scalar body lines so a record type
+        is in scope before its literal.
         """
         scalar_body = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
@@ -1211,7 +1212,7 @@ class Scala(metaclass=LanguageCls):
             data: Value,
             /,
         ) -> tuple[str, ...]:
-            """Record ``case class`` decls precede scalar body lines."""
+            """Record ``case class`` lines precede scalar body lines."""
             return record_preamble(data) + scalar_body(types, data)
 
         return _compute
