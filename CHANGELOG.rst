@@ -5,7 +5,9 @@ Next
 ----
 
 - :class:`~literalizer.FSharp` now accepts ``variable_form`` on
-  :func:`~literalizer.literalize_call`, emitting the inference-style
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`, emitting the inference-style
   binding ``let my_data = make_widget(42)`` without the ``name: Val``
   type annotation or tagged-enum constructor wrapper that literal
   bindings use (the call's return type is not known to the renderer).

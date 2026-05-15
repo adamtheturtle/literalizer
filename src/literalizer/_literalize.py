@@ -2096,13 +2096,13 @@ def _apply_variable_wrapper(
 
     When *is_call_binding* is ``True`` the right-hand side is a call
     expression, not a literal value.  Languages whose literal-binding
-    declaration template injects a value-type-derived tag (Haskell's
-    ``x :: Val`` annotation, Elm's ``x : Val``, etc.) can opt in to a
-    call-specific declaration formatter via
-    ``format_call_variable_declaration``; languages that do not define
-    one fall back to ``format_variable_declaration`` unchanged.  The
-    assignment template re-binds an existing variable and is bare in
-    these languages already, so no call-specific override is needed.
+    templates inject a value-type-derived tag (Haskell's ``x :: Val``
+    annotation, F#'s ``x: Val = FInt ...``, Elm's ``x : Val``, etc.)
+    can opt in to call-specific formatters via
+    ``format_call_variable_declaration`` (for :class:`NewVariable`) and
+    ``format_call_variable_assignment`` (for :class:`ExistingVariable`);
+    languages that do not define them fall back to their literal-binding
+    formatter unchanged.
     """
     if variable_form is None:
         return result
@@ -2123,7 +2123,14 @@ def _apply_variable_wrapper(
                 )
             wrapped = declaration_formatter(name, value, data, modifiers)
         case _:
-            wrapped = language.format_variable_assignment(
+            assignment_formatter = language.format_variable_assignment
+            if is_call_binding:
+                assignment_formatter = getattr(
+                    language,
+                    "format_call_variable_assignment",
+                    assignment_formatter,
+                )
+            wrapped = assignment_formatter(
                 variable_form.name,
                 value,
                 data,
