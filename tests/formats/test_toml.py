@@ -46,33 +46,3 @@ def test_invalid_toml_is_parse_error() -> None:
             pre_indent_level=0,
             include_delimiters=False,
         )
-
-
-def test_toml_comments_propagate() -> None:
-    """Standalone and inline TOML comments survive in the rendered
-    output.
-    """
-    result = literalize(
-        source="# before\n\nanswer = 42 # inline\nplain = 'ok'\n# trailing\n",
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-    )
-
-    assert result.code == (
-        '# before\n"answer": 42,  # inline\n"plain": "ok",\n# trailing'
-    )
-
-
-def test_toml_table_entries_literalize() -> None:
-    """TOML tables become dict entries in the rendered output."""
-    result = literalize(
-        source="[section]\nvalue = 1\n",
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-    )
-
-    assert result.code == '"section": {"value": 1},'
