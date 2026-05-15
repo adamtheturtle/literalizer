@@ -1,8 +1,8 @@
 
 fn main() {
- deep := {
- 	'_': '_',
- }
+	deep := {
+		'_': '_',
+	}
 	my_data := {
 		'a': {'b': {'c': deep.clone()}},
 	}

@@ -872,6 +872,25 @@ class Fortran(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
+    @staticmethod
+    def sequence_binding_declarations(declarations: tuple[str, ...]) -> str:
+        """Order Fortran binding declarations for variable-mode wrapping.
+
+        Each binding's ``bare_code`` is a ``type(fval_t) :: name``
+        specification line followed by an assignment.  Fortran requires
+        every specification statement to precede every executable
+        statement, so the type-declaration lines are gathered first and
+        the assignment lines follow, across all bindings including the
+        final result binding.
+        """
+        type_decls: list[str] = []
+        exec_stmts: list[str] = []
+        for bare_code in declarations:
+            lines = bare_code.splitlines()
+            type_decls.append(lines[0])
+            exec_stmts.extend(lines[1:])
+        return "\n".join((*type_decls, *exec_stmts))
+
     @cached_property
     def _format_entry(self) -> Callable[[Value, str], str]:
         """Shared entry formatter for Fortran values."""
