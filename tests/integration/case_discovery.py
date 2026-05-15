@@ -113,14 +113,20 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_json_escaped_key",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_toml_table",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_json5_unquoted_key",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
 ]
 
