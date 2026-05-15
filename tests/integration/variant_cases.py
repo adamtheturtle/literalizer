@@ -674,6 +674,127 @@ def build_sequence_decl_variants() -> Iterable[Variant]:
 
 
 @beartype
+def _resolve_sequence_format_override(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    declaration_style: enum.Enum,
+) -> enum.Enum | None:
+    """Return the sequence-format override for *declaration_style*, if
+    any.
+
+    Rust ``CONST`` and ``STATIC`` reject the default ``VEC`` sequence
+    format upfront in ``__post_init__``; any cross-product variant that
+    pairs them with a non-default set/dict format still has to apply
+    the same sequence-format override the standalone declaration-style
+    variants use.
+    """
+    overrides = DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(lang_cls, {})
+    seq_format_name = overrides.get(declaration_style.name)
+    if seq_format_name is None:
+        return None
+    spec = make_spec(lang_cls=lang_cls)
+    return next(f for f in spec.sequence_formats if f.name == seq_format_name)
+
+
+@beartype
+def build_set_decl_variants() -> Iterable[Variant]:
+    """Build set format + declaration style cross-option variants.
+
+    For each language with multiple set formats *and* multiple
+    declaration styles, create a variant for every non-default
+    set format paired with every non-default declaration style.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        lang_name = lang_cls.__name__
+        spec = make_spec(lang_cls=lang_cls)
+        default_set_format = spec.set_format
+        default_declaration_style = spec.declaration_style
+        non_default_set_formats = [
+            set_format
+            for set_format in spec.set_formats
+            if set_format is not default_set_format
+        ]
+        non_default_declaration_styles = [
+            declaration_style
+            for declaration_style in spec.declaration_styles
+            if declaration_style is not default_declaration_style
+        ]
+        for set_format in non_default_set_formats:
+            for declaration_style in non_default_declaration_styles:
+                seq_override = _resolve_sequence_format_override(
+                    lang_cls=lang_cls,
+                    declaration_style=declaration_style,
+                )
+                kwargs: dict[str, object] = {
+                    "set_format": set_format,
+                    "declaration_style": declaration_style,
+                }
+                if seq_override is not None:
+                    kwargs["sequence_format"] = seq_override
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_name}_set_{set_format.name.lower()}"
+                            f"_decl_{declaration_style.name.lower()}"
+                        ),
+                        spec=make_spec(lang_cls=lang_cls, **kwargs),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
+def build_dict_decl_variants() -> Iterable[Variant]:
+    """Build dict format + declaration style cross-option variants.
+
+    For each language with multiple dict formats *and* multiple
+    declaration styles, create a variant for every non-default
+    dict format paired with every non-default declaration style.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        lang_name = lang_cls.__name__
+        spec = make_spec(lang_cls=lang_cls)
+        default_dict_format = spec.dict_format
+        default_declaration_style = spec.declaration_style
+        non_default_dict_formats = [
+            dict_format
+            for dict_format in spec.dict_formats
+            if dict_format is not default_dict_format
+        ]
+        non_default_declaration_styles = [
+            declaration_style
+            for declaration_style in spec.declaration_styles
+            if declaration_style is not default_declaration_style
+        ]
+        for dict_format in non_default_dict_formats:
+            for declaration_style in non_default_declaration_styles:
+                seq_override = _resolve_sequence_format_override(
+                    lang_cls=lang_cls,
+                    declaration_style=declaration_style,
+                )
+                kwargs: dict[str, object] = {
+                    "dict_format": dict_format,
+                    "declaration_style": declaration_style,
+                }
+                if seq_override is not None:
+                    kwargs["sequence_format"] = seq_override
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_name}_dict_{dict_format.name.lower()}"
+                            f"_decl_{declaration_style.name.lower()}"
+                        ),
+                        spec=make_spec(lang_cls=lang_cls, **kwargs),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
 def build_constructor_name_variants() -> Iterable[Variant]:
     """Build constructor-name variants for languages listed in
     :data:`CONSTRUCTOR_NAME_OVERRIDES` (e.g. Fortran).
@@ -738,7 +859,6 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
     return variants
 
 
-@beartype
 def build_record_shape_names_variants() -> Iterable[Variant]:
     """Build ``record_shape_names`` variants for languages that support
     the ``RECORD`` heterogeneous strategy.
@@ -774,6 +894,34 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
             )
         )
     return variants
+
+
+@beartype
+def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
+    """Build the Rust ``record_unify_optional_fields`` variant.
+
+    Combines :attr:`Rust.record_unify_optional_fields` with the
+    ``RECORD`` heterogeneous strategy so the golden case exercises the
+    Option/Some/None rendering.  Only Rust currently has this knob.
+    """
+    default_spec = make_spec(lang_cls=Rust)
+    record_strategy = next(
+        strategy
+        for strategy in default_spec.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    spec = make_spec(
+        lang_cls=Rust,
+        heterogeneous_strategy=record_strategy,
+        record_unify_optional_fields=True,
+    )
+    return [
+        Variant(
+            name="Rust_record_unify_optional_fields",
+            spec=spec,
+            lang_cls=Rust,
+        )
+    ]
 
 
 @beartype
@@ -1431,6 +1579,8 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_statement_terminator_style_decl_variants
     ),
     "sequence_decl": build_sequence_decl_variants,
+    "set_decl": build_set_decl_variants,
+    "dict_decl": build_dict_decl_variants,
     "type_hints_cross": build_type_hints_cross_variants,
     "string_format_date_cross": lambda: build_string_format_cross_variants(
         other_kwarg="date_format",
@@ -1458,6 +1608,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "heterogeneous_value_variant_name": (
         build_heterogeneous_value_variant_name_variants
+    ),
+    "record_unify_optional_fields": (
+        build_record_unify_optional_fields_variants
     ),
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
@@ -1686,6 +1839,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "statement_terminator_style_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
+    "set_decl": (_ci(case_dir_name="set_mixed_int_widths"),),
+    "dict_decl": (_ci(case_dir_name="int_key_dict"),),
     "type_name": ADT_INPUTS,
     "constructor_prefix": ADT_INPUTS,
     "numeric_style": (
@@ -1710,6 +1865,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "record_shape_names": (_ci(case_dir_name="record_named_shape"),),
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
+    "record_unify_optional_fields": (
+        _ci(case_dir_name="record_optional_unify"),
+    ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name)
         for case_dir_name in dict.fromkeys(

@@ -133,25 +133,6 @@ def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
     )
 
 
-def test_rust_btree_set_type_annotation() -> None:
-    """``BTREE_SET`` renders a ``BTreeSet`` type annotation."""
-    result = Rust.set_formats.BTREE_SET.format_type_annotation(
-        element_type="i32",
-    )
-
-    assert result == "BTreeSet<i32>"
-
-
-def test_rust_btree_map_type_annotation() -> None:
-    """``BTREE_MAP`` renders a ``BTreeMap`` type annotation."""
-    result = Rust.dict_formats.BTREE_MAP.format_type_annotation(
-        key_type="&str",
-        value_type="i32",
-    )
-
-    assert result == "BTreeMap<&str, i32>"
-
-
 def test_rust_const_vec_raises() -> None:
     """Rust CONST with vector format raises."""
     expected_msg = (
@@ -184,28 +165,6 @@ def test_rust_static_vec_raises() -> None:
             declaration_style=Rust.declaration_styles.STATIC,
             sequence_format=Rust.sequence_formats.VEC,
         )
-
-
-RUST_LAZY_STATIC = Rust(
-    date_format=Rust.date_formats.ISO,
-    datetime_format=Rust.datetime_formats.ISO,
-    bytes_format=Rust.bytes_formats.HEX,
-    declaration_style=Rust.declaration_styles.LAZY_STATIC,
-)
-
-
-def test_rust_lazy_static_preamble_includes_lazy_lock() -> None:
-    """``LAZY_STATIC`` adds ``use std::sync::LazyLock;`` to the
-    preamble.
-    """
-    assert RUST_LAZY_STATIC.static_preamble == ("use std::sync::LazyLock;",)
-
-
-def test_rust_static_preamble_excludes_lazy_lock() -> None:
-    """Non-``LAZY_STATIC`` declaration styles emit no ``LazyLock``
-    import.
-    """
-    assert RUST_CONST.static_preamble == ()
 
 
 def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:

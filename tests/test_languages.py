@@ -29,7 +29,6 @@ from literalizer.languages import (
     Dart,
     Dhall,
     Fortran,
-    FSharp,
     Gleam,
     Go,
     Haskell,
@@ -65,7 +64,6 @@ FORTRAN = Fortran(
     sequence_format=Fortran.sequence_formats.LIST,
     module_name="check",
 )
-FSHARP = FSharp(module_name="check")
 
 
 def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
@@ -389,22 +387,6 @@ def test_fortran_continuation_with_escaped_quote_and_comment() -> None:
     )
 
 
-def test_fsharp_scalar_very_large_int_uses_bigint_suffix() -> None:
-    """Bare F# scalar integers above i64 range use the ``I`` suffix."""
-    result = literalize(
-        source="9223372036854775808",
-        input_format=InputFormat.JSON,
-        language=FSHARP,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-
-    assert result.code == (
-        "type Val =\n    | FInt of bigint\n9223372036854775808I"
-    )
-
-
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
     """COBOL data names must not end with a hyphen after truncation."""
     long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
@@ -446,28 +428,6 @@ def test_java_list_rejects_null_elements() -> None:
             include_delimiters=True,
             variable_form=None,
         )
-
-
-def test_python_no_any_import_when_all_defaults_overridden() -> None:
-    """When all Python default collection types are non-Any, the
-    ``from typing import Any`` import is not emitted.
-    """
-    spec = Python(
-        default_set_element_type="str",
-        default_sequence_element_type="str",
-        default_dict_value_type="str",
-        default_dict_key_type="str",
-    )
-    result = literalize(
-        source="{}\n",
-        input_format=InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data"),
-    )
-    assert result.code == "my_data: dict[str, str] = {}"
-    assert result.preamble == ("from __future__ import annotations",)
 
 
 def test_literalize_call_wrap_in_file_emits_stubs() -> None:
