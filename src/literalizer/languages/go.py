@@ -51,6 +51,7 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
+    RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
     RecordStrategy,
@@ -94,7 +95,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 
 
 @beartype
@@ -718,26 +719,41 @@ class Go(metaclass=LanguageCls):
         """Format a set entry."""
         return _format_go_set_entry
 
-    def _go_field_type(self, formatted: str, /) -> str:
-        """Return the Go field type for an already-formatted value.
+    def _go_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Go struct field type for a record field.
 
-        The declared type is read off the formatted literal so it
-        always matches what the value formatter emitted, even when a
-        list was widened to ``[]any`` by sibling context.  Composite
-        literals (``[]int{...}``, ``Record1{...}``, ``[][2]any{...}``)
-        carry their type as the text before the first ``{``.
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated struct name.  A list or ordered-map
+        field derives its type from the very collection opener the
+        value formatter uses for that value (a record field is
+        formatted with no sibling override, so the opener equals the
+        one emitted, including a widening to ``[]any``); the opener's
+        trailing ``{`` is dropped to leave the bare type, e.g.
+        ``[]int{`` -> ``[]int``, ``[][2]any{`` -> ``[][2]any``.  A
+        scalar field uses the same scalar mapping the openers are
+        built on.
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field is outside the ``RECORD`` strategy's MVP --
+        Rust's ``_rust_record_field_type`` is imprecise for the same
+        shapes (#2234) -- so it is declared as Go's top type ``any``,
+        which the rendered literal still assigns into.
         """
-        if formatted == self.null_literal:
-            return "any"
-        if formatted in {self.true_literal, self.false_literal}:
-            return "bool"
-        if formatted.startswith('"'):
-            return "string"
-        if formatted.startswith("time.Date("):
-            return "time.Time"
-        if "{" in formatted:
-            return formatted[: formatted.index("{")]
-        return "int" if formatted.lstrip("-").isdigit() else "float64"
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        match value:
+            case None:
+                return "any"
+            case OrderedMap():
+                opener = self.ordered_map_format_config.ordered_map_open(
+                    value,
+                )
+            case list():
+                opener = self.sequence_open(value)
+            case _:
+                return self._init_element_to_type(type(value)) or "any"
+        return opener[: -len("{")]
 
     def _go_render_declaration(
         self,
@@ -760,7 +776,7 @@ class Go(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             field_identifier=_go_record_field_identifier,
-            field_type=self._go_field_type,
+            field_type=self._go_record_field_type,
             render_declaration=self._go_render_declaration,
             render_literal=_go_record_literal,
         )
