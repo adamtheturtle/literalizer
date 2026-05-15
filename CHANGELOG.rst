@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Java` gains the ``RECORD`` ``heterogeneous_strategy``
+  (already on :class:`~literalizer.Rust` and :class:`~literalizer.Go`).
+  Each record-shaped dict (non-empty, string-keyed) becomes a generated
+  top-level ``record RecordN(type field, ...) {}`` declaration plus a
+  matching positional ``new RecordN(value, ...)`` literal, so a dict
+  whose values mix scalars and containers is representable instead of
+  raising.  Component names keep the original keys and the
+  record-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter.  Generated
+  ``record`` declarations require JDK 16, so ``Java.language_version``
+  is now ``JDK_16``.  See #2300.
+
 - :func:`~literalizer.literalize` now accepts an opt-in ``bound_refs``
   mapping.  Unlike ``ref_values`` (which only informs a ref's type and
   leaves it as a free external identifier), each name in ``bound_refs``

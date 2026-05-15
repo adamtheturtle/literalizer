@@ -528,7 +528,17 @@ def _maybe_format_record_literal(
             f"{rendered.head}{rendered.compact_pad}{joined}"
             f"{rendered.compact_pad}{rendered.closer}"
         )
-    body = "\n".join(f"{body_prefix}{entry}," for entry in rendered.entries)
+    # Respect the language's trailing-comma policy: Go/Rust permit a
+    # trailing comma after the last field (config ``True`` -> unchanged),
+    # but a Java positional record literal is a constructor call where a
+    # trailing comma is a syntax error (config ``False``).
+    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    sep = spec.element_separator.strip()
+    last_idx = len(rendered.entries) - 1
+    body = "\n".join(
+        f"{body_prefix}{entry}{sep if i < last_idx or trailing_comma else ''}"
+        for i, entry in enumerate(iterable=rendered.entries)
+    )
     return f"{rendered.head}\n{body}\n{multiline_prefix}{rendered.closer}"
 
 

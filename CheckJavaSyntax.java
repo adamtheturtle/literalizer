@@ -39,13 +39,15 @@ public class CheckJavaSyntax {
                 final Path classDir = Files.createTempDirectory("javac");
                 final Iterable<? extends JavaFileObject> units =
                         fileManager.getJavaFileObjectsFromStrings(List.of(filename));
-                // `--release 11` matches `Java.language_version` in
+                // `--release 16` matches `Java.language_version` in
                 // `src/literalizer/languages/java.py`; keep them in sync.
+                // RECORD heterogeneous output emits `record` declarations,
+                // which require JDK >= 16.
                 final JavaCompiler.CompilationTask task = compiler.getTask(
                         null,
                         fileManager,
                         null,
-                        List.of("-d", classDir.toString(), "-proc:none", "--release", "11"),
+                        List.of("-d", classDir.toString(), "-proc:none", "--release", "16"),
                         null,
                         units);
                 if (!task.call()) {

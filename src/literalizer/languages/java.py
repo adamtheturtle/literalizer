@@ -46,6 +46,13 @@ from literalizer._formatters.format_integers import (
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -63,6 +70,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -76,6 +84,7 @@ from literalizer._language import (
     identity_call_target,
     never_inhibits_consuming_form,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -556,6 +565,100 @@ def _object_nil_declaration(
 
 
 @beartype
+def _java_record_field_identifier(key: str, /) -> str:
+    """Return the Java record component name for a dict *key*.
+
+    Java record components keep the original key (identity); the
+    literal is positional so the name only labels the declaration.
+    """
+    return key
+
+
+@beartype
+def _java_field_type(formatted: str, /) -> str:  # noqa: PLR0911
+    """Return the Java record-component type for an already-formatted
+    field value.
+
+    The declared type is read off the formatted literal so it always
+    matches what the value formatter emitted (mirroring Go's
+    string-head inference): ``new int[]{...}`` -> ``int[]``,
+    ``new Record1(...)`` -> ``Record1``, ``LocalDate.of(...)`` ->
+    ``LocalDate``, and so on.  Every Java composite literal states its
+    own type, so a container value carries that type as a ``new <type>``
+    prefix or a factory-call head; a very large integer's
+    ``new BigInteger("...")`` value resolves through the generic
+    ``new `` branch below.
+
+    Like Go's port, this covers only the value kinds the shared
+    ``record_*`` / heterogeneous corpus exercises; a Java-specific
+    kind such as a ``java.time.LocalTime`` record field is out of
+    scope here (flag it, don't infer it speculatively).
+    """
+    if formatted == "null":
+        return "Object"
+    if formatted in {"true", "false"}:
+        return "boolean"
+    if formatted.startswith('"'):
+        return "String"
+    if formatted.startswith("LocalDate.of("):
+        return "LocalDate"
+    if formatted.startswith("Instant.parse("):
+        return "Instant"
+    if formatted.startswith("ZonedDateTime.of("):
+        return "ZonedDateTime"
+    if formatted.startswith("new "):
+        # ``new int[]{...}`` -> ``int[]`` (type ends at ``{``);
+        # ``new Record1(...)`` -> ``Record1`` (type ends at ``(``);
+        # ``new BigInteger("...")`` -> ``BigInteger`` (ends at ``(``);
+        # ``new java.util.ArrayList<>(...)`` -> ``java.util.ArrayList``
+        # (the diamond is illegal in a type position, so the type ends
+        # at ``<``).
+        rest = formatted[len("new ") :]
+        brace = rest.find("{")
+        paren = rest.find("(")
+        angle = rest.find("<")
+        candidates = [i for i in (brace, paren, angle) if i != -1]
+        return rest[: min(candidates)]
+    if formatted.endswith("L"):
+        return "long"
+    return "int" if formatted.lstrip("-").isdigit() else "double"
+
+
+@beartype
+def _java_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Java ``new Name(value, ...)`` positional record literal
+    as structured pieces for the shared compact/multiline layout code.
+
+    Java records are positional, so the field identifiers label only
+    the declaration; the literal emits arguments in declaration order
+    with no field names.
+    """
+    return RenderedRecordLiteral(
+        head=f"new {name}(",
+        entries=tuple(field.formatted for field in fields),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _java_render_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Java ``record Name(type id, ...) {}`` declaration."""
+    components = ", ".join(
+        f"{field.type_name} {field.identifier}" for field in fields
+    )
+    return f"record {name}({components}) {{}}"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Java(metaclass=LanguageCls):
     """Java language specification.
@@ -921,18 +1024,29 @@ class Java(metaclass=LanguageCls):
     modifiers = _JavaModifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for dicts whose values span more than one Java type.
+
+        ``ERROR`` keeps Java's strict-typing behavior (mixed-value dicts
+        that cannot be represented raise).  ``RECORD`` renders each
+        record-shaped dict (non-empty, string-keyed) as a generated
+        ``record`` declared in the preamble plus a matching positional
+        ``new Record0(...)`` literal, so fields may legitimately mix
+        scalars and containers.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
     class VersionFormats(enum.Enum):
-        """Version options for Java."""
+        """Version options for Java.
 
-        JDK_11 = enum.auto()
+        ``RECORD`` heterogeneous output emits ``record`` declarations,
+        which require Java 16 or newer; the floor is set accordingly.
+        """
+
+        JDK_16 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -1177,7 +1291,8 @@ class Java(metaclass=LanguageCls):
     )
     # Keep in sync with the `--release` flag passed to the JavaCompiler
     # in `CheckJavaSyntax.java`.
-    language_version: VersionFormats = VersionFormats.JDK_11
+    language_version: VersionFormats = VersionFormats.JDK_16
+    record_struct_name_prefix: str = "Record"
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -1215,14 +1330,49 @@ class Java(metaclass=LanguageCls):
         return _format_java_assignment
 
     @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Java syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            field_identifier=_java_record_field_identifier,
+            field_type=_java_field_type,
+            render_declaration=_java_render_declaration,
+            render_literal=_java_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return _java_biginteger_preamble
+        """Return data-dependent preamble lines.
+
+        Always emits ``import java.math.BigInteger;`` when the data
+        needs it; under ``HeterogeneousStrategies.RECORD`` also emits
+        one ``record`` declaration per record shape present in the
+        data.
+        """
+        record_preamble = self._record_strategy.preamble
+
+        @beartype
+        def _preamble(data: Value, /) -> tuple[str, ...]:
+            """Combine the BigInteger import with record declarations."""
+            return _java_biginteger_preamble(data) + record_preamble(data)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
