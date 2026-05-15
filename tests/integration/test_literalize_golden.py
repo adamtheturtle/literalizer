@@ -393,11 +393,21 @@ def test_heterogeneous_strategy_combined_variable_forms(
     assert redef_styles
     for version_format in case.lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):
-            spec = make_spec(
+            golden_path = make_golden_path(
+                parent=input_info.path.parent,
+                name=case.name,
+                extension=case.lang_cls.extension,
                 lang_cls=case.lang_cls,
-                heterogeneous_strategy=case.heterogeneous_strategy,
-                declaration_style=redef_styles[0],
-                language_version=version_format,
+                version=version_format,
+            )
+            spec = with_per_fixture_module_name(
+                spec=make_spec(
+                    lang_cls=case.lang_cls,
+                    heterogeneous_strategy=case.heterogeneous_strategy,
+                    declaration_style=redef_styles[0],
+                    language_version=version_format,
+                ),
+                golden_path=golden_path,
             )
             result = literalizer.literalize(
                 source=source_text,
@@ -413,13 +423,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
                 contents=result.code + "\n",
                 extension=spec.extension,
                 newline=None,
-                golden_path=make_golden_path(
-                    parent=input_info.path.parent,
-                    name=case.name,
-                    extension=spec.extension,
-                    lang_cls=case.lang_cls,
-                    version=version_format,
-                ),
+                golden_path=golden_path,
             )
 
 
