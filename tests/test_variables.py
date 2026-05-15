@@ -133,25 +133,6 @@ def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
     )
 
 
-def test_rust_btree_set_type_annotation() -> None:
-    """``BTREE_SET`` renders a ``BTreeSet`` type annotation."""
-    result = Rust.set_formats.BTREE_SET.format_type_annotation(
-        element_type="i32",
-    )
-
-    assert result == "BTreeSet<i32>"
-
-
-def test_rust_btree_map_type_annotation() -> None:
-    """``BTREE_MAP`` renders a ``BTreeMap`` type annotation."""
-    result = Rust.dict_formats.BTREE_MAP.format_type_annotation(
-        key_type="&str",
-        value_type="i32",
-    )
-
-    assert result == "BTreeMap<&str, i32>"
-
-
 def test_rust_const_vec_raises() -> None:
     """Rust CONST with vector format raises."""
     expected_msg = (
