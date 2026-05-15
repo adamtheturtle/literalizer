@@ -85,6 +85,10 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         case_dir_name="literalize_ref_toml_table",
         ref_key="$ref",
     ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_json5_unquoted_key",
+        ref_key="$ref",
+    ),
 ]
 
 LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
