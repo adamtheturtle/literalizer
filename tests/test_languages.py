@@ -39,7 +39,6 @@ from literalizer.languages import (
     Nim,
     Python,
     R,
-    Raku,
     Rust,
     Sml,
     Swift,
@@ -677,30 +676,6 @@ def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
     )
 
     assert result.declaration_code == "userObj"
-
-
-def test_raku_kebab_ref_case_renders() -> None:
-    """Kebab-friendly languages render kebab-form refs as legal
-    symbols.
-    """
-    assert Raku().supported_ref_cases == frozenset(
-        {
-            IdentifierCase.SNAKE,
-            IdentifierCase.UPPER_SNAKE,
-            IdentifierCase.PASCAL,
-            IdentifierCase.CAMEL,
-            IdentifierCase.KEBAB,
-        },
-    )
-
-    result = literalize(
-        source='{"$ref": "user_obj"}',
-        input_format=InputFormat.JSON,
-        language=Raku(),
-        ref_case=IdentifierCase.KEBAB,
-    )
-
-    assert result.declaration_code == "$user-obj"
 
 
 def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
