@@ -1890,7 +1890,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="dict_all_scalar_types"),
     ),
     "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
-    "record_shape_names": (_ci(case_dir_name="record_named_shape"),),
+    "record_shape_names": (
+        _ci(case_dir_name="record_named_shape"),
+        _ci(case_dir_name="record_named_nested_record"),
+    ),
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (

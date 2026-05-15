@@ -1231,12 +1231,20 @@ class Kotlin(metaclass=LanguageCls):
         """Adapt the structured :class:`RecordFieldType` hook to
         Kotlin's still-formatted-string field typing.
 
-        Kotlin's ``field_type`` has not yet been ported off the
-        formatted-string contract (unlike Go), so it reads
-        ``request.formatted``.  Porting it to derive the type from
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated declaration name (which may be a custom
+        ``record_shape_names`` name like ``Task`` that the
+        formatted-string typer cannot recover, since it only recognizes
+        the auto-generated ``{prefix}{N}`` head).  This mirrors Go's
+        ``record_name`` precedence; the remaining (non-record) field
+        typing is still read off ``request.formatted`` because Kotlin's
+        ``field_type`` has not yet been ported off the formatted-string
+        contract (unlike Go).  Porting it to derive the type from
         ``request.value`` via Kotlin's own openers is tracked
         separately.
         """
+        if request.record_name is not None:
+            return request.record_name
         return self._kotlin_record_field_type(request.formatted)
 
     @cached_property
