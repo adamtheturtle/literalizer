@@ -8,9 +8,13 @@ imports from this module to enumerate every expected golden filename.
 import dataclasses
 import enum
 import functools
+import json
 import math
+import tomllib
 from pathlib import Path
+from typing import Any, assert_never
 
+import pyjson5
 from beartype import beartype
 from ruamel.yaml import YAML
 
@@ -169,9 +173,9 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     return False
 
 
-type YamlData = (
-    dict[object, "YamlData"]
-    | list["YamlData"]
+type CaseData = (
+    dict[object, "CaseData"]
+    | list["CaseData"]
     | str
     | int
     | float
@@ -180,7 +184,43 @@ type YamlData = (
 )
 
 
-def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
+def load_case_data(*, input_info: _CaseInput) -> CaseData:
+    """Parse a case input file according to its declared format.
+
+    Dispatches on :attr:`_CaseInput.input_format` so discovery code can
+    inspect any case's data without knowing which serialization backs
+    it.  ``tomllib``/``json``/``pyjson5`` yield plain containers and
+    ``ruamel`` yields its comment-tracking mappings; both shapes are
+    walked structurally by the ``has_*`` predicates, which ignore
+    scalar types (dates, times) outside :data:`CaseData`.
+
+    Not ``@beartype``-decorated: real inputs carry ``datetime``/``date``
+    values that the predicates deliberately do not model.
+    """
+    source = input_info.path.read_text(encoding="utf-8")
+    parsed: CaseData
+    match input_info.input_format:
+        case literalizer.InputFormat.JSON:
+            parsed = json.loads(s=source)
+        case literalizer.InputFormat.JSON5:
+            parsed = pyjson5.decode(data=source)  # pylint: disable=no-member
+        case literalizer.InputFormat.YAML:
+            parsed = YAML().load(  # pyright: ignore[reportUnknownMemberType]
+                stream=source,
+            )
+        case literalizer.InputFormat.TOML:
+            # Unlike the other parsers (which return ``Any``),
+            # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``
+            # keys are invariant, so route it through an ``Any`` so it
+            # widens to ``CaseData`` like the rest.
+            toml_parsed: Any = tomllib.loads(source)
+            parsed = toml_parsed
+        case _ as unreachable:
+            assert_never(unreachable)
+    return parsed
+
+
+def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a dict key that is empty or
     has characters outside printable ASCII.
     """
@@ -208,28 +248,22 @@ def has_non_printable_ascii_dict_keys(data: YamlData) -> bool:
 def cases_with_non_trivial_dict_keys(
     cases_dir: Path,
 ) -> frozenset[str]:
-    """Return case directory names whose input YAML has dict keys that
-    some languages cannot represent (empty or non-printable-ASCII).
+    """Return case directory names whose input has dict keys that some
+    languages cannot represent (empty or non-printable-ASCII).
 
-    Cases backed by a non-YAML input (TOML, JSON, JSON5) are skipped:
-    none of the current non-YAML cases carry non-printable or empty
-    dict keys.
+    Every case is parsed by its declared format, so a JSON/JSON5/TOML
+    case carrying such keys is detected the same as a YAML one.
     """
-    yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
         input_info = case_input(case_dir=case_dir)
-        if input_info.input_format is not literalizer.InputFormat.YAML:
-            continue
-        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=input_info.path.read_text(encoding="utf-8"),
-        )
+        loaded = load_case_data(input_info=input_info)
         if has_non_printable_ascii_dict_keys(data=loaded):
             result.add(case_dir.name)
     return frozenset(result)
 
 
-def has_special_floats(data: YamlData) -> bool:
+def has_special_floats(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
     """
@@ -249,21 +283,16 @@ def has_special_floats(data: YamlData) -> bool:
 def cases_with_special_floats(
     cases_dir: Path,
 ) -> frozenset[str]:
-    """Return case directory names whose input YAML contains a
-    non-finite float that some languages cannot produce at runtime.
+    """Return case directory names whose input contains a non-finite
+    float that some languages cannot produce at runtime.
 
-    Cases backed by a non-YAML input (TOML, JSON, JSON5) are skipped:
-    none of the current non-YAML cases involve non-finite floats.
+    Every case is parsed by its declared format, so a JSON5/TOML case
+    expressing ``inf``/``nan`` is detected the same as a YAML one.
     """
-    yaml = YAML()
     result: set[str] = set()
     for case_dir in cases_dir.iterdir():
         input_info = case_input(case_dir=case_dir)
-        if input_info.input_format is not literalizer.InputFormat.YAML:
-            continue
-        loaded: YamlData = yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=input_info.path.read_text(encoding="utf-8"),
-        )
+        loaded = load_case_data(input_info=input_info)
         if has_special_floats(data=loaded):
             result.add(case_dir.name)
     return frozenset(result)
