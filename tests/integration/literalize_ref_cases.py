@@ -17,6 +17,7 @@ import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
+import pyjson5
 import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -33,6 +34,7 @@ from .case_discovery import (
     LITERALIZE_DEFAULT_REF_CASE_CONFIGS,
     LITERALIZE_REF_CASE_CONFIGS,
     LiteralizeRefCaseConfig,
+    case_input,
 )
 from .check_golden import check_golden
 from .language_specs import (
@@ -340,8 +342,9 @@ def run_literalize_ref_golden_case(
     is injected before the first use so the golden file is a complete
     unit that can be compiled.
     """
-    input_path = cases_dir / config.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / config.case_dir_name)
+    input_path = input_info.path
+    input_source = input_path.read_text()
     golden_path = make_golden_path(
         parent=input_path.parent,
         name=golden_name,
@@ -371,8 +374,8 @@ def run_literalize_ref_golden_case(
     )
     try:
         result = literalizer.literalize(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
+            source=input_source,
+            input_format=input_info.input_format,
             language=spec,
             variable_form=variable_form_obj,
             wrap_in_file=True,
@@ -392,10 +395,17 @@ def run_literalize_ref_golden_case(
         )
     final_code = result.code
     if variable_form_obj is not None:
-        ruamel_yaml = _YAML()
-        raw_data: _RefData = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
-            stream=yaml_string,
-        )
+        raw_data: _RefData
+        match input_info.input_format:
+            case literalizer.InputFormat.JSON:
+                raw_data = json.loads(s=input_source)
+            case literalizer.InputFormat.JSON5:
+                raw_data = pyjson5.decode(data=input_source)  # pylint: disable=no-member
+            case _:
+                ruamel_yaml = _YAML()
+                raw_data = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
+                    stream=input_source,
+                )
         stub_sources = dict(config.ref_value_sources)
         stub_entries: list[tuple[str, str]] = []
         for raw_name in _collect_ref_names(

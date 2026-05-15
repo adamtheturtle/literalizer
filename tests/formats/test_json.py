@@ -43,14 +43,3 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             pre_indent_level=0,
             include_delimiters=False,
         )
-
-
-def test_json_escaped_ref_key_literalizes_as_ref() -> None:
-    """JSON escapes in ref marker keys are decoded before detection."""
-    result = literalize(
-        source='{"\\u0024ref": "my_var"}',
-        input_format=InputFormat.JSON,
-        language=PYTHON,
-    )
-
-    assert result.code == "my_var"

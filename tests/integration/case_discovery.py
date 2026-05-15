@@ -77,6 +77,10 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         ref_key="$ref",
         ref_value_sources=(("my_int", "42"),),
     ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_json_escaped_key",
+        ref_key="$ref",
+    ),
 ]
 
 LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
@@ -103,12 +107,26 @@ class _CaseInput:
 def case_input(*, case_dir: Path) -> _CaseInput:
     """Return the input file path and its :class:`InputFormat` for a case.
 
-    Cases use ``input.yaml`` by default; cases whose input contains a
-    value the YAML 1.2 spec cannot natively express (currently
-    ``datetime.time``) use ``input.toml`` instead.  A case must carry
-    exactly one of the two: ``test_no_dead_golden_files`` flags a case
-    that carries both because the unused file becomes orphaned.
+    Cases use ``input.yaml`` by default.  Cases whose behavior depends on
+    format-specific parsing (e.g. JSON unicode escapes) or whose input
+    contains a value the YAML 1.2 spec cannot natively express (currently
+    ``datetime.time``) use ``input.json``, ``input.json5``, or
+    ``input.toml`` instead.  A case must carry exactly one input file:
+    ``test_no_dead_golden_files`` flags a case that carries more than one
+    because the unused file becomes orphaned.
     """
+    json_path = case_dir / "input.json"
+    if json_path.exists():
+        return _CaseInput(
+            path=json_path,
+            input_format=literalizer.InputFormat.JSON,
+        )
+    json5_path = case_dir / "input.json5"
+    if json5_path.exists():
+        return _CaseInput(
+            path=json5_path,
+            input_format=literalizer.InputFormat.JSON5,
+        )
     toml_path = case_dir / "input.toml"
     if toml_path.exists():
         return _CaseInput(
@@ -185,8 +203,9 @@ def cases_with_non_trivial_dict_keys(
     """Return case directory names whose input YAML has dict keys that
     some languages cannot represent (empty or non-printable-ASCII).
 
-    Cases backed by ``input.toml`` are skipped: TOML dict keys are
-    strings only and cannot carry non-printable or empty content.
+    Cases backed by a non-YAML input (TOML, JSON, JSON5) are skipped:
+    none of the current non-YAML cases carry non-printable or empty
+    dict keys.
     """
     yaml = YAML()
     result: set[str] = set()
@@ -225,8 +244,8 @@ def cases_with_special_floats(
     """Return case directory names whose input YAML contains a
     non-finite float that some languages cannot produce at runtime.
 
-    Cases backed by ``input.toml`` are skipped: none of the current
-    TOML-backed cases involve non-finite floats.
+    Cases backed by a non-YAML input (TOML, JSON, JSON5) are skipped:
+    none of the current non-YAML cases involve non-finite floats.
     """
     yaml = YAML()
     result: set[str] = set()
