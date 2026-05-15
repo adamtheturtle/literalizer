@@ -441,6 +441,31 @@ class Nix(metaclass=LanguageCls):
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @staticmethod
+    def sequence_binding_declarations(declarations: tuple[str, ...]) -> str:
+        """Chain Nix bindings as nested ``let`` blocks.
+
+        Each Nix binding's ``bare_code`` has the shape
+        ``let NAME = VALUE; in NAME`` (the language's declaration
+        template).  Concatenating these verbatim is invalid Nix, so
+        every binding except the last has its trailing ``in NAME``
+        result expression dropped, leaving ``let NAME = VALUE; in``;
+        the bindings are then chained so each subsequent binding is the
+        body of the previous ``let``.  The final binding keeps its full
+        ``; in NAME`` tail so the file evaluates to that value.  The
+        identifier is removed structurally using the known
+        ``; in <name>`` suffix shape, not a regex over the rendered
+        value.
+        """
+        in_marker = "; in "
+        chained_parts: list[str] = []
+        for declaration in declarations[:-1]:
+            split_at = declaration.rfind(in_marker)
+            stripped = declaration[: split_at + len(in_marker) - 1]
+            chained_parts.append(stripped)
+        chained_parts.append(declarations[-1])
+        return "\n".join(chained_parts)
+
+    @staticmethod
     def wrap_in_file(
         content: str,
         variable_name: str,

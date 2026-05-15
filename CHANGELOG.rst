@@ -4,6 +4,23 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize` now accepts an opt-in ``bound_refs``
+  mapping.  Unlike ``ref_values`` (which only informs a ref's type and
+  leaves it as a free external identifier), each name in ``bound_refs``
+  additionally has a binding emitted for it before its first use, so a
+  single ``literalize(..., bound_refs=..., wrap_in_file=True)`` call
+  produces a complete, valid file with per-language declaration
+  sequencing (Nix nested ``let``, the Fortran rule that specification
+  statements precede executable statements, and so on).  Binding
+  emission only happens with ``wrap_in_file=True`` and a
+  :class:`~literalizer.NewVariable` or
+  :class:`~literalizer.ExistingVariable` ``variable_form``; otherwise
+  ``bound_refs`` degrades to type information only, exactly like
+  ``ref_values``.  The default (no ``bound_refs``) is unchanged: a
+  ``$ref`` stays a free external identifier.  The ref golden-file
+  harness now drives every case through one ``literalize`` call,
+  retiring its regex-based stub-stitching helpers.  See #2294.
+
 - The integration golden-file harness now accepts ``input.toml`` next to
   the existing ``input.yaml`` for cases whose input contains a value
   YAML 1.2 cannot natively express (currently :class:`datetime.time`).
