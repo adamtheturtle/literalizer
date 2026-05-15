@@ -235,10 +235,17 @@ def _scala_call_stub(
 
 # A fallback opener carries no element type in the formatted literal
 # (Scala infers it for a ``val``, but a ``case class`` field needs an
-# explicit annotation).  Widen each to a covariant ``[Any]`` form: the
-# Scala ``List`` / ``Map`` / ordered-map collections are covariant in
-# their value parameter, so the precisely-typed literal still
-# type-checks.
+# explicit annotation).  Widen each to an ``[Any]`` form.  This is
+# sound for every opener here, including ``scala.Array`` (which is
+# *invariant*, unlike ``List`` / ``Map`` / ``ListMap``, covariant in
+# their value parameter): the formatted literal is a collection-factory
+# ``apply`` call (``List(...)``, ``Array(...)``, ``ListMap(...)``), and
+# Scala infers that factory's element type from the expected (declared
+# field) type, so ``Array(rec, rec)`` assigned to an ``Array[Any]``
+# field elaborates to ``Array.apply[Any](...)`` and is itself
+# ``Array[Any]``, never ``Array[RecordN]``.  Correctness does not rely
+# on variance, only on expected-type-directed inference of the
+# factory's type argument.
 _SCALA_UNTYPED_OPENERS: dict[str, str] = {
     "List": "List[Any]",
     "Seq": "Seq[Any]",
@@ -824,9 +831,12 @@ class Scala(metaclass=LanguageCls):
         formatter uses for that value (a record field is formatted with
         no sibling override, so the opener equals the one emitted); the
         opener's trailing ``(`` is dropped, and a bare fallback opener
-        (``List(``, or the ordered-map opener) widens to its covariant
-        ``...[Any]`` form so the precisely-typed literal still
-        type-checks.  A scalar field uses the same scalar mapping the
+        (``List(`` / ``Array(``, or the ordered-map opener) widens to
+        its ``...[Any]`` form.  That widening type-checks even for the
+        invariant ``Array`` because the literal is a factory ``apply``
+        whose element type Scala infers from the declared field type
+        (see :data:`_SCALA_UNTYPED_OPENERS`), not by collection
+        variance.  A scalar field uses the same scalar mapping the
         openers are built on (a wide ``int`` -> ``Long``).
 
         A set or a non-record dict (an empty or non-string-keyed dict)
