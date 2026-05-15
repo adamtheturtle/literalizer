@@ -3593,20 +3593,12 @@ def _materialize_value_input(*, value: ValueInput) -> Value:
     """Convert a user-supplied ``ValueInput`` into the internal ``Value``
     form, replacing any non-``list`` ``Sequence`` and non-``dict``
     ``Mapping`` with concrete ``list`` / ``dict`` instances.
-
-    An :class:`OrderedMap` is rebuilt as an ``OrderedMap`` rather than a
-    plain ``dict`` so callers can opt into ordered-map rendering by
-    passing one as a ref value; without this the nominal tag would be
-    lost when the mapping is reconstructed.
     """
     if _is_value_mapping(value):
-        materialized = {
+        return {
             key: _materialize_value_input(value=item)
             for key, item in value.items()
         }
-        if isinstance(value, OrderedMap):
-            return OrderedMap(materialized)
-        return materialized
     if _is_value_sequence(value):
         return [_materialize_value_input(value=item) for item in value]
     return value
