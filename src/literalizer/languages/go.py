@@ -9,6 +9,7 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
+from ruamel.yaml.compat import ordereddict as _ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -48,6 +49,13 @@ from literalizer._formatters.format_integers import (
     make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -189,6 +197,25 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
     Example: ``"apple"`` → ``"apple": struct{}{}``.
     """
     return f"{item}: struct{{}}{{}}"
+
+
+@beartype
+def _go_record_field_identifier(key: str, /) -> str:
+    """Return the exported Go struct field name for a dict *key*."""
+    return IdentifierCase.PASCAL.convert(name=key)
+
+
+@beartype
+def _go_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> str:
+    """Render a single-line Go ``Name{Field: value, ...}`` literal."""
+    body = ", ".join(
+        f"{field.identifier}: {field.formatted}" for field in fields
+    )
+    return f"{name}{{{body}}}"
 
 
 @beartype
@@ -547,11 +574,17 @@ class Go(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for dicts whose values span more than one Go type.
+
+        ``ERROR`` keeps Go's strict-typing behavior (mixed-value dicts
+        that cannot be represented raise).  ``RECORD`` renders each
+        record-shaped dict (non-empty, string-keyed) as a generated
+        ``struct`` declared in the preamble plus a matching struct
+        literal, so fields may legitimately mix scalars and containers.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -644,6 +677,7 @@ class Go(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the `go` directive in the generated go.mod in
     # `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V1_18
@@ -677,15 +711,78 @@ class Go(metaclass=LanguageCls):
         """Format a set entry."""
         return _format_go_set_entry
 
+    def _go_field_type(self, formatted: str, /) -> str:
+        """Return the Go field type for an already-formatted value.
+
+        The declared type is read off the formatted literal so it
+        always matches what the value formatter emitted, even when a
+        list was widened to ``[]any`` by sibling context.  Composite
+        literals (``[]int{...}``, ``Record1{...}``, ``[][2]any{...}``)
+        carry their type as the text before the first ``{``.
+        """
+        if formatted == self.null_literal:
+            return "any"
+        if formatted in {self.true_literal, self.false_literal}:
+            return "bool"
+        if formatted.startswith('"'):
+            return "string"
+        if formatted.startswith("time.Date("):
+            return "time.Time"
+        if "{" in formatted:
+            return formatted[: formatted.index("{")]
+        return "int" if formatted.lstrip("-").isdigit() else "float64"
+
+    def _go_render_declaration(
+        self,
+        name: str,
+        fields: Sequence[RecordDeclarationField],
+        /,
+    ) -> str:
+        """Render a Go ``type Name struct { ... }`` declaration."""
+        lines = [f"type {name} struct {{"]
+        lines += [
+            f"{self.indent}{field.identifier} {field.type_name}"
+            for field in fields
+        ]
+        lines.append("}")
+        return "\n".join(lines)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Go syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            field_identifier=_go_record_field_identifier,
+            field_type=self._go_field_type,
+            render_declaration=self._go_render_declaration,
+            render_literal=_go_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        For ``HeterogeneousStrategies.RECORD`` emits one ``struct``
+        declaration per record shape present in the data; otherwise
+        produces no preamble.
+        """
+        return self._record_strategy.preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
@@ -827,14 +924,35 @@ class Go(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
-        return typed_collection_open(
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under the ``RECORD`` strategy a list whose elements are
+        record-shaped dicts is rendered as ``[]any{ RecordN{...}, ... }``
+        (the elements format as struct literals, not as the
+        ``map[string]...`` the typed opener would otherwise infer).
+        """
+        base = typed_collection_open(
             type_to_opener=make_type_to_opener(
                 element_to_type=self._init_element_to_type,
                 opener_template="[]{type_name}{{",
             ),
             fallback=f"[]{self.default_sequence_element_type}{{",
         )
+        record = type(self.heterogeneous_strategy).RECORD
+        if self.heterogeneous_strategy is not record:
+            return base
+        any_open = f"[]{self.default_sequence_element_type}{{"
+
+        def _open(items: list[Value], /) -> str:
+            """Use ``[]any{`` for lists of record-shaped dicts."""
+            if any(
+                isinstance(item, dict) and not isinstance(item, _ordereddict)
+                for item in items
+            ):
+                return any_open
+            return base(items)
+
+        return _open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
