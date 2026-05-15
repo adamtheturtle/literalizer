@@ -1,5 +1,0 @@
-(defun throttler (&rest args) (declare (ignore args)) 0)
-(defun throttler.check (&rest args) (declare (ignore args)) 0)
-(defun emit (&rest args) (declare (ignore args)) nil)
-(emit (throttler.check :user_id "user_1" :ts 1000.0))
-(emit (throttler.check :user_id "user_2" :ts 2000.5))

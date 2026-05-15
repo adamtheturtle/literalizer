@@ -1,6 +1,0 @@
-(define process (lambda args 0))
-(define tracer (lambda args (if #f #f)))
-(define tracer.emit (lambda args (if #f #f)))
-(tracer.emit (process "hello"))
-(tracer.emit (process 42))
-(tracer.emit (process #t))

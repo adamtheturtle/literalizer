@@ -243,17 +243,11 @@ class CommandCallStyle:
     surrounding parentheses.  *arg_separator* is the string between
     the target and each argument (typically a single space).
 
-    When a ``call_transform`` like ``lambda c: f"emit({c})"`` is
-    supplied, the wrapper word is extracted and the inner call is
-    formatted using *wrapped_call_template*, a ``str.format``-style
-    template with ``{wrapper}`` and ``{inner}`` placeholders (e.g.
-    the default ``'{wrapper} "$({inner})"'`` produces
-    ``emit "$(target arg1 arg2)"`` for Bash; Tcl uses
-    ``'{wrapper} [{inner}]'`` instead).
+    ``call_transform`` is not supported for this style (see
+    :func:`~literalizer.literalize_call`).
     """
 
     arg_separator: str
-    wrapped_call_template: str = '{wrapper} "$({inner})"'
 
 
 CallStyle = (
@@ -687,6 +681,7 @@ class LanguageCls(type):
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
     supports_default_ordered_map_value_type: bool
+    supports_record_struct_name_prefix: bool
     dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
     validate_call_arg: Callable[[Value], None]
@@ -934,18 +929,19 @@ class Language(Protocol):
 
     supports_dotted_call_stub: bool
     """Whether the language can declare a stub for a dotted call wrapper
-    name (e.g. ``tracer.emit``) produced by ``call_transform``.  When
-    ``False``, a dotted ``call_transform`` wrapper is rejected by
-    :func:`~literalizer.literalize_call` with
-    :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`.
+    name (e.g. ``tracer.emit``).  :func:`~literalizer.literalize_call`
+    no longer inspects this (a context-aware ``call_transform`` is
+    opaque); it is metadata for callers and the test harness, which use
+    it to decide whether a generated dotted-wrapper stub can compile in
+    this language.
     """
 
     has_free_function_calls: bool
     """Whether the language has a free function call syntax (i.e. the
-    ability to call a function by a bare name with no dot).  When
-    ``False``, a ``call_transform`` whose wrapper is a bare name with
-    no dot is rejected by :func:`~literalizer.literalize_call` with
-    :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
+    ability to call a function by a bare name with no dot).  Metadata
+    for callers and the test harness, which use it to decide whether a
+    generated bare-wrapper stub can compile in this language;
+    :func:`~literalizer.literalize_call` does not inspect it.
     """
 
     @property

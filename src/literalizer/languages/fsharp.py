@@ -341,6 +341,7 @@ class FSharp(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    supports_record_struct_name_prefix = False
     supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
@@ -570,7 +571,6 @@ class FSharp(metaclass=LanguageCls):
         POSITIONAL = PositionalCallStyle()
         CURRIED = CommandCallStyle(
             arg_separator=" ",
-            wrapped_call_template="{wrapper} ({inner})",
         )
 
     call_styles = CallStyles

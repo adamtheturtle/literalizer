@@ -21,15 +21,15 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
-    DottedCallStubNotSupportedError,
     DottedCallTargetNotSupportedError,
-    FreeFunctionCallNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
+    ZipValuesLengthMismatchError,
+    ZipValuesWithoutCallTransformError,
 )
 from literalizer.languages import (
     Bash,
@@ -44,7 +44,6 @@ from literalizer.languages import (
     Python,
     Racket,
     Tcl,
-    Wren,
     Yaml,
 )
 
@@ -316,45 +315,67 @@ def test_literalize_call_dotted_target_unsupported_per_element_false() -> None:
         )
 
 
-def test_literalize_call_dotted_stub_unsupported_raises() -> None:
-    """Dotted ``call_transform`` wrapper raises for languages without
-    support.
+def test_literalize_call_transform_rejected_for_non_substitution_style() -> (
+    None
+):
+    """``call_transform`` is unsupported for prefix/postfix/command
+    call styles whose language-native wrapper cannot be synthesized
+    from a context-aware transform.
     """
     with pytest.raises(
-        expected_exception=DottedCallStubNotSupportedError,
+        expected_exception=UnsupportedCallShapeError,
         match=(
-            r"^Haskell does not support dotted call stubs: "
-            r"'tracer\.emit'$"
+            r"^Tcl cannot represent this call shape: call_transform is "
+            r"only supported for languages whose call form is an "
+            r"expression that can be wrapped"
         ),
     ):
         literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,
-            language=Haskell(),
+            language=Tcl(),
             target_function="process",
             parameter_names=["value"],
-            call_transform=lambda c: f"tracer.emit({c})",
+            call_transform=lambda ctx: f"emit({ctx.call})",
         )
 
 
-def test_literalize_call_free_function_unsupported_raises() -> None:
-    """A bare ``call_transform`` wrapper name with no dot raises for
-    languages without free function call syntax.
-    """
+def test_literalize_call_zip_values_length_mismatch_raises() -> None:
+    """``zip_values`` must have one entry per generated call."""
     with pytest.raises(
-        expected_exception=FreeFunctionCallNotSupportedError,
+        expected_exception=ZipValuesLengthMismatchError,
         match=(
-            r"^Wren has no free function call syntax for call stub: "
-            r"'emit'$"
+            r"^zip_values has 3 element\(s\) but 2 call\(s\) were "
+            r"generated; the lengths must match$"
         ),
     ):
         literalize_call(
-            source="[[1]]",
+            source="[[1], [2]]",
             input_format=InputFormat.JSON,
-            language=Wren(),
-            target_function="Throttler.process",
+            language=Python(),
+            target_function="process",
             parameter_names=["value"],
-            call_transform=lambda c: f"emit({c})",
+            call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+            zip_values=[True, False, True],
+        )
+
+
+def test_literalize_call_zip_values_without_transform_raises() -> None:
+    """``zip_values`` are only reachable through ``call_transform``."""
+    with pytest.raises(
+        expected_exception=ZipValuesWithoutCallTransformError,
+        match=(
+            r"^zip_values were supplied without a call_transform; the "
+            r"paired values would be unused$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            zip_values=[True, False],
         )
 
 

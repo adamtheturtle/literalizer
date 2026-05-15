@@ -491,23 +491,12 @@ def _build_purescript_call_stub_lines(
 ) -> tuple[str, ...]:
     """Return PureScript stub declarations for a call name.
 
-    All stubs return ``Unit`` regardless of *stub_return*, so wrapper
-    stubs declared with ``forall a. a -> Unit`` can consume them.
+    All stubs return ``Unit`` regardless of *stub_return*.
     """
     del stub_return
-    # Transform-wrapper stubs are always passed a single placeholder param
-    # starting with ``_`` (e.g. ``_arg``).  Declare them polymorphic so
-    # PureScript never needs to unify the wrapped ``Unit`` result with
-    # ``{type_name}``.
-    is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
 
     if len(parts) == 1:
         name = parts[0]
-        if is_wrapper_stub:
-            return (
-                f"{name} :: forall a. a -> Unit",
-                f"{name} _ = unit",
-            )
         sig = " -> ".join([*[type_name] * len(params), "Unit"])
         lhs = " ".join([name, *["_"] * len(params)])
         return (f"{name} :: {sig}", f"{lhs} = unit")
@@ -516,10 +505,7 @@ def _build_purescript_call_stub_lines(
     method = parts[-1]
     fields = parts[1:-1]
 
-    if is_wrapper_stub:
-        func_type = "forall a. a -> Unit"
-        func_body = "\\_ -> unit"
-    elif not params:
+    if not params:
         func_type = "Unit"
         func_body = "unit"
     else:
@@ -711,6 +697,7 @@ class PureScript(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    supports_record_struct_name_prefix = False
     supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
@@ -908,7 +895,6 @@ class PureScript(metaclass=LanguageCls):
 
         COMMAND = CommandCallStyle(
             arg_separator=" ",
-            wrapped_call_template="{wrapper}({inner})",
         )
 
     call_styles = CallStyles

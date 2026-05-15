@@ -242,10 +242,10 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_call_variable_binding = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
-    has_free_function_calls = True
     allows_empty_call_parens = True
-    supports_dotted_call_stub = True
+    has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = True
     max_call_parameters = NO_CALL_PARAMETER_LIMIT
@@ -259,6 +259,7 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    supports_record_struct_name_prefix = False
     supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):

@@ -1,7 +1,0 @@
-(defun app (&rest args) (declare (ignore args)) 0)
-(defun app.client (&rest args) (declare (ignore args)) 0)
-(defun app.client.fetch (&rest args) (declare (ignore args)) 0)
-(defun emit (&rest args) (declare (ignore args)) nil)
-(emit (app.client.fetch :payload "hello"))
-(emit (app.client.fetch :payload 42))
-(emit (app.client.fetch :payload t))
