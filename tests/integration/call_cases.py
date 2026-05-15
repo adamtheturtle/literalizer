@@ -835,6 +835,28 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         variable_form=literalizer.NewVariable(name="my_data"),
     ),
     CallCaseConfig(
+        # Sibling of ``call_variable_form_new`` exercising the
+        # existing-variable assignment path so the call-binding
+        # assignment plumbing is covered for languages whose
+        # assignment template is not bare (e.g. OCaml's
+        # ``let x : val_t = ...``).
+        case_dir_name="call_variable_form_existing",
+        target_function="make_widget",
+        parameter_names=["count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        variable_form=literalizer.ExistingVariable(name="my_data"),
+    ),
+    CallCaseConfig(
         # 27-parameter call exercises the type-variable generators in
         # languages whose call-stub signatures use one type variable per
         # parameter past the 26-letter alphabet (Gleam ``a1``, Roc

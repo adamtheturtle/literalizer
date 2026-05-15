@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
@@ -985,6 +986,24 @@ class OCaml(metaclass=LanguageCls):
         (``let x = make_widget(42)``).
         """
         return self.declaration_style.value.formatter
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an existing-variable binding of a call
+        expression.
+
+        OCaml has no mutable reassignment, so an
+        :class:`~literalizer.ExistingVariable` binding is just another
+        ``let``.  Like :attr:`format_call_variable_declaration`, the
+        ``: val_t`` annotation and tag constructor are omitted so OCaml
+        infers the call's return type instead of the literal-binding
+        formatter producing ``let x : val_t = OInt make_widget(42)``.
+        """
+        return assignment_formatter_from_declaration(
+            self.format_call_variable_declaration
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

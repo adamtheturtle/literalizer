@@ -2101,8 +2101,10 @@ def _apply_variable_wrapper(
     call-specific declaration formatter via
     ``format_call_variable_declaration``; languages that do not define
     one fall back to ``format_variable_declaration`` unchanged.  The
-    assignment template re-binds an existing variable and is bare in
-    these languages already, so no call-specific override is needed.
+    same opt-in applies to the assignment template via
+    ``format_call_variable_assignment``: it is bare for languages like
+    Haskell (``x = ...``) but not OCaml, whose assignment reuses the
+    annotated, tag-wrapping ``let x : val_t = ...`` declaration.
     """
     if variable_form is None:
         return result
@@ -2123,7 +2125,14 @@ def _apply_variable_wrapper(
                 )
             wrapped = declaration_formatter(name, value, data, modifiers)
         case _:
-            wrapped = language.format_variable_assignment(
+            assignment_formatter = language.format_variable_assignment
+            if is_call_binding:
+                assignment_formatter = getattr(
+                    language,
+                    "format_call_variable_assignment",
+                    assignment_formatter,
+                )
+            wrapped = assignment_formatter(
                 variable_form.name,
                 value,
                 data,
