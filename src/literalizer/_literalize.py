@@ -541,18 +541,24 @@ def _expand_record_literal_multiline(
 ) -> str:
     """Expand a single-line record literal into multiline form.
 
-    Splits ``Name { f1: v1, f2: v2 }`` (always produced with at least
-    one field by ``render_record_literal`` because record-eligible
-    dicts are non-empty) into one entry per line indented under
-    *body_prefix* with the closing ``}`` on its own line under
-    *close_prefix*.
+    Splits ``Name { f1: v1, f2: v2 }`` (brace-delimited, e.g. Rust and
+    Go) or ``Name(f1 = v1, f2 = v2)`` (paren-delimited, e.g. Kotlin,
+    Scala, Java) into one entry per line indented under *body_prefix*
+    with the closing delimiter on its own line under *close_prefix*.
+    The opening delimiter is whichever of ``{`` or ``(`` appears first;
+    its matching closer is the literal's final character.  The literal
+    always has at least one field because ``render_record_literal`` is
+    only called for record-eligible (non-empty) dicts.
     """
-    open_idx = rendered.index("{")
+    open_idx = min(
+        index for index, char in enumerate(iterable=rendered) if char in "{("
+    )
+    closer = {"{": "}", "(": ")"}[rendered[open_idx]]
     head = rendered[: open_idx + 1]
     body = rendered[open_idx + 1 : -1].strip()
     entries = _split_record_entries(body=body)
     indented = [f"{body_prefix}{entry.strip()}," for entry in entries]
-    return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}}}"
+    return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}{closer}"
 
 
 @dataclasses.dataclass(frozen=True)
