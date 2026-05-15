@@ -8,7 +8,6 @@ from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
-from ruamel.yaml.compat import ordereddict
 from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
@@ -54,7 +53,7 @@ from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
 )
-from literalizer._types import Scalar, Value, ValueInput
+from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -391,7 +390,7 @@ def _guard_dict_keys_supported(
 @beartype
 def _format_ordered_map_value(
     *,
-    value: ordereddict,
+    value: OrderedMap,
     spec: Language,
     wrap_ids: frozenset[int],
     ref_case: IdentifierCase | None,
@@ -405,9 +404,9 @@ def _format_ordered_map_value(
     _guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
-    ordered_map_items: list[tuple[str, Value]] = [
+    ordered_map_items: list[tuple[Scalar, Value]] = [
         (k, v)
-        for k, v in value.items()  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
+        for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
     ]
     if (
@@ -487,7 +486,7 @@ def _maybe_format_record_literal(
 
     Returns ``None`` when the language's heterogeneous behavior is not
     RECORD-enabled or when *value* is not record-shaped (empty,
-    non-string keys, or a ruamel ordered map).
+    non-string keys, or an ordered map).
     """
     behavior = spec.heterogeneous_behavior
     render_record_literal = behavior.render_record_literal
@@ -809,7 +808,7 @@ def _compute_dict_open_override(
     dicts: list[dict[Scalar, Value]] = [
         item
         for item in items
-        if isinstance(item, dict) and not isinstance(item, ordereddict)
+        if isinstance(item, dict) and not isinstance(item, OrderedMap)
     ]
     # Widening compares openers across dicts, so we need at least two
     # to have anything to compare.
@@ -1340,7 +1339,7 @@ def _format_value(  # pylint: disable=too-complex
                 if expand_refs
                 else spec.format_call_ref_identifier(ref_name, ref_value)
             )
-    if isinstance(value, dict) and not isinstance(value, ordereddict):
+    if isinstance(value, dict) and not isinstance(value, OrderedMap):
         record_literal = _maybe_format_record_literal(
             value=value,
             spec=spec,
@@ -1356,7 +1355,7 @@ def _format_value(  # pylint: disable=too-complex
             return record_literal
     if (
         collection_layout is CollectionLayout.MULTILINE
-        and isinstance(value, (dict, list, set, ordereddict))
+        and isinstance(value, (dict, list, set, OrderedMap))
         and value
     ):
         return _format_multiline_collection_value(
@@ -1372,7 +1371,7 @@ def _format_value(  # pylint: disable=too-complex
             sequence_open_override=sequence_open_override,
         )
     match value:
-        case ordereddict():
+        case OrderedMap():
             result = _format_ordered_map_value(
                 value=value,
                 spec=spec,
@@ -1533,7 +1532,7 @@ def _format_multiline_collection_value(
     lines and the closing delimiter are prefixed here so nested layouts align
     under that entry.
     """
-    is_ordered_map = isinstance(value, ordereddict)
+    is_ordered_map = isinstance(value, OrderedMap)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
     body_prefix = line_prefix + spec.indent
     lines = _format_collection_lines(
@@ -1903,9 +1902,9 @@ def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
         and language.skip_null_dict_values
         and all(v is None for v in data.values())
     ):
-        is_ordered_map = isinstance(data, ordereddict)
-        empty_value: ordereddict | dict[Scalar, Value] = (
-            ordereddict() if is_ordered_map else {}
+        is_ordered_map = isinstance(data, OrderedMap)
+        empty_value: OrderedMap | dict[Scalar, Value] = (
+            OrderedMap() if is_ordered_map else {}
         )
         formatted = _format_value(
             value=empty_value,
@@ -1925,7 +1924,7 @@ def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
     if (
         include_delimiters
         and isinstance(data, dict)
-        and not isinstance(data, ordereddict)
+        and not isinstance(data, OrderedMap)
     ):
         record_literal = _maybe_format_record_literal(
             value=data,
@@ -1945,7 +1944,7 @@ def _literalize(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
         line_prefix + language.indent if include_delimiters else line_prefix
     )
 
-    is_ordered_map = isinstance(data, ordereddict)
+    is_ordered_map = isinstance(data, OrderedMap)
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
     lines: list[str] = _format_collection_lines(
         data=data,

@@ -4,14 +4,12 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import Any, ClassVar, assert_never
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
@@ -83,7 +81,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
 
@@ -351,11 +349,7 @@ def _java_type_hint(
     match data:
         case dict():
             val_type = common(elements=list(data.values()), boxed=True)
-            outer = (
-                "Map"
-                if isinstance(data, (ordereddict, OrderedDict))
-                else dict_outer
-            )
+            outer = "Map" if isinstance(data, OrderedMap) else dict_outer
             hint = f"{outer}<String, {val_type}>"
         case set():
             elem_type = common(elements=list(data), boxed=True)

@@ -4,14 +4,12 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -85,7 +83,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 def _ts_call_stub(
@@ -217,7 +215,7 @@ def _ts_type_hint(
     match data:
         case dict():
             hint = _ts_dict_hint(
-                is_ordered=isinstance(data, (ordereddict, OrderedDict)),
+                is_ordered=isinstance(data, OrderedMap),
                 is_empty=not data,
                 val_types=[recurse(data=v) for v in data.values()],
                 dict_hint_template=dict_hint_template,

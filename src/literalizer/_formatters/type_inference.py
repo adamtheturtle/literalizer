@@ -4,9 +4,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict as _ordereddict
 
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 @dataclass(frozen=True)
@@ -102,7 +101,7 @@ def _collect_element_types(
                 if inner is None:
                     return _INFER_FAILED
                 element_types.add(ListType(inner=inner))
-            case dict() if not isinstance(item, _ordereddict):
+            case dict() if not isinstance(item, OrderedMap):
                 dict_values.extend(item.values())
                 element_types.add(dict)
             case _:
@@ -198,7 +197,7 @@ def record_shape_for_dict(
     dict is not record-eligible.
 
     A dict is record-eligible when it is non-empty and every key is a
-    ``str``.  Callers must filter out ruamel ordered maps before
+    ``str``.  Callers must filter out ordered maps before
     calling this helper.
     """
     # Defensive branches: every Rust RECORD fixture passes non-empty
@@ -386,7 +385,7 @@ def _accumulate_record_shapes(
     # ``Value``-typed sets only contain scalars (see ``literalizer._types``)
     # so there's no need to walk into them.
     match data:
-        case dict() if not isinstance(data, _ordereddict):
+        case dict() if not isinstance(data, OrderedMap):
             shape = record_shape_for_dict(value=data)
             if shape is not None:  # pragma: no branch
                 out[id(data)] = shape

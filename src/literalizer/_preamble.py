@@ -3,15 +3,13 @@
 import dataclasses
 import datetime
 import math
-from collections import OrderedDict
 from typing import assert_never
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._checks import scalar_type_bucket
 from literalizer._language import Language
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 class HeterogeneousElements:
@@ -36,7 +34,7 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
                 child_types = child_types | _collect_value_types(data=k)
                 child_types = child_types | _collect_value_types(data=v)
             container_type = (
-                ordereddict if isinstance(data, ordereddict) else dict
+                OrderedMap if isinstance(data, OrderedMap) else dict
             )
             # ``str`` is included unconditionally because typed-map
             # languages whose dict opener hard-codes the default key
@@ -91,11 +89,11 @@ def _walk_annotated_collections(  # noqa: C901, PLR0912  # pylint: disable=too-c
 ) -> None:
     """Walk *val* and add collection types that appear in type annotations."""
     match val:
-        case ordereddict():
+        case OrderedMap():
             if _needs_annotation(val=val):
-                result.add(ordereddict)
-                for v in val.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                    _walk_annotated_collections(val=v, result=result)  # pyright: ignore[reportUnknownArgumentType]
+                result.add(OrderedMap)
+                for v in val.values():
+                    _walk_annotated_collections(val=v, result=result)
         case dict():
             if _needs_annotation(val=val):
                 result.add(dict)
@@ -110,8 +108,8 @@ def _walk_annotated_collections(  # noqa: C901, PLR0912  # pylint: disable=too-c
                 for v in val:
                     _walk_annotated_collections(val=v, result=result)
                     match v:
-                        case ordereddict():
-                            result.add(ordereddict)
+                        case OrderedMap():
+                            result.add(OrderedMap)
                         case dict():
                             result.add(dict)
                         case set():
@@ -167,7 +165,7 @@ def _collection_preamble(
         lines.extend(language.set_format_config.preamble_lines)
     if list in types:
         lines.extend(language.sequence_format_config.preamble_lines)
-    if ordereddict in types:
+    if OrderedMap in types:
         lines.extend(language.ordered_map_format_config.preamble_lines)
     return tuple(lines)
 
@@ -223,11 +221,9 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     has_ordered = False
     for elem in elements:
         match elem:
-            case ordereddict() | OrderedDict():
+            case OrderedMap():
                 has_ordered = True
-                ordered_vals.extend(
-                    elem.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
-                )
+                ordered_vals.extend(elem.values())
             case dict():
                 has_plain = True
                 plain_vals.extend(elem.values())
@@ -240,10 +236,10 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
         }
         merged.append(merged_plain)
     if has_ordered:
-        merged_ordered: dict[Scalar, Value] = ordereddict(
-            {str(object=i): v for i, v in enumerate(iterable=ordered_vals)}
-        )
-        merged.append(merged_ordered)
+        ordered_src: dict[Scalar, Value] = {
+            str(object=i): v for i, v in enumerate(iterable=ordered_vals)
+        }
+        merged.append(OrderedMap(ordered_src))
     return merged
 
 
@@ -294,14 +290,12 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
         case set():
             elem_ids = sorted({_structural_type_id(value=e) for e in value})
             return f"set({','.join(elem_ids)})"
-        case ordereddict() | OrderedDict() if not value:
+        case OrderedMap() if not value:
             return "empty_odict"
-        case ordereddict() | OrderedDict():
+        case OrderedMap():
             val_set: set[str] = set()
-            for ov in value.values():  # pyright: ignore[reportUnknownVariableType,reportUnknownMemberType]
-                val_set.add(
-                    _structural_type_id(value=ov)  # pyright: ignore[reportUnknownArgumentType]
-                )
+            for ov in value.values():
+                val_set.add(_structural_type_id(value=ov))
             val_ids = sorted(val_set)
             return f"odict({','.join(val_ids)})"
         case dict() if not value:
@@ -381,7 +375,7 @@ def compute_preamble(
     collection = _collection_preamble(types=types, language=language)
     annotated_collection_types: frozenset[type] = (
         _collect_annotated_collection_types(data=data)
-        if has_variable_declaration and types & {dict, list, set, ordereddict}
+        if has_variable_declaration and types & {dict, list, set, OrderedMap}
         else frozenset()
     )
     if annotated_collection_types and _has_union_in_type_hints(data=data):
