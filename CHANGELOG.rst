@@ -20,14 +20,6 @@ Next
   ``record`` declarations require Java 16, so a ``RECORD`` spec pins
   ``language_version`` to ``JDK_16``.  See #2300.
 
-- :class:`~literalizer.Java` now rejects ``heterogeneous_strategy=RECORD``
-  combined with a non-ARRAY ``sequence_format`` (e.g. ``LIST``) with
-  :class:`~literalizer.exceptions.IncompatibleFormatsError`.  A
-  list-valued record component is typed from the array opener the value
-  formatter emits, which only ``sequence_format=ARRAY`` produces; other
-  sequence formats carry no element type and previously rendered an
-  uncompilable ``record``.  See #2337.
-
 - :func:`~literalizer.literalize_call`'s ``call_transform`` now receives
   a :class:`~literalizer.CallContext` instead of the bare call string.
   The context exposes ``call`` (the rendered call expression, formerly
