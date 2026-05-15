@@ -1,6 +1,7 @@
 """Language-wide metadata and protocol checks."""
 
 import enum
+from typing import Protocol, runtime_checkable
 
 import pytest
 from pygments.lexers import find_lexer_class_by_name
@@ -143,6 +144,40 @@ def test_wrap_combined_in_file_unsupported_raises(
             variable_name="x",
             body_preamble=(),
         )
+
+
+@runtime_checkable
+class _HasRecordStructNamePrefix(Protocol):
+    """Structural type for languages that expose a
+    ``record_struct_name_prefix`` constructor field.
+
+    Used to narrow a generic :class:`literalizer.Language` to one with
+    the field without introspecting ``__dataclass_fields__`` or casting
+    to ``Any``.
+    """
+
+    record_struct_name_prefix: str
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_supports_record_struct_name_prefix_matches_constructor(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """The flag is ``True`` exactly when the constructor accepts
+    ``record_struct_name_prefix``.
+
+    Runtime-dispatched callers rely on this flag instead of inspecting
+    dataclass fields, so it must stay in lock-step with the actual
+    constructor keyword arguments.
+    """
+    spec = language_cls()
+    accepts_kwarg = isinstance(spec, _HasRecordStructNamePrefix)
+    assert language_cls.supports_record_struct_name_prefix == accepts_kwarg
 
 
 def test_supported_ref_cases_independent_of_identifier_cases() -> None:
