@@ -1283,10 +1283,10 @@ class Nim(metaclass=LanguageCls):
         every rendered dict becomes a runtime :class:`tables.Table`,
         and imports the ``tables`` module instead of ``json``.  An empty
         dict widens to ``initTable[string, string]()`` so the compiler
-        does not reject ``{}.toTable`` with "undeclared field:
-        'toTable'" (an empty ``{}`` literal is an empty set, not a
-        table, and its key/value types cannot be inferred), mirroring
-        the ``newSeq[string]()`` widening for empty sequences.
+        does not reject ``{}.toTable``: an empty ``{}`` literal is an
+        empty set rather than a table, so the call does not resolve and
+        the key/value types cannot be inferred.  This mirrors the
+        ``newSeq[string]()`` widening for empty sequences.
         """
         if self._uses_object_variant:
             return DictFormatConfig(
