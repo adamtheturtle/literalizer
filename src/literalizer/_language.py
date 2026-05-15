@@ -490,7 +490,7 @@ class HeterogeneousBehavior:
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     render_record_literal: (
-        Callable[[RecordShape, Mapping[str, str]], str] | None
+        Callable[[dict[Scalar, Value], Mapping[str, str]], str] | None
     ) = None
     compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]] = (
         dataclasses.field(default_factory=lambda: _no_compute_record_shapes)
