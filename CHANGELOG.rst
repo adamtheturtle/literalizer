@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.15.1
+------------
+
+
 - :class:`~literalizer.Java` gains the ``RECORD`` ``heterogeneous_strategy``
   (already on :class:`~literalizer.Rust` and :class:`~literalizer.Go`).
   Each record-shaped dict (non-empty, string-keyed) becomes a generated
