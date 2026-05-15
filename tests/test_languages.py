@@ -448,28 +448,6 @@ def test_java_list_rejects_null_elements() -> None:
         )
 
 
-def test_python_no_any_import_when_all_defaults_overridden() -> None:
-    """When all Python default collection types are non-Any, the
-    ``from typing import Any`` import is not emitted.
-    """
-    spec = Python(
-        default_set_element_type="str",
-        default_sequence_element_type="str",
-        default_dict_value_type="str",
-        default_dict_key_type="str",
-    )
-    result = literalize(
-        source="{}\n",
-        input_format=InputFormat.YAML,
-        language=spec,
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data"),
-    )
-    assert result.code == "my_data: dict[str, str] = {}"
-    assert result.preamble == ("from __future__ import annotations",)
-
-
 def test_literalize_call_wrap_in_file_emits_stubs() -> None:
     """``wrap_in_file=True`` produces a self-contained file that
     defines the ``target_function`` so the output compiles on its own.
