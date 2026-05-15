@@ -288,6 +288,42 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
             return False
 
 
+def _has_mixed_record_shapes(
+    *,
+    data: Value,
+    shapes_by_id: "Mapping[int, RecordShape]",
+) -> bool:
+    """Recursively check whether sibling dicts in *data* resolve to
+    different :class:`RecordShape` values.
+
+    Record-eligible dicts compare equal when their entry in
+    *shapes_by_id* matches, so shapes that have been unified by the
+    strategy are treated as compatible siblings.  Non-record-eligible
+    dicts (e.g. ordered maps, empty dicts, dicts with non-string keys)
+    are compared by raw key set as a conservative fallback.
+    """
+    match data:
+        case dict():
+            return any(
+                _has_mixed_record_shapes(data=v, shapes_by_id=shapes_by_id)
+                for v in data.values()
+            )
+        case list():
+            dicts_in_list = [v for v in data if isinstance(v, dict)]
+            signatures: set[object] = {
+                shapes_by_id.get(id(d), frozenset(d.keys()))
+                for d in dicts_in_list
+            }
+            if len(signatures) > 1:
+                return True
+            return any(
+                _has_mixed_record_shapes(data=v, shapes_by_id=shapes_by_id)
+                for v in data
+            )
+        case _:
+            return False
+
+
 @beartype
 def _has_mixed_dict_keys(*, data: Value) -> bool:
     """Recursively check whether data contains any dict whose keys span
@@ -580,8 +616,9 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
         else {}
     )
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
-    if behavior.render_record_literal is not None and _has_mixed_dict_shapes(
-        data=data
+    if behavior.render_record_literal is not None and _has_mixed_record_shapes(
+        data=data,
+        shapes_by_id=record_shapes_by_id,
     ):
         msg = (
             "Sibling list contains dicts with different record shapes; "

@@ -1,5 +1,6 @@
 """Type inference for homogeneous collections."""
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 from beartype import beartype
@@ -175,9 +176,17 @@ class RecordShape:
     homogeneous maps.  Two dicts share a shape when their ordered key
     tuples are equal; per-key value-type rendering is decided at
     preamble-build time by each per-language target.
+
+    ``optional_keys`` is empty for the raw per-dict shapes returned by
+    :func:`record_shape_for_dict`.  After unification (see
+    :func:`unify_record_shapes`) it identifies the keys whose value
+    must be wrapped in an optional type (e.g. Rust's ``Option``) and
+    rendered as a "missing" placeholder for dict instances that lack
+    the key.
     """
 
     keys: tuple[str, ...]
+    optional_keys: frozenset[str] = frozenset()
 
 
 @beartype
@@ -213,6 +222,157 @@ def collect_record_shapes(*, data: Value) -> dict[int, RecordShape]:
     result: dict[int, RecordShape] = {}
     _accumulate_record_shapes(data=data, out=result)
     return result
+
+
+@beartype
+def unify_record_shapes(
+    *,
+    data: Value,
+    shapes_by_id: dict[int, RecordShape],
+) -> dict[int, RecordShape]:
+    """Merge near-identical sibling shapes into shared unified shapes.
+
+    Two record shapes are placed in the same unification group when
+    their key sets share at least one key; groups are formed
+    transitively (union-find on the shared-key relation).  Within a
+    group the unified key tuple is the keys' first-encounter order in
+    *data* and ``optional_keys`` contains every key not present in
+    every member.  Shapes with no shared key relative to all others
+    remain as singleton groups, returned with empty ``optional_keys``.
+
+    Returns a fresh mapping from ``id(dict)`` to its unified
+    :class:`RecordShape`.  Input *shapes_by_id* is not mutated.
+    """
+    raw_shapes = _ordered_unique_shapes(
+        data=data,
+        shapes_by_id=shapes_by_id,
+    )
+    groups = _partition_shapes_by_shared_keys(raw_shapes=raw_shapes)
+    unified_for_raw: dict[RecordShape, RecordShape] = {}
+    key_order = _key_order_from_shapes(raw_shapes=raw_shapes)
+    for group in groups:
+        unified = _build_unified_shape(group=group, key_order=key_order)
+        for raw in group:
+            unified_for_raw[raw] = unified
+    return {
+        dict_id: unified_for_raw[raw] for dict_id, raw in shapes_by_id.items()
+    }
+
+
+def _ordered_unique_shapes(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+) -> list[RecordShape]:
+    """Return raw record shapes in document order, deduplicated."""
+    ordered: list[RecordShape] = []
+    seen: set[RecordShape] = set()
+
+    def walk(node: Value) -> None:
+        """Walk *node* and append each newly-seen raw shape."""
+        match node:
+            case dict():
+                raw = shapes_by_id.get(id(node))
+                if raw is not None and raw not in seen:
+                    seen.add(raw)
+                    ordered.append(raw)
+                for v in node.values():
+                    walk(node=v)
+            case list():
+                for item in node:
+                    walk(node=item)
+            case _:
+                return
+
+    walk(node=data)
+    return ordered
+
+
+def _key_order_from_shapes(
+    *,
+    raw_shapes: Sequence[RecordShape],
+) -> dict[str, int]:
+    """Return a mapping from key to its first-appearance index across
+    *raw_shapes*.
+
+    *raw_shapes* must already be in document order (see
+    :func:`_ordered_unique_shapes`).
+    """
+    order: dict[str, int] = {}
+    for shape in raw_shapes:
+        for key in shape.keys:
+            if key not in order:
+                order[key] = len(order)
+    return order
+
+
+def _partition_shapes_by_shared_keys(
+    *,
+    raw_shapes: Sequence[RecordShape],
+) -> list[list[RecordShape]]:
+    """Partition *raw_shapes* into groups connected by shared keys.
+
+    Uses union-find: shapes A and B share a group whenever any key in
+    ``A.keys`` also appears in ``B.keys``, transitively.
+    """
+    parent = list(range(len(raw_shapes)))
+
+    def find(index: int) -> int:
+        """Return the root index for *index* in the union-find."""
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        """Merge the groups containing *left* and *right*."""
+        root_left = find(index=left)
+        root_right = find(index=right)
+        # Self-assignment is harmless when both indices already share a
+        # root, so no equality guard is needed.
+        parent[root_right] = root_left
+
+    key_to_first: dict[str, int] = {}
+    for shape_index, shape in enumerate(iterable=raw_shapes):
+        for key in shape.keys:
+            existing = key_to_first.get(key)
+            if existing is None:
+                key_to_first[key] = shape_index
+            else:
+                union(left=existing, right=shape_index)
+
+    groups: dict[int, list[RecordShape]] = {}
+    for shape_index, shape in enumerate(iterable=raw_shapes):
+        root = find(index=shape_index)
+        groups.setdefault(root, []).append(shape)
+    return [groups[root] for root in sorted(groups)]
+
+
+def _build_unified_shape(
+    *,
+    group: Sequence[RecordShape],
+    key_order: Mapping[str, int],
+) -> RecordShape:
+    """Return the unified shape for *group*.
+
+    The unified key tuple lists every key that appears in any member,
+    ordered by ``key_order`` (first appearance in document order).
+    ``optional_keys`` are the keys missing from at least one member.
+    """
+    member_key_sets: list[frozenset[str]] = [
+        frozenset(shape.keys) for shape in group
+    ]
+    all_keys: set[str] = set()
+    for member_keys in member_key_sets:
+        all_keys.update(member_keys)
+    required_keys: set[str] = set(member_key_sets[0])
+    for member_keys in member_key_sets[1:]:
+        required_keys.intersection_update(member_keys)
+    ordered_keys: tuple[str, ...] = tuple(
+        sorted(all_keys, key=lambda key: key_order[key])
+    )
+    optional_keys: frozenset[str] = frozenset(all_keys - required_keys)
+    return RecordShape(keys=ordered_keys, optional_keys=optional_keys)
 
 
 def _accumulate_record_shapes(
