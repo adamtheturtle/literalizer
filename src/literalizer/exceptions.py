@@ -170,6 +170,15 @@ class IncompatibleFormatsError(Exception):
     """
 
 
+class InvalidRecordNameError(Exception):
+    """Raised when ``record_struct_name_prefix`` or a value in
+    ``record_shape_names`` is not a valid PascalCase identifier, collides
+    with a reserved keyword of the target language, collides with
+    ``heterogeneous_value_enum_name``, or duplicates another mapped
+    struct name.
+    """
+
+
 class UnrepresentableIntegerError(Exception):
     """Raised when an integer value exceeds the range the target
     language can represent natively.

@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor
+  parameter — a mapping from each record's key-set
+  (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name —
+  so the ``RECORD`` heterogeneous strategy can emit
+  ``struct Task { ... }`` instead of the auto-generated ``Record0``,
+  ``Record1``, ... names.  Shape names that are not PascalCase Rust
+  identifiers, that collide with ``heterogeneous_value_enum_name``,
+  that duplicate another mapped name, or that match a Rust reserved
+  keyword raise the new :class:`~literalizer.exceptions.InvalidRecordNameError`.
+  The existing ``record_struct_name_prefix`` is validated the same way.
+  See #2236.
+
 - :class:`~literalizer.Fortran` now offers
   ``VersionFormats.V2003`` alongside ``VersionFormats.V2008``
   (the default).  The 2003 target defines the ``int64`` kind via

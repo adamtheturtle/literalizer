@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -95,7 +96,17 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    InvalidRecordNameError,
+)
+
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+
+# Rust keywords (strict, reserved, weak) that are syntactically valid
+# PascalCase identifiers; lowercase keywords cannot collide with a name
+# that must start with an uppercase letter.
+_RUST_PASCAL_KEYWORDS: frozenset[str] = frozenset({"Self"})
 
 _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
@@ -520,6 +531,7 @@ class _StrategyParams:
     date_type: str
     datetime_type: str
     record_prefix: str
+    record_shape_names: Mapping[frozenset[str], str]
     unify_optional_fields: bool
 
 
@@ -715,10 +727,16 @@ def _build_record_behavior(
             data=data,
             shapes_by_id=shapes_by_id,
         )
+        prefix_index = 0
         for shape in ordered:
             # ``ordered`` is unique by construction, so the cache always
             # gets populated on first encounter.
-            name_cache[shape] = f"{params.record_prefix}{len(name_cache)}"
+            custom = params.record_shape_names.get(frozenset(shape.keys))
+            if custom is None:
+                name_cache[shape] = f"{params.record_prefix}{prefix_index}"
+                prefix_index += 1
+            else:
+                name_cache[shape] = custom
         return shapes_by_id
 
     def _render_literal(
@@ -839,10 +857,15 @@ def _build_record_preamble(
             seen=seen,
             field_values=field_values,
         )
-        record_names: dict[RecordShape, str] = {
-            shape: f"{params.record_prefix}{index}"
-            for index, shape in enumerate(iterable=ordered_shapes)
-        }
+        record_names: dict[RecordShape, str] = {}
+        prefix_index = 0
+        for shape in ordered_shapes:
+            custom = params.record_shape_names.get(frozenset(shape.keys))
+            if custom is None:
+                record_names[shape] = f"{params.record_prefix}{prefix_index}"
+                prefix_index += 1
+            else:
+                record_names[shape] = custom
         emit_order: list[RecordShape] = []
         emit_seen: set[RecordShape] = set()
         _accumulate_emit_order(
@@ -1734,6 +1757,10 @@ class Rust(metaclass=LanguageCls):
     )
     heterogeneous_value_enum_name: str = "Value"
     record_struct_name_prefix: str = "Record"
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     record_unify_optional_fields: bool = False
     # Keep in sync with the ``--edition`` flag in
     # ``.github/workflows/lint.yml``.
@@ -1811,6 +1838,7 @@ class Rust(metaclass=LanguageCls):
             date_type=self._heterogeneous_variant_date_type,
             datetime_type=self._heterogeneous_variant_datetime_type,
             record_prefix=self.record_struct_name_prefix,
+            record_shape_names=self.record_shape_names,
             unify_optional_fields=self.record_unify_optional_fields,
         )
 
@@ -1940,6 +1968,61 @@ class Rust(metaclass=LanguageCls):
                 f"Use ARRAY or TUPLE instead."
             )
             raise IncompatibleFormatsError(msg)
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate ``record_struct_name_prefix`` and
+        ``record_shape_names`` for PascalCase identifier shape,
+        reserved-keyword collisions, collisions with
+        ``heterogeneous_value_enum_name``, and duplicate target names.
+        """
+        prefix = self.record_struct_name_prefix
+        if not _PASCAL_CASE_IDENTIFIER.match(string=prefix):
+            msg = (
+                f"record_struct_name_prefix {prefix!r} must be a "
+                f"PascalCase identifier starting with an uppercase "
+                f"letter."
+            )
+            raise InvalidRecordNameError(msg)
+        auto_name_pattern = re.compile(
+            pattern=rf"^{re.escape(pattern=prefix)}\d+$",
+        )
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase Rust "
+                    f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in _RUST_PASCAL_KEYWORDS:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is a Rust reserved keyword."
+                )
+                raise InvalidRecordNameError(msg)
+            if name == self.heterogeneous_value_enum_name:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with "
+                    f"heterogeneous_value_enum_name."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated {prefix!r}-prefixed struct names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    f"record_shape_names maps multiple key-sets to "
+                    f"{name!r}; struct names must be unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
