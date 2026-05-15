@@ -4,6 +4,26 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call`'s ``zip_values`` parameter is
+  replaced by a ``zip_source`` / ``zip_input_format`` pair, mirroring
+  the primary ``source`` / ``input_format``.  ``zip_source`` is parsed
+  internally with the *same* parser as ``source`` (so YAML ``!!omap``,
+  datetime/bytes coercion, JSON5, TOML, ... behave identically by
+  construction); its parsed top-level elements pair positionally with
+  the generated calls (element-by-element when ``per_element`` is
+  ``True``, otherwise the whole parsed value pairs with the single
+  call) and are surfaced on :attr:`~literalizer.CallContext.zipped`
+  exactly as before.  Callers no longer need to parse a companion file
+  themselves or reach into private parsing internals.  Supplying
+  ``zip_source`` without ``zip_input_format`` raises the new
+  :class:`~literalizer.exceptions.ZipSourceWithoutInputFormatError`;
+  the existing
+  :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`
+  and :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`
+  contracts are unchanged, and a ``per_element=True`` ``zip_source``
+  that does not parse to a list raises
+  :class:`~literalizer.exceptions.PerElementNotListError`.  See #2340.
+
 2026.05.15.1
 ------------
 
