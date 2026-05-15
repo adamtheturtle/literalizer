@@ -1734,7 +1734,6 @@ class Rust(metaclass=LanguageCls):
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
         default_factory=lambda: MappingProxyType(mapping={}),
-        compare=False,
         hash=False,
     )
     # Keep in sync with the ``--edition`` flag in
@@ -1953,6 +1952,9 @@ class Rust(metaclass=LanguageCls):
                 f"letter."
             )
             raise InvalidRecordNameError(msg)
+        auto_name_pattern = re.compile(
+            pattern=rf"^{re.escape(pattern=prefix)}\d+$",
+        )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
             if not _PASCAL_CASE_IDENTIFIER.match(string=name):
@@ -1973,6 +1975,13 @@ class Rust(metaclass=LanguageCls):
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with "
                     f"heterogeneous_value_enum_name."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated {prefix!r}-prefixed struct names."
                 )
                 raise InvalidRecordNameError(msg)
             if name in seen_names:

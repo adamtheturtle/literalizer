@@ -8,54 +8,28 @@ from literalizer.exceptions import InvalidRecordNameError
 from literalizer.languages import Rust
 
 
-def test_invalid_prefix_lowercase_raises() -> None:
-    """A lowercase prefix is not PascalCase and is rejected."""
-    with pytest.raises(expected_exception=InvalidRecordNameError):
-        Rust(record_struct_name_prefix="record")
-
-
-def test_invalid_prefix_starts_with_digit_raises() -> None:
-    """A prefix that does not start with an uppercase letter is
-    rejected.
+@pytest.mark.parametrize(
+    argnames="prefix",
+    argvalues=["record", "9Record", "", "My-Record"],
+)
+def test_invalid_prefix_raises(prefix: str) -> None:
+    """``record_struct_name_prefix`` must be a non-empty PascalCase
+    identifier.
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
-        Rust(record_struct_name_prefix="9Record")
+        Rust(record_struct_name_prefix=prefix)
 
 
-def test_invalid_prefix_empty_raises() -> None:
-    """An empty prefix would emit anonymous ``0``, ``1`` names and is
-    rejected.
+@pytest.mark.parametrize(
+    argnames="name",
+    argvalues=["task", "My-Task", "9Task", "Self"],
+)
+def test_invalid_shape_name_raises(name: str) -> None:
+    """Values in ``record_shape_names`` must be PascalCase identifiers
+    that are not Rust reserved keywords.
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
-        Rust(record_struct_name_prefix="")
-
-
-def test_invalid_shape_name_lowercase_raises() -> None:
-    """A lowercase mapped struct name is not PascalCase and is
-    rejected.
-    """
-    with pytest.raises(expected_exception=InvalidRecordNameError):
-        Rust(
-            record_shape_names={frozenset({"id", "name"}): "task"},
-        )
-
-
-def test_invalid_shape_name_with_hyphen_raises() -> None:
-    """A mapped struct name with non-identifier characters is rejected."""
-    with pytest.raises(expected_exception=InvalidRecordNameError):
-        Rust(
-            record_shape_names={frozenset({"id", "name"}): "My-Task"},
-        )
-
-
-def test_shape_name_collides_with_rust_keyword_raises() -> None:
-    """``Self`` is a Rust reserved keyword and cannot be used as a
-    generated struct name.
-    """
-    with pytest.raises(expected_exception=InvalidRecordNameError):
-        Rust(
-            record_shape_names={frozenset({"id", "name"}): "Self"},
-        )
+        Rust(record_shape_names={frozenset({"id", "name"}): name})
 
 
 def test_shape_name_collides_with_enum_name_raises() -> None:
@@ -68,6 +42,15 @@ def test_shape_name_collides_with_enum_name_raises() -> None:
             heterogeneous_value_enum_name="Task",
             record_shape_names={frozenset({"id", "name"}): "Task"},
         )
+
+
+def test_shape_name_collides_with_auto_generated_raises() -> None:
+    """A mapped struct name that matches the auto-generated
+    ``{prefix}{N}`` pattern is rejected because the user-named struct
+    would clash with one of the index-named structs at render time.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Rust(record_shape_names={frozenset({"id", "name"}): "Record0"})
 
 
 def test_duplicate_shape_names_raises() -> None:
