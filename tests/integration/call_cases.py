@@ -369,6 +369,30 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         skip_lang_names=frozenset({"Zig", "Groovy"}),
     ),
     CallCaseConfig(
+        # Companion to ``call_zip_values`` exercising the
+        # ``per_element=False`` path: the whole parsed ``zip_source``
+        # value pairs with the single generated call.
+        case_dir_name="call_zip_source_whole",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+        transform_stub_names=["emit"],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        zip_source="--- true\n",
+        zip_input_format=literalizer.InputFormat.YAML,
+        transform_stub_param_names=["_call", "_zip"],
+        # Same wrapper-stub limitations as ``call_zip_values``.
+        skip_lang_names=frozenset({"Zig", "Groovy"}),
+    ),
+    CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],
