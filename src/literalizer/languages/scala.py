@@ -292,6 +292,21 @@ def _scala_record_literal(
 
 
 @beartype
+def _scala_render_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Scala ``case class Name(field: Type, ...)``
+    declaration.
+    """
+    params = ", ".join(
+        f"{field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"case class {name}({params})"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Scala(metaclass=LanguageCls):
     """Scala language specification."""
@@ -846,20 +861,6 @@ class Scala(metaclass=LanguageCls):
         head = opener[: -len("(")]
         return _SCALA_UNTYPED_OPENERS.get(head, head)
 
-    def _scala_render_declaration(
-        self,
-        name: str,
-        fields: Sequence[RecordDeclarationField],
-        /,
-    ) -> str:
-        """Render a Scala ``case class Name(field: Type, ...)``
-        declaration.
-        """
-        params = ", ".join(
-            f"{field.identifier}: {field.type_name}" for field in fields
-        )
-        return f"case class {name}({params})"
-
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
         """Scala syntax hooks for the ``RECORD`` strategy."""
@@ -867,7 +868,7 @@ class Scala(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             field_identifier=_scala_record_field_identifier,
             field_type=self._scala_record_field_type,
-            render_declaration=self._scala_render_declaration,
+            render_declaration=_scala_render_declaration,
             render_literal=_scala_record_literal,
         )
 
