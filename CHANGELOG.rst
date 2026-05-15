@@ -41,6 +41,14 @@ Next
   dict keys and the data-class-name prefix is configurable via the new
   ``record_struct_name_prefix`` constructor parameter.  See #2298.
 
+- :class:`~literalizer.Java` now offers ``VersionFormats.JDK_16``
+  alongside ``VersionFormats.JDK_11`` (still the default), selectable
+  via ``language_version``.  Generated code is currently identical for
+  both targets; the member exists so a future Java ``RECORD``
+  ``heterogeneous_strategy`` (whose ``record`` declarations require
+  Java 16) can gate on it.  The golden harness emits a parallel
+  ``@jdk_16`` fixture set.  See #2313.
+
 2026.05.15
 ----------
 

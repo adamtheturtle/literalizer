@@ -458,6 +458,7 @@ ignore_names = [
     "call_styles",
     "heterogeneous_strategies",
     "INTERFACE",
+    "JDK_16",
     "OBJECT_VARIANT",
     "RECORD",
     "TAGGED_ENUM",
