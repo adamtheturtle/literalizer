@@ -879,15 +879,30 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             case_dir_name=f"call_{name}",
             target_function="throttler.check",
             parameter_names=["user_id", "ts"],
-            call_transform=lambda ctx: f"emit({ctx.call})",
-            transform_stub_names=["emit"],
+            # ``call_transform`` is only valid for the expression call
+            # styles that can be wrapped.  The command/curried style
+            # cannot host one, so that variant exercises the bare
+            # curried call (and its per-argument formatting) without a
+            # transform.
+            call_transform=(
+                None
+                if issubclass(cls, literalizer.CommandCallStyle)
+                else lambda ctx: f"emit({ctx.call})"
+            ),
+            transform_stub_names=(
+                []
+                if issubclass(cls, literalizer.CommandCallStyle)
+                else ["emit"]
+            ),
             per_element=True,
             call_style_type=cls,
             ref_declarations={},
             wrap_in_file=False,
             ref_case_per_language=False,
             consumable_refs=frozenset[str](),
-            requires_call_returns_expression=True,
+            requires_call_returns_expression=not issubclass(
+                cls, literalizer.CommandCallStyle
+            ),
             requires_inline_multiline_dict_args=False,
             requires_standalone_wrapped_comments=False,
         )
