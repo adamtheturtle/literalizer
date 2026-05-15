@@ -160,21 +160,30 @@ jobs:
       # current file. Compile each file from inside a private tmpdir so
       # the stale .mod is not on the module search path and parallel
       # runs cannot clobber each other's output.
-      # ``-std=f2008`` matches ``Fortran.language_version`` in
-      # ``src/literalizer/languages/fortran.py``; keep them in sync.
+      # ``Fortran.VersionFormats`` (``src/literalizer/languages/fortran.py``)
+      # has ``V2003`` and ``V2008`` members; golden files are tagged
+      # ``@v2003`` / ``@v2008`` and each is linted with the matching
+      # ``-std=`` flag.  The ``-std=f2003``/``-std=f2008`` flags and the
+      # ``@v2003``/``@v2008`` globs below mirror those enum members; keep
+      # them in sync.  ``test -s`` fails the job if a version tag drifts
+      # so a glob silently matches no files.
       - name: Lint Fortran
         run: |-
-          find tests/integration/cases -name '*.f90' -print0 > /tmp/files-fortran && test -s /tmp/files-fortran
-          xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran
+          find tests/integration/cases -name '*@v2003.f90' -print0 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
+          find tests/integration/cases -name '*@v2008.f90' -print0 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
+          xargs -0 gfortran -std=f2003 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran2003
+          xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran2008
           cat > /tmp/run-fortran.sh <<'SCRIPT'
+          std=$1
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          src=$(realpath "$1")
+          src=$(realpath "$2")
           cd "$tmpdir" || exit 1
-          gfortran -std=f2008 -ffree-line-length-none "$src" -o run || exit 1
+          gfortran "-std=$std" -ffree-line-length-none "$src" -o run || exit 1
           ./run || exit 1
           SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh < /tmp/files-fortran
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2008 < /tmp/files-fortran2008
 
       - name: Lint Lua
         run: |-

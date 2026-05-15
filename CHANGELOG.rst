@@ -16,6 +16,17 @@ Next
   The existing ``record_struct_name_prefix`` is validated the same way.
   See #2236.
 
+- :class:`~literalizer.Fortran` now offers
+  ``VersionFormats.V2003`` alongside ``VersionFormats.V2008``
+  (the default).  The 2003 target defines the ``int64`` kind via
+  ``selected_int_kind(18)`` instead of importing it from the intrinsic
+  ``iso_fortran_env`` module (whose ``int64`` constant is a Fortran
+  2008 addition), so generated code is otherwise identical and the
+  ``_int64`` literal suffix is unchanged.  The golden harness emits a
+  parallel ``@v2003`` / ``@v2008`` fixture set and CI lints each with
+  the matching ``gfortran -std=f2003`` / ``-std=f2008`` flag.  See
+  #1931.
+
 - The integration golden-file harness now accepts ``input.toml`` next to
   the existing ``input.yaml`` for cases whose input contains a value
   YAML 1.2 cannot natively express (currently :class:`datetime.time`).
