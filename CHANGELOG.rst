@@ -17,6 +17,18 @@ Next
   ``supports_record_shape_names`` language-class flag mirrors the
   constructor.  See #2324.
 
+- :class:`~literalizer.Kotlin` gains the same ``record_shape_names``
+  constructor parameter, a ``Mapping[frozenset[str], str]`` from a
+  record shape's key-set to a custom ``data class`` name.  A mapped
+  shape is declared and rendered with the given name instead of the
+  auto-generated ``RecordN``; the ``record_struct_name_prefix`` counter
+  advances only for the shapes with no custom name.  Names are
+  validated as PascalCase Kotlin identifiers that do not collide with
+  the auto ``{prefix}{N}`` pattern or each other, raising
+  :class:`~literalizer.exceptions.InvalidRecordNameError`.  Its
+  ``supports_record_shape_names`` language-class flag is now ``True``.
+  See #2324.
+
 2026.05.15.1
 ------------
 
