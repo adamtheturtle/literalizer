@@ -48,6 +48,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_raw_rust,
 )
+from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._formatters.type_inference import (
     RecordShape,
     collect_record_shapes,
@@ -75,6 +76,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
+    RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -648,14 +650,18 @@ def _rust_record_field_type(  # noqa: PLR0911
     datetime_type: str,
     record_names: "dict[RecordShape, str]",
     shapes_by_id: "Mapping[int, RecordShape]",
+    tuple_list_ids: frozenset[int],
 ) -> str:
     """Return the Rust struct field type for *value*.
 
     Scalar fields reuse :func:`_heterogeneous_variant_for_scalar`'s
-    ``inner_type``.  List fields use ``Vec<T>`` over the inferred inner
-    type.  Nested record fields use the corresponding generated struct
-    name, looked up via *shapes_by_id* so unification-rewritten shapes
-    match.
+    ``inner_type``.  A list field whose ``id`` is in *tuple_list_ids*
+    is a tuple-eligible heterogeneous scalar array and is typed as a
+    fixed-size tuple ``(T0, T1, ...)`` with one type per element
+    (composing the ``TUPLE`` and ``RECORD`` strategies); any other list
+    field uses ``Vec<T>`` over the inferred inner type.  Nested record
+    fields use the corresponding generated struct name, looked up via
+    *shapes_by_id* so unification-rewritten shapes match.
     """
     # An empty-list field has no element type to infer, so it falls
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
@@ -665,6 +671,19 @@ def _rust_record_field_type(  # noqa: PLR0911
     match value:
         case []:
             return "Vec<String>"
+        case list() if id(value) in tuple_list_ids:
+            element_types = [
+                _rust_record_field_type(
+                    value=item,
+                    date_type=date_type,
+                    datetime_type=datetime_type,
+                    record_names=record_names,
+                    shapes_by_id=shapes_by_id,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for item in value
+            ]
+            return f"({', '.join(element_types)})"
         case list():
             inner_types = [
                 _rust_record_field_type(
@@ -673,6 +692,7 @@ def _rust_record_field_type(  # noqa: PLR0911
                     datetime_type=datetime_type,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
+                    tuple_list_ids=tuple_list_ids,
                 )
                 for item in value
             ]
@@ -785,6 +805,56 @@ def _build_record_behavior(
     )
 
 
+def _render_rust_tuple(
+    value: list[Value],
+    elements: Sequence[str],
+) -> RenderedTupleLiteral:
+    """Render a heterogeneous scalar array as a Rust tuple literal.
+
+    ``collect_tuple_list_ids`` only marks arrays spanning at least two
+    distinct scalar buckets, so a Rust tuple here always has at least
+    two elements and never needs the 1-tuple ``(e0,)`` trailing comma.
+    The shared record-layout assembler joins *elements* into the
+    compact ``(a, b)`` or one-per-line multiline form; *value* is
+    unused because every element is already formatted.
+    """
+    del value
+    return RenderedTupleLiteral(
+        head="(",
+        entries=tuple(elements),
+        closer=")",
+        compact_pad="",
+    )
+
+
+def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
+    """Adapt :func:`collect_tuple_list_ids` to the positional
+    ``compute_tuple_list_ids`` hook signature.
+    """
+    return collect_tuple_list_ids(data=data)
+
+
+def _build_tuple_behavior(
+    params: _StrategyParams,
+    /,
+) -> HeterogeneousBehavior:
+    """TUPLE strategy: render heterogeneous scalar arrays as fixed-size
+    tuples.
+
+    Composes the ``RECORD`` behavior (so a record field whose value is
+    such an array becomes a tuple-typed struct field) and adds the
+    tuple render hook plus the list-id collector that
+    :func:`~literalizer._checks.check_data` uses to carve those arrays
+    out of the heterogeneous-scalar checks.
+    """
+    record_behavior = _build_record_behavior(params)
+    return dataclasses.replace(
+        record_behavior,
+        render_tuple_literal=_render_rust_tuple,
+        compute_tuple_list_ids=_rust_tuple_list_ids,
+    )
+
+
 def _ordered_record_shapes(
     *,
     data: Value,
@@ -840,17 +910,31 @@ def _accumulate_ordered_shapes(
             return
 
 
-def _build_record_preamble(
+def _record_preamble_impl(
     params: _StrategyParams,
     /,
+    *,
+    enable_tuples: bool,
 ) -> Callable[[Value], tuple[str, ...]]:
-    """RECORD strategy: emit ``struct`` declarations for each shape."""
+    """Emit ``struct`` declarations for each record shape in the data.
+
+    When *enable_tuples* is ``True`` (the ``TUPLE`` strategy, which
+    composes ``RECORD``) a record field whose value is a tuple-eligible
+    heterogeneous scalar array is typed as a fixed-size tuple rather
+    than ``Vec<T>``; tuples themselves need no declaration so the
+    struct blocks are the entire preamble either way.
+    """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build struct declarations for every record shape in *data*."""
         raw_shapes_by_id = collect_record_shapes(data=data)
         if not raw_shapes_by_id:
             return ()
+        tuple_list_ids = (
+            collect_tuple_list_ids(data=data)
+            if enable_tuples
+            else frozenset[int]()
+        )
         shapes_by_id: Mapping[int, RecordShape] = (
             unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
             if params.unify_optional_fields
@@ -894,6 +978,7 @@ def _build_record_preamble(
                     datetime_type=params.datetime_type,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
+                    tuple_list_ids=tuple_list_ids,
                 )
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
@@ -903,6 +988,25 @@ def _build_record_preamble(
         return tuple(struct_blocks)
 
     return _preamble
+
+
+def _build_record_preamble(
+    params: _StrategyParams,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """RECORD strategy: emit ``struct`` declarations for each shape."""
+    return _record_preamble_impl(params, enable_tuples=False)
+
+
+def _build_tuple_preamble(
+    params: _StrategyParams,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """TUPLE strategy: emit ``struct`` declarations (tuples themselves
+    need no preamble), typing tuple-eligible record fields as fixed-size
+    tuples.
+    """
+    return _record_preamble_impl(params, enable_tuples=True)
 
 
 def _accumulate_emit_order(
@@ -1684,6 +1788,24 @@ class Rust(metaclass=LanguageCls):
         values span multiple Rust scalar types but always share the
         same field set.  The prefix is configurable via
         :attr:`Rust.record_struct_name_prefix`.
+        """
+
+        TUPLE = _HeterogeneousStrategyConfig(
+            build_behavior=_build_tuple_behavior,
+            build_preamble=_build_tuple_preamble,
+        )
+        """Render a fixed-length heterogeneous **scalar** array (a dict
+        value, record field value, or the document root, all elements
+        scalar and spanning at least two scalar buckets) as a native
+        Rust tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` instead of
+        rejecting it.
+
+        Composes with ``RECORD``: a record field whose value is such an
+        array becomes a tuple-typed struct field (e.g.
+        ``struct Record0 { call: &'static str, args: (i32, &'static str,
+        &'static str, i32) }``).  Heterogeneous arrays nested inside
+        another list, or containing a non-scalar element, are out of
+        scope and still raise.  Rust tuples have no length limit.
         """
 
     heterogeneous_strategies = HeterogeneousStrategies
