@@ -54,6 +54,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
+    RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
     RecordStrategy,
@@ -1167,13 +1168,29 @@ class Kotlin(metaclass=LanguageCls):
             return "Int" if in_int else "Long"
         return "Double"
 
+    def _kotlin_record_field_type_request(
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
+        """Adapt the structured :class:`RecordFieldType` hook to
+        Kotlin's still-formatted-string field typing.
+
+        Kotlin's ``field_type`` has not yet been ported off the
+        formatted-string contract (unlike Go), so it reads
+        ``request.formatted``.  Porting it to derive the type from
+        ``request.value`` via Kotlin's own openers is tracked
+        separately.
+        """
+        return self._kotlin_record_field_type(request.formatted)
+
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
         """Kotlin syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             field_identifier=_kotlin_record_field_identifier,
-            field_type=self._kotlin_record_field_type,
+            field_type=self._kotlin_record_field_type_request,
             render_declaration=_kotlin_render_declaration,
             render_literal=_kotlin_record_literal,
         )
