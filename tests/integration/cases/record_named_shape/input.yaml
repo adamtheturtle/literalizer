@@ -6,4 +6,4 @@
 - id: 101
   description: second task
   is_done: true
-  blocks: []
+  blocks: [100]

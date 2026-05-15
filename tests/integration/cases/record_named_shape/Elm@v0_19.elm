@@ -12,5 +12,5 @@ type Val
 my_data : Val
 my_data = EList [
     EDict [("id", EInt 100), ("description", EStr "first task"), ("is_done", EBool False), ("blocks", EList [EInt 102, EInt 103])],
-    EDict [("id", EInt 101), ("description", EStr "second task"), ("is_done", EBool True), ("blocks", EList [])]
+    EDict [("id", EInt 101), ("description", EStr "second task"), ("is_done", EBool True), ("blocks", EList [EInt 100])]
     ]

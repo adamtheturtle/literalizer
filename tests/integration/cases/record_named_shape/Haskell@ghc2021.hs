@@ -11,7 +11,7 @@ instance Num Val where
 my_data :: Val
 my_data = HList [
     HMap [("id", 100), ("description", HStr "first task"), ("is_done", HBool False), ("blocks", HList [102, 103])],
-    HMap [("id", 101), ("description", HStr "second task"), ("is_done", HBool True), ("blocks", HList [])]
+    HMap [("id", 101), ("description", HStr "second task"), ("is_done", HBool True), ("blocks", HList [100])]
     ]
 main :: IO ()
 main = seq my_data (return ())

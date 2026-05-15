@@ -21,7 +21,7 @@ subroutine main_declaration()
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         fmap([fval_t :: fentry('id', fint(100_int64)), fentry('description', fstr('first task')), fentry('is_done', fbool(.false.)), fentry('blocks', flist([fval_t :: fint(102_int64), fint(103_int64)]))]), &
-        fmap([fval_t :: fentry('id', fint(101_int64)), fentry('description', fstr('second task')), fentry('is_done', fbool(.true.)), fentry('blocks', flist([fval_t :: ]))]) &
+        fmap([fval_t :: fentry('id', fint(101_int64)), fentry('description', fstr('second task')), fentry('is_done', fbool(.true.)), fentry('blocks', flist([fval_t :: fint(100_int64)]))]) &
     ])
 end subroutine main_declaration
 
@@ -31,7 +31,7 @@ subroutine main_assignment()
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         fmap([fval_t :: fentry('id', fint(100_int64)), fentry('description', fstr('first task')), fentry('is_done', fbool(.false.)), fentry('blocks', flist([fval_t :: fint(102_int64), fint(103_int64)]))]), &
-        fmap([fval_t :: fentry('id', fint(101_int64)), fentry('description', fstr('second task')), fentry('is_done', fbool(.true.)), fentry('blocks', flist([fval_t :: ]))]) &
+        fmap([fval_t :: fentry('id', fint(101_int64)), fentry('description', fstr('second task')), fentry('is_done', fbool(.true.)), fentry('blocks', flist([fval_t :: fint(100_int64)]))]) &
     ])
 end subroutine main_assignment
 

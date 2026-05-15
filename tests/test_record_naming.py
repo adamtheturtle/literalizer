@@ -46,8 +46,8 @@ def test_shape_name_collides_with_enum_name_raises() -> None:
 
 def test_shape_name_collides_with_auto_generated_raises() -> None:
     """A mapped struct name that matches the auto-generated
-    ``{prefix}{N}`` pattern is rejected because the user-named struct
-    would clash with one of the index-named structs at render time.
+    ``{prefix}{N}`` pattern is rejected because the user-named record
+    would clash with an index-named record at render time.
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Rust(record_shape_names={frozenset({"id", "name"}): "Record0"})

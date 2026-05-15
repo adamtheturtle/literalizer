@@ -889,16 +889,13 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
         default_spec = make_spec(lang_cls=lang_cls)
         if not isinstance(default_spec, _HasRecordShapeNames):
             continue
+        # A spec exposing ``record_shape_names`` always also exposes the
+        # RECORD strategy the field configures, so ``next`` cannot miss.
         record_strategy = next(
-            (
-                strategy
-                for strategy in default_spec.heterogeneous_strategies
-                if strategy.name == "RECORD"
-            ),
-            None,
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
         )
-        if record_strategy is None:
-            continue
         spec = lang_cls(
             heterogeneous_strategy=record_strategy,
             record_shape_names={shape_keys: custom_name},

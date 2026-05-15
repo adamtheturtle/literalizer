@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import Any
-my_data: tuple[dict[str, int | str | bool | tuple[int, ...] | tuple[Any, ...]], ...] = (
+my_data = (
     {"id": 100, "description": "first task", "is_done": False, "blocks": (102, 103)},
-    {"id": 101, "description": "second task", "is_done": True, "blocks": ()},
+    {"id": 101, "description": "second task", "is_done": True, "blocks": (100,)},
 )

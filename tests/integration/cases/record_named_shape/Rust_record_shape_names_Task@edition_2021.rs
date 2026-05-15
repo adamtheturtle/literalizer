@@ -8,7 +8,7 @@ struct Task {
 fn main() {
     let my_data = vec![
         Task { id: 100, description: "first task", is_done: false, blocks: vec![102, 103] },
-        Task { id: 101, description: "second task", is_done: true, blocks: Vec::<String>::new() },
+        Task { id: 101, description: "second task", is_done: true, blocks: vec![100] },
     ];
     let _ = my_data;
 }
