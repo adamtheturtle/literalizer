@@ -526,7 +526,7 @@ def _maybe_format_record_literal(
     render_record_literal = behavior.render_record_literal
     if render_record_literal is None:
         return None
-    if record_shape_for_dict(value=value) is None:  # pragma: no cover
+    if record_shape_for_dict(value=value) is None:
         return None
     is_multiline = collection_layout is CollectionLayout.MULTILINE
     body_prefix = multiline_prefix + spec.indent if is_multiline else ""
