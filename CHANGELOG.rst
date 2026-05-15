@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Go` gains the ``RECORD`` ``heterogeneous_strategy``
+  (already on :class:`~literalizer.Rust`).  Each record-shaped dict
+  (non-empty, string-keyed) becomes a generated ``type RecordN struct
+  { ... }`` declared in the preamble plus a matching ``RecordN{Field:
+  value, ...}`` literal, so a dict whose values mix scalars and
+  containers is representable instead of raising.  Field names are
+  exported (PascalCase) and the struct-name prefix is configurable via
+  the new ``record_struct_name_prefix`` constructor parameter.  See
+  #2297.
+
 - :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor
   parameter — a mapping from each record's key-set
   (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name —
