@@ -50,7 +50,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._formatters.type_inference import (
     RecordShape,
     collect_record_shapes,
-    record_shape_for_dict,
+    unify_record_shapes,
 )
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
@@ -508,6 +508,22 @@ def _heterogeneous_variant_for_scalar(  # noqa: C901  # pylint: disable=too-comp
 
 
 @dataclasses.dataclass(frozen=True)
+class _StrategyParams:
+    """Bundle of Rust spec knobs handed to a heterogeneous-strategy
+    builder.
+
+    Bundling these into one object keeps the builder signatures stable
+    as new RECORD-only knobs (e.g. shape-unification) are added.
+    """
+
+    enum_name: str
+    date_type: str
+    datetime_type: str
+    record_prefix: str
+    unify_optional_fields: bool
+
+
+@dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Rust heterogeneous-values strategy.
 
@@ -515,22 +531,20 @@ class _HeterogeneousStrategyConfig:
     :class:`~literalizer._language.HeterogeneousBehavior` exposed on a
     Rust instance.  ``build_preamble`` produces the data-dependent
     preamble callable (e.g. the tagged-enum declaration lines).  Both
-    receive the Rust instance's configurable enum name and scalar
-    type names so the resulting functions can close over them.
+    receive a :class:`_StrategyParams` carrying the Rust instance's
+    configurable enum name, scalar type names and RECORD-strategy
+    knobs.
     """
 
-    build_behavior: Callable[[str, str, str, str], HeterogeneousBehavior]
+    build_behavior: Callable[[_StrategyParams], HeterogeneousBehavior]
     build_preamble: Callable[
-        [str, str, str, str],
+        [_StrategyParams],
         Callable[[Value], tuple[str, ...]],
     ]
 
 
 def _build_error_behavior(
-    _enum_name: str,
-    _date_type: str,
-    _datetime_type: str,
-    _record_prefix: str,
+    _params: _StrategyParams,
     /,
 ) -> HeterogeneousBehavior:
     """ERROR strategy: no wrapping, no skipping of checks."""
@@ -538,10 +552,7 @@ def _build_error_behavior(
 
 
 def _build_error_preamble(
-    _enum_name: str,
-    _date_type: str,
-    _datetime_type: str,
-    _record_prefix: str,
+    _params: _StrategyParams,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
@@ -549,10 +560,7 @@ def _build_error_preamble(
 
 
 def _build_tagged_enum_behavior(
-    enum_name: str,
-    date_type: str,
-    datetime_type: str,
-    _record_prefix: str,
+    params: _StrategyParams,
     /,
 ) -> HeterogeneousBehavior:
     """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
@@ -565,12 +573,12 @@ def _build_tagged_enum_behavior(
         """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
         signature = _heterogeneous_variant_for_scalar(
             value=raw_value,
-            date_type=date_type,
-            datetime_type=datetime_type,
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
         )
         if signature.inner_type is None:
-            return f"{enum_name}::{signature.name}"
-        return f"{enum_name}::{signature.name}({formatted})"
+            return f"{params.enum_name}::{signature.name}"
+        return f"{params.enum_name}::{signature.name}({formatted})"
 
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
@@ -582,10 +590,7 @@ def _build_tagged_enum_behavior(
 
 
 def _build_tagged_enum_preamble(
-    enum_name: str,
-    date_type: str,
-    datetime_type: str,
-    _record_prefix: str,
+    params: _StrategyParams,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """TAGGED_ENUM strategy: emit a minimal ``enum`` declaration."""
@@ -601,14 +606,14 @@ def _build_tagged_enum_preamble(
         for scalar in scalars:
             signature = _heterogeneous_variant_for_scalar(
                 value=scalar,
-                date_type=date_type,
-                datetime_type=datetime_type,
+                date_type=params.date_type,
+                datetime_type=params.datetime_type,
             )
             if signature.name in seen:
                 continue
             seen.add(signature.name)
             variants.append(signature)
-        lines: list[str] = [f"enum {enum_name} {{"]
+        lines: list[str] = [f"enum {params.enum_name} {{"]
         for variant in variants:
             body = (
                 variant.name
@@ -629,13 +634,15 @@ def _rust_record_field_type(  # noqa: PLR0911
     date_type: str,
     datetime_type: str,
     record_names: "dict[RecordShape, str]",
+    shapes_by_id: "Mapping[int, RecordShape]",
 ) -> str:
     """Return the Rust struct field type for *value*.
 
     Scalar fields reuse :func:`_heterogeneous_variant_for_scalar`'s
     ``inner_type``.  List fields use ``Vec<T>`` over the inferred inner
     type.  Nested record fields use the corresponding generated struct
-    name (when *record_names* maps a matching shape).
+    name, looked up via *shapes_by_id* so unification-rewritten shapes
+    match.
     """
     # The ``case []`` / ``case set()`` branches are reserved for shapes
     # not exercised by current fixtures: empty-list fields and
@@ -651,12 +658,13 @@ def _rust_record_field_type(  # noqa: PLR0911
                     date_type=date_type,
                     datetime_type=datetime_type,
                     record_names=record_names,
+                    shapes_by_id=shapes_by_id,
                 )
                 for item in value
             ]
             return f"Vec<{_unify_rust_types(types=inner_types)}>"
         case dict():
-            shape = record_shape_for_dict(value=value)
+            shape = shapes_by_id.get(id(value))
             if shape is not None and shape in record_names:
                 return record_names[shape]
             return "String"  # pragma: no cover
@@ -674,29 +682,35 @@ def _rust_record_field_type(  # noqa: PLR0911
 
 
 def _build_record_behavior(
-    _enum_name: str,
-    date_type: str,
-    datetime_type: str,
-    record_prefix: str,
+    params: _StrategyParams,
     /,
 ) -> HeterogeneousBehavior:
     """RECORD strategy: render record-shaped dicts as struct literals."""
-    del date_type, datetime_type
-
-    # ``name_cache`` is rebuilt on every ``compute_record_shapes`` call
-    # so concurrent ``literalize`` invocations on the same cached Rust
-    # spec (e.g. variant golden tests reuse one instance) cannot leak
-    # shape -> name assignments from a previous call.
+    # ``name_cache`` and ``id_to_shape`` are rebuilt on every
+    # ``compute_record_shapes`` call so concurrent ``literalize``
+    # invocations on the same cached Rust spec (e.g. variant golden
+    # tests reuse one instance) cannot leak shape -> name assignments
+    # from a previous call.
     name_cache: dict[RecordShape, str] = {}
+    id_to_shape: dict[int, RecordShape] = {}
 
     def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
         """Walk *data* and return ``id(dict)`` -> :class:`RecordShape`.
 
-        Re-populates the shared name cache in document order so the
+        With ``unify_optional_fields`` on, multiple ids collapse to a
+        shared unified shape (see :func:`unify_record_shapes`).
+        Re-populates the shared caches in document order so the
         preamble's struct names match the rendered literals.
         """
-        shapes_by_id = collect_record_shapes(data=data)
+        raw_shapes_by_id = collect_record_shapes(data=data)
+        shapes_by_id = (
+            unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
+            if params.unify_optional_fields
+            else raw_shapes_by_id
+        )
         name_cache.clear()
+        id_to_shape.clear()
+        id_to_shape.update(shapes_by_id)
         ordered = _ordered_record_shapes(
             data=data,
             shapes_by_id=shapes_by_id,
@@ -704,20 +718,33 @@ def _build_record_behavior(
         for shape in ordered:
             # ``ordered`` is unique by construction, so the cache always
             # gets populated on first encounter.
-            name_cache[shape] = f"{record_prefix}{len(name_cache)}"
+            name_cache[shape] = f"{params.record_prefix}{len(name_cache)}"
         return shapes_by_id
 
     def _render_literal(
-        shape: RecordShape,
+        value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
     ) -> str:
         """Render a record-shape dict as a Rust struct literal.
 
-        ``_compute_shapes`` always runs first via ``check_data`` and
-        populates ``name_cache`` for every shape in the data, so the
-        lookup here cannot miss.
+        Looks up *value*'s (possibly unified) shape from the
+        ``compute_record_shapes`` mapping populated during
+        ``check_data``.  Iterates the unified shape's keys: keys
+        missing from this instance render as ``None``; keys marked
+        optional render as ``Some(value)``; required keys render bare.
         """
-        body = ", ".join(f"{key}: {fields[key]}" for key in shape.keys)
+        shape = id_to_shape[id(value)]
+        parts: list[str] = []
+        for key in shape.keys:
+            if key in fields:
+                formatted = fields[key]
+                if key in shape.optional_keys:
+                    parts.append(f"{key}: Some({formatted})")
+                else:
+                    parts.append(f"{key}: {formatted}")
+            else:
+                parts.append(f"{key}: None")
+        body = ", ".join(parts)
         return f"{name_cache[shape]} {{ {body} }}"
 
     return HeterogeneousBehavior(
@@ -787,19 +814,21 @@ def _accumulate_ordered_shapes(
 
 
 def _build_record_preamble(
-    _enum_name: str,
-    date_type: str,
-    datetime_type: str,
-    record_prefix: str,
+    params: _StrategyParams,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """RECORD strategy: emit ``struct`` declarations for each shape."""
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build struct declarations for every record shape in *data*."""
-        shapes_by_id = collect_record_shapes(data=data)
-        if not shapes_by_id:
+        raw_shapes_by_id = collect_record_shapes(data=data)
+        if not raw_shapes_by_id:
             return ()
+        shapes_by_id: Mapping[int, RecordShape] = (
+            unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
+            if params.unify_optional_fields
+            else raw_shapes_by_id
+        )
         ordered_shapes: list[RecordShape] = []
         seen: set[RecordShape] = set()
         field_values: dict[RecordShape, dict[str, Value]] = {}
@@ -811,7 +840,7 @@ def _build_record_preamble(
             field_values=field_values,
         )
         record_names: dict[RecordShape, str] = {
-            shape: f"{record_prefix}{index}"
+            shape: f"{params.record_prefix}{index}"
             for index, shape in enumerate(iterable=ordered_shapes)
         }
         emit_order: list[RecordShape] = []
@@ -829,10 +858,13 @@ def _build_record_preamble(
                 example = field_values[shape].get(key)
                 field_type = _rust_record_field_type(
                     value=example,
-                    date_type=date_type,
-                    datetime_type=datetime_type,
+                    date_type=params.date_type,
+                    datetime_type=params.datetime_type,
                     record_names=record_names,
+                    shapes_by_id=shapes_by_id,
                 )
+                if key in shape.optional_keys:
+                    field_type = f"Option<{field_type}>"
                 block.append(f"    {key}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
@@ -877,7 +909,7 @@ def _accumulate_emit_order(
             return
 
 
-def _gather_record_field_values(  # pylint: disable=too-complex
+def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
     *,
     data: Value,
     shapes_by_id: Mapping[int, RecordShape],
@@ -903,6 +935,8 @@ def _gather_record_field_values(  # pylint: disable=too-complex
             stored = field_values[shape]
             for key in shape.keys:
                 if key in stored:
+                    continue
+                if key not in data:
                     continue
                 stored[key] = data[key]
             for value in data.values():
@@ -1700,6 +1734,7 @@ class Rust(metaclass=LanguageCls):
     )
     heterogeneous_value_enum_name: str = "Value"
     record_struct_name_prefix: str = "Record"
+    record_unify_optional_fields: bool = False
     # Keep in sync with the ``--edition`` flag in
     # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
@@ -1767,13 +1802,23 @@ class Rust(metaclass=LanguageCls):
         return "NaiveDateTime"
 
     @cached_property
+    def _strategy_params(self) -> _StrategyParams:
+        """Bundle of arguments handed to the active strategy's
+        builders.
+        """
+        return _StrategyParams(
+            enum_name=self.heterogeneous_value_enum_name,
+            date_type=self._heterogeneous_variant_date_type,
+            datetime_type=self._heterogeneous_variant_datetime_type,
+            record_prefix=self.record_struct_name_prefix,
+            unify_optional_fields=self.record_unify_optional_fields,
+        )
+
+    @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         return self.heterogeneous_strategy.value.build_behavior(
-            self.heterogeneous_value_enum_name,
-            self._heterogeneous_variant_date_type,
-            self._heterogeneous_variant_datetime_type,
-            self.record_struct_name_prefix,
+            self._strategy_params,
         )
 
     @cached_property
@@ -1788,10 +1833,7 @@ class Rust(metaclass=LanguageCls):
         strategies produce no preamble.
         """
         return self.heterogeneous_strategy.value.build_preamble(
-            self.heterogeneous_value_enum_name,
-            self._heterogeneous_variant_date_type,
-            self._heterogeneous_variant_datetime_type,
-            self.record_struct_name_prefix,
+            self._strategy_params,
         )
 
     @cached_property

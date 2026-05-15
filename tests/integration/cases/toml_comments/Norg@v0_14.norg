@@ -1,0 +1,9 @@
+* my_data
+@code json
+{
+    % before%
+    "answer": 42,  % inline%
+    "plain": "ok"
+    % trailing%
+}
+@end

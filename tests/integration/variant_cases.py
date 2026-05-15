@@ -860,6 +860,34 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
+    """Build the Rust ``record_unify_optional_fields`` variant.
+
+    Combines :attr:`Rust.record_unify_optional_fields` with the
+    ``RECORD`` heterogeneous strategy so the golden case exercises the
+    Option/Some/None rendering.  Only Rust currently has this knob.
+    """
+    default_spec = make_spec(lang_cls=Rust)
+    record_strategy = next(
+        strategy
+        for strategy in default_spec.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    spec = make_spec(
+        lang_cls=Rust,
+        heterogeneous_strategy=record_strategy,
+        record_unify_optional_fields=True,
+    )
+    return [
+        Variant(
+            name="Rust_record_unify_optional_fields",
+            spec=spec,
+            lang_cls=Rust,
+        )
+    ]
+
+
+@beartype
 def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-enum-name variants for languages that
     generate a named type for their heterogeneous strategy (e.g. Rust's
@@ -1543,6 +1571,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "heterogeneous_value_variant_name": (
         build_heterogeneous_value_variant_name_variants
     ),
+    "record_unify_optional_fields": (
+        build_record_unify_optional_fields_variants
+    ),
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
@@ -1795,6 +1826,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
+    "record_unify_optional_fields": (
+        _ci(case_dir_name="record_optional_unify"),
+    ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name)
         for case_dir_name in dict.fromkeys(
