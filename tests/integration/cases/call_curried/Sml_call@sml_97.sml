@@ -5,6 +5,5 @@ datatype val_t =
 structure throttler = struct
 fun check _ _ = ()
 end
-fun emit _ = ()
-val _ = emit (throttler.check ("user_1") (1000.0))
-val _ = emit (throttler.check ("user_2") (2000.5))
+val _ = throttler.check ("user_1") (1000.0)
+val _ = throttler.check ("user_2") (2000.5)

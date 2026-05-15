@@ -1043,10 +1043,15 @@ class Java(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Java.
 
-        ``RECORD`` heterogeneous output emits ``record`` declarations,
-        which require Java 16 or newer; the floor is set accordingly.
+        * ``VersionFormats.JDK_11``: target Java 11.
+        * ``VersionFormats.JDK_16``: target Java 16.
+
+        The ``RECORD`` ``heterogeneous_strategy`` emits ``record``
+        declarations, which require Java 16 or newer, so a
+        ``RECORD`` spec pins ``language_version`` to ``JDK_16``.
         """
 
+        JDK_11 = enum.auto()
         JDK_16 = enum.auto()
 
     version_formats = VersionFormats
@@ -1073,6 +1078,25 @@ class Java(metaclass=LanguageCls):
             ),
         ),
     )
+
+    def __post_init__(self) -> None:
+        """Pin ``language_version`` to ``JDK_16`` for the ``RECORD``
+        strategy.
+
+        The ``RECORD`` ``heterogeneous_strategy`` emits ``record``
+        declarations, which require Java 16; ``JDK_11`` output would
+        fail to compile.  Coercing here (rather than rejecting a
+        ``JDK_11`` + ``RECORD`` spec) keeps the golden harness simple:
+        every ``RECORD`` spec, however constructed, renders and is
+        tagged ``@jdk_16``.
+        """
+        jdk_16 = self.version_formats.JDK_16
+        if (
+            self.heterogeneous_strategy is self.heterogeneous_strategies.RECORD
+            and self.language_version is not jdk_16
+        ):
+            object.__setattr__(self, "language_version", jdk_16)
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
@@ -1290,9 +1314,11 @@ class Java(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `--release` flag passed to the JavaCompiler
-    # in `CheckJavaSyntax.java`.
-    language_version: VersionFormats = VersionFormats.JDK_16
+    # The `Lint Java` step in `.github/workflows/lint.yml` compiles each
+    # `@jdk_<release>` golden with the `--release` literal matching its
+    # `VersionFormats` member (`11` for `JDK_11`, `16` for `JDK_16`).
+    # Keep those literals in sync with `VersionFormats` above.
+    language_version: VersionFormats = VersionFormats.JDK_11
     record_struct_name_prefix: str = "Record"
     indent: str = "    "
 

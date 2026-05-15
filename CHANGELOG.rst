@@ -13,8 +13,35 @@ Next
   raising.  Component names keep the original keys and the
   record-name prefix is configurable via the new
   ``record_struct_name_prefix`` constructor parameter.  Generated
-  ``record`` declarations require JDK 16, so ``Java.language_version``
-  is now ``JDK_16``.  See #2300.
+  ``record`` declarations require Java 16, so a ``RECORD`` spec pins
+  ``language_version`` to ``JDK_16``.  See #2300.
+
+- :func:`~literalizer.literalize_call`'s ``call_transform`` now receives
+  a :class:`~literalizer.CallContext` instead of the bare call string.
+  The context exposes ``call`` (the rendered call expression, formerly
+  the sole argument), the zero-based ``index``, the input ``row``, and
+  ``zipped``.  A new ``zip_values`` parameter pairs a second,
+  equal-length sequence positionally with the generated calls; each
+  entry is rendered as a language-native literal and surfaced on
+  :attr:`~literalizer.CallContext.zipped`, so a transform can print an
+  expected value beside each call's actual return value.  ``zip_values``
+  requires a ``call_transform`` and must match the call count, raising
+  the new :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`
+  / :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
+  ``call_transform`` is now supported only for call styles whose form
+  is an expression that can be wrapped (positional, keyword, object);
+  the sentinel-probe wrapper synthesis for prefix/postfix/command
+  styles has been removed, and those styles now reject
+  ``call_transform`` with
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+  :func:`~literalizer.literalize_call` no longer raises
+  ``DottedCallStubNotSupportedError`` or
+  ``FreeFunctionCallNotSupportedError`` (a context-aware
+  ``call_transform`` is opaque, so the core cannot inspect the
+  wrapper); those exceptions are removed.  The
+  ``supports_dotted_call_stub`` / ``has_free_function_calls`` language
+  attributes are retained as descriptive metadata for callers that
+  generate wrapper stubs.  See #2293.
 
 - :class:`~literalizer.Kotlin` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
@@ -25,6 +52,14 @@ Next
   representable instead of raising.  Field names keep the original
   dict keys and the data-class-name prefix is configurable via the new
   ``record_struct_name_prefix`` constructor parameter.  See #2298.
+
+- :class:`~literalizer.Java` now offers ``VersionFormats.JDK_16``
+  alongside ``VersionFormats.JDK_11`` (still the default), selectable
+  via ``language_version``.  Generated code is currently identical for
+  both targets; the member exists so a future Java ``RECORD``
+  ``heterogeneous_strategy`` (whose ``record`` declarations require
+  Java 16) can gate on it.  The golden harness emits a parallel
+  ``@jdk_16`` fixture set.  See #2313.
 
 2026.05.15
 ----------

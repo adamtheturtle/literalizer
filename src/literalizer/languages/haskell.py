@@ -1377,7 +1377,6 @@ class Haskell(metaclass=LanguageCls):
 
         CURRIED = CommandCallStyle(
             arg_separator=" ",
-            wrapped_call_template="{wrapper} ({inner})",
         )
         POSITIONAL = PositionalCallStyle()
 

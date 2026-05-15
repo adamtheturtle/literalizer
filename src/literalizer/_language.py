@@ -243,17 +243,11 @@ class CommandCallStyle:
     surrounding parentheses.  *arg_separator* is the string between
     the target and each argument (typically a single space).
 
-    When a ``call_transform`` like ``lambda c: f"emit({c})"`` is
-    supplied, the wrapper word is extracted and the inner call is
-    formatted using *wrapped_call_template*, a ``str.format``-style
-    template with ``{wrapper}`` and ``{inner}`` placeholders (e.g.
-    the default ``'{wrapper} "$({inner})"'`` produces
-    ``emit "$(target arg1 arg2)"`` for Bash; Tcl uses
-    ``'{wrapper} [{inner}]'`` instead).
+    ``call_transform`` is not supported for this style (see
+    :func:`~literalizer.literalize_call`).
     """
 
     arg_separator: str
-    wrapped_call_template: str = '{wrapper} "$({inner})"'
 
 
 CallStyle = (
@@ -501,8 +495,10 @@ class HeterogeneousBehavior:
     mapping from ``id(dict)`` to :class:`RecordShape` for every dict
     the strategy will render as a record literal.  Used by
     :func:`~literalizer._checks.check_data` to carve record-eligible
-    dicts out of the heterogeneous-values checks.  Defaults to a
-    callable returning an empty mapping for non-RECORD strategies.
+    dicts out of the heterogeneous-values checks.  Defaults to
+    ``None`` for non-RECORD strategies, paired with
+    ``render_record_literal``: a behavior either sets both (RECORD)
+    or neither.
 
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
@@ -520,25 +516,14 @@ class HeterogeneousBehavior:
         ]
         | None
     ) = None
-    compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]] = (
-        dataclasses.field(default_factory=lambda: _no_compute_record_shapes)
-    )
+    compute_record_shapes: (
+        Callable[[Value], Mapping[int, RecordShape]] | None
+    ) = None
 
 
 def no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     """Return an empty wrap-id set — used by non-wrapping languages."""
     return frozenset()
-
-
-def _no_compute_record_shapes(_data: Value, /) -> Mapping[int, RecordShape]:
-    """Return an empty record-shape mapping — default for non-RECORD
-    strategies.
-
-    ``check_data`` skips this call when ``render_record_literal`` is
-    ``None`` so the body never runs in practice; it exists to keep the
-    behavior's API uniform.
-    """
-    return {}  # pragma: no cover
 
 
 def _no_compute_call_slot_wrap_ids(
@@ -943,18 +928,19 @@ class Language(Protocol):
 
     supports_dotted_call_stub: bool
     """Whether the language can declare a stub for a dotted call wrapper
-    name (e.g. ``tracer.emit``) produced by ``call_transform``.  When
-    ``False``, a dotted ``call_transform`` wrapper is rejected by
-    :func:`~literalizer.literalize_call` with
-    :class:`~literalizer.exceptions.DottedCallStubNotSupportedError`.
+    name (e.g. ``tracer.emit``).  :func:`~literalizer.literalize_call`
+    no longer inspects this (a context-aware ``call_transform`` is
+    opaque); it is metadata for callers and the test harness, which use
+    it to decide whether a generated dotted-wrapper stub can compile in
+    this language.
     """
 
     has_free_function_calls: bool
     """Whether the language has a free function call syntax (i.e. the
-    ability to call a function by a bare name with no dot).  When
-    ``False``, a ``call_transform`` whose wrapper is a bare name with
-    no dot is rejected by :func:`~literalizer.literalize_call` with
-    :class:`~literalizer.exceptions.FreeFunctionCallNotSupportedError`.
+    ability to call a function by a bare name with no dot).  Metadata
+    for callers and the test harness, which use it to decide whether a
+    generated bare-wrapper stub can compile in this language;
+    :func:`~literalizer.literalize_call` does not inspect it.
     """
 
     @property

@@ -546,7 +546,6 @@ class OCaml(metaclass=LanguageCls):
         POSITIONAL = PositionalCallStyle()
         CURRIED = CommandCallStyle(
             arg_separator=" ",
-            wrapped_call_template="{wrapper} ({inner})",
         )
 
     call_styles = CallStyles
