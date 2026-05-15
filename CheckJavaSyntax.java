@@ -30,22 +30,31 @@ public class CheckJavaSyntax {
             System.err.println("No JDK Java compiler available.");
             System.exit(2);
         }
+        if (args.length < 2) {
+            System.err.println("Usage: CheckJavaSyntax <release> <file>...");
+            System.exit(2);
+        }
+        // The `--release` value is supplied as the first argument by the
+        // `Lint Java` step in `.github/workflows/lint.yml`, which passes
+        // the literal matching each fixture's `@jdk_<release>` golden tag
+        // (`11` for `JDK_11`, `16` for `JDK_16` in `Java.VersionFormats`
+        // in `src/literalizer/languages/java.py`). Keep them in sync.
+        final String release = args[0];
         boolean failed = false;
         try (final StandardJavaFileManager fileManager =
                 compiler.getStandardFileManager(null, null, null)) {
-            for (final String filename : args) {
+            for (int i = 1; i < args.length; i++) {
+                final String filename = args[i];
                 // Each fixture declares `class Main`, so give every file
                 // its own output directory to avoid class-name collisions.
                 final Path classDir = Files.createTempDirectory("javac");
                 final Iterable<? extends JavaFileObject> units =
                         fileManager.getJavaFileObjectsFromStrings(List.of(filename));
-                // `--release 11` matches `Java.language_version` in
-                // `src/literalizer/languages/java.py`; keep them in sync.
                 final JavaCompiler.CompilationTask task = compiler.getTask(
                         null,
                         fileManager,
                         null,
-                        List.of("-d", classDir.toString(), "-proc:none", "--release", "11"),
+                        List.of("-d", classDir.toString(), "-proc:none", "--release", release),
                         null,
                         units);
                 if (!task.call()) {

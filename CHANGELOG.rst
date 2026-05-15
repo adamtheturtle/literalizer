@@ -4,6 +4,27 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Kotlin` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
+  :class:`~literalizer.Go`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated ``data class RecordN(val ...)``
+  declared in the preamble plus a matching ``RecordN(field = value,
+  ...)`` literal, so a dict whose values mix scalars and containers is
+  representable instead of raising.  Field names keep the original
+  dict keys and the data-class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter.  See #2298.
+
+- :class:`~literalizer.Java` now offers ``VersionFormats.JDK_16``
+  alongside ``VersionFormats.JDK_11`` (still the default), selectable
+  via ``language_version``.  Generated code is currently identical for
+  both targets; the member exists so a future Java ``RECORD``
+  ``heterogeneous_strategy`` (whose ``record`` declarations require
+  Java 16) can gate on it.  The golden harness emits a parallel
+  ``@jdk_16`` fixture set.  See #2313.
+
+2026.05.15
+----------
+
 - :func:`~literalizer.literalize` now accepts an opt-in ``bound_refs``
   mapping.  Unlike ``ref_values`` (which only informs a ref's type and
   leaves it as a free external identifier), each name in ``bound_refs``

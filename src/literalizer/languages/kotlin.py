@@ -52,6 +52,14 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
 )
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
@@ -74,6 +82,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -87,6 +96,7 @@ from literalizer._language import (
     identity_call_target,
     never_inhibits_consuming_form,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -469,6 +479,61 @@ def _kotlin_call_stub(
     lines.append(f"class {root_cls} {{ val {fields[0]} = {prev_cls}() }}")
     lines.append(f"val {root} = {root_cls}()")
     return tuple(lines)
+
+
+# Kotlin collection-constructor call names mapped to the declared type
+# they produce, used to derive a ``RECORD`` field's type from its
+# already-formatted generic literal (e.g. ``linkedMapOf<String, Any?>(``
+# -> ``LinkedHashMap<String, Any?>``).
+_KOTLIN_COLLECTION_TYPE: dict[str, str] = {
+    "listOf": "List",
+    "mapOf": "Map",
+    "hashMapOf": "HashMap",
+    "linkedMapOf": "LinkedHashMap",
+    "setOf": "Set",
+}
+
+
+@beartype
+def _kotlin_record_field_identifier(key: str, /) -> str:
+    """Return the Kotlin record field name for a dict *key*.
+
+    Kotlin allows the original (possibly snake_case) key verbatim as a
+    ``data class`` property name, so the mapping is the identity.
+    """
+    return key
+
+
+@beartype
+def _kotlin_render_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Kotlin ``data class Name(val f: T, ...)`` declaration."""
+    params = ", ".join(
+        f"val {field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"data class {name}({params})"
+
+
+@beartype
+def _kotlin_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Kotlin ``Name(field = value, ...)`` literal as
+    structured pieces for the shared compact/multiline layout code.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}(",
+        entries=tuple(
+            f"{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer=")",
+        compact_pad="",
+    )
 
 
 @beartype
@@ -901,11 +966,19 @@ class Kotlin(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for dicts whose values span more than one Kotlin
+        type.
+
+        ``ERROR`` keeps Kotlin's strict-typing behavior (mixed-value
+        dicts that cannot be represented raise).  ``RECORD`` renders
+        each record-shaped dict (non-empty, string-keyed) as a generated
+        ``data class`` declared in the preamble plus a matching
+        constructor-call literal, so fields may legitimately mix scalars
+        and containers.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -997,6 +1070,7 @@ class Kotlin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the version flags passed to the Kotlin lint host in
     # `.github/scripts/lint-kotlin.main.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
@@ -1036,15 +1110,123 @@ class Kotlin(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
+    def _kotlin_record_field_type(self, formatted: str, /) -> str:
+        """Return the Kotlin ``data class`` field type for an
+        already-formatted value.
+
+        The declared type is read off the formatted literal so it
+        always matches what the value formatter emitted.  Scalars and
+        homogeneous typed-array literals have a fixed prefix; richer
+        shapes (string arrays, generic collections, nested records,
+        numbers) are resolved by :meth:`_kotlin_record_composite_type`.
+        """
+        exact = {
+            self.null_literal: "Any?",
+            self.true_literal: "Boolean",
+            self.false_literal: "Boolean",
+        }
+        if formatted in exact:
+            return exact[formatted]
+        prefixes = (
+            ('"', "String"),
+            ("LocalDateTime.of(", "LocalDateTime"),
+            ("LocalDate.of(", "LocalDate"),
+            ("intArrayOf(", "IntArray"),
+        )
+        for prefix, type_name in prefixes:
+            if formatted.startswith(prefix):
+                return type_name
+        return self._kotlin_record_composite_type(formatted=formatted)
+
+    def _kotlin_record_composite_type(self, *, formatted: str) -> str:
+        """Return the field type for a non-scalar formatted value.
+
+        Generic collection literals carry their type in the ``<...>``
+        segment of the constructor call (``linkedMapOf<String, Any?>(``
+        -> ``LinkedHashMap<String, Any?>``); a nested record-shaped dict
+        formats as its own ``RecordN(...)`` literal, whose name is the
+        declared type; everything else is an ``Int``/``Long``/``Double``
+        number.
+        """
+        if formatted.startswith("arrayOf("):
+            body = formatted[len("arrayOf(") :].lstrip()
+            element = body[: body.index('"', 1) + 1]
+            return f"Array<{self._kotlin_record_field_type(element)}>"
+        if "<" in formatted:
+            name = formatted[: formatted.index("<")]
+            generics = formatted[
+                formatted.index("<") : formatted.index(">") + 1
+            ]
+            return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
+        prefix = self.record_struct_name_prefix
+        head = formatted.split(sep="(", maxsplit=1)[0]
+        if head.startswith(prefix) and head[len(prefix) :].isdigit():
+            return head
+        if formatted.lstrip("-").isdigit():
+            value = int(formatted)
+            in_int = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
+            return "Int" if in_int else "Long"
+        return "Double"
+
+    def _kotlin_record_field_type_request(
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
+        """Adapt the structured :class:`RecordFieldType` hook to
+        Kotlin's still-formatted-string field typing.
+
+        Kotlin's ``field_type`` has not yet been ported off the
+        formatted-string contract (unlike Go), so it reads
+        ``request.formatted``.  Porting it to derive the type from
+        ``request.value`` via Kotlin's own openers is tracked
+        separately.
+        """
+        return self._kotlin_record_field_type(request.formatted)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Kotlin syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            field_identifier=_kotlin_record_field_identifier,
+            field_type=self._kotlin_record_field_type_request,
+            render_declaration=_kotlin_render_declaration,
+            render_literal=_kotlin_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return _kotlin_biginteger_preamble
+        """Return data-dependent preamble lines.
+
+        Always emits ``import java.math.BigInteger`` when the data
+        carries an out-of-range integer; under
+        ``HeterogeneousStrategies.RECORD`` additionally emits one
+        ``data class`` declaration per record shape present in the data.
+        """
+        record_preamble = self._record_strategy.preamble
+
+        def _preamble(data: Value, /) -> tuple[str, ...]:
+            """Combine the BigInteger import with record declarations."""
+            return _kotlin_biginteger_preamble(data) + record_preamble(data)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
@@ -1153,16 +1335,38 @@ class Kotlin(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under the ``RECORD`` strategy a list whose elements are
+        record-shaped dicts opens as ``listOf<Any?>(`` (the elements
+        format as ``RecordN(...)`` literals, not the ``Map<...>`` the
+        typed opener would otherwise infer).
+        """
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
-            return fmt.sequence_open
-        return _kotlin_list_sequence_open(
-            cfg=self._opener_config,
-            date_type=self._date_type_name,
-            datetime_type=self._dt_type_name,
-            dict_key_type=self.default_dict_key_type,
-        )
+            base = fmt.sequence_open
+        else:
+            base = _kotlin_list_sequence_open(
+                cfg=self._opener_config,
+                date_type=self._date_type_name,
+                datetime_type=self._dt_type_name,
+                dict_key_type=self.default_dict_key_type,
+            )
+        record = type(self.heterogeneous_strategy).RECORD
+        if self.heterogeneous_strategy is not record:
+            return base
+        any_open = "listOf<Any?>("
+
+        def _open(items: list[Value], /) -> str:
+            """Use ``listOf<Any?>(`` for lists of record-shaped dicts."""
+            if any(
+                isinstance(item, dict) and not isinstance(item, OrderedMap)
+                for item in items
+            ):
+                return any_open
+            return base(items)
+
+        return _open
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

@@ -609,9 +609,10 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     dict_supports_het = spec.dict_supports_heterogeneous_values
     set_supports_het = spec.set_format_config.supports_heterogeneity
     behavior = spec.heterogeneous_behavior
+    compute_record_shapes = behavior.compute_record_shapes
     record_shapes_by_id: Mapping[int, RecordShape] = (
-        behavior.compute_record_shapes(data)
-        if behavior.render_record_literal is not None
+        compute_record_shapes(data)
+        if compute_record_shapes is not None
         else {}
     )
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)

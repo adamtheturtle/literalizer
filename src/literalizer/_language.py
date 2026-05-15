@@ -501,8 +501,10 @@ class HeterogeneousBehavior:
     mapping from ``id(dict)`` to :class:`RecordShape` for every dict
     the strategy will render as a record literal.  Used by
     :func:`~literalizer._checks.check_data` to carve record-eligible
-    dicts out of the heterogeneous-values checks.  Defaults to a
-    callable returning an empty mapping for non-RECORD strategies.
+    dicts out of the heterogeneous-values checks.  Defaults to
+    ``None`` for non-RECORD strategies, paired with
+    ``render_record_literal``: a behavior either sets both (RECORD)
+    or neither.
 
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
@@ -520,25 +522,14 @@ class HeterogeneousBehavior:
         ]
         | None
     ) = None
-    compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]] = (
-        dataclasses.field(default_factory=lambda: _no_compute_record_shapes)
-    )
+    compute_record_shapes: (
+        Callable[[Value], Mapping[int, RecordShape]] | None
+    ) = None
 
 
 def no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     """Return an empty wrap-id set — used by non-wrapping languages."""
     return frozenset()
-
-
-def _no_compute_record_shapes(_data: Value, /) -> Mapping[int, RecordShape]:
-    """Return an empty record-shape mapping — default for non-RECORD
-    strategies.
-
-    ``check_data`` skips this call when ``render_record_literal`` is
-    ``None`` so the body never runs in practice; it exists to keep the
-    behavior's API uniform.
-    """
-    return {}  # pragma: no cover
 
 
 def _no_compute_call_slot_wrap_ids(
