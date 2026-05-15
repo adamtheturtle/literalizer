@@ -4,6 +4,33 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call`'s ``call_transform`` now receives
+  a :class:`~literalizer.CallContext` instead of the bare call string.
+  The context exposes ``call`` (the rendered call expression, formerly
+  the sole argument), the zero-based ``index``, the input ``row``, and
+  ``zipped``.  A new ``zip_values`` parameter pairs a second,
+  equal-length sequence positionally with the generated calls; each
+  entry is rendered as a language-native literal and surfaced on
+  :attr:`~literalizer.CallContext.zipped`, so a transform can print an
+  expected value beside each call's actual return value.  ``zip_values``
+  requires a ``call_transform`` and must match the call count, raising
+  the new :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`
+  / :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
+  ``call_transform`` is now supported only for call styles whose form
+  is an expression that can be wrapped (positional, keyword, object);
+  the sentinel-probe wrapper synthesis for prefix/postfix/command
+  styles has been removed, and those styles now reject
+  ``call_transform`` with
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+  :func:`~literalizer.literalize_call` no longer raises
+  ``DottedCallStubNotSupportedError`` or
+  ``FreeFunctionCallNotSupportedError`` (a context-aware
+  ``call_transform`` is opaque, so the core cannot inspect the
+  wrapper); those exceptions are removed.  The
+  ``supports_dotted_call_stub`` / ``has_free_function_calls`` language
+  attributes are retained as descriptive metadata for callers that
+  generate wrapper stubs.  See #2293.
+
 - :class:`~literalizer.Kotlin` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
   :class:`~literalizer.Go`).  Each record-shaped dict (non-empty,

@@ -453,7 +453,7 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
         language=Python(),
         target_function="process",
         parameter_names=["a", "b"],
-        call_transform=lambda c: f"emit({c})",
+        call_transform=lambda ctx: f"emit({ctx.call})",
         wrap_in_file=True,
     )
     expected = textwrap.dedent(

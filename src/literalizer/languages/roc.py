@@ -764,7 +764,6 @@ class Roc(metaclass=LanguageCls):
 
         COMMAND = CommandCallStyle(
             arg_separator=" ",
-            wrapped_call_template="{wrapper} ({inner})",
         )
 
     call_styles = CallStyles

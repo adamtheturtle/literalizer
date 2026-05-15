@@ -756,7 +756,6 @@ class Elm(metaclass=LanguageCls):
 
         CURRIED = CommandCallStyle(
             arg_separator=" ",
-            wrapped_call_template="{wrapper} ({inner})",
         )
 
     call_styles = CallStyles
