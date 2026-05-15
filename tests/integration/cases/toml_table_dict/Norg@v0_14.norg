@@ -1,0 +1,6 @@
+* my_data
+@code json
+{
+    "section": {"value": 1}
+}
+@end
