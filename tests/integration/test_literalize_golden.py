@@ -298,6 +298,9 @@ def test_format_variant_golden_file(
                         wrap_in_file=True,
                         collection_layout=variant.collection_layout,
                     )
+            except UnrepresentableIntegerError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent integer in this input")
             except NullInCollectionError:
                 pytest.skip("Format rejects null elements in this input")
             except HeterogeneousCollectionError:

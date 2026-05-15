@@ -556,8 +556,17 @@ class Fortran(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class VersionFormats(enum.Enum):
-        """Version options for Fortran."""
+        """Version options for Fortran.
 
+        * ``VersionFormats.V2003`` — target Fortran 2003; the ``int64``
+          kind is defined locally via ``selected_int_kind`` because
+          Fortran 2003's ``iso_fortran_env`` has no such named constant.
+        * ``VersionFormats.V2008`` — target Fortran 2008; the ``int64``
+          kind is imported from the intrinsic ``iso_fortran_env``
+          module.
+        """
+
+        V2003 = enum.auto()
         V2008 = enum.auto()
 
     version_formats = VersionFormats
@@ -680,8 +689,10 @@ class Fortran(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `-std=` flag passed to the Fortran linter in
-    # `.github/workflows/lint.yml`.
+    # Each ``VersionFormats`` member has a matching ``-std=`` flag in the
+    # Fortran lint steps of `.github/workflows/lint.yml` (``V2003`` ->
+    # `-std=f2003`, ``V2008`` -> `-std=f2008`); keep the members and
+    # those flags in sync.
     language_version: VersionFormats = VersionFormats.V2008
     indent: str = "    "
     null_name: str = "fnull"
@@ -1049,10 +1060,32 @@ class Fortran(metaclass=LanguageCls):
 
     @cached_property
     def static_body_preamble(self) -> Sequence[str]:
-        """Static body-preamble lines emitted once per file."""
+        """Static body-preamble lines emitted once per file.
+
+        Fortran 2008 imports the ``int64`` kind from the intrinsic
+        ``iso_fortran_env`` module.  That named constant did not exist
+        in Fortran 2003's ``iso_fortran_env``, so the 2003 target
+        instead defines an equivalent kind parameter with
+        ``selected_int_kind(18)`` (18 decimal digits selects the same
+        8-byte kind ``int64`` denotes).  Fortran requires ``implicit
+        none`` before any data declaration, so the 2003 parameter
+        follows it whereas the 2008 ``use`` precedes it.  Either way the
+        rest of the module, including the ``_int64`` literal suffix,
+        refers to the kind as ``int64``, so nothing else varies by
+        version.
+        """
+        if self.language_version is self.version_formats.V2003:
+            kind_lines: tuple[str, ...] = (
+                "  implicit none",
+                "  integer, parameter :: int64 = selected_int_kind(18)",
+            )
+        else:
+            kind_lines = (
+                "  use, intrinsic :: iso_fortran_env, only: int64",
+                "  implicit none",
+            )
         return (
-            "  use, intrinsic :: iso_fortran_env, only: int64",
-            "  implicit none",
+            *kind_lines,
             "  type :: fval_t",
             "    integer :: t = 0",
             "  end type fval_t",
