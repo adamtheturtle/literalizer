@@ -8,7 +8,7 @@ with one of the input case directories under ``tests/integration/cases``.
 import dataclasses
 import enum
 import functools
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -859,9 +859,24 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
     return variants
 
 
+@runtime_checkable
+class _HasRecordShapeNames(Protocol):
+    """Structural type for languages that expose a
+    ``record_shape_names`` constructor field.
+
+    Used by :func:`build_record_shape_names_variants` to narrow a
+    generic :class:`literalizer.Language` to one with the field, without
+    introspecting ``__dataclass_fields__`` or casting to ``Any``.
+    """
+
+    record_shape_names: Mapping[frozenset[str], str]
+
+
+@beartype
 def build_record_shape_names_variants() -> Iterable[Variant]:
-    """Build ``record_shape_names`` variants for languages that support
-    the ``RECORD`` heterogeneous strategy.
+    """Build ``record_shape_names`` variants for every language whose
+    spec exposes a ``record_shape_names`` field and a ``RECORD``
+    heterogeneous strategy.
 
     Bypasses :func:`make_spec` caching because the user-facing
     ``record_shape_names`` parameter is a ``Mapping``, which cannot be
@@ -872,6 +887,8 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
     custom_name = "Task"
     for lang_cls in sorted_languages():
         default_spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(default_spec, _HasRecordShapeNames):
+            continue
         record_strategy = next(
             (
                 strategy
