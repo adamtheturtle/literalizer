@@ -4,6 +4,36 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Kotlin` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
+  :class:`~literalizer.Go`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated ``data class RecordN(val ...)``
+  declared in the preamble plus a matching ``RecordN(field = value,
+  ...)`` literal, so a dict whose values mix scalars and containers is
+  representable instead of raising.  Field names keep the original
+  dict keys and the data-class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter.  See #2298.
+
+2026.05.15
+----------
+
+- :func:`~literalizer.literalize` now accepts an opt-in ``bound_refs``
+  mapping.  Unlike ``ref_values`` (which only informs a ref's type and
+  leaves it as a free external identifier), each name in ``bound_refs``
+  additionally has a binding emitted for it before its first use, so a
+  single ``literalize(..., bound_refs=..., wrap_in_file=True)`` call
+  produces a complete, valid file with per-language declaration
+  sequencing (Nix nested ``let``, the Fortran rule that specification
+  statements precede executable statements, and so on).  Binding
+  emission only happens with ``wrap_in_file=True`` and a
+  :class:`~literalizer.NewVariable` or
+  :class:`~literalizer.ExistingVariable` ``variable_form``; otherwise
+  ``bound_refs`` degrades to type information only, exactly like
+  ``ref_values``.  The default (no ``bound_refs``) is unchanged: a
+  ``$ref`` stays a free external identifier.  The ref golden-file
+  harness now drives every case through one ``literalize`` call,
+  retiring its regex-based stub-stitching helpers.  See #2294.
+
 - :class:`~literalizer.Go` gains the ``RECORD`` ``heterogeneous_strategy``
   (already on :class:`~literalizer.Rust`).  Each record-shaped dict
   (non-empty, string-keyed) becomes a generated ``type RecordN struct
