@@ -674,6 +674,127 @@ def build_sequence_decl_variants() -> Iterable[Variant]:
 
 
 @beartype
+def _resolve_sequence_format_override(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    declaration_style: enum.Enum,
+) -> enum.Enum | None:
+    """Return the sequence-format override for *declaration_style*, if
+    any.
+
+    Rust ``CONST`` and ``STATIC`` reject the default ``VEC`` sequence
+    format upfront in ``__post_init__``; any cross-product variant that
+    pairs them with a non-default set/dict format still has to apply
+    the same sequence-format override the standalone declaration-style
+    variants use.
+    """
+    overrides = DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(lang_cls, {})
+    seq_format_name = overrides.get(declaration_style.name)
+    if seq_format_name is None:
+        return None
+    spec = make_spec(lang_cls=lang_cls)
+    return next(f for f in spec.sequence_formats if f.name == seq_format_name)
+
+
+@beartype
+def build_set_decl_variants() -> Iterable[Variant]:
+    """Build set format + declaration style cross-option variants.
+
+    For each language with multiple set formats *and* multiple
+    declaration styles, create a variant for every non-default
+    set format paired with every non-default declaration style.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        lang_name = lang_cls.__name__
+        spec = make_spec(lang_cls=lang_cls)
+        default_set_format = spec.set_format
+        default_declaration_style = spec.declaration_style
+        non_default_set_formats = [
+            set_format
+            for set_format in spec.set_formats
+            if set_format is not default_set_format
+        ]
+        non_default_declaration_styles = [
+            declaration_style
+            for declaration_style in spec.declaration_styles
+            if declaration_style is not default_declaration_style
+        ]
+        for set_format in non_default_set_formats:
+            for declaration_style in non_default_declaration_styles:
+                seq_override = _resolve_sequence_format_override(
+                    lang_cls=lang_cls,
+                    declaration_style=declaration_style,
+                )
+                kwargs: dict[str, object] = {
+                    "set_format": set_format,
+                    "declaration_style": declaration_style,
+                }
+                if seq_override is not None:
+                    kwargs["sequence_format"] = seq_override
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_name}_set_{set_format.name.lower()}"
+                            f"_decl_{declaration_style.name.lower()}"
+                        ),
+                        spec=make_spec(lang_cls=lang_cls, **kwargs),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
+def build_dict_decl_variants() -> Iterable[Variant]:
+    """Build dict format + declaration style cross-option variants.
+
+    For each language with multiple dict formats *and* multiple
+    declaration styles, create a variant for every non-default
+    dict format paired with every non-default declaration style.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        lang_name = lang_cls.__name__
+        spec = make_spec(lang_cls=lang_cls)
+        default_dict_format = spec.dict_format
+        default_declaration_style = spec.declaration_style
+        non_default_dict_formats = [
+            dict_format
+            for dict_format in spec.dict_formats
+            if dict_format is not default_dict_format
+        ]
+        non_default_declaration_styles = [
+            declaration_style
+            for declaration_style in spec.declaration_styles
+            if declaration_style is not default_declaration_style
+        ]
+        for dict_format in non_default_dict_formats:
+            for declaration_style in non_default_declaration_styles:
+                seq_override = _resolve_sequence_format_override(
+                    lang_cls=lang_cls,
+                    declaration_style=declaration_style,
+                )
+                kwargs: dict[str, object] = {
+                    "dict_format": dict_format,
+                    "declaration_style": declaration_style,
+                }
+                if seq_override is not None:
+                    kwargs["sequence_format"] = seq_override
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_name}_dict_{dict_format.name.lower()}"
+                            f"_decl_{declaration_style.name.lower()}"
+                        ),
+                        spec=make_spec(lang_cls=lang_cls, **kwargs),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
 def build_constructor_name_variants() -> Iterable[Variant]:
     """Build constructor-name variants for languages listed in
     :data:`CONSTRUCTOR_NAME_OVERRIDES` (e.g. Fortran).
@@ -1393,6 +1514,8 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_statement_terminator_style_decl_variants
     ),
     "sequence_decl": build_sequence_decl_variants,
+    "set_decl": build_set_decl_variants,
+    "dict_decl": build_dict_decl_variants,
     "type_hints_cross": build_type_hints_cross_variants,
     "string_format_date_cross": lambda: build_string_format_cross_variants(
         other_kwarg="date_format",
@@ -1647,6 +1770,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "statement_terminator_style_decl": (_ci(case_dir_name="simple_sequence"),),
     "sequence_decl": (_ci(case_dir_name="int_list"),),
+    "set_decl": (_ci(case_dir_name="set_mixed_int_widths"),),
+    "dict_decl": (_ci(case_dir_name="int_key_dict"),),
     "type_name": ADT_INPUTS,
     "constructor_prefix": ADT_INPUTS,
     "numeric_style": (
