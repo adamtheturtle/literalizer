@@ -1803,7 +1803,9 @@ class Rust(metaclass=LanguageCls):
 
     @cached_property
     def _strategy_params(self) -> _StrategyParams:
-        """Bundle of params handed to the active strategy's builders."""
+        """Bundle of arguments handed to the active strategy's
+        builders.
+        """
         return _StrategyParams(
             enum_name=self.heterogeneous_value_enum_name,
             date_type=self._heterogeneous_variant_date_type,
