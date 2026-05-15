@@ -1198,10 +1198,11 @@ class Kotlin(metaclass=LanguageCls):
 
         Generic collection literals carry their type in the ``<...>``
         segment of the constructor call (``linkedMapOf<String, Any?>(``
-        -> ``LinkedHashMap<String, Any?>``); a nested record-shaped dict
-        formats as its own ``RecordN(...)`` literal, whose name is the
-        declared type; everything else is an ``Int``/``Long``/``Double``
-        number.
+        -> ``LinkedHashMap<String, Any?>``); everything else is an
+        ``Int``/``Long``/``Double`` number.  A nested record-shaped
+        dict is resolved earlier by
+        :meth:`_kotlin_record_field_type_request` via
+        :attr:`RecordFieldType.record_name` and never reaches here.
         """
         if formatted.startswith("arrayOf("):
             body = formatted[len("arrayOf(") :].lstrip()
@@ -1213,10 +1214,6 @@ class Kotlin(metaclass=LanguageCls):
                 formatted.index("<") : formatted.index(">") + 1
             ]
             return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
-        prefix = self.record_struct_name_prefix
-        head = formatted.split(sep="(", maxsplit=1)[0]
-        if head.startswith(prefix) and head[len(prefix) :].isdigit():
-            return head
         if formatted.lstrip("-").isdigit():
             value = int(formatted)
             in_int = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
@@ -1234,10 +1231,11 @@ class Kotlin(metaclass=LanguageCls):
         A field whose value is itself a nested record-shaped dict uses
         that record's generated declaration name (which may be a custom
         ``record_shape_names`` name like ``Task`` that the
-        formatted-string typer cannot recover, since it only recognizes
-        the auto-generated ``{prefix}{N}`` head).  This mirrors Go's
-        ``record_name`` precedence; the remaining (non-record) field
-        typing is still read off ``request.formatted`` because Kotlin's
+        formatted-string fallback cannot recover, since it only
+        recognizes the auto-generated ``{prefix}{N}`` head).  This
+        mirrors Go's ``record_name`` precedence; the remaining
+        (non-record) field typing is still read off
+        ``request.formatted`` because Kotlin's
         ``field_type`` has not yet been ported off the formatted-string
         contract (unlike Go).  Porting it to derive the type from
         ``request.value`` via Kotlin's own openers is tracked
