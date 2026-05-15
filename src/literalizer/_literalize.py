@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Final, assert_never
 
 from beartype import BeartypeConf, beartype
@@ -524,118 +524,13 @@ def _maybe_format_record_literal(
     }
     rendered = render_record_literal(value, formatted_fields)
     if not is_multiline:
-        return rendered
-    return _expand_record_literal_multiline(
-        rendered=rendered,
-        body_prefix=body_prefix,
-        close_prefix=multiline_prefix,
-    )
-
-
-@beartype
-def _expand_record_literal_multiline(
-    *,
-    rendered: str,
-    body_prefix: str,
-    close_prefix: str,
-) -> str:
-    """Expand a single-line record literal into multiline form.
-
-    Splits ``Name { f1: v1, f2: v2 }`` (brace-delimited, e.g. Rust and
-    Go) or ``Name(f1 = v1, f2 = v2)`` (paren-delimited, e.g. Kotlin,
-    Scala, Java) into one entry per line indented under *body_prefix*
-    with the closing delimiter on its own line under *close_prefix*.
-    The opening delimiter is whichever of ``{`` or ``(`` appears first;
-    its matching closer is the literal's final character.  The literal
-    always has at least one field because ``render_record_literal`` is
-    only called for record-eligible (non-empty) dicts.
-    """
-    open_idx = min(
-        index for index, char in enumerate(iterable=rendered) if char in "{("
-    )
-    closer = {"{": "}", "(": ")"}[rendered[open_idx]]
-    head = rendered[: open_idx + 1]
-    body = rendered[open_idx + 1 : -1].strip()
-    entries = _split_record_entries(body=body)
-    indented = [f"{body_prefix}{entry.strip()}," for entry in entries]
-    return f"{head}\n" + "\n".join(indented) + f"\n{close_prefix}{closer}"
-
-
-@dataclasses.dataclass(frozen=True)
-class _StringScanStep:
-    r"""One step of scanning inside a string literal.
-
-    *in_string* is the currently-open quote character (or ``None`` if
-    the literal just closed).  *skip_next* is ``True`` when the next
-    char must be skipped because it is the second half of a ``\X``
-    escape sequence.
-    """
-
-    in_string: str | None
-    skip_next: bool
-
-
-@beartype
-def _split_record_entries(*, body: str) -> list[str]:
-    """Split a record-literal body on commas that are not inside
-    brackets or quotes.
-
-    *body* is the inner text of ``Name { ... }`` for a record with at
-    least one field, so the loop always produces a non-empty trailing
-    entry after the last comma (or the whole body when there are no
-    top-level commas).
-    """
-    entries: list[str] = []
-    last = 0
-    for index in _depth_zero_comma_indices(body=body):
-        entries.append(body[last:index])
-        last = index + 1
-    entries.append(body[last:].strip().rstrip(","))
-    return [e for e in entries if e.strip()]
-
-
-@beartype
-def _depth_zero_comma_indices(*, body: str) -> Iterator[int]:
-    r"""Yield indices of commas in *body* that are at bracket depth zero
-    and outside any string literal.
-
-    Treats ``\\`` inside a string literal as an escape so embedded
-    escaped quotes do not prematurely close string tracking.
-    """
-    depth = 0
-    in_string: str | None = None
-    skip_next = False
-    for index, char in enumerate(iterable=body):
-        if skip_next:
-            skip_next = False
-        elif in_string is not None:
-            step = _advance_string_state(char=char, quote=in_string)
-            in_string = step.in_string
-            skip_next = step.skip_next
-        elif char in {'"', "'"}:
-            in_string = char
-        elif char in {"(", "[", "{"}:
-            depth += 1
-        elif char in {")", "]", "}"}:
-            depth -= 1
-        elif char == "," and depth == 0:
-            yield index
-
-
-@beartype
-def _advance_string_state(
-    *,
-    char: str,
-    quote: str,
-) -> _StringScanStep:
-    """Return the next ``(in_string, skip_next)`` state inside a string
-    literal, given the current quote and next char.
-    """
-    if char == "\\":
-        return _StringScanStep(in_string=quote, skip_next=True)
-    if char == quote:
-        return _StringScanStep(in_string=None, skip_next=False)
-    return _StringScanStep(in_string=quote, skip_next=False)
+        joined = ", ".join(rendered.entries)
+        return (
+            f"{rendered.head}{rendered.compact_pad}{joined}"
+            f"{rendered.compact_pad}{rendered.closer}"
+        )
+    body = "\n".join(f"{body_prefix}{entry}," for entry in rendered.entries)
+    return f"{rendered.head}\n{body}\n{multiline_prefix}{rendered.closer}"
 
 
 @beartype

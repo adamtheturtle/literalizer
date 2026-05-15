@@ -435,6 +435,27 @@ class CollectionLayout(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
+class RenderedRecordLiteral:
+    """A record literal as structured pieces, assembled into compact or
+    multiline form by the shared record-layout code without re-parsing.
+
+    ``head`` is the literal up to and including its opening delimiter
+    (``Record0 {`` for Rust, ``Record0{`` for Go).  ``entries`` is one
+    already-formatted field per element (``id: 1``); an entry whose
+    value is itself multiline arrives already expanded.  ``closer`` is
+    the closing delimiter (``}``).  ``compact_pad`` is inserted just
+    inside the delimiters in compact form (a space for Rust's
+    ``Name { a }``, empty for Go's ``Name{a}``) and is unused in the
+    multiline form.
+    """
+
+    head: str
+    entries: tuple[str, ...]
+    closer: str
+    compact_pad: str
+
+
+@dataclasses.dataclass(frozen=True)
 class HeterogeneousBehavior:
     """Per-language hook describing how heterogeneous scalar
     collections are rendered.
@@ -470,8 +491,11 @@ class HeterogeneousBehavior:
 
     ``render_record_literal`` renders a record-shaped dict as a
     generated struct literal given its :class:`RecordShape` and a
-    mapping of pre-formatted field values.  Defaults to ``None`` for
-    strategies that do not opt into the ``RECORD`` style.
+    mapping of pre-formatted field values, returning a
+    :class:`RenderedRecordLiteral` (structured pieces the shared
+    record-layout code assembles into compact or multiline form).
+    Defaults to ``None`` for strategies that do not opt into the
+    ``RECORD`` style.
 
     ``compute_record_shapes`` walks the data once and returns a
     mapping from ``id(dict)`` to :class:`RecordShape` for every dict
@@ -490,7 +514,11 @@ class HeterogeneousBehavior:
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     render_record_literal: (
-        Callable[[dict[Scalar, Value], Mapping[str, str]], str] | None
+        Callable[
+            [dict[Scalar, Value], Mapping[str, str]],
+            RenderedRecordLiteral,
+        ]
+        | None
     ) = None
     compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]] = (
         dataclasses.field(default_factory=lambda: _no_compute_record_shapes)
