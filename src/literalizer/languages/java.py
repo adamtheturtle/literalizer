@@ -1063,8 +1063,8 @@ class Java(metaclass=LanguageCls):
         element type in its opener and is outside the ``RECORD``
         strategy's MVP (cf. the set / non-record-dict boundary in
         #2317), so the combination is rejected here rather than
-        emitting an uncompilable ``record`` declaration.  This check is
-        spec-only; *data* is unused.
+        emitting a ``record`` declaration that fails to compile.  This
+        check is spec-only; *data* is unused.
         """
         del data
         strategies = type(self.heterogeneous_strategy)

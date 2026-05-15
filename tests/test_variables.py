@@ -252,7 +252,8 @@ def test_java_record_non_array_sequence_raises() -> None:
     A list-valued record component is typed from the array opener
     (``new <type>[]{``) the value formatter emits; ``LIST`` renders
     ``List.of(...)``, whose opener carries no element type, so the
-    combination would emit an uncompilable ``record`` and is rejected.
+    combination would emit a ``record`` that fails to compile and is
+    rejected.
     """
     expected_msg = (
         "Java heterogeneous_strategy=RECORD requires "
