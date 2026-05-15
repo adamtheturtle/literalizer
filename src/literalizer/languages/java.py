@@ -688,6 +688,7 @@ class Java(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     supports_record_struct_name_prefix = True
+    supports_record_shape_names = False
     supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -1417,6 +1418,11 @@ class Java(metaclass=LanguageCls):
         """Java syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
+            # Java does not yet expose a ``record_shape_names``
+            # constructor field (ported with its own RECORD work); an
+            # empty mapping keeps every shape on the auto
+            # ``{prefix}{N}`` names.
+            record_shape_names=MappingProxyType(mapping={}),
             field_identifier=_java_record_field_identifier,
             field_type=self._java_record_field_type,
             render_declaration=_java_render_declaration,

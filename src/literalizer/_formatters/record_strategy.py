@@ -20,10 +20,12 @@ the first-seen :class:`RecordFieldType` request per shape during
 literal rendering; the preamble (assembled after all literals are
 formatted) reads that cache.
 
-Rust keeps its own copy of this logic because it additionally supports
-``record_shape_names`` and optional-field unification; this module
-deliberately omits those knobs (out of scope for the non-Rust ports),
-so :attr:`RecordShape.optional_keys` is always empty here.
+Rust keeps its own copy of this logic because it additionally
+supports optional-field unification; this module supports
+``record_shape_names`` (custom per-shape struct names, keyed by the
+shape's key-set) but deliberately omits unification (out of scope
+for the non-Rust ports), so :attr:`RecordShape.optional_keys` is
+always empty here.
 """
 
 import dataclasses
@@ -91,9 +93,13 @@ class RecordRenderer:
     """Per-language syntax hooks for the ``RECORD`` strategy.
 
     ``name_prefix`` is the auto-naming prefix (``Record`` -> ``Record0``,
-    ``Record1``, ...).  ``field_identifier`` maps an original dict key
-    to the language's field identifier (identity for most languages,
-    PascalCase for Go).  ``field_type`` maps a :class:`RecordFieldType`
+    ``Record1``, ...).  ``record_shape_names`` maps a shape's key-set
+    (``frozenset`` of its keys) to a custom struct name; a mapped shape
+    uses that name and the auto ``{prefix}{index}`` counter advances
+    only for the shapes with no custom name (mirrors Rust).
+    ``field_identifier`` maps an original dict key to the language's
+    field identifier (identity for most languages, PascalCase for Go).
+    ``field_type`` maps a :class:`RecordFieldType`
     (raw field value plus any resolved nested-record name) to its
     declared type, using the language's own collection openers rather
     than re-parsing the formatted literal.  ``render_declaration`` builds
@@ -105,6 +111,7 @@ class RecordRenderer:
     """
 
     name_prefix: str
+    record_shape_names: Mapping[frozenset[str], str]
     field_identifier: Callable[[str], str]
     field_type: Callable[[RecordFieldType], str]
     render_declaration: Callable[
@@ -185,12 +192,25 @@ def _assign_names(
     *,
     shapes: Sequence[RecordShape],
     prefix: str,
+    record_shape_names: Mapping[frozenset[str], str],
 ) -> dict[RecordShape, str]:
-    """Assign ``{prefix}{index}`` names in *shapes* order."""
-    return {
-        shape: f"{prefix}{index}"
-        for index, shape in enumerate(iterable=shapes)
-    }
+    """Assign struct names in *shapes* order.
+
+    A shape whose key-set is mapped in *record_shape_names* takes the
+    custom name; every other shape gets ``{prefix}{index}`` where
+    *index* advances only for the auto-named shapes (mirrors Rust's
+    ``_compute_shapes``/``_build_record_preamble``).
+    """
+    names: dict[RecordShape, str] = {}
+    prefix_index = 0
+    for shape in shapes:
+        custom = record_shape_names.get(frozenset(shape.keys))
+        if custom is None:
+            names[shape] = f"{prefix}{prefix_index}"
+            prefix_index += 1
+        else:
+            names[shape] = custom
+    return names
 
 
 @beartype
@@ -262,7 +282,11 @@ def build_record_strategy(
             shapes_by_id=shapes_by_id,
         )
         name_by_shape.update(
-            _assign_names(shapes=ordered, prefix=renderer.name_prefix),
+            _assign_names(
+                shapes=ordered,
+                prefix=renderer.name_prefix,
+                record_shape_names=renderer.record_shape_names,
+            ),
         )
         return shapes_by_id
 
