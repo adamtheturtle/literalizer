@@ -74,8 +74,8 @@ class LiteralizeRefCase:
 def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     """Return literalize-ref test cases for all languages.
 
-    Configs with a ``ref_case_override`` are filtered to languages whose
-    ``supported_ref_cases`` includes that override; the remaining
+    A case carrying a ``ref_case_override`` is filtered to languages
+    whose ``supported_ref_cases`` includes that override; the remaining
     languages cannot produce a golden file for the forced ref case and
     are excluded from discovery so the orphan-files check stays
     accurate.
@@ -129,7 +129,10 @@ def _collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
 
 
 _STUB_ASSIGN_LINE_RE = re.compile(pattern=r"^\w+\s*=(?!=)")
-_NIX_STUB_IN_RE = re.compile(pattern=r"^(.*;\s+in)\s+\w+\s*$")
+# The trailing identifier may be a kebab-case ref name (Nix permits
+# ``-`` in identifiers), so the name class allows hyphens, not just
+# ``\w``.
+_NIX_STUB_IN_RE = re.compile(pattern=r"^(.*;\s+in)\s+[\w-]+\s*$")
 
 
 def _split_stub(stub_code: str) -> tuple[list[str], list[str]]:
