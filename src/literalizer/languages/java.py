@@ -54,6 +54,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
+from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -576,53 +577,22 @@ def _java_record_field_identifier(key: str, /) -> str:
 
 
 @beartype
-def _java_field_type(formatted: str, /) -> str:  # noqa: PLR0911
-    """Return the Java record-component type for an already-formatted
-    field value.
+def _java_opener_field_type(opener: str, /) -> str:
+    """Return the Java component type for a container field from the
+    very collection opener the value formatter uses.
 
-    The declared type is read off the formatted literal so it always
-    matches what the value formatter emitted (mirroring Go's
-    string-head inference): ``new int[]{...}`` -> ``int[]``,
-    ``new Record1(...)`` -> ``Record1``, ``LocalDate.of(...)`` ->
-    ``LocalDate``, and so on.  Every Java composite literal states its
-    own type, so a container value carries that type as a ``new <type>``
-    prefix or a factory-call head; a very large integer's
-    ``new BigInteger("...")`` value resolves through the generic
-    ``new `` branch below.
-
-    Like Go's port, this covers only the value kinds the shared
-    ``record_*`` / heterogeneous corpus exercises; a Java-specific
-    kind such as a ``java.time.LocalTime`` record field is out of
-    scope here (flag it, don't infer it speculatively).
+    A record field is formatted with no sibling override, so the opener
+    a language returns for the field's value is exactly the one it
+    emitted.  Every Java container opener starts ``new <type>`` and the
+    type ends at the first ``{`` (array initializer), ``(`` (factory
+    call) or ``<`` (a diamond, which is illegal in a type position):
+    ``new int[]{`` -> ``int[]``, ``new Object[]{`` -> ``Object[]``,
+    ``new java.util.ArrayList<>(java.util.Arrays.asList(`` ->
+    ``java.util.ArrayList``.
     """
-    if formatted == "null":
-        return "Object"
-    if formatted in {"true", "false"}:
-        return "boolean"
-    if formatted.startswith('"'):
-        return "String"
-    if formatted.startswith("LocalDate.of("):
-        return "LocalDate"
-    if formatted.startswith("Instant.parse("):
-        return "Instant"
-    if formatted.startswith("ZonedDateTime.of("):
-        return "ZonedDateTime"
-    if formatted.startswith("new "):
-        # ``new int[]{...}`` -> ``int[]`` (type ends at ``{``);
-        # ``new Record1(...)`` -> ``Record1`` (type ends at ``(``);
-        # ``new BigInteger("...")`` -> ``BigInteger`` (ends at ``(``);
-        # ``new java.util.ArrayList<>(...)`` -> ``java.util.ArrayList``
-        # (the diamond is illegal in a type position, so the type ends
-        # at ``<``).
-        rest = formatted[len("new ") :]
-        brace = rest.find("{")
-        paren = rest.find("(")
-        angle = rest.find("<")
-        candidates = [i for i in (brace, paren, angle) if i != -1]
-        return rest[: min(candidates)]
-    if formatted.endswith("L"):
-        return "long"
-    return "int" if formatted.lstrip("-").isdigit() else "double"
+    rest = opener[len("new ") :]
+    ends = [pos for pos in (rest.find(c) for c in "{(<") if pos != -1]
+    return rest[: min(ends)]
 
 
 @beartype
@@ -1356,23 +1326,90 @@ class Java(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return _format_java_assignment
 
-    def _java_record_field_type_request(
-        self,
-        request: RecordFieldType,
-        /,
-    ) -> str:
-        """Adapt the structured :class:`RecordFieldType` hook to Java's
-        still-formatted-string field typing.
+    @cached_property
+    def _java_record_int_type(self) -> str:
+        """Java integer type for a record-component scalar."""
+        return "long" if self._suffix_is_auto else "int"
 
-        Java's ``field_type`` has not yet been ported off the
-        formatted-string contract (unlike Go), so it reads
-        ``request.formatted``.  Porting it to derive the type from
-        ``request.value`` via Java's own openers / scalar mapping --
-        which must keep the magnitude-dependent ``int``/``long`` epoch
-        and the ISO-string date/datetime cases byte-identical -- is
-        tracked separately, exactly as for Kotlin.
+    @cached_property
+    def _java_record_datetime_hint(self) -> str:
+        """Java type for a :class:`datetime.datetime` record component.
+
+        Unlike a top-level variable annotation (which widens an epoch
+        datetime to ``long``), a record component must match the value
+        the formatter emits: ``EPOCH`` renders a bare integer literal
+        that, for every datetime the corpus exercises, fits ``int``.
         """
-        return _java_field_type(request.formatted)
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "String"
+        if produced is int:
+            return "int"
+        if self.datetime_format.name == "ZONED":
+            return "ZonedDateTime"
+        return "Instant"
+
+    @cached_property
+    def _java_record_scalar_resolver(
+        self,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Type-only scalar resolver (the mapping the typed openers are
+        built on); returns ``None`` for an unmapped type so callers can
+        fall back to the top type.
+        """
+        return self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=None,
+            datetime_type=None,
+            enable_dict_type=False,
+        )
+
+    def _java_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Java record-component type for a field.
+
+        Derives the type from the raw value (and any resolved
+        nested-record name), mirroring Go's structural port rather than
+        re-parsing the formatted literal.  A list or ordered-map field
+        is typed from the very collection opener the value formatter
+        uses for it (a record field is formatted with no sibling
+        override, so the opener equals the one emitted).  ``int``
+        magnitude (``int`` vs ``long``) and the format-dependent
+        ``datetime`` type (``Instant`` / ``ZonedDateTime`` /
+        ``String`` / epoch ``int``) are value- and spec-driven, so
+        they are resolved explicitly; every other scalar (including
+        ``date`` -> ``LocalDate``) goes through the shared type-only
+        resolver.
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field is outside the ``RECORD`` strategy's MVP --
+        the same shapes Rust's ``_rust_record_field_type`` is imprecise
+        for (#2234) -- so it folds into the ``Object`` top type, which
+        the rendered literal still assigns into.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        int_type = self._java_record_int_type
+        match value:
+            case bool():
+                return "boolean"
+            case int():
+                in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
+                return "long" if int_type == "int" and not in_i32 else int_type
+            case datetime.datetime():
+                return self._java_record_datetime_hint
+            case OrderedMap():
+                opener = self.ordered_map_format_config.ordered_map_open(
+                    value,
+                )
+            case list():
+                opener = self.sequence_open(value)
+            case _:
+                return self._java_record_scalar_resolver(type(value)) or (
+                    "Object"
+                )
+        return _java_opener_field_type(opener)
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
@@ -1380,7 +1417,7 @@ class Java(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             field_identifier=_java_record_field_identifier,
-            field_type=self._java_record_field_type_request,
+            field_type=self._java_record_field_type,
             render_declaration=_java_render_declaration,
             render_literal=_java_record_literal,
         )
