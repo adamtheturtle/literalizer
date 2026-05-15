@@ -657,12 +657,13 @@ def _rust_record_field_type(  # noqa: PLR0911
     name, looked up via *shapes_by_id* so unification-rewritten shapes
     match.
     """
-    # The ``case []`` / ``case set()`` branches are reserved for shapes
-    # not exercised by current fixtures: empty-list fields and
-    # set-valued fields.  They fall back to ``String`` so the preamble
-    # still type-checks structurally.
+    # An empty-list field has no element type to infer, so it falls
+    # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
+    # this).  The ``case set()`` branch is reserved for set-valued
+    # fields, not exercised by current fixtures; it falls back to
+    # ``String`` so the preamble still type-checks structurally.
     match value:
-        case []:  # pragma: no cover
+        case []:
             return "Vec<String>"
         case list():
             inner_types = [
@@ -1139,6 +1140,7 @@ class Rust(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
+    supports_record_struct_name_prefix = True
     supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (

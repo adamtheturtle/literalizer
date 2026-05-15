@@ -7,9 +7,9 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GList([
-    GDict([#("id", GInt(1)), #("label", GStr("first"))]),
-    GDict([#("id", GInt(2)), #("label", GStr("second"))]),
-    GDict([#("id", GInt(3)), #("label", GStr("third"))]),
+    GDict([#("id", GInt(1)), #("label", GStr("first")), #("tags", GList([]))]),
+    GDict([#("id", GInt(2)), #("label", GStr("second")), #("tags", GList([]))]),
+    GDict([#("id", GInt(3)), #("label", GStr("third")), #("tags", GList([]))]),
   ])
   let _ = my_data
 }

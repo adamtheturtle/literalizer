@@ -404,6 +404,17 @@ def test_heterogeneous_strategy_combined_variable_forms(
         if spec.language_version is not version_format:
             continue
         with subtests.test(version=version_format.name):
+            golden_path = make_golden_path(
+                parent=input_info.path.parent,
+                name=case.name,
+                extension=case.lang_cls.extension,
+                lang_cls=case.lang_cls,
+                version=version_format,
+            )
+            spec = with_per_fixture_module_name(
+                spec=spec,
+                golden_path=golden_path,
+            )
             result = literalizer.literalize(
                 source=source_text,
                 input_format=input_info.input_format,
@@ -418,13 +429,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
                 contents=result.code + "\n",
                 extension=spec.extension,
                 newline=None,
-                golden_path=make_golden_path(
-                    parent=input_info.path.parent,
-                    name=case.name,
-                    extension=spec.extension,
-                    lang_cls=case.lang_cls,
-                    version=version_format,
-                ),
+                golden_path=golden_path,
             )
 
 

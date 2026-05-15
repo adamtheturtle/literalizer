@@ -12,14 +12,14 @@ typedef struct {
 module main;
 initial begin
 static _VVal my_data[] = '{
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"first\"}}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"second\"}}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"third\"}}}"}
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"first\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{}\"}}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"second\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{}\"}}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"third\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{}\"}}}"}
 };
 my_data = '{
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"first\"}}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"second\"}}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"third\"}}}"}
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"first\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{}\"}}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"second\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{}\"}}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"third\"}}, _VKV'{k: \"tags\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{}\"}}}"}
 };
 end
 endmodule

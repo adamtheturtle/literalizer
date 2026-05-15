@@ -6,9 +6,9 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
 let my_data : val_t = OList [
-    OMap [("id", OInt 1); ("label", OStr "first")];
-    OMap [("id", OInt 2); ("label", OStr "second")];
-    OMap [("id", OInt 3); ("label", OStr "third")]
+    OMap [("id", OInt 1); ("label", OStr "first"); ("tags", OList [])];
+    OMap [("id", OInt 2); ("label", OStr "second"); ("tags", OList [])];
+    OMap [("id", OInt 3); ("label", OStr "third"); ("tags", OList [])]
 ]
 
 end
