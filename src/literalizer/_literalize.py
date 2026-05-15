@@ -2291,45 +2291,6 @@ def _literalize_both_forms(
     )
 
 
-@beartype
-def _collect_bound_ref_order(
-    *,
-    value: Value,
-    ref_key: str,
-    bound_names: frozenset[str],
-) -> list[str]:
-    """Return the bound ref names in first-use (document) order.
-
-    Walks *value* depth-first in document order and records each ref
-    marker name that appears in *bound_names*.  A name that occurs more
-    than once is recorded only at its first occurrence so each binding
-    is emitted exactly once before its first use.
-    """
-    ordered: list[str] = []
-    seen: set[str] = set()
-
-    def _walk(node: Value) -> None:
-        """Record a bound ref name on first sight, then walk children."""
-        ref_name = _extract_call_arg_ref_name(value=node, ref_key=ref_key)
-        if ref_name is not None:
-            if ref_name in bound_names and ref_name not in seen:
-                seen.add(ref_name)
-                ordered.append(ref_name)
-            return
-        match node:
-            case dict():
-                for item in node.values():
-                    _walk(node=item)
-            case list():
-                for item in node:
-                    _walk(node=item)
-            case _:
-                return
-
-    _walk(node=value)
-    return ordered
-
-
 @dataclasses.dataclass(frozen=True)
 class _BoundRefComposition:
     """Per-ref declaration results paired with the main binding."""
@@ -2357,26 +2318,18 @@ def _literalize_bound_refs(
     """Emit a binding for each supplied ref before its first use.
 
     Renders one per-ref declaration (via :func:`literalize` with no
-    ``bound_refs`` and no file wrapping) for every name in *bound_refs*
-    that actually occurs in *source*, in first-use order, then renders
-    the main binding with the bound values folded into ``ref_values``.
-    The pieces are composed by sequencing every binding's declaration
-    text per language (Nix nested ``let``, Fortran two-phase) and
-    wrapping the result in variable mode so the language's binding
-    epilogue (Go ``_ = name``, Haskell ``seq name``) is preserved.
+    ``bound_refs`` and no file wrapping) for every name in *bound_refs*,
+    in *bound_refs* iteration order, then renders the main binding with
+    the bound values folded into ``ref_values``.  Callers supply
+    ``bound_refs`` already ordered by the ref's first use in *source*
+    (and containing only refs that appear there), so the bindings are
+    emitted before their first use.  The pieces are composed by
+    sequencing every binding's declaration text per language (Nix
+    nested ``let``, Fortran two-phase) and wrapping the result in
+    variable mode so the language's binding epilogue (Go ``_ = name``,
+    Haskell ``seq name``) is preserved.
     """
-    parsed = parse_input(source=source, input_format=input_format)
-    active_ref_key = _active_literalize_ref_key(
-        source=source,
-        input_format=input_format,
-        data=parsed.data,
-        ref_key=ref_key,
-    )
-    ordered_names = _collect_bound_ref_order(
-        value=parsed.data,
-        ref_key=active_ref_key,
-        bound_names=frozenset(bound_refs),
-    )
+    ordered_names = list(bound_refs)
     decl_results: list[LiteralizeResult] = []
     for name in ordered_names:
         converted_name = (
@@ -2633,11 +2586,15 @@ def literalize(
             that ref should be bound to.  Unlike *ref_values* (which
             only feeds type knowledge to the ref site, leaving the ref
             as a free external identifier), each name in *bound_refs*
-            additionally has a binding emitted for it before its first
-            use, so a single ``literalize`` call with
+            additionally has a binding emitted for it, in *bound_refs*
+            iteration order, so a single ``literalize`` call with
             ``wrap_in_file=True`` produces a complete, valid file with
             per-language declaration sequencing (Nix nested ``let``,
-            Fortran two-phase declarations, and so on).  Binding
+            Fortran two-phase declarations, and so on).  Supply
+            *bound_refs* ordered by each ref's first use in *source*
+            (and limited to refs that appear there) so every binding
+            precedes its first use and no unused binding is emitted.
+            Binding
             emission only happens when *wrap_in_file* is ``True`` and
             *variable_form* is a :class:`NewVariable` or
             :class:`ExistingVariable` (a binding the refs can precede);

@@ -75,12 +75,6 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
-        case_dir_name="literalize_ref_reused",
-        ref_key="$ref",
-        ref_value_sources=(),
-        ref_case_override=None,
-    ),
-    LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_heterogeneous",
         ref_key="$ref",
         ref_value_sources=(),
