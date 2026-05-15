@@ -1,0 +1,13 @@
+* shared_var
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+[
+    shared_var,
+    shared_var
+]
+@end

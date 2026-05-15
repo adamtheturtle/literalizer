@@ -2303,7 +2303,7 @@ def _collect_bound_ref_order(
     seen: set[str] = set()
 
     def _walk(node: Value) -> None:
-        """Record a bound ref name on first sight, then recurse."""
+        """Record a bound ref name on first sight, then walk children."""
         ref_name = _extract_call_arg_ref_name(value=node, ref_key=ref_key)
         if ref_name is not None:
             if ref_name in bound_names and ref_name not in seen:
