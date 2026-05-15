@@ -677,7 +677,7 @@ class PureScript(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1360,6 +1360,33 @@ class PureScript(metaclass=LanguageCls):
             return f"{name} :: {decl_type}\n{base}"
 
         return _purescript_declaration
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration prepends a ``name :: Type``
+        annotation derived from the bound value's runtime tagged-enum
+        type (``PInt``, ``PStr``, ...); a call expression carries no
+        such tag, so the annotation is omitted and PureScript infers
+        the call's return type instead.
+        """
+        return self.declaration_style.value.formatter
+
+    @staticmethod
+    def format_call_binding_body_preamble() -> tuple[str, ...]:
+        """Module-internal preamble lines for an inference-bound call
+        result.
+
+        The call stub returns ``Unit`` (``make_widget _ = unit``), so a
+        ``wrap_in_file`` scaffold whose top level binds a call result
+        must ``import Prelude`` to bring ``Unit`` / ``unit`` into scope.
+        The literal binding for the same data needs no such import, so
+        this is emitted only on the call-binding path.
+        """
+        return ("import Prelude",)
 
     @cached_property
     def compute_body_preamble(
