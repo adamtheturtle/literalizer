@@ -355,7 +355,7 @@ class Sml(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1027,6 +1027,20 @@ class Sml(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return self._sml_decl
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration prepends a ``: val_t`` type
+        annotation and wraps the value in a ``datatype`` constructor
+        derived from the bound value's runtime type; a call expression
+        has no such tag, so both are omitted and SML infers the call's
+        return type instead.
+        """
+        return self.declaration_style.value.formatter
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
