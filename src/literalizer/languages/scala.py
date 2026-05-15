@@ -344,6 +344,7 @@ class Scala(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     supports_record_struct_name_prefix = True
+    supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -876,6 +877,11 @@ class Scala(metaclass=LanguageCls):
         """Scala syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
+            # Scala does not yet expose a ``record_shape_names``
+            # constructor field (ported with its own RECORD work); an
+            # empty mapping keeps every shape on the auto
+            # ``{prefix}{N}`` names.
+            record_shape_names=MappingProxyType(mapping={}),
             field_identifier=_scala_record_field_identifier,
             field_type=self._scala_record_field_type,
             render_declaration=_scala_render_declaration,
