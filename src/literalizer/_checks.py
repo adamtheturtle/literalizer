@@ -195,12 +195,16 @@ def _has_heterogeneous(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
 ) -> bool:
     """Recursively check whether data contains any heterogeneous
     all-scalar collections.
 
     Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
-    carved out by the active RECORD heterogeneous strategy.
+    carved out by the active RECORD heterogeneous strategy.  Lists
+    whose ``id`` is in *tuple_list_ids* are skipped — they are carved
+    out by the active TUPLE heterogeneous strategy, which renders them
+    as a fixed-size tuple rather than a homogeneous sequence.
     """
     match data:
         case dict():
@@ -212,14 +216,22 @@ def _has_heterogeneous(
             )
         case list():
             children = data
-            own_mixed = _all_scalars_heterogeneous(values=children)
+            own_mixed = id(
+                data
+            ) not in tuple_list_ids and _all_scalars_heterogeneous(
+                values=children
+            )
         case set():
             return _all_scalars_heterogeneous(values=list(data))
         case _:
             return False
 
     return own_mixed or any(
-        _has_heterogeneous(data=v, record_dict_ids=record_dict_ids)
+        _has_heterogeneous(
+            data=v,
+            record_dict_ids=record_dict_ids,
+            tuple_list_ids=tuple_list_ids,
+        )
         for v in children
     )
 
@@ -368,24 +380,31 @@ def _has_mixed_dict_values(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
 ) -> bool:
     """Recursively check whether data contains any dict whose values span
     multiple type families.
 
     Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
-    carved out by the active RECORD heterogeneous strategy.
+    carved out by the active RECORD heterogeneous strategy.  A value
+    whose ``id`` is in *tuple_list_ids* is excluded from the
+    type-family span of its parent dict: the TUPLE strategy renders
+    that heterogeneous array as a single fixed-size tuple field, so it
+    does not force the surrounding map to a heterogeneous value type.
     """
     match data:
         case dict():
             values: list[Value] = list(data.values())
+            considered = [v for v in values if id(v) not in tuple_list_ids]
             if id(data) not in record_dict_ids and _values_mixed_types(
-                values=values
+                values=considered
             ):
                 return True
             return any(
                 _has_mixed_dict_values(
                     data=v,
                     record_dict_ids=record_dict_ids,
+                    tuple_list_ids=tuple_list_ids,
                 )
                 for v in values
             )
@@ -394,6 +413,7 @@ def _has_mixed_dict_values(
                 _has_mixed_dict_values(
                     data=v,
                     record_dict_ids=record_dict_ids,
+                    tuple_list_ids=tuple_list_ids,
                 )
                 for v in data
             )
@@ -453,17 +473,34 @@ def _has_dict_with_unwrappable_value_mix(
 
 
 @beartype
-def _has_mixed_list_values(*, data: Value) -> bool:
+def _has_mixed_list_values(
+    *,
+    data: Value,
+    tuple_list_ids: frozenset[int],
+) -> bool:
     """Recursively check whether data contains any list whose elements span
     multiple type families.
+
+    Lists whose ``id`` is in *tuple_list_ids* are skipped — they are
+    carved out by the active TUPLE heterogeneous strategy, which
+    renders them as a fixed-size tuple whose positions may differ in
+    type.
     """
     match data:
         case dict():
-            return any(_has_mixed_list_values(data=v) for v in data.values())
+            return any(
+                _has_mixed_list_values(data=v, tuple_list_ids=tuple_list_ids)
+                for v in data.values()
+            )
         case list():
-            if _values_mixed_types(values=data):
+            if id(data) not in tuple_list_ids and _values_mixed_types(
+                values=data
+            ):
                 return True
-            return any(_has_mixed_list_values(data=v) for v in data)
+            return any(
+                _has_mixed_list_values(data=v, tuple_list_ids=tuple_list_ids)
+                for v in data
+            )
         case _:
             return False
 
@@ -489,9 +526,14 @@ def _check_heterogeneous(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
 ) -> None:
     """Raise if data contains heterogeneous all-scalar collections."""
-    if _has_heterogeneous(data=data, record_dict_ids=record_dict_ids):
+    if _has_heterogeneous(
+        data=data,
+        record_dict_ids=record_dict_ids,
+        tuple_list_ids=tuple_list_ids,
+    ):
         types = _describe_heterogeneous_types(data=data)
         msg = (
             "Collection contains heterogeneous scalar types that cannot "
@@ -546,9 +588,14 @@ def _check_mixed_dict_values(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
 ) -> None:
     """Raise if any dict has values spanning multiple type families."""
-    if _has_mixed_dict_values(data=data, record_dict_ids=record_dict_ids):
+    if _has_mixed_dict_values(
+        data=data,
+        record_dict_ids=record_dict_ids,
+        tuple_list_ids=tuple_list_ids,
+    ):
         types = _describe_mixed_type_families(
             data=data,
             container_type=dict,
@@ -562,9 +609,13 @@ def _check_mixed_dict_values(
 
 
 @beartype
-def _check_mixed_list_values(*, data: Value) -> None:
+def _check_mixed_list_values(
+    *,
+    data: Value,
+    tuple_list_ids: frozenset[int],
+) -> None:
     """Raise if any list has elements spanning multiple type families."""
-    if _has_mixed_list_values(data=data):
+    if _has_mixed_list_values(data=data, tuple_list_ids=tuple_list_ids):
         types = _describe_mixed_type_families(
             data=data,
             container_type=list,
@@ -616,6 +667,12 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
         else {}
     )
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
+    compute_tuple_list_ids = behavior.compute_tuple_list_ids
+    tuple_list_ids: frozenset[int] = (
+        compute_tuple_list_ids(data)
+        if compute_tuple_list_ids is not None
+        else frozenset()
+    )
     if behavior.render_record_literal is not None and _has_mixed_record_shapes(
         data=data,
         shapes_by_id=record_shapes_by_id,
@@ -633,15 +690,20 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
             _check_heterogeneous(
                 data=data,
                 record_dict_ids=record_dict_ids,
+                tuple_list_ids=tuple_list_ids,
             )
             _check_heterogeneous_sibling_lists(data=data)
         if not dict_supports_het:
             _check_mixed_dict_values(
                 data=data,
                 record_dict_ids=record_dict_ids,
+                tuple_list_ids=tuple_list_ids,
             )
         if not seq_supports_het:
-            _check_mixed_list_values(data=data)
+            _check_mixed_list_values(
+                data=data,
+                tuple_list_ids=tuple_list_ids,
+            )
         if not set_supports_het:
             _check_heterogeneous_set(data=data)
     elif behavior.wrap_non_scalar is None:

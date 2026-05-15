@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Rust` gains the ``TUPLE`` ``heterogeneous_strategy``.
+  A fixed-length heterogeneous **scalar** array that is a dict value, a
+  record field value, or the document root (every element scalar,
+  spanning at least two scalar buckets) is rendered as a native tuple
+  ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` instead of raising.  It
+  composes with ``RECORD``: a record field whose value is such an array
+  becomes a tuple-typed struct field.  Heterogeneous arrays nested
+  inside another list, or containing a non-scalar element, stay out of
+  scope and still raise.  This lands the shared, language-agnostic
+  machinery with Rust as the reference implementation; one
+  language port follows per PR.  See #2327.
+
 2026.05.15.1
 ------------
 

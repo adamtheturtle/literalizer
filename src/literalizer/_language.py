@@ -450,6 +450,27 @@ class RenderedRecordLiteral:
 
 
 @dataclasses.dataclass(frozen=True)
+class RenderedTupleLiteral:
+    """A heterogeneous-tuple literal as structured pieces, assembled
+    into compact or multiline form by the same shared layout code as
+    :class:`RenderedRecordLiteral` without re-parsing.
+
+    ``head`` is the literal up to and including its opening delimiter
+    (``(`` for Rust).  ``entries`` is one already-formatted element per
+    tuple position (``1``, ``"email"``); an entry whose value is itself
+    multiline arrives already expanded.  ``closer`` is the closing
+    delimiter (``)``).  ``compact_pad`` is inserted just inside the
+    delimiters in compact form (empty for Rust's ``(a, b)``) and is
+    unused in the multiline form.
+    """
+
+    head: str
+    entries: tuple[str, ...]
+    closer: str
+    compact_pad: str
+
+
+@dataclasses.dataclass(frozen=True)
 class HeterogeneousBehavior:
     """Per-language hook describing how heterogeneous scalar
     collections are rendered.
@@ -500,6 +521,26 @@ class HeterogeneousBehavior:
     ``render_record_literal``: a behavior either sets both (RECORD)
     or neither.
 
+    ``render_tuple_literal`` renders a fixed-length heterogeneous
+    scalar array as a native tuple given the raw list and its
+    pre-formatted elements, returning a :class:`RenderedTupleLiteral`
+    (structured pieces the same shared layout code assembles into
+    compact or multiline form).  Defaults to ``None`` for strategies
+    that do not opt into the ``TUPLE`` style.
+
+    ``compute_tuple_list_ids`` walks the data once and returns the set
+    of ``id(list)`` for every list the strategy will render as a tuple
+    (a heterogeneous scalar array that is a dict value / record field
+    value / document root, all elements scalar, spanning at least two
+    scalar buckets).  Used by
+    :func:`~literalizer._checks.check_data` to carve those lists out of
+    the heterogeneous-scalar / mixed-list / mixed-dict-value checks.
+    Defaults to ``None`` for non-TUPLE strategies, paired with
+    ``render_tuple_literal``: a behavior either sets both (TUPLE) or
+    neither.  The ``TUPLE`` strategy additionally sets the ``RECORD``
+    hooks so a record field whose value is a heterogeneous scalar
+    array becomes a tuple-typed field (the two strategies compose).
+
     Languages that do not wrap expose
     :data:`NO_HETEROGENEOUS_BEHAVIOR`.
     """
@@ -519,6 +560,14 @@ class HeterogeneousBehavior:
     compute_record_shapes: (
         Callable[[Value], Mapping[int, RecordShape]] | None
     ) = None
+    render_tuple_literal: (
+        Callable[
+            [list[Value], Sequence[str]],
+            RenderedTupleLiteral,
+        ]
+        | None
+    ) = None
+    compute_tuple_list_ids: Callable[[Value], frozenset[int]] | None = None
 
 
 def no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:

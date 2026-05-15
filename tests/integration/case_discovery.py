@@ -580,7 +580,13 @@ def build_heterogeneous_strategy_combined_cases() -> list[
     non-default heterogeneous-scalar strategies.
     """
     cases: list[HeterogeneousStrategyCombinedCase] = []
-    case_dir_name = "dict_mixed_scalars"
+    # Most strategies exercise the mixed-scalar dict; the TUPLE strategy
+    # needs an input that actually carries a tuple-eligible
+    # heterogeneous scalar array, so it is paired with the canonical
+    # record-field fixture (which also exercises RECORD/TUPLE
+    # composition) instead.
+    default_case_dir_name = "dict_mixed_scalars"
+    strategy_case_dir_names = {"TUPLE": "tuple_record_field"}
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
@@ -593,6 +599,10 @@ def build_heterogeneous_strategy_combined_cases() -> list[
             name = (
                 f"{lang_name}_heterogeneous_strategy"
                 f"_{strategy.name.lower()}_combined"
+            )
+            case_dir_name = strategy_case_dir_names.get(
+                strategy.name,
+                default_case_dir_name,
             )
             cases.append(
                 HeterogeneousStrategyCombinedCase(
