@@ -44,7 +44,11 @@ from literalizer.languages import (
 )
 
 from .case_discovery import cases_with_special_floats, discover_cases
-from .language_specs import make_spec, sorted_languages
+from .language_specs import (
+    RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES,
+    make_spec,
+    sorted_languages,
+)
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -987,6 +991,87 @@ def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_numeric_cross_variants() -> Iterable[Variant]:
+    """Build ``RECORD`` x non-default numeric-formatter variants.
+
+    For every language whose ``RECORD`` strategy chooses each struct
+    field's type from the value
+    (:data:`RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES`), cross ``RECORD``
+    with every non-default ``integer_format``, ``numeric_separator`` and
+    ``numeric_literal_suffix``.  Run against the ``record_wide_int``
+    input these lock in that the declared field type follows the value,
+    not the formatted literal (issue #2306, follow-up to #2297): an
+    integer field keeps its value-derived type however the literal is
+    written, and a positive integer beyond the signed 64-bit range is
+    typed to match its wide-integer overflow-fallback literal instead of
+    the type a formatted-string inspection would infer.
+
+    Languages whose ``RECORD`` strategy still infers a field's type from
+    the formatted literal would emit non-compiling goldens for this
+    cross; that shared issue is tracked separately
+    (#2298 / #2299 / #2300) and each language joins the set once fixed.
+    """
+    axes: list[
+        tuple[
+            str,
+            str,
+            Callable[[literalizer.Language], object],
+            Callable[[literalizer.Language], type[enum.Enum]],
+        ]
+    ] = [
+        (
+            "integer",
+            "integer_format",
+            lambda s: s.integer_format,
+            lambda s: s.integer_formats,
+        ),
+        (
+            "separator",
+            "numeric_separator",
+            lambda s: s.numeric_separator,
+            lambda s: s.numeric_separators,
+        ),
+        (
+            "suffix",
+            "numeric_literal_suffix",
+            lambda s: s.numeric_literal_suffix,
+            lambda s: s.numeric_literal_suffixes,
+        ),
+    ]
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if lang_cls not in RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES:
+            continue
+        spec = make_spec(lang_cls=lang_cls)
+        record_strategy = next(
+            strategy
+            for strategy in spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
+        )
+        lang_name = lang_cls.__name__
+        for tag, kwarg, get_default, get_formats in axes:
+            default = get_default(spec)
+            for fmt in get_formats(spec):
+                if fmt is default:
+                    continue
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_name}_heterogeneous_strategy_record"
+                            f"_{tag}_{fmt.name.lower()}"
+                        ),
+                        spec=make_spec(
+                            lang_cls=lang_cls,
+                            heterogeneous_strategy=record_strategy,
+                            **{kwarg: fmt},
+                        ),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
 def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-enum-name variants for languages that
     generate a named type for their heterogeneous strategy (e.g. Rust's
@@ -1675,6 +1760,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_record_unify_optional_fields_variants
     ),
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
+    "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
@@ -1950,6 +2036,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "record_epoch_i32_overflow": (
         _ci(case_dir_name="record_epoch_datetime_i32_overflow"),
     ),
+    "record_numeric_cross": (_ci(case_dir_name="record_wide_int"),),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name)
         for case_dir_name in dict.fromkeys(

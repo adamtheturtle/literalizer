@@ -19,8 +19,23 @@ from literalizer.languages import (
     Crystal,
     Erlang,
     Gleam,
+    Go,
     Haskell,
+    Rust,
     Scala,
+)
+
+# Languages whose ``RECORD`` heterogeneous strategy chooses each
+# generated struct field's type from the value itself, so the declared
+# field type matches the rendered literal under any non-default
+# ``integer_format`` / ``numeric_separator`` / ``numeric_literal_suffix``
+# and for an integer outside the signed 64-bit range.  Kotlin, Java and
+# Scala still infer a record field's type from the formatted literal and
+# emit code that does not compile for those combinations; that shared
+# issue is tracked separately (#2298 / #2299 / #2300) and each language
+# joins this set once it derives the type from the value.
+RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
+    frozenset({Go, Rust})
 )
 
 

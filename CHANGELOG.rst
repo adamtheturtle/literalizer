@@ -13,6 +13,15 @@ Next
   (``long`` / ``Long``) once the value leaves signed 32-bit range, so
   the declared component type always matches the rendered literal.
   In-range epochs are unaffected.  See #2338.
+- :class:`~literalizer.Go` no longer emits output that fails to compile
+  for a record field holding a positive integer beyond the signed
+  64-bit range under the ``RECORD`` ``heterogeneous_strategy``.  Such a
+  value renders through the ``uint64(...)`` overflow fallback, and the
+  generated struct field is now typed ``uint64`` to match it instead
+  of ``int`` / ``int64``.  Record integer fields formatted with a
+  non-default ``integer_format``, ``numeric_separator`` or
+  ``numeric_literal_suffix`` keep their value-derived field type.
+  In-range integers are unaffected.  See #2306.
 
 2026.05.15.2
 ------------
