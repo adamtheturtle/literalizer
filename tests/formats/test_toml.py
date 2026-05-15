@@ -63,16 +63,3 @@ def test_toml_comments_propagate() -> None:
     assert result.code == (
         '# before\n"answer": 42,  # inline\n"plain": "ok",\n# trailing'
     )
-
-
-def test_toml_table_entries_literalize() -> None:
-    """TOML tables become dict entries in the rendered output."""
-    result = literalize(
-        source="[section]\nvalue = 1\n",
-        input_format=InputFormat.TOML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-    )
-
-    assert result.code == '"section": {"value": 1},'

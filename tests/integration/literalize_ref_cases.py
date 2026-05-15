@@ -14,6 +14,7 @@ import enum
 import functools
 import json
 import re
+import tomllib
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import assert_never
@@ -408,11 +409,7 @@ def run_literalize_ref_golden_case(
                     stream=input_source,
                 )
             case literalizer.InputFormat.TOML:
-                message = (
-                    "No TOML-backed ref case exists; the stub-name "
-                    "collector has no TOML parser wired in."
-                )
-                raise NotImplementedError(message)
+                raw_data = tomllib.loads(input_source)
             case _ as unreachable:
                 assert_never(unreachable)
         stub_sources = dict(config.ref_value_sources)
