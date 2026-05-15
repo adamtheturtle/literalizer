@@ -53,6 +53,10 @@ class WideInt:
     """
 
 
+# Signed 32-bit range; an int outside it widens to :class:`WideInt`.
+# Keep in sync with ``_SCALA_INT32_MIN`` / ``_SCALA_INT32_MAX`` in
+# :mod:`literalizer.languages.scala`, which derives a ``Long`` record
+# field type from the same threshold.
 _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
 

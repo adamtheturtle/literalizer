@@ -48,10 +48,16 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
+    RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+)
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    WideInt,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -244,29 +250,14 @@ _SCALA_UNTYPED_OPENERS: dict[str, str] = {
     ),
 }
 
-# Date/datetime values format as a factory call whose head up to the
-# first ``(`` is the call (``LocalDate.of``), not the field type; map
-# each constructor prefix to the type the value formatter produced.
-_SCALA_CONSTRUCTOR_TYPES: dict[str, str] = {
-    "LocalDate.of(": "LocalDate",
-    "ZonedDateTime.of(": "ZonedDateTime",
-}
-
-
-@beartype
-def _scala_scalar_number_type(formatted: str, /) -> str:
-    """Return the Scala numeric type for a formatted scalar literal.
-
-    Integers within signed 32-bit range render bare (``Int``); wider
-    ones carry an ``L`` suffix (``Long``); anything else is a
-    floating-point literal (``Double``), including the special-float
-    constants ``Double.NaN`` / ``Double.PositiveInfinity``.
-    """
-    if formatted.endswith("L") and formatted[:-1].lstrip("-").isdigit():
-        return "Long"
-    if formatted.lstrip("-").isdigit():
-        return "Int"
-    return "Double"
+# Scala ``Int`` is signed 32-bit; an integer outside this range is
+# formatted with an ``L`` suffix and is therefore a ``Long`` field
+# (mapped via :class:`WideInt`).  Keep these bounds in sync with
+# ``_I32_MIN`` / ``_I32_MAX`` in
+# :mod:`literalizer._formatters.type_inference` (the value formatter's
+# own widening threshold, which has a back-reference to here).
+_SCALA_INT32_MIN = -(2**31)
+_SCALA_INT32_MAX = 2**31 - 1
 
 
 @beartype
@@ -786,36 +777,72 @@ class Scala(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
-    def _scala_field_type(self, formatted: str, /) -> str:
-        """Return the Scala ``case class`` field type for an
-        already-formatted value.
+    @cached_property
+    def _scalar_field_type_resolver(
+        self,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Map a scalar element type to its Scala type name.
 
-        The declared type is read off the formatted literal so it
-        always matches what the value formatter emitted.  Scalars carry
-        no type prefix and are recognized by shape; container and
-        nested-record literals carry their type as the text before the
-        first ``(`` (the typed openers Scala's element-type resolver
-        emits, e.g. ``List[Int](`` or ``Record1(``).  Untyped fallback
-        openers (``List(``, ``Map(``, the ordered-map ``ListMap``)
-        widen to a covariant ``...[Any]`` so the field still
-        type-checks.  The date/datetime constructors (``LocalDate.of(``,
-        ``ZonedDateTime.of(``) are special-cased because their head up
-        to ``(`` is the factory call, not the type; ``BigInt(`` is not,
-        because there the head *is* the type.
+        Built from the same scalar mapping the collection openers use,
+        with the date/datetime names resolved from the configured
+        formats (so an ``EPOCH`` datetime field is typed ``Int`` and an
+        ``ISO`` one ``String``, matching the rendered literal).
+        ``WideInt`` resolves to ``Long``.
         """
-        if formatted == self.null_literal:
-            return "Any"
-        if formatted in {self.true_literal, self.false_literal}:
-            return "Boolean"
-        if formatted.startswith('"'):
-            return "String"
-        for prefix, type_name in _SCALA_CONSTRUCTOR_TYPES.items():
-            if formatted.startswith(prefix):
-                return type_name
-        if "(" in formatted:
-            head = formatted[: formatted.index("(")]
-            return _SCALA_UNTYPED_OPENERS.get(head, head)
-        return _scala_scalar_number_type(formatted)
+        return self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=self._date_type_name,
+            datetime_type=self._datetime_type_name,
+            enable_dict_type=False,
+        )
+
+    def _scala_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Scala ``case class`` field type for a record
+        field, derived structurally from the raw value.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  A list or ordered-map field
+        derives its type from the very collection opener the value
+        formatter uses for that value (a record field is formatted with
+        no sibling override, so the opener equals the one emitted); the
+        opener's trailing ``(`` is dropped, and an untyped fallback
+        opener (``List(``, the ordered-map ``ListMap(``) widens to its
+        covariant ``...[Any]`` form so the precisely-typed literal
+        still type-checks.  A scalar field uses the same scalar mapping
+        the openers are built on (a wide ``int`` -> ``Long``).
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field is outside the ``RECORD`` strategy's MVP --
+        Rust's ``_rust_record_field_type`` is imprecise for the same
+        shapes (#2234) -- so it is declared as Scala's top type
+        ``Any``, which the rendered literal still assigns into.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        match value:
+            case None:
+                return "Any"
+            case OrderedMap():
+                opener = self.ordered_map_format_config.ordered_map_open(
+                    value,
+                )
+            case list():
+                opener = self.sequence_open(value)
+            case bool():
+                return self._scalar_field_type_resolver(bool) or "Any"
+            case int():
+                element_type: type = (
+                    int
+                    if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX
+                    else WideInt
+                )
+                return self._scalar_field_type_resolver(element_type) or "Any"
+            case _:
+                return self._scalar_field_type_resolver(type(value)) or "Any"
+        head = opener[: -len("(")]
+        return _SCALA_UNTYPED_OPENERS.get(head, head)
 
     def _scala_render_declaration(
         self,
@@ -837,7 +864,7 @@ class Scala(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             field_identifier=_scala_record_field_identifier,
-            field_type=self._scala_field_type,
+            field_type=self._scala_record_field_type,
             render_declaration=self._scala_render_declaration,
             render_literal=_scala_record_literal,
         )
