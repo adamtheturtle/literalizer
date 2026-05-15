@@ -9,7 +9,6 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     make_element_to_type,
@@ -82,7 +81,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 class _CppModifiers(enum.Enum):
@@ -402,9 +401,9 @@ def _compute_cpp_type(
     *type_ctx*.
     """
     match item:
-        case ordereddict():
-            omap_values = item.values()  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
-            values: list[Value] = list(omap_values)  # pyright: ignore[reportUnknownArgumentType]
+        case OrderedMap():
+            omap_values = item.values()
+            values: list[Value] = list(omap_values)
             value_type = _compute_element_type_for_items(
                 items=values,
                 type_ctx=type_ctx,
@@ -585,7 +584,7 @@ def _has_empty_collection(data: Value) -> bool:
     require ``#include <cstddef>``.
     """
     match data:
-        case list() | set() | dict() | ordereddict() if not data:
+        case list() | set() | dict() if not data:
             return True
         case list():
             return any(_has_empty_collection(data=v) for v in data)

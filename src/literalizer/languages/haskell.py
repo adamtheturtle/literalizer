@@ -8,7 +8,6 @@ from functools import cached_property
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -76,7 +75,7 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
@@ -623,7 +622,7 @@ def _haskell_base_constructors(
             (frozenset({str, bytes}), f"{p}Str String"),
             (frozenset({list}), f"{p}List [{type_name}]"),
             (
-                frozenset({dict, ordereddict}),
+                frozenset({dict, OrderedMap}),
                 f"{p}Map [(String, {type_name})]",
             ),
             (frozenset({set}), f"{p}Set [{type_name}]"),

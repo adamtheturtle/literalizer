@@ -9,7 +9,6 @@ from functools import cached_property
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -81,7 +80,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 
 
 @beartype
@@ -1028,7 +1027,7 @@ class FSharp(metaclass=LanguageCls):
                 header,
                 f"    | {p}Map of (string * {self.type_name}) list",
             ),
-            ordereddict: (
+            OrderedMap: (
                 header,
                 f"    | {p}Map of (string * {self.type_name}) list",
             ),

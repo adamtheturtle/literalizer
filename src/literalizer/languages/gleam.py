@@ -11,7 +11,6 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -75,7 +74,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import UnrepresentableSpecialFloatError
 
 
@@ -485,7 +484,7 @@ def _build_gleam_data_dependent_preamble(
                 (frozenset(str_types), f"{p}Str(String)"),
                 (frozenset({list}), f"{p}List(List({type_name}))"),
                 (
-                    frozenset({dict, ordereddict}),
+                    frozenset({dict, OrderedMap}),
                     f"{p}Dict(List(#(String, {type_name})))",
                 ),
                 (frozenset({set}), f"{p}Set(List({type_name}))"),

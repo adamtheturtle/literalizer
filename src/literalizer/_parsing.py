@@ -15,12 +15,11 @@ from ruamel.yaml.comments import (
     CommentedOrderedMap,
     CommentedSet,
 )
-from ruamel.yaml.compat import ordereddict
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.toml_document import TOMLDocument
 
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
     JSONParseError,
@@ -129,10 +128,11 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
-    ``!!omap`` nodes; those are demoted to plain ``ordereddict`` so
-    ordered-map detection in :func:`_literalize` still works.  Other
-    mappings come through as ``CommentedMap`` and are demoted to plain
-    ``dict``.  :class:`CommentedSet` does not subclass :class:`set`, so
+    ``!!omap`` nodes; those are converted to literalizer's own
+    :class:`OrderedMap` so ordered-map detection in :func:`_literalize`
+    does not depend on ruamel's class hierarchy.  Other mappings come
+    through as ``CommentedMap`` and are demoted to plain ``dict``.
+    :class:`CommentedSet` does not subclass :class:`set`, so
     it is converted as well.  Scalar leaves (including dict keys) are
     unwrapped to plain Python types so type-based dispatch sees
     ``int`` rather than ``ScalarInt`` and friends.
@@ -146,11 +146,11 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     # and ``list`` respectively, so their cases collapse into the plain
     # ``dict()`` / ``list()`` arms below.  ``CommentedOrderedMap`` must
     # stay on its own arm because it is *also* a ``dict`` subclass but
-    # represents ``!!omap`` and must be demoted to ``ordereddict``.
+    # represents ``!!omap`` and must become an ``OrderedMap``.
     match data:
         case CommentedOrderedMap():
             omap_src: dict[Scalar, YamlCoercible] = dict(data)
-            return ordereddict(
+            return OrderedMap(
                 [
                     (
                         _unwrap_yaml_scalar(value=k),

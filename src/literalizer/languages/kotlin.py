@@ -4,14 +4,12 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections import OrderedDict
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
 
 from beartype import beartype
-from ruamel.yaml.compat import ordereddict
 
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
@@ -95,7 +93,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 @beartype
@@ -370,7 +368,7 @@ def _kotlin_type_hint(
         case dict():
             hint = _kotlin_dict_hint(
                 is_empty=not data,
-                is_ordered=isinstance(data, (ordereddict, OrderedDict)),
+                is_ordered=isinstance(data, OrderedMap),
                 val_types=[recurse(data=v) for v in data.values()],
                 default_dict_key_type=default_dict_key_type,
                 default_dict_value_type=default_dict_value_type,
