@@ -152,37 +152,6 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
     )
 
 
-def test_rust_epoch_datetime_tagged_enum_uses_integer_variant() -> None:
-    """Epoch datetimes use the integer variant in heterogeneous Rust
-    data.
-    """
-    result = literalize(
-        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
-        input_format=InputFormat.YAML,
-        language=Rust(
-            datetime_format=Rust.datetime_formats.EPOCH,
-            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
-        ),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-
-    assert result.preamble == (
-        "use std::collections::HashMap;",
-        "enum Value {",
-        "    I64(i64),",
-        "    Str(&'static str),",
-        "}",
-    )
-    assert result.code == (
-        "HashMap::from([\n"
-        '    ("ts", Value::I64(1705321800)),\n'
-        '    ("name", Value::Str("hi")),\n'
-        "])"
-    )
-
-
 # The widening branch in
 # :func:`~literalizer._literalize._compute_dict_open_override` only
 # fires when a language combines a value-type-sensitive ``dict_open``

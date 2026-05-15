@@ -968,6 +968,48 @@ def build_string_format_cross_variants(
 
 
 @beartype
+def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
+    """Build cross-product variants of ``heterogeneous_strategy`` and
+    ``datetime_format``.
+
+    For every language, pair every non-default heterogeneous strategy
+    with every non-default datetime format.  Covers code paths where the
+    chosen heterogeneous strategy selects a variant based on the rendered
+    Python type of a datetime value (e.g. Rust's ``TAGGED_ENUM`` routing
+    an ``EPOCH`` datetime through the ``i64`` variant rather than a
+    ``DateTime`` variant).
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        default_strategy = spec.heterogeneous_strategy
+        default_dt = spec.datetime_format
+        lang_name = lang_cls.__name__
+        for strategy in spec.heterogeneous_strategies:
+            if strategy is default_strategy:
+                continue
+            for dt in spec.datetime_formats:
+                if dt is default_dt:
+                    continue
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_name}"
+                            f"_heterogeneous_strategy_{strategy.name.lower()}"
+                            f"_datetime_{dt.name.lower()}"
+                        ),
+                        spec=make_spec(
+                            lang_cls=lang_cls,
+                            heterogeneous_strategy=strategy,
+                            datetime_format=dt,
+                        ),
+                        lang_cls=lang_cls,
+                    )
+                )
+    return variants
+
+
+@beartype
 def build_type_hints_cross_variants() -> list[Variant]:
     """Build cross-product variants: each non-default type-hint format
     combined with each non-default value of another format axis.
@@ -1364,6 +1406,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         get_other_default=lambda s: s.datetime_format,
         get_other_formats=lambda s: s.datetime_formats,
     ),
+    "heterogeneous_strategy_datetime_cross": (
+        build_heterogeneous_strategy_datetime_cross_variants
+    ),
     "type_name": build_type_name_variants,
     "constructor_prefix": build_constructor_prefix_variants,
     "constructor_name": build_constructor_name_variants,
@@ -1619,6 +1664,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "constructor_name": (_ci(case_dir_name="simple_dict"),),
     "heterogeneous_strategy": HETEROGENEOUS_INPUTS,
+    "heterogeneous_strategy_datetime_cross": (
+        _ci(case_dir_name="dict_all_scalar_types"),
+    ),
     "heterogeneous_value_enum_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
