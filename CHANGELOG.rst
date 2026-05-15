@@ -5,7 +5,8 @@ Next
 ----
 
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
-  emit uncompilable output for a post-2038 :class:`~datetime.datetime`
+  emit output that fails to compile for a post-2038
+  :class:`~datetime.datetime`
   under the ``RECORD`` ``heterogeneous_strategy`` with
   ``datetime_format=EPOCH``.  The epoch seconds now carry the language's
   wide-integer suffix and the record component widens accordingly
