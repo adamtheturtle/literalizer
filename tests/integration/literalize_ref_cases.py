@@ -16,6 +16,7 @@ import json
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import assert_never
 
 import pyjson5
 import pytest
@@ -401,11 +402,19 @@ def run_literalize_ref_golden_case(
                 raw_data = json.loads(s=input_source)
             case literalizer.InputFormat.JSON5:
                 raw_data = pyjson5.decode(data=input_source)  # pylint: disable=no-member
-            case _:
+            case literalizer.InputFormat.YAML:
                 ruamel_yaml = _YAML()
                 raw_data = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
                     stream=input_source,
                 )
+            case literalizer.InputFormat.TOML:
+                message = (
+                    "No TOML-backed ref case exists; the stub-name "
+                    "collector has no TOML parser wired in."
+                )
+                raise NotImplementedError(message)
+            case _ as unreachable:
+                assert_never(unreachable)
         stub_sources = dict(config.ref_value_sources)
         stub_entries: list[tuple[str, str]] = []
         for raw_name in _collect_ref_names(
