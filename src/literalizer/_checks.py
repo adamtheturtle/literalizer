@@ -237,39 +237,68 @@ def _has_heterogeneous(
 
 
 @beartype
-def _has_heterogeneous_sibling_lists(*, data: Value) -> bool:
+def _has_heterogeneous_sibling_lists(
+    *,
+    data: Value,
+    tuple_list_ids: frozenset[int],
+) -> bool:
     """Recursively check whether data contains sibling lists whose
     combined scalar elements are heterogeneous.
 
     Sibling lists are detected both as the direct children of a list
     and as the values of a dict.
+
+    Lists whose ``id`` is in *tuple_list_ids* are carved out by the
+    active TUPLE heterogeneous strategy: each is rendered as its own
+    fixed-size tuple type rather than the sequence type shared by the
+    remaining sibling lists, so its elements do not join the shared
+    element pool and it does not count as a sibling sequence.  Such a
+    list still counts as a list value for the "all values are lists"
+    gate, so a genuine heterogeneous pair of sibling sequences beside a
+    tuple-eligible list is still rejected.
     """
     match data:
         case dict():
             values = list(data.values())
-            if any(_has_heterogeneous_sibling_lists(data=v) for v in values):
+            if any(
+                _has_heterogeneous_sibling_lists(
+                    data=v,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for v in values
+            ):
                 return True
-            sublists: list[list[Value]] = [
+            all_lists: list[list[Value]] = [
                 v for v in values if isinstance(v, list)
             ]
+            seq_lists = [v for v in all_lists if id(v) not in tuple_list_ids]
             return (
-                len(sublists) == len(values)
-                and len(sublists) > 1
+                len(all_lists) == len(values)
+                and len(seq_lists) > 1
                 and _all_scalars_heterogeneous(
-                    values=[e for sub in sublists for e in sub],
+                    values=[e for sub in seq_lists for e in sub],
                 )
             )
         case list():
-            if any(_has_heterogeneous_sibling_lists(data=v) for v in data):
+            if any(
+                _has_heterogeneous_sibling_lists(
+                    data=v,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for v in data
+            ):
                 return True
-            list_sublists: list[list[Value]] = [
+            all_list_children: list[list[Value]] = [
                 v for v in data if isinstance(v, list)
             ]
+            seq_list_children = [
+                v for v in all_list_children if id(v) not in tuple_list_ids
+            ]
             return (
-                len(list_sublists) == len(data)
-                and len(list_sublists) > 1
+                len(all_list_children) == len(data)
+                and len(seq_list_children) > 1
                 and _all_scalars_heterogeneous(
-                    values=[e for sub in list_sublists for e in sub],
+                    values=[e for sub in seq_list_children for e in sub],
                 )
             )
         case _:
@@ -544,9 +573,16 @@ def _check_heterogeneous(
 
 
 @beartype
-def _check_heterogeneous_sibling_lists(*, data: Value) -> None:
+def _check_heterogeneous_sibling_lists(
+    *,
+    data: Value,
+    tuple_list_ids: frozenset[int],
+) -> None:
     """Raise if sibling lists have heterogeneous scalar types."""
-    if _has_heterogeneous_sibling_lists(data=data):
+    if _has_heterogeneous_sibling_lists(
+        data=data,
+        tuple_list_ids=tuple_list_ids,
+    ):
         types = _describe_heterogeneous_types(data=data)
         msg = (
             "Sibling lists contain heterogeneous scalar types that "
@@ -692,7 +728,10 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
                 record_dict_ids=record_dict_ids,
                 tuple_list_ids=tuple_list_ids,
             )
-            _check_heterogeneous_sibling_lists(data=data)
+            _check_heterogeneous_sibling_lists(
+                data=data,
+                tuple_list_ids=tuple_list_ids,
+            )
         if not dict_supports_het:
             _check_mixed_dict_values(
                 data=data,
