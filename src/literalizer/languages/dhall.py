@@ -16,8 +16,8 @@ from literalizer._formatters.collection_openers import (
     make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
-    format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
 )
@@ -374,17 +374,27 @@ class _VariantSignature:
     inner_type: str | None
 
 
+_DHALL_TYPE_FOR_PYTHON_TYPE: dict[type, str] = {
+    str: "Text",
+    int: "Integer",
+    float: "Double",
+    bool: "Bool",
+}
+
+
 @beartype
 def _dhall_variant_for_scalar(  # pylint: disable=too-complex
+    *,
     value: Scalar,
+    datetime_inner_type: str,
 ) -> _VariantSignature:
     """Return the Dhall union-type variant signature for *value*.
 
     Dhall has no per-width integer types, so all integers map to a
-    single ``Int : Integer`` variant.  ``date``, ``datetime``, and
-    ``bytes`` are all rendered as ``Text`` by Dhall's built-in
-    formatters, so their variants share that inner type but keep
-    distinct names for self-documentation.
+    single ``Int : Integer`` variant.  ``date`` and ``bytes`` are
+    always rendered as ``Text`` by Dhall's built-in formatters;
+    ``datetime`` may render as ``Text`` (ISO) or ``Integer`` (epoch),
+    so its inner type is supplied by the caller.
     """
     match value:
         case bool():
@@ -398,7 +408,9 @@ def _dhall_variant_for_scalar(  # pylint: disable=too-complex
         case bytes():
             signature = _VariantSignature(name="Bytes", inner_type="Text")
         case datetime.datetime():
-            signature = _VariantSignature(name="DateTime", inner_type="Text")
+            signature = _VariantSignature(
+                name="DateTime", inner_type=datetime_inner_type
+            )
         case datetime.date():
             signature = _VariantSignature(name="Date", inner_type="Text")
         case datetime.time():
@@ -422,17 +434,22 @@ class _HeterogeneousStrategyConfig:
     resulting functions can close over it.
     """
 
-    build_behavior: Callable[[str], HeterogeneousBehavior]
-    build_preamble: Callable[[str], Callable[[Value], tuple[str, ...]]]
+    build_behavior: Callable[[str, str], HeterogeneousBehavior]
+    build_preamble: Callable[[str, str], Callable[[Value], tuple[str, ...]]]
 
 
-def _build_error_behavior(_union_name: str, /) -> HeterogeneousBehavior:
+def _build_error_behavior(
+    _union_name: str,
+    _datetime_inner_type: str,
+    /,
+) -> HeterogeneousBehavior:
     """ERROR strategy: no wrapping, no skipping of checks."""
     return NO_HETEROGENEOUS_BEHAVIOR
 
 
 def _build_error_preamble(
     _union_name: str,
+    _datetime_inner_type: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
@@ -441,6 +458,7 @@ def _build_error_preamble(
 
 def _build_union_type_behavior(
     union_name: str,
+    datetime_inner_type: str,
     /,
 ) -> HeterogeneousBehavior:
     """UNION_TYPE strategy: wrap scalars and skip scalar checks."""
@@ -451,7 +469,10 @@ def _build_union_type_behavior(
 
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{union_name}.{Variant} payload``."""
-        signature = _dhall_variant_for_scalar(value=raw_value)
+        signature = _dhall_variant_for_scalar(
+            value=raw_value,
+            datetime_inner_type=datetime_inner_type,
+        )
         if signature.inner_type is None:
             return f"{union_name}.{signature.name}"
         return f"{union_name}.{signature.name} {formatted}"
@@ -467,6 +488,7 @@ def _build_union_type_behavior(
 
 def _build_union_type_preamble(
     union_name: str,
+    datetime_inner_type: str,
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """UNION_TYPE strategy: emit a minimal ``let`` binding declaring
@@ -482,7 +504,10 @@ def _build_union_type_preamble(
         variants: list[_VariantSignature] = []
         seen: set[str] = set()
         for scalar in scalars:
-            signature = _dhall_variant_for_scalar(value=scalar)
+            signature = _dhall_variant_for_scalar(
+                value=scalar,
+                datetime_inner_type=datetime_inner_type,
+            )
             if signature.name in seen:
                 continue
             seen.add(signature.name)
@@ -570,7 +595,9 @@ class Dhall(metaclass=LanguageCls):
         )
 
         EPOCH = DatetimeFormatConfig(
-            formatter=format_datetime_epoch,
+            formatter=datetime_epoch_formatter(
+                format_integer=_format_dhall_integer,
+            ),
             type_produced=int,
         )
 
@@ -926,6 +953,9 @@ class Dhall(metaclass=LanguageCls):
         """
         return self.heterogeneous_strategy.value.build_preamble(
             self.heterogeneous_value_union_name,
+            _DHALL_TYPE_FOR_PYTHON_TYPE[
+                self.datetime_format.value.type_produced
+            ],
         )
 
     @cached_property
@@ -933,6 +963,9 @@ class Dhall(metaclass=LanguageCls):
         """Return the behavior for the chosen heterogeneous strategy."""
         return self.heterogeneous_strategy.value.build_behavior(
             self.heterogeneous_value_union_name,
+            _DHALL_TYPE_FOR_PYTHON_TYPE[
+                self.datetime_format.value.type_produced
+            ],
         )
 
     @cached_property
