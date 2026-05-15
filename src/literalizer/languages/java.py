@@ -930,9 +930,14 @@ class Java(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class VersionFormats(enum.Enum):
-        """Version options for Java."""
+        """Version options for Java.
+
+        * ``VersionFormats.JDK_11``: target Java 11.
+        * ``VersionFormats.JDK_16``: target Java 16.
+        """
 
         JDK_11 = enum.auto()
+        JDK_16 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -1175,8 +1180,10 @@ class Java(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `--release` flag passed to the JavaCompiler
-    # in `CheckJavaSyntax.java`.
+    # The `Lint Java` step in `.github/workflows/lint.yml` compiles each
+    # `@jdk_<release>` golden with the `--release` literal matching its
+    # `VersionFormats` member (`11` for `JDK_11`, `16` for `JDK_16`).
+    # Keep those literals in sync with `VersionFormats` above.
     language_version: VersionFormats = VersionFormats.JDK_11
     indent: str = "    "
 

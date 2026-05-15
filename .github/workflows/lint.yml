@@ -98,6 +98,16 @@ jobs:
           # under the declared minimum interpreter.
           python-version: '3.12'
 
+      # The fixture set spans every `Java.VersionFormats` member in
+      # `src/literalizer/languages/java.py`; the installed JDK must be at
+      # least the highest member (`JDK_16`) so `--release 16` is accepted.
+      # 21 is the current LTS and also accepts `--release 11`.
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Lint Bash
         run: |-
           find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
@@ -117,14 +127,19 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
 
       # The host compiles each fixture into an in-memory assembly, then
-      # reflectively constructs `Check` and invokes its `check()` method
+      # reflectively constructs `Main` and invokes its `main()` method
       # (or runs field initializers on field-only fixtures), so javac
       # emit-success and runtime errors (e.g. bad `Instant.parse` input)
-      # both fail here.
+      # both fail here. Each `@jdk_<release>` golden is compiled at the
+      # matching `--release`; the `11` / `16` literals match
+      # `Java.VersionFormats.JDK_11` / `JDK_16` in
+      # `src/literalizer/languages/java.py`. Keep them in sync.
       - name: Lint Java
         run: |-
-          find tests/integration/cases -name '*.java' -print0 > /tmp/files-java && test -s /tmp/files-java
-          xargs -0 java CheckJavaSyntax.java < /tmp/files-java
+          find tests/integration/cases -name '*@jdk_11.java' -print0 > /tmp/files-java-11 && test -s /tmp/files-java-11
+          xargs -0 java CheckJavaSyntax.java 11 < /tmp/files-java-11
+          find tests/integration/cases -name '*@jdk_16.java' -print0 > /tmp/files-java-16 && test -s /tmp/files-java-16
+          xargs -0 java CheckJavaSyntax.java 16 < /tmp/files-java-16
 
       - name: Lint Php
         run: |-
