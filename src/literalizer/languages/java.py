@@ -46,6 +46,15 @@ from literalizer._formatters.format_integers import (
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -63,6 +72,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -76,6 +86,7 @@ from literalizer._language import (
     identity_call_target,
     never_inhibits_consuming_form,
     no_call_stub,
+    no_data_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -556,6 +567,69 @@ def _object_nil_declaration(
 
 
 @beartype
+def _java_record_field_identifier(key: str, /) -> str:
+    """Return the Java record component name for a dict *key*.
+
+    Java record components keep the original key (identity); the
+    literal is positional so the name only labels the declaration.
+    """
+    return key
+
+
+@beartype
+def _java_opener_field_type(opener: str, /) -> str:
+    """Return the Java component type for a container field from the
+    very collection opener the value formatter uses.
+
+    A record field is formatted with no sibling override, so the opener
+    a language returns for the field's value is exactly the one it
+    emitted.  Every Java container opener starts ``new <type>`` and the
+    type ends at the first ``{`` (array initializer), ``(`` (factory
+    call) or ``<`` (a diamond, which is illegal in a type position):
+    ``new int[]{`` -> ``int[]``, ``new Object[]{`` -> ``Object[]``,
+    ``new java.util.ArrayList<>(java.util.Arrays.asList(`` ->
+    ``java.util.ArrayList``.
+    """
+    rest = opener[len("new ") :]
+    ends = [pos for pos in (rest.find(c) for c in "{(<") if pos != -1]
+    return rest[: min(ends)]
+
+
+@beartype
+def _java_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Java ``new Name(value, ...)`` positional record literal
+    as structured pieces for the shared compact/multiline layout code.
+
+    Java records are positional, so the field identifiers label only
+    the declaration; the literal emits arguments in declaration order
+    with no field names.
+    """
+    return RenderedRecordLiteral(
+        head=f"new {name}(",
+        entries=tuple(field.formatted for field in fields),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _java_render_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Java ``record Name(type id, ...) {}`` declaration."""
+    components = ", ".join(
+        f"{field.type_name} {field.identifier}" for field in fields
+    )
+    return f"record {name}({components}) {{}}"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Java(metaclass=LanguageCls):
     """Java language specification.
@@ -613,7 +687,7 @@ class Java(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -922,11 +996,18 @@ class Java(metaclass=LanguageCls):
     modifiers = _JavaModifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for dicts whose values span more than one Java type.
+
+        ``ERROR`` keeps Java's strict-typing behavior (mixed-value dicts
+        that cannot be represented raise).  ``RECORD`` renders each
+        record-shaped dict (non-empty, string-keyed) as a generated
+        ``record`` declared in the preamble plus a matching positional
+        ``new Record0(...)`` literal, so fields may legitimately mix
+        scalars and containers.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -935,6 +1016,10 @@ class Java(metaclass=LanguageCls):
 
         * ``VersionFormats.JDK_11``: target Java 11.
         * ``VersionFormats.JDK_16``: target Java 16.
+
+        The ``RECORD`` ``heterogeneous_strategy`` emits ``record``
+        declarations, which require Java 16 or newer, so a
+        ``RECORD`` spec pins ``language_version`` to ``JDK_16``.
         """
 
         JDK_11 = enum.auto()
@@ -964,6 +1049,25 @@ class Java(metaclass=LanguageCls):
             ),
         ),
     )
+
+    def __post_init__(self) -> None:
+        """Pin ``language_version`` to ``JDK_16`` for the ``RECORD``
+        strategy.
+
+        The ``RECORD`` ``heterogeneous_strategy`` emits ``record``
+        declarations, which require Java 16; ``JDK_11`` output would
+        fail to compile.  Coercing here (rather than rejecting a
+        ``JDK_11`` + ``RECORD`` spec) keeps the golden harness simple:
+        every ``RECORD`` spec, however constructed, renders and is
+        tagged ``@jdk_16``.
+        """
+        jdk_16 = self.version_formats.JDK_16
+        if (
+            self.heterogeneous_strategy is self.heterogeneous_strategies.RECORD
+            and self.language_version is not jdk_16
+        ):
+            object.__setattr__(self, "language_version", jdk_16)
+
     validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
@@ -1186,6 +1290,7 @@ class Java(metaclass=LanguageCls):
     # `VersionFormats` member (`11` for `JDK_11`, `16` for `JDK_16`).
     # Keep those literals in sync with `VersionFormats` above.
     language_version: VersionFormats = VersionFormats.JDK_11
+    record_struct_name_prefix: str = "Record"
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -1223,14 +1328,134 @@ class Java(metaclass=LanguageCls):
         return _format_java_assignment
 
     @cached_property
+    def _java_record_int_type(self) -> str:
+        """Java integer type for a record-component scalar."""
+        return "long" if self._suffix_is_auto else "int"
+
+    @cached_property
+    def _java_record_datetime_hint(self) -> str:
+        """Java type for a :class:`datetime.datetime` record component.
+
+        Unlike a top-level variable annotation (which widens an epoch
+        datetime to ``long``), a record component must match the value
+        the formatter emits: ``EPOCH`` renders a bare integer literal
+        that, for every datetime the corpus exercises, fits ``int``.
+        """
+        produced = self.datetime_format.value.type_produced
+        if produced is str:
+            return "String"
+        if produced is int:
+            return "int"
+        if self.datetime_format.name == "ZONED":
+            return "ZonedDateTime"
+        return "Instant"
+
+    @cached_property
+    def _java_record_scalar_resolver(
+        self,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Type-only scalar resolver (the mapping the typed openers are
+        built on); returns ``None`` for an unmapped type so callers can
+        fall back to the top type.
+        """
+        return self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=None,
+            datetime_type=None,
+            enable_dict_type=False,
+        )
+
+    def _java_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Java record-component type for a field.
+
+        Derives the type from the raw value (and any resolved
+        nested-record name), mirroring Go's structural port rather than
+        re-parsing the formatted literal.  A list or ordered-map field
+        is typed from the very collection opener the value formatter
+        uses for it (a record field is formatted with no sibling
+        override, so the opener equals the one emitted).  ``int``
+        magnitude (``int`` vs ``long``) and the format-dependent
+        ``datetime`` type (``Instant`` / ``ZonedDateTime`` /
+        ``String`` / epoch ``int``) are value- and spec-driven, so
+        they are resolved explicitly; every other scalar (including
+        ``date`` -> ``LocalDate``) goes through the shared type-only
+        resolver.
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field is outside the ``RECORD`` strategy's MVP --
+        the same shapes Rust's ``_rust_record_field_type`` is imprecise
+        for (#2234) -- so it folds into the ``Object`` top type, which
+        the rendered literal still assigns into.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        int_type = self._java_record_int_type
+        match value:
+            case bool():
+                return "boolean"
+            case int():
+                in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
+                return "long" if int_type == "int" and not in_i32 else int_type
+            case datetime.datetime():
+                return self._java_record_datetime_hint
+            case OrderedMap():
+                opener = self.ordered_map_format_config.ordered_map_open(
+                    value,
+                )
+            case list():
+                opener = self.sequence_open(value)
+            case _:
+                return self._java_record_scalar_resolver(type(value)) or (
+                    "Object"
+                )
+        return _java_opener_field_type(opener)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Java syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            field_identifier=_java_record_field_identifier,
+            field_type=self._java_record_field_type,
+            render_declaration=_java_render_declaration,
+            render_literal=_java_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return _java_biginteger_preamble
+        """Return data-dependent preamble lines.
+
+        Always emits ``import java.math.BigInteger;`` when the data
+        needs it; under ``HeterogeneousStrategies.RECORD`` also emits
+        one ``record`` declaration per record shape present in the
+        data.
+        """
+        record_preamble = self._record_strategy.preamble
+
+        @beartype
+        def _preamble(data: Value, /) -> tuple[str, ...]:
+            """Combine the BigInteger import with record declarations."""
+            return _java_biginteger_preamble(data) + record_preamble(data)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
