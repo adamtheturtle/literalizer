@@ -72,11 +72,20 @@ class LiteralizeRefCase:
 @functools.cache
 @beartype
 def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
-    """Return literalize-ref test cases for all languages."""
+    """Return literalize-ref test cases for all languages.
+
+    Configs with a ``ref_case_override`` are filtered to languages whose
+    ``supported_ref_cases`` includes that override; the remaining
+    languages cannot produce a golden file for the forced ref case and
+    are excluded from discovery so the orphan-files check stays
+    accurate.
+    """
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
         for config in LITERALIZE_REF_CASE_CONFIGS
         for lang_cls in sorted_languages()
+        if config.ref_case_override is None
+        or config.ref_case_override in lang_cls.supported_ref_cases
     ]
 
 

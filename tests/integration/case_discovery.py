@@ -36,46 +36,74 @@ class LiteralizeRefCaseConfig:
     matching ref stub.  Without it the harness keeps its historical
     behavior: refs render with no value-type knowledge and stubs are
     dict shaped.
+
+    When *ref_case_override* is set, the case forces that identifier
+    case for the ``ref_case`` argument of :func:`literalize` instead of
+    using the language's default (``identifier_cases[0]``).  Discovery
+    skips any language whose ``supported_ref_cases`` does not include
+    the override.
     """
 
     case_dir_name: str
     ref_key: str
-    ref_value_sources: tuple[tuple[str, str], ...] = ()
+    ref_value_sources: tuple[tuple[str, str], ...]
+    ref_case_override: literalizer.IdentifierCase | None
 
 
 LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_whole",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_in_dict",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_in_list",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_heterogeneous",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_in_mixed_list",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_camel_name",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_deep_nesting",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_scalar",
         ref_key="$ref",
         ref_value_sources=(("my_int", "42"),),
+        ref_case_override=None,
+    ),
+    LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_kebab_name",
+        ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=literalizer.IdentifierCase.KEBAB,
     ),
 ]
 
@@ -83,10 +111,14 @@ LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_default_nested",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_default_whole",
         ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=None,
     ),
 ]
 
