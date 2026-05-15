@@ -1,5 +1,6 @@
 datatype val_t =
-    SInt of LargeInt.int
+    SBool of bool
+  | SInt of LargeInt.int
   | SStr of string
   | SList of val_t list
 fun process _ = ()

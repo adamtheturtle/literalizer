@@ -95,12 +95,16 @@ class CallCaseConfig:
     zip_values: Sequence[ValueInput] | None = None
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
-    # so transforms that call the wrapper with more than one argument
-    # (e.g. a zipped value alongside the call) compile in languages
-    # with a fixed parameter count.
+    # so a transform that calls the wrapper with the call *and* the
+    # zipped value (two arguments) compiles in fixed-parameter-count
+    # languages.
     transform_stub_param_names: list[str] = dataclasses.field(
         default_factory=lambda: ["_arg"],
     )
+    # Languages (by class name) that cannot represent this case's
+    # generated fixture and are skipped (no golden) instead of emitting
+    # non-compiling output.
+    skip_lang_names: frozenset[str] = frozenset()
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -354,6 +358,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
         zip_values=[True, False],
         transform_stub_param_names=["_call", "_zip"],
+        # Zig types the 2-parameter wrapper stub strongly while the
+        # call stub returns ``void``; Groovy stubs the wrapper
+        # object-style (``Map``) and rejects the positional 2-arg
+        # call.  Neither can host this fixture, so skip them.
+        skip_lang_names=frozenset({"Zig", "Groovy"}),
     ),
     CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
@@ -928,6 +937,59 @@ def _call_transform_style_unsupported(
 
 
 @beartype
+def _wrapper_capability_skip_reason(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> str | None:
+    """Return why this language cannot host the case's wrapper stub.
+
+    ``call_transform`` is now opaque to the core (no sentinel probe),
+    so the harness -- which knows the wrapper names from
+    ``transform_stub_names`` -- decides whether the stub it injects can
+    compile in this language: a dotted wrapper (e.g. ``tracer.emit``)
+    needs ``supports_dotted_call_stub``; a bare wrapper (e.g. ``emit``)
+    needs ``has_free_function_calls``.  Languages that fail the check
+    are skipped (no golden) rather than emitting a non-compiling
+    fixture.
+    """
+    if lang_cls.__name__ in config.skip_lang_names:
+        return (
+            f"{lang_cls.__name__} cannot represent the "
+            f"{config.case_dir_name} fixture"
+        )
+    for wrapper_name in config.transform_stub_names:
+        if "." in wrapper_name:
+            if not lang_cls.supports_dotted_call_stub:
+                return (
+                    f"{lang_cls.__name__} cannot declare a dotted call "
+                    f"stub for {wrapper_name!r}"
+                )
+        elif not lang_cls.has_free_function_calls:
+            return (
+                f"{lang_cls.__name__} has no free function call syntax "
+                f"for {wrapper_name!r}"
+            )
+    return None
+
+
+@beartype
+def _skip_if_wrapper_unsupported(
+    *,
+    config: CallCaseConfig,
+    lang_cls: literalizer.LanguageCls,
+    golden_path: Path,
+) -> None:
+    """Skip (and drop any stale golden) when this language cannot host
+    the case's wrapper stub.
+    """
+    reason = _wrapper_capability_skip_reason(lang_cls=lang_cls, config=config)
+    if reason is not None:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(reason)
+
+
+@beartype
 def _expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -1174,6 +1236,9 @@ def run_call_golden_case(
         lang_cls=lang_cls,
         version=version,
     )
+    _skip_if_wrapper_unsupported(
+        config=config, lang_cls=lang_cls, golden_path=golden_path
+    )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
@@ -1251,9 +1316,9 @@ def run_call_golden_case(
             "input in its typed call stub",
         )
     # Stubs for transform function names.  The parameter count matches
-    # ``transform_stub_param_names`` so wrappers called with more than
-    # one argument (e.g. a zipped value beside the call) compile in
-    # languages with a fixed parameter count.
+    # ``transform_stub_param_names`` so a wrapper called with the call
+    # and the zipped value (two arguments) compiles in
+    # fixed-parameter-count languages.
     for wrapper_name in config.transform_stub_names:
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(

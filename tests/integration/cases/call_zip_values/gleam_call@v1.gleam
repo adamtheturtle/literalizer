@@ -1,4 +1,5 @@
 pub type GVal {
+  GBool(Bool)
   GInt(Int)
   GStr(String)
   GList(List(GVal))

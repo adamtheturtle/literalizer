@@ -3582,6 +3582,41 @@ def _materialize_value_input(*, value: ValueInput) -> Value:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class _ZipResolution:
+    """Resolved ``zip_values``: rendered literals plus the materialized
+    values (the latter feed preamble/body-type inference so languages
+    with generated value types declare the zip literal's type).
+    """
+
+    literals: list[str]
+    values: list[Value]
+
+
+@beartype
+def _preamble_data_with_zip(
+    *,
+    data_for_preamble: Value,
+    zip_resolution: "_ZipResolution | None",
+) -> Value:
+    """Fold ``zip_values`` into the data used for preamble inference.
+
+    The rendered zip literals reference whatever type machinery the
+    language uses for a value (e.g. Haskell's ``data Val`` constructors,
+    Gleam's ``pub type GVal``).  Including the materialized zip values
+    here makes :func:`compute_preamble` /
+    ``call_data_dependent_preamble`` see their types so the generated
+    declarations cover them.  The call data is nested as a single
+    element so its shape is preserved while the zip values are added
+    as siblings; only the *set of types present* matters here, not the
+    structure.
+    """
+    if zip_resolution is None:
+        return data_for_preamble
+    return [data_for_preamble, *zip_resolution.values]
+
+
+@beartype
 def _resolve_zip_literals(
     *,
     zip_values: Sequence[ValueInput] | None,
@@ -3589,7 +3624,7 @@ def _resolve_zip_literals(
     call_count: int,
     language: Language,
     collection_layout: CollectionLayout,
-) -> list[str] | None:
+) -> _ZipResolution | None:
     """Render each ``zip_values`` entry to a language-native literal.
 
     Returns ``None`` when no ``zip_values`` were supplied.  Otherwise a
@@ -3612,9 +3647,11 @@ def _resolve_zip_literals(
             zip_count=len(zip_values),
         )
     literals: list[str] = []
+    materialized_values: list[Value] = []
     for value in zip_values:
         materialized = _materialize_value_input(value=value)
         language.validate_spec_for_data(data=materialized)
+        materialized_values.append(materialized)
         literals.append(
             _literalize(
                 data=materialized,
@@ -3627,7 +3664,7 @@ def _resolve_zip_literals(
                 collection_layout=collection_layout,
             )
         )
-    return literals
+    return _ZipResolution(literals=literals, values=materialized_values)
 
 
 @beartype
@@ -3834,12 +3871,15 @@ def literalize_call(
         variable_form=variable_form,
         per_element=per_element,
     )
-    zip_literals = _resolve_zip_literals(
+    zip_resolution = _resolve_zip_literals(
         zip_values=zip_values,
         call_transform=call_transform,
         call_count=len(arg_values),
         language=language,
         collection_layout=collection_layout,
+    )
+    zip_literals = (
+        zip_resolution.literals if zip_resolution is not None else None
     )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,
@@ -3901,8 +3941,12 @@ def literalize_call(
             collection_layout=collection_layout,
             variable_form=variable_form,
         )
+    preamble_data = _preamble_data_with_zip(
+        data_for_preamble=data_for_preamble,
+        zip_resolution=zip_resolution,
+    )
     computed = compute_preamble(
-        data=data_for_preamble,
+        data=preamble_data,
         language=language,
         has_variable_declaration=isinstance(variable_form, NewVariable),
     )
@@ -3910,7 +3954,7 @@ def literalize_call(
         entries=(
             tuple(language.static_preamble)
             + computed.header
-            + language.call_data_dependent_preamble(data_for_preamble)
+            + language.call_data_dependent_preamble(preamble_data)
         )
     )
 

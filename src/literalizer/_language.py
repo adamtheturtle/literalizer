@@ -644,8 +644,10 @@ class LanguageCls(type):
     supports_no_variable_wrap_in_file: bool
     supports_call_variable_binding: bool
     supports_dotted_calls: bool
+    has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
     allows_empty_call_parens: bool
+    supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_zero_parameter_calls: bool
     max_call_parameters: int
@@ -903,6 +905,23 @@ class Language(Protocol):
     :func:`~literalizer.literalize_call`.  When ``False``, dotted
     targets are rejected with
     :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
+    """
+
+    supports_dotted_call_stub: bool
+    """Whether the language can declare a stub for a dotted call wrapper
+    name (e.g. ``tracer.emit``).  :func:`~literalizer.literalize_call`
+    no longer inspects this (a context-aware ``call_transform`` is
+    opaque); it is metadata for callers and the test harness, which use
+    it to decide whether a generated dotted-wrapper stub can compile in
+    this language.
+    """
+
+    has_free_function_calls: bool
+    """Whether the language has a free function call syntax (i.e. the
+    ability to call a function by a bare name with no dot).  Metadata
+    for callers and the test harness, which use it to decide whether a
+    generated bare-wrapper stub can compile in this language;
+    :func:`~literalizer.literalize_call` does not inspect it.
     """
 
     @property
