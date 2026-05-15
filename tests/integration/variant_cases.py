@@ -974,8 +974,8 @@ def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
 
     For every language, pair every non-default heterogeneous strategy
     with every non-default datetime format.  Covers code paths where the
-    chosen heterogeneous strategy needs to select a variant based on the
-    datetime's rendered Python type (e.g. Rust's ``TAGGED_ENUM`` routing
+    chosen heterogeneous strategy selects a variant based on the rendered
+    Python type of a datetime value (e.g. Rust's ``TAGGED_ENUM`` routing
     an ``EPOCH`` datetime through the ``i64`` variant rather than a
     ``DateTime`` variant).
     """
