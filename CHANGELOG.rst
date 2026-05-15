@@ -87,6 +87,17 @@ Next
   the new ``record_struct_name_prefix`` constructor parameter.  See
   #2297.
 
+- :class:`~literalizer.Scala` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
+  :class:`~literalizer.Go`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated ``case class RecordN(field: Type,
+  ...)`` declared in the enclosing ``object`` plus a matching
+  ``RecordN(field = value, ...)`` literal, so a dict whose values mix
+  scalars and containers is representable instead of raising.  Field
+  names are the dict keys verbatim and the ``case class``-name prefix
+  is configurable via the new ``record_struct_name_prefix``
+  constructor parameter.  See #2299.
+
 - :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor
   parameter — a mapping from each record's key-set
   (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name —

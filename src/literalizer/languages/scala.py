@@ -46,6 +46,19 @@ from literalizer._formatters.format_integers import (
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    WideInt,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -64,6 +77,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -83,7 +97,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import NullInCollectionError
 
 
@@ -219,6 +233,79 @@ def _scala_call_stub(
     return tuple(lines)
 
 
+# A fallback opener carries no element type in the formatted literal
+# (Scala infers it for a ``val``, but a ``case class`` field needs an
+# explicit annotation).  Widen each to a covariant ``[Any]`` form: the
+# Scala ``List`` / ``Map`` / ordered-map collections are covariant in
+# their value parameter, so the precisely-typed literal still
+# type-checks.
+_SCALA_UNTYPED_OPENERS: dict[str, str] = {
+    "List": "List[Any]",
+    "Seq": "Seq[Any]",
+    "Array": "Array[Any]",
+    "Set": "Set[Any]",
+    "Map": "Map[String, Any]",
+    "ListMap": "scala.collection.immutable.ListMap[String, Any]",
+    "scala.collection.immutable.ListMap": (
+        "scala.collection.immutable.ListMap[String, Any]"
+    ),
+}
+
+# Scala ``Int`` is signed 32-bit; an integer outside this range is
+# formatted with an ``L`` suffix and is therefore a ``Long`` field
+# (mapped via :class:`WideInt`).  Keep these bounds in sync with
+# ``_I32_MIN`` / ``_I32_MAX`` in
+# :mod:`literalizer._formatters.type_inference` (the widening threshold
+# the value formatter uses, which has a back-reference to here).
+_SCALA_INT32_MIN = -(2**31)
+_SCALA_INT32_MAX = 2**31 - 1
+
+
+@beartype
+def _scala_record_field_identifier(key: str, /) -> str:
+    """Return the Scala ``case class`` field name for a dict *key*.
+
+    Scala field identifiers are the dict keys verbatim (no case
+    conversion), matching the keyword-argument literal form
+    ``Record0(id = 1, ...)``.
+    """
+    return key
+
+
+@beartype
+def _scala_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Scala ``Name(field = value, ...)`` literal as structured
+    pieces for the shared compact/multiline layout code.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}(",
+        entries=tuple(
+            f"{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _scala_render_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Scala ``case class Name(field: Type, ...)``
+    declaration.
+    """
+    params = ", ".join(
+        f"{field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"case class {name}({params})"
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Scala(metaclass=LanguageCls):
@@ -249,7 +336,7 @@ class Scala(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -565,11 +652,18 @@ class Scala(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for dicts whose values span more than one Scala type.
+
+        ``ERROR`` keeps Scala's strict-typing behavior (mixed-value
+        dicts that cannot be represented raise).  ``RECORD`` renders
+        each record-shaped dict (non-empty, string-keyed) as a
+        generated ``case class`` declared in the preamble plus a
+        matching ``Record0(field = value, ...)`` literal, so fields may
+        legitimately mix scalars and containers.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -659,6 +753,7 @@ class Scala(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the `-S` flag passed to `scala-cli run` in
     # `.github/workflows/lint.yml` (which only accepts the Scala major
     # version, so `V3` maps to `-S 3`).
@@ -700,14 +795,110 @@ class Scala(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    def _scalar_field_type_resolver(
+        self,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Map a scalar element type to its Scala type name.
+
+        Built from the same scalar mapping the collection openers use,
+        with the date/datetime names resolved from the configured
+        formats (so an ``EPOCH`` datetime field is typed ``Int`` and an
+        ``ISO`` one ``String``, matching the rendered literal).
+        ``WideInt`` resolves to ``Long``.
+        """
+        return self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=self._date_type_name,
+            datetime_type=self._datetime_type_name,
+            enable_dict_type=False,
+        )
+
+    def _scala_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Scala ``case class`` field type for a record
+        field, derived structurally from the raw value.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  A list or ordered-map field
+        derives its type from the very collection opener the value
+        formatter uses for that value (a record field is formatted with
+        no sibling override, so the opener equals the one emitted); the
+        opener's trailing ``(`` is dropped, and a bare fallback opener
+        (``List(``, or the ordered-map opener) widens to its covariant
+        ``...[Any]`` form so the precisely-typed literal still
+        type-checks.  A scalar field uses the same scalar mapping the
+        openers are built on (a wide ``int`` -> ``Long``).
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field is outside the ``RECORD`` strategy's MVP --
+        Rust's ``_rust_record_field_type`` is imprecise for the same
+        shapes (#2234) -- so it is declared as Scala's top type
+        ``Any``, which the rendered literal still assigns into.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        match value:
+            case None:
+                return "Any"
+            case OrderedMap():
+                opener = self.ordered_map_format_config.ordered_map_open(
+                    value,
+                )
+            case list():
+                opener = self.sequence_open(value)
+            case bool():
+                return self._scalar_field_type_resolver(bool) or "Any"
+            case int():
+                element_type: type = (
+                    int
+                    if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX
+                    else WideInt
+                )
+                return self._scalar_field_type_resolver(element_type) or "Any"
+            case _:
+                return self._scalar_field_type_resolver(type(value)) or "Any"
+        head = opener[: -len("(")]
+        return _SCALA_UNTYPED_OPENERS.get(head, head)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Scala syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            field_identifier=_scala_record_field_identifier,
+            field_type=self._scala_record_field_type,
+            render_declaration=_scala_render_declaration,
+            render_literal=_scala_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
+        """Return data-dependent preamble lines.
+
+        The ``RECORD`` strategy's ``case class`` declarations are not
+        emitted here (file scope): Scala compiles every fixture
+        together, so a file-scope ``case class Record0`` would collide
+        across cases.  They are emitted into the per-fixture ``object``
+        body instead; see :attr:`compute_body_preamble`.
+        """
         return no_data_preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
@@ -838,8 +1029,16 @@ class Scala(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
-        return _resolve_sequence_open(
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under the ``RECORD`` strategy a list whose elements are
+        record-shaped dicts is opened with the format's plain,
+        element-type-free opener (``List(``) so the elements render as
+        ``RecordN(...)`` literals and Scala infers ``List[RecordN]``;
+        the typed opener would otherwise infer a ``Map[String, ...]``
+        element type that the struct literals do not satisfy.
+        """
+        base = _resolve_sequence_open(
             cfg=self._opener_config,
             sequence_format=self.sequence_format,
             list_member=self.sequence_formats.LIST,
@@ -848,6 +1047,25 @@ class Scala(metaclass=LanguageCls):
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
         )
+        record = type(self.heterogeneous_strategy).RECORD
+        if self.heterogeneous_strategy is not record:
+            return base
+        plain_open = self.sequence_format.value.sequence_open
+
+        def _open(items: list[Value], /) -> str:
+            """Use the plain opener for lists of record-shaped dicts.
+
+            ``OrderedMap`` is never record-eligible, so an omap element
+            keeps the typed opener.
+            """
+            if any(
+                isinstance(item, dict) and not isinstance(item, OrderedMap)
+                for item in items
+            ):
+                return plain_open(items)
+            return base(items)
+
+        return _open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
@@ -972,11 +1190,33 @@ class Scala(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
-        return body_preamble_from_scalars(
+        """Compute body-preamble lines from the scalar map, prefixed
+        with the ``RECORD`` strategy's generated ``case class``
+        declarations.
+
+        Scala compiles every fixture in one invocation, so a
+        file-scope ``case class Record0`` would collide across cases.
+        Emitting the declarations into the body preamble (which
+        :meth:`wrap_in_file` places inside the per-fixture ``object``,
+        ahead of the value) scopes each ``RecordN`` to its own fixture;
+        the declarations precede the scalar body lines so a record type
+        is in scope before its literal.
+        """
+        scalar_body = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+        record_preamble = self._record_strategy.preamble
+
+        def _compute(
+            types: frozenset[type],
+            data: Value,
+            /,
+        ) -> tuple[str, ...]:
+            """Record ``case class`` lines precede scalar body lines."""
+            return record_preamble(data) + scalar_body(types, data)
+
+        return _compute
 
     @cached_property
     def call_style_config(self) -> CallStyle:
