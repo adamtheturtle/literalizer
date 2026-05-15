@@ -744,7 +744,8 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
     the ``RECORD`` heterogeneous strategy.
 
     Bypasses :func:`make_spec` caching because the user-facing
-    ``record_shape_names`` parameter is a ``Mapping`` (unhashable).
+    ``record_shape_names`` parameter is a ``Mapping``, which cannot be
+    stored in the cache key's :class:`frozenset` of kwargs.
     """
     variants: list[Variant] = []
     shape_keys = frozenset({"id", "description", "is_done", "blocks"})
