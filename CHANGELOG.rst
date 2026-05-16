@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.StubReturn` is now part of the public API.  It
+  was already the parameter type of the public
+  :class:`~literalizer.Language` protocol's ``format_call_stub`` and
+  ``format_call_preamble_stub`` methods, so it is now re-exported from
+  the package root for consumers implementing that protocol.  See
+  #1947.
+
 2026.05.16.1
 ------------
 
