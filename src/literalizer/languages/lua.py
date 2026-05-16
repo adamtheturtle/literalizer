@@ -486,6 +486,8 @@ class Lua(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``luaVersion`` pin passed to
+    # ``leafo/gh-actions-lua`` in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.V5_4
     indent: str = "    "
 
