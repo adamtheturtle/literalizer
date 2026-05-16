@@ -57,6 +57,8 @@ from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    CommentSourceLengthMismatchError,
+    CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -3422,6 +3424,58 @@ def _assemble_call(
 
 
 @beartype
+def _append_trailing_comment(
+    *,
+    rendered: str,
+    comment: str,
+    language: Language,
+) -> str:
+    """Append *comment* as a trailing line comment to *rendered*.
+
+    The comment is placed on the last line of the fully rendered
+    statement -- after the language's statement terminator and any
+    ``format_call_statement`` wrapping -- so a line-comment leader
+    (``//``, ``#``, ...) cannot swallow the terminator.  The
+    language's :attr:`~Language.comment_config` supplies the leader and
+    any closer; languages with no line comment fall back to their
+    block-comment form (``/* ... */``), which is valid on a single
+    line.  An empty *comment* leaves *rendered* unchanged.
+    """
+    if not comment:
+        return rendered
+    cfg = language.comment_config
+    lines = rendered.split(sep="\n")
+    lines[-1] = f"{lines[-1]}  {cfg.prefix} {comment}{cfg.suffix}"
+    return "\n".join(lines)
+
+
+@beartype
+def _resolve_comment_literals(
+    *,
+    comment_source: Sequence[str] | None,
+    call_count: int,
+) -> list[str] | None:
+    """Validate *comment_source* against the generated call count.
+
+    Returns ``None`` when no *comment_source* was supplied.  Otherwise
+    the entry count must equal *call_count* (each comment pairs
+    positionally with one call) and no entry may span multiple lines.
+    """
+    if comment_source is None:
+        return None
+    comments = list(comment_source)
+    if len(comments) != call_count:
+        raise CommentSourceLengthMismatchError(
+            call_count=call_count,
+            comment_count=len(comments),
+        )
+    for index, comment in enumerate(iterable=comments):
+        if "\n" in comment:
+            raise CommentSourceMultilineError(index=index)
+    return comments
+
+
+@beartype
 def _render_call_per_element(
     *,
     data: list[Value],
@@ -3435,6 +3489,7 @@ def _render_call_per_element(
     consumable_ref_names: frozenset[str],
     ref_values: Mapping[str, Value],
     ref_key: str,
+    comment_literals: Sequence[str] | None,
     collection_comments: CollectionComments | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> str:
@@ -3515,21 +3570,29 @@ def _render_call_per_element(
             collection_layout=collection_layout,
         )
         rendered_elements.append(
-            language.format_call_statement(
-                _assemble_call(
-                    target_function=target_function,
-                    args_str=args_str,
-                    call_transform=call_transform,
-                    statement_terminator=language.statement_terminator,
-                    style=style,
-                    index=index,
-                    row=arg_values,
-                    zipped=(
-                        zip_literals[index]
-                        if zip_literals is not None
-                        else None
-                    ),
-                )
+            _append_trailing_comment(
+                rendered=language.format_call_statement(
+                    _assemble_call(
+                        target_function=target_function,
+                        args_str=args_str,
+                        call_transform=call_transform,
+                        statement_terminator=language.statement_terminator,
+                        style=style,
+                        index=index,
+                        row=arg_values,
+                        zipped=(
+                            zip_literals[index]
+                            if zip_literals is not None
+                            else None
+                        ),
+                    )
+                ),
+                comment=(
+                    comment_literals[index]
+                    if comment_literals is not None
+                    else ""
+                ),
+                language=language,
             )
         )
     if collection_comments is not None:
@@ -3557,6 +3620,7 @@ def _render_call_whole(
     consumable_ref_names: frozenset[str],
     ref_values: Mapping[str, Value],
     ref_key: str,
+    comment: str,
     collection_layout: CollectionLayout,
     variable_form: NewVariable | ExistingVariable | None,
 ) -> str:
@@ -3611,17 +3675,21 @@ def _render_call_whole(
         collection_layout=collection_layout,
     )
     if variable_form is None:
-        return language.format_call_statement(
-            _assemble_call(
-                target_function=target_function,
-                args_str=args_str,
-                call_transform=call_transform,
-                statement_terminator=language.statement_terminator,
-                style=style,
-                index=0,
-                row=[data],
-                zipped=zip_literal,
-            )
+        return _append_trailing_comment(
+            rendered=language.format_call_statement(
+                _assemble_call(
+                    target_function=target_function,
+                    args_str=args_str,
+                    call_transform=call_transform,
+                    statement_terminator=language.statement_terminator,
+                    style=style,
+                    index=0,
+                    row=[data],
+                    zipped=zip_literal,
+                )
+            ),
+            comment=comment,
+            language=language,
         )
     call_expr = _assemble_call(
         target_function=target_function,
@@ -3633,13 +3701,17 @@ def _render_call_whole(
         row=[data],
         zipped=zip_literal,
     )
-    return _apply_variable_wrapper(
-        result=call_expr,
+    return _append_trailing_comment(
+        rendered=_apply_variable_wrapper(
+            result=call_expr,
+            language=language,
+            data=data,
+            variable_form=variable_form,
+            line_prefix="",
+            is_call_binding=True,
+        ),
+        comment=comment,
         language=language,
-        data=data,
-        variable_form=variable_form,
-        line_prefix="",
-        is_call_binding=True,
     )
 
 
@@ -3713,6 +3785,40 @@ def _validate_wrap_in_file_supports_standalone_comments(
             reason=(
                 "standalone comments cannot be preserved when wrapping "
                 "calls in this language"
+            ),
+        )
+
+
+@beartype
+def _validate_comment_source_supported(
+    *,
+    language: Language,
+    comment_literals: list[str] | None,
+) -> None:
+    """Raise when ``comment_source`` would produce invalid code.
+
+    A trailing comment is only safe when every generated call is a
+    self-contained line: languages that assemble the call sequence into
+    a single clause/list/expression append separators, terminators or
+    closers *after* the per-call text (Erlang's clause ``.``, a Jsonnet
+    list ``,``, a Roc ``dbg ( ... )`` wrapper), which a line comment
+    would then swallow.
+    :attr:`~Language.supports_standalone_comments_in_wrapped_calls`
+    already marks exactly the languages that can carry a trailing
+    comment through their call-sequence form, so reuse it rather than
+    emit code that fails to compile.  All-empty entries emit no comment
+    and are always allowed.
+    """
+    if (
+        comment_literals is not None
+        and any(comment_literals)
+        and not language.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "comment_source trailing comments cannot be preserved "
+                "in this language's call-sequence form"
             ),
         )
 
@@ -4091,6 +4197,7 @@ def literalize_call(
     call_transform: Callable[[CallContext], str] | None = None,
     zip_source: str | None = None,
     zip_input_format: InputFormat | None = None,
+    comment_source: Sequence[str] | None = None,
     per_element: bool = True,
     wrap_in_file: bool = False,
     ref_case: IdentifierCase | None = None,
@@ -4154,6 +4261,37 @@ def literalize_call(
         zip_input_format: The serialization format of *zip_source*.
             Required whenever *zip_source* is supplied and ignored
             otherwise.
+        comment_source: Optional sequence of trailing source-code
+            comments, one per generated call, paired positionally.
+            Each non-empty entry is emitted as a line comment **after**
+            the statement terminator on the call's last line, using the
+            language's :attr:`~Language.comment_config` leader (``#``,
+            ``//``, ``--``, ...); languages with no line comment fall
+            back to that language's block-comment form (``/* ... */``),
+            which is valid on a single line.  Because the comment is
+            applied to the fully terminated statement, a line-comment
+            leader never swallows the terminator (a problem a
+            *call_transform* cannot avoid, since it only sees the
+            pre-terminator call expression).  An empty entry emits no
+            comment.  Unlike *zip_source* this is a plain sequence (not
+            a parsed source) and needs neither a *call_transform* nor
+            an input format.  The entry count must equal the number of
+            generated calls -- one per top-level element when
+            *per_element* is ``True``, otherwise one for the single
+            call -- or
+            :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
+            is raised; an entry containing a newline raises
+            :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+            A trailing comment is only safe where each generated call
+            is a self-contained line; languages that assemble the call
+            sequence into a single clause/list/expression (so a
+            separator, terminator or closer follows the call on the
+            same line, which a line comment would swallow) reject a
+            non-empty *comment_source* with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+            The supported set is exactly the languages whose
+            :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
+            is ``True``.
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
@@ -4308,6 +4446,14 @@ def literalize_call(
     zip_literals = (
         zip_resolution.literals if zip_resolution is not None else None
     )
+    comment_literals = _resolve_comment_literals(
+        comment_source=comment_source,
+        call_count=len(arg_values),
+    )
+    _validate_comment_source_supported(
+        language=language,
+        comment_literals=comment_literals,
+    )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,
         wrap_in_file=wrap_in_file,
@@ -4349,6 +4495,7 @@ def literalize_call(
             consumable_ref_names=consumable_refs,
             ref_values=materialized_ref_values,
             ref_key=ref_key,
+            comment_literals=comment_literals,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
         )
@@ -4365,6 +4512,9 @@ def literalize_call(
             consumable_ref_names=consumable_refs,
             ref_values=materialized_ref_values,
             ref_key=ref_key,
+            comment=(
+                comment_literals[0] if comment_literals is not None else ""
+            ),
             collection_layout=collection_layout,
             variable_form=variable_form,
         )

@@ -13,6 +13,28 @@ Next
   strategy, so the preamble fires off the tuple ids alone, even when
   the data has no record-shaped dicts.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2329.
+- :func:`~literalizer.literalize_call` gains a ``comment_source``
+  argument: a sequence of trailing source-code comments, one per
+  generated call, paired positionally.  Each non-empty entry is
+  emitted as a line comment **after** the statement terminator using
+  the target language's comment syntax (``#``, ``//``, ``--``, ...),
+  falling back to that language's block-comment form (``/* ... */``)
+  where there is no line comment.  This places the comment where only
+  the core can put it -- a ``call_transform`` only sees the
+  pre-terminator call expression, so a transform that appended a line
+  comment would have the terminator commented out.  An empty entry
+  emits no comment.  A length mismatch raises
+  :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
+  and a multi-line entry raises
+  :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+  Languages that assemble the call sequence into a single
+  clause/list/expression (so a separator, terminator or closer would
+  follow the comment on the same line and be swallowed) reject a
+  non-empty ``comment_source`` with
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`; the
+  supported set is the languages whose
+  :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
+  is ``True``.  See #2369.
 - :class:`~literalizer.FSharp` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
