@@ -1261,8 +1261,13 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.jl' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # `version: '1.9'` is `>=` `Julia.language_version` (`V1_9`) in
+      # `src/literalizer/languages/julia.py`; keep them in sync so the
+      # fixture gate runs under the declared minimum Julia.
       - name: Install Julia
         uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.9'
       - name: Set up Julia project
         run: |
           mkdir -p /tmp/julia-lint
