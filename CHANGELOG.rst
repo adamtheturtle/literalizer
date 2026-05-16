@@ -20,6 +20,13 @@ Next
   (``long`` / ``Long``) once the value leaves signed 32-bit range, so
   the declared component type always matches the rendered literal.
   In-range epochs are unaffected.  See #2338.
+- Internal: the ``RECORD`` ``heterogeneous_strategy`` no longer threads
+  the already-formatted field literal into the field-type hook.
+  :class:`~literalizer.Kotlin` now derives each generated ``data class``
+  field's declared type structurally from the raw value through its own
+  collection openers and scalar mapping (matching the Go/Java/Scala
+  ports), and the ``formatted`` string is dropped from the renderer
+  contract.  No generated output changes.  See #2305.
 
 2026.05.15.2
 ------------
