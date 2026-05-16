@@ -205,6 +205,7 @@ def _has_special_float(*, data: Value) -> bool:
             return False
 
 
+@beartype
 def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     """Return *elements* with plain dicts pooled and ordered dicts pooled.
 
@@ -243,6 +244,7 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     return merged
 
 
+@beartype
 def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     value: Value,
@@ -309,6 +311,7 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
             assert_never(unreachable)
 
 
+@beartype
 def _has_union_in_type_hints(*, data: Value) -> bool:
     """Return ``True`` if the Python type hints for *data* would contain
     a union (``Union[A, B]`` or ``A | B``).

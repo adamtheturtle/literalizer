@@ -127,6 +127,7 @@ def _format_v_u64_positive(value: int) -> str:
     return f"u64({value})"
 
 
+@beartype
 def _make_v_i64_formatter(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -145,6 +146,7 @@ def _make_v_i64_formatter(
     return _format
 
 
+@beartype
 def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
     data: Value,
 ) -> frozenset[int]:
@@ -205,6 +207,7 @@ class _VHeterogeneousStrategyConfig:
     build_preamble: Callable[[], Callable[[Value], tuple[str, ...]]]
 
 
+@beartype
 def _build_v_interface_behavior() -> HeterogeneousBehavior:
     """INTERFACE strategy: wrap scalars in ``IVal(...)``."""
 
@@ -235,6 +238,7 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
     )
 
 
+@beartype
 def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
     """INTERFACE strategy: emit ``interface IVal {}`` when needed."""
 
@@ -250,6 +254,7 @@ def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
     return _preamble
 
 
+@beartype
 def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: emit ``interface IVal {}`` when empty containers
     will render as ``[]IVal{}`` / ``map[string]IVal{}``.

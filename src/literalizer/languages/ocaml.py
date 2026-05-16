@@ -112,6 +112,7 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
     return f"{prefix}{tag} {literal}"
 
 
+@beartype
 def _build_ocaml_entry_formatter(
     prefix: str,
 ) -> Callable[[Value, str], str]:
@@ -164,6 +165,7 @@ def _build_ocaml_call_stub_lines(
     return tuple(lines)
 
 
+@beartype
 def _ocaml_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -177,6 +179,7 @@ def _ocaml_call_stub(
     )
 
 
+@beartype
 def _ocaml_curried_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

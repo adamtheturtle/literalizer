@@ -76,11 +76,20 @@ class RecordFieldType:
     literal.  ``record_name`` is the generated declaration name when
     ``value`` is itself a nested record-shaped dict (resolved here, the
     one piece a language cannot recover from the value alone), and
-    ``None`` otherwise.
+    ``None`` otherwise.  ``element_record_name`` is the analogous
+    generated name when ``value`` is a non-empty list whose every
+    element is a record-shaped dict of one shared shape (a sibling list
+    spanning more than one record shape is rejected before formatting),
+    so a language that types such a list precisely -- e.g. C++
+    ``std::vector<RecordN>`` -- can name the element struct; it is
+    ``None`` for every other value, including a list of plain scalars.
+    Languages that widen a record-dict list to a single catch-all
+    element type (Go ``[]any``, Java ``Object[]``) ignore it.
     """
 
     value: Value
     record_name: str | None
+    element_record_name: str | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -246,6 +255,39 @@ def _accumulate_emit_order(
 
 
 @beartype
+def _list_element_record_name(
+    *,
+    field_value: Value,
+    id_to_shape: Mapping[int, RecordShape],
+    name_by_shape: Mapping[RecordShape, str],
+) -> str | None:
+    """Return the generated record name for *field_value* when it is a
+    non-empty list whose every element is a record-shaped dict of one
+    shared shape, else ``None``.
+
+    A list mixing record dicts with other values returns ``None`` (the
+    language types it through its own openers).  A sibling list
+    spanning more than one record shape is rejected by
+    :func:`literalizer._checks.check_data` before any value is
+    formatted, so every element of an all-record-dict list that reaches
+    here shares one shape and the first element's resolved name applies
+    to the whole list.
+    """
+    if not isinstance(field_value, list) or not field_value:
+        return None
+    shapes = [
+        id_to_shape.get(id(item)) if isinstance(item, dict) else None
+        for item in field_value
+    ]
+    if any(shape is None for shape in shapes):
+        return None
+    # Every element is a record-shaped dict; the upstream mixed-shape
+    # guard guarantees one shared shape, so the first element names the
+    # whole list.
+    return name_by_shape[id_to_shape[id(field_value[0])]]
+
+
+@beartype
 def build_record_strategy(
     *,
     renderer: RecordRenderer,
@@ -289,19 +331,27 @@ def build_record_strategy(
         """Build the structured field-type request for *field_value*.
 
         ``record_name`` is set only when *field_value* is itself a
-        nested record-shaped dict (the one piece a language cannot
-        recover from the raw value); every other value, including a
-        list of record-shaped dicts, is typed by the language from the
-        value via its own collection openers.
+        nested record-shaped dict; ``element_record_name`` is set only
+        when *field_value* is a non-empty list whose every element is a
+        record-shaped dict of one shared shape (its generated name).
+        Both are pieces a language cannot recover from the raw value;
+        every other value is typed by the language from the value via
+        its own collection openers.
         """
         nested_name = (
             name_by_shape.get(id_to_shape[id(field_value)])
             if isinstance(field_value, dict) and id(field_value) in id_to_shape
             else None
         )
+        element_name = _list_element_record_name(
+            field_value=field_value,
+            id_to_shape=id_to_shape,
+            name_by_shape=name_by_shape,
+        )
         return RecordFieldType(
             value=field_value,
             record_name=nested_name,
+            element_record_name=element_name,
         )
 
     def _render_literal(

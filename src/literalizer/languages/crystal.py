@@ -89,6 +89,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@beartype
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
     return IdentifierCase.PASCAL.convert(name=name)

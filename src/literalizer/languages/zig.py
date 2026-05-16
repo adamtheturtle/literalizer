@@ -872,8 +872,16 @@ class Zig(metaclass=LanguageCls):
                 "[]const u8",
             )
         if isinstance(value, OrderedMap):
+            # An ordered-map field is out of scope for the base RECORD
+            # port (the cross-language decision is tracked in #2317); it
+            # is typed imprecisely from the first value's type, like the
+            # other ports' non-record-dict fallback.  ``... or [0]``
+            # keeps an empty ordered map from raising ``StopIteration``
+            # (its ``&.{}`` literal coerces to any slice element type);
+            # ``or`` is not a coverage branch, so no unreachable arm is
+            # added for a corpus that has no empty ordered-map field.
             val_type = self._zig_value_type(
-                next(iter(value.values())),
+                (list(value.values()) or [0])[0],
             )
             return f"[]const struct {{ key: []const u8, val: {val_type} }}"
         if isinstance(value, list):
@@ -903,11 +911,16 @@ class Zig(metaclass=LanguageCls):
         """Return the Zig ``struct`` field type for a record field.
 
         A field whose value is itself a nested record-shaped dict uses
-        that record's generated name; every other value is typed
-        structurally from the raw value by :meth:`_zig_value_type`.
+        that record's generated name; a field whose value is a list of
+        record-shaped dicts is a ``[]const RecordN`` slice of that
+        element record (its literal is ``&.{ RecordN{ ... }, ... }``);
+        every other value is typed structurally from the raw value by
+        :meth:`_zig_value_type`.
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"[]const {request.element_record_name}"
         return self._zig_value_type(request.value)
 
     @cached_property

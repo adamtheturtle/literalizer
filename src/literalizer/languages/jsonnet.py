@@ -102,6 +102,7 @@ def _format_jsonnet_dict_entry(
     return f"{key}: {formatted_value}"
 
 
+@beartype
 def _jsonnet_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

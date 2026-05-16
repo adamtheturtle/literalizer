@@ -139,6 +139,7 @@ class _JavaModifiers(enum.Enum):
     """Immutability: cannot be reassigned."""
 
 
+@beartype
 def _java_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
