@@ -81,6 +81,7 @@ def _apply_elm_date_iso(value: datetime.date, prefix: str) -> str:
     return f"{prefix}Str {format_date_iso(value=value)}"
 
 
+@beartype
 def _build_elm_date_iso(
     prefix: str,
 ) -> Callable[[datetime.date], str]:
@@ -101,6 +102,7 @@ def _apply_elm_time_iso(value: datetime.time, prefix: str) -> str:
     return f"{prefix}Str {format_time_iso(value=value)}"
 
 
+@beartype
 def _build_elm_time_iso(
     prefix: str,
 ) -> Callable[[datetime.time], str]:
@@ -121,6 +123,7 @@ def _apply_elm_datetime_iso(value: datetime.datetime, prefix: str) -> str:
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
 
+@beartype
 def _build_elm_datetime_iso(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -135,6 +138,7 @@ def _build_elm_datetime_iso(
     return _format
 
 
+@beartype
 def _build_elm_datetime_epoch(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -152,6 +156,7 @@ def _apply_elm_bytes_hex(value: bytes, prefix: str) -> str:
     return f"{prefix}Str {format_bytes_hex(value=value)}"
 
 
+@beartype
 def _build_elm_bytes_hex(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -172,6 +177,7 @@ def _apply_elm_bytes_base64(value: bytes, prefix: str) -> str:
     return f"{prefix}Str {format_bytes_base64(value=value)}"
 
 
+@beartype
 def _build_elm_bytes_base64(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -197,6 +203,7 @@ def _apply_elm_integer_formatter(
     return f"{prefix}Int {formatted}"
 
 
+@beartype
 def _build_elm_integer_formatter(
     prefix: str,
     base: Callable[[int], str],
@@ -225,6 +232,7 @@ def _apply_elm_float_wrapper(
     return f"{prefix}Float {formatted}"
 
 
+@beartype
 def _build_elm_float_wrapper(
     prefix: str,
     inner: Callable[[float], str],
@@ -252,6 +260,7 @@ def _apply_elm_string(value: str, prefix: str) -> str:
     return f"{prefix}Str {escaped}"
 
 
+@beartype
 def _build_elm_str_formatter(
     prefix: str,
 ) -> Callable[[str], str]:
@@ -282,6 +291,7 @@ def _apply_elm_dict_entry(
     return f"({key}, {formatted_value})"
 
 
+@beartype
 def _build_elm_dict_entry(
     prefix: str,
 ) -> Callable[[str, Value, str], str]:
@@ -381,6 +391,7 @@ def _build_elm_body_preamble(
     return _compute
 
 
+@beartype
 def _elm_flatten_dotted(parts: Sequence[str]) -> str:
     """Flatten call target parts to an Elm identifier.
 
@@ -411,6 +422,7 @@ def _elm_type_var(*, index: int) -> str:
     return f"{letter}{group}"
 
 
+@beartype
 def _elm_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -436,6 +448,7 @@ def _elm_call_stub(
     return (type_signature, implementation)
 
 
+@beartype
 def _elm_format_call_arg(_original: Value, formatted: str, /) -> str:
     """Wrap a formatted Elm value in parentheses for curried application.
 
@@ -466,6 +479,7 @@ _BYTES_FORMATTERS: dict[
 }
 
 
+@beartype
 def _elm_platform_worker_suffix(indent: str) -> str:
     """Return the Elm ``Platform.worker`` suffix indented by
     ``indent``.
@@ -482,6 +496,7 @@ def _elm_platform_worker_suffix(indent: str) -> str:
     )
 
 
+@beartype
 def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
     """Build a complete Elm call-mode module from preamble and let-
     bindings.

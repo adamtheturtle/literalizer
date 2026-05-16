@@ -95,6 +95,7 @@ def _apply_sml_negate_int(value: int, formatter: Callable[[int], str]) -> str:
     return result
 
 
+@beartype
 def _sml_negate_int(
     formatter: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -118,6 +119,7 @@ def _apply_sml_negate_float(
     return result
 
 
+@beartype
 def _sml_negate_float(
     formatter: Callable[[float], str],
 ) -> Callable[[float], str]:
@@ -186,6 +188,7 @@ def _apply_sml_entry_formatter(
     return result
 
 
+@beartype
 def _build_sml_entry_formatter(
     prefix: str,
 ) -> Callable[[Value, str], str]:
@@ -245,6 +248,7 @@ def _build_sml_declaration(
     return _format
 
 
+@beartype
 def _format_sml_preamble_lines(
     lines: list[str],
     *,
@@ -295,6 +299,7 @@ def _build_sml_call_stub_lines(
     return tuple(lines)
 
 
+@beartype
 def _sml_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -308,6 +313,7 @@ def _sml_call_stub(
     )
 
 
+@beartype
 def _sml_curried_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

@@ -400,6 +400,7 @@ class _NumericLiteralSuffixConfig:
     formatter_wrapper: Callable[[Callable[[int], str]], Callable[[int], str]]
 
 
+@beartype
 def _identity_wrapper(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -1034,6 +1035,7 @@ def _renders_as_string_literal(
             return False
 
 
+@beartype
 def _cpp_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],

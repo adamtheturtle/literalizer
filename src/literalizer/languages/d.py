@@ -83,6 +83,7 @@ from literalizer._types import Value
 _D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
 
 
+@beartype
 def _d_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Keep D's ``parseJSON("[]")`` empty literal beside typed siblings.
 

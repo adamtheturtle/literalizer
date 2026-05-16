@@ -187,6 +187,7 @@ def _format_forth_dict_entry(
     return f"{key} {formatted_value}"
 
 
+@beartype
 def _forth_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],

@@ -88,6 +88,7 @@ def _apply_purescript_date_iso(value: datetime.date, prefix: str) -> str:
     return f"{prefix}Str {format_date_iso(value=value)}"
 
 
+@beartype
 def _build_purescript_date_iso(
     prefix: str,
 ) -> Callable[[datetime.date], str]:
@@ -108,6 +109,7 @@ def _apply_purescript_time_iso(value: datetime.time, prefix: str) -> str:
     return f"{prefix}Str {format_time_iso(value=value)}"
 
 
+@beartype
 def _build_purescript_time_iso(
     prefix: str,
 ) -> Callable[[datetime.time], str]:
@@ -130,6 +132,7 @@ def _apply_purescript_datetime_iso(
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
 
+@beartype
 def _build_purescript_datetime_iso(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -144,6 +147,7 @@ def _build_purescript_datetime_iso(
     return _format
 
 
+@beartype
 def _build_purescript_datetime_epoch(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -164,6 +168,7 @@ def _apply_purescript_bytes_hex(value: bytes, prefix: str) -> str:
     return f"{prefix}Str {format_bytes_hex(value=value)}"
 
 
+@beartype
 def _build_purescript_bytes_hex(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -184,6 +189,7 @@ def _apply_purescript_bytes_base64(value: bytes, prefix: str) -> str:
     return f"{prefix}Str {format_bytes_base64(value=value)}"
 
 
+@beartype
 def _build_purescript_bytes_base64(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -208,6 +214,7 @@ def _purescript_int_fits_in_int32(value: int) -> bool:
     return _PURESCRIPT_INT32_MIN <= value <= _PURESCRIPT_INT32_MAX
 
 
+@beartype
 def _purescript_has_large_int(val: Value) -> bool:
     """Return True if *val* contains an integer that overflows
     PureScript's 32-bit ``Int``.
@@ -252,6 +259,7 @@ def _apply_purescript_integer_formatter(
     return f"{prefix}Long {value}.0"
 
 
+@beartype
 def _build_purescript_integer_formatter(
     prefix: str,
     base: Callable[[int], str],
@@ -281,6 +289,7 @@ def _apply_purescript_float_wrapper(
     return f"{prefix}Float {formatted}"
 
 
+@beartype
 def _build_purescript_float_wrapper(
     prefix: str,
     inner: Callable[[float], str],
@@ -308,6 +317,7 @@ def _apply_purescript_string(value: str, prefix: str) -> str:
     return f"{prefix}Str {escaped}"
 
 
+@beartype
 def _build_purescript_str_formatter(
     prefix: str,
 ) -> Callable[[str], str]:
@@ -338,6 +348,7 @@ def _apply_purescript_dict_entry(
     return f"(Tuple {key} ({formatted_value}))"
 
 
+@beartype
 def _build_purescript_dict_entry(
     prefix: str,
 ) -> Callable[[str, Value, str], str]:
@@ -390,6 +401,7 @@ _format_purescript_string = _build_purescript_str_formatter(prefix="P")
 _purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
+@beartype
 def _purescript_negative_float(val: float) -> bool:
     """Return True if *val* is a float requiring ``import Prelude``."""
     return math.copysign(1, val) < 0 or math.isinf(val) or math.isnan(val)
@@ -527,6 +539,7 @@ def _build_purescript_call_stub_lines(
     return (f"{root} :: {inner_type}", f"{root} = {inner_val}")
 
 
+@beartype
 def _build_purescript_call_stub(
     type_name: str,
 ) -> Callable[
@@ -562,6 +575,7 @@ def _purescript_format_call_arg(_original: Value, formatted: str, /) -> str:
     return f"({formatted})"
 
 
+@beartype
 def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     """Indent call expressions for a PureScript ``let`` block.
 
@@ -575,6 +589,7 @@ def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     return "\n".join(binding_prefix + line for line in calls.split(sep="\n"))
 
 
+@beartype
 def _build_purescript_call_output(
     preamble: str,
     decl_part: str,

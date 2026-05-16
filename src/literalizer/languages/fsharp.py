@@ -130,6 +130,7 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             return formatted
 
 
+@beartype
 def _build_fsharp_entry_formatter(
     prefix: str,
 ) -> Callable[[Value, str], str]:
@@ -147,6 +148,7 @@ def _build_fsharp_entry_formatter(
 _format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
 
 
+@beartype
 def _build_fsharp_datetime_epoch(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -261,6 +263,7 @@ def _build_fsharp_call_stub_lines(
     return tuple(lines)
 
 
+@beartype
 def _fsharp_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -274,6 +277,7 @@ def _fsharp_call_stub(
     )
 
 
+@beartype
 def _fsharp_curried_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

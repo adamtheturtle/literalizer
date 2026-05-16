@@ -291,11 +291,13 @@ def _format_inline_type_hint_declaration(
     return f"{name}: {hint} = {value}"
 
 
+@beartype
 def _join_union_pipe(types: list[str]) -> str:
     """Join *types* with ``|`` (Python 3.10+ union syntax)."""
     return " | ".join(types)
 
 
+@beartype
 def _join_union_typing(types: list[str]) -> str:
     """Join *types* as ``Union[...]`` (Python 3.8-compatible)."""
     return f"Union[{', '.join(types)}]"
@@ -544,6 +546,7 @@ def _build_type_hint_preamble(
     return _preamble
 
 
+@beartype
 def _build_python_call_stub(
     *,
     indent: str,

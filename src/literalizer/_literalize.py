@@ -2886,6 +2886,7 @@ def literalize(
     )
 
 
+@beartype
 def _active_literalize_ref_key(
     *,
     source: str,
@@ -2907,6 +2908,7 @@ def _active_literalize_ref_key(
     return _DISABLED_REF_KEY
 
 
+@beartype
 def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     """Return the identifier name for a ``{ref_key: "name"}`` marker.
 
@@ -2922,6 +2924,7 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     return ref_value
 
 
+@beartype
 def _contains_ref_marker(*, value: Value, ref_key: str) -> bool:
     """Return whether *value* contains a ``{ref_key: "name"}`` marker."""
     if _extract_call_arg_ref_name(value=value, ref_key=ref_key) is not None:
@@ -3997,6 +4000,7 @@ def _validate_call_preconditions(
         )
 
 
+@beartype
 def _is_value_mapping(
     value: ValueInput, /
 ) -> TypeIs[ValueItemsMap[Scalar, ValueInput]]:
@@ -4010,6 +4014,7 @@ def _is_value_mapping(
     return isinstance(value, Mapping)
 
 
+@beartype
 def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
     """Narrow ``value`` to the ``Sequence`` arm of ``ValueInput``,
     excluding the ``str``/``bytes`` scalars that are also sequences.
@@ -4091,6 +4096,7 @@ def _wrap_call_in_file(
     return wrapped
 
 
+@beartype
 def _materialize_value_input(*, value: ValueInput) -> Value:
     """Convert a user-supplied ``ValueInput`` into the internal ``Value``
     form, replacing any non-``list`` ``Sequence`` and non-``dict``
