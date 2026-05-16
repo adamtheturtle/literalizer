@@ -374,3 +374,54 @@ languages whose call form is an expression that can be wrapped
 (positional, keyword, or object call style); prefix-, postfix-, and
 command-style languages reject it with
 :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+
+Annotating each call with a trailing comment
+--------------------------------------------
+
+A ``call_transform`` only sees the *call expression*, before the
+language's statement terminator is applied, so it cannot append a
+trailing line comment: in C-family languages the terminator would land
+*inside* the comment (``catalog.lookup("Dune", 1965)  // first
+edition;``) and the statement would no longer compile.  ``comment_source``
+solves this by handing the core a sequence of comments -- one per
+generated call, paired positionally -- which it emits **after** the
+statement terminator using the target language's comment syntax:
+
+.. code-block:: python
+
+   """Attach a per-row trailing comment to each generated call."""
+
+   from literalizer import InputFormat, literalize_call
+   from literalizer.languages import Java
+
+   books_yaml = """\
+   ---
+   - [Dune, 1965]
+   - [Solaris, 1961]
+   """
+
+   result = literalize_call(
+       source=books_yaml,
+       input_format=InputFormat.YAML,
+       language=Java(),
+       target_function="catalog.lookup",
+       parameter_names=["title", "year"],
+       comment_source=["first edition", "translated from Polish"],
+   )
+
+   assert result.code == (
+       'catalog.lookup("Dune", 1965);  // first edition\n'
+       'catalog.lookup("Solaris", 1961);  // translated from Polish'
+   )
+
+``comment_source`` is a plain sequence, not a parsed source, so it needs
+neither a ``call_transform`` nor an input format.  Its length must equal
+the number of generated calls (one per top-level element when
+``per_element`` is ``True``, otherwise one) or
+:class:`~literalizer.exceptions.CommentSourceLengthMismatchError` is
+raised; an empty entry emits no comment, and an entry containing a
+newline raises
+:class:`~literalizer.exceptions.CommentSourceMultilineError`.  Languages
+with no line comment fall back to that language's block-comment form
+(``catalog.lookup("Dune", 1965)  (* first edition *)`` in OCaml), which
+is valid on a single line.

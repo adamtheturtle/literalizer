@@ -21,6 +21,8 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    CommentSourceLengthMismatchError,
+    CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -422,6 +424,44 @@ def test_literalize_call_zip_source_per_element_non_list_raises() -> None:
             call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
             zip_source='"not a list"',
             zip_input_format=InputFormat.JSON,
+        )
+
+
+def test_literalize_call_comment_source_length_mismatch_raises() -> None:
+    """``comment_source`` must have one entry per generated call."""
+    with pytest.raises(
+        expected_exception=CommentSourceLengthMismatchError,
+        match=(
+            r"^comment_source has 2 entry\(ies\) but 3 call\(s\) were "
+            r"generated; the lengths must match$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2], [3]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            comment_source=["first", "second"],
+        )
+
+
+def test_literalize_call_comment_source_multiline_entry_raises() -> None:
+    """A ``comment_source`` entry may not span multiple lines."""
+    with pytest.raises(
+        expected_exception=CommentSourceMultilineError,
+        match=(
+            r"^comment_source entry at index 1 contains a newline; "
+            r"trailing comments must be single-line$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            comment_source=["fine", "broken\ncomment"],
         )
 
 

@@ -286,6 +286,47 @@ class ZipSourceWithoutInputFormatError(Exception):
         )
 
 
+class CommentSourceLengthMismatchError(Exception):
+    """Raised when ``literalize_call`` is given a ``comment_source``
+    whose entry count differs from the number of generated calls.
+
+    Each comment is paired positionally with one call, so the two
+    sequences must be the same length.
+    """
+
+    def __init__(
+        self,
+        *,
+        call_count: int,
+        comment_count: int,
+    ) -> None:
+        """Create a ``CommentSourceLengthMismatchError``."""
+        super().__init__(
+            f"comment_source has {comment_count} entry(ies) but "
+            f"{call_count} call(s) were generated; the lengths must match"
+        )
+        self.call_count = call_count
+        self.comment_count = comment_count
+
+
+class CommentSourceMultilineError(Exception):
+    """Raised when a ``comment_source`` entry contains a newline.
+
+    A trailing comment is emitted on the statement's last line; a
+    newline would push the remainder onto a line with no comment
+    leader and, in languages whose line comment runs to end of line,
+    produce invalid source.  Comments must be single-line.
+    """
+
+    def __init__(self, *, index: int) -> None:
+        """Create a ``CommentSourceMultilineError``."""
+        super().__init__(
+            f"comment_source entry at index {index} contains a newline; "
+            "trailing comments must be single-line"
+        )
+        self.index = index
+
+
 class VariableNameNotSupportedError(Exception):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.

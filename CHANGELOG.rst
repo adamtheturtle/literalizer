@@ -4,6 +4,21 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` gains a ``comment_source``
+  argument: a sequence of trailing source-code comments, one per
+  generated call, paired positionally.  Each non-empty entry is
+  emitted as a line comment **after** the statement terminator using
+  the target language's comment syntax (``#``, ``//``, ``--``, ...),
+  falling back to that language's block-comment form (``/* ... */``)
+  where there is no line comment.  This places the comment where only
+  the core can put it -- a ``call_transform`` only sees the
+  pre-terminator call expression, so a transform that appended a line
+  comment would have the terminator commented out.  An empty entry
+  emits no comment.  A length mismatch raises
+  :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
+  and a multi-line entry raises
+  :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+  See #2369.
 - :class:`~literalizer.Roc` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (RInt 42i128)`` without a
