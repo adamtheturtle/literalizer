@@ -735,7 +735,7 @@ class Odin(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
-    def _odin_record_field_type(  # noqa: PLR0911
+    def _odin_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         request: RecordFieldType,
         /,
