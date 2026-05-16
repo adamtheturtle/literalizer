@@ -1,0 +1,6 @@
+module Fixture_tuple_int_key_dict_value_Crystal_heterogeneous_strategy_record
+extend self
+my_data = {
+    1 => [1, "email", "a@gmail.com", 100],
+}
+end
