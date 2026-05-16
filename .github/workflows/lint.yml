@@ -76,6 +76,13 @@ jobs:
           luaVersion: '5.4'
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+      # The ``guile-3.0`` apt package pins Guile to the 3.x series,
+      # which implements ``R7RS``, matching ``Scheme.language_version``
+      # (``R7RS``) in ``src/literalizer/languages/scheme.py``; keep them
+      # in sync. ``R7RS`` is a fixed standard, so the version pin here
+      # is for reproducibility rather than language selection. apt
+      # provides no point-release pin, so the ``-3.0`` package suffix
+      # is the only available version constraint.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
