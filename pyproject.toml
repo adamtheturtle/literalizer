@@ -530,6 +530,14 @@ ignore_names = [
 exclude = [
     ".venv",
     "tests/integration/cases",
+    # ``doccmd`` writes transient ``doccmd_*.py`` snippet files under
+    # ``docs/source`` while the docs hooks run.  A concurrently running
+    # ``vulture .`` can enumerate one and then fail to read it once
+    # ``doccmd`` deletes it, raising ``FileNotFoundError``.  These
+    # generated files are never worth scanning, so exclude them (the
+    # bare token becomes the ``*doccmd_*`` glob Vulture matches paths
+    # against).
+    "doccmd_",
 ]
 
 [tool.yamlfix]

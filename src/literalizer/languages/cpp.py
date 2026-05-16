@@ -42,6 +42,10 @@ from literalizer._formatters.format_integers import (
     make_ull_fallback,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.tuple_strategy import (
+    collect_tuple_list_ids,
+    is_tuple_eligible,
+)
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
@@ -64,6 +68,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -81,6 +86,8 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
+    no_compute_call_slot_wrap_ids,
+    no_compute_wrap_ids,
     no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -271,11 +278,19 @@ class _CppTypeCtx:
     :data:`_IntTypeResolver` that picks the narrowest int type for a
     given collection of values.  Used wherever a type string is emitted
     so that the int type can be specialized per-collection.
+
+    ``tuple_strategy`` is ``True`` under the ``TUPLE`` heterogeneous
+    strategy: a tuple-eligible heterogeneous scalar array in a mapping
+    value (the document root needs no opener type) is then typed
+    ``std::tuple<T0, ...>`` instead of
+    ``std::vector<std::variant<...>>``, matching the
+    ``std::make_tuple`` literal the strategy renders.
     """
 
     int_resolver: _IntTypeResolver
     date_type: str | None
     datetime_type: str | None
+    tuple_strategy: bool
 
     def element_to_type(
         self,
@@ -393,18 +408,65 @@ def _identity_wrapper(
 
 
 @beartype
-def _compute_cpp_type(
+def _cpp_tuple_element_type(
+    *,
+    value: Value,
+    type_ctx: _CppTypeCtx,
+) -> str:
+    """Return the C++ type for one tuple element.
+
+    Tuple-eligible arrays are all-scalar (see
+    :func:`~literalizer._formatters.tuple_strategy.is_tuple_eligible`),
+    so *value* is always a scalar; each element's int width is narrowed
+    to its own value so the declared type matches the
+    ``std::make_tuple`` literal, whose integer arguments carry no width
+    suffix.
+    """
+    if isinstance(value, int) and not isinstance(value, bool):
+        int_type = type_ctx.int_resolver([value])
+    else:
+        int_type = "long long"
+    element_to_type = type_ctx.element_to_type(int_type=int_type)
+    return _compute_cpp_type(
+        item=value,
+        element_to_type=element_to_type,
+        type_ctx=type_ctx,
+        in_mapping_value=False,
+    )
+
+
+@beartype
+def _cpp_tuple_type(
+    *,
+    items: list[Value],
+    type_ctx: _CppTypeCtx,
+) -> str:
+    """Return ``std::tuple<T0, T1, ...>`` for a tuple-eligible array."""
+    element_types = [
+        _cpp_tuple_element_type(value=element, type_ctx=type_ctx)
+        for element in items
+    ]
+    return f"std::tuple<{', '.join(element_types)}>"
+
+
+@beartype
+def _compute_cpp_type(  # noqa: PLR0911
     *,
     item: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
     type_ctx: _CppTypeCtx,
+    in_mapping_value: bool,
 ) -> str:
     """Return the C++ type string for a single value.
 
     *element_to_type* must have the int type already narrowed for the
     enclosing collection's variant arm (or homogeneous leaf).  When the
     value is a sub-collection, recursion re-narrows independently via
-    *type_ctx*.
+    *type_ctx*.  *in_mapping_value* is ``True`` when *item* is a dict /
+    ordered-map value: a tuple-eligible heterogeneous scalar array in
+    that position is typed ``std::tuple<...>`` under the ``TUPLE``
+    strategy (the same lists :func:`collect_tuple_list_ids` marks,
+    which are dict values or the document root, never list elements).
     """
     match item:
         case OrderedMap():
@@ -413,6 +475,7 @@ def _compute_cpp_type(
             value_type = _compute_element_type_for_items(
                 items=values,
                 type_ctx=type_ctx,
+                in_mapping_value=True,
             )
             return f"std::vector<std::pair<std::string, {value_type}>>"
         case dict():
@@ -420,12 +483,20 @@ def _compute_cpp_type(
             value_type = _compute_element_type_for_items(
                 items=values,
                 type_ctx=type_ctx,
+                in_mapping_value=True,
             )
             return f"std::map<std::string, {value_type}>"
+        case list() if (
+            in_mapping_value
+            and type_ctx.tuple_strategy
+            and is_tuple_eligible(value=item)
+        ):
+            return _cpp_tuple_type(items=item, type_ctx=type_ctx)
         case list():
             inner_type = _compute_element_type_for_items(
                 items=item,
                 type_ctx=type_ctx,
+                in_mapping_value=False,
             )
             return f"std::vector<{inner_type}>"
         case set():
@@ -436,6 +507,7 @@ def _compute_cpp_type(
             inner_type = _compute_element_type_for_items(
                 items=sorted_items,
                 type_ctx=type_ctx,
+                in_mapping_value=False,
             )
             return f"std::initializer_list<{inner_type}>"
         case _:
@@ -451,6 +523,7 @@ def _collect_unique_cpp_types(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
     type_ctx: _CppTypeCtx,
+    in_mapping_value: bool,
 ) -> list[str]:
     """Collect unique C++ type names for each item, preserving order."""
     unique_cpp_types: list[str] = []
@@ -460,6 +533,7 @@ def _collect_unique_cpp_types(
             item=item,
             element_to_type=element_to_type,
             type_ctx=type_ctx,
+            in_mapping_value=in_mapping_value,
         )
         if item_type not in seen:
             seen.add(item_type)
@@ -472,6 +546,7 @@ def _compute_element_type_for_items(
     *,
     items: list[Value],
     type_ctx: _CppTypeCtx,
+    in_mapping_value: bool,
 ) -> str:
     """Return the C++ element type for a collection of items.
 
@@ -479,16 +554,31 @@ def _compute_element_type_for_items(
     or ``std::variant<T1, T2, ...>`` for mixed types.  Returns
     ``std::nullptr_t`` for empty collections.  Narrows int-valued leaves
     to the narrowest C++ int type that holds the actual values.
+
+    When *in_mapping_value* is set under the ``TUPLE`` strategy and any
+    item is a tuple-eligible array, the homogeneous fast path is
+    bypassed: each item is typed individually so a tuple-eligible array
+    becomes ``std::tuple<...>`` (the fast path would otherwise widen a
+    uniform list-of-arrays to ``std::vector<std::variant<...>>``).
     """
     if not items:
         return "std::nullptr_t"
-    element_type = infer_element_type(items=items)
+    has_tuple_item = (
+        in_mapping_value
+        and type_ctx.tuple_strategy
+        and any(
+            isinstance(item, list) and is_tuple_eligible(value=item)
+            for item in items
+        )
+    )
+    element_type = None if has_tuple_item else infer_element_type(items=items)
     if element_type is not None:
         match element_type:
             case DictType(value_type=None, values=dict_values):
                 value_type = _compute_element_type_for_items(
                     items=list(dict_values),
                     type_ctx=type_ctx,
+                    in_mapping_value=True,
                 )
                 return f"std::map<std::string, {value_type}>"
             case _:
@@ -513,6 +603,7 @@ def _compute_element_type_for_items(
         items=items,
         element_to_type=variant_element_to_type,
         type_ctx=type_ctx,
+        in_mapping_value=in_mapping_value,
     ):
         case [single]:
             return single
@@ -624,13 +715,98 @@ def _build_variant_preamble(
 
 
 @beartype
+def _build_tuple_preamble(
+    *,
+    type_ctx: _CppTypeCtx,
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build the ``TUPLE``-strategy ``data_dependent_preamble``.
+
+    Composes the variant preamble and additionally emits
+    ``#include <tuple>`` whenever the data carries any tuple-eligible
+    heterogeneous scalar array.  The ``<tuple>`` line is emitted off
+    :func:`collect_tuple_list_ids` alone, so it fires even when the
+    data has no record-shaped dicts at all (e.g. a bare top-level
+    heterogeneous array) -- C++ has no ``RECORD`` strategy, so this is
+    the only thing that pulls in the tuple header.
+    """
+    variant_preamble = _build_variant_preamble(type_ctx=type_ctx)
+
+    def _tuple_preamble(data: Value, /) -> tuple[str, ...]:
+        """Return the variant headers plus ``<tuple>`` when needed."""
+        lines = list(variant_preamble(data))
+        if collect_tuple_list_ids(data=data):
+            lines.append("#include <tuple>")
+        return tuple(lines)
+
+    return _tuple_preamble
+
+
+@beartype
+def _render_cpp_tuple(
+    value: list[Value],
+    elements: Sequence[str],
+) -> RenderedTupleLiteral:
+    """Render a heterogeneous scalar array as ``std::make_tuple(...)``.
+
+    ``collect_tuple_list_ids`` only marks arrays spanning at least two
+    scalar buckets, so the call always has at least two arguments.  The
+    shared layout assembler joins *elements* into the compact
+    ``std::make_tuple(a, b)`` or one-per-line multiline form; *value* is
+    unused because every element arrives already formatted.
+    """
+    del value
+    return RenderedTupleLiteral(
+        head="std::make_tuple(",
+        entries=tuple(elements),
+        closer=")",
+        compact_pad="",
+        # ``std::make_tuple(a, b,)`` is a syntax error (function call,
+        # not a braced initializer), so suppress the trailing comma the
+        # language-wide config would otherwise add in multiline form.
+        multiline_trailing_comma=False,
+    )
+
+
+@beartype
+def _cpp_tuple_list_ids(data: Value, /) -> frozenset[int]:
+    """Adapt :func:`collect_tuple_list_ids` to the positional
+    ``compute_tuple_list_ids`` hook signature.
+    """
+    return collect_tuple_list_ids(data=data)
+
+
+_CPP_TUPLE_BEHAVIOR = HeterogeneousBehavior(
+    skip_scalar_checks=False,
+    compute_wrap_ids=no_compute_wrap_ids,
+    wrap_scalar=None,
+    wrap_non_scalar=None,
+    compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+    render_tuple_literal=_render_cpp_tuple,
+    compute_tuple_list_ids=_cpp_tuple_list_ids,
+)
+"""``TUPLE`` strategy behavior: render fixed-length heterogeneous
+scalar arrays as ``std::make_tuple`` literals.
+
+C++ already represents the carved-out scalar checks via
+``std::variant`` (``skip_scalar_checks`` is irrelevant -- the
+sequence/dict formats report ``supports_heterogeneity``), so this only
+adds the tuple render hook and the list-id collector; there is no
+``RECORD`` behavior to compose (C++ has none).
+"""
+
+
+@beartype
 def _apply_cpp_variant_sequence_open(
     *,
     items: list[Value],
     type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ``std::vector`` opener."""
-    inner = _compute_element_type_for_items(items=items, type_ctx=type_ctx)
+    inner = _compute_element_type_for_items(
+        items=items,
+        type_ctx=type_ctx,
+        in_mapping_value=False,
+    )
     return f"std::vector<{inner}>{{"
 
 
@@ -645,6 +821,7 @@ def _apply_cpp_variant_dict_open(
     value_type = _compute_element_type_for_items(
         items=list(items.values()),
         type_ctx=type_ctx,
+        in_mapping_value=True,
     )
     map_kind = (
         "std::unordered_map" if "unordered" in opener_template else "std::map"
@@ -659,7 +836,11 @@ def _apply_cpp_variant_set_open(
     type_ctx: _CppTypeCtx,
 ) -> str:
     """Return a typed ``std::initializer_list`` opener."""
-    inner = _compute_element_type_for_items(items=items, type_ctx=type_ctx)
+    inner = _compute_element_type_for_items(
+        items=items,
+        type_ctx=type_ctx,
+        in_mapping_value=False,
+    )
     return f"std::initializer_list<{inner}>{{"
 
 
@@ -674,6 +855,7 @@ def _apply_cpp_variant_ordered_map_open(
     value_type = _compute_element_type_for_items(
         items=values,
         type_ctx=type_ctx,
+        in_mapping_value=True,
     )
     return f"std::vector<std::pair<std::string, {value_type}>>{{"
 
@@ -1259,11 +1441,18 @@ class Cpp(metaclass=LanguageCls):
     modifiers = _CppModifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        C++ represents heterogeneous scalar collections with
+        ``std::variant`` by default (``ERROR``); ``TUPLE`` additionally
+        renders a fixed-length heterogeneous scalar array (a dict value
+        or the document root, all elements scalar, spanning at least two
+        scalar buckets) as ``std::make_tuple(...)`` typed
+        ``std::tuple<...>``.
         """
 
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        TUPLE = _CPP_TUPLE_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -1579,12 +1768,18 @@ class Cpp(metaclass=LanguageCls):
         return self.datetime_format.cpp_type
 
     @cached_property
+    def _tuple_strategy_active(self) -> bool:
+        """Return whether the ``TUPLE`` heterogeneous strategy is set."""
+        return self.heterogeneous_strategy.name == "TUPLE"
+
+    @cached_property
     def _type_ctx(self) -> _CppTypeCtx:
         """Context bundle for C++ type resolution."""
         return _CppTypeCtx(
             int_resolver=self.numeric_literal_suffix.int_resolver,
             date_type=self._cpp_date_type,
             datetime_type=self._cpp_datetime_type,
+            tuple_strategy=self._tuple_strategy_active,
         )
 
     @cached_property
@@ -1670,8 +1865,10 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
         """Build data-dependent preamble lines (variant and ``nullptr``
-        headers).
+        headers, plus ``<tuple>`` under the ``TUPLE`` strategy).
         """
+        if self._tuple_strategy_active:
+            return _build_tuple_preamble(type_ctx=self._type_ctx)
         return _build_variant_preamble(type_ctx=self._type_ctx)
 
     @cached_property

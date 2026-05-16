@@ -41,6 +41,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -799,7 +800,11 @@ class Go(metaclass=LanguageCls):
         trailing ``{`` is dropped to leave the bare type, e.g.
         ``[]int{`` -> ``[]int``, ``[][2]any{`` -> ``[][2]any``.  A
         scalar field uses the same scalar mapping the openers are
-        built on.
+        built on.  A positive integer beyond the signed 64-bit range is
+        the one exception: its literal comes from the ``uint64(...)``
+        overflow fallback (see
+        :func:`make_unsigned_overflow_fallback`), so the field is typed
+        ``uint64`` to match that typed conversion.
 
         A set or a non-record dict (an empty or non-string-keyed dict)
         as a record field is outside the ``RECORD`` strategy's MVP --
@@ -819,6 +824,8 @@ class Go(metaclass=LanguageCls):
                 )
             case list():
                 opener = self.sequence_open(value)
+            case int() if not isinstance(value, bool) and value > I64_MAX:
+                return "uint64"
             case _:
                 return self._init_element_to_type(type(value)) or "any"
         return opener[: -len("{")]

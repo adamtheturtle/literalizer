@@ -29,6 +29,36 @@ from .language_specs import (
     sorted_languages,
 )
 
+# Case directories consumed only by a dedicated variant axis, never by
+# the all-languages base / combined / language-version discovery.  Like
+# the call and ``$ref`` case directories, a specialized test owns these.
+#
+# ``record_wide_int`` carries an integer beyond the signed 64-bit range
+# to exercise Go's and Rust's value-derived ``RECORD`` field typing
+# (issue #2306) via the ``record_numeric_cross`` axis.  Other languages'
+# default heterogeneous representations cannot hold a >2^63 integer in a
+# container -- a separate latent issue, not #2306 -- so base-discovering
+# it for every language would emit golden files that fail to compile.
+VARIANT_ONLY_CASE_DIRS = frozenset({"record_wide_int"})
+
+
+@functools.cache
+@beartype
+def _specialized_case_dirs() -> frozenset[str]:
+    """Case directories a specialized test owns, so they are excluded
+    from the all-languages base / combined / language-version
+    discovery: the call, ``$ref`` and default-``$ref`` case
+    directories plus :data:`VARIANT_ONLY_CASE_DIRS`.
+    """
+    return (
+        frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
+        | frozenset(cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS)
+        | frozenset(
+            cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
+        )
+        | VARIANT_ONLY_CASE_DIRS
+    )
+
 
 @dataclasses.dataclass(frozen=True)
 class LiteralizeRefCaseConfig:
@@ -363,24 +393,14 @@ def discover_cases(
     cases_dir: Path,
 ) -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
-    call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
-    ref_case_dirs = frozenset(
-        cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
-    )
-    default_ref_case_dirs = frozenset(
-        cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
-    )
+    specialized_case_dirs = _specialized_case_dirs()
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
-        if case_dir.name in call_case_dirs:
-            continue
-        if case_dir.name in ref_case_dirs:
-            continue
-        if case_dir.name in default_ref_case_dirs:
+        if case_dir.name in specialized_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
@@ -437,24 +457,14 @@ def discover_combined_cases(
     """Return combined test cases for all redefinition-supporting
     styles.
     """
-    call_case_dirs = frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
-    ref_case_dirs = frozenset(
-        cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS
-    )
-    default_ref_case_dirs = frozenset(
-        cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
-    )
+    specialized_case_dirs = _specialized_case_dirs()
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     cases: list[CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
-        if case_dir.name in call_case_dirs:
-            continue
-        if case_dir.name in ref_case_dirs:
-            continue
-        if case_dir.name in default_ref_case_dirs:
+        if case_dir.name in specialized_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases

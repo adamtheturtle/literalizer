@@ -675,7 +675,15 @@ def _maybe_format_tuple_literal(
             f"{rendered.head}{rendered.compact_pad}{joined}"
             f"{rendered.compact_pad}{rendered.closer}"
         )
-    trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
+    # Rust permits a trailing comma after the last tuple element
+    # (config ``True`` -> unchanged); C++'s literal is a
+    # ``std::make_tuple(...)`` call where a trailing comma is a syntax
+    # error, so it sets ``RenderedTupleLiteral.multiline_trailing_comma``
+    # ``False`` even though C++'s braced-collection config is ``True``.
+    trailing_comma = (
+        spec.trailing_comma_config.multiline_trailing_comma
+        and rendered.multiline_trailing_comma
+    )
     sep = spec.element_separator.strip()
     last_idx = len(rendered.entries) - 1
     body = "\n".join(

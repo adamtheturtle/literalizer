@@ -11,6 +11,15 @@ Next
   A ``wrap_in_file=True`` Elm scaffold places the binding inside the
   ``main`` ``let`` block so the call is still exercised when the
   module is run.  See #2245.
+- :class:`~literalizer.Cpp` now supports the ``TUPLE``
+  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
+  that is a dict value or the document root is rendered as
+  ``std::make_tuple(...)`` typed ``std::tuple<T0, ...>`` (with
+  ``#include <tuple>`` emitted by the data-dependent preamble) instead
+  of ``std::vector<std::variant<...>>``.  C++ has no ``RECORD``
+  strategy, so the preamble fires off the tuple ids alone, even when
+  the data has no record-shaped dicts.  The default (``ERROR``)
+  ``std::variant`` output is unchanged.  See #2329.
 - :func:`~literalizer.literalize_call` gains a ``comment_source``
   argument: a sequence of trailing source-code comments, one per
   generated call, paired positionally.  Each non-empty entry is
@@ -91,6 +100,23 @@ Next
   (``long`` / ``Long``) once the value leaves signed 32-bit range, so
   the declared component type always matches the rendered literal.
   In-range epochs are unaffected.  See #2338.
+- :class:`~literalizer.Go` no longer emits output that fails to compile
+  for a record field holding a positive integer beyond the signed
+  64-bit range under the ``RECORD`` ``heterogeneous_strategy``.  Such a
+  value renders through the ``uint64(...)`` overflow fallback, and the
+  generated struct field is now typed ``uint64`` to match it instead
+  of ``int`` / ``int64``.  Record integer fields formatted with a
+  non-default ``integer_format``, ``numeric_separator`` or
+  ``numeric_literal_suffix`` keep their value-derived field type.
+  In-range integers are unaffected.  See #2306.
+- :class:`~literalizer.Kotlin`, :class:`~literalizer.Java` and
+  :class:`~literalizer.Scala` no longer emit output that fails to
+  compile for a record field holding an integer beyond the signed
+  64-bit range under the ``RECORD`` ``heterogeneous_strategy``.  The
+  generated ``data class`` / ``record`` / ``case class`` field is now
+  typed ``BigInteger`` / ``BigInteger`` / ``BigInt`` to match the
+  arbitrary-precision overflow-fallback literal instead of
+  ``Long`` / ``long``.  In-range integers are unaffected.  See #2376.
 - Internal: the ``RECORD`` ``heterogeneous_strategy`` no longer threads
   the already-formatted field literal into the field-type hook.
   :class:`~literalizer.Kotlin` now derives each generated ``data class``
