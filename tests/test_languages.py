@@ -625,24 +625,6 @@ def test_datetime_time_heterogeneous_variant_renders(spec: Language) -> None:
     assert "Time" in result.code
 
 
-def test_datetime_time_rust_lazy_static_renders() -> None:
-    """Rust LAZY_STATIC infers ``&str`` for a ``datetime.time`` value.
-
-    Covers the ``case datetime.time():`` arm of ``_rust_scalar_type``,
-    which only runs when a typed declaration walks scalar values.
-    Delete with the rest of the time-coverage shims once issue #2230
-    lands.
-    """
-    result = literalize(
-        source="val = 09:30:00\n",
-        input_format=InputFormat.TOML,
-        language=Rust(declaration_style=Rust.declaration_styles.LAZY_STATIC),
-        variable_form=NewVariable(name="X"),
-        wrap_in_file=True,
-    )
-    assert "HashMap<&str, &str>" in result.code
-
-
 def test_datetime_time_union_annotation_renders() -> None:
     """Annotated heterogeneous sequence with a ``datetime.time`` element
     renders without crashing.
