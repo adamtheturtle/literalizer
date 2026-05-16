@@ -103,7 +103,7 @@ jobs:
       # least the highest member (`JDK_16`) so `--release 16` is accepted.
       # 21 is the current LTS and also accepts `--release 11`.
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
