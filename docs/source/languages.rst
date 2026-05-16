@@ -86,6 +86,16 @@ for the ``time.Date(...)`` constructor.
 Each ``__init__`` parameter has a sensible default, so you only need to
 specify the options you want to change.
 
+Heterogeneous values
+--------------------
+
+When the input data mixes value types that the target language's
+natural collection type cannot hold, a ``heterogeneous_strategy``
+constructor argument controls the outcome.  Every language defaults to
+``ERROR``; some expose richer strategies such as ``TAGGED_ENUM`` or
+``RECORD``.  See :ref:`heterogeneous-strategies` for the strategies,
+worked examples, and the per-language support matrix.
+
 Custom language implementations
 -------------------------------
 
