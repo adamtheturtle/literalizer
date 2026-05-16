@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- The mapping arm of the public ``ValueInput`` type (accepted by
+  ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
+  ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
+  nested ``dict`` literals with any scalar key type (``str``, ``int``,
+  mixed, ...) typecheck without an explicit annotation.  This is a
+  type-only relaxation that accepts strictly more inputs; runtime
+  behaviour is unchanged.
 - :class:`~literalizer.Python` gains an opt-in ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,

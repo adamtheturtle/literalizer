@@ -53,7 +53,13 @@ from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
 )
-from literalizer._types import OrderedMap, Scalar, Value, ValueInput
+from literalizer._types import (
+    OrderedMap,
+    Scalar,
+    Value,
+    ValueInput,
+    ValueItemsMap,
+)
 from literalizer.exceptions import (
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
@@ -3993,8 +3999,14 @@ def _validate_call_preconditions(
 
 def _is_value_mapping(
     value: ValueInput, /
-) -> TypeIs[Mapping[Scalar, ValueInput]]:
-    """Narrow ``value`` to the ``Mapping`` arm of ``ValueInput``."""
+) -> TypeIs[ValueItemsMap[Scalar, ValueInput]]:
+    """Narrow ``value`` to the mapping arm of ``ValueInput``.
+
+    The arm is the covariant-key ``ValueItemsMap`` protocol (see its
+    docstring); every :class:`~collections.abc.Mapping` satisfies it
+    structurally, so the ``isinstance`` guard is sound and the negative
+    branch subtracts the whole mapping arm.
+    """
     return isinstance(value, Mapping)
 
 
