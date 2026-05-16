@@ -2,8 +2,9 @@
   "name": "npm-linters",
   "version": "1.0.0",
   "license": "ISC",
+  "//": "The `elm` devDependency is pinned to an exact version `>=` the `Elm.language_version` (`VersionFormats.V0_19`) default in `src/literalizer/languages/elm.py`; keep them in sync.",
   "devDependencies": {
-    "elm": "^0.19.1-6",
+    "elm": "0.19.1-6",
     "elm-format": "^0.8.8",
     "json5": "^2.2.3",
     "tree-sitter-cli": "^0.26.8",
