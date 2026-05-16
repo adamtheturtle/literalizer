@@ -462,6 +462,7 @@ class _KotlinDictSpec:
     opener_template: str
 
 
+@beartype
 def _kotlin_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

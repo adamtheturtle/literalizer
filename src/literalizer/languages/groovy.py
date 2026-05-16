@@ -82,6 +82,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@beartype
 def _groovy_call_stub_factory(
     *,
     keyword_style: bool,

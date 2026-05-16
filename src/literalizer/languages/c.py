@@ -144,6 +144,7 @@ def _make_format_c_entry(
 _SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
 
 
+@beartype
 def _c_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

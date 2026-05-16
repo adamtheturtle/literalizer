@@ -592,11 +592,13 @@ class HeterogeneousBehavior:
     compute_tuple_list_ids: Callable[[Value], frozenset[int]] | None = None
 
 
+@beartype
 def no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     """Return an empty wrap-id set — used by non-wrapping languages."""
     return frozenset()
 
 
+@beartype
 def _no_compute_call_slot_wrap_ids(
     _slot_values: Sequence[Value],
     /,
@@ -1924,6 +1926,7 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@beartype
 def _no_call_stub(
     _parts: Sequence[str],
     _params: Sequence[str],
@@ -1942,6 +1945,7 @@ no_call_stub: Callable[
 """Shared callable for languages that need no call stubs."""
 
 
+@beartype
 def _identity_call_target(parts: Sequence[str], /) -> str:
     """Return the parts joined with ``"."``."""
     return ".".join(parts)
@@ -1951,6 +1955,7 @@ identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 """Shared callable for languages that need no call-target rewriting."""
 
 
+@beartype
 def _identity_call_ref_identifier(name: str, value: Value | None, /) -> str:
     """Return *name* unchanged.
 
@@ -1997,6 +2002,7 @@ predicate that returns ``True`` for those values.
 """
 
 
+@beartype
 def _no_type_hint_preamble(
     _empty_collection_types: frozenset[type],
     /,
@@ -2013,6 +2019,7 @@ no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
 """Shared callable for languages that need no type-hint preamble."""
 
 
+@beartype
 def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
     """Return no preamble lines — used by languages that do not need
     data-dependent preamble.
@@ -2024,6 +2031,7 @@ no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
 """Shared callable for languages with no data-dependent preamble."""
 
 
+@beartype
 def _no_validate_spec_for_data(self: "Language", data: Value) -> None:
     """Default ``validate_spec_for_data`` — no spec/data constraints."""
     del self, data
@@ -2037,6 +2045,7 @@ check.
 """
 
 
+@beartype
 def _default_wrap_calls_with_declarations(
     self: "Language",
     declarations: tuple[str, ...],
@@ -2064,6 +2073,7 @@ expressions.
 """
 
 
+@beartype
 def _no_format_integer_widened(self: "Language") -> None:
     """Default ``format_integer_widened`` -- no mixed-magnitude integer
     widening, so the renderer keeps the normal integer formatter.
@@ -2078,6 +2088,7 @@ falls back to the language's normal integer formatter.
 """
 
 
+@beartype
 def _default_format_call_variable_declaration(
     self: "Language",
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2095,6 +2106,7 @@ formatted exactly like a literal binding (no value-type tag to drop).
 """
 
 
+@beartype
 def _default_format_call_variable_assignment(
     self: "Language",
 ) -> Callable[[str, str, Value], str]:
@@ -2112,6 +2124,7 @@ formatted exactly like a literal binding (no value-type tag to drop).
 """
 
 
+@beartype
 def _default_sequence_binding_declarations(
     self: "Language", declarations: tuple[str, ...]
 ) -> str:
@@ -2130,6 +2143,7 @@ default_sequence_binding_declarations: Callable[
 """
 
 
+@beartype
 def _no_call_binding_body_preamble(self: "Language") -> tuple[str, ...]:
     """Default ``format_call_binding_body_preamble`` -- no extra body
     preamble lines for an inference-bound call result.
@@ -2144,6 +2158,7 @@ no_call_binding_body_preamble: Callable[["Language"], tuple[str, ...]] = (
 """Shared callable for languages needing no call-binding body preamble."""
 
 
+@beartype
 def _no_call_binding_file_pragmas(self: "Language") -> tuple[str, ...]:
     """Default ``format_call_binding_file_pragmas`` -- no file-level
     compiler-pragma line for an inference-bound call result.
@@ -2222,6 +2237,7 @@ def wrap_combined_in_file_noop(
     )
 
 
+@beartype
 def body_preamble_from_scalars(
     *,
     scalar_body_preamble: dict[type, tuple[str, ...]],

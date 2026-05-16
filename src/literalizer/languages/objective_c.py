@@ -56,8 +56,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
@@ -136,6 +134,33 @@ def _format_objc_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
+def _format_objc_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format an Objective-C ``id`` declaration binding a call result.
+
+    The literal-binding declaration boxes a primitive right-hand side
+    as ``NSNumber`` / ``NSString`` because an ``id`` is a pointer type.
+    A call expression already evaluates to an object pointer, so the
+    ``@(...)`` boxing is dropped and the call result is bound directly.
+    """
+    return f"id {name} = {value};"
+
+
+@beartype
+def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
+    """Format an Objective-C reassignment binding a call result.
+
+    The call-expression counterpart of :func:`_format_objc_assignment`;
+    no ``@(...)`` boxing since a call already yields an object pointer.
+    """
+    return f"{name} = {value};"
+
+
+@beartype
 def _format_objc_string(value: str) -> str:
     r"""Format a string as an Objective-C ``NSString`` literal.
 
@@ -199,6 +224,7 @@ def _objc_format_call_target(parts: Sequence[str], /) -> str:
 _SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
 
 
+@beartype
 def _objc_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -297,8 +323,6 @@ class ObjectiveC(metaclass=LanguageCls):
     """Objective-C language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -310,7 +334,7 @@ class ObjectiveC(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -695,6 +719,32 @@ class ObjectiveC(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return _format_objc_assignment
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration boxes a primitive right-hand
+        side as ``NSNumber`` / ``NSString`` (an ``id`` is a pointer
+        type); a call expression already yields an object pointer, so
+        the ``@(...)`` boxing is dropped and the call result is bound
+        directly.
+        """
+        return _format_objc_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call expression.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; the ``@(...)`` boxing is
+        dropped since a call already yields an object pointer.
+        """
+        return _format_objc_call_assignment
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

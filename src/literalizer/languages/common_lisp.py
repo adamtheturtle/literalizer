@@ -87,6 +87,7 @@ def _format_cons_entry(
     return f"(cons {key} {formatted_value})"
 
 
+@beartype
 def _common_lisp_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],

@@ -216,6 +216,7 @@ class _ScalaDictSpec:
     preamble_lines: tuple[str, ...]
 
 
+@beartype
 def _scala_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

@@ -10,6 +10,24 @@ Next
   ``format_call_preamble_stub`` methods, so it is now re-exported from
   the package root for consumers implementing that protocol.  See
   #1947.
+- :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting ``id my_data =
+  make_widget(@42);`` directly.  The literal-binding declaration boxes
+  a primitive right-hand side via ``@(...)`` because an ``id`` is a
+  pointer type, but a call expression already yields an object pointer,
+  so the boxing is dropped for the call-result binding.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding output is unchanged.  See #2223.
+- :class:`~literalizer.Erlang` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`, binding the call result with
+  ``My_data = make_widget(...)``.  A ``wrap_in_file=True`` Erlang
+  scaffold hoists the generated call stub to module scope between
+  ``-export`` and ``x()`` (previously the literal-binding scaffold
+  nested it inside the ``x/0`` clause, producing invalid Erlang) while
+  keeping the binding and the trailing ``My_data.`` return inside
+  ``x()``.  See #2454.
 
 2026.05.16.1
 ------------

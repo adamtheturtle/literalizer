@@ -78,6 +78,7 @@ from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
 
+@beartype
 def _clojure_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],

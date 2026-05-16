@@ -289,6 +289,7 @@ class _CSharpDictSpec:
     opener_template: str
 
 
+@beartype
 def _csharp_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

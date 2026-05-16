@@ -124,6 +124,7 @@ _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
 
 
+@beartype
 def _rust_integer_type(value: int) -> str:
     """Return the narrowest Rust integer type for *value*."""
     if _I32_MIN <= value <= _I32_MAX:
@@ -565,6 +566,7 @@ class _HeterogeneousStrategyConfig:
     ]
 
 
+@beartype
 def _build_error_behavior(
     _params: _StrategyParams,
     /,
@@ -573,6 +575,7 @@ def _build_error_behavior(
     return NO_HETEROGENEOUS_BEHAVIOR
 
 
+@beartype
 def _build_error_preamble(
     _params: _StrategyParams,
     /,
@@ -581,6 +584,7 @@ def _build_error_preamble(
     return no_data_preamble
 
 
+@beartype
 def _build_tagged_enum_behavior(
     params: _StrategyParams,
     /,
@@ -611,6 +615,7 @@ def _build_tagged_enum_behavior(
     )
 
 
+@beartype
 def _build_tagged_enum_preamble(
     params: _StrategyParams,
     /,
@@ -734,6 +739,7 @@ def _rust_record_field_type(
             return signature.inner_type
 
 
+@beartype
 def _build_record_behavior(
     params: _StrategyParams,
     /,
@@ -824,6 +830,7 @@ def _build_record_behavior(
     )
 
 
+@beartype
 def _render_rust_tuple(
     value: list[Value],
     elements: Sequence[str],
@@ -849,6 +856,7 @@ def _render_rust_tuple(
     )
 
 
+@beartype
 def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
     """Adapt :func:`collect_tuple_list_ids` to the positional
     ``compute_tuple_list_ids`` hook signature.
@@ -856,6 +864,7 @@ def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
     return collect_tuple_list_ids(data=data)
 
 
+@beartype
 def _build_tuple_behavior(
     params: _StrategyParams,
     /,
@@ -877,6 +886,7 @@ def _build_tuple_behavior(
     )
 
 
+@beartype
 def _ordered_record_shapes(
     *,
     data: Value,
@@ -896,6 +906,7 @@ def _ordered_record_shapes(
     return ordered
 
 
+@beartype
 def _accumulate_ordered_shapes(
     *,
     data: Value,
@@ -932,6 +943,7 @@ def _accumulate_ordered_shapes(
             return
 
 
+@beartype
 def _record_preamble_impl(
     params: _StrategyParams,
     /,
@@ -1012,6 +1024,7 @@ def _record_preamble_impl(
     return _preamble
 
 
+@beartype
 def _build_record_preamble(
     params: _StrategyParams,
     /,
@@ -1020,6 +1033,7 @@ def _build_record_preamble(
     return _record_preamble_impl(params, enable_tuples=False)
 
 
+@beartype
 def _build_tuple_preamble(
     params: _StrategyParams,
     /,
@@ -1031,6 +1045,7 @@ def _build_tuple_preamble(
     return _record_preamble_impl(params, enable_tuples=True)
 
 
+@beartype
 def _accumulate_emit_order(
     *,
     data: Value,
@@ -1066,6 +1081,7 @@ def _accumulate_emit_order(
             return
 
 
+@beartype
 def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
     *,
     data: Value,
@@ -1149,6 +1165,7 @@ def _rust_type_var(*, index: int) -> str:
     return f"{letter}{group}"
 
 
+@beartype
 def _rust_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

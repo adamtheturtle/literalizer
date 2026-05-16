@@ -111,6 +111,7 @@ def _apply_roc_str_wrapped_date(value: datetime.date, prefix: str) -> str:
     return f"{prefix}Str {format_date_iso(value=value)}"
 
 
+@beartype
 def _build_roc_date_iso(
     prefix: str,
 ) -> Callable[[datetime.date], str]:
@@ -131,6 +132,7 @@ def _apply_roc_str_wrapped_time(value: datetime.time, prefix: str) -> str:
     return f"{prefix}Str {format_time_iso(value=value)}"
 
 
+@beartype
 def _build_roc_time_iso(
     prefix: str,
 ) -> Callable[[datetime.time], str]:
@@ -153,6 +155,7 @@ def _apply_roc_str_wrapped_datetime(
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
 
+@beartype
 def _build_roc_datetime_iso(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -167,6 +170,7 @@ def _build_roc_datetime_iso(
     return _format
 
 
+@beartype
 def _build_roc_datetime_epoch(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -184,6 +188,7 @@ def _apply_roc_bytes_hex(value: bytes, prefix: str) -> str:
     return f"{prefix}Str {format_bytes_hex(value=value)}"
 
 
+@beartype
 def _build_roc_bytes_hex(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -204,6 +209,7 @@ def _apply_roc_bytes_base64(value: bytes, prefix: str) -> str:
     return f"{prefix}Str {format_bytes_base64(value=value)}"
 
 
+@beartype
 def _build_roc_bytes_base64(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -224,6 +230,7 @@ def _apply_roc_string(value: str, prefix: str) -> str:
     return f"{prefix}Str {_format_roc_string_literal(value=value)}"
 
 
+@beartype
 def _build_roc_str_formatter(
     prefix: str,
 ) -> Callable[[str], str]:
@@ -254,6 +261,7 @@ def _apply_roc_integer(
     return f"{prefix}Int {base(value)}i128"
 
 
+@beartype
 def _build_roc_integer_formatter(
     prefix: str,
     base: Callable[[int], str],
@@ -277,6 +285,7 @@ def _apply_roc_float(
     return f"{prefix}Float {inner(value)}"
 
 
+@beartype
 def _build_roc_float_formatter(
     prefix: str,
     inner: Callable[[float], str],
@@ -308,6 +317,7 @@ def _apply_roc_dict_entry(
     return f"({key}, {formatted_value})"
 
 
+@beartype
 def _build_roc_dict_entry(
     prefix: str,
 ) -> Callable[[str, Value, str], str]:
@@ -435,6 +445,7 @@ def _build_roc_body_preamble(
     return _compute
 
 
+@beartype
 def _roc_format_call_target(parts: Sequence[str]) -> str:
     """Flatten a sequence of call target parts to an underscored Roc
     identifier.
@@ -461,6 +472,7 @@ def _roc_type_var(*, index: int) -> str:
     return f"{letter}{group}"
 
 
+@beartype
 def _roc_call_body_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -497,6 +509,7 @@ def _roc_format_call_arg(_value: Value, formatted: str) -> str:
     return f"({formatted})"
 
 
+@beartype
 def _indent_call_lines(*, content: str, indent: str) -> str:
     """Wrap each call line of *content* in ``dbg (...)`` for a Roc
     ``main`` body.

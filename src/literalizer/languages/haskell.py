@@ -195,6 +195,7 @@ def _build_haskell_call_stub_lines(
     return tuple(lines)
 
 
+@beartype
 def _build_haskell_call_stub(
     *,
     type_name: str,
@@ -256,6 +257,7 @@ def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
     )
 
 
+@beartype
 def _build_haskell_datetime_formatter(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -475,6 +477,7 @@ def _build_string_formatters(
     )
 
 
+@beartype
 def _num_instance(
     *,
     has_int: bool,
@@ -524,6 +527,7 @@ def _num_instance(
     )
 
 
+@beartype
 def _has_microsecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime with microseconds."""
     match data:
@@ -541,6 +545,7 @@ def _has_microsecond_datetime(*, data: Value) -> bool:
             return False
 
 
+@beartype
 def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime without
     microseconds.
@@ -560,6 +565,7 @@ def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
             return False
 
 
+@beartype
 def _datetime_import_items(
     *,
     has_from_gregorian: bool,

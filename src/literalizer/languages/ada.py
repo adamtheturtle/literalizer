@@ -84,6 +84,7 @@ _ADA_FLOAT_SPECIAL_DECLS = {
 }
 
 
+@beartype
 def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
     """Return which IEEE-special float kinds appear anywhere in *data*.
 
@@ -112,6 +113,7 @@ def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
     return frozenset(kinds)
 
 
+@beartype
 def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Ada's structured empty literal beside typed siblings.
 

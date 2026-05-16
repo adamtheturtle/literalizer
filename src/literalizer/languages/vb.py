@@ -162,6 +162,7 @@ def _format_string_vb(value: str) -> str:
     return " & ".join(parts)
 
 
+@beartype
 def _vb_unique_class_name(*, segment: str, position: int) -> str:
     """Build a stub class name unique to a segment's path position.
 
@@ -174,6 +175,7 @@ def _vb_unique_class_name(*, segment: str, position: int) -> str:
     return f"{segment.title()}Type_{position}_"
 
 
+@beartype
 def _vb_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
