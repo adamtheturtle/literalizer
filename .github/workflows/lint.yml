@@ -1119,6 +1119,10 @@ jobs:
       - name: Install OCaml
         uses: ocaml/setup-ocaml@v3
         with:
+          # ``ocaml-compiler: 5`` resolves to the latest OCaml 5.x
+          # release, which is ``>=`` the ``V5`` default of
+          # ``OCaml.language_version`` in
+          # ``src/literalizer/languages/ocaml.py``; keep them in sync.
           ocaml-compiler: 5
       - name: Check OCaml syntax
         run: |-
