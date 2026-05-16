@@ -543,12 +543,12 @@ class Bash(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     # Keep in sync with the ``Lint Bash`` step of
-    # ``.github/workflows/lint.yml``. ``ubuntu-latest`` preinstalls the
-    # ``bash`` that both runs and lints the fixtures; that runner default
-    # (the 5.x series) is ``>=`` this ``V5_1`` default and serves as the
-    # pinned floor. Bash has no ``--langversion``-style flag, so the
-    # runner default is the pin; the step's ``BASH_VERSINFO`` guard fails
-    # the job if it ever drifts below 5.1.
+    # ``.github/workflows/lint.yml``. The ``bash`` preinstalled on
+    # ``ubuntu-latest`` both runs and lints the fixtures; that runner
+    # default (the 5.x series) is ``>=`` this ``V5_1`` default and serves
+    # as the pinned floor. Bash has no ``--langversion``-style flag, so
+    # the runner default is the pin; the step's ``BASH_VERSINFO`` guard
+    # fails the job if it ever drifts below 5.1.
     language_version: VersionFormats = VersionFormats.V5_1
     indent: str = "    "
 
