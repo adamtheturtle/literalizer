@@ -93,11 +93,13 @@ from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
 
+@beartype
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
     return IdentifierCase.PASCAL.convert(name=name)
 
 
+@beartype
 def _ruby_call_stub(
     format_class_name: Callable[[str], str],
     parts: Sequence[str],

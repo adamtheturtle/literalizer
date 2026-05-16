@@ -90,6 +90,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@beartype
 def _php_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a dotted call target into PHP's ``$obj->method`` form."""
     if len(parts) == 1:
@@ -97,11 +98,13 @@ def _php_format_call_target(parts: Sequence[str], /) -> str:
     return "$" + parts[0] + "".join(f"->{p}" for p in parts[1:])
 
 
+@beartype
 def _php_format_call_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Prepend PHP's ``$`` variable sigil to a call-ref identifier."""
     return f"${name}"
 
 
+@beartype
 def _php_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

@@ -114,6 +114,7 @@ def _apply_gleam_str_wrapped_date(value: datetime.date, prefix: str) -> str:
     return f"{prefix}Str({format_date_iso(value=value)})"
 
 
+@beartype
 def _build_gleam_date_iso(
     prefix: str,
 ) -> Callable[[datetime.date], str]:
@@ -134,6 +135,7 @@ def _apply_gleam_str_wrapped_time(value: datetime.time, prefix: str) -> str:
     return f"{prefix}Str({format_time_iso(value=value)})"
 
 
+@beartype
 def _build_gleam_time_iso(
     prefix: str,
 ) -> Callable[[datetime.time], str]:
@@ -156,6 +158,7 @@ def _apply_gleam_str_wrapped_datetime(
     return f"{prefix}Str({format_datetime_iso(value=value)})"
 
 
+@beartype
 def _build_gleam_datetime_iso(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -170,6 +173,7 @@ def _build_gleam_datetime_iso(
     return _format
 
 
+@beartype
 def _build_gleam_datetime_epoch(
     prefix: str,
 ) -> Callable[[datetime.datetime], str]:
@@ -187,6 +191,7 @@ def _apply_gleam_bytes_hex(value: bytes, prefix: str) -> str:
     return f"{prefix}Str({format_bytes_hex(value=value)})"
 
 
+@beartype
 def _build_gleam_bytes_hex(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -207,6 +212,7 @@ def _apply_gleam_bytes_base64(value: bytes, prefix: str) -> str:
     return f"{prefix}Str({format_bytes_base64(value=value)})"
 
 
+@beartype
 def _build_gleam_bytes_base64(
     prefix: str,
 ) -> Callable[[bytes], str]:
@@ -228,6 +234,7 @@ def _apply_gleam_string(value: str, prefix: str) -> str:
     return f"{prefix}Str({escaped})"
 
 
+@beartype
 def _build_gleam_str_formatter(
     prefix: str,
 ) -> Callable[[str], str]:
@@ -250,6 +257,7 @@ def _apply_gleam_integer_wrapped(
     return f"{prefix}Int({base(value)})"
 
 
+@beartype
 def _build_gleam_integer_wrapper(
     prefix: str,
     base: Callable[[int], str],
@@ -275,6 +283,7 @@ def _apply_gleam_float_wrapped(
     return f"{prefix}Float({inner(value)})"
 
 
+@beartype
 def _build_gleam_float_wrapper(
     prefix: str,
     inner: Callable[[float], str],
@@ -308,6 +317,7 @@ def _apply_gleam_dict_entry(
     return f"#({key}, {formatted_value})"
 
 
+@beartype
 def _build_gleam_dict_entry(
     prefix: str,
 ) -> Callable[[str, Value, str], str]:
@@ -370,6 +380,7 @@ _GLEAM_BYTES_FORMATTERS: dict[
 }
 
 
+@beartype
 def _gleam_type_var(index: int) -> str:
     """Return a unique lowercase identifier for a type variable.
 
@@ -385,6 +396,7 @@ def _gleam_type_var(index: int) -> str:
     return f"{letter}{group}"
 
 
+@beartype
 def _gleam_call_preamble_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -408,6 +420,7 @@ def _gleam_call_preamble_stub(
     return (f"pub fn {flat_name}({param_list}) -> Nil {{ Nil }}",)
 
 
+@beartype
 def _gleam_format_call_target(parts: Sequence[str]) -> str:
     """Flatten a sequence of call target parts to an underscored Gleam
     identifier.

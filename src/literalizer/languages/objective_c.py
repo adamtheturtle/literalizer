@@ -224,6 +224,7 @@ def _objc_format_call_target(parts: Sequence[str], /) -> str:
 _SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
 
 
+@beartype
 def _objc_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

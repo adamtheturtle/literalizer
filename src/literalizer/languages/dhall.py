@@ -93,6 +93,7 @@ _DHALL_UNESCAPE_RE = re.compile(pattern=r"\\([$\"\\nrt]|u\{([0-9A-Fa-f]+)\})")
 _BACKTICK_LABEL_RE = re.compile(pattern=r"^[\x20-\x5f\x61-\x7e]+$")
 
 
+@beartype
 def _unescape_dhall_string(value: str) -> str:
     """Reverse Dhall double-quoted string escapes to produce raw
     content.
@@ -297,6 +298,7 @@ _DHALL_BRACKET_DELTA: dict[str, tuple[str, int]] = {
 _DHALL_STRING_RE = re.compile(pattern=r'"(?:[^"\\]|\\.)*"')
 
 
+@beartype
 def _dhall_validate_call_stmt(call_expr: str) -> None:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     call expressions that cannot be represented as valid Dhall.
@@ -350,6 +352,7 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
         prev_is_word = next_prev_is_word
 
 
+@beartype
 def _dhall_reject_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     any ``$ref`` argument.
@@ -444,6 +447,7 @@ class _HeterogeneousStrategyConfig:
     build_preamble: Callable[[str, str], Callable[[Value], tuple[str, ...]]]
 
 
+@beartype
 def _build_error_behavior(
     _union_name: str,
     _datetime_inner_type: str,
@@ -453,6 +457,7 @@ def _build_error_behavior(
     return NO_HETEROGENEOUS_BEHAVIOR
 
 
+@beartype
 def _build_error_preamble(
     _union_name: str,
     _datetime_inner_type: str,
@@ -462,6 +467,7 @@ def _build_error_preamble(
     return no_data_preamble
 
 
+@beartype
 def _build_union_type_behavior(
     union_name: str,
     datetime_inner_type: str,
@@ -492,6 +498,7 @@ def _build_union_type_behavior(
     )
 
 
+@beartype
 def _build_union_type_preamble(
     union_name: str,
     datetime_inner_type: str,
