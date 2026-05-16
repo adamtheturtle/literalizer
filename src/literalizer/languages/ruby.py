@@ -579,6 +579,8 @@ class Ruby(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``ruby-version`` pin passed to
+    # ``ruby/setup-ruby`` in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.V3
     indent: str = "  "
 
