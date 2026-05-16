@@ -76,10 +76,16 @@ jobs:
           luaVersion: '5.4'
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+      # ``gforth`` is pinned to ``0.7.3+dfsg-9build4.1`` (the Ubuntu
+      # 24.04 build), which implements ANS Forth, matching
+      # ``Forth.language_version`` (``ANS``) in
+      # ``src/literalizer/languages/forth.py``; keep them in sync.
+      # ``ANS`` is a fixed standard, so the version pin here is for
+      # reproducibility rather than language selection.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: tcl gforth guile-3.0
+          packages: tcl gforth=0.7.3+dfsg-9build4.1 guile-3.0
           version: 1.0
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
