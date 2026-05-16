@@ -1470,12 +1470,15 @@ jobs:
     # check and the run step via a job-level env var.
     env:
       # Pin the Nim toolchain so the installed compiler does not drift.
-      # ``2.2.4`` matches ``Nim.language_version`` (``V2``, i.e. Nim
-      # 2.x) in ``src/literalizer/languages/nim.py``; keep them in sync
-      # (the pin must stay ``>=`` that ``V2`` default). The
-      # ``NIM_WARNING_FLAGS`` catalogue below is Nim-version-sensitive,
-      # so this pin also stabilizes that list.
-      NIM_VERSION: 2.2.4
+      # ``2.2.10`` is ``>=`` the ``Nim.language_version`` (``V2``, i.e.
+      # Nim 2.x) default in ``src/literalizer/languages/nim.py``; keep
+      # them in sync. The ``NIM_WARNING_FLAGS`` catalogue below is
+      # Nim-version-sensitive (it must list exactly the warnings the
+      # pinned compiler's ``nim check --warnings:list`` reports, e.g.
+      # ``ImplicitRangeConversion`` is absent in older 2.2.x patch
+      # releases such as 2.2.4), so regenerate that list when bumping
+      # this pin.
+      NIM_VERSION: 2.2.10
       NIM_WARNING_FLAGS: >-
         --warningAsError:AboveMaxSizeSet:on
         --warningAsError:AmbiguousLink:on
