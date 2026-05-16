@@ -1223,8 +1223,16 @@ jobs:
 
   lint-commonlisp:
     runs-on: ubuntu-latest
+    # The ``LISP`` environment variable pins the SBCL build that
+    # 40ants/setup-lisp installs to ``sbcl-bin/2.6.4`` (without the
+    # version, ``sbcl-bin`` drifts to whatever is latest). SBCL
+    # implements the fixed ``ANSI`` standard that
+    # ``CommonLisp.language_version`` defaults to in
+    # ``src/literalizer/languages/common_lisp.py``; the pin keeps the
+    # installed SBCL build stable across CI runs rather than selecting
+    # a language standard. Keep them in sync.
     env:
-      LISP: sbcl-bin
+      LISP: sbcl-bin/2.6.4
     steps:
       - uses: actions/checkout@v6
         with:
