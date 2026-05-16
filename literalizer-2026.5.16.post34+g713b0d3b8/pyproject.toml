@@ -1,0 +1,545 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools",
+    "setuptools-scm>=8.1.0",
+]
+
+[project]
+name = "literalizer"
+description = "Convert JSON data structures to native language literal syntax."
+readme = { file = "README.rst", content-type = "text/x-rst" }
+keywords = [ "code-generation", "json", "literal" ]
+license = "MIT"
+authors = [
+    { name = "Adam Dangoor", email = "adamdangoor@gmail.com" },
+]
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dynamic = [
+    "version",
+]
+dependencies = [
+    "beartype>=0.22.9,<1",
+    "pyhumps>=3.8",
+    "pyjson5>=2",
+    # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
+    # which has a maximum ruamel.yaml version of 0.18.16.
+    "ruamel-yaml>=0.18.16",
+    # ruamel.yaml.clib backs the ``typ='safe', pure=False`` loader used by
+    # the comment-free YAML fast path in ``_parse_yaml``.  ruamel.yaml does
+    # not depend on it directly, so we pin it here to guarantee the fast
+    # path is available on every platform where a wheel is published.
+    "ruamel-yaml-clib>=0.2.15; platform_python_implementation=='CPython'",
+    "tomlkit>=0.15",
+    # typing_extensions for ``TypeIs`` (PEP 742), which is in the stdlib
+    # ``typing`` module only from Python 3.13.
+    "typing-extensions>=4.10",
+]
+optional-dependencies.dev = [
+    "actionlint-py==1.7.12.24",
+    "check-manifest==0.51",
+    "deptry==0.25.1",
+    "doc8==2.0.0",
+    "doccmd==2026.5.6",
+    "furo==2025.12.19",
+    "hypothesis>=6.0",
+    "interrogate==1.7.0",
+    "mypy[faster-cache]==2.1.0",
+    "mypy-strict-kwargs==2026.1.12",
+    "prek==0.4.0",
+    "pydocstringformatter==0.7.5",
+    "pygments==2.20.0",
+    "pylint[spelling]==4.0.5",
+    "pylint-per-file-ignores==3.2.1",
+    "pyproject-fmt==2.21.2",
+    "pyrefly==1.0.0",
+    "pyright==1.1.409",
+    "pyroma==5.0.1",
+    "pytest==9.0.3",
+    "pytest-beartype-tests==2026.4.26",
+    "pytest-codspeed==5.0.2",
+    "pytest-cov==7.1.0",
+    "pytest-regressions==2.10.0",
+    "pytest-xdist==3.8.0",
+    "ruff==0.15.13",
+    # We add shellcheck-py not only for shell scripts and shell code blocks,
+    # but also because having it installed means that ``actionlint-py`` will
+    # use it to lint shell commands in GitHub workflow files.
+    "shellcheck-py==0.11.0.1",
+    "shfmt-py==4.0.0",
+    "sphinx==9.1.0",
+    "sphinx-copybutton==0.5.2",
+    "sphinx-lint==1.0.2",
+    "sphinx-pyproject==0.3.0",
+    "sphinx-substitution-extensions==2026.1.12",
+    "sphinxcontrib-spelling==8.0.2",
+    "ty==0.0.36",
+    "types-pygments==2.20.0.20260508",
+    "vulture==2.16",
+    "yamlfix==1.19.1",
+    "zizmor==1.25.1",
+]
+optional-dependencies.release = [
+    "check-wheel-contents==0.6.3",
+]
+urls.Documentation = "https://adamtheturtle.github.io/literalizer/"
+urls.Source = "https://github.com/adamtheturtle/literalizer"
+
+[tool.setuptools]
+zip-safe = false
+package-data.literalizer = [
+    "py.typed",
+]
+packages.find.where = [
+    "src",
+]
+
+[tool.setuptools_scm]
+# This keeps the start of the version the same as the last release.
+# This is useful for our documentation to include e.g. binary links
+# to the latest released binary.
+#
+# Code to match this is in ``conf.py``.
+version_scheme = "post-release"
+
+[tool.ruff]
+line-length = 79
+lint.select = [ "ALL" ]
+lint.ignore = [
+    # Ruff warns that this conflicts with the formatter.
+    "COM812",
+    # Allow our chosen docstring line-style - pydocstringformatter handles formatting
+    # but doesn't enforce D205 (blank line after summary) or D212 (summary on first line).
+    "D205",
+    "D212",
+    # Ruff warns that this conflicts with the formatter.
+    "ISC001",
+    # literalize has 8 keyword-only arguments, which is justified by the
+    # public API design.
+    "PLR0913",
+]
+lint.per-file-ignores."doccmd_*.py" = [
+    # Allow our chosen docstring line-style - pydocstringformatter handles
+    # formatting but docstrings in docs may not match this style.
+    "D200",
+    # Allow commented-out example output in documentation code blocks.
+    "ERA001",
+    # Allow asserts in docs.
+    "S101",
+    # Allow print() in docs for output-illustrating examples.
+    "T201",
+]
+lint.per-file-ignores."tests/**/test_*.py" = [
+    # Allow 'assert' as we use it for tests.
+    "S101",
+]
+lint.per-file-ignores."tests/integration/cases/**/*.py" = [
+    # These are generated fixture files; suppress everything except
+    # unused-import checks (F401) so we catch stale imports.
+    "B",
+    "D",
+    "DTZ",
+    "E",
+    "I",
+    "INP",
+    "PLR",
+    "Q",
+]
+lint.per-file-ignores."tests/integration/test_*.py" = [
+    # Allow 'assert' as we use it for tests.
+    "S101",
+    # FileRegressionFixture must be imported at runtime for beartype.
+    "TC002",
+]
+# Do not automatically remove commented out code.
+# We comment out code during development, and with VSCode auto-save, this code
+# is sometimes annoyingly removed.
+lint.unfixable = [ "ERA001" ]
+lint.flake8-tidy-imports.banned-api."builtins.getattr".msg = "getattr is banned: declare a typed protocol and use isinstance narrowing, or access the attribute directly."
+lint.flake8-tidy-imports.banned-api."builtins.hasattr".msg = "hasattr is banned: declare a typed protocol and use isinstance narrowing instead."
+lint.flake8-tidy-imports.banned-api."builtins.setattr".msg = "setattr is banned: assign through a typed attribute or constructor instead."
+lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: use explicit type narrowing or a typed variable instead."
+lint.pydocstyle.convention = "google"
+
+[tool.pylint]
+# Allow the body of an if to be on the same line as the test if there is no
+# else.
+FORMAT.single-line-if-stmt = false
+# Pickle collected data for later comparisons.
+MASTER.persistent = true
+# Use multiple processes to speed up Pylint.
+MASTER.jobs = 0
+# Top-level investigation script with intentional ``exec`` and shell
+# fragments in its docstring; not part of the shipped package.
+MASTER.ignore-paths = [ "repro.py" ]
+# List of plugins (as comma separated values of python modules names) to load,
+# usually to register additional checkers.
+# See https://chezsoi.org/lucas/blog/pylint-strict-base-configuration.html.
+# We do not use the plugins:
+# - pylint.extensions.code_style
+# - pylint.extensions.magic_value
+# - pylint.extensions.while_used
+# as they seemed to get in the way.
+MASTER.load-plugins = [
+    "pylint_per_file_ignores",
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.comparison_placement",
+    "pylint.extensions.consider_refactoring_into_while_condition",
+    "pylint.extensions.docparams",
+    "pylint.extensions.dunder",
+    "pylint.extensions.eq_without_hash",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.mccabe",
+    "pylint.extensions.no_self_use",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.private_import",
+    "pylint.extensions.redefined_loop_name",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing",
+]
+# Allow loading of arbitrary C extensions. Extensions are imported into the
+# active Python interpreter and may run arbitrary code.
+MASTER.unsafe-load-any-extension = false
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time (only on the command line, not in the configuration file where
+# it should appear only once). See also the "--disable" option for examples.
+MESSAGES-CONTROL.enable = [
+    "bad-inline-option",
+    "deprecated-pragma",
+    "file-ignored",
+    "spelling",
+    "use-symbolic-message-instead",
+    "useless-suppression",
+]
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifiers separated by comma (,) or put this
+# option multiple times (only on the command line, not in the configuration
+# file where it should appear only once).You can also use "--disable=all" to
+# disable everything first and then reenable specific checks. For example, if
+# you want to run only the similarities checker, you can use "--disable=all
+# --enable=similarities". If you want to run only the classes checker, but have
+# no Warning level messages displayed, use"--disable=all --enable=classes
+# --disable=W"
+MESSAGES-CONTROL.disable = [
+    "too-few-public-methods",
+    "too-many-locals",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    "too-many-lines",
+    "locally-disabled",
+    # Let ruff handle long lines
+    "line-too-long",
+    # Let ruff handle unused imports
+    "unused-import",
+    # Let ruff deal with sorting
+    "ungrouped-imports",
+    # We don't need everything to be documented because of mypy
+    "missing-type-doc",
+    "missing-return-type-doc",
+    # Too difficult to please
+    "duplicate-code",
+    # Let ruff handle imports
+    "wrong-import-order",
+]
+# We ignore invalid names because:
+# - We want to use generated module names, which may not be valid, but are never seen.
+# - We want to use global variables in documentation, which may not be uppercase
+MESSAGES-CONTROL.per-file-ignores = [
+    "docs/source/conf.py:invalid-name",
+    "docs/source/doccmd_*.py:invalid-name",
+    "doccmd_README_rst_*.py:invalid-name",
+]
+# Spelling dictionary name. Available dictionaries: none. To make it working
+# install python-enchant package.
+SPELLING.spelling-dict = "en_US"
+# A path to a file that contains private dictionary; one word per line.
+SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
+# Tells whether to store unknown words to indicated private dictionary in
+# --spelling-private-dict-file option instead of raising a message.
+SPELLING.spelling-store-unknown-words = "no"
+
+[tool.check-manifest]
+ignore = [
+    ".pre-commit-config.yaml",
+    ".vscode/*.json",
+    "conftest.py",
+    "CHANGELOG.rst",
+    "CODE_OF_CONDUCT.rst",
+    "CONTRIBUTING.rst",
+    "LICENSE",
+    "Makefile",
+    "issue.md",
+    "repro.py",
+    "ci",
+    "ci/**",
+    "docs",
+    "docs/**",
+    ".git_archival.txt",
+    "spelling_private_dict.txt",
+    "tests",
+    "tests/**",
+    "zizmor.yml",
+    "CheckJavaSyntax.java",
+    ".clj-kondo",
+    ".clj-kondo/**",
+    ".clang-tidy",
+]
+
+[tool.deptry]
+optional_dependencies_dev_groups = [
+    "dev",
+    "release",
+]
+
+[tool.pyproject-fmt]
+indent = 4
+keep_full_version = true
+max_supported_python = "3.14"
+
+[tool.mypy]
+strict = true
+files = [ "." ]
+# ``@`` in a path stops mypy from forming a module name and triggers an
+# internal error (mypy 2.1.0).  Every golden fixture under
+# ``tests/integration/cases/`` carries a ``@<version>`` tag, so exclude
+# those paths from mypy; ruff and other linters still cover them.
+exclude = [
+    "build",
+    "repro.py",
+    "tests/integration/cases/.*@.*",
+]
+plugins = [ "mypy_strict_kwargs" ]
+follow_untyped_imports = true
+
+[[tool.mypy.overrides]]
+# Ref case golden files intentionally reference undefined identifiers.
+module = [
+    "tests.integration.cases.literalize_ref_in_dict.*",
+    "tests.integration.cases.literalize_ref_in_list.*",
+    "tests.integration.cases.literalize_ref_whole.*",
+]
+ignore_errors = true
+
+[tool.pyrefly]
+# Without this, pyrefly's built-in default `project-excludes` (e.g.
+# `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
+# appended to ours and combine with the `.gitignore`-based ignore files to
+# match our entire include pattern (`**/*.py*`), causing pyrefly to report
+# "no files matched" and fail the pre-push hook.
+disable-project-excludes-heuristics = true
+errors.non-exhaustive-match = "error"
+errors.unused-ignore = "error"
+project-excludes = [ "repro.py" ]
+search_path = [ ".", "src", ".github/scripts" ]
+
+[tool.pyright]
+enableTypeIgnoreComments = false
+exclude = [
+    ".venv",
+    "repro.py",
+]
+reportUnnecessaryTypeIgnoreComment = true
+typeCheckingMode = "strict"
+executionEnvironments = [
+    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
+    { root = "tests/errors/test_non_string_dict_key_guard.py", reportPrivateUsage = false },
+]
+
+[tool.ty]
+analysis.respect-type-ignore-comments = false
+terminal.error-on-warning = true
+overrides = []
+environment.extra-paths = [ ".github/scripts" ]
+src.exclude = [ "repro.py" ]
+
+[tool.pytest]
+ini_options.xfail_strict = true
+ini_options.log_cli = true
+ini_options.addopts = "-n auto"
+
+[tool.coverage]
+run.branch = true
+run.omit = [
+    "tests/benchmarks/**/*.py",
+    "tests/integration/cases/**/*.py",
+    "tests/integration/list_fixtures.py",
+]
+report.exclude_also = [
+    "case _ as unreachable:\n\\s*assert_never\\(",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+report.show_missing = true
+
+[tool.doc8]
+max_line_length = 2000
+ignore_path = [
+    "./.eggs",
+    "./docs/build",
+    "./docs/build/spelling/output.txt",
+    "./node_modules",
+    "./src/*.egg-info/",
+    "./src/*/_setuptools_scm_version.txt",
+]
+
+[tool.interrogate]
+fail-under = 100
+omit-covered-files = true
+verbose = 2
+exclude = [
+    "tests/integration/cases",
+]
+
+[tool.pydocstringformatter]
+write = true
+split-summary-body = false
+max-line-length = 75
+linewrap-full-docstring = true
+
+[tool.vulture]
+# Ideally we would limit the paths to the source code where we want to ignore names,
+# but Vulture does not enable this.
+ignore_names = [
+    # pytest configuration
+    "pytest_collect_file",
+    "pytest_plugins",
+    # pytest fixtures - we name fixtures like this for this purpose
+    "fixture_*",
+    # Sphinx
+    "autoclass_content",
+    "autodoc_member_order",
+    "copybutton_exclude",
+    "extensions",
+    "html_show_copyright",
+    "html_show_sourcelink",
+    "html_show_sphinx",
+    "html_theme",
+    "html_theme_options",
+    "html_title",
+    "htmlhelp_basename",
+    "intersphinx_mapping",
+    "language",
+    "linkcheck_ignore",
+    "linkcheck_retries",
+    "master_doc",
+    "nitpicky",
+    "project_copyright",
+    "pygments_style",
+    "rst_prolog",
+    "source_suffix",
+    "spelling_word_list_filename",
+    "suppress_warnings",
+    "templates_path",
+    "warning_is_error",
+    # Enum __call__ used implicitly when enum members are passed as callables
+    "__call__",
+    # Protocol and collection dunder methods used implicitly
+    "__getitem__",
+    # Enum members accessed by consumers iterating format enums
+    "ALLOW",
+    "ARRAY",
+    "BASE64",
+    "BINARY",
+    "BLOCK",
+    "BTREE_MAP",
+    "BTREE_SET",
+    "call_styles",
+    "heterogeneous_strategies",
+    "INTERFACE",
+    "JDK_16",
+    "OBJECT_VARIANT",
+    "RECORD",
+    "TAGGED_ENUM",
+    "UNION_TYPE",
+    "VARIANT",
+    "CONST",
+    "CONTAINERS_MAP",
+    "DICTIONARY",
+    "HASH_MAP",
+    "HASH_SET",
+    "HEX",
+    "LIST_MAP",
+    "LET",
+    "LET_MUT",
+    "LET_MUTABLE",
+    "MAP",
+    "MAP_OF_ENTRIES",
+    "MAP_SET",
+    "MUT",
+    "NAMED",
+    "EPOCH",
+    "FIXED",
+    "FROZENSET",
+    "ELIXIR",
+    "ERLANG",
+    "EXPLICIT",
+    "NO",
+    "OBJECT",
+    "PAREN",
+    "OCTAL",
+    "OCTAL_C_STYLE",
+    "RAW",
+    "ORDERED",
+    "PRIVATE",
+    "PROTECTED",
+    "ROCKET",
+    "SAFE",
+    "SEQ",
+    "SCIENTIFIC",
+    "SINGLE",
+    "SYMBOL",
+    "SORTED_DICTIONARY",
+    "SORTED_SET",
+    "STATIC",
+    "TREE_SET",
+    "TUPLE",
+    "UNDERSCORE",
+    "UNORDERED_MAP",
+    "VERBATIM",
+    "ZONED",
+    # Used by downstream consumers
+    "supports_module_name",
+    "supports_empty_dict_key",
+    "supports_call_style",
+    "supports_default_dict_key_type",
+    "supports_default_dict_value_type",
+    "supports_default_sequence_element_type",
+    "supports_default_set_element_type",
+    "supports_default_ordered_map_value_type",
+    "supports_record_struct_name_prefix",
+    # Used in documentation code examples
+    "custom",
+    "result",
+    # ruamel.yaml configuration attributes
+    "default_flow_style",
+    "sort_base_mapping_type_on_output",
+]
+# Duplicate some of .gitignore
+exclude = [
+    ".venv",
+    "tests/integration/cases",
+    # ``doccmd`` writes transient ``doccmd_*.py`` snippet files under
+    # ``docs/source`` while the docs hooks run.  A concurrently running
+    # ``vulture .`` can enumerate one and then fail to read it once
+    # ``doccmd`` deletes it, raising ``FileNotFoundError``.  These
+    # generated files are never worth scanning, so exclude them (the
+    # bare token becomes the ``*doccmd_*`` glob Vulture matches paths
+    # against).
+    "doccmd_",
+]
+
+[tool.yamlfix]
+section_whitelines = 1
+whitelines = 1

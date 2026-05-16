@@ -1,0 +1,22 @@
+---
+Checks: >
+  *,
+  -altera-struct-pack-align,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -fuchsia-default-arguments-calls,
+  -google-objc-function-naming,
+  -google-runtime-int,
+  -hicpp-named-parameter,
+  -llvm-include-order,
+  -llvmlibc-callee-namespace,
+  -llvmlibc-implementation-in-namespace,
+  -llvmlibc-restrict-system-libc-headers,
+  -misc-include-cleaner,
+  -misc-use-internal-linkage,
+  -modernize-raw-string-literal,
+  -modernize-use-trailing-return-type,
+  -performance-unnecessary-value-param,
+  -readability-implicit-bool-conversion,
+  -readability-magic-numbers,
+  -readability-named-parameter,
+WarningsAsErrors: '*'
