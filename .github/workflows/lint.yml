@@ -1507,10 +1507,15 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.d' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # ``compiler: dmd-2.112.0`` implements D ``>=`` the ``V2`` default
+      # of ``D.language_version`` in ``src/literalizer/languages/d.py``;
+      # keep them in sync. Every ``dmd-2.x`` release implements the D2
+      # language, so this pin tracks a concrete compiler build rather
+      # than a language standard, and avoids the ``dmd-latest`` drift.
       - name: Install DMD
         uses: dlang-community/setup-dlang@v2
         with:
-          compiler: dmd-latest
+          compiler: dmd-2.112.0
       # D derives the module name from the source filename and rejects
       # ``@`` as a non-identifier character, so copy each fixture to a
       # sanitized name before invoking ``dmd``.

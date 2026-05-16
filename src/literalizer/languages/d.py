@@ -523,6 +523,11 @@ class D(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``compiler`` input of the
+    # ``dlang-community/setup-dlang`` step in
+    # ``.github/workflows/lint.yml``. Every ``dmd-2.x`` release
+    # implements the D2 language, so the pin there is ``>=`` this
+    # ``V2`` default.
     language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
