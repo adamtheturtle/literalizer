@@ -778,6 +778,13 @@ class V(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the pinned V release downloaded by the
+    # ``Install V`` step of the ``lint-v`` job in
+    # ``.github/workflows/lint.yml``: the pinned ``weekly.2026.08``
+    # release is ``>=`` this ``V0_4`` default, so the fixture gate
+    # runs under a compiler that accepts the declared language
+    # version.  (The ``0.5.1`` stable is too old: it emits broken C
+    # for the interface-strategy float fixtures.)
     language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "\t"
     call_style: CallStyles = CallStyles.POSITIONAL

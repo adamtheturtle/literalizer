@@ -1,7 +1,8 @@
 """Type aliases used across the literalizer package."""
 
 import datetime
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Protocol, runtime_checkable
 
 type Scalar = (
     str
@@ -15,8 +16,34 @@ type Scalar = (
     | bytes
 )
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
+
+
+@runtime_checkable
+class ValueItemsMap[K, V](Protocol):
+    """Covariant-key read-only view of the mapping arm of ``ValueInput``.
+
+    A plain :class:`~collections.abc.Mapping`'s key parameter is
+    invariant, so an inline ``dict`` literal -- inferred with a narrow
+    key type such as ``str`` or ``int`` -- is not assignable to
+    ``Mapping[Scalar, ValueInput]`` even though every concrete scalar
+    key type *is* a ``Scalar``.  The only operation literalizer
+    performs on this arm is iterating ``items()`` (see
+    ``_materialize_value_input``), so representing it as a read-only
+    ``items()`` view places ``K``/``V`` solely in an output position;
+    PEP 695 then infers them covariant, and any scalar-keyed mapping
+    literal is accepted without an explicit annotation.
+    """
+
+    def items(self) -> Iterable[tuple[K, V]]:
+        """Yield the key/value pairs."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 type ValueInput = (
-    Scalar | Sequence[ValueInput] | Mapping[Scalar, ValueInput] | set[Scalar]
+    Scalar
+    | Sequence[ValueInput]
+    | ValueItemsMap[Scalar, ValueInput]
+    | set[Scalar]
 )
 
 

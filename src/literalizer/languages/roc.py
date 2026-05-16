@@ -953,6 +953,11 @@ class Roc(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the pinned ``ROC_NIGHTLY_BUILD`` downloaded in
+    # the ``Install Roc`` step of ``.github/workflows/lint.yml``. Roc
+    # has no stable release and no ``--langversion``-style flag, so the
+    # pinned nightly build is the only mechanism for pinning the
+    # version; ``V0`` maps to the ``2025-10-28`` nightly.
     language_version: VersionFormats = VersionFormats.V0
     indent: str = "    "
     type_name: str = "Val"
