@@ -1993,6 +1993,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "scalar_null",
             "scalar_date",
             "scalar_datetime",
+            "time_dict",
             "binary",
             "set_mixed_int_widths",
         )
