@@ -469,12 +469,6 @@ def test_haskell_without_ref_values_strips_per_element_ref() -> None:
     assert result.body_preamble == ("data Val = HList [Val]",)
 
 
-_TIME_COVERAGE_SOURCES = (
-    "starts_at = 09:30:00\n",
-    "starts_at = 09:30:15.123456\n",
-)
-
-
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES,
     key=lambda c: c.__name__,
@@ -486,7 +480,13 @@ _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     argvalues=_SORTED_LANGUAGES,
     ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
-@pytest.mark.parametrize(argnames="source", argvalues=_TIME_COVERAGE_SOURCES)
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=[
+        "starts_at = 09:30:00\n",
+        "starts_at = 09:30:15.123456\n",
+    ],
+)
 def test_datetime_time_renders(lang_cls: LanguageCls, source: str) -> None:
     """Every language renders a ``datetime.time`` value without crashing.
 
