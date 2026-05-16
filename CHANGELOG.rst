@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- The mapping arm of the public ``ValueInput`` type (accepted by
+  ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
+  ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
+  nested ``dict`` literals with any scalar key type (``str``, ``int``,
+  mixed, ...) are accepted by type checkers without an explicit
+  annotation.  This is a type-only relaxation that accepts strictly
+  more inputs; runtime behavior is unchanged.
 - :class:`~literalizer.Scala` gains the same ``record_shape_names``
   constructor parameter, a ``Mapping[frozenset[str], str]`` from a
   record shape's key-set to a custom ``case class`` name.  A mapped
@@ -15,7 +22,6 @@ Next
   :class:`~literalizer.exceptions.InvalidRecordNameError`.  Its
   ``supports_record_shape_names`` language-class flag is now ``True``.
   See #2332.
-
 - :class:`~literalizer.Python` gains an opt-in ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,

@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import textwrap
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 import pytest
 
@@ -34,11 +34,6 @@ from literalizer.languages import (
     Swift,
     TypeScript,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from literalizer._types import Scalar, ValueInput
 
 COBOL = Cobol(
     date_format=Cobol.date_formats.ISO,
@@ -395,9 +390,6 @@ def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
     """Haskell unknown nested refs do not shape preamble type
     inference.
     """
-    inner_arg: Mapping[Scalar, ValueInput] = {"nested": "value"}
-    known_arg: list[ValueInput] = [1, inner_arg]
-    ref_values: dict[str, ValueInput] = {"known": known_arg}
     result = literalize_call(
         source=(
             '[[{"$ref": "known"}, {"$ref": "missing"}, '
@@ -407,7 +399,7 @@ def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
         language=Haskell(),
         target_function="process",
         parameter_names=["a", "b", "c"],
-        ref_values=ref_values,
+        ref_values={"known": [1, {"nested": "value"}]},
     )
 
     assert result.body_preamble == (
