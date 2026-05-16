@@ -22,29 +22,32 @@ def _private_literalizer_imports(*, tree: ast.Module) -> list[str]:
     """
     offenders: list[str] = []
     for node in ast.walk(node=tree):
-        if isinstance(node, ast.Import):
-            offenders.extend(
-                f"line {node.lineno}: import {alias.name}"
-                for alias in node.names
-                if alias.name.startswith("literalizer._")
-            )
-        elif isinstance(node, ast.ImportFrom):
-            module = node.module or ""
-            from_private_module = module.startswith("literalizer._")
-            private_names = (
-                [
-                    alias.name
+        match node:
+            case ast.Import():
+                offenders.extend(
+                    f"line {node.lineno}: import {alias.name}"
                     for alias in node.names
-                    if alias.name.startswith("_")
-                ]
-                if module == "literalizer"
-                else []
-            )
-            if from_private_module or private_names:
-                imported = ", ".join(alias.name for alias in node.names)
-                offenders.append(
-                    f"line {node.lineno}: from {module} import {imported}"
+                    if alias.name.startswith("literalizer._")
                 )
+            case ast.ImportFrom():
+                module = node.module or ""
+                from_private_module = module.startswith("literalizer._")
+                private_names = (
+                    [
+                        alias.name
+                        for alias in node.names
+                        if alias.name.startswith("_")
+                    ]
+                    if module == "literalizer"
+                    else []
+                )
+                if from_private_module or private_names:
+                    imported = ", ".join(alias.name for alias in node.names)
+                    offenders.append(
+                        f"line {node.lineno}: from {module} import {imported}"
+                    )
+            case _:
+                pass
     return offenders
 
 
