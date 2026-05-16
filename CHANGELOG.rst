@@ -4,6 +4,14 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting ``id my_data =
+  make_widget(@42);`` directly.  The literal-binding declaration boxes
+  a primitive right-hand side via ``@(...)`` because an ``id`` is a
+  pointer type, but a call expression already yields an object pointer,
+  so the boxing is dropped for the call-result binding.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding output is unchanged.  See #2223.
 - The mapping arm of the public ``ValueInput`` type (accepted by
   ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
   ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
