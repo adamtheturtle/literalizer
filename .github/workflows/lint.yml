@@ -1409,6 +1409,9 @@ jobs:
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
         with:
+          # `crystal: 1.20.0` is `>=` `Crystal.language_version` (`V1`,
+          # i.e. Crystal 1.x) in `src/literalizer/languages/crystal.py`;
+          # keep them in sync.
           crystal: 1.20.0
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
