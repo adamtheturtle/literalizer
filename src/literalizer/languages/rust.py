@@ -668,11 +668,10 @@ def _rust_record_field_type(
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
     # this).  A set-valued field, and a dict-valued field whose dict is
     # not record-eligible (empty, non-string-keyed, or an ordered map),
-    # have no struct field type that matches the
-    # ``HashSet``/``BTreeSet``/``HashMap`` literal rendered for the
-    # value, so the ``case set()`` and the
-    # non-record ``case dict()`` paths reject the input instead of
-    # emitting a struct that fails to compile.
+    # have no struct field type that matches the set or map literal
+    # rendered for the value, so the ``case set()`` and the non-record
+    # ``case dict()`` paths reject the input instead of emitting a
+    # struct that fails to compile.
     match value:
         case []:
             return "Vec<String>"
@@ -1099,8 +1098,8 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
         case dict():
             # Non-record dicts (empty, non-string-keyed, or an ordered
             # map) sitting next to record dicts are a #2234 /
-            # out-of-MVP shape.  Still recurse so a record dict nested
-            # deeper inside one is found, even though
+            # out-of-MVP shape.  Keep walking its values so a record
+            # dict nested deeper inside one is still found, even though
             # :func:`_rust_record_field_type` later rejects such a dict
             # when it is itself a record field.
             for value in data.values():

@@ -1,9 +1,9 @@
 """Rejection of set-valued fields under the Rust ``RECORD`` strategy.
 
 A set-valued record field has no struct field type that agrees with the
-``HashSet``/``BTreeSet`` literal rendered for the value, so the
-``RECORD`` heterogeneous strategy cannot emit a struct for it that
-compiles.  ``literalize`` therefore raises
+set literal rendered for the value, so the ``RECORD`` heterogeneous
+strategy cannot emit a struct for it that compiles.  ``literalize``
+therefore raises
 :class:`~literalizer.exceptions.UnrepresentableInputError` rather than
 producing a struct that fails to compile.  The integration framework
 only exercises golden output that compiles, so this contract has no

@@ -2,8 +2,8 @@
 strategy.
 
 A record field whose value is a dict that is not record-eligible
-(empty, or an ordered map) is rendered as a ``HashMap`` literal but has
-no matching struct field type, so the ``RECORD`` heterogeneous strategy
+(empty, or an ordered map) is rendered as a map literal but has no
+matching struct field type, so the ``RECORD`` heterogeneous strategy
 cannot emit a struct for it that compiles.  ``literalize`` therefore
 raises :class:`~literalizer.exceptions.UnrepresentableInputError`
 rather than producing a struct that fails to compile.  The ordered-map
