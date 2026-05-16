@@ -434,6 +434,10 @@ class Clojure(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # ``V1_11`` (Clojure 1.11) is ``<=`` the Clojure 1.12.x bundled by
+    # the ``bb: 1.12.218`` pin in the ``lint-jvm-mini`` job of
+    # ``.github/workflows/lint.yml`` (Babashka determines the effective
+    # Clojure runtime); keep them in sync.
     language_version: VersionFormats = VersionFormats.V1_11
     indent: str = "    "
 

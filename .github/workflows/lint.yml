@@ -940,11 +940,17 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # ``bb: 1.12.218`` bundles Clojure 1.12.x, which is ``>=`` the
+      # ``V1_11`` (Clojure 1.11) default of ``Clojure.language_version``
+      # in ``src/literalizer/languages/clojure.py``; keep them in sync.
+      # Babashka determines the effective Clojure runtime, so it must be
+      # pinned (not ``latest``) to stop the effective version drifting.
+      # ``clj-kondo`` is a static linter, pinned for reproducibility.
       - name: Install clj-kondo and Babashka
         uses: DeLaGuardo/setup-clojure@13
         with:
-          clj-kondo: latest
-          bb: latest
+          clj-kondo: 2026.04.15
+          bb: 1.12.218
       # The pinned Apache Groovy 4.0.32 binary distribution is ``>=`` the
       # ``V4`` (Groovy 4.x) default of ``Groovy.language_version`` in
       # ``src/literalizer/languages/groovy.py``; keep them in sync. The
