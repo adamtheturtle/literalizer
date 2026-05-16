@@ -85,33 +85,49 @@ class CallCaseConfig:
     requires_call_returns_expression: bool
     requires_inline_multiline_dict_args: bool
     requires_standalone_wrapped_comments: bool
+    # When set (only meaningful with ``wrap_in_file=True`` and a
+    # ``variable_form``), emit a golden for a language only when its
+    # ``variable_form`` output is byte-identical to its output under
+    # this mirror form.  ``ExistingVariable`` call-binding wrapped in a
+    # file is self-contained (compiles standalone) exactly for the
+    # languages whose assignment *is* a declaration -- functional
+    # ``let`` rebinds (OCaml/F#/Haskell/Roc/PureScript/Elm) and dynamic
+    # languages where a bare assignment defines the name.  For those,
+    # the ``ExistingVariable`` output equals the ``NewVariable``
+    # declaration form, which already has a compiling
+    # ``call_variable_form_new`` golden -- so an identical
+    # ``ExistingVariable`` fixture provably compiles too, with no
+    # hand-maintained allow-list.  Imperative compiled languages emit a
+    # bare assignment to an undeclared name (not self-contained, fails
+    # the lint-CI compile of every fixture); they diverge from the
+    # ``NewVariable`` form and are skipped (no golden) instead.  ``None``
+    # disables the gate (every supporting language gets a golden).
+    self_contained_mirror_variable_form: literalizer.VariableForm | None
     # When set, drive ``literalize_call(..., variable_form=...)`` to
     # exercise the call-binding output mode.  Only meaningful with
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
-    variable_form: literalizer.VariableForm | None = None
+    variable_form: literalizer.VariableForm | None
     # Companion source whose parsed top-level elements pair
     # positionally with the generated calls and are exposed on
     # ``CallContext.zipped``.  Requires ``call_transform``.  Parsed
     # with ``zip_input_format``.
-    zip_source: str | None = None
-    zip_input_format: literalizer.InputFormat | None = None
+    zip_source: str | None
+    zip_input_format: literalizer.InputFormat | None
     # Trailing source-code comments, one per generated call, paired
     # positionally and emitted after the statement terminator using the
     # language's comment syntax.  An empty entry emits no comment.
-    comment_source: list[str] | None = None
+    comment_source: list[str] | None
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
     # so a transform that calls the wrapper with the call *and* the
     # zipped value (two arguments) compiles in fixed-parameter-count
     # languages.
-    transform_stub_param_names: list[str] = dataclasses.field(
-        default_factory=lambda: ["_arg"],
-    )
+    transform_stub_param_names: list[str]
     # Languages (by class name) that cannot represent this case's
     # generated fixture and are skipped (no golden) instead of emitting
     # non-compiling output.
-    skip_lang_names: frozenset[str] = frozenset()
+    skip_lang_names: frozenset[str]
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -138,6 +154,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args",
@@ -154,6 +177,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_line_comments",
@@ -174,7 +204,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # comments; languages without that support raise
         # UnsupportedCallShapeError (see _validate_comment_source_supported).
         requires_standalone_wrapped_comments=True,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
         comment_source=["first edition", "", "cyberpunk"],
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_comments",
@@ -191,6 +227,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=True,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_comments_dict_args",
@@ -207,6 +250,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
         requires_standalone_wrapped_comments=True,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_negative_int",
@@ -223,6 +273,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_multi_args",
@@ -239,6 +296,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         # Four-parameter call.
@@ -256,6 +320,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_reserved_target",
@@ -272,6 +343,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_dotted_method",
@@ -288,6 +366,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_homogeneous_dotted_method",
@@ -304,6 +389,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_deep_dotted_method",
@@ -320,6 +412,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_snake_dotted_method",
@@ -336,6 +435,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_deep_dotted_transformed",
@@ -352,6 +458,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_dotted_transform_stub",
@@ -368,6 +481,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_zip_values",
@@ -384,8 +504,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
         zip_source="---\n- true\n- false\n",
         zip_input_format=literalizer.InputFormat.YAML,
+        comment_source=None,
         transform_stub_param_names=["_call", "_zip"],
         # Zig types the 2-parameter wrapper stub strongly while the
         # call stub returns ``void``; Groovy stubs the wrapper
@@ -411,8 +534,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
         zip_source="--- true\n",
         zip_input_format=literalizer.InputFormat.YAML,
+        comment_source=None,
         transform_stub_param_names=["_call", "_zip"],
         # Same wrapper-stub limitations as ``call_zip_values``.
         skip_lang_names=frozenset({"Zig", "Groovy"}),
@@ -432,6 +558,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_no_params",
@@ -448,6 +581,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_no_params_transform",
@@ -464,6 +604,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_no_params_dotted",
@@ -480,6 +627,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_no_params_curried",
@@ -496,6 +650,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_no_params_curried_dotted",
@@ -512,6 +673,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_per_element_false",
@@ -528,6 +696,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_per_element_false_dict_arg",
@@ -544,6 +719,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_homogeneous_value_dict_arg",
@@ -560,6 +742,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_existing_ref_arg",
@@ -576,6 +765,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args",
@@ -595,6 +791,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         # Same ref reused across multiple per-element calls.  The
@@ -624,6 +827,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         # Mix of register-trivial (Int / Bool / Float64) and non-trivial
@@ -655,6 +865,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted",
@@ -674,6 +891,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted_whole",
@@ -692,6 +916,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_converted_nonsnake",
@@ -711,6 +942,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         # Slot 0 holds lists whose Mojo element type disagrees across
@@ -736,6 +974,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_args_escaped_quote",
@@ -752,6 +997,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_in_list",
@@ -771,6 +1023,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_in_dict",
@@ -789,6 +1048,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_ref_nested_converted",
@@ -807,6 +1073,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_mixed_type_dicts",
@@ -823,6 +1096,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=True,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         # Drive ``literalize_call(..., wrap_in_file=True)`` directly so
@@ -841,6 +1121,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_variable_form_new",
@@ -857,7 +1144,46 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=True,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
         variable_form=literalizer.NewVariable(name="my_data"),
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
+    ),
+    CallCaseConfig(
+        # ``ExistingVariable`` counterpart of ``call_variable_form_new``.
+        # The runner gates each language on
+        # ``self_contained_mirror_variable_form``: only languages whose
+        # ``ExistingVariable`` wrap-in-file output equals their
+        # ``NewVariable`` form (functional ``let`` rebinds and dynamic
+        # languages) get a golden; imperative compiled languages emit a
+        # bare assignment to an undeclared name and are skipped (no
+        # golden) rather than landing a non-compiling fixture.
+        case_dir_name="call_variable_form_existing",
+        target_function="make_widget",
+        parameter_names=["count"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=literalizer.NewVariable(
+            name="my_data",
+        ),
+        variable_form=literalizer.ExistingVariable(name="my_data"),
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         # 27-parameter call exercises the type-variable generators in
@@ -878,6 +1204,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_wrap_in_file_escaped_quote",
@@ -894,6 +1227,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args_uniform_second_slot",
@@ -910,6 +1250,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
         case_dir_name="call_scalar_args_with_null",
@@ -926,6 +1273,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
     ),
     *[
         CallCaseConfig(
@@ -958,6 +1312,13 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             ),
             requires_inline_multiline_dict_args=False,
             requires_standalone_wrapped_comments=False,
+            self_contained_mirror_variable_form=None,
+            variable_form=None,
+            zip_source=None,
+            zip_input_format=None,
+            comment_source=None,
+            transform_stub_param_names=["_arg"],
+            skip_lang_names=frozenset(),
         )
         for name, cls in CALL_STYLE_VARIANTS
     ],
@@ -970,7 +1331,7 @@ class CallCase:
 
     config: CallCaseConfig
     lang_cls: literalizer.LanguageCls
-    expected_exception: type[Exception] | None = None
+    expected_exception: type[Exception] | None
 
 
 _SUBSTITUTION_CALL_STYLES = (
@@ -1180,6 +1541,31 @@ def _run_wrap_in_file_case(
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
+    mirror_form = config.self_contained_mirror_variable_form
+    if mirror_form is not None:
+        mirror_result = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            zip_source=config.zip_source,
+            zip_input_format=config.zip_input_format,
+            comment_source=config.comment_source,
+            per_element=config.per_element,
+            wrap_in_file=True,
+            ref_case=effective_ref_case,
+            variable_form=mirror_form,
+        )
+        if wrap_result.code != mirror_result.code:
+            golden_path.unlink(missing_ok=True)
+            pytest.skip(
+                f"{lang_name} {config.variable_form!r} call-binding is "
+                f"not self-contained (a bare assignment to an undeclared "
+                f"name); it diverges from the compilable "
+                f"{mirror_form!r} form, so no golden is emitted",
+            )
     check_golden(
         file_regression=file_regression,
         contents=wrap_result.code + "\n",

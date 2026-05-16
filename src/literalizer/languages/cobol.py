@@ -676,6 +676,9 @@ class Cobol(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``GNUCOBOL_VERSION`` pin in the
+    # ``lint-cobol`` job of ``.github/workflows/lint.yml``; the pinned
+    # GnuCOBOL must support COBOL ``>=`` this ``V2002`` default.
     language_version: VersionFormats = VersionFormats.V2002
     indent: str = "    "
 

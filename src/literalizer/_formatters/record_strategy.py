@@ -1,5 +1,5 @@
-"""Language-agnostic orchestration for the ``RECORD`` and ``TUPLE``
-heterogeneous strategies.
+"""Language-agnostic orchestration for the ``RECORD`` heterogeneous
+strategy.
 
 The ``RECORD`` strategy renders record-shaped dicts (non-empty,
 string-keyed) as generated struct/record declarations plus matching
@@ -8,14 +8,6 @@ literals, rather than a homogeneous map.  Shape detection lives in
 parts that are the same for every target language (document-order
 shape naming, post-order declaration emission) and delegates the
 language-specific syntax to a :class:`RecordRenderer`.
-
-The ``TUPLE`` strategy composes ``RECORD``: :func:`build_tuple_strategy`
-reuses every piece above and additionally renders each tuple-eligible
-heterogeneous scalar array (a record field, another dict value, or the
-document root) as the language's native fixed-size tuple, typing a
-tuple-valued record field as ``(T0, T1, ...)`` instead of a
-homogeneous sequence.  Tuple scope detection lives in
-:mod:`literalizer._formatters.tuple_strategy`.
 
 Declaration field types are derived from the raw field value through
 the language's own collection openers (the same opener functions the
@@ -41,10 +33,6 @@ from collections.abc import Callable, Mapping, Sequence
 
 from beartype import beartype
 
-from literalizer._formatters.tuple_strategy import (
-    collect_tuple_lists,
-    is_tuple_eligible,
-)
 from literalizer._formatters.type_inference import (
     RecordShape,
     collect_record_shapes,
@@ -52,12 +40,10 @@ from literalizer._formatters.type_inference import (
 from literalizer._language import (
     HeterogeneousBehavior,
     RenderedRecordLiteral,
-    RenderedTupleLiteral,
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import TupleArityNotRepresentableError
 
 
 @dataclasses.dataclass(frozen=True)
@@ -131,42 +117,6 @@ class RecordRenderer:
         [str, Sequence[RecordLiteralField]],
         RenderedRecordLiteral,
     ]
-
-
-@dataclasses.dataclass(frozen=True)
-class TupleRenderer:
-    """Per-language syntax hooks for the ``TUPLE`` strategy.
-
-    The ``TUPLE`` strategy composes ``RECORD`` (a record field whose
-    value is a tuple-eligible heterogeneous scalar array becomes a
-    tuple-typed field) and adds two pieces of syntax on top of a
-    :class:`RecordRenderer`:
-
-    ``render_type`` joins the already-resolved element type names into
-    the language's tuple *type* (Scala ``(T0, T1, ...)``), used for the
-    declared type of a record field whose value is such an array.
-    ``render_literal`` builds the tuple *literal* as a
-    :class:`RenderedTupleLiteral` (structured pieces the shared layout
-    code in :mod:`literalizer._literalize` assembles into compact or
-    multiline form) from the raw list and its pre-formatted elements.
-    ``arity_limit`` is the most elements a native tuple may hold in
-    the language (Scala's ``Tuple22`` -> ``22``); a tuple-eligible
-    array longer than the limit raises
-    :exc:`~literalizer.exceptions.TupleArityNotRepresentableError` at
-    check time rather than silently downgrading.  Every language that
-    composes ``RECORD`` through :func:`build_tuple_strategy` is
-    statically typed with a finite tuple-element cap, so the limit is
-    always required (a language with unbounded tuples builds its
-    behavior directly, like Rust, rather than through this shared
-    helper).
-    """
-
-    render_type: Callable[[Sequence[str]], str]
-    render_literal: Callable[
-        [list[Value], Sequence[str]],
-        RenderedTupleLiteral,
-    ]
-    arity_limit: int
 
 
 @dataclasses.dataclass(frozen=True)
@@ -418,83 +368,3 @@ def build_record_strategy(
         return tuple(blocks)
 
     return RecordStrategy(behavior=behavior, preamble=_preamble)
-
-
-@beartype
-def build_tuple_strategy(
-    *,
-    record_renderer: RecordRenderer,
-    tuple_renderer: TupleRenderer,
-) -> RecordStrategy:
-    """Build the behavior + preamble for the ``TUPLE`` strategy.
-
-    ``TUPLE`` composes ``RECORD``: record-shaped dicts still become
-    generated declarations, but a record field whose value is a
-    tuple-eligible heterogeneous scalar array is typed as the
-    language's native tuple ``(T0, T1, ...)`` (via
-    :attr:`TupleRenderer.render_type`) instead of the homogeneous
-    sequence type, and every tuple-eligible array (a record field,
-    another dict value, or the document root) renders as a tuple
-    literal.  An array longer than :attr:`TupleRenderer.arity_limit`
-    raises :exc:`~literalizer.exceptions.TupleArityNotRepresentableError`
-    at check time rather than silently downgrading.
-    """
-    base_field_type = record_renderer.field_type
-
-    def _tuple_aware_field_type(request: RecordFieldType) -> str:
-        """Type a tuple-eligible list field as the native tuple type.
-
-        A record field is a dict value, so the positional half of
-        tuple-eligibility holds and :func:`is_tuple_eligible` supplies
-        the structural half.  Each element is itself a scalar
-        (tuple-eligible arrays are all-scalar) typed through the
-        language's own ``field_type``, then joined by
-        :attr:`TupleRenderer.render_type`.
-        """
-        value = request.value
-        if isinstance(value, list) and is_tuple_eligible(value=value):
-            element_types = [
-                base_field_type(
-                    RecordFieldType(value=element, record_name=None),
-                )
-                for element in value
-            ]
-            return tuple_renderer.render_type(element_types)
-        return base_field_type(request)
-
-    record_strategy = build_record_strategy(
-        renderer=dataclasses.replace(
-            record_renderer,
-            field_type=_tuple_aware_field_type,
-        ),
-    )
-
-    def _compute_tuple_list_ids(data: Value, /) -> frozenset[int]:
-        """Return the tuple-eligible list ids, enforcing the
-        tuple-length limit first.
-
-        The limit is checked against the same lists
-        :func:`collect_tuple_lists` marks (dict values / record fields
-        / the document root); a list reached only as a list element is
-        out of tuple scope and keeps raising the ordinary
-        heterogeneous-scalar error instead.
-        """
-        tuple_lists = collect_tuple_lists(data=data)
-        limit = tuple_renderer.arity_limit
-        for tuple_list in tuple_lists:
-            if len(tuple_list) > limit:
-                raise TupleArityNotRepresentableError(
-                    arity=len(tuple_list),
-                    limit=limit,
-                )
-        return frozenset(id(tuple_list) for tuple_list in tuple_lists)
-
-    behavior = dataclasses.replace(
-        record_strategy.behavior,
-        render_tuple_literal=tuple_renderer.render_literal,
-        compute_tuple_list_ids=_compute_tuple_list_ids,
-    )
-    return RecordStrategy(
-        behavior=behavior,
-        preamble=record_strategy.preamble,
-    )

@@ -45,6 +45,15 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_single,
     format_string_raw_python,
 )
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -63,6 +72,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -155,22 +165,38 @@ def _format_bytes_python(value: bytes) -> str:
 
 
 @beartype
-def _needs_type_annotation(data: Value) -> bool:
+def _needs_type_annotation(
+    *,
+    data: Value,
+    record_eligible: Callable[[Value], bool],
+) -> bool:
     """Whether *data* needs a type annotation for type-checkers.
 
     This is true when *data* is or contains an empty collection,
     because type-checkers cannot infer the element types.
+
+    Under the ``RECORD`` strategy a record-shaped dict renders as a
+    fully-annotated ``@dataclasses.dataclass`` instance, so it is
+    self-describing and neither needs a helper annotation nor drags an
+    enclosing collection into needing one (an empty collection that is
+    one of its fields is annotated on the dataclass field instead).
+    *record_eligible* identifies such dicts; it is a constant ``False``
+    predicate when the strategy is not ``RECORD``.
     """
     match data:
         case dict():
+            if record_eligible(data):
+                return False
             return len(data) == 0 or any(
-                _needs_type_annotation(data=v) for v in data.values()
+                _needs_type_annotation(data=v, record_eligible=record_eligible)
+                for v in data.values()
             )
         case set():
             return len(data) == 0
         case list():
             return len(data) == 0 or any(
-                _needs_type_annotation(data=e) for e in data
+                _needs_type_annotation(data=e, record_eligible=record_eligible)
+                for e in data
             )
         case _:
             return False
@@ -195,13 +221,16 @@ def _format_variable_declaration(
     default_dict_value_type: str,
     default_dict_key_type: str,
     join_union: Callable[[list[str]], str],
+    record_eligible: Callable[[Value], bool],
 ) -> str:
     """Format a Python variable declaration.
 
     For empty collections a type annotation is added so that
-    type-checkers can infer the type.
+    type-checkers can infer the type.  *record_eligible* lets a
+    ``RECORD``-strategy record-shaped dict opt out (it is self-typed
+    by its generated dataclass); see :func:`_needs_type_annotation`.
     """
-    if _needs_type_annotation(data=data):
+    if _needs_type_annotation(data=data, record_eligible=record_eligible):
         return _format_inline_type_hint_declaration(
             name=name,
             value=value,
@@ -622,6 +651,37 @@ def _build_type_hint_preamble_py38(
 
 
 @beartype
+def _python_record_field_identifier(key: str, /) -> str:
+    """Return the dataclass field name for a dict *key*.
+
+    Python field identifiers are the dict keys verbatim (no case
+    conversion), matching the keyword-argument literal form
+    ``Record0(id=1, ...)``.
+    """
+    return key
+
+
+@beartype
+def _python_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Python ``Name(field=value, ...)`` keyword constructor
+    call as structured pieces for the shared compact/multiline layout
+    code.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}(",
+        entries=tuple(
+            f"{field.identifier}={field.formatted}" for field in fields
+        ),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Python(metaclass=LanguageCls):
     """Python language specification.
@@ -693,6 +753,25 @@ class Python(metaclass=LanguageCls):
               etc. for generic collection type hints (PEP 484 style).
             * ``VersionFormats.PY39`` — use built-in ``list``, ``dict``, etc.
               directly as generic aliases (PEP 585, default).
+
+        heterogeneous_strategy: How to render a record-shaped dict
+            (non-empty, string-keyed).
+
+            * ``HeterogeneousStrategies.ERROR`` — render a plain
+              ``dict`` (default).  Python's ``dict`` is already
+              heterogeneous, so every record-shaped dict is
+              representable as one.
+            * ``HeterogeneousStrategies.RECORD`` — opt-in
+              idiomatic-output strategy: render each record-shaped dict
+              as a generated frozen ``@dataclasses.dataclass`` declared
+              in the preamble plus a matching
+              ``RecordN(field=value, ...)`` literal.  Every dict is
+              still representable as a plain ``dict``; this strategy
+              only produces the more idiomatic dataclass form.
+
+        record_struct_name_prefix: Prefix for the auto-generated
+            ``@dataclasses.dataclass`` names under the ``RECORD``
+            strategy (``"Record"`` -> ``Record0``, ``Record1``, ...).
     """
 
     format_integer_widened = no_format_integer_widened
@@ -727,7 +806,7 @@ class Python(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = True
 
@@ -890,9 +969,15 @@ class Python(metaclass=LanguageCls):
             default_dict_value_type: str,
             default_dict_key_type: str,
             join_union: Callable[[list[str]], str],
+            record_eligible: Callable[[Value], bool],
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter for this hint
             style.
+
+            *record_eligible* flags ``RECORD``-strategy record-shaped
+            dicts so a bare assignment is kept for them (the generated
+            dataclass already types every field); it is a constant
+            ``False`` predicate for other strategies.
             """
             if self is type(self).ALWAYS:
 
@@ -956,6 +1041,7 @@ class Python(metaclass=LanguageCls):
                     default_dict_value_type=default_dict_value_type,
                     default_dict_key_type=default_dict_key_type,
                     join_union=join_union,
+                    record_eligible=record_eligible,
                 )
 
             return _auto_formatter
@@ -1117,11 +1203,22 @@ class Python(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Strategy for dicts whose values span more than one Python
+        type.
+
+        ``ERROR`` keeps the default behavior.  Python's ``dict`` is
+        already heterogeneous, so a record-shaped dict is representable
+        as a plain ``dict`` and is rendered that way by default.
+        ``RECORD`` is an opt-in *idiomatic-output* strategy: each
+        record-shaped dict (non-empty, string-keyed) becomes a
+        generated frozen ``@dataclasses.dataclass`` declared in the
+        preamble plus a matching ``RecordN(field=value, ...)`` literal.
+        Every dict is still representable as a plain ``dict``; this
+        strategy only produces the more idiomatic dataclass form.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -1221,6 +1318,7 @@ class Python(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     language_version: VersionFormats = VersionFormats.PY39
     indent: str = "    "
 
@@ -1252,15 +1350,133 @@ class Python(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
+    def _python_render_declaration(
+        self,
+        name: str,
+        fields: Sequence[RecordDeclarationField],
+        /,
+    ) -> str:
+        """Render a frozen ``@dataclasses.dataclass`` declaration."""
+        lines = [
+            "@dataclasses.dataclass(frozen=True)",
+            f"class {name}:",
+        ]
+        lines += [
+            f"{self.indent}{field.identifier}: {field.type_name}"
+            for field in fields
+        ]
+        return "\n".join(lines)
+
+    @cached_property
+    def _record_field_type(self) -> Callable[[RecordFieldType], str]:
+        """Return the dataclass field-type resolver for the ``RECORD``
+        strategy.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated class name; every other value is typed
+        through :func:`_python_type_hint`, the same hint function the
+        variable-annotation path uses, so the declared type matches the
+        rendered literal and honors the configured
+        sequence/set/dict/date/datetime formats and the targeted
+        Python version.
+        """
+        if self.language_version is self.version_formats.PY38:
+            mapping = self._py38_names
+            sequence_hint = mapping.get(
+                self.sequence_format.type_hint,
+                self.sequence_format.type_hint,
+            )
+            set_hint = mapping.get(
+                self.set_format.type_hint,
+                self.set_format.type_hint,
+            )
+            dict_hint = mapping["dict"]
+            join_union: Callable[[list[str]], str] = _join_union_typing
+        else:
+            sequence_hint = self.sequence_format.type_hint
+            set_hint = self.set_format.type_hint
+            dict_hint = "dict"
+            join_union = _join_union_pipe
+
+        def _field_type(request: RecordFieldType, /) -> str:
+            """Type a record field from its nested-record name or its
+            raw value.
+            """
+            if request.record_name is not None:
+                return request.record_name
+            return _python_type_hint(
+                data=request.value,
+                bytes_hint=self.bytes_format.type_hint,
+                date_hint=self.date_format.type_hint,
+                datetime_hint=self.datetime_format.type_hint,
+                time_hint="datetime.time",
+                sequence_hint=sequence_hint,
+                set_hint=set_hint,
+                dict_hint=dict_hint,
+                default_set_element_type=self.default_set_element_type,
+                default_sequence_element_type=(
+                    self.default_sequence_element_type
+                ),
+                default_dict_value_type=self.default_dict_value_type,
+                default_dict_key_type=self.default_dict_key_type,
+                join_union=join_union,
+            )
+
+        return _field_type
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Python syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            # Python does not expose a ``record_shape_names``
+            # constructor field (base RECORD only, as for the other
+            # non-Rust ports); an empty mapping keeps every shape on
+            # the auto ``{prefix}{N}`` names.
+            record_shape_names=MappingProxyType(mapping={}),
+            field_identifier=_python_record_field_identifier,
+            field_type=self._record_field_type,
+            render_declaration=self._python_render_declaration,
+            render_literal=_python_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        Under ``HeterogeneousStrategies.RECORD`` emits ``import
+        dataclasses`` followed by one frozen
+        ``@dataclasses.dataclass`` declaration per record shape present
+        in the data; otherwise produces no preamble.
+        """
+        record_preamble = self._record_strategy.preamble
+
+        def _preamble(data: Value, /) -> tuple[str, ...]:
+            """Prefix the record declarations with ``import
+            dataclasses``.
+            """
+            blocks = record_preamble(data)
+            if not blocks:
+                return ()
+            return ("import dataclasses", *blocks)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def format_call_stub(
@@ -1457,6 +1673,34 @@ class Python(metaclass=LanguageCls):
         }
 
     @cached_property
+    def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:
+        """Predicate marking a value as a ``RECORD``-strategy
+        record-shaped dict.
+
+        Such a dict renders as a self-typed
+        ``@dataclasses.dataclass`` instance, so the inline
+        variable-annotation path treats it as opaque (see
+        :func:`_needs_type_annotation`).  For any other strategy the
+        predicate is a constant ``False``, leaving the annotation
+        behavior unchanged.
+        """
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is not cls.RECORD:
+            return lambda _data: False
+
+        def _eligible(data: Value, /) -> bool:
+            """An ordered map is never record-eligible; a plain
+            non-empty string-keyed dict is.
+            """
+            return (
+                isinstance(data, dict)
+                and not isinstance(data, OrderedMap)
+                and record_shape_for_dict(value=data) is not None
+            )
+
+        return _eligible
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1491,6 +1735,7 @@ class Python(metaclass=LanguageCls):
             default_dict_value_type=self.default_dict_value_type,
             default_dict_key_type=self.default_dict_key_type,
             join_union=join_union,
+            record_eligible=self._record_eligible_for_annotation,
         )
 
     @cached_property

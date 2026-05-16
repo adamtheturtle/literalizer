@@ -56,8 +56,10 @@ from literalizer._formatters.record_strategy import (
     RecordLiteralField,
     RecordRenderer,
     RecordStrategy,
-    TupleRenderer,
     build_record_strategy,
+)
+from literalizer._formatters.tuple_strategy import (
+    TupleRenderer,
     build_tuple_strategy,
 )
 from literalizer._formatters.type_inference import (
@@ -327,22 +329,27 @@ def _scala_render_declaration(
 
 
 # Scala's tuple sugar ``(a, b, ...)`` expands to ``TupleN``, which the
-# standard library defines only up to ``Tuple22``.  A heterogeneous
-# scalar array longer than this has no native tuple type, so the
-# ``TUPLE`` strategy raises rather than silently downgrading.
+# standard library defines only as ``Tuple2`` through ``Tuple22``
+# (there is no one-element tuple).  A heterogeneous scalar array
+# outside this range has no native tuple type, so the ``TUPLE``
+# strategy raises rather than silently downgrading.
+_SCALA_MIN_TUPLE_ARITY = 2
 _SCALA_MAX_TUPLE_ARITY = 22
 
 
 @beartype
-def _scala_render_tuple_type(element_types: Sequence[str], /) -> str:
-    """Render a Scala tuple *type* ``(T0, T1, ...)``.
+def _scala_tuple_arity_representable(arity: int, /) -> bool:
+    """Return whether Scala has a native fixed-size tuple of the given
+    element count.
 
-    ``collect_tuple_lists`` only marks arrays spanning at least two
-    scalar buckets, so there are always at least two element types and
-    the parenthesized form is unambiguously ``TupleN`` (Scala has no
-    one-element tuple sugar).
+    Scala ships ``Tuple2`` through ``Tuple22`` (there is no
+    one-element tuple sugar); a tuple-eligible array always spans at
+    least two scalar buckets, so the lower bound is never exercised,
+    but it keeps the predicate self-contained.  Anything past
+    ``Tuple22`` has no native tuple type, so the ``TUPLE`` strategy
+    raises rather than dropping the per-position types.
     """
-    return f"({', '.join(element_types)})"
+    return _SCALA_MIN_TUPLE_ARITY <= arity <= _SCALA_MAX_TUPLE_ARITY
 
 
 @beartype
@@ -938,10 +945,11 @@ class Scala(metaclass=LanguageCls):
         (``Int``, or ``Long`` once it leaves 32-bit range past 2038).
 
         A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field is outside the ``RECORD`` strategy's MVP --
-        Rust's ``_rust_record_field_type`` is imprecise for the same
-        shapes (#2234) -- so it is declared as Scala's top type
-        ``Any``, which the rendered literal still assigns into.
+        as a record field has no precise component type under the
+        ``RECORD`` strategy.  Per the cross-language decision in #2317,
+        Rust rejects such a field while Scala widens it to the top type
+        ``Any`` (documented best effort), which the rendered literal
+        still assigns into.
         """
         if request.record_name is not None:
             return request.record_name
@@ -991,20 +999,36 @@ class Scala(metaclass=LanguageCls):
             render_literal=_scala_record_literal,
         )
 
+    def _scala_tuple_field_type(self, elements: list[Value], /) -> str:
+        """Return the Scala tuple type ``(T0, T1, ...)`` for a
+        tuple-eligible ``RECORD`` field, one type per position.
+
+        The length is validated at check time, so *elements* is 2..22;
+        each position's type reuses :meth:`_scala_record_field_type`
+        (the same scalar resolution a plain field value uses), so e.g.
+        ``[1, "email"]`` types ``(Int, String)``.
+        """
+        elem_types = [
+            self._scala_record_field_type(
+                RecordFieldType(value=element, record_name=None),
+            )
+            for element in elements
+        ]
+        return f"({', '.join(elem_types)})"
+
     @cached_property
     def _scala_tuple_renderer(self) -> TupleRenderer:
         """Scala syntax hooks for the ``TUPLE`` strategy.
 
-        Tuple element types reuse :meth:`_scala_record_field_type` (via
-        the shared :func:`build_tuple_strategy`, which already wires it
-        through the wrapped ``RecordRenderer``); only the tuple type /
-        literal syntax and the ``Tuple22`` length cap are
-        Scala-specific.
+        Tuple element types reuse :meth:`_scala_record_field_type`, so
+        a tuple-eligible record field is typed exactly like the scalar
+        positions it holds; only the tuple literal syntax and the
+        ``Tuple22`` length cap are Scala-specific.
         """
         return TupleRenderer(
-            render_type=_scala_render_tuple_type,
             render_literal=_scala_render_tuple_literal,
-            arity_limit=_SCALA_MAX_TUPLE_ARITY,
+            field_type=self._scala_tuple_field_type,
+            representable_arity=_scala_tuple_arity_representable,
         )
 
     @cached_property

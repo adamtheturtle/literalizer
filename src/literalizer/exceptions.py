@@ -40,31 +40,6 @@ class UnrepresentableInputError(Exception):
     """
 
 
-class TupleArityNotRepresentableError(UnrepresentableInputError):
-    """Raised when the ``TUPLE`` heterogeneous strategy meets a
-    heterogeneous scalar array longer than the target language's
-    largest native tuple type.
-
-    Some languages cap how many elements a native tuple may hold
-    (Scala's ``Tuple22``, for example, tops out at 22 elements).  A
-    tuple-eligible array longer than that limit has no native tuple
-    representation, so the strategy raises this explicit error at
-    check time rather than silently downgrading to a homogeneous
-    collection (which would lose the per-element types) or emitting
-    code that does not compile.
-    """
-
-    def __init__(self, *, arity: int, limit: int) -> None:
-        """Create a ``TupleArityNotRepresentableError``."""
-        super().__init__(
-            f"A heterogeneous scalar array of arity {arity} exceeds the "
-            f"target language's maximum native tuple arity of {limit}; "
-            "the TUPLE heterogeneous strategy cannot represent it."
-        )
-        self.arity = arity
-        self.limit = limit
-
-
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.
@@ -112,6 +87,35 @@ class HeterogeneousSetError(HeterogeneousCollectionError):
     """Raised when a set contains scalars of multiple types and the
     target language requires homogeneous set elements.
     """
+
+
+class TupleArityNotRepresentableError(HeterogeneousCollectionError):
+    """Raised when the ``TUPLE`` heterogeneous strategy meets a
+    tuple-eligible heterogeneous scalar array whose length the target
+    language has no native fixed-size tuple for.
+
+    Kotlin only has ``Pair`` (two elements) and ``Triple`` (three
+    elements); an array of any other length cannot be represented as a
+    typed tuple without losing the per-position types, so
+    ``literalize`` raises rather than falling back to a homogeneous
+    list (which would re-trip the heterogeneity checks the strategy
+    exists to satisfy).  Subclasses
+    :class:`HeterogeneousCollectionError` so the same callers that
+    already skip a heterogeneous input the language cannot represent
+    also skip this one.
+    """
+
+    def __init__(self, *, arity: int) -> None:
+        """Create a ``TupleArityNotRepresentableError``.
+
+        The keyword argument is the element count of the rejected
+        array.
+        """
+        super().__init__(
+            f"a heterogeneous scalar array of {arity} elements has no "
+            f"native fixed-size tuple in the target language"
+        )
+        self.arity = arity
 
 
 class NullInCollectionError(Exception):

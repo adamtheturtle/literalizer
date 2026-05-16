@@ -1302,6 +1302,8 @@ class Mojo(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_variant_name: str = "Value"
+    # Keep in sync with the ``mojo-compiler`` pin in the ``lint-mojo``
+    # job of ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.V24_5
     indent: str = "    "
 

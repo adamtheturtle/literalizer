@@ -4,6 +4,25 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Python` gains an opt-in ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala` and :class:`~literalizer.Java`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  frozen ``@dataclasses.dataclass`` declared in the preamble (with an
+  ``import dataclasses``) plus a matching ``RecordN(field=value, ...)``
+  literal; field names are the dict keys verbatim and the class-name
+  prefix is configurable via the new ``record_struct_name_prefix``
+  constructor parameter.  Python's ``dict`` is already heterogeneous,
+  so every record-shaped dict is representable as a plain ``dict``;
+  this is purely an idiomatic-output choice, the strategy is opt-in,
+  and the default (``ERROR``) plain-``dict`` output is unchanged.  See
+  #2419.
+
+2026.05.16
+----------
+
+
 - :class:`~literalizer.Elm` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (EInt 42)`` without a ``name : Val``
@@ -26,11 +45,31 @@ Next
   another dict value, or the document root is rendered as a native
   tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` (a tuple-valued
   ``case class`` field is declared with the tuple type) instead of
-  raising or widening to ``List[Any]``.  An array of more than 22
-  elements (no ``Tuple22``) raises
+  raising or widening to ``List[Any]``.  Scala ships ``Tuple2``
+  through ``Tuple22``, so an array of any other length raises
   :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
-  rather than silently downgrading.  The default (``ERROR``) output
-  is unchanged.  See #2330.
+  rather than degrading to a homogeneous list.  The default
+  (``ERROR``) output is unchanged.  See #2330.
+- :class:`~literalizer.TypeScript` now supports the ``TUPLE``
+  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
+  that is a dict value or the document root is rendered as an
+  ``[e0, e1, ...] as const`` tuple literal, which TypeScript infers as
+  a ``readonly [T0, T1, ...]`` tuple type, instead of a widened
+  ``(T0 | T1)[]`` array.  TypeScript has no ``RECORD`` strategy and
+  ``as const`` needs no imports, so there is no data-dependent
+  preamble.  The default (``ERROR``) union-array output is unchanged.
+  See #2328.
+- :class:`~literalizer.Kotlin` now supports the ``TUPLE``
+  ``heterogeneous_strategy``, composing ``RECORD``: a fixed-length
+  heterogeneous scalar array that is a dict value or the document root
+  is rendered as a two-element ``Pair(...)`` or three-element
+  ``Triple(...)`` typed ``Pair<...>`` / ``Triple<...>``, and a record
+  field whose value is such an array becomes a tuple-typed field.
+  Kotlin has no general N-tuple, so an array of any other length
+  raises
+  :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
+  rather than degrading to a homogeneous list.  The default
+  (``ERROR``) output is unchanged.  See #2331.
 - :func:`~literalizer.literalize_call` gains a ``comment_source``
   argument: a sequence of trailing source-code comments, one per
   generated call, paired positionally.  Each non-empty entry is

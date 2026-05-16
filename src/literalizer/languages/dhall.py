@@ -909,6 +909,13 @@ class Dhall(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_union_name: str = "Value"
+    # Keep in sync with the pinned ``dhall`` binary in the ``Install
+    # Dhall`` step of ``.github/workflows/lint.yml``.  Note the Dhall
+    # *language* standard version is distinct from the ``dhall-haskell``
+    # binary version: the pinned binary ``dhall-haskell`` 1.42.2
+    # implements Dhall language standard 23.1.0, which is ``>=`` this
+    # ``V17`` (Dhall standard 17.0.0) default, so the fixture gate runs
+    # under a binary that accepts the declared language version.
     language_version: VersionFormats = VersionFormats.V17
     indent: str = "  "
     call_style: CallStyles = CallStyles.POSITIONAL

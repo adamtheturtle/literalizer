@@ -64,6 +64,10 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
+from literalizer._formatters.tuple_strategy import (
+    TupleRenderer,
+    build_tuple_strategy,
+)
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
@@ -87,6 +91,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
+    RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -567,6 +572,47 @@ def _kotlin_record_literal(
 
 
 @beartype
+def _kotlin_tuple_literal(
+    value: list[Value],
+    elements: Sequence[str],
+    /,
+) -> RenderedTupleLiteral:
+    """Render a heterogeneous scalar array as a Kotlin two-element
+    ``Pair(...)`` or three-element ``Triple(...)`` literal as
+    structured pieces for the shared compact/multiline layout code.
+
+    :func:`~literalizer._formatters.tuple_strategy.build_tuple_strategy`
+    validates the length at check time (Kotlin has no fixed-size tuple
+    of any other length), so *value* is always length 2 or 3 here; it
+    selects the constructor and is otherwise unused because every
+    element arrives already formatted.
+    """
+    head = {2: "Pair(", 3: "Triple("}[len(value)]
+    return RenderedTupleLiteral(
+        head=head,
+        entries=tuple(elements),
+        closer=")",
+        compact_pad="",
+        # ``Pair(a,\n    b,\n)`` is valid Kotlin -- a trailing comma is
+        # allowed in an argument list -- so keep the language-wide
+        # trailing-comma policy for the multiline form.
+        multiline_trailing_comma=True,
+    )
+
+
+@beartype
+def _kotlin_tuple_arity_representable(arity: int, /) -> bool:
+    """Return whether Kotlin has a native fixed-size tuple of the
+    given element count.
+
+    Kotlin only ships ``Pair`` (two elements) and ``Triple`` (three
+    elements); any other length has no typed tuple, so the ``TUPLE``
+    strategy raises rather than dropping the per-position types.
+    """
+    return arity in {2, 3}
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Kotlin(metaclass=LanguageCls):
     """Kotlin language specification.
@@ -1012,11 +1058,20 @@ class Kotlin(metaclass=LanguageCls):
         each record-shaped dict (non-empty, string-keyed) as a generated
         ``data class`` declared in the preamble plus a matching
         constructor-call literal, so fields may legitimately mix scalars
-        and containers.
+        and containers.  ``TUPLE`` composes ``RECORD`` and additionally
+        renders a fixed-length heterogeneous scalar array that is a
+        dict value or the document root as a two-element ``Pair(...)``
+        or three-element ``Triple(...)`` typed ``Pair<...>`` /
+        ``Triple<...>`` -- a record field whose value is such an array
+        becomes a tuple-typed field.  Kotlin has no general N-tuple, so
+        an array of any other length raises
+        :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
+        rather than degrading to a homogeneous list.
         """
 
         ERROR = enum.auto()
         RECORD = enum.auto()
+        TUPLE = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -1256,10 +1311,11 @@ class Kotlin(metaclass=LanguageCls):
         resolver.
 
         A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field is outside the ``RECORD`` strategy's MVP --
-        the same shapes Rust's ``_rust_record_field_type`` is imprecise
-        for (#2234) -- so it folds into Kotlin's ``Any?`` top type,
-        which the rendered literal still assigns into.
+        as a record field has no precise component type under the
+        ``RECORD`` strategy.  Per the cross-language decision in #2317,
+        Rust rejects such a field while Kotlin folds it into the
+        ``Any?`` top type (documented best effort), which the rendered
+        literal still assigns into.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1300,6 +1356,21 @@ class Kotlin(metaclass=LanguageCls):
                     "Any?"
                 )
 
+    def _kotlin_tuple_field_type(self, elements: list[Value], /) -> str:
+        """Return the Kotlin ``Pair``/``Triple`` type for a
+        tuple-eligible ``RECORD`` field, one type parameter per
+        position.
+
+        The length is validated at check time, so *elements* is length
+        2 or 3; each position's type reuses
+        :meth:`_kotlin_value_field_type` (the same scalar resolution a
+        plain field value uses), so e.g. ``[1, "email"]`` types
+        ``Pair<Int, String>``.
+        """
+        elem_types = [self._kotlin_value_field_type(e) for e in elements]
+        constructor = {2: "Pair", 3: "Triple"}[len(elements)]
+        return f"{constructor}<{', '.join(elem_types)}>"
+
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
         """Kotlin syntax hooks for the ``RECORD`` strategy."""
@@ -1313,11 +1384,25 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _tuple_renderer(self) -> TupleRenderer:
+        """Kotlin syntax hooks for the ``TUPLE`` strategy."""
+        return TupleRenderer(
+            render_literal=_kotlin_tuple_literal,
+            field_type=self._kotlin_tuple_field_type,
+            representable_arity=_kotlin_tuple_arity_representable,
+        )
+
+    @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble."""
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(renderer=self._record_renderer)
+        if self.heterogeneous_strategy is cls.TUPLE:
+            return build_tuple_strategy(
+                record_renderer=self._record_renderer,
+                tuple_renderer=self._tuple_renderer,
+            )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,
             preamble=no_data_preamble,
@@ -1454,10 +1539,11 @@ class Kotlin(metaclass=LanguageCls):
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
-        Under the ``RECORD`` strategy a list whose elements are
-        record-shaped dicts opens as ``listOf<Any?>(`` (the elements
-        format as ``RecordN(...)`` literals, not the ``Map<...>`` the
-        typed opener would otherwise infer).
+        Under any record-rendering strategy (``RECORD``, or ``TUPLE``
+        which composes it) a list whose elements are record-shaped
+        dicts opens as ``listOf<Any?>(`` (the elements format as
+        ``RecordN(...)`` literals, not the ``Map<...>`` the typed
+        opener would otherwise infer).
         """
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
@@ -1469,8 +1555,11 @@ class Kotlin(metaclass=LanguageCls):
                 datetime_type=self._dt_type_name,
                 dict_key_type=self.default_dict_key_type,
             )
-        record = type(self.heterogeneous_strategy).RECORD
-        if self.heterogeneous_strategy is not record:
+        # ``RECORD`` and ``TUPLE`` (which composes ``RECORD``) both set
+        # ``render_record_literal``; ``ERROR`` does not.  Keying off the
+        # behavior rather than the enum member keeps the two
+        # record-rendering strategies in step.
+        if self.heterogeneous_behavior.render_record_literal is None:
             return base
         any_open = "listOf<Any?>("
 

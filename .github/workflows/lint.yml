@@ -68,6 +68,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # ``luaVersion: '5.4'`` matches ``Lua.language_version`` (``V5_4``)
+      # in ``src/literalizer/languages/lua.py``; keep them in sync.
       - name: Install Lua
         uses: leafo/gh-actions-lua@v13
         with:
@@ -80,15 +82,41 @@ jobs:
           packages: tcl gforth guile-3.0
           version: 1.0
       - name: Install Dhall
+        # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
+        # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
+        # standard 17.0.0) default of ``Dhall.language_version`` in
+        # ``src/literalizer/languages/dhall.py``; keep them in sync.
+        # Note the binary version (1.42.2) is distinct from the Dhall
+        # *language* standard version (23.1.0) it implements.
         run: |-
           curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
             | tar -xj
           echo "$PWD/bin" >> "$GITHUB_PATH"
+      # The ``0.4.0`` wren-cli release downloaded here matches
+      # ``Wren.language_version`` (``V0_4``) in
+      # ``src/literalizer/languages/wren.py``; keep them in sync. Wren
+      # has no ``--langversion``-style flag, so the pinned CLI release
+      # is the only mechanism for pinning the language version.
       - name: Install Wren CLI
         run: |
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+      # ``ubuntu-latest`` preinstalls a ``pwsh``, but that runner default
+      # drifts, so install an explicit release and put it first on
+      # ``PATH`` for the ``Lint PowerShell`` / ``Run PowerShell files``
+      # steps. The pinned PowerShell ``7.4.6`` (LTS) is ``>=`` the ``V7``
+      # default of ``PowerShell.language_version`` in
+      # ``src/literalizer/languages/powershell.py``; keep them in sync.
+      # PowerShell has no ``--langversion``-style flag, so the pinned
+      # release is the only mechanism for pinning the language version.
+      - name: Install PowerShell
+        run: |-
+          mkdir -p /tmp/powershell
+          curl -fsSL https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz \
+            | tar -xz -C /tmp/powershell
+          chmod +x /tmp/powershell/pwsh
+          echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -108,11 +136,44 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # `.js` fixtures are executed by `node` below;
+      # `JavaScript.language_version` is `VersionFormats.ES2015` in
+      # `src/literalizer/languages/javascript.py`. Without an explicit
+      # `node-version` the runtime drifts with the `setup-node` action
+      # default. Node 22 is a current LTS and fully supports that ES2015
+      # default. This same pin is repeated on every Node lint job
+      # (`lint-npm-installed`, `lint-typescript-run`, `lint-elm`,
+      # `lint-elm-run`); keep all of them and that `language_version`
+      # declaration in sync.
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      # ``php-version: '8.1'`` matches ``Php.language_version`` (``V8_1``)
+      # in ``src/literalizer/languages/php.py``; keep them in sync. PHP
+      # has no ``--langversion``-style flag, so the pinned interpreter is
+      # the only mechanism for pinning the language version. Without this
+      # step `php` is whatever `ubuntu-latest` ships and drifts.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
       - name: Lint Bash
         run: |-
           find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
           xargs -0 bash -n < /tmp/files-bash
           xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-bash
+
+      # ``ruby-version: '3.4'`` is ``>=`` the ``V3`` (Ruby 3.x) default of
+      # ``Ruby.language_version`` in ``src/literalizer/languages/ruby.py``;
+      # keep them in sync. Without this setup step the ``ruby`` binary is
+      # whatever ``ubuntu-latest`` ships and drifts.
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
 
       - name: Lint Ruby
         run: |-
@@ -421,8 +482,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -469,8 +536,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -494,8 +567,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -524,8 +603,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -672,6 +757,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # The pinned MLton implements SML '97, matching
+      # ``SML.language_version`` (``SML_97``) in
+      # ``src/literalizer/languages/sml.py``; keep them in sync.
+      # ``SML_97`` is a fixed standard, so the version pin here is for
+      # reproducibility rather than language selection.
       - name: Install MLton
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
@@ -842,11 +932,17 @@ jobs:
         with:
           clj-kondo: latest
           bb: latest
+      # The pinned Apache Groovy 4.0.32 binary distribution is ``>=`` the
+      # ``V4`` (Groovy 4.x) default of ``Groovy.language_version`` in
+      # ``src/literalizer/languages/groovy.py``; keep them in sync. The
+      # Ubuntu ``groovy`` apt package is Groovy 2.4.x (``< V4``), so the
+      # pinned binary distribution is the only mechanism for installing a
+      # Groovy ``>= V4``.
       - name: Install Groovy
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: groovy
-          version: 1.0
+        run: |-
+          curl -fsSL https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip -o /tmp/groovy.zip
+          unzip -q -o /tmp/groovy.zip -d /tmp/groovy
+          echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
       - name: Lint Clojure
         run: |-
@@ -860,14 +956,10 @@ jobs:
       # instead of cold-starting groovyc/groovy per file. A fresh
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
-      # Invoke the wrapper at /usr/share/groovy/bin/groovy directly rather
-      # than ``groovy`` because cache-apt-pkgs-action does not replay the
-      # package's ``update-alternatives`` postinst on cache hit, so
-      # ``/usr/bin/groovy`` is missing.
       - name: Lint Groovy
         run: |-
           find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
-          /usr/share/groovy/bin/groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
+          groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
@@ -977,6 +1069,13 @@ jobs:
 
   lint-cobol:
     runs-on: ubuntu-latest
+    env:
+      # Pin the GnuCOBOL toolchain so the implicitly installed compiler
+      # does not drift. ``3.2`` supports the COBOL 2002 standard, which
+      # matches ``Cobol.language_version`` (``V2002``) in
+      # ``src/literalizer/languages/cobol.py``; keep them in sync (the
+      # pin must stay ``>=`` that ``V2002`` default).
+      GNUCOBOL_VERSION: '3.2'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -987,6 +1086,8 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install GnuCOBOL
         uses: fabasoad/setup-cobol-action@v1.6.2
+        with:
+          version: ${{ env.GNUCOBOL_VERSION }}
       # GnuCOBOL caps the file base name length and rejects ``@``-laden
       # names that exceed it, so copy each fixture to a fixed short
       # filename before invoking ``cobc``.
@@ -1119,6 +1220,10 @@ jobs:
       - name: Install OCaml
         uses: ocaml/setup-ocaml@v3
         with:
+          # ``ocaml-compiler: 5`` resolves to the latest OCaml 5.x
+          # release, which is ``>=`` the ``V5`` default of
+          # ``OCaml.language_version`` in
+          # ``src/literalizer/languages/ocaml.py``; keep them in sync.
           ocaml-compiler: 5
       - name: Check OCaml syntax
         run: |-
@@ -1133,8 +1238,16 @@ jobs:
 
   lint-commonlisp:
     runs-on: ubuntu-latest
+    # The ``LISP`` environment variable pins the SBCL build that
+    # 40ants/setup-lisp installs to ``sbcl-bin/2.6.4`` (without the
+    # version, ``sbcl-bin`` drifts to whatever is latest). SBCL
+    # implements the fixed ``ANSI`` standard that
+    # ``CommonLisp.language_version`` defaults to in
+    # ``src/literalizer/languages/common_lisp.py``; the pin keeps the
+    # installed SBCL build stable across CI runs rather than selecting
+    # a language standard. Keep them in sync.
     env:
-      LISP: sbcl-bin
+      LISP: sbcl-bin/2.6.4
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1261,8 +1374,13 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.jl' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # `version: '1.9'` is `>=` `Julia.language_version` (`V1_9`) in
+      # `src/literalizer/languages/julia.py`; keep them in sync so the
+      # fixture gate runs under the declared minimum Julia.
       - name: Install Julia
         uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.9'
       - name: Set up Julia project
         run: |
           mkdir -p /tmp/julia-lint
@@ -1409,6 +1527,9 @@ jobs:
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
         with:
+          # `crystal: 1.20.0` is `>=` `Crystal.language_version` (`V1`,
+          # i.e. Crystal 1.x) in `src/literalizer/languages/crystal.py`;
+          # keep them in sync.
           crystal: 1.20.0
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
@@ -1455,6 +1576,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # ``mojo-compiler==1.0.0b1`` is >= the ``VersionFormats.V24_5``
+      # value of ``Mojo.language_version`` in
+      # ``src/literalizer/languages/mojo.py``; keep them in sync.
       - name: Install Mojo
         run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax
@@ -1725,7 +1849,14 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
 
   lint-objectivec:
-    runs-on: macos-latest
+    # ``macos-15`` pins the runner image (the current ``macos-latest``
+    # alias) so the Apple ``clang`` it ships stays fixed. That clang
+    # supports the Objective-C 2.0 (``V2``) language generation that
+    # ``ObjectiveC.language_version`` in
+    # ``src/literalizer/languages/objective_c.py`` defaults to; keep them
+    # in sync. ``V2`` is a fixed language generation, so the pin is for
+    # build reproducibility, not to track a moving standard.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1761,7 +1892,12 @@ jobs:
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
 
   lint-objectivec-tidy:
-    runs-on: macos-latest
+    # ``macos-15`` pins the runner image to match ``lint-objectivec`` so
+    # the Apple ``clang`` headers that Homebrew ``clang-tidy`` parses stay
+    # fixed against the Objective-C 2.0 (``V2``)
+    # ``ObjectiveC.language_version`` default in
+    # ``src/literalizer/languages/objective_c.py``; keep them in sync.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:
