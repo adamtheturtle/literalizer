@@ -419,6 +419,21 @@ jobs:
 
   lint-roc:
     runs-on: ubuntu-latest
+    # Roc has no stable release, and the upstream ``nightly`` GitHub
+    # release only ever retains the moving
+    # ``roc_nightly-linux_x86_64-latest.tar.gz`` asset -- old dated
+    # nightlies are not kept, so there is no dated URL to ``curl``.
+    # Instead we download ``-latest`` and assert its embedded build id
+    # (the tarball's top-level directory, which carries the build date
+    # and commit) equals ``ROC_NIGHTLY_BUILD``, so CI fails loudly when
+    # upstream replaces the nightly instead of silently drifting. This
+    # ``2025-10-28`` build is documented against the ``V0`` default of
+    # ``Roc.language_version`` in ``src/literalizer/languages/roc.py``;
+    # keep them in sync. Roc has no ``--langversion``-style flag, so the
+    # pinned nightly build is the only mechanism for pinning the
+    # language version.
+    env:
+      ROC_NIGHTLY_BUILD: roc_nightly-linux_x86_64-2025-10-28-ea210f57
     steps:
       - uses: actions/checkout@v6
         with:
@@ -428,8 +443,19 @@ jobs:
           curl -fsSL https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz \
             -o /tmp/roc.tar.gz
           mkdir -p /tmp/roc-nightly
-          tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly --strip-components=1
-          sudo install /tmp/roc-nightly/roc /usr/local/bin/roc
+          tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly
+          # Read the extracted top-level directory by globbing rather
+          # than `tar -tzf | head`: under the default `bash -eo
+          # pipefail` shell, `head` closing the pipe sends `tar`
+          # SIGPIPE (exit 141), which `pipefail` would propagate and
+          # `set -e` would abort on.
+          actual=$(cd /tmp/roc-nightly && echo *)
+          if [ "$actual" != "$ROC_NIGHTLY_BUILD" ]; then
+            echo "Roc nightly drifted: got '$actual', pinned '$ROC_NIGHTLY_BUILD'." >&2
+            echo "Update ROC_NIGHTLY_BUILD here and the Roc.language_version comment in src/literalizer/languages/roc.py together." >&2
+            exit 1
+          fi
+          sudo install "/tmp/roc-nightly/$ROC_NIGHTLY_BUILD/roc" /usr/local/bin/roc
       - name: Lint Roc
         run: |-
           find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc && test -s /tmp/files-roc
