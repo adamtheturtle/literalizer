@@ -529,6 +529,11 @@ class Nix(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``install_url`` Nix release pin passed to
+    # ``cachix/install-nix-action`` in the ``lint-fast`` job of
+    # ``.github/workflows/lint.yml``. ``V2`` is a fixed language
+    # generation (the Nix 2.x series), so the pin is for build
+    # reproducibility rather than to track a moving standard.
     language_version: VersionFormats = VersionFormats.V2
     indent: str = "  "
 

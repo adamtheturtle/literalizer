@@ -74,8 +74,18 @@ jobs:
         uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: '5.4'
+      # The pinned Nix ``2.34.7`` is in the Nix 2.x series, which is
+      # ``>=`` the ``V2`` default of ``Nix.language_version`` in
+      # ``src/literalizer/languages/nix.py``; keep them in sync. ``V2``
+      # is a fixed language generation, so the pin is for build
+      # reproducibility rather than to track a moving standard.
+      # ``cachix/install-nix-action`` has no version input, so the
+      # ``install_url`` release URL is the only mechanism for pinning
+      # the Nix version.
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.34.7/install
       # ``gforth`` is pinned to ``0.7.3+dfsg-9build4.1`` (the Ubuntu
       # 24.04 build), which implements ANS Forth, matching
       # ``Forth.language_version`` (``ANS``) in
