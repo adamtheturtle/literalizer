@@ -2096,15 +2096,14 @@ def _apply_variable_wrapper(
 
     When *is_call_binding* is ``True`` the right-hand side is a call
     expression, not a literal value.  Languages whose literal-binding
-    declaration template injects a value-type-derived tag (Haskell's
-    ``x :: Val`` annotation, Elm's ``x : Val``, etc.) can opt in to a
-    call-specific declaration formatter via
-    ``format_call_variable_declaration``; languages that do not define
-    one fall back to ``format_variable_declaration`` unchanged.  The
-    same opt-in applies to the assignment template via
-    ``format_call_variable_assignment``: it is bare for languages like
-    Haskell (``x = ...``) but not OCaml, whose assignment reuses the
-    annotated, tag-wrapping ``let x : val_t = ...`` declaration.
+    templates inject a value-type-derived tag (Haskell's ``x :: Val``
+    annotation, F#'s ``x: Val = FInt ...``, the OCaml
+    ``let x : val_t = OInt ...`` binding, Elm's ``x : Val``, etc.) can
+    opt in to call-specific formatters via
+    ``format_call_variable_declaration`` (for :class:`NewVariable`) and
+    ``format_call_variable_assignment`` (for :class:`ExistingVariable`);
+    languages that do not define them fall back to their literal-binding
+    formatter unchanged.
     """
     if variable_form is None:
         return result
