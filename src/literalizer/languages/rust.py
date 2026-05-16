@@ -1106,9 +1106,10 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
                 )
         case dict():
             # Non-record dicts (empty, non-string-keyed, or an ordered
-            # map) sitting next to record dicts are a #2234 /
-            # out-of-MVP shape.  Keep walking its values so a record
-            # dict nested deeper inside one is still found, even though
+            # map) sitting next to record dicts have no precise Rust
+            # component type under the RECORD strategy (#2317).  Keep
+            # walking its values so a record dict nested deeper inside
+            # one is still found, even though
             # :func:`_rust_record_field_type` later rejects such a dict
             # when it is itself a record field.
             for value in data.values():

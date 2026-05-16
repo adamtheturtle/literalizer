@@ -807,10 +807,11 @@ class Go(metaclass=LanguageCls):
         ``uint64`` to match that typed conversion.
 
         A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field is outside the ``RECORD`` strategy's MVP --
-        Rust's ``_rust_record_field_type`` is imprecise for the same
-        shapes (#2234) -- so it is declared as Go's top type ``any``,
-        which the rendered literal still assigns into.
+        as a record field has no precise component type under the
+        ``RECORD`` strategy.  Per the cross-language decision in #2317,
+        Rust rejects such a field while Go widens it to the top type
+        ``any`` (documented best effort), which the rendered literal
+        still assigns into.
         """
         if request.record_name is not None:
             return request.record_name
