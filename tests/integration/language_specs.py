@@ -19,24 +19,8 @@ from literalizer.languages import (
     Crystal,
     Erlang,
     Gleam,
-    Go,
     Haskell,
-    Rust,
     Scala,
-)
-
-# Languages whose ``RECORD`` heterogeneous strategy gives each generated
-# struct field a type that matches the rendered literal under any
-# non-default ``integer_format`` / ``numeric_separator`` /
-# ``numeric_literal_suffix`` and for a positive integer outside the
-# signed 64-bit range (whose literal comes from a wide-integer overflow
-# fallback).  Kotlin, Java and Scala derive the field type structurally
-# (#2305) but still pick a fixed-width integer type that the
-# out-of-range fallback literal overflows, so that combination does not
-# compile; the remaining width gap is tracked by #2376 and each
-# language joins this set once fixed.
-RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
-    frozenset({Go, Rust})
 )
 
 

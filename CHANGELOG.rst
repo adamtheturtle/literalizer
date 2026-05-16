@@ -29,6 +29,14 @@ Next
   non-default ``integer_format``, ``numeric_separator`` or
   ``numeric_literal_suffix`` keep their value-derived field type.
   In-range integers are unaffected.  See #2306.
+- :class:`~literalizer.Kotlin`, :class:`~literalizer.Java` and
+  :class:`~literalizer.Scala` no longer emit output that fails to
+  compile for a record field holding an integer beyond the signed
+  64-bit range under the ``RECORD`` ``heterogeneous_strategy``.  The
+  generated ``data class`` / ``record`` / ``case class`` field is now
+  typed ``BigInteger`` / ``BigInteger`` / ``BigInt`` to match the
+  arbitrary-precision overflow-fallback literal instead of
+  ``Long`` / ``long``.  In-range integers are unaffected.  See #2376.
 - Internal: the ``RECORD`` ``heterogeneous_strategy`` no longer threads
   the already-formatted field literal into the field-type hook.
   :class:`~literalizer.Kotlin` now derives each generated ``data class``
