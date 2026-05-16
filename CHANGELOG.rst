@@ -20,6 +20,17 @@ Next
   strategy, so the preamble fires off the tuple ids alone, even when
   the data has no record-shaped dicts.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2329.
+- :class:`~literalizer.Kotlin` now supports the ``TUPLE``
+  ``heterogeneous_strategy``, composing ``RECORD``: a fixed-length
+  heterogeneous scalar array that is a dict value or the document root
+  is rendered as a two-element ``Pair(...)`` or three-element
+  ``Triple(...)`` typed ``Pair<...>`` / ``Triple<...>``, and a record
+  field whose value is such an array becomes a tuple-typed field.
+  Kotlin has no general N-tuple, so an array of any other length
+  raises
+  :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
+  rather than degrading to a homogeneous list.  The default
+  (``ERROR``) output is unchanged.  See #2331.
 - :func:`~literalizer.literalize_call` gains a ``comment_source``
   argument: a sequence of trailing source-code comments, one per
   generated call, paired positionally.  Each non-empty entry is
