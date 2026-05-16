@@ -436,8 +436,9 @@ class Clojure(metaclass=LanguageCls):
     )
     # ``V1_11`` (Clojure 1.11) is ``<=`` the Clojure 1.12.x bundled by
     # the ``bb: 1.12.218`` pin in the ``lint-jvm-mini`` job of
-    # ``.github/workflows/lint.yml`` (Babashka determines the effective
-    # Clojure runtime); keep them in sync.
+    # ``.github/workflows/lint.yml`` (that pinned interpreter runs the
+    # fixtures, so its bundled Clojure is the effective runtime
+    # version); keep them in sync.
     language_version: VersionFormats = VersionFormats.V1_11
     indent: str = "    "
 
