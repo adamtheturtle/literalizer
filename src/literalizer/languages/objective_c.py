@@ -647,6 +647,10 @@ class ObjectiveC(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``macos-15`` runner image pinned for the
+    # ``lint-objectivec`` / ``lint-objectivec-tidy`` jobs in
+    # ``.github/workflows/lint.yml``, whose Apple ``clang`` supports this
+    # Objective-C 2.0 (``V2``) language generation.
     language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
