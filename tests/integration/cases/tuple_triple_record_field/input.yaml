@@ -1,0 +1,6 @@
+---
+call: send
+args:
+  - 1
+  - email
+  - true
