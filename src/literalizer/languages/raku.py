@@ -562,6 +562,11 @@ class Raku(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the Rakudo release pinned via ``RAKU_VERSION``
+    # in the ``lint-raku`` job of ``.github/workflows/lint.yml``. Rakudo
+    # has no ``--langversion``-style flag, so the pinned compiler
+    # release is the only mechanism for pinning the language version;
+    # ``V6D`` is Raku language version 6.d.
     language_version: VersionFormats = VersionFormats.V6D
     indent: str = "    "
 
