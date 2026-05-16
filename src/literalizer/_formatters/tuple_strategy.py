@@ -58,15 +58,15 @@ def is_tuple_eligible(*, value: list[Value]) -> bool:
 
 
 @beartype
-def _accumulate_tuple_list_ids(
+def _accumulate_tuple_lists(
     *,
     data: Value,
-    out: set[int],
+    out: list[list[Value]],
 ) -> None:
-    """Walk *data* recording the ids of tuple-eligible dict-value lists.
+    """Walk *data* collecting every tuple-eligible dict-value list.
 
-    Only lists reached as a dict value are marked here; lists reached
-    as an element of another list are deliberately skipped (the
+    Only lists reached as a dict value are collected here; lists
+    reached as an element of another list are deliberately skipped (the
     nested-list / sibling-list shapes stay out of scope) while still
     being walked so deeper dict-value lists are found.
     """
@@ -76,25 +76,38 @@ def _accumulate_tuple_list_ids(
                 if isinstance(child, list) and is_tuple_eligible(
                     value=child,
                 ):
-                    out.add(id(child))
-                _accumulate_tuple_list_ids(data=child, out=out)
+                    out.append(child)
+                _accumulate_tuple_lists(data=child, out=out)
         case list():
             for item in data:
-                _accumulate_tuple_list_ids(data=item, out=out)
+                _accumulate_tuple_lists(data=item, out=out)
         case _:
             return
+
+
+@beartype
+def collect_tuple_lists(*, data: Value) -> list[list[Value]]:
+    """Return every tuple-eligible list in *data*, in document order.
+
+    The document root is eligible when it is itself a tuple-eligible
+    heterogeneous scalar array; every other eligible list is a dict
+    value reached during the walk.  The list objects (not just their
+    ids) are returned so the ``TUPLE`` strategy can additionally
+    enforce a language's maximum tuple length against each one.
+    """
+    out: list[list[Value]] = []
+    if isinstance(data, list) and is_tuple_eligible(value=data):
+        out.append(data)
+    _accumulate_tuple_lists(data=data, out=out)
+    return out
 
 
 @beartype
 def collect_tuple_list_ids(*, data: Value) -> frozenset[int]:
     """Return ``id(list)`` for every tuple-eligible list in *data*.
 
-    The document root is eligible when it is itself a tuple-eligible
-    heterogeneous scalar array; every other eligible list is a dict
-    value reached during the walk.
+    Thin id-keyed view over :func:`collect_tuple_lists` for the
+    ``check_data`` / ``_literalize`` carve-outs, which match lists by
+    identity.
     """
-    out: set[int] = set()
-    if isinstance(data, list) and is_tuple_eligible(value=data):
-        out.add(id(data))
-    _accumulate_tuple_list_ids(data=data, out=out)
-    return frozenset(out)
+    return frozenset(id(lst) for lst in collect_tuple_lists(data=data))

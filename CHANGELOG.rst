@@ -20,6 +20,17 @@ Next
   strategy, so the preamble fires off the tuple ids alone, even when
   the data has no record-shaped dicts.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2329.
+- :class:`~literalizer.Scala` now supports the ``TUPLE``
+  ``heterogeneous_strategy``, which composes ``RECORD``: a
+  fixed-length heterogeneous scalar array that is a record field,
+  another dict value, or the document root is rendered as a native
+  tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` (a tuple-valued
+  ``case class`` field is declared with the tuple type) instead of
+  raising or widening to ``List[Any]``.  An array of more than 22
+  elements (no ``Tuple22``) raises
+  :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
+  rather than silently downgrading.  The default (``ERROR``) output
+  is unchanged.  See #2330.
 - :func:`~literalizer.literalize_call` gains a ``comment_source``
   argument: a sequence of trailing source-code comments, one per
   generated call, paired positionally.  Each non-empty entry is

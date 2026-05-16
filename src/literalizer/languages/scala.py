@@ -56,7 +56,9 @@ from literalizer._formatters.record_strategy import (
     RecordLiteralField,
     RecordRenderer,
     RecordStrategy,
+    TupleRenderer,
     build_record_strategy,
+    build_tuple_strategy,
 )
 from literalizer._formatters.type_inference import (
     DictType,
@@ -82,6 +84,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
+    RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -321,6 +324,50 @@ def _scala_render_declaration(
         f"{field.identifier}: {field.type_name}" for field in fields
     )
     return f"case class {name}({params})"
+
+
+# Scala's tuple sugar ``(a, b, ...)`` expands to ``TupleN``, which the
+# standard library defines only up to ``Tuple22``.  A heterogeneous
+# scalar array longer than this has no native tuple type, so the
+# ``TUPLE`` strategy raises rather than silently downgrading.
+_SCALA_MAX_TUPLE_ARITY = 22
+
+
+@beartype
+def _scala_render_tuple_type(element_types: Sequence[str], /) -> str:
+    """Render a Scala tuple *type* ``(T0, T1, ...)``.
+
+    ``collect_tuple_lists`` only marks arrays spanning at least two
+    scalar buckets, so there are always at least two element types and
+    the parenthesized form is unambiguously ``TupleN`` (Scala has no
+    one-element tuple sugar).
+    """
+    return f"({', '.join(element_types)})"
+
+
+@beartype
+def _scala_render_tuple_literal(
+    value: list[Value],
+    elements: Sequence[str],
+    /,
+) -> RenderedTupleLiteral:
+    """Render a heterogeneous scalar array as a Scala tuple literal.
+
+    The shared layout assembler joins *elements* into the compact
+    ``(a, b)`` or one-per-line multiline form; *value* is unused
+    because every element is already formatted.  Scala permits a
+    trailing comma before the closing ``)`` on its own line (the same
+    policy its collection literals use), so the language-wide
+    trailing-comma config is kept for the multiline form.
+    """
+    del value
+    return RenderedTupleLiteral(
+        head="(",
+        entries=tuple(elements),
+        closer=")",
+        compact_pad="",
+        multiline_trailing_comma=True,
+    )
 
 
 @beartype
@@ -684,11 +731,18 @@ class Scala(metaclass=LanguageCls):
         each record-shaped dict (non-empty, string-keyed) as a
         generated ``case class`` declared in the preamble plus a
         matching ``Record0(field = value, ...)`` literal, so fields may
-        legitimately mix scalars and containers.
+        legitimately mix scalars and containers.  ``TUPLE`` composes
+        ``RECORD`` and additionally renders each fixed-length
+        heterogeneous scalar array (a record field, another dict value,
+        or the document root) as a native tuple ``(e0, e1, ...)`` typed
+        ``(T0, T1, ...)``.  An array of more than 22 elements (no
+        ``Tuple22``) is rejected with
+        :exc:`~literalizer.exceptions.TupleArityNotRepresentableError`.
         """
 
         ERROR = enum.auto()
         RECORD = enum.auto()
+        TUPLE = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -938,11 +992,37 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _scala_tuple_renderer(self) -> TupleRenderer:
+        """Scala syntax hooks for the ``TUPLE`` strategy.
+
+        Tuple element types reuse :meth:`_scala_record_field_type` (via
+        the shared :func:`build_tuple_strategy`, which already wires it
+        through the wrapped ``RecordRenderer``); only the tuple type /
+        literal syntax and the ``Tuple22`` length cap are
+        Scala-specific.
+        """
+        return TupleRenderer(
+            render_type=_scala_render_tuple_type,
+            render_literal=_scala_render_tuple_literal,
+            arity_limit=_SCALA_MAX_TUPLE_ARITY,
+        )
+
+    @cached_property
     def _record_strategy(self) -> RecordStrategy:
-        """Resolve the active strategy to its behavior + preamble."""
+        """Resolve the active strategy to its behavior + preamble.
+
+        ``TUPLE`` composes ``RECORD``; both reuse
+        :attr:`_record_renderer` so a tuple-eligible array that is a
+        record field becomes a tuple-typed ``case class`` field.
+        """
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(renderer=self._record_renderer)
+        if self.heterogeneous_strategy is cls.TUPLE:
+            return build_tuple_strategy(
+                record_renderer=self._record_renderer,
+                tuple_renderer=self._scala_tuple_renderer,
+            )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,
             preamble=no_data_preamble,
@@ -1096,12 +1176,13 @@ class Scala(metaclass=LanguageCls):
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
-        Under the ``RECORD`` strategy a list whose elements are
-        record-shaped dicts is opened with the format's plain,
-        element-type-free opener (``List(``) so the elements render as
-        ``RecordN(...)`` literals and Scala infers ``List[RecordN]``;
-        the typed opener would otherwise infer a ``Map[String, ...]``
-        element type that the struct literals do not satisfy.
+        Under the ``RECORD`` strategy (and ``TUPLE``, which composes
+        it) a list whose elements are record-shaped dicts is opened
+        with the format's plain, element-type-free opener (``List(``)
+        so the elements render as ``RecordN(...)`` literals and Scala
+        infers ``List[RecordN]``; the typed opener would otherwise
+        infer a ``Map[String, ...]`` element type that the struct
+        literals do not satisfy.
         """
         base = _resolve_sequence_open(
             cfg=self._opener_config,
@@ -1112,8 +1193,8 @@ class Scala(metaclass=LanguageCls):
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
         )
-        record = type(self.heterogeneous_strategy).RECORD
-        if self.heterogeneous_strategy is not record:
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy not in (cls.RECORD, cls.TUPLE):
             return base
         plain_open = self.sequence_format.value.sequence_open
 

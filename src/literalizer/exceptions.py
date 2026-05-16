@@ -40,6 +40,31 @@ class UnrepresentableInputError(Exception):
     """
 
 
+class TupleArityNotRepresentableError(UnrepresentableInputError):
+    """Raised when the ``TUPLE`` heterogeneous strategy meets a
+    heterogeneous scalar array longer than the target language's
+    largest native tuple type.
+
+    Some languages cap how many elements a native tuple may hold
+    (Scala's ``Tuple22``, for example, tops out at 22 elements).  A
+    tuple-eligible array longer than that limit has no native tuple
+    representation, so the strategy raises this explicit error at
+    check time rather than silently downgrading to a homogeneous
+    collection (which would lose the per-element types) or emitting
+    code that does not compile.
+    """
+
+    def __init__(self, *, arity: int, limit: int) -> None:
+        """Create a ``TupleArityNotRepresentableError``."""
+        super().__init__(
+            f"A heterogeneous scalar array of arity {arity} exceeds the "
+            f"target language's maximum native tuple arity of {limit}; "
+            "the TUPLE heterogeneous strategy cannot represent it."
+        )
+        self.arity = arity
+        self.limit = limit
+
+
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.
