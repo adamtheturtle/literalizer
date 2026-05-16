@@ -1,7 +1,0 @@
-from __future__ import annotations
-def process(*_args: object, **_kwargs: object) -> object: ...
-# Test cases
-process(value={"type": "create", "pr_id": "pr_1"})  # first case
-process(value={"type": "update", "pr_id": "pr_2"})  # second case
-# third case
-process(value={"type": "delete", "pr_id": "pr_3"})

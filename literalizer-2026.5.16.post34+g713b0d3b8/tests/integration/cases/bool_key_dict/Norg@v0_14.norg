@@ -1,7 +1,0 @@
-* my_data
-@code json
-{
-    true: "yes",
-    false: "no"
-}
-@end

@@ -1,6 +1,0 @@
-<?php
-$my_data = [
-   true,
-   false,
-   true,
-];
