@@ -992,6 +992,9 @@ class Nim(metaclass=LanguageCls):
     )
     heterogeneous_value_variant_name: str = "Value"
     call_style: CallStyles = CallStyles.POSITIONAL
+    # Keep in sync with the ``NIM_VERSION`` pin in the ``lint-nim`` job
+    # of ``.github/workflows/lint.yml``; the pinned compiler must be
+    # ``>=`` this ``V2`` (Nim 2.x) default.
     language_version: VersionFormats = VersionFormats.V2
     indent: str = "    "
 
