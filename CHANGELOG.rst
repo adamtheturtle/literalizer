@@ -34,6 +34,12 @@ Next
   ``record_struct_name_prefix`` constructor parameter and its
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  See #2477.
+- :class:`~literalizer.StubReturn` is now part of the public API.  It
+  was already the parameter type of the public
+  :class:`~literalizer.Language` protocol's ``format_call_stub`` and
+  ``format_call_preamble_stub`` methods, so it is now re-exported from
+  the package root for consumers implementing that protocol.  See
+  #1947.
 - :class:`~literalizer.Cpp` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,

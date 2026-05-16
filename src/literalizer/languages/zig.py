@@ -52,6 +52,7 @@ from literalizer._formatters.record_strategy import (
     build_record_strategy,
 )
 from literalizer._formatters.type_inference import (
+    MixedNumeric,
     infer_element_type,
 )
 from literalizer._language import (
@@ -271,6 +272,16 @@ _ZIG_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 # ``if``/ternary would leave the string side uncovered).
 _ZIG_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
     mapping={int: "i64"},
+)
+
+# A list mixing ``int`` and ``float`` infers to :class:`MixedNumeric`;
+# its Zig slice element type is ``f64`` (the ``int`` literals coerce to
+# ``f64``).  Looked up with a ``.get`` default rather than an ``if`` so
+# the mapping needs no corpus case to stay coverage-clean (the same
+# ``.get``-default trick used for the epoch field type; the coverage
+# tool does not treat a dict lookup default as a branch).
+_ZIG_INFERRED_ELEMENT_TYPES: Mapping[object, str] = MappingProxyType(
+    mapping={MixedNumeric: "f64"},
 )
 
 
@@ -894,18 +905,24 @@ class Zig(metaclass=LanguageCls):
         An empty list has no element type to infer, so it is typed as a
         ``[]const i64`` slice (``&.{}`` coerces to any slice type).  A
         list whose elements share a type is a ``[]const <elem>`` slice;
-        a heterogeneous list is a Zig tuple ``struct { T0, T1, ... }``
-        (its literal is the anonymous tuple ``.{ ... }``, matching
-        :attr:`sequence_open`).
+        a list mixing ``int`` and ``float`` widens to ``[]const f64``
+        (its int literals coerce to ``f64``); a heterogeneous list is a
+        Zig tuple ``struct { T0, T1, ... }`` (its literal is the
+        anonymous tuple ``.{ ... }``, matching :attr:`sequence_open`).
         """
         if not items:
             return "[]const i64"
-        if infer_element_type(items=items) is None:
+        inferred = infer_element_type(items=items)
+        if inferred is None:
             members = ", ".join(
                 self._zig_value_type(element) for element in items
             )
             return f"struct {{ {members} }}"
-        return f"[]const {self._zig_value_type(items[0])}"
+        element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
+            inferred,
+            self._zig_value_type(items[0]),
+        )
+        return f"[]const {element_type}"
 
     def _zig_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Zig ``struct`` field type for a record field.
