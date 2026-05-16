@@ -5,7 +5,7 @@
 import pytest
 
 from literalizer.exceptions import InvalidRecordNameError
-from literalizer.languages import Go, Kotlin, Rust
+from literalizer.languages import Go, Kotlin, Rust, Scala
 
 
 @pytest.mark.parametrize(
@@ -129,6 +129,43 @@ def test_kotlin_duplicate_shape_names_raises() -> None:
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Kotlin(
+            record_shape_names={
+                frozenset({"id", "name"}): "Task",
+                frozenset({"id", "title"}): "Task",
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="name",
+    argvalues=["task", "My-Task", "9Task"],
+)
+def test_scala_invalid_shape_name_raises(name: str) -> None:
+    """Values in Scala's ``record_shape_names`` must be PascalCase
+    identifiers.
+
+    Scala has no PascalCase reserved keyword (every Scala keyword is
+    lowercase), so the PascalCase check is the only name-shape gate.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Scala(record_shape_names={frozenset({"id", "name"}): name})
+
+
+def test_scala_shape_name_collides_with_auto_generated_raises() -> None:
+    """A mapped struct name that matches the auto-generated
+    ``{prefix}{N}`` pattern is rejected because the user-named record
+    would clash with an index-named record at render time.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Scala(record_shape_names={frozenset({"id", "name"}): "Record0"})
+
+
+def test_scala_duplicate_shape_names_raises() -> None:
+    """Two distinct key-sets cannot map to the same Scala struct
+    name.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Scala(
             record_shape_names={
                 frozenset({"id", "name"}): "Task",
                 frozenset({"id", "title"}): "Task",
