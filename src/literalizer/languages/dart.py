@@ -781,10 +781,10 @@ class Dart(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `sdk: ^3.0.0` SDK constraint in the
-    # generated `pubspec.yaml` in `.github/workflows/lint.yml`. Dart has
-    # no `--langversion`-style flag, so the pubspec SDK constraint is
-    # the pin mechanism; `V3` maps to `^3.0.0`.
+    # Keep in sync with the `sdk: ^3.0.0` constraint in the generated
+    # `pubspec.yaml` in `.github/workflows/lint.yml`. Dart has no
+    # `--langversion`-style flag, so that `pubspec.yaml` constraint is
+    # the only way to pin the version; `V3` maps to `^3.0.0`.
     language_version: VersionFormats = VersionFormats.V3
     indent: str = "    "
 
