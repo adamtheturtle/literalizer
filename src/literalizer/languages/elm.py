@@ -922,6 +922,9 @@ class Elm(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the exact ``elm`` dependency pin in
+    # ``.github/npm-linters/package.json``, which is pinned to a version
+    # ``>=`` this ``V0_19`` default.
     language_version: VersionFormats = VersionFormats.V0_19
     indent: str = "    "
     type_name: str = "Val"
