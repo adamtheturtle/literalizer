@@ -9,6 +9,7 @@ import pytest
 
 from literalizer import (
     BothVariableForms,
+    ExistingVariable,
     IdentifierCase,
     InputFormat,
     NewVariable,
@@ -22,6 +23,7 @@ from literalizer.languages import (
     CSharp,
     Dart,
     Dhall,
+    FSharp,
     Gleam,
     Go,
     Haskell,
@@ -133,6 +135,40 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
         "    SInt of LargeInt.int\n"
         "val my_data : val_t = SInt (~2208988800)"
     )
+
+
+def test_fsharp_call_binding_existing_variable_infers_type() -> None:
+    """An F# ``ExistingVariable`` call binding rebinds with a plain
+    inference-style ``let``.
+
+    The literal-binding assignment injects a ``: Val`` annotation and a
+    tagged-enum constructor (``FInt``) derived from the value's runtime
+    type; a call expression has no such tag, so
+    ``format_call_variable_assignment`` omits both and lets F# infer
+    the return type.  It also never emits ``let mutable`` -- even under
+    the ``LET_MUTABLE`` declaration style -- mirroring
+    ``format_variable_assignment``, because an F# rebinding shadows
+    with ``let``.  This output is not self-contained across the
+    compiled languages (a bare assignment to an undeclared name), so it
+    is asserted here rather than as a golden fixture.
+    """
+    for declaration_style in (
+        FSharp.declaration_styles.LET,
+        FSharp.declaration_styles.LET_MUTABLE,
+    ):
+        result = literalize_call(
+            source="42",
+            input_format=InputFormat.YAML,
+            language=FSharp(declaration_style=declaration_style),
+            target_function="make_widget",
+            parameter_names=["count"],
+            variable_form=ExistingVariable(name="my_data"),
+            per_element=False,
+        )
+
+        assert result.code == (
+            "type Val =\n    | FInt of int64\nlet my_data = make_widget(42)"
+        )
 
 
 # The widening branch in
