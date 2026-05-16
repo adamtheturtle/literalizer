@@ -442,16 +442,20 @@ jobs:
         run: |-
           curl -fsSL https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz \
             -o /tmp/roc.tar.gz
-          actual=$(tar -tzf /tmp/roc.tar.gz | head -1)
-          actual=${actual%/}
+          mkdir -p /tmp/roc-nightly
+          tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly
+          # Read the extracted top-level directory by globbing rather
+          # than `tar -tzf | head`: under the default `bash -eo
+          # pipefail` shell, `head` closing the pipe sends `tar`
+          # SIGPIPE (exit 141), which `pipefail` would propagate and
+          # `set -e` would abort on.
+          actual=$(cd /tmp/roc-nightly && echo *)
           if [ "$actual" != "$ROC_NIGHTLY_BUILD" ]; then
             echo "Roc nightly drifted: got '$actual', pinned '$ROC_NIGHTLY_BUILD'." >&2
             echo "Update ROC_NIGHTLY_BUILD here and the Roc.language_version comment in src/literalizer/languages/roc.py together." >&2
             exit 1
           fi
-          mkdir -p /tmp/roc-nightly
-          tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly --strip-components=1
-          sudo install /tmp/roc-nightly/roc /usr/local/bin/roc
+          sudo install "/tmp/roc-nightly/$ROC_NIGHTLY_BUILD/roc" /usr/local/bin/roc
       - name: Lint Roc
         run: |-
           find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc && test -s /tmp/files-roc
