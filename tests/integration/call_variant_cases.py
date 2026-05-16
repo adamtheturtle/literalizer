@@ -11,6 +11,8 @@ from collections.abc import Callable, Iterable
 
 from beartype import beartype
 
+import literalizer
+
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
@@ -54,6 +56,7 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
                     statement_terminator_style=statement_terminator_style,
                 ),
                 lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for statement_terminator_style in spec.statement_terminator_styles
             if statement_terminator_style
@@ -81,6 +84,7 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
                     heterogeneous_strategy=strategy,
                 ),
                 lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for strategy in spec.heterogeneous_strategies
             if strategy is not default_strategy
