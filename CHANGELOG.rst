@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.16.1
+------------
+
+
 - The mapping arm of the public ``ValueInput`` type (accepted by
   ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
   ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
