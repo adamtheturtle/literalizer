@@ -778,9 +778,9 @@ class V(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the pinned V release tag cloned by the
+    # Keep in sync with the pinned V release downloaded by the
     # ``Install V`` step of the ``lint-v`` job in
-    # ``.github/workflows/lint.yml``: the pinned ``0.5.1`` tag is
+    # ``.github/workflows/lint.yml``: the pinned ``0.5.1`` release is
     # ``>=`` this ``V0_4`` default, so the fixture gate runs under a
     # compiler that accepts the declared language version.
     language_version: VersionFormats = VersionFormats.V0_4

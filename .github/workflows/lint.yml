@@ -1885,15 +1885,19 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.v' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
-      # The pinned ``0.5.1`` release tag is ``>=`` the ``V0_4`` default
-      # of ``V.language_version`` in ``src/literalizer/languages/v.py``;
-      # keep them in sync.  Pinning to a tagged release stops the V
-      # compiler from drifting with upstream ``master``.
+      # The pinned ``0.5.1`` release is ``>=`` the ``V0_4`` default of
+      # ``V.language_version`` in ``src/literalizer/languages/v.py``;
+      # keep them in sync.  Use the prebuilt release archive (which
+      # bundles the ``v`` binary and tcc) rather than building from
+      # source: V's ``make`` re-clones the *latest* ``vc`` C bootstrap,
+      # which fails to compile an old tagged ``vlib``.  A pinned
+      # release artifact stops the compiler drifting with upstream
+      # ``master``.
       - name: Install V
         run: |
-          git clone --depth=1 --branch 0.5.1 https://github.com/vlang/v /tmp/vlang
-          cd /tmp/vlang && make
-          sudo ln -s /tmp/vlang/v /usr/local/bin/v
+          curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/0.5.1/v_linux.zip
+          unzip -q /tmp/v_linux.zip -d /tmp
+          sudo ln -s /tmp/v/v /usr/local/bin/v
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
