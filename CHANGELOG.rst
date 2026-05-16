@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.PureScript` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``my_data = make_widget (PInt 42)`` without a ``name :: Type``
+  annotation (the call's return type is not known to the renderer).
+  ``wrap_in_file=True`` PureScript scaffolds add ``import Prelude`` so
+  the call stub's ``Unit`` result type resolves; literal-binding output
+  is unchanged.  See #2247.
 - :class:`~literalizer.Rust` under the ``RECORD``
   ``heterogeneous_strategy`` now raises
   :class:`~literalizer.exceptions.UnrepresentableInputError` for a
