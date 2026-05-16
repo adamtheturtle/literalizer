@@ -3793,8 +3793,9 @@ def _validate_comment_source_supported(
     self-contained line: languages that assemble the call sequence into
     a single clause/list/expression append separators, terminators or
     closers *after* the per-call text (Erlang's clause ``.``, a Jsonnet
-    list ``,``, Roc's ``dbg ( ... )``), which a line comment would then
-    swallow.  :attr:`~Language.supports_standalone_comments_in_wrapped_calls`
+    list ``,``, a Roc ``dbg ( ... )`` wrapper), which a line comment
+    would then swallow.
+    :attr:`~Language.supports_standalone_comments_in_wrapped_calls`
     already marks exactly the languages that can carry a trailing
     comment through their call-sequence form, so reuse it rather than
     emit code that fails to compile.  All-empty entries emit no comment

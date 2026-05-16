@@ -431,7 +431,8 @@ self-contained line.  Languages that assemble the call sequence into a
 single clause, list or expression -- so a separator, terminator or
 closer would follow the call on the same line and the line comment
 would swallow it (Erlang's clause-terminating ``.``, a Jsonnet list
-``,``, Roc's ``dbg ( ... )``) -- reject a non-empty ``comment_source``
+``,``, a Roc ``dbg ( ... )`` wrapper) -- reject a non-empty
+``comment_source``
 with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.  The
 supported set is exactly the languages whose
 :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
