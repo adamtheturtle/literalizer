@@ -1012,12 +1012,12 @@ class FSharp(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a declaration binding a call expression.
 
-        The literal-binding declaration prepends a ``name: Val`` type
-        annotation and wraps the value in a tagged-enum constructor
-        (``FInt``, ``FStr``, …) derived from the bound value's runtime
-        type; a call expression has no such tag, so both the annotation
-        and the constructor wrapper are omitted and F# infers the
-        call's return type instead.
+        The literal-binding declaration adds a leading ``name: Val``
+        type annotation and wraps the value in a tagged-enum
+        constructor (``FInt``, ``FStr``, …) derived from the bound
+        value's runtime type; a call expression has no such tag, so
+        both the annotation and the constructor wrapper are omitted and
+        F# infers the call's return type instead.
         """
         return self.declaration_style.value.formatter
 
