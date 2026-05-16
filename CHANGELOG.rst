@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.16
+----------
+
+
 - :class:`~literalizer.Elm` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (EInt 42)`` without a ``name : Val``
@@ -20,6 +24,15 @@ Next
   strategy, so the preamble fires off the tuple ids alone, even when
   the data has no record-shaped dicts.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2329.
+- :class:`~literalizer.TypeScript` now supports the ``TUPLE``
+  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
+  that is a dict value or the document root is rendered as an
+  ``[e0, e1, ...] as const`` tuple literal, which TypeScript infers as
+  a ``readonly [T0, T1, ...]`` tuple type, instead of a widened
+  ``(T0 | T1)[]`` array.  TypeScript has no ``RECORD`` strategy and
+  ``as const`` needs no imports, so there is no data-dependent
+  preamble.  The default (``ERROR``) union-array output is unchanged.
+  See #2328.
 - :class:`~literalizer.Kotlin` now supports the ``TUPLE``
   ``heterogeneous_strategy``, composing ``RECORD``: a fixed-length
   heterogeneous scalar array that is a dict value or the document root
