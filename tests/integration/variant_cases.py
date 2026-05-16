@@ -1952,7 +1952,14 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         )
     ),
     "statement_terminator_style_decl": (_ci(case_dir_name="simple_sequence"),),
-    "sequence_decl": (_ci(case_dir_name="int_list"),),
+    "sequence_decl": (
+        _ci(case_dir_name="int_list"),
+        # A one-element list pins the single-element-tuple trailing
+        # comma in both the type annotation and the value (e.g. Rust
+        # ``static my_data: (i32,) = (1,);``); a multi-element input
+        # cannot exercise that carve-out.
+        _ci(case_dir_name="int_list_single"),
+    ),
     "set_decl": (_ci(case_dir_name="set_mixed_int_widths"),),
     "dict_decl": (_ci(case_dir_name="int_key_dict"),),
     "type_name": ADT_INPUTS,

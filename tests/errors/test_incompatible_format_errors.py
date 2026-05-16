@@ -1,8 +1,17 @@
-"""Tests for variable declaration and assignment in literalizer
-converter.
+"""Rejection of declaration styles and modifiers that cannot accept the
+value's rendered literal.
+
+Each case pairs a constant-context declaration (Rust ``CONST`` /
+``STATIC`` / ``LAZY_STATIC``, C# ``const``, Nim ``CONST``) or a typed
+record component with a value whose only literal form is a runtime
+constructor or a non-constant collection.  ``literalize`` raises
+:class:`~literalizer.exceptions.IncompatibleFormatsError` (or, for the
+placeholder formatter, :class:`NotImplementedError`) rather than emitting
+output that fails to compile.  The integration framework only exercises
+golden output that compiles, so these contracts have no golden-file
+surface and need unit coverage.
 """
 
-import datetime
 import re
 
 import pytest
@@ -85,52 +94,6 @@ def test_rust_tuple_format_type_annotation_raises() -> None:
             element_type="i32",
             length=2,
         )
-
-
-def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
-    """Single-element tuple annotations include the required comma."""
-    rust = Rust(
-        declaration_style=Rust.declaration_styles.STATIC,
-        sequence_format=Rust.sequence_formats.TUPLE,
-    )
-    result = literalize(
-        source="[1]",
-        input_format=InputFormat.JSON,
-        language=rust,
-        variable_form=NewVariable(name="DATA"),
-    )
-
-    assert result.code == ("static DATA: (i32,) = (\n    1,\n);")
-
-
-def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
-    """Epoch datetime variants use the configured integer type."""
-    rust = Rust(
-        datetime_format=Rust.datetime_formats.EPOCH,
-        heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
-    )
-    timestamp = datetime.datetime(
-        year=2024,
-        month=1,
-        day=1,
-        tzinfo=datetime.UTC,
-    )
-    result = literalize(
-        source=f"- {timestamp.isoformat()}\n- 1\n",
-        input_format=InputFormat.YAML,
-        language=rust,
-        variable_form=None,
-    )
-
-    assert result.preamble == (
-        "enum Value {",
-        "    I64(i64),",
-        "    I32(i32),",
-        "}",
-    )
-    assert result.code == (
-        "vec![\n    Value::I64(1704067200),\n    Value::I32(1),\n]"
-    )
 
 
 def test_rust_const_vec_raises() -> None:

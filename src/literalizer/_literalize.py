@@ -2096,13 +2096,14 @@ def _apply_variable_wrapper(
 
     When *is_call_binding* is ``True`` the right-hand side is a call
     expression, not a literal value.  Languages whose literal-binding
-    declaration template injects a value-type-derived tag (Haskell's
-    ``x :: Val`` annotation, Elm's ``x : Val``, etc.) can opt in to a
-    call-specific declaration formatter via
-    ``format_call_variable_declaration``; languages that do not define
-    one fall back to ``format_variable_declaration`` unchanged.  The
-    assignment template re-binds an existing variable and is bare in
-    these languages already, so no call-specific override is needed.
+    templates inject a value-type-derived tag (Haskell's ``x :: Val``
+    annotation, F#'s ``x: Val = FInt ...``, the OCaml
+    ``let x : val_t = OInt ...`` binding, Elm's ``x : Val``, etc.) can
+    opt in to call-specific formatters via
+    ``format_call_variable_declaration`` (for :class:`NewVariable`) and
+    ``format_call_variable_assignment`` (for :class:`ExistingVariable`);
+    languages that do not define them fall back to their literal-binding
+    formatter unchanged.
     """
     if variable_form is None:
         return result
@@ -2123,7 +2124,14 @@ def _apply_variable_wrapper(
                 )
             wrapped = declaration_formatter(name, value, data, modifiers)
         case _:
-            wrapped = language.format_variable_assignment(
+            assignment_formatter = language.format_variable_assignment
+            if is_call_binding:
+                assignment_formatter = getattr(
+                    language,
+                    "format_call_variable_assignment",
+                    assignment_formatter,
+                )
+            wrapped = assignment_formatter(
                 variable_form.name,
                 value,
                 data,
@@ -3904,10 +3912,23 @@ def _wrap_call_in_file(
     wrap_variable_name = (
         variable_form.name if variable_form is not None else ""
     )
+    # An inference-bound call result (``my_data = make_widget (...)``)
+    # may rely on module-internal preamble lines that the literal
+    # binding never needs -- e.g. PureScript's call stub returns
+    # ``Unit``, so the binding module must ``import Prelude`` even
+    # though the literal binding for the same data does not.  Languages
+    # that do not define the hook leave ``body_preamble`` unchanged.
+    call_binding_body_preamble: tuple[str, ...] = ()
+    if variable_form is not None:
+        body_preamble_hook = getattr(
+            language, "format_call_binding_body_preamble", None
+        )
+        if body_preamble_hook is not None:
+            call_binding_body_preamble = body_preamble_hook()
     wrapped = language.wrap_in_file(
         content=result,
         variable_name=wrap_variable_name,
-        body_preamble=body_stubs + computed_body,
+        body_preamble=call_binding_body_preamble + body_stubs + computed_body,
     )
     call_binding_pragmas: tuple[str, ...] = ()
     if variable_form is not None:
