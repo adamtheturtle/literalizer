@@ -31,13 +31,19 @@ from literalizer._types import Value
 
 
 @beartype
-def _is_tuple_eligible(*, value: list[Value]) -> bool:
+def is_tuple_eligible(*, value: list[Value]) -> bool:
     """Return whether *value* is a tuple-eligible heterogeneous array.
 
     Eligible when every element is a scalar and the elements span at
     least two distinct scalar type buckets.  An empty list, a list
     with any non-scalar element, and a homogeneous list (one bucket)
     are all ineligible.
+
+    This is the structural half of tuple-eligibility (the positional
+    half -- a list must be a dict value or the document root -- is
+    enforced by :func:`collect_tuple_list_ids` and by the caller's
+    position when a language's type inference reuses this predicate
+    directly).
     """
     buckets: set[type] = set()
     for element in value:
@@ -67,7 +73,7 @@ def _accumulate_tuple_list_ids(
     match data:
         case dict():
             for child in data.values():
-                if isinstance(child, list) and _is_tuple_eligible(
+                if isinstance(child, list) and is_tuple_eligible(
                     value=child,
                 ):
                     out.add(id(child))
@@ -88,7 +94,7 @@ def collect_tuple_list_ids(*, data: Value) -> frozenset[int]:
     value reached during the walk.
     """
     out: set[int] = set()
-    if isinstance(data, list) and _is_tuple_eligible(value=data):
+    if isinstance(data, list) and is_tuple_eligible(value=data):
         out.add(id(data))
     _accumulate_tuple_list_ids(data=data, out=out)
     return frozenset(out)

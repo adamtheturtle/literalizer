@@ -456,18 +456,29 @@ class RenderedTupleLiteral:
     :class:`RenderedRecordLiteral` without re-parsing.
 
     ``head`` is the literal up to and including its opening delimiter
-    (``(`` for Rust).  ``entries`` is one already-formatted element per
-    tuple position (``1``, ``"email"``); an entry whose value is itself
-    multiline arrives already expanded.  ``closer`` is the closing
-    delimiter (``)``).  ``compact_pad`` is inserted just inside the
-    delimiters in compact form (empty for Rust's ``(a, b)``) and is
-    unused in the multiline form.
+    (``(`` for Rust, ``std::make_tuple(`` for C++).  ``entries`` is one
+    already-formatted element per tuple position (``1``, ``"email"``);
+    an entry whose value is itself multiline arrives already expanded.
+    ``closer`` is the closing delimiter (``)``).  ``compact_pad`` is
+    inserted just inside the delimiters in compact form (empty for
+    Rust's ``(a, b)``) and is unused in the multiline form.
+
+    ``multiline_trailing_comma`` is ANDed with the language's
+    :attr:`TrailingCommaConfig.multiline_trailing_comma` to decide
+    whether the multiline form ends with a trailing comma after the
+    last element: ``True`` for Rust (a trailing comma after the last
+    tuple element is valid), but ``False`` for C++ because the literal
+    is a ``std::make_tuple(...)`` function call where a trailing
+    argument comma is a syntax error (even though C++'s braced
+    collections, hence its language-wide config, do use trailing
+    commas).
     """
 
     head: str
     entries: tuple[str, ...]
     closer: str
     compact_pad: str
+    multiline_trailing_comma: bool
 
 
 @dataclasses.dataclass(frozen=True)

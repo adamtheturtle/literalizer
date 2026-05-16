@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Cpp` now supports the ``TUPLE``
+  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
+  that is a dict value or the document root is rendered as
+  ``std::make_tuple(...)`` typed ``std::tuple<T0, ...>`` (with
+  ``#include <tuple>`` emitted by the data-dependent preamble) instead
+  of ``std::vector<std::variant<...>>``.  C++ has no ``RECORD``
+  strategy, so the preamble fires off the tuple ids alone, even when
+  the data has no record-shaped dicts.  The default (``ERROR``)
+  ``std::variant`` output is unchanged.  See #2329.
 - :func:`~literalizer.literalize_call` gains a ``comment_source``
   argument: a sequence of trailing source-code comments, one per
   generated call, paired positionally.  Each non-empty entry is
