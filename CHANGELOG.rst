@@ -14,6 +14,11 @@ Next
   nested it inside the ``x/0`` clause, producing invalid Erlang) while
   keeping the binding and the trailing ``My_data.`` return inside
   ``x()``.  See #2454.
+
+2026.05.16.1
+------------
+
+
 - The mapping arm of the public ``ValueInput`` type (accepted by
   ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
   ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
