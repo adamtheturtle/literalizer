@@ -1462,6 +1462,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # ``mojo-compiler==1.0.0b1`` is >= the ``VersionFormats.V24_5``
+      # value of ``Mojo.language_version`` in
+      # ``src/literalizer/languages/mojo.py``; keep them in sync.
       - name: Install Mojo
         run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax
