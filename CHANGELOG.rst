@@ -12,6 +12,28 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Zig` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  The
+  default (``ERROR``) strategy keeps the homogeneous ``ZVal``
+  tagged-union model; under ``RECORD`` each record-shaped dict
+  (non-empty, string-keyed) becomes a generated ``const RecordN =
+  struct { ... };`` declared in the preamble plus a matching
+  ``Record0{ .field = value, ... }`` literal whose fields are raw Zig
+  values, so a record-shaped dict that mixes scalars with a container
+  is representable.  Field names are the dict keys verbatim and field
+  types are inferred structurally from the value (``i64``/``u64``,
+  ``f64``, ``bool``, ``[]const u8``, ``?i64``, ``[]const T`` slices,
+  ``struct { ... }`` tuples for heterogeneous lists, nested
+  ``RecordN``).  Without the ``ZVal`` union the whole value is raw, so
+  a non-record collection is a ``&.{ ... }`` slice / ``.{ ... }``
+  tuple and the binding drops its ``: ZVal`` annotation; the
+  class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter and its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  See #2477.
 - :class:`~literalizer.Odin` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
