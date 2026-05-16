@@ -4,6 +4,10 @@ Changelog
 Next
 ----
 
+2026.05.16
+----------
+
+
 - :class:`~literalizer.Elm` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (EInt 42)`` without a ``name : Val``
