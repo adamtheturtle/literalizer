@@ -1056,6 +1056,9 @@ class PureScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # ``V0_15`` (PureScript 0.15.x) matches the ``purescript: 0.15.15``
+    # pin in the ``lint-haskell-family`` job of
+    # ``.github/workflows/lint.yml``; keep them in sync.
     language_version: VersionFormats = VersionFormats.V0_15
     indent: str = "    "
     type_name: str = "Val"

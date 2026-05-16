@@ -977,9 +977,14 @@ jobs:
       - uses: haskell-actions/setup@v2
         with:
           ghc-version: latest
+      # ``purescript: 0.15.15`` is ``>=`` the ``V0_15`` (PureScript
+      # 0.15.x) default of ``PureScript.language_version`` in
+      # ``src/literalizer/languages/purescript.py``; keep them in sync.
+      # Without an explicit pin ``setup-purescript`` installs whatever
+      # ``purescript: latest`` resolves to and drifts.
       - uses: purescript-contrib/setup-purescript@main
         with:
-          purescript: latest
+          purescript: 0.15.15
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
