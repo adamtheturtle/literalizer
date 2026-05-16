@@ -4,6 +4,26 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Cpp` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java` and
+  :class:`~literalizer.Python`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated aggregate ``struct`` declared in
+  the preamble plus a matching ``Record0{.field = value, ...}``
+  C++20 designated-initializer literal, so a record-shaped dict that
+  mixes scalars with a container is representable even though
+  ``std::map`` requires homogeneous values.  Field names are the dict
+  keys verbatim, scalar members carry a ``{}`` in-class initializer
+  (so the aggregate satisfies clang-tidy's member-init check), and the
+  class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter; its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  A list whose every element is a record-shaped dict is
+  opened with ``std::vector{`` so class-template argument deduction
+  infers ``std::vector<RecordN>``.  The default (``ERROR``)
+  ``std::variant`` output is unchanged.  See #2420.
+
 - :class:`~literalizer.Scala` gains the same ``record_shape_names``
   constructor parameter, a ``Mapping[frozenset[str], str]`` from a
   record shape's key-set to a custom ``case class`` name.  A mapped
@@ -61,10 +81,10 @@ Next
   that is a dict value or the document root is rendered as
   ``std::make_tuple(...)`` typed ``std::tuple<T0, ...>`` (with
   ``#include <tuple>`` emitted by the data-dependent preamble) instead
-  of ``std::vector<std::variant<...>>``.  C++ has no ``RECORD``
-  strategy, so the preamble fires off the tuple ids alone, even when
-  the data has no record-shaped dicts.  The default (``ERROR``)
-  ``std::variant`` output is unchanged.  See #2329.
+  of ``std::vector<std::variant<...>>``.  C++'s ``TUPLE`` strategy
+  does not compose ``RECORD``, so the preamble fires off the tuple ids
+  alone, even when the data has no record-shaped dicts.  The default
+  (``ERROR``) ``std::variant`` output is unchanged.  See #2329.
 - :class:`~literalizer.Scala` now supports the ``TUPLE``
   ``heterogeneous_strategy``, which composes ``RECORD``: a
   fixed-length heterogeneous scalar array that is a record field,

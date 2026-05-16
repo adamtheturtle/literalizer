@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -33,6 +33,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
@@ -42,6 +44,14 @@ from literalizer._formatters.format_integers import (
     make_ull_fallback,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._formatters.tuple_strategy import (
     collect_tuple_list_ids,
     is_tuple_eligible,
@@ -51,6 +61,7 @@ from literalizer._formatters.type_inference import (
     ListType,
     WideInt,
     infer_element_type,
+    record_shape_for_dict,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -68,6 +79,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -790,9 +802,174 @@ scalar arrays as ``std::make_tuple`` literals.
 C++ already represents the carved-out scalar checks via
 ``std::variant`` (``skip_scalar_checks`` is irrelevant -- the
 sequence/dict formats report ``supports_heterogeneity``), so this only
-adds the tuple render hook and the list-id collector; there is no
-``RECORD`` behavior to compose (C++ has none).
+adds the tuple render hook and the list-id collector.  The ``RECORD``
+strategy is wired separately on the language (its behavior needs the
+per-instance type context), so the ``TUPLE`` behavior does not compose
+a record behavior here.
 """
+
+
+# The ``RECORD`` strategy generates a plain aggregate ``struct`` per
+# distinct record shape.  clang-tidy's
+# ``cppcoreguidelines-pro-type-member-init`` requires every scalar
+# member to carry an in-class initializer, while
+# ``readability-redundant-member-init`` rejects one on a class-type
+# member (its default constructor already value-initializes it).  So a
+# field type that is a fundamental scalar gets a ``{}`` brace-or-equal
+# initializer and a class type (``std::string``, ``std::vector<...>``,
+# ``std::chrono::...``, a nested ``RecordN``) gets none.  These are
+# exactly the scalar type names :func:`_make_cpp_element_to_type`
+# emits, plus ``std::nullptr_t`` (a fundamental type, so it also needs
+# the initializer and the redundant-init check does not apply).
+_CPP_SCALAR_FIELD_TYPES: frozenset[str] = frozenset(
+    {
+        "bool",
+        "double",
+        "int",
+        "long",
+        "long long",
+        "unsigned long long",
+        "std::nullptr_t",
+    },
+)
+
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``), so the shared renderer always gets
+# an empty custom-name mapping.
+_CPP_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+
+@beartype
+def _cpp_record_field_identifier(key: str, /) -> str:
+    """Return the C++ ``struct`` member name for a dict *key*.
+
+    C++ member identifiers are the dict keys verbatim (no case
+    conversion), matching the designated-initializer literal form
+    ``Record0{.id = 1, ...}``.
+    """
+    return key
+
+
+@beartype
+def _cpp_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a C++ designated-initializer ``Name{.field = value, ...}``
+    literal as structured pieces for the shared compact/multiline
+    layout code.
+
+    C++20 designated initializers must appear in declaration order; the
+    shared strategy iterates the shape's keys in document order for both
+    the declaration and the literal, so the orders always agree.  A
+    trailing comma after the last initializer is valid in a
+    brace-enclosed initializer list (unlike the ``std::make_tuple``
+    call the ``TUPLE`` strategy renders), so the language-wide
+    trailing-comma config applies unchanged.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}{{",
+        entries=tuple(
+            f".{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad="",
+    )
+
+
+@beartype
+def _cpp_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a C++ aggregate ``struct Name { Type field{}; ... };``.
+
+    A scalar field carries a ``{}`` in-class initializer so the
+    aggregate satisfies clang-tidy's member-init check; a class-type
+    field omits it (its default constructor already value-initializes
+    it, which the redundant-init check would otherwise flag).
+    """
+    members = " ".join(
+        f"{field.type_name} {field.identifier}"
+        f"{'{}' if field.type_name in _CPP_SCALAR_FIELD_TYPES else ''};"
+        for field in fields
+    )
+    return f"struct {name} {{ {members} }};"
+
+
+@beartype
+def _cpp_int_field_type(
+    *,
+    value: int,
+    int_resolver: _IntTypeResolver,
+) -> str:
+    """Return the C++ field type for an integer record field.
+
+    Mirrors the literal :attr:`Cpp.format_integer` emits: an integer
+    inside signed 64-bit range follows the value-driven *int_resolver*
+    (``int``/``long long``, or the suffix-forced ``long``), while a
+    positive value beyond it is written with a ``ULL`` suffix by the
+    overflow fallback and is therefore ``unsigned long long`` (a
+    negative out-of-range value raises at format time, so that side is
+    never reached).
+    """
+    if not I64_MIN <= value <= I64_MAX:
+        return "unsigned long long"
+    return int_resolver([value])
+
+
+@beartype
+def _all_record_shaped(items: list[Value], /) -> bool:
+    """Return whether *items* is a non-empty list whose every element
+    is a record-shaped dict (non-empty, all-string-keyed, not an
+    ordered map).
+
+    Under the ``RECORD`` strategy such a list renders each element as a
+    generated ``RecordN`` literal, so the C++ sequence opener widens to
+    a ``std::vector`` whose element type is deduced from those literals
+    (class-template argument deduction) rather than the homogeneous-map
+    type the variant opener would otherwise emit.
+    """
+    if not items:
+        return False
+    return all(
+        isinstance(item, dict)
+        and not isinstance(item, OrderedMap)
+        and record_shape_for_dict(value=item) is not None
+        for item in items
+    )
+
+
+@beartype
+def _build_cpp_record_preamble(
+    *,
+    type_ctx: _CppTypeCtx,
+    record_preamble: Callable[[Value], tuple[str, ...]],
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build the ``RECORD``-strategy ``data_dependent_preamble``.
+
+    Composes the ``std::variant`` / ``std::nullptr_t`` header lines (a
+    record field may still be a heterogeneous list or an empty
+    collection) followed by the generated ``struct`` declarations.  The
+    headers precede the declarations so a declared field may name
+    ``std::nullptr_t`` or ``std::variant``; the scalar/sequence headers
+    (``<string>``, ``<vector>``, ``<chrono>``) are emitted earlier
+    still, by the type-driven preamble the core assembles before this
+    one.
+    """
+    variant_preamble = _build_variant_preamble(type_ctx=type_ctx)
+
+    def _record_pre(data: Value, /) -> tuple[str, ...]:
+        """Return the ``std::variant`` / ``std::nullptr_t`` headers plus
+        the ``struct`` declarations.
+        """
+        return tuple(variant_preamble(data)) + tuple(record_preamble(data))
+
+    return _record_pre
 
 
 @beartype
@@ -1140,7 +1317,7 @@ class Cpp(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
@@ -1448,11 +1625,17 @@ class Cpp(metaclass=LanguageCls):
         renders a fixed-length heterogeneous scalar array (a dict value
         or the document root, all elements scalar, spanning at least two
         scalar buckets) as ``std::make_tuple(...)`` typed
-        ``std::tuple<...>``.
+        ``std::tuple<...>``.  ``RECORD`` instead renders each
+        record-shaped dict (non-empty, string-keyed) as a generated
+        aggregate ``struct`` declared in the preamble plus a matching
+        ``Record0{.field = value, ...}`` designated-initializer literal,
+        so fields may mix scalars and containers that the homogeneous
+        ``std::map`` cannot.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
-        TUPLE = _CPP_TUPLE_BEHAVIOR
+        ERROR = enum.auto()
+        TUPLE = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -1594,6 +1777,7 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the ``-std=`` flag passed to clang++ in
     # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.CPP20
@@ -1773,6 +1957,63 @@ class Cpp(metaclass=LanguageCls):
         return self.heterogeneous_strategy.name == "TUPLE"
 
     @cached_property
+    def _record_strategy_active(self) -> bool:
+        """Return whether the ``RECORD`` heterogeneous strategy is set."""
+        return self.heterogeneous_strategy.name == "RECORD"
+
+    def _cpp_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the C++ ``struct`` field type for a record field,
+        derived structurally from the raw value.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  Every other value is typed by the
+        same :func:`_compute_cpp_type` the collection openers in the
+        value formatter use, with the integer width narrowed to the
+        field's own value so the declared type matches the rendered
+        integer literal whether or not it carries a suffix (including
+        the ``unsigned long long`` an out-of-range integer's ``ULL``
+        overflow literal needs).  A set or non-record dict field is out
+        of scope for the base ``RECORD`` port (the cross-language
+        decision is tracked in #2317) and is not reached by any record
+        golden, so it falls through to the shared
+        :func:`_compute_cpp_type` map / initializer-list handling.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        if isinstance(value, int) and not isinstance(value, bool):
+            int_type = _cpp_int_field_type(
+                value=value,
+                int_resolver=self._type_ctx.int_resolver,
+            )
+        else:
+            int_type = "long long"
+        element_to_type = self._type_ctx.element_to_type(int_type=int_type)
+        return _compute_cpp_type(
+            item=value,
+            element_to_type=element_to_type,
+            type_ctx=self._type_ctx,
+            in_mapping_value=False,
+        )
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """C++ syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_CPP_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_cpp_record_field_identifier,
+            field_type=self._cpp_record_field_type,
+            render_declaration=_cpp_render_record_declaration,
+            render_literal=_cpp_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``struct``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
+
+    @cached_property
     def _type_ctx(self) -> _CppTypeCtx:
         """Context bundle for C++ type resolution."""
         return _CppTypeCtx(
@@ -1794,8 +2035,30 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
-        return self.sequence_format_config.sequence_open
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under the ``RECORD`` strategy a list whose every element is a
+        record-shaped dict renders each element as a generated
+        ``RecordN`` literal; the variant opener would type such a list
+        ``std::vector<std::map<...>>`` (the homogeneous-map element type)
+        which the struct literals cannot initialize.  Such a list is
+        instead opened with a bare ``std::vector{`` so class-template
+        argument deduction infers ``std::vector<RecordN>`` from the
+        literals.  Every other list keeps the typed variant opener.
+        """
+        base_open = self.sequence_format_config.sequence_open
+        if not self._record_strategy_active:
+            return base_open
+
+        def _open(items: list[Value]) -> str:
+            """Return the CTAD ``std::vector{`` opener for an all-record
+            list, else the typed variant opener.
+            """
+            if _all_record_shaped(items):
+                return "std::vector{"
+            return base_open(items)
+
+        return _open
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -1865,16 +2128,32 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
         """Build data-dependent preamble lines (variant and ``nullptr``
-        headers, plus ``<tuple>`` under the ``TUPLE`` strategy).
+        headers, plus ``<tuple>`` under the ``TUPLE`` strategy or the
+        generated ``struct`` declarations under ``RECORD``).
         """
+        if self._record_strategy_active:
+            return _build_cpp_record_preamble(
+                type_ctx=self._type_ctx,
+                record_preamble=self._record_strategy.preamble,
+            )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)
         return _build_variant_preamble(type_ctx=self._type_ctx)
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the heterogeneous-behavior config.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``TUPLE`` and ``ERROR`` use their static
+        behaviors.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.behavior
+        if self._tuple_strategy_active:
+            return _CPP_TUPLE_BEHAVIOR
+        return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def format_variable_declaration(
