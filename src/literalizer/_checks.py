@@ -25,27 +25,31 @@ if TYPE_CHECKING:
 
 
 @beartype
-def scalar_type_bucket(*, value: Value) -> type | None:
+def scalar_type_bucket(*, value: Value) -> type | None:  # noqa: PLR0911
     """Return the type bucket for a scalar, or ``None`` for
     collections.
     """
-    if value is None:
-        return type(None)
     # Check bool before int (bool is a subclass of int), and
     # datetime before date (datetime is a subclass of date).
-    _buckets = (
-        bool,
-        int,
-        float,
-        str,
-        bytes,
-        datetime.date,
-        datetime.time,
-    )
-    for bucket in _buckets:
-        if isinstance(value, bucket):
-            return bucket
-    return None
+    match value:
+        case None:
+            return type(None)
+        case bool():
+            return bool
+        case int():
+            return int
+        case float():
+            return float
+        case str():
+            return str
+        case bytes():
+            return bytes
+        case datetime.date():
+            return datetime.date
+        case datetime.time():
+            return datetime.time
+        case _:
+            return None
 
 
 @beartype
@@ -77,28 +81,42 @@ def _all_scalars_heterogeneous(
 
 
 @beartype
-def _value_type_family(*, value: Value) -> str:
+def _value_type_family(  # noqa: C901, PLR0911, PLR0912
+    *,
+    value: Value,
+) -> str:
+    # pylint: disable=too-complex,too-many-branches
     """Return a broad type family label for a value."""
-    if value is None:
-        return "none"
-    # Check bool before int (bool is a subclass of int), and
-    # datetime before date (datetime is a subclass of date).
-    for check_type, family in (
-        (bool, "bool"),
-        (int, "int"),
-        (float, "float"),
-        (str, "str"),
-        (bytes, "bytes"),
-        (datetime.datetime, "datetime"),
-        (datetime.date, "date"),
-        (datetime.time, "time"),
-        (list, "list"),
-        (OrderedMap, "dict"),
-        (dict, "dict"),
-    ):
-        if isinstance(value, check_type):
-            return family
-    return "set"
+    # Check bool before int (bool is a subclass of int), datetime
+    # before date (datetime is a subclass of date), and OrderedMap
+    # before dict (OrderedMap is a subclass of dict).
+    match value:
+        case None:
+            return "none"
+        case bool():
+            return "bool"
+        case int():
+            return "int"
+        case float():
+            return "float"
+        case str():
+            return "str"
+        case bytes():
+            return "bytes"
+        case datetime.datetime():
+            return "datetime"
+        case datetime.date():
+            return "date"
+        case datetime.time():
+            return "time"
+        case list():
+            return "list"
+        case OrderedMap():
+            return "dict"
+        case dict():
+            return "dict"
+        case _:
+            return "set"
 
 
 @beartype

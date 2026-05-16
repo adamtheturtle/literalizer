@@ -31,6 +31,12 @@ Next
   inferred), and an integer field beyond the signed 64-bit range is
   typed ``u64`` to match its literal.  The default (``ERROR``)
   ``map[string]any`` output is unchanged.  See #2481.
+- :class:`~literalizer.StubReturn` is now part of the public API.  It
+  was already the parameter type of the public
+  :class:`~literalizer.Language` protocol's ``format_call_stub`` and
+  ``format_call_preamble_stub`` methods, so it is now re-exported from
+  the package root for consumers implementing that protocol.  See
+  #1947.
 - :class:`~literalizer.Cpp` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
