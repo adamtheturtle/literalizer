@@ -1224,6 +1224,10 @@ jobs:
       - name: Check Dart syntax and run fixtures
         run: |-
           tmpdir=$(mktemp -d)
+          # `sdk: ^3.0.0` matches `Dart.language_version` (`V3`) in
+          # `src/literalizer/languages/dart.py`; keep them in sync. Dart
+          # has no `--langversion`-style flag, so the pubspec SDK
+          # constraint is the only mechanism for pinning the version.
           printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
           driver="$tmpdir/main.dart"
           : > "$driver"
