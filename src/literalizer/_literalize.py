@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import Final, assert_never
+from typing import Final, Protocol, assert_never, runtime_checkable
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -69,6 +69,95 @@ from literalizer.exceptions import (
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
 )
+
+
+@runtime_checkable
+class _SupportsWidenedInteger(Protocol):
+    """A language that overrides integer formatting for widened
+    (mixed-magnitude) integer collections.
+    """
+
+    @property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Formatter for integers in a width-widened collection."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _SupportsCallVariableDeclaration(Protocol):
+    """A language with a call-specific variable-declaration formatter.
+
+    Languages whose literal-binding declaration template injects a
+    value-type-derived tag (Haskell's ``x :: Val``, Elm's ``x : Val``)
+    expose this so a call result is bound without that tag.
+    """
+
+    @property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _SupportsSequenceBindingDeclarations(Protocol):
+    """A language that structurally sequences multiple bindings.
+
+    Used where declaration-level reordering (Fortran) or structural
+    nesting (Nix chained ``let``) is required instead of plain
+    newline joining.
+    """
+
+    def sequence_binding_declarations(
+        self, declarations: tuple[str, ...]
+    ) -> str:
+        """Combine *declarations* into one bound code block."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _SupportsCallVariableWrapInFile(Protocol):
+    """A language with a call-binding-specific ``wrap_in_file``.
+
+    Used when a language's literal-binding file scaffold cannot host a
+    call-result binding (e.g. Elm's top-level ``name : Val`` form
+    versus a call-mode ``Check.main`` entry point).
+    """
+
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in a complete file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _SupportsCallBindingBodyPreamble(Protocol):
+    """A language needing extra body preamble for an inference-bound
+    call result (e.g. PureScript's ``import Prelude`` for the call
+    stub's ``Unit``).
+    """
+
+    def format_call_binding_body_preamble(self) -> tuple[str, ...]:
+        """Module-internal preamble lines for a bound call result."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _SupportsCallBindingFilePragmas(Protocol):
+    """A language emitting a file-level pragma alongside a
+    ``wrap_in_file`` scaffold whose top level binds a call result
+    (e.g. Haskell's ``-Wno-missing-signatures``).
+    """
+
+    def format_call_binding_file_pragmas(self) -> tuple[str, ...]:
+        """File-level pragma lines for a bound-call-result scaffold."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 _DISABLED_REF_KEY = ""
 
@@ -299,7 +388,9 @@ def _widened_int_formatter(
     """
     if infer_element_type(items=items) is not WideInt:
         return None
-    return getattr(spec, "format_integer_widened", None)
+    if isinstance(spec, _SupportsWidenedInteger):
+        return spec.format_integer_widened
+    return None
 
 
 _SCALAR_TYPES: Final = (
@@ -2115,11 +2206,11 @@ def _apply_variable_wrapper(
     match variable_form:
         case NewVariable(name=name, modifiers=modifiers):
             declaration_formatter = language.format_variable_declaration
-            if is_call_binding:
-                declaration_formatter = getattr(
-                    language,
-                    "format_call_variable_declaration",
-                    declaration_formatter,
+            if is_call_binding and isinstance(
+                language, _SupportsCallVariableDeclaration
+            ):
+                declaration_formatter = (
+                    language.format_call_variable_declaration
                 )
             wrapped = declaration_formatter(name, value, data, modifiers)
         case _:
@@ -2566,9 +2657,10 @@ def _compose_bound_refs(
         *(d.bare_code for d in decl_results),
         main_result.bare_code,
     )
-    sequence_hook = getattr(language, "sequence_binding_declarations", None)
-    if sequence_hook is not None:
-        sequenced_content = sequence_hook(binding_bare_codes)
+    if isinstance(language, _SupportsSequenceBindingDeclarations):
+        sequenced_content = language.sequence_binding_declarations(
+            declarations=binding_bare_codes
+        )
     else:
         sequenced_content = "\n".join(binding_bare_codes)
     wrapped = language.wrap_in_file(
@@ -3905,16 +3997,16 @@ def _wrap_call_in_file(
         variable_form.name if variable_form is not None else ""
     )
     wrap_in_file_hook = language.wrap_in_file
-    if variable_form is not None:
+    if variable_form is not None and isinstance(
+        language, _SupportsCallVariableWrapInFile
+    ):
         # A call-result binding cannot reuse a language's literal-binding
         # scaffold when that scaffold's shape depends on the bound value
         # (e.g. Elm's top-level ``name : Val`` form, forced externally by
         # the test driver, versus a call-mode ``Check.main`` entry point).
         # Languages that need a different scaffold opt in here; the rest
         # fall back to ``wrap_in_file`` unchanged.
-        wrap_in_file_hook = getattr(
-            language, "wrap_call_variable_in_file", wrap_in_file_hook
-        )
+        wrap_in_file_hook = language.wrap_call_variable_in_file
     # An inference-bound call result (``my_data = make_widget (...)``)
     # may rely on module-internal preamble lines that the literal
     # binding never needs -- e.g. PureScript's call stub returns
@@ -3922,24 +4014,22 @@ def _wrap_call_in_file(
     # though the literal binding for the same data does not.  Languages
     # that do not define the hook leave ``body_preamble`` unchanged.
     call_binding_body_preamble: tuple[str, ...] = ()
-    if variable_form is not None:
-        body_preamble_hook = getattr(
-            language, "format_call_binding_body_preamble", None
+    if variable_form is not None and isinstance(
+        language, _SupportsCallBindingBodyPreamble
+    ):
+        call_binding_body_preamble = (
+            language.format_call_binding_body_preamble()
         )
-        if body_preamble_hook is not None:
-            call_binding_body_preamble = body_preamble_hook()
     wrapped = wrap_in_file_hook(
         content=result,
         variable_name=wrap_variable_name,
         body_preamble=call_binding_body_preamble + body_stubs + computed_body,
     )
     call_binding_pragmas: tuple[str, ...] = ()
-    if variable_form is not None:
-        pragma_hook = getattr(
-            language, "format_call_binding_file_pragmas", None
-        )
-        if pragma_hook is not None:
-            call_binding_pragmas = pragma_hook()
+    if variable_form is not None and isinstance(
+        language, _SupportsCallBindingFilePragmas
+    ):
+        call_binding_pragmas = language.format_call_binding_file_pragmas()
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
     full_preamble = preamble + call_binding_pragmas + preamble_stubs
