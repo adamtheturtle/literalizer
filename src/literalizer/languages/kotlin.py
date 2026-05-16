@@ -1243,10 +1243,12 @@ class Kotlin(metaclass=LanguageCls):
         resolver.
 
         A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field is outside the ``RECORD`` strategy's MVP --
-        the same shapes Rust's ``_rust_record_field_type`` is imprecise
-        for (#2234) -- so it folds into Kotlin's ``Any?`` top type,
-        which the rendered literal still assigns into.
+        as a record field is outside the ``RECORD`` strategy's MVP
+        (#2317) -- so it folds into Kotlin's ``Any?`` top type, which
+        the rendered literal still assigns into.  (Rust instead emits
+        the precise ``HashMap`` or ``HashSet`` container type for the
+        same shapes; the per-language behavior is intentionally
+        different.)
         """
         if request.record_name is not None:
             return request.record_name

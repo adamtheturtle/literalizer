@@ -34,6 +34,15 @@ Next
   collection openers and scalar mapping (matching the Go/Java/Scala
   ports), and the ``formatted`` string is dropped from the renderer
   contract.  No generated output changes.  See #2305.
+- :class:`~literalizer.Rust` no longer emits output that fails to
+  compile for a set or a non-record dict (an empty or non-string-keyed
+  dict) as a record field under the ``RECORD``
+  ``heterogeneous_strategy``.  The field is now declared as the
+  configured ``HashMap``/``BTreeMap`` / ``HashSet``/``BTreeSet``
+  container with inner types inferred the same way list-field elements
+  are, so the declared type always matches the rendered literal
+  (previously the field was typed ``String`` while the literal stayed a
+  map/set).  Other record output is unchanged.  See #2370.
 
 2026.05.15.2
 ------------

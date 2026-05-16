@@ -865,10 +865,12 @@ class Scala(metaclass=LanguageCls):
         (``Int``, or ``Long`` once it leaves 32-bit range past 2038).
 
         A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field is outside the ``RECORD`` strategy's MVP --
-        Rust's ``_rust_record_field_type`` is imprecise for the same
-        shapes (#2234) -- so it is declared as Scala's top type
-        ``Any``, which the rendered literal still assigns into.
+        as a record field is outside the ``RECORD`` strategy's MVP
+        (#2317) -- so it is declared as Scala's top type ``Any``,
+        which the rendered literal still assigns into.  (Rust instead
+        emits the precise ``HashMap`` or ``HashSet`` container type for
+        the same shapes; the per-language behavior is intentionally
+        different.)
         """
         if request.record_name is not None:
             return request.record_name

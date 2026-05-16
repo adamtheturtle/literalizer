@@ -528,6 +528,12 @@ class _StrategyParams:
 
     Bundling these into one object keeps the builder signatures stable
     as new RECORD-only knobs (e.g. shape-unification) are added.
+
+    ``dict_format_type_annotation`` / ``set_format_type_annotation`` and
+    the matching ``default_*`` types are the same map/set container
+    syntax used by the declaration path of the value formatter; the
+    RECORD preamble types a non-record dict / set field through them so
+    the declared field type matches the rendered literal exactly.
     """
 
     enum_name: str
@@ -536,6 +542,11 @@ class _StrategyParams:
     record_prefix: str
     record_shape_names: Mapping[frozenset[str], str]
     unify_optional_fields: bool
+    dict_format_type_annotation: Callable[[str, str], str]
+    set_format_type_annotation: Callable[[str], str]
+    default_dict_key_type: str
+    default_dict_value_type: str
+    default_set_element_type: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -642,73 +653,115 @@ def _build_tagged_enum_preamble(
     return _preamble
 
 
+@dataclasses.dataclass(frozen=True)
+class _RecordFieldTypeConfig:
+    """Immutable inputs threaded through :func:`_rust_record_field_type`.
+
+    Bundled so the recursive calls stay terse and the map/set container
+    syntax does not widen every call site.  ``dict_format_type_annotation``
+    / ``set_format_type_annotation`` and the ``default_*`` types come
+    from the active spec (via :class:`_StrategyParams`); the rest are
+    rebuilt per preamble pass.
+    """
+
+    date_type: str
+    datetime_type: str
+    record_names: "dict[RecordShape, str]"
+    shapes_by_id: "Mapping[int, RecordShape]"
+    tuple_list_ids: frozenset[int]
+    dict_format_type_annotation: Callable[[str, str], str]
+    set_format_type_annotation: Callable[[str], str]
+    default_dict_key_type: str
+    default_dict_value_type: str
+    default_set_element_type: str
+
+
 @beartype
 def _rust_record_field_type(  # noqa: PLR0911
     *,
     value: Value,
-    date_type: str,
-    datetime_type: str,
-    record_names: "dict[RecordShape, str]",
-    shapes_by_id: "Mapping[int, RecordShape]",
-    tuple_list_ids: frozenset[int],
+    config: _RecordFieldTypeConfig,
 ) -> str:
     """Return the Rust struct field type for *value*.
 
     Scalar fields reuse :func:`_heterogeneous_variant_for_scalar`'s
-    ``inner_type``.  A list field whose ``id`` is in *tuple_list_ids*
-    is a tuple-eligible heterogeneous scalar array and is typed as a
-    fixed-size tuple ``(T0, T1, ...)`` with one type per element
-    (composing the ``TUPLE`` and ``RECORD`` strategies); any other list
-    field uses ``Vec<T>`` over the inferred inner type.  Nested record
-    fields use the corresponding generated struct name, looked up via
-    *shapes_by_id* so unification-rewritten shapes match.
+    ``inner_type``.  A list field whose ``id`` is in
+    ``config.tuple_list_ids`` is a tuple-eligible heterogeneous scalar
+    array and is typed as a fixed-size tuple ``(T0, T1, ...)`` with one
+    type per element (composing the ``TUPLE`` and ``RECORD``
+    strategies); any other list field uses ``Vec<T>`` over the inferred
+    inner type.  Nested record fields use the corresponding generated
+    struct name, looked up via ``config.shapes_by_id`` so
+    unification-rewritten shapes match.
+
+    A set or a non-record dict (an empty or non-string-keyed dict) as a
+    record field is outside the ``RECORD`` strategy's MVP (#2317): it is
+    typed as the configured set or map container the value formatter
+    renders (``HashSet`` or ``BTreeSet``; ``HashMap`` or ``BTreeMap``),
+    with inner types inferred the same way list elements are, so the
+    declared field type matches the literal (Go, Kotlin, Scala and Java
+    instead widen to their top type; see those languages' ``field_type``).
     """
     # An empty-list field has no element type to infer, so it falls
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
-    # this).  The ``case set()`` branch is reserved for set-valued
-    # fields, not exercised by current fixtures; it falls back to
-    # ``String`` so the preamble still type-checks structurally.
+    # this).
     match value:
         case []:
             return "Vec<String>"
-        case list() if id(value) in tuple_list_ids:
+        case list() if id(value) in config.tuple_list_ids:
             element_types = [
-                _rust_record_field_type(
-                    value=item,
-                    date_type=date_type,
-                    datetime_type=datetime_type,
-                    record_names=record_names,
-                    shapes_by_id=shapes_by_id,
-                    tuple_list_ids=tuple_list_ids,
-                )
+                _rust_record_field_type(value=item, config=config)
                 for item in value
             ]
             return f"({', '.join(element_types)})"
         case list():
             inner_types = [
-                _rust_record_field_type(
-                    value=item,
-                    date_type=date_type,
-                    datetime_type=datetime_type,
-                    record_names=record_names,
-                    shapes_by_id=shapes_by_id,
-                    tuple_list_ids=tuple_list_ids,
-                )
+                _rust_record_field_type(value=item, config=config)
                 for item in value
             ]
             return f"Vec<{_unify_rust_types(types=inner_types)}>"
         case dict():
-            shape = shapes_by_id.get(id(value))
-            if shape is not None and shape in record_names:
-                return record_names[shape]
-            return "String"  # pragma: no cover
-        case set():  # pragma: no cover
-            return "String"
+            shape = config.shapes_by_id.get(id(value))
+            if shape is not None and shape in config.record_names:
+                return config.record_names[shape]
+            key_type = (
+                _unify_rust_types(
+                    types=[
+                        _rust_record_field_type(value=key, config=config)
+                        for key in value
+                    ],
+                )
+                if value
+                else config.default_dict_key_type
+            )
+            value_type = (
+                _unify_rust_types(
+                    types=[
+                        _rust_record_field_type(value=item, config=config)
+                        for item in value.values()
+                    ],
+                )
+                if value
+                else config.default_dict_value_type
+            )
+            return config.dict_format_type_annotation(key_type, value_type)
+        case set():
+            element_type = (
+                _unify_rust_types(
+                    types=[
+                        _rust_record_field_type(value=item, config=config)
+                        for item in value
+                    ],
+                )
+                if value
+                else config.default_set_element_type
+            )
+            return config.set_format_type_annotation(element_type)
         case _:
             signature = _heterogeneous_variant_for_scalar(
                 value=value,
-                date_type=date_type,
-                datetime_type=datetime_type,
+                date_type=config.date_type,
+                datetime_type=config.datetime_type,
             )
             if signature.inner_type is None:
                 return "Option<()>"
@@ -959,6 +1012,18 @@ def _record_preamble_impl(
                 prefix_index += 1
             else:
                 record_names[shape] = custom
+        field_type_config = _RecordFieldTypeConfig(
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
+            record_names=record_names,
+            shapes_by_id=shapes_by_id,
+            tuple_list_ids=tuple_list_ids,
+            dict_format_type_annotation=params.dict_format_type_annotation,
+            set_format_type_annotation=params.set_format_type_annotation,
+            default_dict_key_type=params.default_dict_key_type,
+            default_dict_value_type=params.default_dict_value_type,
+            default_set_element_type=params.default_set_element_type,
+        )
         emit_order: list[RecordShape] = []
         emit_seen: set[RecordShape] = set()
         _accumulate_emit_order(
@@ -974,11 +1039,7 @@ def _record_preamble_impl(
                 example = field_values[shape].get(key)
                 field_type = _rust_record_field_type(
                     value=example,
-                    date_type=params.date_type,
-                    datetime_type=params.datetime_type,
-                    record_names=record_names,
-                    shapes_by_id=shapes_by_id,
-                    tuple_list_ids=tuple_list_ids,
+                    config=field_type_config,
                 )
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
@@ -1082,9 +1143,11 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
                     seen=seen,
                     field_values=field_values,
                 )
-        case dict():  # pragma: no cover
+        case dict():
             # Non-record dicts (empty or non-string-keyed) sitting next
-            # to record dicts are a #2234 / out-of-MVP shape.
+            # to record dicts are an out-of-MVP shape (#2317); the walk
+            # still descends into their values so a record dict nested
+            # inside one is found.
             for value in data.values():
                 _gather_record_field_values(
                     data=value,
@@ -1972,6 +2035,15 @@ class Rust(metaclass=LanguageCls):
             record_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
             unify_optional_fields=self.record_unify_optional_fields,
+            dict_format_type_annotation=(
+                self.dict_format.format_type_annotation
+            ),
+            set_format_type_annotation=(
+                self.set_format.format_type_annotation
+            ),
+            default_dict_key_type=self.default_dict_key_type,
+            default_dict_value_type=self.default_dict_value_type,
+            default_set_element_type=self.default_set_element_type,
         )
 
     @cached_property

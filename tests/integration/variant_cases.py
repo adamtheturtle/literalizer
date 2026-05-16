@@ -939,6 +939,38 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_container_fields_variants() -> Iterable[Variant]:
+    """Build the Rust ``record_container_fields`` variant.
+
+    Exercises the ``RECORD`` strategy with record fields whose values
+    are a set or a non-record dict (empty, non-empty non-string-keyed)
+    -- an out-of-MVP shape (#2317) Rust types as the precise ``HashMap``
+    or ``HashSet`` container.  Wired Rust-only: Go, Kotlin and Scala
+    fold these into their top type and Java raises for the
+    integer-keyed sub-dict, so a cross-language golden would be blocked
+    on the #2317 decision; the Rust behavior is settled and self
+    contained.
+    """
+    default_spec = make_spec(lang_cls=Rust)
+    record_strategy = next(
+        strategy
+        for strategy in default_spec.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    spec = make_spec(
+        lang_cls=Rust,
+        heterogeneous_strategy=record_strategy,
+    )
+    return [
+        Variant(
+            name="Rust_record_container_fields",
+            spec=spec,
+            lang_cls=Rust,
+        )
+    ]
+
+
+@beartype
 def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
     """Build a ``RECORD`` + ``EPOCH`` variant for every language whose
     spec exposes both a ``RECORD`` heterogeneous strategy and an
@@ -1674,6 +1706,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "record_unify_optional_fields": (
         build_record_unify_optional_fields_variants
     ),
+    "record_container_fields": build_record_container_fields_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
@@ -1952,6 +1985,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "record_unify_optional_fields": (
         _ci(case_dir_name="record_optional_unify"),
     ),
+    "record_container_fields": (_ci(case_dir_name="record_container_fields"),),
     "record_epoch_i32_overflow": (
         _ci(case_dir_name="record_epoch_datetime_i32_overflow"),
     ),
