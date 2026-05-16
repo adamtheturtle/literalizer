@@ -1,0 +1,10 @@
+import java.util.Map;
+record Task(int id, String description, boolean is_done, int[] blocks) {}
+class Module {
+    public static void module() {
+var my_data = new Object[]{
+    new Task(100, "first task", false, new int[]{102, 103}),
+    new Task(101, "second task", true, new int[]{100})
+};
+    }
+}

@@ -5,7 +5,7 @@
 import pytest
 
 from literalizer.exceptions import InvalidRecordNameError
-from literalizer.languages import Go, Kotlin, Rust
+from literalizer.languages import Go, Java, Kotlin, Rust
 
 
 @pytest.mark.parametrize(
@@ -129,6 +129,56 @@ def test_kotlin_duplicate_shape_names_raises() -> None:
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Kotlin(
+            record_shape_names={
+                frozenset({"id", "name"}): "Task",
+                frozenset({"id", "title"}): "Task",
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="name",
+    argvalues=["task", "My-Task", "9Task"],
+)
+def test_java_invalid_shape_name_raises(name: str) -> None:
+    """Values in Java's ``record_shape_names`` must be PascalCase
+    identifiers.
+
+    Java has no PascalCase reserved keyword (every Java keyword is
+    lowercase), so the PascalCase check is the only name-shape gate.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Java(record_shape_names={frozenset({"id", "name"}): name})
+
+
+def test_java_shape_name_collides_with_module_name_raises() -> None:
+    """A mapped record name that matches ``module_name`` is rejected
+    because Java records are emitted as top-level types alongside the
+    ``class {module_name}`` wrapper, so the two declarations would
+    share an identifier.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Java(
+            module_name="Task",
+            record_shape_names={frozenset({"id", "name"}): "Task"},
+        )
+
+
+def test_java_shape_name_collides_with_auto_generated_raises() -> None:
+    """A mapped record name that matches the auto-generated
+    ``{prefix}{N}`` pattern is rejected because the user-named record
+    would clash with an index-named record at render time.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Java(record_shape_names={frozenset({"id", "name"}): "Record0"})
+
+
+def test_java_duplicate_shape_names_raises() -> None:
+    """Two distinct key-sets cannot map to the same Java record
+    name.
+    """
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Java(
             record_shape_names={
                 frozenset({"id", "name"}): "Task",
                 frozenset({"id", "title"}): "Task",

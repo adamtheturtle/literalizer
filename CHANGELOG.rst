@@ -19,6 +19,20 @@ Next
   and the default (``ERROR``) plain-``dict`` output is unchanged.  See
   #2419.
 
+- :class:`~literalizer.Java` gains the same ``record_shape_names``
+  constructor parameter (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go` and :class:`~literalizer.Kotlin`), a
+  ``Mapping[frozenset[str], str]`` from a record shape's key-set to a
+  custom ``record`` name.  A mapped shape is declared and rendered with
+  the given name instead of the auto-generated ``RecordN``; the
+  ``record_struct_name_prefix`` counter advances only for the shapes
+  with no custom name.  Names are validated as PascalCase Java
+  identifiers that do not collide with the auto ``{prefix}{N}`` pattern,
+  the wrapper class name (``module_name``), or each other, raising
+  :class:`~literalizer.exceptions.InvalidRecordNameError`.  Its
+  ``supports_record_shape_names`` language-class flag is now ``True``.
+  See #2333.
+
 2026.05.16
 ----------
 
