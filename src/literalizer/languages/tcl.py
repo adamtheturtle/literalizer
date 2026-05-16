@@ -480,6 +480,11 @@ class Tcl(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``tcl`` apt-package pin in the ``Install
+    # apt packages`` step of the ``lint-fast`` job in
+    # ``.github/workflows/lint.yml``; the pinned ``tcl`` metapackage
+    # (``8.6.14build1``) must be ``>=`` this ``V8_6`` (Tcl 8.6)
+    # default.
     language_version: VersionFormats = VersionFormats.V8_6
     indent: str = "    "
 

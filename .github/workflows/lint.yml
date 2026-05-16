@@ -82,6 +82,10 @@ jobs:
       # ``src/literalizer/languages/forth.py``; keep them in sync.
       # ``ANS`` is a fixed standard, so the version pin here is for
       # reproducibility rather than language selection.
+      # The ``tcl`` apt metapackage is pinned to ``8.6.14build1`` (the
+      # Ubuntu 24.04 build of Tcl 8.6.14), which is ``>=`` the ``V8_6``
+      # (Tcl 8.6) default of ``Tcl.language_version`` in
+      # ``src/literalizer/languages/tcl.py``; keep them in sync.
       # The ``guile-3.0`` apt package pins Guile to the 3.x series,
       # which implements ``R7RS``, matching ``Scheme.language_version``
       # (``R7RS``) in ``src/literalizer/languages/scheme.py``; keep them
@@ -92,7 +96,7 @@ jobs:
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: tcl gforth=0.7.3+dfsg-9build4.1 guile-3.0
+          packages: tcl=8.6.14build1 gforth=0.7.3+dfsg-9build4.1 guile-3.0
           version: 1.0
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
