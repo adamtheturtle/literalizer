@@ -37,6 +37,23 @@ Next
   ``format_call_preamble_stub`` methods, so it is now re-exported from
   the package root for consumers implementing that protocol.  See
   #1947.
+- :class:`~literalizer.Crystal` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Cpp` and :class:`~literalizer.Python`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  ``record`` struct declared in the per-fixture module body plus a
+  matching positional ``Record0.new(value, ...)`` literal, so a
+  record-shaped dict that mixes scalars with a container is
+  representable even though ``Hash`` requires a homogeneous value
+  type.  Field names are the dict keys verbatim, an integer field is
+  sized to match its rendered literal (``Int32`` / ``Int64`` / the
+  ``_i128``-suffixed ``Int128``), and the struct-name prefix is
+  configurable via the new ``record_struct_name_prefix`` constructor
+  parameter; its ``supports_record_struct_name_prefix``
+  language-class flag is now ``True``.  The default (``ERROR``)
+  strategy still raises for such a dict.  See #2420.
 - :class:`~literalizer.Cpp` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
