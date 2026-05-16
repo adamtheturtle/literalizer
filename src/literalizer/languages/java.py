@@ -1432,10 +1432,11 @@ class Java(metaclass=LanguageCls):
         encoded element type (e.g. ``List.of(``) reaches this branch.
 
         A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field is outside the ``RECORD`` strategy's MVP --
-        the same shapes Rust's ``_rust_record_field_type`` is imprecise
-        for (#2317) -- so it folds into the ``Object`` top type, which
-        the rendered literal still assigns into.
+        as a record field has no precise component type under the
+        ``RECORD`` strategy.  Per the cross-language decision in #2317,
+        Rust rejects such a field while Java folds it into the
+        ``Object`` top type (documented best effort), which the
+        rendered literal still assigns into.
         """
         if request.record_name is not None:
             return request.record_name
