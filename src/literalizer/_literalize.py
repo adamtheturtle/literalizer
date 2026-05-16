@@ -2097,8 +2097,9 @@ def _apply_variable_wrapper(
     When *is_call_binding* is ``True`` the right-hand side is a call
     expression, not a literal value.  Languages whose literal-binding
     templates inject a value-type-derived tag (Haskell's ``x :: Val``
-    annotation, F#'s ``x: Val = FInt ...``, Elm's ``x : Val``, etc.)
-    can opt in to call-specific formatters via
+    annotation, F#'s ``x: Val = FInt ...``, the OCaml
+    ``let x : val_t = OInt ...`` binding, Elm's ``x : Val``, etc.) can
+    opt in to call-specific formatters via
     ``format_call_variable_declaration`` (for :class:`NewVariable`) and
     ``format_call_variable_assignment`` (for :class:`ExistingVariable`);
     languages that do not define them fall back to their literal-binding

@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
@@ -281,7 +282,7 @@ class OCaml(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -970,6 +971,39 @@ class OCaml(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return self._ocaml_declaration
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration annotates the binding with the
+        custom type and wraps the value in a tag constructor derived
+        from its runtime type (``let x : val_t = OInt 42``); a call
+        expression has no such tag, so both the annotation and the tag
+        are omitted and OCaml infers the call's return type instead
+        (``let x = make_widget(42)``).
+        """
+        return self.declaration_style.value.formatter
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an existing-variable binding of a call
+        expression.
+
+        OCaml has no mutable reassignment, so an
+        :class:`~literalizer.ExistingVariable` binding is just another
+        ``let``.  Like :attr:`format_call_variable_declaration`, the
+        ``: val_t`` annotation and tag constructor are omitted so OCaml
+        infers the call's return type instead of the literal-binding
+        formatter producing ``let x : val_t = OInt make_widget(42)``.
+        """
+        return assignment_formatter_from_declaration(
+            formatter=self.format_call_variable_declaration
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

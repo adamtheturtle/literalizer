@@ -40,6 +40,19 @@ Next
   annotation or ``datatype`` constructor wrapping used for literal
   bindings (the call's return type is not known to the renderer, so
   SML infers it).  See #2248.
+- :class:`~literalizer.OCaml` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`, emitting the inference-style
+  binding ``let my_data = make_widget(42)`` without the ``: val_t``
+  annotation or tag constructor used for literal bindings (the call's
+  return type is not known to the renderer, so OCaml infers it).
+  The call-binding bypass now also covers the assignment template via
+  the new ``format_call_variable_assignment`` hook, so OCaml's
+  non-bare ``let x : val_t = ...`` assignment no longer leaks a tag
+  constructor onto a call result.  Existing literal-binding output for
+  every language is unchanged.  See #2246.
+
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
   emit output that fails to compile for a post-2038
   :class:`~datetime.datetime`
