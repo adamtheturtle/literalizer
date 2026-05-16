@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -36,12 +37,22 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -59,6 +70,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -210,6 +222,90 @@ def _odin_call_body_stub(
     return (f"{root}: {root_type} = {init_expr}",)
 
 
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``, consistent with the other non-Rust
+# ports), so the shared renderer always gets an empty custom-name
+# mapping.
+_ODIN_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+
+@beartype
+def _odin_record_field_identifier(key: str, /) -> str:
+    """Return the Odin ``struct`` member name for a dict *key*.
+
+    Odin member identifiers are the dict keys verbatim (no case
+    conversion), matching the ``Record0{ id = 1, ... }`` literal form.
+    """
+    return key
+
+
+@beartype
+def _odin_int_field_type(value: int, /) -> str:
+    """Return the Odin ``struct`` field type for an integer record
+    field.
+
+    Odin's ``int`` is 64-bit on the targets the fixtures build for, so
+    every value within the signed 64-bit range is ``int``.  The only
+    out-of-range integer the record corpus carries is the unsigned
+    64-bit maximum (``2**64 - 1``); it is typed ``u64`` so the
+    decimal/hex/octal/binary literal -- every integer literal is a
+    bare constant in Odin with no inherent type -- fits the declared
+    field.  A value beyond unsigned 64-bit range is out of scope for
+    the base
+    ``RECORD`` port (Rust is imprecise here too) and is not reached by
+    any record golden.
+    """
+    if not I64_MIN <= value <= I64_MAX:
+        return "u64"
+    return "int"
+
+
+@beartype
+def _odin_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render an Odin ``Name :: struct { field: Type, ... }``.
+
+    Emitted at package scope by the data-dependent preamble (each
+    fixture is its own compilation unit, so file-scope ``struct``
+    declarations never collide).  The matching record *literal* stays
+    inside ``main`` via the normal value path, avoiding the Odin
+    compiler crash on nested struct literals at global scope that
+    :func:`_odin_call_preamble_stub` already works around.
+    """
+    members = ", ".join(
+        f"{field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"{name} :: struct {{ {members} }}"
+
+
+@beartype
+def _odin_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render an Odin ``Name{ field = value, ... }`` struct literal as
+    structured pieces for the shared compact/multiline layout code.
+
+    A trailing comma after the last field is valid in an Odin compound
+    literal, so the language-wide trailing-comma config applies
+    unchanged in the multiline form.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}{{",
+        entries=tuple(
+            f"{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad=" ",
+    )
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Odin(metaclass=LanguageCls):
@@ -247,7 +343,7 @@ class Odin(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
@@ -493,11 +589,18 @@ class Odin(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        ``ERROR`` raises on a heterogeneous scalar collection.
+        ``RECORD`` instead renders each record-shaped dict (non-empty,
+        string-keyed) as a generated package-scope ``struct`` plus a
+        matching ``Record0{ field = value, ... }`` literal, so a dict
+        may mix scalars and containers that the homogeneous
+        ``map[string]V`` cannot.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -585,6 +688,7 @@ class Odin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     language_version: VersionFormats = VersionFormats.DEV_2024
     indent: str = "\t"
 
@@ -631,15 +735,97 @@ class Odin(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
+    def _odin_record_field_type(  # noqa: PLR0911
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
+        """Return the Odin ``struct`` field type for a record field,
+        derived structurally from the raw value.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  Every container Odin renders is
+        ``any``-boxed -- a list is ``[dynamic]any{...}`` and an ordered
+        map or non-record dict is ``map[string]any{...}`` -- so the
+        declared field type is the matching ``any`` container; no
+        element type is inferred.  A scalar maps to its Odin type, with
+        an integer's width following its own value (so a wide-integer
+        literal still fits its field) and a datetime typed ``int`` only
+        when the active datetime format renders it as an epoch number.
+        A set or non-record dict field is out of scope for the base
+        ``RECORD`` port (the cross-language decision is tracked in
+        #2317); a non-record dict still renders as a plain
+        ``map[string]any`` so the catch-all type matches its literal.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        value = request.value
+        match value:
+            case None:
+                return "any"
+            case bool():
+                return "bool"
+            case int():
+                return _odin_int_field_type(value)
+            case float():
+                return "f64"
+            case str() | bytes():
+                return "string"
+            case datetime.datetime() if (
+                self.datetime_format.value.type_produced is int
+            ):
+                return _odin_int_field_type(
+                    datetime_epoch_seconds(value=value),
+                )
+            case datetime.date() | datetime.time():
+                return "string"
+            case list():
+                return "[dynamic]any"
+            case _:
+                return "map[string]any"
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Odin syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_ODIN_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_odin_record_field_identifier,
+            field_type=self._odin_record_field_type,
+            render_declaration=_odin_render_record_declaration,
+            render_literal=_odin_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble.
+
+        ``RECORD`` resolves to the shared record behavior plus the
+        package-scope ``struct``-declaration preamble; ``ERROR`` keeps
+        the raising behavior and emits no data preamble.
+        """
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        For ``HeterogeneousStrategies.RECORD`` emits one ``struct``
+        declaration per record shape present in the data; otherwise
+        produces no preamble.
+        """
+        return self._record_strategy.preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
