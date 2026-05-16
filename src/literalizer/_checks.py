@@ -85,6 +85,7 @@ def _value_type_family(  # noqa: C901, PLR0911, PLR0912
     *,
     value: Value,
 ) -> str:
+    # pylint: disable=too-complex,too-many-branches
     """Return a broad type family label for a value."""
     # Check bool before int (bool is a subclass of int), datetime
     # before date (datetime is a subclass of date), and OrderedMap
