@@ -76,10 +76,16 @@ jobs:
           luaVersion: '5.4'
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+      # ``gforth`` is pinned to ``0.7.3+dfsg-9build4.1`` (the Ubuntu
+      # 24.04 build), which implements ANS Forth, matching
+      # ``Forth.language_version`` (``ANS``) in
+      # ``src/literalizer/languages/forth.py``; keep them in sync.
+      # ``ANS`` is a fixed standard, so the version pin here is for
+      # reproducibility rather than language selection.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: tcl gforth guile-3.0
+          packages: tcl gforth=0.7.3+dfsg-9build4.1 guile-3.0
           version: 1.0
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
@@ -102,6 +108,21 @@ jobs:
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+      # ``ubuntu-latest`` preinstalls a ``pwsh``, but that runner default
+      # drifts, so install an explicit release and put it first on
+      # ``PATH`` for the ``Lint PowerShell`` / ``Run PowerShell files``
+      # steps. The pinned PowerShell ``7.4.6`` (LTS) is ``>=`` the ``V7``
+      # default of ``PowerShell.language_version`` in
+      # ``src/literalizer/languages/powershell.py``; keep them in sync.
+      # PowerShell has no ``--langversion``-style flag, so the pinned
+      # release is the only mechanism for pinning the language version.
+      - name: Install PowerShell
+        run: |-
+          mkdir -p /tmp/powershell
+          curl -fsSL https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz \
+            | tar -xz -C /tmp/powershell
+          chmod +x /tmp/powershell/pwsh
+          echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -134,6 +155,16 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+
+      # ``php-version: '8.1'`` matches ``Php.language_version`` (``V8_1``)
+      # in ``src/literalizer/languages/php.py``; keep them in sync. PHP
+      # has no ``--langversion``-style flag, so the pinned interpreter is
+      # the only mechanism for pinning the language version. Without this
+      # step `php` is whatever `ubuntu-latest` ships and drifts.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
 
       - name: Lint Bash
         run: |-
@@ -946,9 +977,14 @@ jobs:
       - uses: haskell-actions/setup@v2
         with:
           ghc-version: latest
+      # ``purescript: 0.15.15`` is ``>=`` the ``V0_15`` (PureScript
+      # 0.15.x) default of ``PureScript.language_version`` in
+      # ``src/literalizer/languages/purescript.py``; keep them in sync.
+      # Without an explicit pin ``setup-purescript`` installs whatever
+      # ``purescript: latest`` resolves to and drifts.
       - uses: purescript-contrib/setup-purescript@main
         with:
-          purescript: latest
+          purescript: 0.15.15
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1213,8 +1249,16 @@ jobs:
 
   lint-commonlisp:
     runs-on: ubuntu-latest
+    # The ``LISP`` environment variable pins the SBCL build that
+    # 40ants/setup-lisp installs to ``sbcl-bin/2.6.4`` (without the
+    # version, ``sbcl-bin`` drifts to whatever is latest). SBCL
+    # implements the fixed ``ANSI`` standard that
+    # ``CommonLisp.language_version`` defaults to in
+    # ``src/literalizer/languages/common_lisp.py``; the pin keeps the
+    # installed SBCL build stable across CI runs rather than selecting
+    # a language standard. Keep them in sync.
     env:
-      LISP: sbcl-bin
+      LISP: sbcl-bin/2.6.4
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1560,6 +1604,16 @@ jobs:
     # case new warnings have been added. Shared across both the syntax
     # check and the run step via a job-level env var.
     env:
+      # Pin the Nim toolchain so the installed compiler does not drift.
+      # ``2.2.10`` is ``>=`` the ``Nim.language_version`` (``V2``, i.e.
+      # Nim 2.x) default in ``src/literalizer/languages/nim.py``; keep
+      # them in sync. The ``NIM_WARNING_FLAGS`` catalogue below is
+      # Nim-version-sensitive (it must list exactly the warnings the
+      # pinned compiler's ``nim check --warnings:list`` reports, e.g.
+      # ``ImplicitRangeConversion`` is absent in older 2.2.x patch
+      # releases such as 2.2.4), so regenerate that list when bumping
+      # this pin.
+      NIM_VERSION: 2.2.10
       NIM_WARNING_FLAGS: >-
         --warningAsError:AboveMaxSizeSet:on
         --warningAsError:AmbiguousLink:on
@@ -1639,6 +1693,8 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install Nim
         uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ env.NIM_VERSION }}
       # Nim derives the module name from the source filename and
       # rejects ``@`` as a non-identifier character, so copy each
       # fixture to a sanitized name before invoking ``nim c -r``.
@@ -1702,6 +1758,13 @@ jobs:
 
   lint-raku:
     runs-on: ubuntu-latest
+    # The pinned Rakudo ``2026.04`` release implements Raku language
+    # version 6.d, the ``V6D`` default of ``Raku.language_version`` in
+    # ``src/literalizer/languages/raku.py``; keep them in sync. Rakudo
+    # has no ``--langversion``-style flag, so the pinned compiler
+    # release is the only mechanism for pinning the language version.
+    env:
+      RAKU_VERSION: '2026.04'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1711,7 +1774,9 @@ jobs:
         run: find tests/integration/cases -name '*.raku' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Raku
-        run: sudo apt-get update && sudo apt-get install --yes raku
+        uses: Raku/setup-raku@v1
+        with:
+          raku-version: ${{ env.RAKU_VERSION }}
       - name: Check Raku syntax
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
       - name: Run Raku files
@@ -1816,7 +1881,14 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
 
   lint-objectivec:
-    runs-on: macos-latest
+    # ``macos-15`` pins the runner image (the current ``macos-latest``
+    # alias) so the Apple ``clang`` it ships stays fixed. That clang
+    # supports the Objective-C 2.0 (``V2``) language generation that
+    # ``ObjectiveC.language_version`` in
+    # ``src/literalizer/languages/objective_c.py`` defaults to; keep them
+    # in sync. ``V2`` is a fixed language generation, so the pin is for
+    # build reproducibility, not to track a moving standard.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1852,7 +1924,12 @@ jobs:
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
 
   lint-objectivec-tidy:
-    runs-on: macos-latest
+    # ``macos-15`` pins the runner image to match ``lint-objectivec`` so
+    # the Apple ``clang`` headers that Homebrew ``clang-tidy`` parses stay
+    # fixed against the Objective-C 2.0 (``V2``)
+    # ``ObjectiveC.language_version`` default in
+    # ``src/literalizer/languages/objective_c.py``; keep them in sync.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:

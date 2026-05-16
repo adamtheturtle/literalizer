@@ -542,6 +542,10 @@ class Forth(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # The `Install apt packages` step in `.github/workflows/lint.yml`
+    # pins a `gforth` build implementing ANS Forth, matching this
+    # default (`ANS`). The pin is for reproducible builds, not
+    # language selection. Keep the two in sync.
     language_version: VersionFormats = VersionFormats.ANS
     indent: str = "    "
 

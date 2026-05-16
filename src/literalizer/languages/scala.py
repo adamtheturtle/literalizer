@@ -3,7 +3,8 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -108,7 +109,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    InvalidRecordNameError,
+    NullInCollectionError,
+)
 
 
 @beartype
@@ -277,6 +281,8 @@ _SCALA_UNTYPED_OPENERS: dict[str, str] = {
 _SCALA_INT32_MIN = -(2**31)
 _SCALA_INT32_MAX = 2**31 - 1
 
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+
 
 @beartype
 def _scala_record_field_identifier(key: str, /) -> str:
@@ -361,7 +367,7 @@ class Scala(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     supports_record_struct_name_prefix = True
-    supports_record_shape_names = False
+    supports_record_shape_names = True
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -779,6 +785,10 @@ class Scala(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     record_struct_name_prefix: str = "Record"
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     # Keep in sync with the `-S` flag passed to `scala-cli run` in
     # `.github/workflows/lint.yml` (which only accepts the Scala major
     # version, so `V3` maps to `-S 3`).
@@ -798,6 +808,51 @@ class Scala(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    def __post_init__(self) -> None:
+        """Validate ``record_shape_names`` after construction."""
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate ``record_shape_names`` for PascalCase identifier
+        shape, collisions with the auto-generated ``{prefix}{N}``
+        struct names, and duplicate target names.
+
+        Ported from
+        :meth:`literalizer.languages.Rust._validate_record_naming`.
+        Scala has no ``heterogeneous_value_enum_name`` so that
+        collision check does not apply, and Rust's reserved-keyword
+        check is unnecessary here: every Scala keyword is lowercase,
+        so the PascalCase requirement already rejects every one of
+        them.
+        """
+        prefix = self.record_struct_name_prefix
+        auto_name_pattern = re.compile(
+            pattern=rf"^{re.escape(pattern=prefix)}\d+$",
+        )
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase Scala "
+                    f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated {prefix!r}-prefixed struct names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    f"record_shape_names maps multiple key-sets to "
+                    f"{name!r}; struct names must be unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -927,11 +982,7 @@ class Scala(metaclass=LanguageCls):
         """Scala syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
-            # Scala does not yet expose a ``record_shape_names``
-            # constructor field (ported with its own RECORD work); an
-            # empty mapping keeps every shape on the auto
-            # ``{prefix}{N}`` names.
-            record_shape_names=MappingProxyType(mapping={}),
+            record_shape_names=self.record_shape_names,
             field_identifier=_scala_record_field_identifier,
             field_type=self._scala_record_field_type,
             render_declaration=_scala_render_declaration,

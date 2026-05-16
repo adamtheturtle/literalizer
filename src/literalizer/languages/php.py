@@ -538,6 +538,11 @@ class Php(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``php-version`` pin passed to
+    # ``shivammathur/setup-php`` in the ``Set up PHP`` step of
+    # ``.github/workflows/lint.yml``. PHP has no ``--langversion``-style
+    # flag, so the pinned interpreter is the only mechanism for pinning
+    # the language version; ``V8_1`` maps to ``8.1``.
     language_version: VersionFormats = VersionFormats.V8_1
     indent: str = "    "
 
