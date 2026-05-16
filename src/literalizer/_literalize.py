@@ -3774,6 +3774,39 @@ def _validate_wrap_in_file_supports_standalone_comments(
 
 
 @beartype
+def _validate_comment_source_supported(
+    *,
+    language: Language,
+    comment_literals: list[str] | None,
+) -> None:
+    """Raise when ``comment_source`` would produce invalid code.
+
+    A trailing comment is only safe when every generated call is a
+    self-contained line: languages that assemble the call sequence into
+    a single clause/list/expression append separators, terminators or
+    closers *after* the per-call text (Erlang's clause ``.``, a Jsonnet
+    list ``,``, Roc's ``dbg ( ... )``), which a line comment would then
+    swallow.  :attr:`~Language.supports_standalone_comments_in_wrapped_calls`
+    already marks exactly the languages that can carry a trailing
+    comment through their call-sequence form, so reuse it rather than
+    emit code that fails to compile.  All-empty entries emit no comment
+    and are always allowed.
+    """
+    if (
+        comment_literals is not None
+        and any(comment_literals)
+        and not language.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "comment_source trailing comments cannot be preserved "
+                "in this language's call-sequence form"
+            ),
+        )
+
+
+@beartype
 def _validate_parameter_count(
     *,
     language: Language,
@@ -4232,6 +4265,16 @@ def literalize_call(
             :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
             is raised; an entry containing a newline raises
             :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+            A trailing comment is only safe where each generated call
+            is a self-contained line; languages that assemble the call
+            sequence into a single clause/list/expression (so a
+            separator, terminator or closer follows the call on the
+            same line, which a line comment would swallow) reject a
+            non-empty *comment_source* with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+            The supported set is exactly the languages whose
+            :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
+            is ``True``.
         per_element: If ``True`` (default), each top-level list element
             becomes a separate call.  If ``False``, the whole
             literalized value is passed as a single argument.
@@ -4389,6 +4432,10 @@ def literalize_call(
     comment_literals = _resolve_comment_literals(
         comment_source=comment_source,
         call_count=len(arg_values),
+    )
+    _validate_comment_source_supported(
+        language=language,
+        comment_literals=comment_literals,
     )
     _validate_wrap_in_file_supports_standalone_comments(
         language=language,

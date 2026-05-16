@@ -465,6 +465,43 @@ def test_literalize_call_comment_source_multiline_entry_raises() -> None:
         )
 
 
+def test_literalize_call_comment_source_unsupported_language_raises() -> None:
+    """A non-empty ``comment_source`` is rejected for a language whose
+    call-sequence form cannot carry a trailing comment.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"^Jsonnet cannot represent this call shape: comment_source "
+            r"trailing comments cannot be preserved in this language's "
+            r"call-sequence form$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Jsonnet(),
+            target_function="process",
+            parameter_names=["value"],
+            comment_source=["note", ""],
+        )
+
+
+def test_literalize_call_empty_comment_source_allowed_everywhere() -> None:
+    """All-empty ``comment_source`` emits no comment, so it is allowed
+    even for a language that cannot carry a trailing comment.
+    """
+    result = literalize_call(
+        source="[[1], [2]]",
+        input_format=InputFormat.JSON,
+        language=Jsonnet(),
+        target_function="process",
+        parameter_names=["value"],
+        comment_source=["", ""],
+    )
+    assert result.code == "process(value=1)\nprocess(value=2)"
+
+
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
     """Refs count as arguments; parameter-count mismatch still raises."""
     with pytest.raises(

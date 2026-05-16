@@ -18,7 +18,14 @@ Next
   :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
   and a multi-line entry raises
   :class:`~literalizer.exceptions.CommentSourceMultilineError`.
-  See #2369.
+  Languages that assemble the call sequence into a single
+  clause/list/expression (so a separator, terminator or closer would
+  follow the comment on the same line and be swallowed) reject a
+  non-empty ``comment_source`` with
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`; the
+  supported set is the languages whose
+  :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
+  is ``True``.  See #2369.
 - :class:`~literalizer.PureScript` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (PInt 42)`` without a ``name :: Type``

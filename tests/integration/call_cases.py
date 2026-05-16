@@ -169,7 +169,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
-        requires_standalone_wrapped_comments=False,
+        # comment_source emits trailing comments through the language's
+        # call-sequence form, the same constraint as wrapped standalone
+        # comments; languages without that support raise
+        # UnsupportedCallShapeError (see _validate_comment_source_supported).
+        requires_standalone_wrapped_comments=True,
         comment_source=["first edition", "", "cyberpunk"],
     ),
     CallCaseConfig(

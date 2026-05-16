@@ -425,3 +425,14 @@ newline raises
 with no line comment fall back to that language's block-comment form
 (``catalog.lookup("Dune", 1965)  (* first edition *)`` in OCaml), which
 is valid on a single line.
+
+A trailing comment is only safe where each generated call is a
+self-contained line.  Languages that assemble the call sequence into a
+single clause, list or expression -- so a separator, terminator or
+closer would follow the call on the same line and the line comment
+would swallow it (Erlang's clause-terminating ``.``, a Jsonnet list
+``,``, Roc's ``dbg ( ... )``) -- reject a non-empty ``comment_source``
+with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.  The
+supported set is exactly the languages whose
+:attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
+is ``True``.
