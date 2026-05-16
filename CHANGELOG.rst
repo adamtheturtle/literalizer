@@ -51,6 +51,17 @@ Next
   strategy, so the preamble fires off the tuple ids alone, even when
   the data has no record-shaped dicts.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2329.
+- :class:`~literalizer.Scala` now supports the ``TUPLE``
+  ``heterogeneous_strategy``, which composes ``RECORD``: a
+  fixed-length heterogeneous scalar array that is a record field,
+  another dict value, or the document root is rendered as a native
+  tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` (a tuple-valued
+  ``case class`` field is declared with the tuple type) instead of
+  raising or widening to ``List[Any]``.  Scala ships ``Tuple2``
+  through ``Tuple22``, so an array of any other length raises
+  :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
+  rather than degrading to a homogeneous list.  The default
+  (``ERROR``) output is unchanged.  See #2330.
 - :class:`~literalizer.TypeScript` now supports the ``TUPLE``
   ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
   that is a dict value or the document root is rendered as an
