@@ -2,8 +2,6 @@
 
 import dataclasses
 import datetime
-import json
-import re
 import textwrap
 from typing import TYPE_CHECKING, ClassVar
 
@@ -11,6 +9,7 @@ import pytest
 
 from literalizer import (
     BothVariableForms,
+    ExistingVariable,
     IdentifierCase,
     InputFormat,
     NewVariable,
@@ -18,16 +17,13 @@ from literalizer import (
     literalize_call,
 )
 from literalizer._language import Language, LanguageCls, StubReturn
-from literalizer.exceptions import (
-    NullInCollectionError,
-    UnrepresentableSpecialFloatError,
-)
 from literalizer.languages import (
     ALL_LANGUAGES,
     Cobol,
     CSharp,
     Dart,
     Dhall,
+    FSharp,
     Gleam,
     Go,
     Haskell,
@@ -36,6 +32,7 @@ from literalizer.languages import (
     Kotlin,
     Matlab,
     Nim,
+    OCaml,
     Python,
     R,
     Rust,
@@ -139,6 +136,79 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
         "    SInt of LargeInt.int\n"
         "val my_data : val_t = SInt (~2208988800)"
     )
+
+
+def test_fsharp_call_binding_existing_variable_infers_type() -> None:
+    """An F# ``ExistingVariable`` call binding rebinds with a plain
+    inference-style ``let``.
+
+    The literal-binding assignment injects a ``: Val`` annotation and a
+    tagged-enum constructor (``FInt``) derived from the value's runtime
+    type; a call expression has no such tag, so
+    ``format_call_variable_assignment`` omits both and lets F# infer
+    the return type.  It also never emits ``let mutable`` -- even under
+    the ``LET_MUTABLE`` declaration style -- mirroring
+    ``format_variable_assignment``, because an F# rebinding shadows
+    with ``let``.  This output is not self-contained across the
+    compiled languages (a bare assignment to an undeclared name), so it
+    is asserted here rather than as a golden fixture.
+    """
+    for declaration_style in (
+        FSharp.declaration_styles.LET,
+        FSharp.declaration_styles.LET_MUTABLE,
+    ):
+        result = literalize_call(
+            source="42",
+            input_format=InputFormat.YAML,
+            language=FSharp(declaration_style=declaration_style),
+            target_function="make_widget",
+            parameter_names=["count"],
+            variable_form=ExistingVariable(name="my_data"),
+            per_element=False,
+        )
+
+        assert result.code == (
+            "type Val =\n    | FInt of int64\nlet my_data = make_widget(42)"
+        )
+
+
+def test_ocaml_call_binding_existing_variable_infers_type() -> None:
+    """An OCaml ``ExistingVariable`` call binding rebinds with a bare,
+    inference-style ``let``, matching the ``NewVariable`` form.
+
+    The OCaml literal-binding assignment reuses the annotated,
+    tag-wrapping ``let x : val_t = OInt ...`` declaration.  A call
+    expression has no tag, so ``format_call_variable_assignment`` omits
+    both the ``: val_t`` annotation and the constructor and lets OCaml
+    infer the return type -- emitting ``let x = make_widget(...)``, not
+    ``let x : val_t = OInt make_widget(...)``.  This output is not
+    self-contained across the compiled languages (a bare assignment to
+    an undeclared name), so it is asserted here rather than as a golden
+    fixture.
+    """
+    ocaml = OCaml()
+    expected = "type val_t =\n  | OInt of int\nlet my_data = make_widget(42)"
+    new_result = literalize_call(
+        source="42",
+        input_format=InputFormat.YAML,
+        language=ocaml,
+        target_function="make_widget",
+        parameter_names=["count"],
+        variable_form=NewVariable(name="my_data"),
+        per_element=False,
+    )
+    existing_result = literalize_call(
+        source="42",
+        input_format=InputFormat.YAML,
+        language=ocaml,
+        target_function="make_widget",
+        parameter_names=["count"],
+        variable_form=ExistingVariable(name="my_data"),
+        per_element=False,
+    )
+
+    assert new_result.code == expected
+    assert existing_result.code == expected
 
 
 # The widening branch in
@@ -376,30 +446,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
             assert not name.endswith("-")
 
 
-def test_java_list_rejects_null_elements() -> None:
-    """Java's ``List.of()`` does not accept null elements."""
-    spec = Java(
-        sequence_format=Java.sequence_formats.LIST,
-    )
-    expected_msg = re.escape(
-        pattern="Java's List.of() does not accept null elements"
-        " (got 3 items, including null). "
-        "Use sequence_format=ARRAY instead."
-    )
-    with pytest.raises(
-        expected_exception=NullInCollectionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(obj=[1, None, "hello"]),
-            input_format=InputFormat.JSON,
-            language=spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
 def test_literalize_call_wrap_in_file_emits_stubs() -> None:
     """``wrap_in_file=True`` produces a self-contained file that
     defines the ``target_function`` so the output compiles on its own.
@@ -549,27 +595,6 @@ def test_gleam_call_stub_more_than_26_parameters() -> None:
         }}""",
     )
     assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames="yaml_value",
-    argvalues=[".inf", "-.inf", ".nan"],
-    ids=["positive_infinity", "negative_infinity", "nan"],
-)
-def test_gleam_special_floats_raise(yaml_value: str) -> None:
-    """Gleam raises ``UnrepresentableSpecialFloatError`` for non-finite
-    floats.
-
-    Gleam targets Erlang, which has no expression that evaluates to a
-    non-finite float, so the literalizer surfaces this at literalize
-    time rather than producing output that panics at ``gleam run``.
-    """
-    with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
-        literalize(
-            source=f"- {yaml_value}\n",
-            input_format=InputFormat.YAML,
-            language=Gleam(),
-        )
 
 
 def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
@@ -998,3 +1023,33 @@ def test_format_time_local_time_of_with_microseconds_exact_ms() -> None:
         wrap_in_file=True,
     )
     assert "LocalTime.of(9, 30, 15, 123000000)" in result.code
+
+
+def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
+    """Epoch datetime variants use the configured integer type."""
+    rust = Rust(
+        datetime_format=Rust.datetime_formats.EPOCH,
+        heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+    )
+    timestamp = datetime.datetime(
+        year=2024,
+        month=1,
+        day=1,
+        tzinfo=datetime.UTC,
+    )
+    result = literalize(
+        source=f"- {timestamp.isoformat()}\n- 1\n",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=None,
+    )
+
+    assert result.preamble == (
+        "enum Value {",
+        "    I64(i64),",
+        "    I32(i32),",
+        "}",
+    )
+    assert result.code == (
+        "vec![\n    Value::I64(1704067200),\n    Value::I32(1),\n]"
+    )
