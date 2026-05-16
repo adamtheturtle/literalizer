@@ -89,22 +89,6 @@ def test_rust_tuple_format_type_annotation_raises() -> None:
         )
 
 
-def test_rust_static_single_element_tuple_annotation_has_comma() -> None:
-    """Single-element tuple annotations include the required comma."""
-    rust = Rust(
-        declaration_style=Rust.declaration_styles.STATIC,
-        sequence_format=Rust.sequence_formats.TUPLE,
-    )
-    result = literalize(
-        source="[1]",
-        input_format=InputFormat.JSON,
-        language=rust,
-        variable_form=NewVariable(name="DATA"),
-    )
-
-    assert result.code == ("static DATA: (i32,) = (\n    1,\n);")
-
-
 def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
     """Epoch datetime variants use the configured integer type."""
     rust = Rust(

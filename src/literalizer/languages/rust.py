@@ -102,6 +102,7 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
+    UnrepresentableInputError,
 )
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
@@ -643,7 +644,7 @@ def _build_tagged_enum_preamble(
 
 
 @beartype
-def _rust_record_field_type(  # noqa: PLR0911
+def _rust_record_field_type(
     *,
     value: Value,
     date_type: str,
@@ -665,9 +666,12 @@ def _rust_record_field_type(  # noqa: PLR0911
     """
     # An empty-list field has no element type to infer, so it falls
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
-    # this).  The ``case set()`` branch is reserved for set-valued
-    # fields, not exercised by current fixtures; it falls back to
-    # ``String`` so the preamble still type-checks structurally.
+    # this).  A set-valued field, and a dict-valued field whose dict is
+    # not record-eligible (empty, non-string-keyed, or an ordered map),
+    # have no struct field type that matches the set or map literal
+    # rendered for the value, so the ``case set()`` and the non-record
+    # ``case dict()`` paths reject the input instead of emitting a
+    # struct that fails to compile.
     match value:
         case []:
             return "Vec<String>"
@@ -701,9 +705,18 @@ def _rust_record_field_type(  # noqa: PLR0911
             shape = shapes_by_id.get(id(value))
             if shape is not None and shape in record_names:
                 return record_names[shape]
-            return "String"  # pragma: no cover
-        case set():  # pragma: no cover
-            return "String"
+            msg = (
+                "Rust cannot represent a non-record dict (empty, "
+                "non-string-keyed, or an ordered map) as a field "
+                "under the RECORD heterogeneous strategy"
+            )
+            raise UnrepresentableInputError(msg)
+        case set():
+            msg = (
+                "Rust cannot represent a set-valued field under the "
+                "RECORD heterogeneous strategy"
+            )
+            raise UnrepresentableInputError(msg)
         case _:
             signature = _heterogeneous_variant_for_scalar(
                 value=value,
@@ -1082,9 +1095,13 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
                     seen=seen,
                     field_values=field_values,
                 )
-        case dict():  # pragma: no cover
-            # Non-record dicts (empty or non-string-keyed) sitting next
-            # to record dicts are a #2234 / out-of-MVP shape.
+        case dict():
+            # Non-record dicts (empty, non-string-keyed, or an ordered
+            # map) sitting next to record dicts are a #2234 /
+            # out-of-MVP shape.  Keep walking its values so a record
+            # dict nested deeper inside one is still found, even though
+            # :func:`_rust_record_field_type` later rejects such a dict
+            # when it is itself a record field.
             for value in data.values():
                 _gather_record_field_values(
                     data=value,
