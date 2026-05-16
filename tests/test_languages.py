@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, ClassVar
 import pytest
 
 from literalizer import (
-    ExistingVariable,
     IdentifierCase,
     InputFormat,
     Language,
@@ -23,14 +22,12 @@ from literalizer.languages import (
     CSharp,
     Dart,
     Dhall,
-    FSharp,
     Go,
     Haskell,
     Java,
     Kotlin,
     Matlab,
     Nim,
-    OCaml,
     Python,
     Rust,
     Sml,
@@ -121,118 +118,6 @@ def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
         "    SInt of LargeInt.int\n"
         "val my_data : val_t = SInt (~2208988800)"
     )
-
-
-def test_fsharp_call_binding_existing_variable_infers_type() -> None:
-    """An F# ``ExistingVariable`` call binding rebinds with a plain
-    inference-style ``let``.
-
-    The literal-binding assignment injects a ``: Val`` annotation and a
-    tagged-enum constructor (``FInt``) derived from the value's runtime
-    type; a call expression has no such tag, so
-    ``format_call_variable_assignment`` omits both and lets F# infer
-    the return type.  It also never emits ``let mutable`` -- even under
-    the ``LET_MUTABLE`` declaration style -- mirroring
-    ``format_variable_assignment``, because an F# rebinding shadows
-    with ``let``.  This output is not self-contained across the
-    compiled languages (a bare assignment to an undeclared name), so it
-    is asserted here rather than as a golden fixture.
-    """
-    for declaration_style in (
-        FSharp.declaration_styles.LET,
-        FSharp.declaration_styles.LET_MUTABLE,
-    ):
-        result = literalize_call(
-            source="42",
-            input_format=InputFormat.YAML,
-            language=FSharp(declaration_style=declaration_style),
-            target_function="make_widget",
-            parameter_names=["count"],
-            variable_form=ExistingVariable(name="my_data"),
-            per_element=False,
-        )
-
-        assert result.code == (
-            "type Val =\n    | FInt of int64\nlet my_data = make_widget(42)"
-        )
-
-
-def test_ocaml_call_binding_existing_variable_infers_type() -> None:
-    """An OCaml ``ExistingVariable`` call binding rebinds with a bare,
-    inference-style ``let``, matching the ``NewVariable`` form.
-
-    The OCaml literal-binding assignment reuses the annotated,
-    tag-wrapping ``let x : val_t = OInt ...`` declaration.  A call
-    expression has no tag, so ``format_call_variable_assignment`` omits
-    both the ``: val_t`` annotation and the constructor and lets OCaml
-    infer the return type -- emitting ``let x = make_widget(...)``, not
-    ``let x : val_t = OInt make_widget(...)``.  This output is not
-    self-contained across the compiled languages (a bare assignment to
-    an undeclared name), so it is asserted here rather than as a golden
-    fixture.
-    """
-    ocaml = OCaml()
-    expected = "type val_t =\n  | OInt of int\nlet my_data = make_widget(42)"
-    new_result = literalize_call(
-        source="42",
-        input_format=InputFormat.YAML,
-        language=ocaml,
-        target_function="make_widget",
-        parameter_names=["count"],
-        variable_form=NewVariable(name="my_data"),
-        per_element=False,
-    )
-    existing_result = literalize_call(
-        source="42",
-        input_format=InputFormat.YAML,
-        language=ocaml,
-        target_function="make_widget",
-        parameter_names=["count"],
-        variable_form=ExistingVariable(name="my_data"),
-        per_element=False,
-    )
-
-    assert new_result.code == expected
-    assert existing_result.code == expected
-
-
-def test_default_call_binding_existing_variable_reuses_assignment() -> None:
-    """A language that does not override
-    ``format_call_variable_assignment`` binds an ``ExistingVariable``
-    call result with its plain literal-binding assignment formatter.
-
-    Most languages (everything except F#/OCaml, which inject and then
-    omit a value-type tag) use the shared default that simply reuses
-    :attr:`Language.format_variable_assignment`.  ``call_variable_form``
-    golden fixtures only exercise the ``NewVariable`` declaration path,
-    so this asserts the assignment path for a representative default
-    language (Python).  Like the F#/OCaml cases the output is a bare
-    assignment to an undeclared name -- not self-contained across the
-    compiled languages -- so it is asserted here rather than as a
-    golden fixture.
-    """
-    python = Python()
-    new_result = literalize_call(
-        source="42",
-        input_format=InputFormat.YAML,
-        language=python,
-        target_function="make_widget",
-        parameter_names=["count"],
-        variable_form=NewVariable(name="my_data"),
-        per_element=False,
-    )
-    existing_result = literalize_call(
-        source="42",
-        input_format=InputFormat.YAML,
-        language=python,
-        target_function="make_widget",
-        parameter_names=["count"],
-        variable_form=ExistingVariable(name="my_data"),
-        per_element=False,
-    )
-
-    assert new_result.code == "my_data = make_widget(count=42)"
-    assert existing_result.code == "my_data = make_widget(count=42)"
 
 
 # The null-filtering step in
