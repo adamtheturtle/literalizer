@@ -1898,6 +1898,15 @@ jobs:
           curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/0.5.1/v_linux.zip
           unzip -q /tmp/v_linux.zip -d /tmp
           sudo ln -s /tmp/v/v /usr/local/bin/v
+          # The prebuilt binary lazily creates ``~/.vmodules`` on its
+          # first run.  The ``Check V syntax`` step fans out across
+          # ``nproc`` parallel ``v fmt`` processes, which otherwise race
+          # to create that folder and panic (``V panic: folder:
+          # ~/.vmodules/, error: File exists``).  Warm it up once,
+          # serially, with the same ``v fmt`` invocation so every
+          # first-run directory exists before the parallel step.
+          echo 'fn main() {}' > /tmp/v-warmup.v
+          v fmt /tmp/v-warmup.v > /dev/null 2>&1 || true
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
