@@ -11,6 +11,8 @@ statically-typed-map languages whose typed-map output would otherwise
 emit a key type that disagrees with the literal.
 """
 
+import re
+
 import pytest
 
 import literalizer
@@ -79,6 +81,24 @@ def test_typed_map_languages_reject_non_string_keys(
             input_format=literalizer.InputFormat.YAML,
             language=lang_cls(),
             variable_form=literalizer.NewVariable(name="my_data"),
+        )
+
+
+def test_rejection_names_target_language_and_key_type() -> None:
+    """The error identifies the target language and the offending key
+    type.
+    """
+    expected_msg = re.escape(
+        pattern="Json5 cannot represent dict key of type int",
+    )
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match=f"^{expected_msg}$",
+    ):
+        literalizer.literalize(
+            source=_INT_KEY_YAML,
+            input_format=literalizer.InputFormat.YAML,
+            language=Json5(),
         )
 
 
