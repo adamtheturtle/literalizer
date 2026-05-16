@@ -418,8 +418,9 @@ def _cpp_tuple_element_type(
     Tuple-eligible arrays are all-scalar (see
     :func:`~literalizer._formatters.tuple_strategy.is_tuple_eligible`),
     so *value* is always a scalar; each element's int width is narrowed
-    to its own value so the declared type matches the unsuffixed
-    ``std::make_tuple`` literal.
+    to its own value so the declared type matches the
+    ``std::make_tuple`` literal, whose integer arguments carry no width
+    suffix.
     """
     if isinstance(value, int) and not isinstance(value, bool):
         int_type = type_ctx.int_resolver([value])
@@ -720,7 +721,7 @@ def _build_tuple_preamble(
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``TUPLE``-strategy ``data_dependent_preamble``.
 
-    Composes the variant/``nullptr`` preamble and additionally emits
+    Composes the variant preamble and additionally emits
     ``#include <tuple>`` whenever the data carries any tuple-eligible
     heterogeneous scalar array.  The ``<tuple>`` line is emitted off
     :func:`collect_tuple_list_ids` alone, so it fires even when the
