@@ -71,21 +71,16 @@ class RecordFieldType:
     """The structured input to :attr:`RecordRenderer.field_type`.
 
     ``value`` is the raw field value (first-seen for its shape); a
-    ported language maps it to a declared type through its own
-    collection openers / scalar mapping rather than prefix-matching a
-    formatted literal.  ``record_name`` is the generated declaration
-    name when ``value`` is itself a nested record-shaped dict (resolved
-    here, the one piece a language cannot recover from the value
-    alone), and ``None`` otherwise.  ``formatted`` is the
-    already-formatted field literal, retained for languages whose
-    ``field_type`` hook has not yet been ported off the
-    formatted-string contract (Kotlin); ported languages (Go) ignore
-    it.
+    language maps it to a declared type through its own collection
+    openers / scalar mapping rather than prefix-matching a formatted
+    literal.  ``record_name`` is the generated declaration name when
+    ``value`` is itself a nested record-shaped dict (resolved here, the
+    one piece a language cannot recover from the value alone), and
+    ``None`` otherwise.
     """
 
     value: Value
     record_name: str | None
-    formatted: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -290,18 +285,14 @@ def build_record_strategy(
         )
         return shapes_by_id
 
-    def _field_type_request(
-        field_value: Value,
-        formatted: str,
-    ) -> RecordFieldType:
+    def _field_type_request(field_value: Value) -> RecordFieldType:
         """Build the structured field-type request for *field_value*.
 
         ``record_name`` is set only when *field_value* is itself a
         nested record-shaped dict (the one piece a language cannot
         recover from the raw value); every other value, including a
         list of record-shaped dicts, is typed by the language from the
-        value via its own collection openers.  *formatted* is carried
-        through for not-yet-ported languages.
+        value via its own collection openers.
         """
         nested_name = (
             name_by_shape.get(id_to_shape[id(field_value)])
@@ -311,7 +302,6 @@ def build_record_strategy(
         return RecordFieldType(
             value=field_value,
             record_name=nested_name,
-            formatted=formatted,
         )
 
     def _render_literal(
@@ -324,10 +314,7 @@ def build_record_strategy(
         shape = id_to_shape[id(value)]
         if shape not in request_by_shape:
             request_by_shape[shape] = {
-                key: _field_type_request(
-                    field_value=value[key],
-                    formatted=fields[key],
-                )
+                key: _field_type_request(field_value=value[key])
                 for key in shape.keys
             }
         literal_fields = [
