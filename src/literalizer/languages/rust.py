@@ -837,6 +837,9 @@ def _render_rust_tuple(
         entries=tuple(elements),
         closer=")",
         compact_pad="",
+        # ``(a,\n    b,\n)`` is valid Rust, so keep the language-wide
+        # trailing-comma policy (``True``) for the multiline form.
+        multiline_trailing_comma=True,
     )
 
 

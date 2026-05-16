@@ -4,6 +4,15 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Cpp` now supports the ``TUPLE``
+  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
+  that is a dict value or the document root is rendered as
+  ``std::make_tuple(...)`` typed ``std::tuple<T0, ...>`` (with
+  ``#include <tuple>`` emitted by the data-dependent preamble) instead
+  of ``std::vector<std::variant<...>>``.  C++ has no ``RECORD``
+  strategy, so the preamble fires off the tuple ids alone, even when
+  the data has no record-shaped dicts.  The default (``ERROR``)
+  ``std::variant`` output is unchanged.  See #2329.
 - :class:`~literalizer.FSharp` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
