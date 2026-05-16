@@ -916,7 +916,7 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
         # builder bypasses it): a language whose ``wrap_in_file``
         # introduces a named scope (e.g. Java's ``class {module_name}``,
         # which its CI lint host loads as ``Main``) needs the same
-        # ``"main"`` name the other goldens use.
+        # ``"main"`` name that :func:`make_spec` uses.
         if lang_cls.supports_module_name:
             spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
                 name="main",
