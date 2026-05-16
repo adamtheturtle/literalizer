@@ -1007,8 +1007,8 @@ def build_record_numeric_cross_variants() -> Iterable[Variant]:
     the type a formatted-string inspection would infer.
 
     Languages whose ``RECORD`` strategy still infers a field's type from
-    the formatted literal would emit non-compiling goldens for this
-    cross; that shared issue is tracked separately
+    the formatted literal would emit golden files that do not compile
+    for this cross; that shared issue is tracked separately
     (#2298 / #2299 / #2300) and each language joins the set once fixed.
     """
     axes: list[
