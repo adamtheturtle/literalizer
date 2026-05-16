@@ -61,6 +61,7 @@ _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
 
 
+@beartype
 def _int_needs_widening(items: list[Value]) -> bool:
     """Return ``True`` if any int in *items* is outside i32 range."""
     return any(
@@ -82,6 +83,7 @@ class _Collected:
 _INFER_FAILED = object()
 
 
+@beartype
 def _collect_element_types(
     items: list[Value],
 ) -> _Collected | object:
@@ -266,6 +268,7 @@ def unify_record_shapes(
     }
 
 
+@beartype
 def _ordered_unique_shapes(
     *,
     data: Value,
@@ -295,6 +298,7 @@ def _ordered_unique_shapes(
     return ordered
 
 
+@beartype
 def _key_order_from_shapes(
     *,
     raw_shapes: Sequence[RecordShape],
@@ -313,6 +317,7 @@ def _key_order_from_shapes(
     return order
 
 
+@beartype
 def _partition_shapes_by_shared_keys(
     *,
     raw_shapes: Sequence[RecordShape],
@@ -355,6 +360,7 @@ def _partition_shapes_by_shared_keys(
     return [groups[root] for root in sorted(groups)]
 
 
+@beartype
 def _build_unified_shape(
     *,
     group: Sequence[RecordShape],
@@ -382,6 +388,7 @@ def _build_unified_shape(
     return RecordShape(keys=ordered_keys, optional_keys=optional_keys)
 
 
+@beartype
 def _accumulate_record_shapes(
     *,
     data: Value,

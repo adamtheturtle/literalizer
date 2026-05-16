@@ -96,6 +96,7 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
             return formatted
 
 
+@beartype
 def _occam_stub_parameters(params: Sequence[str], /) -> str:
     """Return an Occam parameter list for a generated call stub."""
     if not params:
@@ -104,6 +105,7 @@ def _occam_stub_parameters(params: Sequence[str], /) -> str:
     return f"({formatted})"
 
 
+@beartype
 def _occam_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

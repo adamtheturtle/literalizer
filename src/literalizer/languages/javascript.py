@@ -92,6 +92,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@beartype
 def _js_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],

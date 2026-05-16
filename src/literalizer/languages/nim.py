@@ -307,6 +307,7 @@ class _HeterogeneousStrategyConfig:
     ]
 
 
+@beartype
 def _build_error_behavior(
     _variant_name: str,
     _date_type: str,
@@ -317,6 +318,7 @@ def _build_error_behavior(
     return NO_HETEROGENEOUS_BEHAVIOR
 
 
+@beartype
 def _build_error_preamble(
     _variant_name: str,
     _date_type: str,
@@ -328,6 +330,7 @@ def _build_error_preamble(
     return no_data_preamble
 
 
+@beartype
 def _needs_json_wrap_for_field(field_type: str | None) -> bool:
     """Return whether *field_type* requires ``%*`` to convert a
     formatted scalar into the variant payload.
@@ -339,6 +342,7 @@ def _needs_json_wrap_for_field(field_type: str | None) -> bool:
     return field_type == "JsonNode"
 
 
+@beartype
 def _build_object_variant_behavior(
     variant_name: str,
     date_type: str,
@@ -379,6 +383,7 @@ def _build_object_variant_behavior(
     )
 
 
+@beartype
 def _build_object_variant_preamble(
     variant_name: str,
     date_type: str,

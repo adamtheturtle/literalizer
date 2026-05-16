@@ -161,6 +161,7 @@ def _swift_args_contain_nil(*, args: Sequence[Value]) -> bool:
     return any(v is None for v in inner)
 
 
+@beartype
 def _swift_call_stub(
     parts: Sequence[str],
     params: Sequence[str],

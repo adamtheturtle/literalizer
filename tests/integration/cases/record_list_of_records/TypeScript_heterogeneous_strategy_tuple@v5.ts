@@ -1,0 +1,5 @@
+const my_data = {
+  "name": "box",
+  "items": [{"id": 1, "label": "first"}, {"id": 2, "label": "second"}],
+};
+export {};

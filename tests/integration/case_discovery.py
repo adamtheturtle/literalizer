@@ -46,9 +46,18 @@ from .language_specs import (
 # ``Pair``/``Triple``).  Only the ``heterogeneous_strategy`` axis is
 # meaningful for them, so they stay out of the all-languages base
 # discovery.
+#
+# ``record_list_of_records`` carries a record field whose value is a
+# list of record-shaped dicts, exercising the ``RECORD`` strategy's
+# ``element_record_name`` field typing (issue #2420; C++
+# ``std::vector<RecordN>``).  Only the ``heterogeneous_strategy`` axis
+# is meaningful for it -- under the default strategy it is just another
+# heterogeneous dict already covered elsewhere -- so it stays out of
+# the all-languages base discovery.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
+        "record_list_of_records",
         "tuple_pair_record_field",
         "tuple_pair_top_level",
         "tuple_triple_record_field",
