@@ -7,6 +7,7 @@ driven through :func:`literalizer.literalize_call`.  The runner
 """
 
 import dataclasses
+import datetime
 import enum
 import functools
 from collections.abc import Callable, Sequence
@@ -18,7 +19,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._language import StubReturn
-from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -33,6 +33,23 @@ from .language_specs import (
     sorted_languages,
     with_per_fixture_module_name,
 )
+
+# Spelled out locally to mirror ``literalizer._types.Value`` without
+# importing from a private module (see issue #1947); ``source_data``
+# flows in from the parsed YAML, so containers may be ruamel
+# comment-tracking subclasses of ``list``/``dict``.
+type _Scalar = (
+    str
+    | int
+    | float
+    | bool
+    | None
+    | datetime.date
+    | datetime.datetime
+    | datetime.time
+    | bytes
+)
+type _Value = _Scalar | list[_Value] | dict[_Scalar, _Value] | set[_Scalar]
 
 
 @beartype
@@ -1652,9 +1669,9 @@ def _run_call_with_declarations(
 @beartype
 def _arg_values_for_stub(
     *,
-    source_data: Value,
+    source_data: _Value,
     per_element: bool,
-) -> Sequence[Value]:
+) -> Sequence[_Value]:
     """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of
     arguments rows for per-element calls; a single-entry list
     wrapping the whole data otherwise.
@@ -1808,7 +1825,7 @@ def run_call_golden_case(
         *(d.types_present for d in decl_results),
         result.types_present,
     )
-    combined_source_data: list[Value] = [
+    combined_source_data: list[_Value] = [
         *(d.source_data for d in decl_results),
         result.source_data,
     ]
