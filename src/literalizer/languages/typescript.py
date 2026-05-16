@@ -47,6 +47,7 @@ from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_backslash_single,
 )
+from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -65,6 +66,7 @@ from literalizer._language import (
     ObjectCallStyle,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -82,6 +84,8 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
+    no_compute_call_slot_wrap_ids,
+    no_compute_wrap_ids,
     no_data_preamble,
     no_format_integer_widened,
     no_type_hint_preamble,
@@ -282,6 +286,66 @@ def _format_ts_typed_declaration(
         sequence_is_tuple=sequence_is_tuple,
     )
     return f"{keyword} {name}: {hint} = {value};"
+
+
+@beartype
+def _render_ts_tuple(
+    value: list[Value],
+    elements: Sequence[str],
+) -> RenderedTupleLiteral:
+    """Render a heterogeneous scalar array as an ``as const`` tuple.
+
+    ``collect_tuple_list_ids`` only marks arrays spanning at least two
+    scalar buckets, so the literal always has at least two elements;
+    *value* is unused because every element arrives already formatted.
+    The ``[`` opener and ``] as const`` closer are the same array
+    literal / ``as const`` syntax the whole-program ``SequenceFormats``
+    ``ARRAY`` opener and ``TUPLE`` closer use (kept in sync with
+    :class:`TypeScript.SequenceFormats`); ``as const`` makes TypeScript
+    infer the per-element ``readonly [T0, T1, ...]`` tuple type instead
+    of a widened ``(T0 | T1)[]`` array type.
+    """
+    del value
+    return RenderedTupleLiteral(
+        head="[",
+        entries=tuple(elements),
+        closer="] as const",
+        compact_pad="",
+        # ``[\n  a,\n  b,\n] as const`` is valid TypeScript, so keep the
+        # language-wide trailing-comma policy for the multiline form.
+        multiline_trailing_comma=True,
+    )
+
+
+@beartype
+def _ts_tuple_list_ids(data: Value, /) -> frozenset[int]:
+    """Adapt :func:`collect_tuple_list_ids` to the positional
+    ``compute_tuple_list_ids`` hook signature.
+    """
+    return collect_tuple_list_ids(data=data)
+
+
+_TS_TUPLE_BEHAVIOR = HeterogeneousBehavior(
+    skip_scalar_checks=False,
+    compute_wrap_ids=no_compute_wrap_ids,
+    wrap_scalar=None,
+    wrap_non_scalar=None,
+    compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+    render_tuple_literal=_render_ts_tuple,
+    compute_tuple_list_ids=_ts_tuple_list_ids,
+)
+"""``TUPLE`` strategy behavior: render a fixed-length heterogeneous
+scalar array (a dict value or the document root, all elements scalar,
+spanning at least two scalar buckets) as an ``[e0, e1, ...] as const``
+tuple literal.
+
+TypeScript already represents the carved-out scalar checks via union
+array / value types (``skip_scalar_checks`` is irrelevant -- the
+sequence/dict formats report ``supports_heterogeneity``), so this only
+adds the tuple render hook and the list-id collector; there is no
+``RECORD`` behavior to compose (TypeScript has none) and no
+data-dependent preamble (``as const`` needs no imports).
+"""
 
 
 @beartype
@@ -737,11 +801,19 @@ class TypeScript(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        TypeScript represents heterogeneous scalar collections with
+        union element / value types by default (``ERROR``); ``TUPLE``
+        additionally renders a fixed-length heterogeneous scalar array
+        (a dict value or the document root, all elements scalar,
+        spanning at least two scalar buckets) as an
+        ``[e0, e1, ...] as const`` tuple literal, which TypeScript
+        infers as a ``readonly [T0, T1, ...]`` tuple type.
         """
 
         ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        TUPLE = _TS_TUPLE_BEHAVIOR
 
     heterogeneous_strategies = HeterogeneousStrategies
 
