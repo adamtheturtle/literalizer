@@ -4,6 +4,21 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Python` gains an opt-in ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala` and :class:`~literalizer.Java`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  frozen ``@dataclasses.dataclass`` declared in the preamble (with an
+  ``import dataclasses``) plus a matching ``RecordN(field=value, ...)``
+  literal; field names are the dict keys verbatim and the class-name
+  prefix is configurable via the new ``record_struct_name_prefix``
+  constructor parameter.  Python's ``dict`` is already heterogeneous,
+  so every record-shaped dict is representable as a plain ``dict``;
+  this is purely an idiomatic-output choice, the strategy is opt-in,
+  and the default (``ERROR``) plain-``dict`` output is unchanged.  See
+  #2419.
+
 2026.05.16
 ----------
 
