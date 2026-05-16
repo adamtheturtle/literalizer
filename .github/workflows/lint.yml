@@ -108,6 +108,20 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # `.js` fixtures are executed by `node` below;
+      # `JavaScript.language_version` is `VersionFormats.ES2015` in
+      # `src/literalizer/languages/javascript.py`. Without an explicit
+      # `node-version` the runtime drifts with the `setup-node` action
+      # default. Node 22 is a current LTS and fully supports that ES2015
+      # default. This same pin is repeated on every Node lint job
+      # (`lint-npm-installed`, `lint-typescript-run`, `lint-elm`,
+      # `lint-elm-run`); keep all of them and that `language_version`
+      # declaration in sync.
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
       - name: Lint Bash
         run: |-
           find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
@@ -421,8 +435,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -469,8 +489,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -494,8 +520,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -524,8 +556,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
