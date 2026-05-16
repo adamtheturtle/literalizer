@@ -933,6 +933,15 @@ def _all_record_shaped(items: list[Value], /) -> bool:
     a ``std::vector`` whose element type is deduced from those literals
     (class-template argument deduction) rather than the homogeneous-map
     type the variant opener would otherwise emit.
+
+    Uniformity of shape need not be checked here: a sibling list whose
+    record-shaped dicts do not all share one shape is rejected for
+    every ``RECORD`` language by the shared
+    :func:`literalizer._checks.check_data` guard
+    (:class:`~literalizer.exceptions.HeterogeneousSiblingListsError`)
+    before any value is formatted, so a list reaching this predicate is
+    always single-shape and the deduced ``std::vector<RecordN>`` is
+    well-formed.
     """
     if not items:
         return False
