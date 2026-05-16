@@ -7,7 +7,7 @@ class Record1:
 @dataclasses.dataclass(frozen=True)
 class Record0:
     name: str
-    items: tuple[dict[str, int | str], ...]
+    items: tuple[Record1, ...]
 my_data = Record0(
     name="box",
     items=(

@@ -1381,8 +1381,13 @@ class Python(metaclass=LanguageCls):
         strategy.
 
         A field whose value is itself a nested record-shaped dict uses
-        that record's generated class name; every other value is typed
-        through :func:`_python_type_hint`, the same hint function the
+        that record's generated class name; a field whose value is a
+        list of record-shaped dicts (one shared shape) is typed as the
+        sequence of that record's class (matching the
+        ``(RecordN(...), ...)`` literal the strategy renders, which
+        :func:`_python_type_hint` would otherwise infer as a sequence
+        of ``dict``); every other value is typed through
+        :func:`_python_type_hint`, the same hint function the
         variable-annotation path uses, so the declared type matches the
         rendered literal and honors the configured
         sequence/set/dict/date/datetime formats and the targeted
@@ -1412,6 +1417,12 @@ class Python(metaclass=LanguageCls):
             """
             if request.record_name is not None:
                 return request.record_name
+            if request.element_record_name is not None:
+                return (
+                    f"{sequence_hint}[{request.element_record_name}, ...]"
+                    if sequence_hint.casefold() == "tuple"
+                    else f"{sequence_hint}[{request.element_record_name}]"
+                )
             return _python_type_hint(
                 data=request.value,
                 bytes_hint=self.bytes_format.type_hint,
