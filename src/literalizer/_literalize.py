@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from typing import Final, assert_never
+from typing import Final, Protocol, assert_never, runtime_checkable
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
@@ -71,6 +71,26 @@ from literalizer.exceptions import (
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
 )
+
+
+@runtime_checkable
+class _SupportsCallVariableWrapInFile(Protocol):
+    """A language with a call-binding-specific ``wrap_in_file``.
+
+    Used when a language's literal-binding file scaffold cannot host a
+    call-result binding (e.g. Elm's top-level ``name : Val`` form
+    versus a call-mode ``Check.main`` entry point).
+    """
+
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in a complete file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
 
 _DISABLED_REF_KEY = ""
 
@@ -4020,6 +4040,17 @@ def _wrap_call_in_file(
     wrap_variable_name = (
         variable_form.name if variable_form is not None else ""
     )
+    wrap_in_file_hook = language.wrap_in_file
+    if variable_form is not None and isinstance(
+        language, _SupportsCallVariableWrapInFile
+    ):
+        # A call-result binding cannot reuse a language's literal-binding
+        # scaffold when that scaffold's shape depends on the bound value
+        # (e.g. Elm's top-level ``name : Val`` form, forced externally by
+        # the test driver, versus a call-mode ``Check.main`` entry point).
+        # Languages that need a different scaffold opt in here; the rest
+        # fall back to ``wrap_in_file`` unchanged.
+        wrap_in_file_hook = language.wrap_call_variable_in_file
     # An inference-bound call result (``my_data = make_widget (...)``)
     # may rely on module-internal preamble lines that the literal
     # binding never needs -- e.g. PureScript's call stub returns
@@ -4032,7 +4063,7 @@ def _wrap_call_in_file(
         call_binding_body_preamble = (
             language.format_call_binding_body_preamble()
         )
-    wrapped = language.wrap_in_file(
+    wrapped = wrap_in_file_hook(
         content=result,
         variable_name=wrap_variable_name,
         body_preamble=call_binding_body_preamble + body_stubs + computed_body,

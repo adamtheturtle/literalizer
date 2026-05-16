@@ -4,6 +4,13 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Elm` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``my_data = make_widget (EInt 42)`` without a ``name : Val``
+  annotation (the call's return type is not known to the renderer).
+  A ``wrap_in_file=True`` Elm scaffold places the binding inside the
+  ``main`` ``let`` block so the call is still exercised when the
+  module is run.  See #2245.
 - :class:`~literalizer.Cpp` now supports the ``TUPLE``
   ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
   that is a dict value or the document root is rendered as
