@@ -82,6 +82,12 @@ jobs:
           packages: tcl gforth guile-3.0
           version: 1.0
       - name: Install Dhall
+        # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
+        # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
+        # standard 17.0.0) default of ``Dhall.language_version`` in
+        # ``src/literalizer/languages/dhall.py``; keep them in sync.
+        # Note the binary version (1.42.2) is distinct from the Dhall
+        # *language* standard version (23.1.0) it implements.
         run: |-
           curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
             | tar -xj
