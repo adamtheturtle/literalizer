@@ -790,10 +790,13 @@ class Crystal(metaclass=LanguageCls):
         way, while every other date/datetime/time/bytes format renders
         a string).  A list compiles to ``Array`` of the union of its
         items' types (empty -> ``[] of Nil`` -> ``Array(Nil)``); an
-        ordered map compiles to ``Hash(String, ...)`` of the union of
-        its value types.  The union is built to match the compiler's
-        own canonical ordering so the invariant ``Array`` / ``Hash``
-        field type accepts the inferred literal.
+        ordered map compiles to ``Hash`` keyed by
+        :attr:`default_dict_key_type` of the union of its value types,
+        or -- when empty, matching the ``{} of K => V`` literal the
+        formatter emits -- of :attr:`default_dict_value_type`.  The
+        union is built to match the compiler's own canonical ordering
+        so the invariant ``Array`` / ``Hash`` field type accepts the
+        inferred literal.
         """
         if (
             isinstance(value, datetime.datetime)
@@ -815,7 +818,14 @@ class Crystal(metaclass=LanguageCls):
                     self._crystal_type_for_value(item)
                     for item in value.values()
                 }
-                return f"Hash(String, {_crystal_union(parts)})"
+                # An empty ordered map renders as ``{} of K => V`` with
+                # the configured dict defaults, so the union falls back
+                # to ``default_dict_value_type`` (``or`` keeps the
+                # never-empty corpus path branch-free).
+                value_type = (
+                    _crystal_union(parts) or self.default_dict_value_type
+                )
+                return f"Hash({self.default_dict_key_type}, {value_type})"
             case _:
                 # A set or non-record dict field is out of scope for
                 # the base ``RECORD`` port (#2317) and is not reached
