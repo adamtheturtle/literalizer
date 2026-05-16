@@ -1690,6 +1690,10 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install Verilator
         uses: veryl-lang/setup-verilator@v2
+      # `--language 1800-2017` matches `SystemVerilog.language_version` in
+      # `src/literalizer/languages/systemverilog.py`
+      # (`SystemVerilog.VersionFormats.IEEE_1800_2017` maps to the
+      # IEEE 1800-2017 SystemVerilog standard); keep them in sync.
       - name: Check SystemVerilog syntax
         run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
           -Wno-REALCVT < /tmp/files-to-lint

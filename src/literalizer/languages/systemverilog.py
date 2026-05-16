@@ -567,6 +567,10 @@ class SystemVerilog(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.POSITIONAL
+    # The `Check SystemVerilog syntax` step in
+    # `.github/workflows/lint.yml` passes `verilator --language 1800-2017`,
+    # matching this default (`IEEE_1800_2017` is the IEEE 1800-2017
+    # SystemVerilog standard). Keep the two in sync.
     language_version: VersionFormats = VersionFormats.IEEE_1800_2017
     indent: str = "    "
 
