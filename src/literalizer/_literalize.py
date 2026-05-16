@@ -294,12 +294,12 @@ def _widened_int_formatter(
     """Return a widened integer formatter for *items* or ``None``.
 
     Returns ``None`` when *items* do not require widening (no
-    out-of-i32 integer present) or when the language does not expose a
-    ``format_integer_widened`` override.
+    out-of-i32 integer present) or when the language has no
+    ``format_integer_widened`` (it resolves to ``None``).
     """
     if infer_element_type(items=items) is not WideInt:
         return None
-    return getattr(spec, "format_integer_widened", None)
+    return spec.format_integer_widened
 
 
 _SCALAR_TYPES: Final = (
@@ -2115,22 +2115,18 @@ def _apply_variable_wrapper(
 
     match variable_form:
         case NewVariable(name=name, modifiers=modifiers):
-            declaration_formatter = language.format_variable_declaration
-            if is_call_binding:
-                declaration_formatter = getattr(
-                    language,
-                    "format_call_variable_declaration",
-                    declaration_formatter,
-                )
+            declaration_formatter = (
+                language.format_call_variable_declaration
+                if is_call_binding
+                else language.format_variable_declaration
+            )
             wrapped = declaration_formatter(name, value, data, modifiers)
         case _:
-            assignment_formatter = language.format_variable_assignment
-            if is_call_binding:
-                assignment_formatter = getattr(
-                    language,
-                    "format_call_variable_assignment",
-                    assignment_formatter,
-                )
+            assignment_formatter = (
+                language.format_call_variable_assignment
+                if is_call_binding
+                else language.format_variable_assignment
+            )
             wrapped = assignment_formatter(
                 variable_form.name,
                 value,
@@ -2553,8 +2549,8 @@ def _compose_bound_refs(
     another at statement scope.  Languages that need declaration-level
     reordering (the Fortran rule that specification statements precede
     executable statements) or structural nesting (the Nix chained
-    ``let``) provide an optional ``sequence_binding_declarations``
-    hook.  Preamble lines are deduplicated in first-seen order.
+    ``let``) override :meth:`Language.sequence_binding_declarations`.
+    Preamble lines are deduplicated in first-seen order.
     """
     decl_results = composition.declarations
     main_result = composition.main_result
@@ -2574,11 +2570,9 @@ def _compose_bound_refs(
         *(d.bare_code for d in decl_results),
         main_result.bare_code,
     )
-    sequence_hook = getattr(language, "sequence_binding_declarations", None)
-    if sequence_hook is not None:
-        sequenced_content = sequence_hook(binding_bare_codes)
-    else:
-        sequenced_content = "\n".join(binding_bare_codes)
+    sequenced_content = language.sequence_binding_declarations(
+        declarations=binding_bare_codes
+    )
     wrapped = language.wrap_in_file(
         content=sequenced_content,
         variable_name=composition.main_variable_name,
@@ -3917,14 +3911,13 @@ def _wrap_call_in_file(
     # binding never needs -- e.g. PureScript's call stub returns
     # ``Unit``, so the binding module must ``import Prelude`` even
     # though the literal binding for the same data does not.  Languages
-    # that do not define the hook leave ``body_preamble`` unchanged.
+    # that do not define the hook return ``()`` so ``body_preamble`` is
+    # unchanged.
     call_binding_body_preamble: tuple[str, ...] = ()
     if variable_form is not None:
-        body_preamble_hook = getattr(
-            language, "format_call_binding_body_preamble", None
+        call_binding_body_preamble = (
+            language.format_call_binding_body_preamble()
         )
-        if body_preamble_hook is not None:
-            call_binding_body_preamble = body_preamble_hook()
     wrapped = language.wrap_in_file(
         content=result,
         variable_name=wrap_variable_name,
@@ -3932,11 +3925,7 @@ def _wrap_call_in_file(
     )
     call_binding_pragmas: tuple[str, ...] = ()
     if variable_form is not None:
-        pragma_hook = getattr(
-            language, "format_call_binding_file_pragmas", None
-        )
-        if pragma_hook is not None:
-            call_binding_pragmas = pragma_hook()
+        call_binding_pragmas = language.format_call_binding_file_pragmas()
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
     full_preamble = preamble + call_binding_pragmas + preamble_stubs

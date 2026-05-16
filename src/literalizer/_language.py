@@ -1270,6 +1270,85 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def format_integer_widened(self) -> Callable[[int], str] | None:
+        """Widened-integer formatter for mixed-magnitude int collections,
+        or ``None`` when the language has no widening behavior.
+
+        Used only when a sequence/set mixes integers that do not all fit
+        one fixed-width type (e.g. an ``i32`` and a value past ``i32``'s
+        range); the formatter then casts every element to the wider
+        type.  Languages with no such widening (the common case) return
+        ``None`` via :data:`no_format_integer_widened`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a :class:`NewVariable` declaration whose
+        right-hand side is a call expression rather than a literal.
+
+        Languages whose literal-binding declaration injects a
+        value-type-derived tag (Haskell's ``x :: Val``, F#'s
+        ``x: Val = FInt ...``) override this to drop the tag and let the
+        compiler infer the call's return type.  Languages with no such
+        tag reuse :attr:`format_variable_declaration` unchanged via
+        :data:`default_format_call_variable_declaration`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an :class:`ExistingVariable` binding
+        whose right-hand side is a call expression rather than a literal.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; see
+        :attr:`format_call_variable_declaration`.  Languages with no
+        value-type tag reuse :attr:`format_variable_assignment`
+        unchanged via :data:`default_format_call_variable_assignment`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def sequence_binding_declarations(
+        self, declarations: tuple[str, ...]
+    ) -> str:
+        """Combine the per-binding ``bare_code`` snippets of a
+        multi-binding file into one body.
+
+        Most languages join the snippets with newlines via
+        :data:`default_sequence_binding_declarations`.  Languages that
+        need ordering (Fortran: every specification statement before
+        every executable one) or structural nesting (Nix's chained
+        ``let``) override this.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def format_call_binding_body_preamble(self) -> tuple[str, ...]:
+        """Module-internal body-preamble lines required only when a
+        top-level binding holds an inference-bound call result.
+
+        Most languages need none and return ``()`` via
+        :data:`no_call_binding_body_preamble`.  PureScript overrides
+        this with ``import Prelude`` (its call stub returns ``Unit``).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def format_call_binding_file_pragmas(self) -> tuple[str, ...]:
+        """File-level compiler-pragma lines required only when a
+        top-level binding holds an inference-bound call result.
+
+        Most languages need none and return ``()`` via
+        :data:`no_call_binding_file_pragmas`.  Haskell overrides this to
+        suppress ``-Wmissing-signatures`` for the binding, whose type
+        the renderer cannot annotate.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -1961,6 +2040,100 @@ default_wrap_calls_with_declarations: Callable[
 already accepts the declarations spliced in front of the call
 expressions.
 """
+
+
+def _no_format_integer_widened(self: "Language") -> None:
+    """Default ``format_integer_widened`` -- no mixed-magnitude integer
+    widening, so the renderer keeps the normal integer formatter.
+    """
+    del self
+
+
+no_format_integer_widened: property = property(fget=_no_format_integer_widened)
+"""Shared ``format_integer_widened`` descriptor for languages with no
+mixed-magnitude integer widening.  Resolves to ``None`` so the renderer
+falls back to the language's normal integer formatter.
+"""
+
+
+def _default_format_call_variable_declaration(
+    self: "Language",
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Default ``format_call_variable_declaration`` -- reuse the
+    literal-binding declaration formatter unchanged.
+    """
+    return self.format_variable_declaration
+
+
+default_format_call_variable_declaration: property = property(
+    fget=_default_format_call_variable_declaration
+)
+"""Shared descriptor for languages whose call-result declaration is
+formatted exactly like a literal binding (no value-type tag to drop).
+"""
+
+
+def _default_format_call_variable_assignment(
+    self: "Language",
+) -> Callable[[str, str, Value], str]:
+    """Default ``format_call_variable_assignment`` -- reuse the
+    literal-binding assignment formatter unchanged.
+    """
+    return self.format_variable_assignment
+
+
+default_format_call_variable_assignment: property = property(
+    fget=_default_format_call_variable_assignment
+)
+"""Shared descriptor for languages whose call-result assignment is
+formatted exactly like a literal binding (no value-type tag to drop).
+"""
+
+
+def _default_sequence_binding_declarations(
+    self: "Language", declarations: tuple[str, ...]
+) -> str:
+    """Default ``sequence_binding_declarations`` -- join the per-binding
+    snippets with newlines.
+    """
+    del self
+    return "\n".join(declarations)
+
+
+default_sequence_binding_declarations: Callable[
+    ["Language", tuple[str, ...]], str
+] = _default_sequence_binding_declarations
+"""Shared callable for languages that concatenate multi-binding
+``bare_code`` snippets with plain newlines.
+"""
+
+
+def _no_call_binding_body_preamble(self: "Language") -> tuple[str, ...]:
+    """Default ``format_call_binding_body_preamble`` -- no extra body
+    preamble lines for an inference-bound call result.
+    """
+    del self
+    return ()
+
+
+no_call_binding_body_preamble: Callable[["Language"], tuple[str, ...]] = (
+    _no_call_binding_body_preamble
+)
+"""Shared callable for languages needing no call-binding body preamble."""
+
+
+def _no_call_binding_file_pragmas(self: "Language") -> tuple[str, ...]:
+    """Default ``format_call_binding_file_pragmas`` -- no file-level
+    compiler-pragma line for an inference-bound call result.
+    """
+    del self
+    return ()
+
+
+no_call_binding_file_pragmas: Callable[["Language"], tuple[str, ...]] = (
+    _no_call_binding_file_pragmas
+)
+"""Shared callable for languages needing no call-binding file pragmas."""
 
 
 @beartype
