@@ -12,6 +12,25 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Odin` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  package-scope ``struct`` declared in the preamble plus a matching
+  ``Record0{ field = value, ... }`` literal, so a record-shaped dict
+  that mixes scalars with a container is representable even though
+  ``map[string]V`` requires homogeneous values.  Field names are the
+  dict keys verbatim, and the class-name prefix is configurable via
+  the new ``record_struct_name_prefix`` constructor parameter; its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  A list or ordered-map record field keeps Odin's standard
+  ``[dynamic]any{...}`` / ``map[string]any{...}`` rendering and is
+  typed as the matching ``any`` container (no element type is
+  inferred), and an integer field beyond the signed 64-bit range is
+  typed ``u64`` to match its literal.  The default (``ERROR``)
+  ``map[string]any`` output is unchanged.  See #2481.
 - :class:`~literalizer.StubReturn` is now part of the public API.  It
   was already the parameter type of the public
   :class:`~literalizer.Language` protocol's ``format_call_stub`` and
