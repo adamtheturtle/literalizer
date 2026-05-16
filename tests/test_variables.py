@@ -271,7 +271,7 @@ def test_ocaml_call_existing_variable_binding_omits_tag() -> None:
     """OCaml ``literalize_call`` binds a call result tag-free for an
     :class:`ExistingVariable`, matching the :class:`NewVariable` form.
 
-    OCaml's literal-binding assignment reuses the annotated,
+    The OCaml literal-binding assignment reuses the annotated,
     tag-wrapping ``let x : val_t = OInt ...`` declaration.  A call
     expression has no tag, so the call-binding path must emit the bare
     inference-style ``let x = make_widget(...)`` for the existing-variable
