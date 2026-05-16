@@ -22,13 +22,13 @@ from literalizer._formatters.format_dates import (
     format_time_fsharp,
 )
 from literalizer._formatters.format_entries import (
-    assignment_formatter_from_declaration,
     declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     tuple_dict_entry,
     variable_declaration_formatter,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -1027,15 +1027,16 @@ class FSharp(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment binding a call expression.
 
-        The literal-binding assignment, like the declaration, injects a
-        ``: Val`` annotation and a tagged-enum constructor derived from
-        the bound value's runtime type; a call expression has no such
-        tag, so this reuses :attr:`format_call_variable_declaration` (an
-        F# rebinding is itself a ``let``) and infers the return type.
+        The literal-binding assignment injects a ``: Val`` annotation
+        and a tagged-enum constructor derived from the bound value's
+        runtime type; a call expression has no such tag, so both are
+        omitted and F# infers the return type.  Mirrors
+        :attr:`format_variable_assignment`, which always emits a plain
+        ``let`` (never ``let mutable``) regardless of
+        ``declaration_style``: an F# rebinding shadows with ``let``, so
+        the ``mutable`` keyword would be spurious here.
         """
-        return assignment_formatter_from_declaration(
-            self.format_call_variable_declaration,
-        )
+        return variable_formatter(template="let {name} = {value}")
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
