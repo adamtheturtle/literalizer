@@ -141,6 +141,15 @@ jobs:
           xargs -0 bash -n < /tmp/files-bash
           xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-bash
 
+      # ``ruby-version: '3.4'`` is ``>=`` the ``V3`` (Ruby 3.x) default of
+      # ``Ruby.language_version`` in ``src/literalizer/languages/ruby.py``;
+      # keep them in sync. Without this setup step the ``ruby`` binary is
+      # whatever ``ubuntu-latest`` ships and drifts.
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+
       - name: Lint Ruby
         run: |-
           find tests/integration/cases -name '*.rb' -print0 > /tmp/files-ruby && test -s /tmp/files-ruby
