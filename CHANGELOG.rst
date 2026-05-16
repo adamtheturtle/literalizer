@@ -4,6 +4,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Scala` gains the same ``record_shape_names``
+  constructor parameter, a ``Mapping[frozenset[str], str]`` from a
+  record shape's key-set to a custom ``case class`` name.  A mapped
+  shape is declared and rendered with the given name instead of the
+  auto-generated ``RecordN``; the ``record_struct_name_prefix`` counter
+  advances only for the shapes with no custom name.  Names are
+  validated as PascalCase Scala identifiers that do not collide with
+  the auto ``{prefix}{N}`` pattern or each other, raising
+  :class:`~literalizer.exceptions.InvalidRecordNameError`.  Its
+  ``supports_record_shape_names`` language-class flag is now ``True``.
+  See #2332.
+
 - :class:`~literalizer.Python` gains an opt-in ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
