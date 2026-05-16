@@ -435,6 +435,11 @@ class Scheme(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.PREFIX
+    # The `Install apt packages` step in `.github/workflows/lint.yml`
+    # installs the `guile-3.0` apt package, whose Guile 3.x implements
+    # the `R7RS` standard, matching this default (`R7RS`). The pin is
+    # for reproducible builds, not language selection. Keep the two in
+    # sync.
     language_version: VersionFormats = VersionFormats.R7RS
     indent: str = "    "
 
