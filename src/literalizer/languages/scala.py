@@ -334,28 +334,21 @@ def _scala_render_declaration(
     return f"case class {name}({params})"
 
 
-# Scala's tuple sugar ``(a, b, ...)`` expands to ``TupleN``, which the
-# standard library defines only as ``Tuple2`` through ``Tuple22``
-# (there is no one-element tuple).  A heterogeneous scalar array
-# outside this range has no native tuple type, so the ``TUPLE``
-# strategy raises rather than silently downgrading.
-_SCALA_MIN_TUPLE_ARITY = 2
-_SCALA_MAX_TUPLE_ARITY = 22
-
-
 @beartype
 def _scala_tuple_arity_representable(arity: int, /) -> bool:
-    """Return whether Scala has a native fixed-size tuple of the given
-    element count.
+    """Return whether Scala 3 has a native fixed-size tuple of the
+    given element count.
 
-    Scala ships ``Tuple2`` through ``Tuple22`` (there is no
-    one-element tuple sugar); a tuple-eligible array always spans at
-    least two scalar buckets, so the lower bound is never exercised,
-    but it keeps the predicate self-contained.  Anything past
-    ``Tuple22`` has no native tuple type, so the ``TUPLE`` strategy
-    raises rather than dropping the per-position types.
+    Scala 3 -- the only version this language targets -- imposes no
+    tuple-length limit: ``(a, b, ...)`` is a native tuple for any
+    element count, with lengths past 22 transparently backed by
+    ``TupleXXL`` (Scala 2's ``Tuple22`` cap was removed).  A
+    tuple-eligible array always has at least two elements (Scala has
+    no one-element tuple sugar, but such a length never reaches here),
+    so every length the ``TUPLE`` strategy passes is representable.
     """
-    return _SCALA_MIN_TUPLE_ARITY <= arity <= _SCALA_MAX_TUPLE_ARITY
+    del arity
+    return True
 
 
 @beartype
@@ -748,9 +741,9 @@ class Scala(metaclass=LanguageCls):
         ``RECORD`` and additionally renders each fixed-length
         heterogeneous scalar array (a record field, another dict value,
         or the document root) as a native tuple ``(e0, e1, ...)`` typed
-        ``(T0, T1, ...)``.  An array of more than 22 elements (no
-        ``Tuple22``) is rejected with
-        :exc:`~literalizer.exceptions.TupleArityNotRepresentableError`.
+        ``(T0, T1, ...)``.  Scala 3 imposes no tuple-length limit
+        (lengths past 22 are transparently backed by ``TupleXXL``), so
+        any fixed-length heterogeneous scalar array is representable.
         """
 
         ERROR = enum.auto()
@@ -1073,8 +1066,9 @@ class Scala(metaclass=LanguageCls):
 
         Tuple element types reuse :meth:`_scala_record_field_type`, so
         a tuple-eligible record field is typed exactly like the scalar
-        positions it holds; only the tuple literal syntax and the
-        ``Tuple22`` length cap are Scala-specific.
+        positions it holds; only the tuple literal syntax is
+        Scala-specific (Scala 3 has no tuple-length cap, so every
+        eligible array is representable).
         """
         return TupleRenderer(
             render_literal=_scala_render_tuple_literal,

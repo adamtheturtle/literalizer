@@ -57,10 +57,10 @@ Next
   another dict value, or the document root is rendered as a native
   tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` (a tuple-valued
   ``case class`` field is declared with the tuple type) instead of
-  raising or widening to ``List[Any]``.  Scala ships ``Tuple2``
-  through ``Tuple22``, so an array of any other length raises
-  :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
-  rather than degrading to a homogeneous list.  The default
+  raising or widening to ``List[Any]``.  Scala 3 (the only version
+  this language targets) imposes no tuple-length limit -- lengths past
+  22 are transparently backed by ``TupleXXL`` -- so every fixed-length
+  heterogeneous scalar array is representable.  The default
   (``ERROR``) output is unchanged.  See #2330.
 - :class:`~literalizer.TypeScript` now supports the ``TUPLE``
   ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
