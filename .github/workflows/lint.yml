@@ -102,6 +102,21 @@ jobs:
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
+      # ``ubuntu-latest`` preinstalls a ``pwsh``, but that runner default
+      # drifts, so install an explicit release and put it first on
+      # ``PATH`` for the ``Lint PowerShell`` / ``Run PowerShell files``
+      # steps. The pinned PowerShell ``7.4.6`` (LTS) is ``>=`` the ``V7``
+      # default of ``PowerShell.language_version`` in
+      # ``src/literalizer/languages/powershell.py``; keep them in sync.
+      # PowerShell has no ``--langversion``-style flag, so the pinned
+      # release is the only mechanism for pinning the language version.
+      - name: Install PowerShell
+        run: |-
+          mkdir -p /tmp/powershell
+          curl -fsSL https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz \
+            | tar -xz -C /tmp/powershell
+          chmod +x /tmp/powershell/pwsh
+          echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
