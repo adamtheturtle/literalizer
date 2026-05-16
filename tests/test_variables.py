@@ -8,14 +8,16 @@ import re
 import pytest
 
 from literalizer import (
+    ExistingVariable,
     InputFormat,
     NewVariable,
     literalize,
+    literalize_call,
 )
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Java, Nim, Rust
+from literalizer.languages import CSharp, Java, Nim, OCaml, Rust
 
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
@@ -279,3 +281,42 @@ def test_java_record_non_array_sequence_raises() -> None:
             include_delimiters=True,
             variable_form=NewVariable(name="my_var"),
         )
+
+
+def test_ocaml_call_existing_variable_binding_omits_tag() -> None:
+    """OCaml ``literalize_call`` binds a call result tag-free for an
+    :class:`ExistingVariable`, matching the :class:`NewVariable` form.
+
+    OCaml's literal-binding assignment reuses the annotated,
+    tag-wrapping ``let x : val_t = OInt ...`` declaration.  A call
+    expression has no tag, so the call-binding path must emit the bare
+    inference-style ``let x = make_widget(...)`` for the existing-variable
+    form too -- not ``let x : val_t = OInt make_widget(...)``.  This is a
+    pytest assertion rather than a golden fixture because an
+    existing-variable binding references an identifier the scaffold does
+    not declare, so the rendered file cannot compile under the
+    lint-every-fixture CI gate.
+    """
+    ocaml = OCaml()
+    expected = "type val_t =\n  | OInt of int\nlet my_data = make_widget(42)"
+    new_result = literalize_call(
+        target_function="make_widget",
+        parameter_names=["count"],
+        source="42",
+        input_format=InputFormat.YAML,
+        language=ocaml,
+        variable_form=NewVariable(name="my_data"),
+        per_element=False,
+    )
+    existing_result = literalize_call(
+        target_function="make_widget",
+        parameter_names=["count"],
+        source="42",
+        input_format=InputFormat.YAML,
+        language=ocaml,
+        variable_form=ExistingVariable(name="my_data"),
+        per_element=False,
+    )
+
+    assert new_result.code == expected
+    assert existing_result.code == expected
