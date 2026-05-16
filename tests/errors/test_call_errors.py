@@ -21,6 +21,8 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
+    CommentSourceLengthMismatchError,
+    CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -423,6 +425,81 @@ def test_literalize_call_zip_source_per_element_non_list_raises() -> None:
             zip_source='"not a list"',
             zip_input_format=InputFormat.JSON,
         )
+
+
+def test_literalize_call_comment_source_length_mismatch_raises() -> None:
+    """``comment_source`` must have one entry per generated call."""
+    with pytest.raises(
+        expected_exception=CommentSourceLengthMismatchError,
+        match=(
+            r"^comment_source has 2 entry\(ies\) but 3 call\(s\) were "
+            r"generated; the lengths must match$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2], [3]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            comment_source=["first", "second"],
+        )
+
+
+def test_literalize_call_comment_source_multiline_entry_raises() -> None:
+    """A ``comment_source`` entry may not span multiple lines."""
+    with pytest.raises(
+        expected_exception=CommentSourceMultilineError,
+        match=(
+            r"^comment_source entry at index 1 contains a newline; "
+            r"trailing comments must be single-line$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            comment_source=["fine", "broken\ncomment"],
+        )
+
+
+def test_literalize_call_comment_source_unsupported_language_raises() -> None:
+    """A non-empty ``comment_source`` is rejected for a language whose
+    call-sequence form cannot carry a trailing comment.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"^Jsonnet cannot represent this call shape: comment_source "
+            r"trailing comments cannot be preserved in this language's "
+            r"call-sequence form$"
+        ),
+    ):
+        literalize_call(
+            source="[[1], [2]]",
+            input_format=InputFormat.JSON,
+            language=Jsonnet(),
+            target_function="process",
+            parameter_names=["value"],
+            comment_source=["note", ""],
+        )
+
+
+def test_literalize_call_empty_comment_source_allowed_everywhere() -> None:
+    """All-empty ``comment_source`` emits no comment, so it is allowed
+    even for a language that cannot carry a trailing comment.
+    """
+    result = literalize_call(
+        source="[[1], [2]]",
+        input_format=InputFormat.JSON,
+        language=Jsonnet(),
+        target_function="process",
+        parameter_names=["value"],
+        comment_source=["", ""],
+    )
+    assert result.code == "process(value=1)\nprocess(value=2)"
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:
