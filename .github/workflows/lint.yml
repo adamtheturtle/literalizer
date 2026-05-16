@@ -450,13 +450,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Install cpanminus
-        uses: awalsh128/cache-apt-pkgs-action@v1
+      # ``perl-version: '5.36'`` is ``>=`` the ``V5_36``
+      # ``Perl.language_version`` default in
+      # ``src/literalizer/languages/perl.py``; keep them in sync. Without
+      # this setup step the ``perl`` binary is whatever ``ubuntu-latest``
+      # ships and drifts. The action also bundles ``cpanm`` for the
+      # pinned interpreter, so ``DateTime`` installs against it (no
+      # ``sudo``, which would target the system Perl instead).
+      - name: Set up Perl
+        uses: shogo82148/actions-setup-perl@v1
         with:
-          packages: cpanminus
-          version: 1.0
+          perl-version: '5.36'
       - name: Install Perl DateTime
-        run: sudo cpanm --notest DateTime
+        run: cpanm --notest DateTime
       - name: Lint Perl
         run: |-
           find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl && test -s /tmp/files-perl

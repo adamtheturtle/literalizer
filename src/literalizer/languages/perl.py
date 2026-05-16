@@ -531,6 +531,8 @@ class Perl(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``perl-version`` pin passed to
+    # ``shogo82148/actions-setup-perl`` in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.V5_36
     indent: str = "    "
 
