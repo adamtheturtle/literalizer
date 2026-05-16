@@ -402,24 +402,28 @@ def _purescript_needs_prelude(val: Value) -> bool:
     Prelude is required for ``negate`` (any negative int or float)
     and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
     """
-    if isinstance(val, bool):
-        result = False
-    elif isinstance(val, float):
-        result = _purescript_negative_float(val=val)
-    elif isinstance(val, int):
-        result = val < 0
-    elif isinstance(val, list):
-        result = any(_purescript_needs_prelude(val=v) for v in val)
-    elif isinstance(val, dict):
-        result = any(_purescript_needs_prelude(val=v) for v in val.values())
-    elif isinstance(val, set):
-        result = any(
-            _purescript_needs_prelude(val=v)
-            for v in val
-            if isinstance(v, (int, float)) and not isinstance(v, bool)
-        )
-    else:
-        result = False
+    # Check bool before int (bool is a subclass of int).
+    match val:
+        case bool():
+            result = False
+        case float():
+            result = _purescript_negative_float(val=val)
+        case int():
+            result = val < 0
+        case list():
+            result = any(_purescript_needs_prelude(val=v) for v in val)
+        case dict():
+            result = any(
+                _purescript_needs_prelude(val=v) for v in val.values()
+            )
+        case set():
+            result = any(
+                _purescript_needs_prelude(val=v)
+                for v in val
+                if isinstance(v, (int, float)) and not isinstance(v, bool)
+            )
+        case _:
+            result = False
     return result
 
 
