@@ -679,6 +679,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # The pinned MLton implements SML '97, matching
+      # ``SML.language_version`` (``SML_97``) in
+      # ``src/literalizer/languages/sml.py``; keep them in sync.
+      # ``SML_97`` is a fixed standard, so the version pin here is for
+      # reproducibility rather than language selection.
       - name: Install MLton
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
