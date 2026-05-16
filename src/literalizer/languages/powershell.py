@@ -497,6 +497,13 @@ class PowerShell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the pinned PowerShell release downloaded in the
+    # ``Install PowerShell`` step of ``.github/workflows/lint.yml``.
+    # ``ubuntu-latest`` ships a drifting ``pwsh``, so that step installs
+    # an explicit release whose version is ``>=`` this ``V7`` default.
+    # PowerShell has no ``--langversion``-style flag, so the pinned
+    # release is the only mechanism for pinning the language version;
+    # ``V7`` maps to PowerShell 7.
     language_version: VersionFormats = VersionFormats.V7
     indent: str = "    "
 
