@@ -26,7 +26,6 @@ Next
   supported set is the languages whose
   :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
   is ``True``.  See #2369.
-=======
 - :class:`~literalizer.FSharp` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
