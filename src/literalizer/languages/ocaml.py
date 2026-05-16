@@ -1002,7 +1002,7 @@ class OCaml(metaclass=LanguageCls):
         formatter producing ``let x : val_t = OInt make_widget(42)``.
         """
         return assignment_formatter_from_declaration(
-            self.format_call_variable_declaration
+            formatter=self.format_call_variable_declaration
         )
 
     @cached_property
