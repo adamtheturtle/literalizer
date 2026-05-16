@@ -1248,10 +1248,11 @@ class Elm(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a declaration binding a call expression.
 
-        The literal-binding declaration prepends a ``name : Val``
-        annotation derived from the bound value's runtime tagged-enum
-        type; a call expression has no such tag, so the annotation is
-        omitted and Elm infers the call's return type instead.
+        The literal-binding declaration is prepended with a
+        ``name : Val`` annotation derived from the bound value's
+        runtime tagged-enum type; a call expression has no such tag,
+        so the annotation is omitted and Elm infers the call's return
+        type instead.
         """
         return self.declaration_style.value.formatter
 
