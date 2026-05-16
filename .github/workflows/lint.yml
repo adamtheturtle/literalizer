@@ -1942,11 +1942,36 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.v' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # The pinned ``weekly.2026.08`` release is ``>=`` the ``V0_4``
+      # default of ``V.language_version`` in
+      # ``src/literalizer/languages/v.py``; keep them in sync.  Use a
+      # prebuilt release archive (which bundles the ``v`` binary and
+      # tcc) rather than building from source: V's ``make`` re-clones
+      # the *latest* ``vc`` C bootstrap, which fails to compile an old
+      # tagged ``vlib``.  A pinned release artifact stops the compiler
+      # drifting with upstream ``master``.  A ``weekly.*`` tag (rather
+      # than the ``0.5.1`` stable, which is from 2024) is required:
+      # ``0.5.1`` has an interface-codegen bug that miscompiles the
+      # literalizer's ``IVal`` float fixtures (``main__IVal has no
+      # member named _f64``).  The bundled tcc also miscompiles V's
+      # generated C on this runner (``undefined symbol
+      # builtin__memdup``), so the build uses the runner's system
+      # ``gcc`` as the C backend (``-cc gcc``) instead.
       - name: Install V
         run: |
-          git clone --depth=1 https://github.com/vlang/v /tmp/vlang
-          cd /tmp/vlang && make
-          sudo ln -s /tmp/vlang/v /usr/local/bin/v
+          curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/weekly.2026.08/v_linux.zip
+          unzip -q /tmp/v_linux.zip -d /tmp
+          sudo ln -s /tmp/v/v /usr/local/bin/v
+          # The prebuilt binary lazily creates ``~/.vmodules`` (and the
+          # C compile cache) on its first run.  The ``Check V syntax``
+          # and ``Run V files`` steps each fan out across ``nproc``
+          # parallel ``v`` processes, which otherwise race to create
+          # those folders and panic (``V panic: folder: ~/.vmodules/,
+          # error: File exists``).  Warm up once, serially, with the
+          # same ``v -cc gcc run`` invocation the parallel step uses so
+          # every lazily-created directory exists beforehand.
+          echo 'fn main() {}' > /tmp/v-warmup.v
+          v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1956,7 +1981,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_v_syntax.py
           < /tmp/files-to-lint
       - name: Run V files
-        run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
 
   lint-objectivec:
     # ``macos-15`` pins the runner image (the current ``macos-latest``
