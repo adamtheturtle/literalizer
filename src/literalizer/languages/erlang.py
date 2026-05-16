@@ -214,7 +214,7 @@ class Erlang(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -532,6 +532,34 @@ class Erlang(metaclass=LanguageCls):
         parts.extend(body_preamble)
         parts.append("x() ->")
         parts.append(f"{indented}.")
+        return "\n".join(parts)
+
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in an Erlang module.
+
+        :meth:`wrap_in_file`'s variable branch places *body_preamble*
+        inside ``x()``, but for a call binding those lines are the
+        module-level stub function definitions emitted by
+        :func:`_erlang_call_stub`; nesting a function definition inside
+        the ``x/0`` clause is a syntax error.  This hook hoists
+        *body_preamble* to module scope between ``-export`` and ``x()``
+        (matching the call-without-binding branch of
+        :meth:`wrap_in_file`) while keeping the
+        ``My_data = make_widget(...)`` binding and the trailing
+        ``My_data.`` return inside ``x()``.
+        """
+        erlang_varname = variable_name[0].upper() + variable_name[1:]
+        indented = textwrap.indent(text=content, prefix=self.indent)
+        parts = [f"-module({self.module_name}).", "-export([x/0])."]
+        parts.extend(body_preamble)
+        parts.append("x() ->")
+        parts.append(indented)
+        parts.append(f"{self.indent}{erlang_varname}.")
         return "\n".join(parts)
 
     @staticmethod

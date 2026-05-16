@@ -4,6 +4,16 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Erlang` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`, binding the call result with
+  ``My_data = make_widget(...)``.  A ``wrap_in_file=True`` Erlang
+  scaffold hoists the generated call stub to module scope between
+  ``-export`` and ``x()`` (previously the literal-binding scaffold
+  nested it inside the ``x/0`` clause, producing invalid Erlang) while
+  keeping the binding and the trailing ``My_data.`` return inside
+  ``x()``.  See #2454.
 - The mapping arm of the public ``ValueInput`` type (accepted by
   ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
   ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
