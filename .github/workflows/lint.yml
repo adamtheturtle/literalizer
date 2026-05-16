@@ -68,6 +68,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # ``luaVersion: '5.4'`` matches ``Lua.language_version`` (``V5_4``)
+      # in ``src/literalizer/languages/lua.py``; keep them in sync.
       - name: Install Lua
         uses: leafo/gh-actions-lua@v13
         with:
