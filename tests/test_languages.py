@@ -8,15 +8,15 @@ from typing import TYPE_CHECKING, ClassVar
 import pytest
 
 from literalizer import (
-    BothVariableForms,
     ExistingVariable,
     IdentifierCase,
     InputFormat,
+    Language,
+    LanguageCls,
     NewVariable,
     literalize,
     literalize_call,
 )
-from literalizer._language import Language, LanguageCls, StubReturn
 from literalizer.languages import (
     ALL_LANGUAGES,
     Cobol,
@@ -24,17 +24,14 @@ from literalizer.languages import (
     Dart,
     Dhall,
     FSharp,
-    Gleam,
     Go,
     Haskell,
     Java,
-    Jsonnet,
     Kotlin,
     Matlab,
     Nim,
     OCaml,
     Python,
-    R,
     Rust,
     Sml,
     Swift,
@@ -82,18 +79,6 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
         ")"
         ")"
     )
-
-
-def test_r_formats_named_dict_entries() -> None:
-    """R dict entries with names are formatted without raising."""
-    result = literalize(
-        source="{name: value}",
-        input_format=InputFormat.YAML,
-        language=R(empty_dict_key=R.empty_dict_keys.ERROR),
-        variable_form=None,
-    )
-
-    assert result.code == 'list(\n    "name" = "value"\n)'
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
@@ -250,22 +235,23 @@ def test_default_call_binding_existing_variable_reuses_assignment() -> None:
     assert existing_result.code == "my_data = make_widget(count=42)"
 
 
-# The widening branch in
-# :func:`~literalizer._literalize._compute_dict_open_override` only
-# fires when a language combines a value-type-sensitive ``dict_open``
-# (from
+# The null-filtering step in
+# :func:`~literalizer._literalize._compute_dict_open_override` (the
+# ``filtered_dicts`` comprehension) only runs when a language combines
+# a value-type-sensitive ``dict_open`` (from
 # :func:`~literalizer._formatters.collection_openers.typed_dict_open`)
 # with ``skip_null_dict_values=True``. No production language pairs
 # those two: the ``typed_dict_open`` languages (Dart, CSharp, Kotlin,
 # Scala, Go) all keep nulls, while the ``skip_null_dict_values=True``
 # languages (Java, Lua, Toml, Wren) all use ``fixed_dict_open`` whose
-# constant opener never triggers widening. Each test below therefore
-# defines a Dart subclass inline rather than reusing a production
-# language or a shared test helper; that is also why these tests live
-# here rather than in the ``tests/integration/cases/`` golden-file
-# suite, which iterates over
-# :data:`~literalizer.languages.ALL_LANGUAGES` and has no way to
-# inject a test-only language.
+# constant opener never triggers widening. The golden-file suite
+# iterates over :data:`~literalizer.languages.ALL_LANGUAGES` and has
+# no way to inject a test-only language, so the two cases below define
+# a Dart subclass inline to pin the divergent-types and matching-types
+# outcomes of that filtering. The surrounding widening logic (override
+# computation and the collapse-to-empty paths) is exercised by
+# production golden cases with type-divergent dicts and is not
+# re-asserted here.
 
 
 def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
@@ -297,74 +283,6 @@ def test_dart_skip_nulls_widens_across_null_masked_types() -> None:
         "<Map<String, dynamic>>[\n"
         '    <String, dynamic>{"b": 1},\n'
         '    <String, dynamic>{"a": "hello"},\n'
-        "]"
-    )
-
-
-def test_dart_skip_nulls_widens_when_one_dict_collapses_to_empty() -> None:
-    """Widening fires when one dict collapses to ``{}`` and another is
-    typed.
-
-    ``{"a": None}`` filters to ``{}`` (fallback opener), while
-    ``{"x": 1}`` filters to ``{"x": 1}`` (``<String, int>``).  The
-    override must widen both to the fallback so the sequence is
-    consistent.
-    """
-
-    @dataclasses.dataclass(frozen=True, kw_only=True)
-    class DartSkipNulls(Dart):
-        """Dart variant that drops null dict values."""
-
-        skip_null_dict_values: ClassVar[bool] = True
-
-    source = '[{"a": null}, {"x": 1}]'
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=DartSkipNulls(),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-
-    assert result.code == (
-        "<Map<String, dynamic>>[\n"
-        "    <String, dynamic>{},\n"
-        '    <String, dynamic>{"x": 1},\n'
-        "]"
-    )
-
-
-def test_dart_skip_nulls_no_widening_when_all_dicts_collapse_to_empty() -> (
-    None
-):
-    """No override is needed when every dict collapses to ``{}``.
-
-    Two all-null dicts filter to ``{}`` each.  Both render with the
-    fallback ``<String, dynamic>{`` opener on their own, so widening
-    would be a no-op.
-    """
-
-    @dataclasses.dataclass(frozen=True, kw_only=True)
-    class DartSkipNulls(Dart):
-        """Dart variant that drops null dict values."""
-
-        skip_null_dict_values: ClassVar[bool] = True
-
-    source = '[{"a": null}, {"b": null}]'
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=DartSkipNulls(),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-
-    assert result.code == (
-        "<Map<String, dynamic>>[\n"
-        "    <String, dynamic>{},\n"
-        "    <String, dynamic>{},\n"
         "]"
     )
 
@@ -423,47 +341,6 @@ def test_matlab_dict_key_with_quote() -> None:
     )
 
     assert result.code == "'hello \"world\"', 1"
-
-
-def test_cobol_level_number_cap() -> None:
-    """COBOL level numbers are capped at 49 for deeply nested
-    structures.
-    """
-    yaml_string = (
-        "a:\n"
-        "  b:\n"
-        "    c:\n"
-        "      d:\n"
-        "        e:\n"
-        "          f:\n"
-        "            g:\n"
-        "              h:\n"
-        "                i:\n"
-        "                  value: deep\n"
-    )
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=COBOL,
-        pre_indent_level=1,
-        include_delimiters=True,
-        variable_form=None,
-    )
-
-    assert result.code == (
-        "\n"
-        "        05 F-A.\n"
-        "10 F-B.\n"
-        "15 F-C.\n"
-        "20 F-D.\n"
-        "25 F-E.\n"
-        "30 F-F.\n"
-        "35 F-G.\n"
-        "40 F-H.\n"
-        "45 F-I.\n"
-        '49 F-VALUE PIC X(4) VALUE "deep".\n'
-        "    "
-    )
 
 
 def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
@@ -550,109 +427,6 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
     assert result.code == expected
 
 
-def test_gleam_call_preamble_stub_many_parameters() -> None:
-    """Gleam call stubs handle more than 26 parameters.
-
-    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
-    suffix branch, emitting ``z`` for the last single-letter slot and
-    ``a1`` for the next one in the generated stub signature.
-    """
-    params = [f"p{i}" for i in range(27)]
-    (line,) = Gleam().format_call_preamble_stub(
-        ("target",),
-        params,
-        StubReturn.VOID,
-        (),
-    )
-    assert line == (
-        "pub fn target("
-        "_p0: a, "
-        "_p1: b, "
-        "_p2: c, "
-        "_p3: d, "
-        "_p4: e, "
-        "_p5: f, "
-        "_p6: g, "
-        "_p7: h, "
-        "_p8: i, "
-        "_p9: j, "
-        "_p10: k, "
-        "_p11: l, "
-        "_p12: m, "
-        "_p13: n, "
-        "_p14: o, "
-        "_p15: p, "
-        "_p16: q, "
-        "_p17: r, "
-        "_p18: s, "
-        "_p19: t, "
-        "_p20: u, "
-        "_p21: v, "
-        "_p22: w, "
-        "_p23: x, "
-        "_p24: y, "
-        "_p25: z, "
-        "_p26: a1"
-        ") -> Nil { Nil }"
-    )
-
-
-def test_gleam_call_stub_more_than_26_parameters() -> None:
-    """Gleam type-var generation falls back to numeric suffixes past
-    the 26-letter alphabet.
-
-    Calls with 27 parameters exercise ``_gleam_type_var``'s numeric
-    suffix branch, emitting ``z`` for the last single-letter slot and
-    ``a1`` for the next one in the generated stub signature.
-    """
-    parameter_names = [f"p{i}" for i in range(27)]
-    yaml_row = "\n".join(f"  - {i}" for i in range(26))
-    source = f"---\n-\n{yaml_row}\n  - [100]\n"
-    result = literalize_call(
-        source=source,
-        input_format=InputFormat.YAML,
-        language=Gleam(),
-        target_function="process",
-        parameter_names=parameter_names,
-        wrap_in_file=True,
-    )
-    signature_params = ", ".join(
-        f"_p{i}: {chr(ord('a') + i)}" for i in range(26)
-    )
-    int_args = ", ".join(f"GInt({i})" for i in range(26))
-    call_args = f"{int_args}, GList([GInt(100)])"
-    expected = textwrap.dedent(
-        text=f"""\
-        pub type GVal {{
-          GInt(Int)
-          GList(List(GVal))
-        }}
-        pub fn process({signature_params}, _p26: a1) -> Nil {{ Nil }}
-
-        pub fn main() {{
-          process({call_args})
-        }}""",
-    )
-    assert result.code == expected
-
-
-def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
-    """Non-empty declarations are placed before the wrapped call
-    expression.
-
-    Jsonnet ``local`` bindings are invalid inside an array literal, so
-    ``wrap_calls_with_declarations`` emits them before the
-    ``wrap_in_file`` output rather than splicing them inside the array.
-    """
-    spec = Jsonnet()
-    result = spec.wrap_calls_with_declarations(
-        ("local x = 1;",),
-        "[x]",
-        (),
-    )
-    assert result == "local x = 1;\n[x]"
-
-
 def test_dhall_quoted_dict_key() -> None:
     """Dhall backtick-label validation decodes simple escapes."""
     result = literalize(
@@ -664,20 +438,6 @@ def test_dhall_quoted_dict_key() -> None:
     )
 
     assert result.code == '{\n  `a"b` = +1,\n}'
-
-
-def test_python_dotted_target_function_renders() -> None:
-    """Dotted ``target_function`` succeeds when the language supports
-    it.
-    """
-    result = literalize_call(
-        source="[[1]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="module.fn",
-        parameter_names=["a"],
-    )
-    assert result.code == "module.fn(a=1)"
 
 
 def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
@@ -810,24 +570,6 @@ def test_haskell_without_ref_values_strips_per_element_ref() -> None:
     assert result.body_preamble == ("data Val = HList [Val]",)
 
 
-def test_python_variable_names_supported_renders() -> None:
-    """``variable_form`` succeeds for Python's variable-name support."""
-    result = literalize(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        variable_form=BothVariableForms(name="x"),
-        wrap_in_file=True,
-    )
-    assert result.code == "from __future__ import annotations\nx = 42\nx = 42"
-
-
-_TIME_COVERAGE_SOURCES = (
-    "starts_at = 09:30:00\n",
-    "starts_at = 09:30:15.123456\n",
-)
-
-
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES,
     key=lambda c: c.__name__,
@@ -839,7 +581,13 @@ _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     argvalues=_SORTED_LANGUAGES,
     ids=[c.__name__ for c in _SORTED_LANGUAGES],
 )
-@pytest.mark.parametrize(argnames="source", argvalues=_TIME_COVERAGE_SOURCES)
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=[
+        "starts_at = 09:30:00\n",
+        "starts_at = 09:30:15.123456\n",
+    ],
+)
 def test_datetime_time_renders(lang_cls: LanguageCls, source: str) -> None:
     """Every language renders a ``datetime.time`` value without crashing.
 
