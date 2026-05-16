@@ -703,6 +703,10 @@ class Sml(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # The `Install MLton` step in `.github/workflows/lint.yml` pins a
+    # `MLton` build implementing the Standard `ML` '97 language, matching
+    # this default (`SML_97`). The pin is for reproducible builds, not
+    # language selection. Keep the two in sync.
     language_version: VersionFormats = VersionFormats.SML_97
     indent: str = "    "
     type_name: str = "val_t"

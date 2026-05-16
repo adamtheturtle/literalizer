@@ -4,6 +4,21 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Python` gains an opt-in ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala` and :class:`~literalizer.Java`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  frozen ``@dataclasses.dataclass`` declared in the preamble (with an
+  ``import dataclasses``) plus a matching ``RecordN(field=value, ...)``
+  literal; field names are the dict keys verbatim and the class-name
+  prefix is configurable via the new ``record_struct_name_prefix``
+  constructor parameter.  Python's ``dict`` is already heterogeneous,
+  so every record-shaped dict is representable as a plain ``dict``;
+  this is purely an idiomatic-output choice, the strategy is opt-in,
+  and the default (``ERROR``) plain-``dict`` output is unchanged.  See
+  #2419.
+
 2026.05.16
 ----------
 
@@ -33,6 +48,17 @@ Next
   ``as const`` needs no imports, so there is no data-dependent
   preamble.  The default (``ERROR``) union-array output is unchanged.
   See #2328.
+- :class:`~literalizer.Kotlin` now supports the ``TUPLE``
+  ``heterogeneous_strategy``, composing ``RECORD``: a fixed-length
+  heterogeneous scalar array that is a dict value or the document root
+  is rendered as a two-element ``Pair(...)`` or three-element
+  ``Triple(...)`` typed ``Pair<...>`` / ``Triple<...>``, and a record
+  field whose value is such an array becomes a tuple-typed field.
+  Kotlin has no general N-tuple, so an array of any other length
+  raises
+  :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
+  rather than degrading to a homogeneous list.  The default
+  (``ERROR``) output is unchanged.  See #2331.
 - :func:`~literalizer.literalize_call` gains a ``comment_source``
   argument: a sequence of trailing source-code comments, one per
   generated call, paired positionally.  Each non-empty entry is

@@ -68,6 +68,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # ``luaVersion: '5.4'`` matches ``Lua.language_version`` (``V5_4``)
+      # in ``src/literalizer/languages/lua.py``; keep them in sync.
       - name: Install Lua
         uses: leafo/gh-actions-lua@v13
         with:
@@ -80,10 +82,21 @@ jobs:
           packages: tcl gforth guile-3.0
           version: 1.0
       - name: Install Dhall
+        # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
+        # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
+        # standard 17.0.0) default of ``Dhall.language_version`` in
+        # ``src/literalizer/languages/dhall.py``; keep them in sync.
+        # Note the binary version (1.42.2) is distinct from the Dhall
+        # *language* standard version (23.1.0) it implements.
         run: |-
           curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
             | tar -xj
           echo "$PWD/bin" >> "$GITHUB_PATH"
+      # The ``0.4.0`` wren-cli release downloaded here matches
+      # ``Wren.language_version`` (``V0_4``) in
+      # ``src/literalizer/languages/wren.py``; keep them in sync. Wren
+      # has no ``--langversion``-style flag, so the pinned CLI release
+      # is the only mechanism for pinning the language version.
       - name: Install Wren CLI
         run: |
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
@@ -107,6 +120,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+
+      # `.js` fixtures are executed by `node` below;
+      # `JavaScript.language_version` is `VersionFormats.ES2015` in
+      # `src/literalizer/languages/javascript.py`. Without an explicit
+      # `node-version` the runtime drifts with the `setup-node` action
+      # default. Node 22 is a current LTS and fully supports that ES2015
+      # default. This same pin is repeated on every Node lint job
+      # (`lint-npm-installed`, `lint-typescript-run`, `lint-elm`,
+      # `lint-elm-run`); keep all of them and that `language_version`
+      # declaration in sync.
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
 
       - name: Lint Bash
         run: |-
@@ -421,8 +448,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -469,8 +502,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -494,8 +533,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -524,8 +569,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # `node-version` pinned to Node 22 LTS, which supports the
+      # `ES2015` `JavaScript.language_version` default; keep in sync with
+      # the other Node lint jobs and the `language_version` declaration in
+      # `src/literalizer/languages/javascript.py` (see the `Set up Node`
+      # step in `lint-fast` for the full rationale).
       - uses: actions/setup-node@v6
         with:
+          node-version: '22'
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
@@ -672,6 +723,11 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # The pinned MLton implements SML '97, matching
+      # ``SML.language_version`` (``SML_97``) in
+      # ``src/literalizer/languages/sml.py``; keep them in sync.
+      # ``SML_97`` is a fixed standard, so the version pin here is for
+      # reproducibility rather than language selection.
       - name: Install MLton
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
@@ -1119,6 +1175,10 @@ jobs:
       - name: Install OCaml
         uses: ocaml/setup-ocaml@v3
         with:
+          # ``ocaml-compiler: 5`` resolves to the latest OCaml 5.x
+          # release, which is ``>=`` the ``V5`` default of
+          # ``OCaml.language_version`` in
+          # ``src/literalizer/languages/ocaml.py``; keep them in sync.
           ocaml-compiler: 5
       - name: Check OCaml syntax
         run: |-
@@ -1409,6 +1469,9 @@ jobs:
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
         with:
+          # `crystal: 1.20.0` is `>=` `Crystal.language_version` (`V1`,
+          # i.e. Crystal 1.x) in `src/literalizer/languages/crystal.py`;
+          # keep them in sync.
           crystal: 1.20.0
       # Compile every fixture in a single `crystal run` invocation to
       # pay Crystal's front-end + LLVM codegen + link cost once instead
@@ -1455,6 +1518,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # ``mojo-compiler==1.0.0b1`` is >= the ``VersionFormats.V24_5``
+      # value of ``Mojo.language_version`` in
+      # ``src/literalizer/languages/mojo.py``; keep them in sync.
       - name: Install Mojo
         run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax

@@ -654,6 +654,9 @@ class OCaml(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``ocaml-compiler`` input of the
+    # ``Install OCaml`` step in ``.github/workflows/lint.yml``, which
+    # pins ``5`` (latest OCaml 5.x), satisfying this ``V5`` default.
     language_version: VersionFormats = VersionFormats.V5
     indent: str = "    "
     type_name: str = "val_t"
