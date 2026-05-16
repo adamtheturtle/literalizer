@@ -173,8 +173,20 @@ jobs:
         with:
           php-version: '8.1'
 
+      # ``ubuntu-latest`` preinstalls the ``bash`` that both runs this job
+      # and lints/executes the ``.sh`` fixtures. That runner default (the
+      # 5.x series) is ``>=`` the ``V5_1`` default of
+      # ``Bash.language_version`` in ``src/literalizer/languages/bash.py``;
+      # keep them in sync. Bash has no ``--langversion``-style flag and is
+      # the workflow's own shell, so rather than swap the interpreter the
+      # runner default is the pinned floor; the ``BASH_VERSINFO`` guard
+      # below fails the job if that floor ever drifts below 5.1.
       - name: Lint Bash
         run: |-
+          if (( BASH_VERSINFO[0] < 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] < 1) )); then
+            echo "bash ${BASH_VERSION} is below the pinned V5_1 floor" >&2
+            exit 1
+          fi
           find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
           xargs -0 bash -n < /tmp/files-bash
           xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-bash
