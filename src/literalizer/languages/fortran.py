@@ -57,10 +57,15 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
     identity_call_ref_identifier,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -323,6 +328,12 @@ def _fortran_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     module_name: str = "Module"
 

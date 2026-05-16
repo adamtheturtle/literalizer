@@ -61,12 +61,16 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    default_format_call_variable_assignment,
+    default_sequence_binding_declarations,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
     never_inhibits_consuming_form,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -693,6 +697,11 @@ class PureScript(metaclass=LanguageCls):
             Defaults to ``"P"``, producing constructors like ``PNull``,
             ``PBool``, ``PInt``, etc.
     """
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_assignment = default_format_call_variable_assignment
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     extension = ".purs"
     pygments_name = None

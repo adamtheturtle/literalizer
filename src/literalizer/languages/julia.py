@@ -68,13 +68,19 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
+    default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_statement,
     identity_call_target,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -150,6 +156,13 @@ class Julia(metaclass=LanguageCls):
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
     """
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     extension = ".jl"
     pygments_name = "julia"
