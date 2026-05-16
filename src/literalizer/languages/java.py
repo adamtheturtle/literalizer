@@ -4,7 +4,8 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections.abc import Callable, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import Any, ClassVar, assert_never
@@ -103,8 +104,11 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidRecordNameError,
     NullInCollectionError,
 )
+
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 class _JavaModifiers(enum.Enum):
@@ -686,7 +690,7 @@ class Java(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     supports_record_struct_name_prefix = True
-    supports_record_shape_names = False
+    supports_record_shape_names = True
     supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
@@ -1066,6 +1070,59 @@ class Java(metaclass=LanguageCls):
             and self.language_version is not jdk_16
         ):
             object.__setattr__(self, "language_version", jdk_16)
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate ``record_shape_names`` for PascalCase identifier
+        shape, collisions with the auto-generated ``{prefix}{N}``
+        record names, collisions with the wrapper class name, and
+        duplicate target names.
+
+        Ported from
+        :meth:`literalizer.languages.Rust._validate_record_naming`.
+        Java has no ``heterogeneous_value_enum_name`` so that collision
+        check does not apply, and Rust's reserved-keyword check is
+        unnecessary here: every Java keyword is lowercase, so the
+        PascalCase requirement already rejects every one of them.  Java
+        records are emitted as top-level types before
+        ``class {module_name}`` (default ``Module``, ``Main`` in the
+        golden harness), so a custom name must not collide with that
+        wrapper class either.
+        """
+        prefix = self.record_struct_name_prefix
+        auto_name_pattern = re.compile(
+            pattern=rf"^{re.escape(pattern=prefix)}\d+$",
+        )
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase Java "
+                    f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if name == self.module_name:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the wrapper "
+                    f"class name (module_name)."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated {prefix!r}-prefixed record names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    f"record_shape_names maps multiple key-sets to "
+                    f"{name!r}; record names must be unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
@@ -1320,6 +1377,10 @@ class Java(metaclass=LanguageCls):
     # Keep those literals in sync with `VersionFormats` above.
     language_version: VersionFormats = VersionFormats.JDK_11
     record_struct_name_prefix: str = "Record"
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     indent: str = "    "
 
     null_literal: ClassVar[str] = "null"
@@ -1468,11 +1529,7 @@ class Java(metaclass=LanguageCls):
         """Java syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
-            # Java does not yet expose a ``record_shape_names``
-            # constructor field (ported with its own RECORD work); an
-            # empty mapping keeps every shape on the auto
-            # ``{prefix}{N}`` names.
-            record_shape_names=MappingProxyType(mapping={}),
+            record_shape_names=self.record_shape_names,
             field_identifier=_java_record_field_identifier,
             field_type=self._java_record_field_type,
             render_declaration=_java_render_declaration,
