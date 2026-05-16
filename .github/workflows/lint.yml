@@ -147,10 +147,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
-          # Pinned to ``Python.language_version`` (``PY_3_12``) in
-          # ``src/literalizer/languages/python.py``; keep this version
-          # in sync with that default so the Python fixture gate runs
-          # under the declared minimum interpreter.
+          # Pinned to the ``requires-python = ">=3.12"`` floor in
+          # ``pyproject.toml``; keep this in sync with that floor so the
+          # Python fixture gate runs under the declared minimum
+          # interpreter. The ``Python.VersionFormats`` enum
+          # (``PY38``/``PY39``) only selects typing-alias syntax and does
+          # not encode this runtime floor, so it is not the source of
+          # truth here.
           python-version: '3.12'
 
       # The fixture set spans every `Java.VersionFormats` member in
@@ -1773,8 +1776,15 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name 'Python@py39.py' -print0 > /tmp/files-python
           && test -s /tmp/files-python
+      # The default (``@py39``) Python fixtures emit ``datetime.UTC``,
+      # which requires Python 3.11+, so they cannot run on the 3.8
+      # interpreter used above. Pin this run to the
+      # ``requires-python = ">=3.12"`` floor in ``pyproject.toml`` so a
+      # generator change that outpaces the declared minimum interpreter
+      # fails CI loudly here rather than silently working on a newer
+      # version; keep this in sync with that floor.
       - name: Run default Python golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.13 --no-project python <
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.12 --no-project python <
           /tmp/files-python
 
   lint-racket:
