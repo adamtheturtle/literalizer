@@ -44,11 +44,7 @@ from literalizer.languages import (
 )
 
 from .case_discovery import cases_with_special_floats, discover_cases
-from .language_specs import (
-    RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES,
-    make_spec,
-    sorted_languages,
-)
+from .language_specs import make_spec, sorted_languages
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -994,23 +990,16 @@ def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
 def build_record_numeric_cross_variants() -> Iterable[Variant]:
     """Build ``RECORD`` x non-default numeric-formatter variants.
 
-    For every language whose ``RECORD`` strategy chooses each struct
-    field's type from the value
-    (:data:`RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES`), cross ``RECORD``
-    with every non-default ``integer_format``, ``numeric_separator`` and
-    ``numeric_literal_suffix``.  Run against the ``record_wide_int``
-    input these lock in that the declared field type follows the value,
-    not the formatted literal (issue #2306, follow-up to #2297): an
+    For every language exposing a ``RECORD`` heterogeneous strategy,
+    cross ``RECORD`` with every non-default ``integer_format``,
+    ``numeric_separator`` and ``numeric_literal_suffix``.  Run against
+    the ``record_wide_int`` input these lock in that the declared field
+    type follows the value, not the formatted literal (issue #2306,
+    follow-up to #2297; extended to Kotlin/Java/Scala by #2376): an
     integer field keeps its value-derived type however the literal is
-    written, and a positive integer beyond the signed 64-bit range is
-    typed to match its wide-integer overflow-fallback literal instead of
-    the type a formatted-string inspection would infer.
-
-    Languages whose ``RECORD`` strategy does not yet widen a record
-    field's integer type to match its out-of-range overflow-fallback
-    literal would emit golden files that do not compile for this cross;
-    that width gap is tracked by #2376 and each language joins the set
-    once fixed.
+    written, and an integer beyond the signed 64-bit range is typed to
+    match its wide-integer overflow-fallback literal instead of the
+    type a formatted-string inspection would infer.
     """
     axes: list[
         tuple[
@@ -1041,14 +1030,17 @@ def build_record_numeric_cross_variants() -> Iterable[Variant]:
     ]
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if lang_cls not in RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES:
-            continue
         spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
-            strategy
-            for strategy in spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
+            (
+                strategy
+                for strategy in spec.heterogeneous_strategies
+                if strategy.name == "RECORD"
+            ),
+            None,
         )
+        if record_strategy is None:
+            continue
         lang_name = lang_cls.__name__
         for tag, kwarg, get_default, get_formats in axes:
             default = get_default(spec)

@@ -38,6 +38,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
@@ -1391,7 +1393,11 @@ class Java(metaclass=LanguageCls):
             enable_dict_type=False,
         )
 
-    def _java_record_field_type(self, request: RecordFieldType, /) -> str:
+    def _java_record_field_type(  # noqa: PLR0911
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
         """Return the Java record-component type for a field.
 
         Derives the type from the raw value (and any resolved
@@ -1427,6 +1433,8 @@ class Java(metaclass=LanguageCls):
         match value:
             case bool():
                 return "boolean"
+            case int() if not I64_MIN <= value <= I64_MAX:
+                return "BigInteger"
             case int():
                 in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
                 return "long" if int_type == "int" and not in_i32 else int_type

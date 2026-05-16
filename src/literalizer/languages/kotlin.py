@@ -44,6 +44,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
@@ -1265,6 +1267,8 @@ class Kotlin(metaclass=LanguageCls):
                 return "Any?"
             case bool():
                 return "Boolean"
+            case int() if not I64_MIN <= value <= I64_MAX:
+                return "BigInteger"
             case int():
                 in_i32 = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
                 return "Int" if in_i32 else "Long"
