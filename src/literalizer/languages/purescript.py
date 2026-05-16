@@ -604,6 +604,28 @@ def _build_purescript_call_output(
     )
 
 
+@beartype
+def _hoist_purescript_prelude_import(preamble: str) -> str:
+    """Collapse repeated ``import Prelude`` lines into a single import
+    that precedes every declaration.
+
+    A call stub bound to a variable needs ``import Prelude`` for its
+    ``Unit`` return type, and data that itself requires Prelude
+    (negative numbers, special floats) makes
+    :func:`_build_purescript_body_preamble` emit its own
+    ``import Prelude``.  Concatenated naively the second import lands
+    after the stub declarations, which PureScript rejects because
+    imports must precede all declarations.  Drop every
+    ``import Prelude`` line and, when at least one was present, re-emit
+    a single one at the top.
+    """
+    lines = preamble.split(sep="\n")
+    kept = [line for line in lines if line != "import Prelude"]
+    if len(kept) == len(lines):
+        return preamble
+    return "\n".join(["import Prelude", *kept])
+
+
 _INT_BASE: dict[str, Callable[[int], str]] = {
     "DECIMAL": str,
     "HEX": format_integer_hex,
@@ -677,7 +699,7 @@ class PureScript(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -979,6 +1001,11 @@ class PureScript(metaclass=LanguageCls):
                 calls=content,
                 indent=self.indent,
             )
+        # An inference-bound call result contributes its own
+        # ``import Prelude`` (for the stub's ``Unit``) on top of any
+        # ``import Prelude`` the data already required; collapse them so
+        # a single import stays ahead of every declaration.
+        preamble = _hoist_purescript_prelude_import(preamble=preamble)
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
     @staticmethod
@@ -1360,6 +1387,33 @@ class PureScript(metaclass=LanguageCls):
             return f"{name} :: {decl_type}\n{base}"
 
         return _purescript_declaration
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration is prepended with a
+        ``name :: Type`` annotation derived from the bound value's
+        runtime tagged-enum type (``PInt``, ``PStr``, ...); a call
+        expression has no such tag, so the annotation is omitted and
+        PureScript infers the call's return type instead.
+        """
+        return self.declaration_style.value.formatter
+
+    @staticmethod
+    def format_call_binding_body_preamble() -> tuple[str, ...]:
+        """Module-internal preamble lines for an inference-bound call
+        result.
+
+        The call stub returns ``Unit`` (``make_widget _ = unit``), so a
+        ``wrap_in_file`` scaffold whose top level binds a call result
+        must ``import Prelude`` to bring ``Unit`` / ``unit`` into scope.
+        The literal binding for the same data needs no such import, so
+        this is emitted only on the call-binding path.
+        """
+        return ("import Prelude",)
 
     @cached_property
     def compute_body_preamble(

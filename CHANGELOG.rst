@@ -12,6 +12,21 @@ Next
   type annotation or tagged-enum constructor wrapper that literal
   bindings use (the call's return type is not known to the renderer).
   Existing literal-binding output for F# is unchanged.  See #2249.
+- :class:`~literalizer.PureScript` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``my_data = make_widget (PInt 42)`` without a ``name :: Type``
+  annotation (the call's return type is not known to the renderer).
+  ``wrap_in_file=True`` PureScript scaffolds add ``import Prelude`` so
+  the call stub's ``Unit`` result type resolves; literal-binding output
+  is unchanged.  See #2247.
+- :class:`~literalizer.Rust` under the ``RECORD``
+  ``heterogeneous_strategy`` now raises
+  :class:`~literalizer.exceptions.UnrepresentableInputError` for a
+  set-valued record field, and for a record field whose value is a
+  dict that is not record-eligible (empty, non-string-keyed, or an
+  ordered map), instead of emitting a struct whose declared field
+  type disagrees with the rendered ``HashSet``/``BTreeSet``/``HashMap``
+  literal and fails to compile.
 - :class:`~literalizer.Roc` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting the inference-style
   binding ``my_data = make_widget (RInt 42i128)`` without a
@@ -25,7 +40,6 @@ Next
   annotation or ``datatype`` constructor wrapping used for literal
   bindings (the call's return type is not known to the renderer, so
   SML infers it).  See #2248.
-
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
   emit output that fails to compile for a post-2038
   :class:`~datetime.datetime`

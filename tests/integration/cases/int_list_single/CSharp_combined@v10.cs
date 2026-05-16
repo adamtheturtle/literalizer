@@ -1,0 +1,7 @@
+using System;
+var my_data = (
+    1
+);
+my_data = (
+    1
+);

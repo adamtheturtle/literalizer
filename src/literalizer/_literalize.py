@@ -3911,10 +3911,23 @@ def _wrap_call_in_file(
     wrap_variable_name = (
         variable_form.name if variable_form is not None else ""
     )
+    # An inference-bound call result (``my_data = make_widget (...)``)
+    # may rely on module-internal preamble lines that the literal
+    # binding never needs -- e.g. PureScript's call stub returns
+    # ``Unit``, so the binding module must ``import Prelude`` even
+    # though the literal binding for the same data does not.  Languages
+    # that do not define the hook leave ``body_preamble`` unchanged.
+    call_binding_body_preamble: tuple[str, ...] = ()
+    if variable_form is not None:
+        body_preamble_hook = getattr(
+            language, "format_call_binding_body_preamble", None
+        )
+        if body_preamble_hook is not None:
+            call_binding_body_preamble = body_preamble_hook()
     wrapped = language.wrap_in_file(
         content=result,
         variable_name=wrap_variable_name,
-        body_preamble=body_stubs + computed_body,
+        body_preamble=call_binding_body_preamble + body_stubs + computed_body,
     )
     call_binding_pragmas: tuple[str, ...] = ()
     if variable_form is not None:
