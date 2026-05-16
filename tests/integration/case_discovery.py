@@ -29,26 +29,26 @@ from .language_specs import (
     sorted_languages,
 )
 
-# Case dirs consumed only by a dedicated variant axis, never by the
-# all-languages base / combined / language-version discovery.  Like the
-# call and ``$ref`` case dirs, a specialized test owns these.
+# Case directories consumed only by a dedicated variant axis, never by
+# the all-languages base / combined / language-version discovery.  Like
+# the call and ``$ref`` case directories, a specialized test owns these.
 #
 # ``record_wide_int`` carries an integer beyond the signed 64-bit range
 # to exercise Go's and Rust's value-derived ``RECORD`` field typing
 # (issue #2306) via the ``record_numeric_cross`` axis.  Other languages'
 # default heterogeneous representations cannot hold a >2^63 integer in a
 # container -- a separate latent issue, not #2306 -- so base-discovering
-# it for every language would emit non-compiling goldens.
+# it for every language would emit golden files that fail to compile.
 VARIANT_ONLY_CASE_DIRS = frozenset({"record_wide_int"})
 
 
 @functools.cache
 @beartype
 def _specialized_case_dirs() -> frozenset[str]:
-    """Case dirs a specialized test owns, so they are excluded from the
-    all-languages base / combined / language-version discovery: the
-    call, ``$ref`` and default-``$ref`` case dirs plus
-    :data:`VARIANT_ONLY_CASE_DIRS`.
+    """Case directories a specialized test owns, so they are excluded
+    from the all-languages base / combined / language-version
+    discovery: the call, ``$ref`` and default-``$ref`` case
+    directories plus :data:`VARIANT_ONLY_CASE_DIRS`.
     """
     return (
         frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
