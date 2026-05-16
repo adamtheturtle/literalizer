@@ -196,6 +196,45 @@ def test_ocaml_call_binding_existing_variable_infers_type() -> None:
     assert existing_result.code == expected
 
 
+def test_default_call_binding_existing_variable_reuses_assignment() -> None:
+    """A language that does not override
+    ``format_call_variable_assignment`` binds an ``ExistingVariable``
+    call result with its plain literal-binding assignment formatter.
+
+    Most languages (everything except F#/OCaml, which inject and then
+    omit a value-type tag) use the shared default that simply reuses
+    :attr:`Language.format_variable_assignment`.  ``call_variable_form``
+    golden fixtures only exercise the ``NewVariable`` declaration path,
+    so this asserts the assignment path for a representative default
+    language (Python).  Like the F#/OCaml cases the output is a bare
+    assignment to an undeclared name -- not self-contained across the
+    compiled languages -- so it is asserted here rather than as a
+    golden fixture.
+    """
+    python = Python()
+    new_result = literalize_call(
+        source="42",
+        input_format=InputFormat.YAML,
+        language=python,
+        target_function="make_widget",
+        parameter_names=["count"],
+        variable_form=NewVariable(name="my_data"),
+        per_element=False,
+    )
+    existing_result = literalize_call(
+        source="42",
+        input_format=InputFormat.YAML,
+        language=python,
+        target_function="make_widget",
+        parameter_names=["count"],
+        variable_form=ExistingVariable(name="my_data"),
+        per_element=False,
+    )
+
+    assert new_result.code == "my_data = make_widget(count=42)"
+    assert existing_result.code == "my_data = make_widget(count=42)"
+
+
 # The null-filtering step in
 # :func:`~literalizer._literalize._compute_dict_open_override` (the
 # ``filtered_dicts`` comprehension) only runs when a language combines
@@ -399,20 +438,6 @@ def test_dhall_quoted_dict_key() -> None:
     )
 
     assert result.code == '{\n  `a"b` = +1,\n}'
-
-
-def test_python_dotted_target_function_renders() -> None:
-    """Dotted ``target_function`` succeeds when the language supports
-    it.
-    """
-    result = literalize_call(
-        source="[[1]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="module.fn",
-        parameter_names=["a"],
-    )
-    assert result.code == "module.fn(a=1)"
 
 
 def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:

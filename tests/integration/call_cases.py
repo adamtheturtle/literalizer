@@ -96,6 +96,10 @@ class CallCaseConfig:
     # with ``zip_input_format``.
     zip_source: str | None = None
     zip_input_format: literalizer.InputFormat | None = None
+    # Trailing source-code comments, one per generated call, paired
+    # positionally and emitted after the statement terminator using the
+    # language's comment syntax.  An empty entry emits no comment.
+    comment_source: list[str] | None = None
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
     # so a transform that calls the wrapper with the call *and* the
@@ -150,6 +154,27 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_call_returns_expression=False,
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
+    ),
+    CallCaseConfig(
+        case_dir_name="call_line_comments",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        # comment_source emits trailing comments through the language's
+        # call-sequence form, the same constraint as wrapped standalone
+        # comments; languages without that support raise
+        # UnsupportedCallShapeError (see _validate_comment_source_supported).
+        requires_standalone_wrapped_comments=True,
+        comment_source=["first edition", "", "cyberpunk"],
     ),
     CallCaseConfig(
         case_dir_name="call_comments",
@@ -1146,6 +1171,7 @@ def _run_wrap_in_file_case(
             call_transform=config.call_transform,
             zip_source=config.zip_source,
             zip_input_format=config.zip_input_format,
+            comment_source=config.comment_source,
             per_element=config.per_element,
             wrap_in_file=True,
             ref_case=effective_ref_case,
@@ -1211,6 +1237,7 @@ def _run_call_with_declarations(
             call_transform=config.call_transform,
             zip_source=config.zip_source,
             zip_input_format=config.zip_input_format,
+            comment_source=config.comment_source,
             per_element=config.per_element,
             ref_case=effective_ref_case,
             consumable_refs=config.consumable_refs,

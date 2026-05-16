@@ -57,13 +57,19 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
+    default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -231,6 +237,13 @@ def _sv_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     module_name: str = "Module"
 
@@ -567,6 +580,10 @@ class SystemVerilog(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     call_style: CallStyles = CallStyles.POSITIONAL
+    # The `Check SystemVerilog syntax` step in
+    # `.github/workflows/lint.yml` passes `verilator --language 1800-2017`,
+    # matching this default (`IEEE_1800_2017` is the IEEE 1800-2017
+    # SystemVerilog standard). Keep the two in sync.
     language_version: VersionFormats = VersionFormats.IEEE_1800_2017
     indent: str = "    "
 

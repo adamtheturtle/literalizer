@@ -59,14 +59,19 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -182,6 +187,12 @@ class Nix(metaclass=LanguageCls):
     Dict keys that cannot be represented as Nix attribute names raise
     :class:`~literalizer.exceptions.InvalidDictKeyError`.
     """
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     extension = ".nix"
     pygments_name = "nix"

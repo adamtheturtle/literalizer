@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC process (VAL MOBILE LIT value)
+    SKIP
+:
+PROC main ()
+    process(MOBILE LIT(lit.str; MOBILE []BYTE "Dune"))  -- first edition
+    process(MOBILE LIT(lit.str; MOBILE []BYTE "Solaris"))
+    process(MOBILE LIT(lit.str; MOBILE []BYTE "Neuromancer"))  -- cyberpunk
+    SEQ
+        SKIP
+:
