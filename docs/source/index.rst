@@ -83,6 +83,7 @@ Reference
    function-call-use-case
    api-reference
    languages
+   heterogeneous-strategies
    release-process
    changelog
    contributing
