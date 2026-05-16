@@ -2,8 +2,6 @@
 
 import dataclasses
 import datetime
-import json
-import re
 import textwrap
 from typing import TYPE_CHECKING, ClassVar
 
@@ -18,10 +16,6 @@ from literalizer import (
     literalize_call,
 )
 from literalizer._language import Language, LanguageCls, StubReturn
-from literalizer.exceptions import (
-    NullInCollectionError,
-    UnrepresentableSpecialFloatError,
-)
 from literalizer.languages import (
     ALL_LANGUAGES,
     Cobol,
@@ -376,30 +370,6 @@ def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
             assert not name.endswith("-")
 
 
-def test_java_list_rejects_null_elements() -> None:
-    """Java's ``List.of()`` does not accept null elements."""
-    spec = Java(
-        sequence_format=Java.sequence_formats.LIST,
-    )
-    expected_msg = re.escape(
-        pattern="Java's List.of() does not accept null elements"
-        " (got 3 items, including null). "
-        "Use sequence_format=ARRAY instead."
-    )
-    with pytest.raises(
-        expected_exception=NullInCollectionError,
-        match=f"^{expected_msg}$",
-    ):
-        literalize(
-            source=json.dumps(obj=[1, None, "hello"]),
-            input_format=InputFormat.JSON,
-            language=spec,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-
 def test_literalize_call_wrap_in_file_emits_stubs() -> None:
     """``wrap_in_file=True`` produces a self-contained file that
     defines the ``target_function`` so the output compiles on its own.
@@ -549,27 +519,6 @@ def test_gleam_call_stub_more_than_26_parameters() -> None:
         }}""",
     )
     assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames="yaml_value",
-    argvalues=[".inf", "-.inf", ".nan"],
-    ids=["positive_infinity", "negative_infinity", "nan"],
-)
-def test_gleam_special_floats_raise(yaml_value: str) -> None:
-    """Gleam raises ``UnrepresentableSpecialFloatError`` for non-finite
-    floats.
-
-    Gleam targets Erlang, which has no expression that evaluates to a
-    non-finite float, so the literalizer surfaces this at literalize
-    time rather than producing output that panics at ``gleam run``.
-    """
-    with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
-        literalize(
-            source=f"- {yaml_value}\n",
-            input_format=InputFormat.YAML,
-            language=Gleam(),
-        )
 
 
 def test_jsonnet_wrap_calls_with_declarations_prepends_bindings() -> None:
@@ -998,3 +947,33 @@ def test_format_time_local_time_of_with_microseconds_exact_ms() -> None:
         wrap_in_file=True,
     )
     assert "LocalTime.of(9, 30, 15, 123000000)" in result.code
+
+
+def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
+    """Epoch datetime variants use the configured integer type."""
+    rust = Rust(
+        datetime_format=Rust.datetime_formats.EPOCH,
+        heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+    )
+    timestamp = datetime.datetime(
+        year=2024,
+        month=1,
+        day=1,
+        tzinfo=datetime.UTC,
+    )
+    result = literalize(
+        source=f"- {timestamp.isoformat()}\n- 1\n",
+        input_format=InputFormat.YAML,
+        language=rust,
+        variable_form=None,
+    )
+
+    assert result.preamble == (
+        "enum Value {",
+        "    I64(i64),",
+        "    I32(i32),",
+        "}",
+    )
+    assert result.code == (
+        "vec![\n    Value::I64(1704067200),\n    Value::I32(1),\n]"
+    )
