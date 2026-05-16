@@ -105,7 +105,9 @@ def _collect_element_types(
                 if inner is None:
                     return _INFER_FAILED
                 element_types.add(ListType(inner=inner))
-            case dict() if not isinstance(item, OrderedMap):
+            case OrderedMap():
+                element_types.add(type(item))
+            case dict():
                 dict_values.extend(item.values())
                 element_types.add(dict)
             case _:
@@ -391,13 +393,13 @@ def _accumulate_record_shapes(
     # ``Value``-typed sets only contain scalars (see ``literalizer._types``)
     # so there's no need to walk into them.
     match data:
-        case dict() if not isinstance(data, OrderedMap):
-            shape = record_shape_for_dict(value=data)
-            if shape is not None:
-                out[id(data)] = shape
+        case OrderedMap():
             for v in data.values():
                 _accumulate_record_shapes(data=v, out=out)
         case dict():
+            shape = record_shape_for_dict(value=data)
+            if shape is not None:
+                out[id(data)] = shape
             for v in data.values():
                 _accumulate_record_shapes(data=v, out=out)
         case list():
