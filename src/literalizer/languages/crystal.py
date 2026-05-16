@@ -101,6 +101,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Value
 
 
+@beartype
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
     return IdentifierCase.PASCAL.convert(name=name)
@@ -825,7 +826,13 @@ class Crystal(metaclass=LanguageCls):
         """Return the Crystal ``record`` field type for a record field.
 
         A field whose value is itself a nested record-shaped dict uses
-        that record's generated name; every other value is typed by
+        that record's generated name.  A field whose value is a list of
+        single-shape record dicts is an ``Array`` of that record's
+        name: Crystal infers the element type from the generated
+        ``Name.new(...)`` literals, and ``Array`` is invariant, so the
+        declared element type must be the record name (not the widened
+        ``Array(Nil)`` :meth:`_crystal_type_for_value` would derive
+        from the raw dicts).  Every other value is typed by
         :meth:`_crystal_type_for_value`.  A set or non-record dict
         field is out of scope for the base ``RECORD`` port (the
         cross-language decision is tracked in #2317) and is not reached
@@ -833,6 +840,8 @@ class Crystal(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"Array({request.element_record_name})"
         return self._crystal_type_for_value(request.value)
 
     @cached_property

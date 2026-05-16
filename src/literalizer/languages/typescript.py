@@ -96,6 +96,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 
 
+@beartype
 def _ts_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],

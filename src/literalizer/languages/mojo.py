@@ -345,6 +345,7 @@ def _mojo_typed_param_list(
     return info.typed_params
 
 
+@beartype
 def _mojo_cross_call_scalar_wrap_ids(
     slot_values: Sequence[Value],
 ) -> frozenset[int]:
@@ -375,6 +376,7 @@ def _mojo_cross_call_scalar_wrap_ids(
     return frozenset(id(value) for value in slot_values)
 
 
+@beartype
 def _mojo_init_expr(parts: Sequence[str]) -> str:
     """Return the constructor expression for a multi-part call target.
 
@@ -650,6 +652,7 @@ class _HeterogeneousStrategyConfig:
     build_preamble: Callable[[str, type], Callable[[Value], tuple[str, ...]]]
 
 
+@beartype
 def _build_error_behavior(
     _variant_name: str, _datetime_type_produced: type, /
 ) -> HeterogeneousBehavior:
@@ -657,6 +660,7 @@ def _build_error_behavior(
     return NO_HETEROGENEOUS_BEHAVIOR
 
 
+@beartype
 def _build_error_preamble(
     _variant_name: str,
     _datetime_type_produced: type,
@@ -669,6 +673,7 @@ def _build_error_preamble(
 _VARIANT_IMPORT_LINE = "from std.utils.variant import Variant"
 
 
+@beartype
 def _build_variant_behavior(
     variant_name: str,
     datetime_type_produced: type,
@@ -797,6 +802,7 @@ def _render_variant_preamble(
     )
 
 
+@beartype
 def _build_variant_preamble(
     variant_name: str,
     datetime_type_produced: type,
@@ -886,6 +892,7 @@ def _mojo_element_renders_as_string(
             return False
 
 
+@beartype
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(

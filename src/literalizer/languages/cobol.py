@@ -78,6 +78,7 @@ from literalizer.exceptions import CallArgNotSupportedError
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
 
+@beartype
 def _cobol_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
     """Keep COBOL's structured empty literal beside typed siblings.
 
