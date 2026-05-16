@@ -12,6 +12,19 @@ Next
   type annotation or tagged-enum constructor wrapper that literal
   bindings use (the call's return type is not known to the renderer).
   Existing literal-binding output for F# is unchanged.  See #2249.
+- :class:`~literalizer.Roc` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``my_data = make_widget (RInt 42i128)`` without a
+  ``my_data : Val`` annotation (the call's return type is not known to
+  the renderer, and Roc infers it).  The ``Val`` tag-union alias is
+  omitted from such scaffolds because nothing annotates with ``: Val``;
+  existing literal-binding output is unchanged.  See #2250.
+- :class:`~literalizer.Sml` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, emitting the inference-style
+  binding ``val my_data = make_widget(42)`` without the ``: val_t``
+  annotation or ``datatype`` constructor wrapping used for literal
+  bindings (the call's return type is not known to the renderer, so
+  SML infers it).  See #2248.
 
 - :class:`~literalizer.Java` and :class:`~literalizer.Scala` no longer
   emit output that fails to compile for a post-2038
@@ -22,6 +35,13 @@ Next
   (``long`` / ``Long``) once the value leaves signed 32-bit range, so
   the declared component type always matches the rendered literal.
   In-range epochs are unaffected.  See #2338.
+- Internal: the ``RECORD`` ``heterogeneous_strategy`` no longer threads
+  the already-formatted field literal into the field-type hook.
+  :class:`~literalizer.Kotlin` now derives each generated ``data class``
+  field's declared type structurally from the raw value through its own
+  collection openers and scalar mapping (matching the Go/Java/Scala
+  ports), and the ``formatted`` string is dropped from the renderer
+  contract.  No generated output changes.  See #2305.
 
 2026.05.15.2
 ------------
@@ -82,6 +102,13 @@ Next
   :class:`~literalizer.exceptions.InvalidRecordNameError`.  Its
   ``supports_record_shape_names`` language-class flag is now ``True``.
   See #2324.
+
+- :class:`~literalizer.Kotlin` now declares a ``data class`` field
+  whose value is a custom-named nested record with that nested
+  record's ``record_shape_names`` name (e.g. ``Task``).  Previously
+  such a field fell through to ``Double`` because the custom name does
+  not match the auto-generated ``{prefix}{N}`` head, so the generated
+  Kotlin did not compile.  See #2348.
 
 2026.05.15.1
 ------------

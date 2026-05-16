@@ -547,7 +547,7 @@ class Roc(metaclass=LanguageCls):
     pygments_name = "text"
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -830,14 +830,20 @@ class Roc(metaclass=LanguageCls):
         exits non-zero on, whereas ``dbg`` is treated as side
         effecting.
 
-        In call mode the ``Val`` type alias is dropped because nothing
-        in the wrapped output annotates a binding with ``: Val`` —
-        keeping it would trip the Roc ``UNUSED DEFINITION`` warning
-        when the alias has no recursive (``List``/``Dict``/``Set``)
-        self-reference for the compiler to consider load-bearing.
+        The ``Val`` type alias is kept only when the wrapped output
+        actually annotates a binding with ``: Val`` (the literal-binding
+        declaration ``my_data : Val``).  It is dropped for every call
+        mode -- both the discarded-result form (exposed ``main``) and
+        the inference-style call binding ``my_data = make_widget ...``
+        whose right-hand side is a call expression with no tag, hence
+        no annotation.  Keeping an alias nothing uses would trip the
+        Roc ``UNUSED DEFINITION`` warning, which ``roc check`` exits
+        non-zero on, when the alias has no recursive
+        (``List``/``Dict``/``Set``) self-reference for the compiler to
+        consider load-bearing.
         """
         exposed = variable_name or "main"
-        if variable_name:
+        if f" : {self.type_name}\n" in content:
             effective_preamble = body_preamble
         else:
             effective_preamble = self._strip_type_alias(
@@ -1255,6 +1261,19 @@ class Roc(metaclass=LanguageCls):
             return f"{name} : {_type_name}\n{base}"
 
         return _roc_declaration
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration emits a ``name : Val``
+        annotation derived from the bound value's runtime tag-union
+        type; a call expression has no such tag, so the annotation is
+        omitted and Roc infers the call's return type instead.
+        """
+        return self.declaration_style.value.formatter
 
     @cached_property
     def format_variable_assignment(
