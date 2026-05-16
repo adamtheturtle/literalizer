@@ -42,6 +42,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_hex,
     format_integer_underscore,
     make_overflow_fallback_formatter,
@@ -857,7 +859,11 @@ class Scala(metaclass=LanguageCls):
         )
         return self._scalar_field_type_resolver(element_type) or "Any"
 
-    def _scala_record_field_type(self, request: RecordFieldType, /) -> str:
+    def _scala_record_field_type(  # noqa: PLR0911
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
         """Return the Scala ``case class`` field type for a record
         field, derived structurally from the raw value.
 
@@ -906,6 +912,8 @@ class Scala(metaclass=LanguageCls):
                 opener = self.sequence_open(value)
             case bool():
                 return self._scalar_field_type_resolver(bool) or "Any"
+            case int() if not I64_MIN <= value <= I64_MAX:
+                return "BigInt"
             case int():
                 return self._scala_int_magnitude_field_type(value)
             case _:
