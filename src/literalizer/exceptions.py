@@ -89,6 +89,35 @@ class HeterogeneousSetError(HeterogeneousCollectionError):
     """
 
 
+class TupleArityNotRepresentableError(HeterogeneousCollectionError):
+    """Raised when the ``TUPLE`` heterogeneous strategy meets a
+    tuple-eligible heterogeneous scalar array whose length the target
+    language has no native fixed-size tuple for.
+
+    Kotlin only has ``Pair`` (two elements) and ``Triple`` (three
+    elements); an array of any other length cannot be represented as a
+    typed tuple without losing the per-position types, so
+    ``literalize`` raises rather than falling back to a homogeneous
+    list (which would re-trip the heterogeneity checks the strategy
+    exists to satisfy).  Subclasses
+    :class:`HeterogeneousCollectionError` so the same callers that
+    already skip a heterogeneous input the language cannot represent
+    also skip this one.
+    """
+
+    def __init__(self, *, arity: int) -> None:
+        """Create a ``TupleArityNotRepresentableError``.
+
+        The keyword argument is the element count of the rejected
+        array.
+        """
+        super().__init__(
+            f"a heterogeneous scalar array of {arity} elements has no "
+            f"native fixed-size tuple in the target language"
+        )
+        self.arity = arity
+
+
 class NullInCollectionError(Exception):
     """Raised when a collection contains null elements and the chosen
     format does not support them (e.g. Java's ``List.of()``).

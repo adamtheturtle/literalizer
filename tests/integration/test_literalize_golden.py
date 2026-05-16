@@ -415,15 +415,31 @@ def test_heterogeneous_strategy_combined_variable_forms(
                 spec=spec,
                 golden_path=golden_path,
             )
-            result = literalizer.literalize(
-                source=source_text,
-                input_format=input_info.input_format,
-                language=spec,
-                pre_indent_level=0,
-                include_delimiters=True,
-                variable_form=literalizer.BothVariableForms(name="my_data"),
-                wrap_in_file=True,
-            )
+            try:
+                result = literalizer.literalize(
+                    source=source_text,
+                    input_format=input_info.input_format,
+                    language=spec,
+                    pre_indent_level=0,
+                    include_delimiters=True,
+                    variable_form=literalizer.BothVariableForms(
+                        name="my_data",
+                    ),
+                    wrap_in_file=True,
+                )
+            except HeterogeneousCollectionError:
+                # A strategy may not be able to represent the paired
+                # fixture for every language (e.g. Kotlin ``TUPLE`` has
+                # no native tuple for the four-element
+                # ``tuple_record_field`` array), exactly as the base
+                # variant golden test skips such an input.  Drop any
+                # stale golden and skip.
+                golden_path.unlink(missing_ok=True)
+                pytest.skip(
+                    f"{case.lang_cls.__name__} cannot represent this "
+                    "heterogeneous input under "
+                    f"{case.heterogeneous_strategy.name}",
+                )
             check_golden(
                 file_regression=file_regression,
                 contents=result.code + "\n",

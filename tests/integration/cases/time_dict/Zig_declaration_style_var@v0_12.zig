@@ -1,0 +1,20 @@
+const ZVal = union(enum) {
+    nil,
+    bool: bool,
+    int: i64,
+    uint: u64,
+    float: f64,
+    str: []const u8,
+    arr: []const ZVal,
+    map: []const ZKV,
+    set: []const ZVal,
+};
+const ZKV = struct { key: []const u8, val: ZVal };
+pub fn main() void {
+    var my_data: ZVal = .{ .map = &.{
+        .{ .key = "morning", .val = .{ .str = "09:30:00" } },
+        .{ .key = "afternoon", .val = .{ .str = "14:15:00" } },
+        .{ .key = "evening", .val = .{ .str = "23:59:59" } },
+    }};
+    my_data = .nil;
+}

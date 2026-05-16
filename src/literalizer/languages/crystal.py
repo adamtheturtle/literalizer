@@ -573,6 +573,9 @@ class Crystal(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``crystal:`` pin passed to
+    # ``crystal-lang/install-crystal`` in the ``lint-crystal`` job of
+    # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.V1
     indent: str = "    "
 

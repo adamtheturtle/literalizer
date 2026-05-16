@@ -39,7 +39,22 @@ from .language_specs import (
 # default heterogeneous representations cannot hold a >2^63 integer in a
 # container -- a separate latent issue, not #2306 -- so base-discovering
 # it for every language would emit golden files that fail to compile.
-VARIANT_ONLY_CASE_DIRS = frozenset({"record_wide_int"})
+#
+# The ``tuple_pair_*`` / ``tuple_triple_*`` directories carry
+# two-element and three-element mixed scalar arrays solely to exercise
+# the ``TUPLE`` heterogeneous strategy (issue #2331; Kotlin
+# ``Pair``/``Triple``).  Only the ``heterogeneous_strategy`` axis is
+# meaningful for them, so they stay out of the all-languages base
+# discovery.
+VARIANT_ONLY_CASE_DIRS = frozenset(
+    {
+        "record_wide_int",
+        "tuple_pair_record_field",
+        "tuple_pair_top_level",
+        "tuple_triple_record_field",
+        "tuple_triple_top_level",
+    }
+)
 
 
 @functools.cache

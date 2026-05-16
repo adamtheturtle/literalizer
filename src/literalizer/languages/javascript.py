@@ -562,8 +562,11 @@ class JavaScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
-    # Keep in sync with the `tsc --target es2015 --lib es2015` flags in
-    # `.github/workflows/lint.yml` and `TypeScript.language_version` in
+    # Keep in sync with the `tsc --target es2015 --lib es2015` flags and
+    # the `node-version` pins on the Node lint jobs (`lint-fast`,
+    # `lint-npm-installed`, `lint-typescript-run`, `lint-elm`,
+    # `lint-elm-run`) in `.github/workflows/lint.yml`, and with
+    # `TypeScript.language_version` in
     # `src/literalizer/languages/typescript.py` (TypeScript fixtures share
     # this ECMAScript target).
     language_version: VersionFormats = VersionFormats.ES2015
