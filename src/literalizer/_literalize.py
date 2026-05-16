@@ -4002,10 +4002,10 @@ def _is_value_mapping(
 ) -> TypeIs[ValueItemsMap[Scalar, ValueInput]]:
     """Narrow ``value`` to the mapping arm of ``ValueInput``.
 
-    The arm is the covariant-key ``ValueItemsMap`` protocol (see its
-    docstring); every :class:`~collections.abc.Mapping` satisfies it
-    structurally, so the ``isinstance`` guard is sound and the negative
-    branch subtracts the whole mapping arm.
+    The arm is the covariant-key ``ValueItemsMap`` protocol; every
+    :class:`~collections.abc.Mapping` satisfies it structurally, so the
+    ``isinstance`` guard is sound and the negative branch subtracts the
+    whole mapping arm.
     """
     return isinstance(value, Mapping)
 
