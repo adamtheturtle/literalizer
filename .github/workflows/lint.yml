@@ -86,6 +86,11 @@ jobs:
           curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
             | tar -xj
           echo "$PWD/bin" >> "$GITHUB_PATH"
+      # The ``0.4.0`` wren-cli release downloaded here matches
+      # ``Wren.language_version`` (``V0_4``) in
+      # ``src/literalizer/languages/wren.py``; keep them in sync. Wren
+      # has no ``--langversion``-style flag, so the pinned CLI release
+      # is the only mechanism for pinning the language version.
       - name: Install Wren CLI
         run: |
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip

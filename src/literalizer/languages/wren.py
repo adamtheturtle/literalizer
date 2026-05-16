@@ -510,6 +510,11 @@ class Wren(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the wren release downloaded in the
+    # `Install Wren CLI` step of `.github/workflows/lint.yml`. Wren has
+    # no `--langversion`-style flag, so the pinned compiler release is
+    # the only mechanism for pinning the version; `V0_4` maps to
+    # `0.4.0`.
     language_version: VersionFormats = VersionFormats.V0_4
     indent: str = "    "
 
