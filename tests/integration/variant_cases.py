@@ -1006,10 +1006,11 @@ def build_record_numeric_cross_variants() -> Iterable[Variant]:
     typed to match its wide-integer overflow-fallback literal instead of
     the type a formatted-string inspection would infer.
 
-    Languages whose ``RECORD`` strategy still infers a field's type from
-    the formatted literal would emit golden files that do not compile
-    for this cross; that shared issue is tracked separately
-    (#2298 / #2299 / #2300) and each language joins the set once fixed.
+    Languages whose ``RECORD`` strategy does not yet widen a record
+    field's integer type to match its out-of-range overflow-fallback
+    literal would emit golden files that do not compile for this cross;
+    that width gap is tracked by #2376 and each language joins the set
+    once fixed.
     """
     axes: list[
         tuple[

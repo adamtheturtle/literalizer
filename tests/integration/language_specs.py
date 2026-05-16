@@ -33,8 +33,8 @@ from literalizer.languages import (
 # fallback).  Kotlin, Java and Scala derive the field type structurally
 # (#2305) but still pick a fixed-width integer type that the
 # out-of-range fallback literal overflows, so that combination does not
-# compile; the remaining width gap is tracked separately
-# (#2298 / #2299 / #2300) and each language joins this set once fixed.
+# compile; the remaining width gap is tracked by #2376 and each
+# language joins this set once fixed.
 RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
     frozenset({Go, Rust})
 )
