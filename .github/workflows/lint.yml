@@ -1044,6 +1044,13 @@ jobs:
 
   lint-cobol:
     runs-on: ubuntu-latest
+    env:
+      # Pin the GnuCOBOL toolchain so the implicitly installed compiler
+      # does not drift. ``3.2`` supports the COBOL 2002 standard, which
+      # matches ``Cobol.language_version`` (``V2002``) in
+      # ``src/literalizer/languages/cobol.py``; keep them in sync (the
+      # pin must stay ``>=`` that ``V2002`` default).
+      GNUCOBOL_VERSION: '3.2'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1054,6 +1061,8 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install GnuCOBOL
         uses: fabasoad/setup-cobol-action@v1.6.2
+        with:
+          version: ${{ env.GNUCOBOL_VERSION }}
       # GnuCOBOL caps the file base name length and rejects ``@``-laden
       # names that exceed it, so copy each fixture to a fixed short
       # filename before invoking ``cobc``.
