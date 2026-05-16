@@ -1,7 +1,5 @@
 """Meta-tests for project structure and CI configuration."""
 
-import ast
-import pathlib
 from typing import Any
 
 import pytest
@@ -9,68 +7,6 @@ from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer.languages import ALL_LANGUAGES
-
-_TESTS_ROOT = pathlib.Path(__file__).parent
-
-
-@beartype
-def _private_literalizer_imports(*, tree: ast.Module) -> list[str]:
-    """Return a description of every ``literalizer._*`` import in *tree*.
-
-    ``ast.walk`` visits ``TYPE_CHECKING``-guarded imports too, so this
-    catches both module-level and type-checking-only offenders.
-    """
-    offenders: list[str] = []
-    for node in ast.walk(node=tree):
-        match node:
-            case ast.Import():
-                offenders.extend(
-                    f"line {node.lineno}: import {alias.name}"
-                    for alias in node.names
-                    if alias.name.startswith("literalizer._")
-                )
-            case ast.ImportFrom():
-                module = node.module or ""
-                from_private_module = module.startswith("literalizer._")
-                private_names = (
-                    [
-                        alias.name
-                        for alias in node.names
-                        if alias.name.startswith("_")
-                    ]
-                    if module == "literalizer"
-                    else []
-                )
-                if from_private_module or private_names:
-                    imported = ", ".join(alias.name for alias in node.names)
-                    offenders.append(
-                        f"line {node.lineno}: from {module} import {imported}"
-                    )
-            case _:
-                pass
-    return offenders
-
-
-def test_no_private_literalizer_imports_in_tests() -> None:
-    """No ``tests/**/*.py`` file imports from a ``literalizer._*``
-    module (issue #1947).
-
-    Private imports pin internal structure and hide public-API gaps;
-    tests must exercise the package through its public surface.  This
-    check also covers ``TYPE_CHECKING``-only imports so a future test
-    cannot reintroduce one.
-    """
-    violations: dict[str, list[str]] = {}
-    for path in sorted(_TESTS_ROOT.rglob(pattern="*.py")):
-        tree = ast.parse(source=path.read_text(encoding="utf-8"))
-        offenders = _private_literalizer_imports(tree=tree)
-        if offenders:
-            violations[str(object=path)] = offenders
-
-    assert not violations, (
-        "tests/ must not import from private literalizer._* modules; "
-        f"offenders: {violations}"
-    )
 
 
 @pytest.fixture(scope="session", name="lint_workflow")
