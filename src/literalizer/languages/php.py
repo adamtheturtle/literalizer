@@ -69,12 +69,18 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
+    default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_statement,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -145,6 +151,13 @@ def _php_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Php(metaclass=LanguageCls):
     """PHP language specification."""
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     extension = ".php"
     pygments_name = "php"

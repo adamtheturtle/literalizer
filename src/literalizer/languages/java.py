@@ -81,12 +81,17 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
+    default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
     no_type_hint_preamble,
@@ -644,6 +649,12 @@ class Java(metaclass=LanguageCls):
             * ``sequence_formats.LIST`` — ``List.of(...)`` call,
               e.g. ``List.of(1, 2, 3)``.
     """
+
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     module_name: str = "Module"
 

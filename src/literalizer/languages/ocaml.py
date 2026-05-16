@@ -67,12 +67,16 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
     never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -276,6 +280,11 @@ class OCaml(metaclass=LanguageCls):
             Defaults to ``"O"``, producing constructors like ``ONull``,
             ``OBool``, ``OInt``, etc.
     """
+
+    format_integer_widened = no_format_integer_widened
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     extension = ".ml"
     pygments_name = "ocaml"
