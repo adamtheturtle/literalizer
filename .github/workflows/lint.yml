@@ -1892,7 +1892,11 @@ jobs:
       # source: V's ``make`` re-clones the *latest* ``vc`` C bootstrap,
       # which fails to compile an old tagged ``vlib``.  A pinned
       # release artifact stops the compiler drifting with upstream
-      # ``master``.
+      # ``master``.  The release's bundled tcc miscompiles V's
+      # generated C on this runner (``undefined symbol
+      # builtin__memdup``, ``field not found: _f64``), so the build
+      # uses the runner's system ``gcc`` as the C backend (``-cc
+      # gcc``) instead.
       - name: Install V
         run: |
           curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/0.5.1/v_linux.zip
@@ -1903,11 +1907,11 @@ jobs:
           # and ``Run V files`` steps each fan out across ``nproc``
           # parallel ``v`` processes, which otherwise race to create
           # those folders and panic (``V panic: folder: ~/.vmodules/,
-          # error: File exists``).  Warm up once, serially, with ``v
-          # run`` (a superset of ``v fmt``'s first-run setup) so every
-          # lazily-created directory exists before the parallel steps.
+          # error: File exists``).  Warm up once, serially, with the
+          # same ``v -cc gcc run`` invocation the parallel step uses so
+          # every lazily-created directory exists beforehand.
           echo 'fn main() {}' > /tmp/v-warmup.v
-          v run /tmp/v-warmup.v > /dev/null 2>&1 || true
+          v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1917,7 +1921,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_v_syntax.py
           < /tmp/files-to-lint
       - name: Run V files
-        run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
 
   lint-objectivec:
     # ``macos-15`` pins the runner image (the current ``macos-latest``
