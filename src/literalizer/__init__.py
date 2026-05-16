@@ -25,6 +25,7 @@ from literalizer._language import (
     PrefixCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
+    StubReturn,
     TrailingCommaConfig,
 )
 from literalizer._literalize import (
@@ -67,6 +68,7 @@ __all__ = [
     "PrefixCallStyle",
     "SequenceFormatConfig",
     "SetFormatConfig",
+    "StubReturn",
     "TrailingCommaConfig",
     "VariableForm",
     "fixed_open",

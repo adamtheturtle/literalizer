@@ -324,10 +324,21 @@ class FloatSpecialsMixin:
 
 
 class StubReturn(enum.Enum):
-    """Whether a call stub should return a value or void."""
+    """Whether a generated call stub returns a value or nothing.
+
+    Passed to :attr:`Language.format_call_stub` and
+    :attr:`Language.format_call_preamble_stub` to control the return
+    type of the no-op target-function stub emitted when a call is
+    wrapped in a self-contained file.
+    """
 
     VOID = "void"
+    """The call result is discarded, so the stub returns nothing."""
+
     VALUE = "value"
+    """The call result is consumed (passed to a ``call_transform`` or
+    bound to a variable), so the stub returns a value.
+    """
 
 
 class IdentifierCase(enum.Enum):
