@@ -533,6 +533,10 @@ class R(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `r-version` pin passed to
+    # `r-lib/actions/setup-r` in the `lint-r` job of
+    # `.github/workflows/lint.yml`; `V4` maps to R `4.x`, and that pin
+    # (`4.4.0`) must stay `>=` this default.
     language_version: VersionFormats = VersionFormats.V4
     indent: str = "    "
 

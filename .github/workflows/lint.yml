@@ -76,10 +76,16 @@ jobs:
           luaVersion: '5.4'
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+      # ``gforth`` is pinned to ``0.7.3+dfsg-9build4.1`` (the Ubuntu
+      # 24.04 build), which implements ANS Forth, matching
+      # ``Forth.language_version`` (``ANS``) in
+      # ``src/literalizer/languages/forth.py``; keep them in sync.
+      # ``ANS`` is a fixed standard, so the version pin here is for
+      # reproducibility rather than language selection.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: tcl gforth guile-3.0
+          packages: tcl gforth=0.7.3+dfsg-9build4.1 guile-3.0
           version: 1.0
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
@@ -971,9 +977,14 @@ jobs:
       - uses: haskell-actions/setup@v2
         with:
           ghc-version: latest
+      # ``purescript: 0.15.15`` is ``>=`` the ``V0_15`` (PureScript
+      # 0.15.x) default of ``PureScript.language_version`` in
+      # ``src/literalizer/languages/purescript.py``; keep them in sync.
+      # Without an explicit pin ``setup-purescript`` installs whatever
+      # ``purescript: latest`` resolves to and drifts.
       - uses: purescript-contrib/setup-purescript@main
         with:
-          purescript: latest
+          purescript: 0.15.15
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1468,6 +1479,11 @@ jobs:
         uses: r-lib/actions/setup-r@v2
         with:
           windows-path-include-rtools: false
+          # `4.4.0` is `>=` the `R.language_version` default (`V4`) in
+          # `src/literalizer/languages/r.py`; keep them in sync. Without
+          # this pin `setup-r` installs whatever it considers `release`,
+          # so the R that compiles the fixtures drifts.
+          r-version: 4.4.0
       - name: Check R syntax
         run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
           < /tmp/files-to-lint
@@ -1739,7 +1755,16 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.rkt' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # The pinned Racket ``8.17`` is ``>=`` the ``V8`` default of
+      # ``Racket.language_version`` in
+      # ``src/literalizer/languages/racket.py``; keep them in sync.
+      # Racket has no ``--langversion``-style flag, so the pinned
+      # release is the only mechanism for pinning the language version.
+      # Without an explicit ``version`` the installed Racket drifts
+      # with the ``setup-racket`` action default.
       - uses: Bogdanp/setup-racket@v1.15
+        with:
+          version: '8.17'
       - name: Check Racket syntax
         run: xargs -0 raco make < /tmp/files-to-lint
       - name: Run Racket files
@@ -1747,6 +1772,13 @@ jobs:
 
   lint-raku:
     runs-on: ubuntu-latest
+    # The pinned Rakudo ``2026.04`` release implements Raku language
+    # version 6.d, the ``V6D`` default of ``Raku.language_version`` in
+    # ``src/literalizer/languages/raku.py``; keep them in sync. Rakudo
+    # has no ``--langversion``-style flag, so the pinned compiler
+    # release is the only mechanism for pinning the language version.
+    env:
+      RAKU_VERSION: '2026.04'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1756,7 +1788,9 @@ jobs:
         run: find tests/integration/cases -name '*.raku' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Raku
-        run: sudo apt-get update && sudo apt-get install --yes raku
+        uses: Raku/setup-raku@v1
+        with:
+          raku-version: ${{ env.RAKU_VERSION }}
       - name: Check Raku syntax
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
       - name: Run Raku files

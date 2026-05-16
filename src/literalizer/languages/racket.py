@@ -440,6 +440,12 @@ class Racket(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``version`` pin passed to
+    # ``Bogdanp/setup-racket`` in the ``lint-racket`` job of
+    # ``.github/workflows/lint.yml``. Racket has no
+    # ``--langversion``-style flag, so the pinned release is the only
+    # mechanism for pinning the language version; the pin (``8.17``) is
+    # ``>=`` the ``V8`` default.
     language_version: VersionFormats = VersionFormats.V8
     indent: str = "    "
 
