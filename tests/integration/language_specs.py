@@ -25,15 +25,16 @@ from literalizer.languages import (
     Scala,
 )
 
-# Languages whose ``RECORD`` heterogeneous strategy chooses each
-# generated struct field's type from the value itself, so the declared
-# field type matches the rendered literal under any non-default
-# ``integer_format`` / ``numeric_separator`` / ``numeric_literal_suffix``
-# and for an integer outside the signed 64-bit range.  Kotlin, Java and
-# Scala still infer a record field's type from the formatted literal and
-# emit code that does not compile for those combinations; that shared
-# issue is tracked separately (#2298 / #2299 / #2300) and each language
-# joins this set once it derives the type from the value.
+# Languages whose ``RECORD`` heterogeneous strategy gives each generated
+# struct field a type that matches the rendered literal under any
+# non-default ``integer_format`` / ``numeric_separator`` /
+# ``numeric_literal_suffix`` and for a positive integer outside the
+# signed 64-bit range (whose literal comes from a wide-integer overflow
+# fallback).  Kotlin, Java and Scala derive the field type structurally
+# (#2305) but still pick a fixed-width integer type that the
+# out-of-range fallback literal overflows, so that combination does not
+# compile; the remaining width gap is tracked separately
+# (#2298 / #2299 / #2300) and each language joins this set once fixed.
 RECORD_FIELD_TYPE_FROM_VALUE_LANGUAGES: frozenset[literalizer.LanguageCls] = (
     frozenset({Go, Rust})
 )
