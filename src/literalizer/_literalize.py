@@ -3904,7 +3904,18 @@ def _wrap_call_in_file(
     wrap_variable_name = (
         variable_form.name if variable_form is not None else ""
     )
-    wrapped = language.wrap_in_file(
+    wrap_in_file_hook = language.wrap_in_file
+    if variable_form is not None:
+        # A call-result binding cannot reuse a language's literal-binding
+        # scaffold when that scaffold's shape depends on the bound value
+        # (e.g. Elm's top-level ``name : Val`` form, forced externally by
+        # the test driver, versus a call-mode ``Check.main`` entry point).
+        # Languages that need a different scaffold opt in here; the rest
+        # fall back to ``wrap_in_file`` unchanged.
+        wrap_in_file_hook = getattr(
+            language, "wrap_call_variable_in_file", wrap_in_file_hook
+        )
+    wrapped = wrap_in_file_hook(
         content=result,
         variable_name=wrap_variable_name,
         body_preamble=body_stubs + computed_body,

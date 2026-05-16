@@ -539,7 +539,7 @@ class Elm(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1241,6 +1241,45 @@ class Elm(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding declaration prepends a ``name : Val``
+        annotation derived from the bound value's runtime tagged-enum
+        type; a call expression has no such tag, so the annotation is
+        omitted and Elm infers the call's return type instead.
+        """
+        return self.declaration_style.value.formatter
+
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in an Elm module.
+
+        The literal-binding scaffold emits a top-level ``name : Val`` /
+        ``name = …`` pair that the test driver forces externally via a
+        ``Check.my_data`` reference.  A call-mode fixture is instead
+        driven through ``Check.main``, so the binding is placed inside
+        the ``main`` ``let`` block; evaluating the block forces the
+        call.  *content* is the single-line ``name = call …`` binding
+        produced by :attr:`format_call_variable_declaration`.
+        """
+        del variable_name  # the binding text already carries the name
+        preamble = "\n".join(body_preamble)
+        let_indent = self.indent * 2
+        let_lines = [f"{let_indent}{line}" for line in content.split(sep="\n")]
+        return _elm_call_module(
+            preamble=preamble,
+            let_lines=let_lines,
+            indent=self.indent,
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
