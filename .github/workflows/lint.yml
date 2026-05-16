@@ -135,6 +135,16 @@ jobs:
         with:
           node-version: '22'
 
+      # ``php-version: '8.1'`` matches ``Php.language_version`` (``V8_1``)
+      # in ``src/literalizer/languages/php.py``; keep them in sync. PHP
+      # has no ``--langversion``-style flag, so the pinned interpreter is
+      # the only mechanism for pinning the language version. Without this
+      # step `php` is whatever `ubuntu-latest` ships and drifts.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
       - name: Lint Bash
         run: |-
           find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
