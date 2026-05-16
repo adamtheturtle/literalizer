@@ -1791,7 +1791,14 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 v run < /tmp/files-to-lint
 
   lint-objectivec:
-    runs-on: macos-latest
+    # ``macos-15`` pins the runner image (the current ``macos-latest``
+    # alias) so the Apple ``clang`` it ships stays fixed. That clang
+    # supports the Objective-C 2.0 (``V2``) language generation that
+    # ``ObjectiveC.language_version`` in
+    # ``src/literalizer/languages/objective_c.py`` defaults to; keep them
+    # in sync. ``V2`` is a fixed language generation, so the pin is for
+    # build reproducibility, not to track a moving standard.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -1827,7 +1834,12 @@ jobs:
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
 
   lint-objectivec-tidy:
-    runs-on: macos-latest
+    # ``macos-15`` pins the runner image to match ``lint-objectivec`` so
+    # the Apple ``clang`` headers that Homebrew ``clang-tidy`` parses stay
+    # fixed against the Objective-C 2.0 (``V2``)
+    # ``ObjectiveC.language_version`` default in
+    # ``src/literalizer/languages/objective_c.py``; keep them in sync.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
         with:
