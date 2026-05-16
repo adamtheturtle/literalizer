@@ -1975,20 +1975,27 @@ class Cpp(metaclass=LanguageCls):
         derived structurally from the raw value.
 
         A field whose value is itself a nested record-shaped dict uses
-        that record's generated name.  Every other value is typed by the
-        same :func:`_compute_cpp_type` the collection openers in the
-        value formatter use, with the integer width narrowed to the
-        field's own value so the declared type matches the rendered
-        integer literal whether or not it carries a suffix (including
-        the ``unsigned long long`` an out-of-range integer's ``ULL``
-        overflow literal needs).  A set or non-record dict field is out
-        of scope for the base ``RECORD`` port (the cross-language
+        that record's generated name.  A field whose value is a list of
+        record-shaped dicts (one shared shape) is typed
+        ``std::vector<RecordN>`` to match the ``std::vector{`` opener's
+        class-template argument deduction from the ``RecordN`` element
+        literals (the same name the shared strategy resolves, the one
+        piece unrecoverable from the raw value).  Every other value is
+        typed by the same :func:`_compute_cpp_type` the collection
+        openers in the value formatter use, with the integer width
+        narrowed to the field's own value so the declared type matches
+        the rendered integer literal whether or not it carries a suffix
+        (including the ``unsigned long long`` an out-of-range integer's
+        ``ULL`` overflow literal needs).  A set or non-record dict field
+        is out of scope for the base ``RECORD`` port (the cross-language
         decision is tracked in #2317) and is not reached by any record
         golden, so it falls through to the shared
         :func:`_compute_cpp_type` map / initializer-list handling.
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"std::vector<{request.element_record_name}>"
         value = request.value
         if isinstance(value, int) and not isinstance(value, bool):
             int_type = _cpp_int_field_type(
