@@ -908,10 +908,20 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name == "RECORD"
         )
-        spec = lang_cls(
-            heterogeneous_strategy=record_strategy,
-            record_shape_names={shape_keys: custom_name},
-        )
+        spec_kwargs: dict[str, object] = {
+            "heterogeneous_strategy": record_strategy,
+            "record_shape_names": {shape_keys: custom_name},
+        }
+        # Mirror :func:`make_spec`'s ``module_name`` default (this
+        # builder bypasses it): a language whose ``wrap_in_file``
+        # introduces a named scope (e.g. Java's ``class {module_name}``,
+        # which its CI lint host loads as ``Main``) needs the same
+        # ``"main"`` name the other goldens use.
+        if lang_cls.supports_module_name:
+            spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
+                name="main",
+            )
+        spec = lang_cls(**spec_kwargs)
         variants.append(
             Variant(
                 name=(f"{lang_cls.__name__}_record_shape_names_{custom_name}"),
