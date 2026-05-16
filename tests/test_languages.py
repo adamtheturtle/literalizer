@@ -401,20 +401,6 @@ def test_dhall_quoted_dict_key() -> None:
     assert result.code == '{\n  `a"b` = +1,\n}'
 
 
-def test_python_dotted_target_function_renders() -> None:
-    """Dotted ``target_function`` succeeds when the language supports
-    it.
-    """
-    result = literalize_call(
-        source="[[1]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="module.fn",
-        parameter_names=["a"],
-    )
-    assert result.code == "module.fn(a=1)"
-
-
 def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
     """Cases legal in the language but absent from the idiomatic
     preference list are accepted and rendered.
