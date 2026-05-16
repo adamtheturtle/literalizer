@@ -573,6 +573,8 @@ class Julia(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the `version` input of the
+    # `julia-actions/setup-julia` step in `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
 

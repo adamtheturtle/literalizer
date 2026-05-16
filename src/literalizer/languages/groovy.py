@@ -484,6 +484,12 @@ class Groovy(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the Apache Groovy binary distribution downloaded
+    # in the ``Install Groovy`` step of ``.github/workflows/lint.yml``.
+    # The Ubuntu ``groovy`` apt package is Groovy 2.4.x (``< V4``), so
+    # the pinned binary distribution is the only mechanism for
+    # installing a Groovy ``>= V4``; ``V4`` maps to the pinned
+    # ``4.0.32`` release.
     language_version: VersionFormats = VersionFormats.V4
     indent: str = "    "
 

@@ -451,6 +451,11 @@ class CommonLisp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    # Keep in sync with the ``LISP`` environment variable of the
+    # ``lint-commonlisp`` job in ``.github/workflows/lint.yml``, which pins
+    # ``sbcl-bin/2.6.4``. ``ANSI`` is a fixed standard; the pin keeps the
+    # installed SBCL build stable across CI runs rather than selecting a
+    # language standard.
     language_version: VersionFormats = VersionFormats.ANSI
     indent: str = "    "
 

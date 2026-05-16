@@ -11,6 +11,8 @@ dist/
 *.egg-info/
 *.egg
 MANIFEST
+# setuptools-scm sdist extraction dir, e.g. literalizer-2026.5.16.post34+g713b0d3b8/
+/literalizer-*/
 
 # Unit test / coverage
 .coverage
