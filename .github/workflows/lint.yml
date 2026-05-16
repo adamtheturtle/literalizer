@@ -898,11 +898,17 @@ jobs:
         with:
           clj-kondo: latest
           bb: latest
+      # The pinned Apache Groovy 4.0.32 binary distribution is ``>=`` the
+      # ``V4`` (Groovy 4.x) default of ``Groovy.language_version`` in
+      # ``src/literalizer/languages/groovy.py``; keep them in sync. The
+      # Ubuntu ``groovy`` apt package is Groovy 2.4.x (``< V4``), so the
+      # pinned binary distribution is the only mechanism for installing a
+      # Groovy ``>= V4``.
       - name: Install Groovy
-        uses: awalsh128/cache-apt-pkgs-action@v1
-        with:
-          packages: groovy
-          version: 1.0
+        run: |-
+          curl -fsSL https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip -o /tmp/groovy.zip
+          unzip -q -o /tmp/groovy.zip -d /tmp/groovy
+          echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
       - name: Lint Clojure
         run: |-
@@ -916,14 +922,10 @@ jobs:
       # instead of cold-starting groovyc/groovy per file. A fresh
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
-      # Invoke the wrapper at /usr/share/groovy/bin/groovy directly rather
-      # than ``groovy`` because cache-apt-pkgs-action does not replay the
-      # package's ``update-alternatives`` postinst on cache hit, so
-      # ``/usr/bin/groovy`` is missing.
       - name: Lint Groovy
         run: |-
           find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
-          /usr/share/groovy/bin/groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
+          groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
