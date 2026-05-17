@@ -1000,9 +1000,9 @@ class Nim(metaclass=LanguageCls):
         # RECORD intentionally reuses the inert ERROR builders (its
         # real behavior/preamble are resolved per-instance, see
         # ``heterogeneous_behavior`` / ``data_dependent_preamble``);
-        # ``_HeterogeneousStrategyConfig``'s identity equality
-        # (``eq=False``) keeps it a distinct member rather than an
-        # alias of ERROR, which ``PIE796`` cannot tell apart.
+        # ``_HeterogeneousStrategyConfig`` uses identity equality so
+        # this stays a distinct member rather than an alias of ERROR,
+        # which ``PIE796`` cannot tell apart.
         RECORD = _HeterogeneousStrategyConfig(  # noqa: PIE796
             build_behavior=_build_error_behavior,
             build_preamble=_build_error_preamble,

@@ -58,7 +58,7 @@ from .language_specs import (
 # ``meta`` field is an empty (non-record) dict.  It exists only to
 # exercise the per-language rejection of a non-record-dict record field
 # under the ``RECORD`` strategy (the cross-language decision in #2317):
-# Nim's variant builder is the sole consumer, so it stays out of the
+# the Nim variant builder is the sole consumer, so it stays out of the
 # all-languages base discovery.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
