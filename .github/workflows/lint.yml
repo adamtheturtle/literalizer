@@ -457,12 +457,21 @@ jobs:
             -o /tmp/carbon.tar.gz
           mkdir -p /tmp/carbon
           tar -xzf /tmp/carbon.tar.gz -C /tmp/carbon
-          carbon_bin=$(find /tmp/carbon -type f -name carbon -perm -u+x | head -n1)
-          if [ -z "$carbon_bin" ]; then
+          # ``bin/carbon`` is a symlink to ``lib/carbon/carbon-busybox``
+          # (so ``find -type f`` never matches it), and the busybox
+          # resolves its prelude relative to its own real path -- so it
+          # must be invoked through the in-tree symlink rather than
+          # copied out with ``install``/``cp`` (which would dereference
+          # it and break prelude lookup). Symlink it onto PATH instead.
+          carbon_root=$(find /tmp/carbon -maxdepth 1 -type d -name 'carbon_toolchain-*' | head -n1)
+          carbon_bin="$carbon_root/bin/carbon"
+          if [ ! -e "$carbon_bin" ]; then
             echo "carbon binary not found in toolchain tarball" >&2
+            find /tmp/carbon -maxdepth 3 >&2
             exit 1
           fi
-          sudo install "$carbon_bin" /usr/local/bin/carbon
+          sudo ln -s "$carbon_bin" /usr/local/bin/carbon
+          carbon compile --help >/dev/null
       - name: Lint Carbon
         run: |-
           find tests/integration/cases -name '*.carbon' -print0 > /tmp/files-carbon && test -s /tmp/files-carbon
