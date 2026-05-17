@@ -7,7 +7,7 @@ import enum
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
@@ -88,10 +88,10 @@ from literalizer._language import (
     no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import UnrepresentableInputError
 
 
 @beartype
@@ -272,12 +272,94 @@ def _all_record_shaped(items: list[Value], /) -> bool:
     """
     if not items:
         return False
-    return all(
-        isinstance(item, dict)
-        and not isinstance(item, OrderedMap)
-        and record_shape_for_dict(value=item) is not None
-        for item in items
+    return all(_c_record_dict(item) for item in items)
+
+
+@beartype
+def _c_record_dict(value: Value, /) -> TypeGuard[dict[Scalar, Value]]:
+    """Return whether *value* is a record-shaped dict.
+
+    A record-shaped dict (non-empty, all-string-keyed, not an ordered
+    map) renders as a ``(struct RecordN){...}`` literal under the
+    ``RECORD`` strategy.
+    """
+    return (
+        isinstance(value, dict)
+        and not isinstance(value, OrderedMap)
+        and record_shape_for_dict(value=value) is not None
     )
+
+
+_C_RECORD_IN_CVAL_MSG = (
+    "C cannot represent a record-shaped dict (or a list whose every "
+    "element is one) nested under a non-record container -- a "
+    "non-all-record list, a non-record dict, an ordered map, or a set "
+    "-- under the RECORD heterogeneous strategy: it renders as a "
+    "generated struct, which is not a CVal union member, so it is "
+    "representable only as a record-field value, an element of such a "
+    "field's struct array, or the document root (cf. the set / "
+    "non-record-dict field boundary tracked in #2317)"
+)
+
+
+@beartype
+def _check_c_record_nesting(  # noqa: C901
+    *,
+    node: Value,
+    cval_context: bool,
+) -> None:
+    """Raise :class:`UnrepresentableInputError` if a record-shaped dict
+    (or an all-record list) is reachable only through a ``CVal``
+    context.
+
+    Under C's ``RECORD`` strategy a record-shaped dict renders as a
+    ``(struct RecordN){...}`` literal and a list whose elements are all
+    record-shaped dicts as a ``struct RecordN[]`` array; neither is a
+    ``CVal`` union member.  Either is therefore representable only as a
+    record-field value, an element of such a field's struct array, or
+    the document root.  *cval_context* is ``True`` once the walk has
+    descended through a non-record container, where the value must
+    occupy a ``CVal`` slot and a record there cannot be represented.
+    """
+    # pylint: disable=too-complex
+    if _c_record_dict(node):
+        if cval_context:
+            raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
+        for field_value in node.values():
+            _check_c_record_field(field_value)
+        return
+    match node:
+        case OrderedMap() | dict():
+            for value in node.values():
+                _check_c_record_nesting(node=value, cval_context=True)
+        case list() if _all_record_shaped(node):
+            if cval_context:
+                raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
+            for element in node:
+                _check_c_record_nesting(node=element, cval_context=False)
+        case list():
+            for element in node:
+                _check_c_record_nesting(node=element, cval_context=True)
+        case _:
+            return
+
+
+@beartype
+def _check_c_record_field(field_value: Value, /) -> None:
+    """Validate one field value of a record-shaped dict.
+
+    A nested record dict stays a ``struct`` member and an all-record
+    list a ``struct`` array (neither a ``CVal``), so those descend
+    without entering a ``CVal`` context.  Every other field value is a
+    ``CVal`` slot.
+    """
+    if _c_record_dict(field_value):
+        _check_c_record_nesting(node=field_value, cval_context=False)
+    elif isinstance(field_value, list) and _all_record_shaped(field_value):
+        for element in field_value:
+            _check_c_record_nesting(node=element, cval_context=False)
+    else:
+        _check_c_record_nesting(node=field_value, cval_context=True)
 
 
 @beartype
@@ -713,7 +795,21 @@ class C(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid C for *data*.
+
+        Under the ``RECORD`` strategy a record-shaped dict renders as a
+        ``(struct RecordN){...}`` literal (and a list whose elements are
+        all record-shaped dicts as a ``struct RecordN[]`` array); a
+        ``struct`` is not a ``CVal`` union member, so a record reachable
+        only through a non-record container would have to occupy a
+        ``CVal`` slot and cannot compile.  Rejecting it here keeps the
+        boundary explicit rather than emitting C that fails to build
+        (cf. the set / non-record-dict field boundary tracked in
+        #2317).  The default (``ERROR``) strategy is unconstrained.
+        """
+        if self._record_strategy_active:
+            _check_c_record_nesting(node=data, cval_context=False)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
