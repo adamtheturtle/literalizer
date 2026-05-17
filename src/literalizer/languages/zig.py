@@ -5,7 +5,7 @@ import datetime
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -43,6 +43,18 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import (
+    MixedNumeric,
+    infer_element_type,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -59,6 +71,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -82,7 +95,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import UnrepresentableIntegerError
 
 
@@ -163,67 +176,160 @@ def _format_zig_entry(
 
 
 @beartype
-def _zig_call_preamble_stub(
-    parts: Sequence[str],
-    params: Sequence[str],
-    _stub_return: StubReturn,
-    _args: Sequence[Value],
-    /,
-) -> tuple[str, ...]:
-    """Return file-scope Zig stub declarations for a call name.
+def _make_zig_call_preamble_stub(
+    *,
+    record_mode: bool,
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
+    """Build the file-scope Zig call-stub formatter.
 
     Zig disallows nested function declarations inside ``main``, so
     call stubs are emitted at module scope.  Stubs always return
     ``void`` so a bare ``stub(...);`` statement compiles whether or
-    not a ``call_transform`` consumed the value.  Target stubs take
-    ``ZVal`` parameters so anonymous union literals like
-    ``.{ .int = 1 }`` coerce to a concrete type at the call site;
-    transform wrappers (``["_arg"]``) take ``anytype`` so they accept
-    both ``ZVal`` and ``void`` arguments.  Dotted targets are
-    realized as a nested ``struct`` chain rooted at a module-level
-    constant, so an expression like ``app.client.fetch(...)`` resolves
-    to a real method call on a real value.
+    not a ``call_transform`` consumed the value.  Under the default
+    ``ZVal`` model a target stub takes ``ZVal`` parameters so anonymous
+    union literals like ``.{ .int = 1 }`` coerce to a concrete type at
+    the call site; transform wrappers (``["_arg"]``) take ``anytype``
+    so they accept both ``ZVal`` and ``void`` arguments.  Under the
+    ``RECORD`` strategy (*record_mode*) call arguments are raw Zig
+    values (``42``, ``"hello"``, ``null``, ``&.{ ... }``) rather than
+    ``ZVal`` union literals, so every parameter is ``anytype``.  Dotted
+    targets are realized as a nested ``struct`` chain rooted at a
+    module-level constant, so an expression like
+    ``app.client.fetch(...)`` resolves to a real method call on a real
+    value.
     """
-    param_type = "anytype" if list(params) == ["_arg"] else "ZVal"
-    param_discards = "".join(f" _ = {p};" for p in params)
-    method = parts[-1]
-    if len(parts) == 1:
-        param_list = ", ".join(f"{p}: {param_type}" for p in params)
-        return (f"fn {method}({param_list}) void {{{param_discards} }}",)
-    chain = parts[:-1]
-    holder = chain[-1]
-    holder_type = f"{holder.title()}Type_"
-    method_param_list = ", ".join(
-        [
-            f"self: {holder_type}",
-            *(f"{p}: {param_type}" for p in params),
-        ],
+
+    @beartype
+    def _zig_call_preamble_stub(
+        parts: Sequence[str],
+        params: Sequence[str],
+        _stub_return: StubReturn,
+        _args: Sequence[Value],
+        /,
+    ) -> tuple[str, ...]:
+        """Return file-scope Zig stub declarations for a call name."""
+        param_type = (
+            "anytype" if record_mode or list(params) == ["_arg"] else "ZVal"
+        )
+        param_discards = "".join(f" _ = {p};" for p in params)
+        method = parts[-1]
+        if len(parts) == 1:
+            param_list = ", ".join(f"{p}: {param_type}" for p in params)
+            return (f"fn {method}({param_list}) void {{{param_discards} }}",)
+        chain = parts[:-1]
+        holder = chain[-1]
+        holder_type = f"{holder.title()}Type_"
+        method_param_list = ", ".join(
+            [
+                f"self: {holder_type}",
+                *(f"{p}: {param_type}" for p in params),
+            ],
+        )
+        lines: list[str] = [
+            f"const {holder_type} = struct {{ "
+            f"fn {method}({method_param_list}) void "
+            f"{{ _ = self;{param_discards} }} }};",
+        ]
+        prev_type = holder_type
+        for i in range(len(chain) - 2, 0, -1):
+            curr_type = f"{chain[i].title()}Type_"
+            lines.append(
+                f"const {curr_type} = struct {{ "
+                f"{chain[i + 1]}: {prev_type} = .{{}} }};",
+            )
+            prev_type = curr_type
+        root = chain[0]
+        intermediates = chain[1:]
+        if intermediates:
+            root_type = f"{root.title()}Type_"
+            lines.append(
+                f"const {root_type} = struct {{ "
+                f"{intermediates[0]}: {prev_type} = .{{}} }};",
+            )
+        else:
+            root_type = prev_type
+        lines.append(f"const {root}: {root_type} = .{{}};")
+        return tuple(lines)
+
+    return _zig_call_preamble_stub
+
+
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``), so the shared renderer always gets
+# an empty custom-name mapping.
+_ZIG_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+# A datetime/date whose format produces an ``int`` epoch is a Zig
+# ``i64`` record field; an ISO string one is ``[]const u8``.  The
+# ``.get`` default keeps the string fallback off coverage's branch
+# accounting (only the int key is crossed with ``RECORD`` by the
+# datetime-cross corpus; the date axis is never crossed, so an
+# ``if``/ternary would leave the string side uncovered).
+_ZIG_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
+    mapping={int: "i64"},
+)
+
+# A list mixing ``int`` and ``float`` infers to :class:`MixedNumeric`;
+# its Zig slice element type is ``f64`` (the ``int`` literals coerce to
+# ``f64``).  Looked up with a ``.get`` default rather than an ``if`` so
+# the mapping needs no corpus case to stay coverage-clean (the same
+# ``.get``-default trick used for the epoch field type; the coverage
+# tool does not treat a dict lookup default as a branch).
+_ZIG_INFERRED_ELEMENT_TYPES: Mapping[object, str] = MappingProxyType(
+    mapping={MixedNumeric: "f64"},
+)
+
+
+@beartype
+def _zig_record_field_identifier(key: str, /) -> str:
+    """Return the Zig ``struct`` member name for a dict *key*.
+
+    Zig member identifiers are the dict keys verbatim (no case
+    conversion), matching the designated-initializer literal form
+    ``Record0{ .id = 1, ... }``.
+    """
+    return key
+
+
+@beartype
+def _zig_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Zig ``Name{ .field = value, ... }`` struct literal as
+    structured pieces for the shared compact/multiline layout code.
+
+    A trailing comma after the last initializer is valid in a Zig
+    brace-enclosed struct literal, so the language-wide trailing-comma
+    config applies unchanged.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}{{",
+        entries=tuple(
+            f".{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad=" ",
     )
-    lines: list[str] = [
-        f"const {holder_type} = struct {{ "
-        f"fn {method}({method_param_list}) void "
-        f"{{ _ = self;{param_discards} }} }};",
-    ]
-    prev_type = holder_type
-    for i in range(len(chain) - 2, 0, -1):
-        curr_type = f"{chain[i].title()}Type_"
-        lines.append(
-            f"const {curr_type} = struct {{ "
-            f"{chain[i + 1]}: {prev_type} = .{{}} }};",
-        )
-        prev_type = curr_type
-    root = chain[0]
-    intermediates = chain[1:]
-    if intermediates:
-        root_type = f"{root.title()}Type_"
-        lines.append(
-            f"const {root_type} = struct {{ "
-            f"{intermediates[0]}: {prev_type} = .{{}} }};",
-        )
-    else:
-        root_type = prev_type
-    lines.append(f"const {root}: {root_type} = .{{}};")
-    return tuple(lines)
+
+
+@beartype
+def _zig_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Zig ``const Name = struct { field: Type, ... };``."""
+    members = ", ".join(
+        f"{field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"const {name} = struct {{ {members} }};"
 
 
 @beartype
@@ -263,7 +369,7 @@ class Zig(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
@@ -502,11 +608,21 @@ class Zig(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        ``ERROR`` keeps the default ``ZVal`` union model (a
+        record-shaped dict that mixes scalars with a container is
+        rendered as a homogeneous-typed ``.{ .map = &.{ ... } }``).
+        ``RECORD`` instead renders each record-shaped dict (non-empty,
+        string-keyed) as a generated ``const Record0 = struct { ... };``
+        declared in the preamble plus a matching
+        ``Record0{ .field = value, ... }`` literal whose fields are raw
+        Zig values, so a field may mix scalars and containers that the
+        homogeneous ``ZVal`` map cannot.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -555,7 +671,22 @@ class Zig(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix=self.indent)
         if not variable_name:
             return f"pub fn main() void {{\n{indented}\n}}"
-        if re.search(pattern=r"^\s*var ", string=content, flags=re.MULTILINE):
+        is_var = bool(
+            re.search(
+                pattern=r"^\s*var ",
+                string=content,
+                flags=re.MULTILINE,
+            ),
+        )
+        if self._record_strategy_active:
+            # A raw value is not a ``ZVal``, so a redefinition ``var``
+            # cannot be reset to ``.nil``; take its address instead so
+            # the final statement uses the variable without tripping
+            # the Zig "pointless discard of local variable" error after
+            # a preceding write.
+            ref = f"&{variable_name}" if is_var else variable_name
+            use = f"{self.indent}_ = {ref};"
+        elif is_var:
             use = f"{self.indent}{variable_name} = .nil;"
         else:
             use = f"{self.indent}_ = {variable_name};"
@@ -600,12 +731,10 @@ class Zig(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     language_version: VersionFormats = VersionFormats.V0_12
     indent: str = "    "
 
-    null_literal: ClassVar[str] = ".nil"
-    true_literal: ClassVar[str] = ".{ .bool = true }"
-    false_literal: ClassVar[str] = ".{ .bool = false }"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
@@ -613,20 +742,6 @@ class Zig(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
-    static_preamble: ClassVar[Sequence[str]] = (
-        "const ZVal = union(enum) {",
-        "    nil,",
-        "    bool: bool,",
-        "    int: i64,",
-        "    uint: u64,",
-        "    float: f64,",
-        "    str: []const u8,",
-        "    arr: []const ZVal,",
-        "    map: []const ZKV,",
-        "    set: []const ZVal,",
-        "};",
-        "const ZKV = struct { key: []const u8, val: ZVal };",
-    )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = (
         'const std = @import("std");',
@@ -642,7 +757,22 @@ class Zig(metaclass=LanguageCls):
     def _format_entry(self) -> Callable[[Value, str], str]:
         """Shared entry formatter closing over date/datetime
         ``type_produced``.
+
+        Under the ``RECORD`` strategy every value is emitted as a raw
+        Zig literal (no ``ZVal`` union tag), so the entry formatter is
+        the identity: sequence/set elements, call arguments, and
+        variable bindings all pass their already-formatted literal
+        through unchanged.
         """
+        if self._record_strategy_active:
+
+            @beartype
+            def _identity(_original: Value, formatted: str) -> str:
+                """Pass the raw Zig literal through unchanged."""
+                return formatted
+
+            return _identity
+
         date_type = self.date_format.value.type_produced
         datetime_type = self.datetime_format.value.type_produced
 
@@ -686,14 +816,196 @@ class Zig(metaclass=LanguageCls):
         return _format_assign
 
     @cached_property
+    def _record_strategy_active(self) -> bool:
+        """Return whether the ``RECORD`` heterogeneous strategy is set."""
+        return self.heterogeneous_strategy.name == "RECORD"
+
+    @cached_property
+    def null_literal(self) -> str:
+        """The literal representing null.
+
+        The default ``ZVal`` model uses the union tag ``.nil``; under
+        ``RECORD`` a null record field is a raw Zig ``null`` (its field
+        type is the optional ``?i64``).
+        """
+        return "null" if self._record_strategy_active else ".nil"
+
+    @cached_property
+    def true_literal(self) -> str:
+        """The literal representing true.
+
+        Raw Zig ``true`` under ``RECORD`` (a ``bool`` field), the
+        ``ZVal`` union literal otherwise.
+        """
+        if self._record_strategy_active:
+            return "true"
+        return ".{ .bool = true }"
+
+    @cached_property
+    def false_literal(self) -> str:
+        """The literal representing false.
+
+        Raw Zig ``false`` under ``RECORD`` (a ``bool`` field), the
+        ``ZVal`` union literal otherwise.
+        """
+        if self._record_strategy_active:
+            return "false"
+        return ".{ .bool = false }"
+
+    def _zig_value_type(self, value: Value, /) -> str:  # noqa: PLR0911
+        """Return the Zig type for a raw record field *value*.
+
+        Derived structurally from the value (never by re-parsing the
+        formatted literal): scalars map to their Zig primitive, a
+        homogeneous list to ``[]const <elem>``, a heterogeneous list to
+        a Zig tuple ``struct { T0, ... }``, and an ordered map to a
+        slice of ``key``/``val`` ``struct`` values.  A nested
+        record-shaped dict never reaches here -- the shared strategy
+        resolves it to its generated name in
+        :meth:`_zig_record_field_type`.
+        """
+        if isinstance(value, bool):
+            return "bool"
+        if isinstance(value, int):
+            return "u64" if value > I64_MAX else "i64"
+        if isinstance(value, float):
+            return "f64"
+        if value is None:
+            return "?i64"
+        if isinstance(value, datetime.datetime):
+            return _ZIG_EPOCH_INT_FIELD_TYPES.get(
+                self.datetime_format.value.type_produced,
+                "[]const u8",
+            )
+        if isinstance(value, datetime.date):
+            return _ZIG_EPOCH_INT_FIELD_TYPES.get(
+                self.date_format.value.type_produced,
+                "[]const u8",
+            )
+        if isinstance(value, OrderedMap):
+            # An ordered-map field is out of scope for the base RECORD
+            # port (the cross-language decision is tracked in #2317); it
+            # is typed imprecisely from the first value's type, like the
+            # other ports' non-record-dict fallback.  ``... or [0]``
+            # keeps an empty ordered map from raising ``StopIteration``
+            # (its ``&.{}`` literal coerces to any slice element type);
+            # ``or`` is not a coverage branch, so no unreachable arm is
+            # added for a corpus that has no empty ordered-map field.
+            val_type = self._zig_value_type(
+                (list(value.values()) or [0])[0],
+            )
+            return f"[]const struct {{ key: []const u8, val: {val_type} }}"
+        if isinstance(value, list):
+            return self._zig_list_type(items=value)
+        return "[]const u8"
+
+    def _zig_list_type(self, *, items: list[Value]) -> str:
+        """Return the Zig type for a list record field.
+
+        An empty list has no element type to infer, so it is typed as a
+        ``[]const i64`` slice (``&.{}`` coerces to any slice type).  A
+        list whose elements share a type is a ``[]const <elem>`` slice;
+        a list mixing ``int`` and ``float`` widens to ``[]const f64``
+        (its int literals coerce to ``f64``); a heterogeneous list is a
+        Zig tuple ``struct { T0, T1, ... }`` (its literal is the
+        anonymous tuple ``.{ ... }``, matching :attr:`sequence_open`).
+        """
+        if not items:
+            return "[]const i64"
+        inferred = infer_element_type(items=items)
+        if inferred is None:
+            members = ", ".join(
+                self._zig_value_type(element) for element in items
+            )
+            return f"struct {{ {members} }}"
+        element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
+            inferred,
+            self._zig_value_type(items[0]),
+        )
+        return f"[]const {element_type}"
+
+    def _zig_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Zig ``struct`` field type for a record field.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name; a field whose value is a list of
+        record-shaped dicts is a ``[]const RecordN`` slice of that
+        element record (its literal is ``&.{ RecordN{ ... }, ... }``);
+        every other value is typed structurally from the raw value by
+        :meth:`_zig_value_type`.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"[]const {request.element_record_name}"
+        return self._zig_value_type(request.value)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Zig syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_ZIG_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_zig_record_field_identifier,
+            field_type=self._zig_record_field_type,
+            render_declaration=_zig_render_record_declaration,
+            render_literal=_zig_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``struct``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """File-scope preamble.
+
+        The default ``ZVal`` model needs its tagged-union declaration;
+        the ``RECORD`` strategy emits raw Zig values and generated
+        ``struct`` declarations instead, so it needs no static
+        preamble.
+        """
+        if self._record_strategy_active:
+            return ()
+        return (
+            "const ZVal = union(enum) {",
+            "    nil,",
+            "    bool: bool,",
+            "    int: i64,",
+            "    uint: u64,",
+            "    float: f64,",
+            "    str: []const u8,",
+            "    arr: []const ZVal,",
+            "    map: []const ZKV,",
+            "    set: []const ZVal,",
+            "};",
+            "const ZKV = struct { key: []const u8, val: ZVal };",
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
+        """Return data-dependent preamble lines.
+
+        Under ``RECORD`` this is the generated ``const Record0 =
+        struct { ... };`` block, emitted in dependency order so a
+        nested record is declared before its parent.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.preamble
         return no_data_preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the heterogeneous-behavior config.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``ERROR`` keeps the default ``ZVal`` model.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.behavior
+        return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def call_data_dependent_preamble(
@@ -732,7 +1044,9 @@ class Zig(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return file-scope stubs for a call expression."""
-        return _zig_call_preamble_stub
+        return _make_zig_call_preamble_stub(
+            record_mode=self._record_strategy_active,
+        )
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
@@ -796,8 +1110,18 @@ class Zig(metaclass=LanguageCls):
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        """Configuration for the chosen sequence format.
+
+        Under ``RECORD`` a list is a raw Zig literal -- a ``&.{ ... }``
+        slice (homogeneous / empty) or a ``.{ ... }`` tuple
+        (heterogeneous), both closed by a single ``}`` rather than the
+        ``ZVal`` ``.{ .arr = &.{ ... }}`` form.  Only the closer changes
+        here; the opener is chosen per list by :attr:`sequence_open`.
+        """
+        base = self.sequence_format.value
+        if self._record_strategy_active:
+            return dataclasses.replace(base, close="}")
+        return base
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
@@ -806,13 +1130,39 @@ class Zig(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
-        return self.sequence_format.value.sequence_open
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under ``RECORD`` a homogeneous or empty list opens ``&.{`` so
+        the literal coerces to a ``[]const T`` slice; a heterogeneous
+        list opens ``.{`` so it is a Zig tuple (matching the
+        ``struct { T0, ... }`` field type :meth:`_zig_value_type`
+        derives).  Every other strategy keeps the ``ZVal`` array
+        opener.
+        """
+        if not self._record_strategy_active:
+            return self.sequence_format.value.sequence_open
+
+        def _open(items: list[Value]) -> str:
+            """Return the slice opener, or the tuple opener for a
+            heterogeneous list.
+            """
+            if items and infer_element_type(items=items) is None:
+                return ".{"
+            return "&.{"
+
+        return _open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
-        return DictFormatConfig(
+        """Configuration for dict formatting.
+
+        Under ``RECORD`` every non-empty string-keyed dict is a record
+        (rendered as a generated ``struct``); the only plain dict that
+        still reaches the dict formatter is the empty dict, emitted as
+        the raw empty struct ``.{}`` instead of the ``ZVal``
+        ``.{ .map = &.{}}`` form.
+        """
+        base = DictFormatConfig(
             dict_open=fixed_open(open_str=".{ .map = &.{"),
             close="}}",
             format_entry=dict_entry_with_template(
@@ -824,6 +1174,9 @@ class Zig(metaclass=LanguageCls):
             narrowed_open=None,
             supports_trailing_comma=True,
         )
+        if self._record_strategy_active:
+            return dataclasses.replace(base, empty_dict=".{}")
+        return base
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -882,7 +1235,19 @@ class Zig(metaclass=LanguageCls):
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
-        """Configuration for ordered-map formatting."""
+        """Configuration for ordered-map formatting.
+
+        An ordered map is never record-eligible, so under ``RECORD`` it
+        stays a map but as a raw ``&.{ .{ .key = ..., .val = ... }, ... }``
+        slice of ``key``/``val`` ``struct`` values rather than the
+        ``ZVal`` ``.{ .map = &.{ ... }}`` form.
+        """
+        if self._record_strategy_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(open_str="&.{"),
+                close="}",
+                preamble_lines=(),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str=".{ .map = &.{"),
             close="}}",
@@ -909,6 +1274,7 @@ class Zig(metaclass=LanguageCls):
         """
         keyword = self.declaration_style.value.keyword
         format_entry = self._format_entry
+        record_mode = self._record_strategy_active
 
         @beartype
         def _format_decl(
@@ -917,8 +1283,16 @@ class Zig(metaclass=LanguageCls):
             data: Value,
             _modifiers: frozenset[enum.Enum],
         ) -> str:
-            """Format a Zig declaration with explicit ``ZVal`` type."""
+            """Format a Zig declaration.
+
+            The default ``ZVal`` model declares an explicit ``: ZVal``
+            type; under ``RECORD`` the value is a raw Zig literal
+            (a ``Record0{ ... }`` struct, slice, tuple or scalar) whose
+            type is inferred, so no annotation is emitted.
+            """
             wrapped = format_entry(data, value)
+            if record_mode:
+                return f"{keyword} {name} = {wrapped};"
             return f"{keyword} {name}: ZVal = {wrapped};"
 
         return _format_decl
