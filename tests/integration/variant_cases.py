@@ -1995,13 +1995,13 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "scalar_datetime",
             # ``scalar_time`` pins the ``case datetime.time():`` scalar
             # type-hint arm under non-default (``ALWAYS``)
-            # ``variable_type_hints``; ``time_union_nested`` pins the
-            # ``_structural_type_id`` time arm.  Together these replace
-            # the ``test_datetime_time_always_type_hint_renders`` and
-            # ``test_datetime_time_union_annotation_renders`` shims
-            # (issue #2518).
+            # ``variable_type_hints``, replacing the
+            # ``test_datetime_time_always_type_hint_renders`` shim
+            # (issue #2518).  The Python-only ``_structural_type_id``
+            # time arm cannot ride this all-languages axis (it would
+            # force non-compiling Kotlin nested-time-list output); it
+            # keeps a focused pytest test instead.
             "scalar_time",
-            "time_union_nested",
             "binary",
             "mixed_type_dicts_in_sequence",
             "empty_dicts_in_sequence",

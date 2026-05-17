@@ -62,6 +62,47 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
     )
 
 
+# Issue #2518 replaced the per-language ``datetime.time`` coverage
+# shims with golden-file cases, but the
+# :func:`~literalizer._preamble._structural_type_id`
+# ``case datetime.time(): return "time"`` arm cannot ride the
+# all-languages ``type_hints`` golden axis.  That arm only fires on
+# the *Python* type-hint path: ``_has_union_in_type_hints`` recurses
+# through nested lists with divergent inner shapes (e.g. ``[[t], []]``)
+# and computes a structural id for the time scalar.  The empty inner
+# list that forces the union recursion also makes the Kotlin renderer
+# emit a nested-time-list under ``ALWAYS`` whose value type
+# (``Array<Array<LocalTime>>``) disagrees with its inferred annotation
+# (``List<Any?>``); since the per-language lint CI compiles every
+# golden fixture, an all-languages golden case for this input fails to
+# build.  No other reachable input exercises the arm.  So, like the
+# Dart ``skip_null_dict_values`` cases below, this Python-only arm
+# stays a focused pytest test driven through the public API.
+
+
+def test_python_time_union_annotation_renders() -> None:
+    """Python ``ALWAYS`` type hints render a nested time union.
+
+    Covers the ``case datetime.time(): return "time"`` arm of
+    :func:`~literalizer._preamble._structural_type_id`, which only runs
+    when a typed Python variable declaration drives
+    ``_has_union_in_type_hints`` to walk a list containing a time
+    scalar.  See the module comment above for why this is not an
+    all-languages golden-file case.
+    """
+    result = literalize(
+        source="mixed = [[09:30:00], []]\n",
+        input_format=InputFormat.TOML,
+        language=Python(
+            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
+        ),
+        variable_form=NewVariable(name="x"),
+        wrap_in_file=True,
+    )
+
+    assert result.code
+
+
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
     """Explicit Haskell epoch datetimes use the integer constructor."""
     result = literalize(

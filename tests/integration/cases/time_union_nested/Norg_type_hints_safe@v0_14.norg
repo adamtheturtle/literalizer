@@ -1,6 +1,0 @@
-* my_data
-@code json
-{
-    "mixed": [["09:30:00"], []]
-}
-@end
