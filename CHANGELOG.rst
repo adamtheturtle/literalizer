@@ -95,6 +95,23 @@ Next
   opened with ``std::vector{`` so class-template argument deduction
   infers ``std::vector<RecordN>``.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2420.
+- :class:`~literalizer.Swift` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  ``struct`` declared in the preamble plus a matching
+  ``Record0(field: value, ...)`` initializer literal, so a
+  record-shaped dict that mixes scalars with a container is
+  representable as a typed value even though ``Dictionary`` requires a
+  homogeneous value type.  Field names are the dict keys verbatim, a
+  field whose value is a list of record-shaped dicts of one shape is
+  typed ``[RecordN]``, and the struct-name prefix is configurable via
+  the new ``record_struct_name_prefix`` constructor parameter; its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  The default (``ERROR``) ``Any`` output is unchanged.  See
+  #2474.
 - :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting ``id my_data =
   make_widget(@42);`` directly.  The literal-binding declaration boxes

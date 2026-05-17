@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
@@ -48,6 +48,14 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -65,6 +73,7 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -402,6 +411,68 @@ def _optional_nil_declaration(
     return _format
 
 
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``), so the shared renderer always gets
+# an empty custom-name mapping.
+_SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+
+@beartype
+def _swift_record_field_identifier(key: str, /) -> str:
+    """Return the Swift ``struct`` member name for a dict *key*.
+
+    Swift property identifiers are the dict keys verbatim (no case
+    conversion), matching the synthesized-initializer literal form
+    ``Record0(id: 1, ...)`` whose argument labels are the property
+    names.
+    """
+    return key
+
+
+@beartype
+def _swift_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Swift ``Name(field: value, ...)`` initializer literal as
+    structured pieces for the shared compact/multiline layout code.
+
+    A ``struct`` with stored properties and no explicit initializer gets
+    a synthesized initializer taking one argument per stored property,
+    each argument named for its property in declaration order; the
+    shared strategy iterates the shape's keys in document order for both
+    the declaration and the literal, so the orders always agree.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}(",
+        entries=tuple(
+            f"{field.identifier}: {field.formatted}" for field in fields
+        ),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _swift_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Swift ``struct Name { let field: Type; ... }``.
+
+    Stored ``let`` properties are emitted on one line separated by
+    ``;``; the compiler synthesizes the initializer the literal calls.
+    """
+    members = "; ".join(
+        f"let {field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"struct {name} {{ {members} }}"
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Swift(metaclass=LanguageCls):
@@ -439,7 +510,7 @@ class Swift(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = True
 
@@ -788,11 +859,20 @@ class Swift(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        Swift represents heterogeneous collections with ``Any`` by
+        default (``ERROR``).  ``RECORD`` instead renders each
+        record-shaped dict (non-empty, string-keyed) as a generated
+        ``struct`` declared in the preamble plus a matching
+        ``Record0(field: value, ...)`` initializer literal, so a
+        record-shaped dict that mixes scalars with a container is
+        representable as a typed value even though ``Dictionary``
+        requires a homogeneous value type.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -885,6 +965,7 @@ class Swift(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the `-swift-version` flag passed to the Swift
     # linter in `.github/workflows/lint.yml` (which only accepts the
     # major language mode, so `V5_9` maps to `-swift-version 5`).
@@ -929,14 +1010,93 @@ class Swift(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    def _swift_date_hint(self) -> str:
+        """Swift type name for the chosen :class:`datetime.date`
+        format.
+        """
+        if self.date_format.value.type_produced is str:
+            return "String"
+        return "Date"
+
+    @cached_property
+    def _swift_datetime_hint(self) -> str:
+        """Swift type name for the chosen :class:`datetime.datetime`
+        format.
+        """
+        produced = self.datetime_format.value.type_produced
+        if produced is int:
+            return "Int"
+        if produced is str:
+            return "String"
+        return "Date"
+
+    def _swift_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Swift ``struct`` field type for a record field,
+        derived structurally from the raw value.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  A field whose value is a list
+        whose every element is a record-shaped dict of one shared shape
+        is typed ``[RecordN]`` to match the element type Swift infers
+        from the homogeneous array of ``RecordN`` literals.  Every other
+        value is typed by the same :func:`_swift_type_hint` machinery
+        the typed variable declaration uses, so the declared type always
+        matches the rendered literal.  A set or non-record dict field is
+        out of scope for the base ``RECORD`` port (the cross-language
+        decision is tracked in #2317) and is not reached by any record
+        golden, so it falls through to that shared resolver.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"[{request.element_record_name}]"
+        return _swift_type_hint(
+            data=request.value,
+            date_hint=self._swift_date_hint,
+            datetime_hint=self._swift_datetime_hint,
+            default_set_element_type=self.default_set_element_type,
+            default_sequence_element_type=self.default_sequence_element_type,
+            default_dict_value_type=self.default_dict_value_type,
+            sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
+        )
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Swift syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_SWIFT_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_swift_record_field_identifier,
+            field_type=self._swift_record_field_type,
+            render_declaration=_swift_render_record_declaration,
+            render_literal=_swift_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Resolve the active strategy to its behavior + preamble."""
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is cls.RECORD:
+            return build_record_strategy(renderer=self._record_renderer)
+        return RecordStrategy(
+            behavior=NO_HETEROGENEOUS_BEHAVIOR,
+            preamble=no_data_preamble,
+        )
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        Under ``HeterogeneousStrategies.RECORD`` this emits one
+        ``struct`` declaration per record shape present in the data;
+        otherwise no data-dependent lines.
+        """
+        return self._record_strategy.preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the behavior for the chosen heterogeneous strategy."""
+        return self._record_strategy.behavior
 
     @cached_property
     def call_data_dependent_preamble(
@@ -1126,20 +1286,8 @@ class Swift(metaclass=LanguageCls):
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
-            date_hint=(
-                "String"
-                if self.date_format.value.type_produced is str
-                else "Date"
-            ),
-            datetime_hint=(
-                "Int"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "String"
-                    if self.datetime_format.value.type_produced is str
-                    else "Date"
-                )
-            ),
+            date_hint=self._swift_date_hint,
+            datetime_hint=self._swift_datetime_hint,
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
