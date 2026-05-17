@@ -12,6 +12,26 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.C` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  A C literal binding wraps
+  the right-hand side in a designated-initializer compound literal that
+  encodes the value's runtime type (a tagged-union projection, or a
+  ``struct Record0 my_data = (struct Record0){...};`` aggregate under
+  the ``RECORD`` strategy), which is wrong for a call whose return type
+  is opaque to the renderer; the call result is now bound directly as
+  ``CVal my_data = make_widget(...);``.  No caller-supplied return-type
+  hint is required: every generated call stub returns the universal
+  tagged ``CVal`` union, so the binding's declared type is always
+  ``CVal`` (the same type a C literal binding declares).  Because the
+  binding is a typed
+  declaration while the :class:`~literalizer.ExistingVariable` form is a
+  bare assignment to an already-declared name, only the
+  :class:`~literalizer.NewVariable` form is golden-covered.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Follow-up to #1961.  See #2506.
 - :class:`~literalizer.Elixir` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
