@@ -12,6 +12,10 @@ Changelog
 Next
 ----
 
+2026.05.17
+----------
+
+
 - :class:`~literalizer.D` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
