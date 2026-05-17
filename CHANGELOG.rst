@@ -197,8 +197,14 @@ Next
   fixed-size ``struct`` array member.  Every other container (a scalar
   or heterogeneous list, or an empty list) is typed a pointer to
   ``CVal`` and rendered as a ``CVal`` array literal, reusing C's
-  existing tagged union for arbitrary heterogeneity.  The default
-  (``ERROR``) ``CVal`` output is unchanged.  See #2476.
+  existing tagged union for arbitrary heterogeneity.  Because that
+  fixed-size ``struct`` array is sized from the shape's first-seen
+  instance, two same-shape records whose shared all-record-list field
+  has differing lengths are rejected with
+  :class:`~literalizer.exceptions.UnrepresentableInputError` rather
+  than emitting C that fails to compile or misrepresents the input
+  (cf. the set / non-record-dict field boundary tracked in #2317).
+  The default (``ERROR``) ``CVal`` output is unchanged.  See #2476.
 - :class:`~literalizer.V` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
