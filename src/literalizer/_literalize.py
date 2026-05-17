@@ -4113,26 +4113,49 @@ def _compose_call_with_bound_ref_declarations(
     language: Language,
     bound_refs: Mapping[str, Value],
     ref_case: IdentifierCase | None,
-    call_result: LiteralizeResult,
+    result: str,
+    preamble: tuple[str, ...],
+    body_preamble: tuple[str, ...],
+    types_present: frozenset[type],
+    contains_standalone_comments: bool,
+    data_for_preamble: Value,
+    per_element: bool,
     variable_form: NewVariable | ExistingVariable | None,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
-    arg_values: Sequence[Value],
     call_transform: Callable[[CallContext], str] | None,
 ) -> LiteralizeResult:
     """Emit a binding for each bound ref before the calls.
 
-    Renders one :class:`NewVariable` declaration (via
-    :func:`_literalize_value_binding`) for every name in *bound_refs*,
-    in *bound_refs* iteration order, then composes them with
-    *call_result* and a no-op stub for the target function through
+    Reconstructs the call :class:`LiteralizeResult` from the rendered
+    *result* and its preamble pieces, renders one :class:`NewVariable`
+    declaration (via :func:`_literalize_value_binding`) for every name
+    in *bound_refs* in iteration order, then composes them with a no-op
+    stub for the target function through
     :func:`_literalize_call_with_declarations` so the duplicate-preamble
     reconciliation is shared with every other call/declaration caller.
 
-    The stub return mode mirrors :func:`_wrap_call_in_file`: a value is
-    returned whenever the call result is consumed (a ``call_transform``
-    or a ``variable_form`` binding); otherwise a void stub suffices.
+    The refs are now real declarations, so the target stub's parameter
+    types are inferred from the ref-substituted values
+    (*data_for_preamble*), not from the raw ``$ref`` markers a call's
+    own ``arg_values`` still carries.  The stub return mode mirrors
+    :func:`_wrap_call_in_file`: a value is returned whenever the call
+    result is consumed (a ``call_transform`` or a ``variable_form``
+    binding); otherwise a void stub suffices.
     """
+    call_result = LiteralizeResult(
+        declaration_code=result,
+        preamble=preamble,
+        body_preamble=body_preamble,
+        types_present=types_present,
+        contains_standalone_comments=contains_standalone_comments,
+        source_data=data_for_preamble,
+    )
+    stub_arg_values: Sequence[Value] = (
+        data_for_preamble
+        if per_element and isinstance(data_for_preamble, list)
+        else [data_for_preamble]
+    )
     decl_results = [
         _literalize_value_binding(
             value=value,
@@ -4153,10 +4176,10 @@ def _compose_call_with_bound_ref_declarations(
         else StubReturn.VOID
     )
     body_stubs = language.format_call_stub(
-        target_function_parts, parameter_names, stub_return, arg_values
+        target_function_parts, parameter_names, stub_return, stub_arg_values
     )
     preamble_stubs = language.format_call_preamble_stub(
-        target_function_parts, parameter_names, stub_return, arg_values
+        target_function_parts, parameter_names, stub_return, stub_arg_values
     )
     # An inference-bound call result may rely on module-internal
     # preamble or file-level compiler directives the literal binding
@@ -4177,6 +4200,76 @@ def _compose_call_with_bound_ref_declarations(
         call=call_result,
         extra_body_preamble=call_binding_body_preamble + body_stubs,
         extra_preamble=call_binding_pragmas + preamble_stubs,
+    )
+
+
+@beartype
+def _wrap_call_result_in_file(
+    *,
+    language: Language,
+    materialized_bound_refs: Mapping[str, Value],
+    ref_case: IdentifierCase | None,
+    result: str,
+    preamble: tuple[str, ...],
+    computed_body: tuple[str, ...],
+    types_present: frozenset[type],
+    contains_standalone_comments: bool,
+    data_for_preamble: Value,
+    per_element: bool,
+    variable_form: NewVariable | ExistingVariable | None,
+    target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
+    arg_values: Sequence[Value],
+    call_transform: Callable[[CallContext], str] | None,
+) -> LiteralizeResult:
+    """Assemble a ``wrap_in_file=True`` ``literalize_call`` result.
+
+    Routes through :func:`_compose_call_with_bound_ref_declarations`
+    when ``bound_refs`` were supplied (a complete file that declares
+    each ref before the calls) and through :func:`_wrap_call_in_file`
+    (calls plus a target stub, refs left as free identifiers)
+    otherwise.  Keeping this dispatch out of :func:`literalize_call`
+    keeps that public entry point within its complexity budget.
+    """
+    if materialized_bound_refs:
+        # ``bound_refs`` requests a complete file that declares each
+        # ref and then calls the target with it.  Reconcile the
+        # declaration and call preambles through the shared composer so
+        # the result matches every other call/declaration caller.
+        return _compose_call_with_bound_ref_declarations(
+            language=language,
+            bound_refs=materialized_bound_refs,
+            ref_case=ref_case,
+            result=result,
+            preamble=preamble,
+            body_preamble=computed_body,
+            types_present=types_present,
+            contains_standalone_comments=contains_standalone_comments,
+            data_for_preamble=data_for_preamble,
+            per_element=per_element,
+            variable_form=variable_form,
+            target_function_parts=target_function_parts,
+            parameter_names=parameter_names,
+            call_transform=call_transform,
+        )
+    wrapped = _wrap_call_in_file(
+        language=language,
+        result=result,
+        variable_form=variable_form,
+        target_function_parts=target_function_parts,
+        parameter_names=parameter_names,
+        arg_values=arg_values,
+        call_transform=call_transform,
+        preamble=preamble,
+        computed_body=computed_body,
+    )
+    return LiteralizeResult(
+        declaration_code=wrapped,
+        preamble=(),
+        body_preamble=(),
+        types_present=types_present,
+        contains_standalone_comments=contains_standalone_comments,
+        source_data=data_for_preamble,
     )
 
 
@@ -4696,58 +4789,22 @@ def literalize_call(
     )
 
     if wrap_in_file:
-        if materialized_bound_refs:
-            # ``bound_refs`` requests a complete file that declares
-            # each ref and then calls the target with it.  Reconcile
-            # the declaration and call preambles through the shared
-            # composer so the result matches every other
-            # call/declaration caller.
-            call_result = LiteralizeResult(
-                declaration_code=result,
-                preamble=preamble,
-                body_preamble=computed.body,
-                types_present=computed.types_present,
-                contains_standalone_comments=contains_standalone_comments,
-                source_data=data_for_preamble,
-            )
-            # The refs are now real declarations, so the target stub's
-            # parameter types must be inferred from the ref-substituted
-            # values (``data_for_preamble``), not from the raw ``$ref``
-            # markers ``arg_values`` still carries.
-            stub_arg_values: Sequence[Value] = (
-                data_for_preamble
-                if per_element and isinstance(data_for_preamble, list)
-                else [data_for_preamble]
-            )
-            return _compose_call_with_bound_ref_declarations(
-                language=language,
-                bound_refs=materialized_bound_refs,
-                ref_case=ref_case,
-                call_result=call_result,
-                variable_form=variable_form,
-                target_function_parts=target_function_parts,
-                parameter_names=parameter_names,
-                arg_values=stub_arg_values,
-                call_transform=call_transform,
-            )
-        wrapped = _wrap_call_in_file(
+        return _wrap_call_result_in_file(
             language=language,
+            materialized_bound_refs=materialized_bound_refs,
+            ref_case=ref_case,
             result=result,
+            preamble=preamble,
+            computed_body=computed.body,
+            types_present=computed.types_present,
+            contains_standalone_comments=contains_standalone_comments,
+            data_for_preamble=data_for_preamble,
+            per_element=per_element,
             variable_form=variable_form,
             target_function_parts=target_function_parts,
             parameter_names=parameter_names,
             arg_values=arg_values,
             call_transform=call_transform,
-            preamble=preamble,
-            computed_body=computed.body,
-        )
-        return LiteralizeResult(
-            declaration_code=wrapped,
-            preamble=(),
-            body_preamble=(),
-            types_present=computed.types_present,
-            contains_standalone_comments=contains_standalone_comments,
-            source_data=data_for_preamble,
         )
 
     return LiteralizeResult(
