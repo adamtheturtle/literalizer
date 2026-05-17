@@ -625,11 +625,8 @@ class CSharp(metaclass=LanguageCls):
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
                 supports_trailing_comma=True,
-                empty_template="Array.Empty<{type}>()",
-                preamble_lines=(
-                    "using System;",
-                    "using System.Collections.Generic;",
-                ),
+                empty_template="new {type}[] {{}}",
+                preamble_lines=(),
                 format_entry=passthrough_sequence_entry,
                 typed_opener_fallback_template=("new {type}[] {{"),
             )
@@ -1372,14 +1369,17 @@ class CSharp(metaclass=LanguageCls):
         """Configuration for the chosen sequence format.
 
         ``()`` parses as an invalid expression in C#; the language's
-        ``ValueTuple.Create()`` (or ``Array.Empty<T>()`` for the array
-        format) is the syntactically valid empty form, so prefer it
-        whenever an empty inner list sits beside non-empty siblings.
+        ``ValueTuple.Create()`` (or a typed empty array literal
+        ``new T[] {}`` for the array format) is the syntactically valid
+        empty form, so prefer it whenever an empty inner list sits
+        beside non-empty siblings.  The array empty form is a plain
+        language-level array literal, never ``Array.Empty<T>()``, so the
+        array path needs no ``using System;``.
         """
         element_type = self.default_sequence_element_type
         base = self.sequence_format(default_type=element_type)
         empty = (
-            f"Array.Empty<{element_type}>()"
+            f"new {element_type}[] {{}}"
             if self.sequence_format.name == "ARRAY"
             else "ValueTuple.Create()"
         )

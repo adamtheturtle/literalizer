@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System;
 record Record0(int Id, string Description, bool IsDone, int[] Blocks);
 class Check {
     public static void Main() {

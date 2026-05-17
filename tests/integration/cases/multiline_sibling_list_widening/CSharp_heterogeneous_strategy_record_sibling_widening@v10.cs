@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System;
 record Record1(int[] Numbers, string[] Strings);
 record Record0(Dictionary<string, object> OmapValue, Record1 SiblingLists, string[] RefMarkerPresent);
 class Check {
