@@ -5,6 +5,7 @@ from literalizer._language import LanguageCls
 from .ada import Ada
 from .bash import Bash
 from .c import C
+from .carbon import Carbon
 from .clojure import Clojure
 from .cobol import Cobol
 from .common_lisp import CommonLisp
@@ -71,6 +72,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Ada,
         Bash,
         C,
+        Carbon,
         Clojure,
         Cobol,
         CommonLisp,
@@ -140,6 +142,7 @@ __all__ = [
     "Bash",
     "C",
     "CSharp",
+    "Carbon",
     "Clojure",
     "Cobol",
     "CommonLisp",

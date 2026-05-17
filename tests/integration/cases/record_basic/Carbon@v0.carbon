@@ -1,0 +1,20 @@
+choice CVal {
+  Nil,
+  Bool(bool),
+  Int(i64),
+  UInt(u64),
+  Float(f64),
+  Str(Core.String),
+  Arr(Core.Array(CVal)),
+  Map(Core.Array({.key: Core.String, .val: CVal})),
+  Set(Core.Array(CVal)),
+}
+fn Run() {
+  let my_data: CVal = CVal.Map((
+    {.key = "id", .val = CVal.Int(1)},
+    {.key = "description", .val = CVal.Str("She said \"hello\", then waved")},
+    {.key = "is_done", .val = CVal.Bool(false)},
+    {.key = "blocks", .val = CVal.Arr((CVal.Int(1), CVal.Int(2), CVal.Int(3)))},
+  ));
+  let _: CVal = my_data;
+}

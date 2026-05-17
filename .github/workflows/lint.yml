@@ -435,6 +435,39 @@ jobs:
             run_odin "$src" || run_odin "$src" || exit 1
           done
 
+  lint-carbon:
+    runs-on: ubuntu-latest
+    # Carbon has no stable release; the toolchain ships only as dated
+    # ``carbon_toolchain-0.0.0-0.nightly.YYYY.MM.DD.tar.gz`` nightly
+    # assets (old nightlies are retained, so a dated URL is stable).
+    # This ``2026.05.17`` nightly is documented against the ``V0``
+    # default of ``Carbon.language_version`` in
+    # ``src/literalizer/languages/carbon.py``; keep them in sync.
+    # Carbon has no ``--langversion``-style flag, so the pinned nightly
+    # is the only mechanism for pinning the language version.
+    env:
+      CARBON_NIGHTLY: 0.0.0-0.nightly.2026.05.17
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Carbon
+        run: |-
+          curl -fsSL "https://github.com/carbon-language/carbon-lang/releases/download/v${CARBON_NIGHTLY}/carbon_toolchain-${CARBON_NIGHTLY}.tar.gz" \
+            -o /tmp/carbon.tar.gz
+          mkdir -p /tmp/carbon
+          tar -xzf /tmp/carbon.tar.gz -C /tmp/carbon
+          carbon_bin=$(find /tmp/carbon -type f -name carbon -perm -u+x | head -n1)
+          if [ -z "$carbon_bin" ]; then
+            echo "carbon binary not found in toolchain tarball" >&2
+            exit 1
+          fi
+          sudo install "$carbon_bin" /usr/local/bin/carbon
+      - name: Lint Carbon
+        run: |-
+          find tests/integration/cases -name '*.carbon' -print0 > /tmp/files-carbon && test -s /tmp/files-carbon
+          xargs -0 -P "$(nproc)" -n1 carbon compile --phase=check < /tmp/files-carbon
+
   lint-roc:
     runs-on: ubuntu-latest
     # Roc has no stable release, and the upstream ``nightly`` GitHub
@@ -2104,6 +2137,7 @@ jobs:
       - lint-haskell-family
       - lint-c-tidy
       - lint-cpp-tidy
+      - lint-carbon
       - lint-cobol
       - lint-cpp
       - lint-kotlin

@@ -12,6 +12,14 @@ Changelog
 Next
 ----
 
+- Added :class:`~literalizer.Carbon`, an output language for the
+  experimental Carbon successor-to-C++ language.  Heterogeneous
+  JSON/YAML data is represented through a single ``choice CVal``
+  tagged union (the Carbon analog of the Zig ``ZVal`` model), with
+  ``//`` whole-line comments, semicolon-terminated statements, and
+  ``{.field = value}`` struct literals.  Fixtures are compiled in CI
+  by the ``lint-carbon`` job against a pinned ``carbon`` nightly.
+
 - :class:`~literalizer.CSharp` array sequence-format no longer emits
   ``using System;`` or ``using System.Collections.Generic;``.  A C#
   array literal (``new T[] {...}``) is a built-in language feature and
