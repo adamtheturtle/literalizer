@@ -491,22 +491,23 @@ def literalize_yaml_scalar(
 
     pending: tuple[str, ...] = ()
 
-    if scalar_comments.inline and supports_scalar_inline_comments:
-        inline_value = (
-            f"{base}  {comment_prefix} {scalar_comments.inline}"
-            f"{comment_suffix}"
-        )
-    elif scalar_comments.inline:
-        inline_value = base
-        formatted_inline = _format_comment(
-            text=scalar_comments.inline,
-            comment_prefix=comment_prefix,
-            comment_suffix=comment_suffix,
-            line_prefix=line_prefix,
-        )
-        pending = (formatted_inline,)
-    else:
-        inline_value = base
+    match bool(scalar_comments.inline), supports_scalar_inline_comments:
+        case True, True:
+            inline_value = (
+                f"{base}  {comment_prefix} {scalar_comments.inline}"
+                f"{comment_suffix}"
+            )
+        case True, False:
+            inline_value = base
+            formatted_inline = _format_comment(
+                text=scalar_comments.inline,
+                comment_prefix=comment_prefix,
+                comment_suffix=comment_suffix,
+                line_prefix=line_prefix,
+            )
+            pending = (formatted_inline,)
+        case _:
+            inline_value = base
 
     if supports_scalar_before_comments:
         parts = [*formatted_before, inline_value]
