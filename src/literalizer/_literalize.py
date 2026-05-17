@@ -2619,28 +2619,38 @@ def _compose_bound_refs(
         variable_name=composition.main_variable_name,
         body_preamble=unified_body_preamble,
     )
-    # The main binding's preamble was computed with every bound ref
-    # resolved into its data, so its multi-line data-dependent block
-    # (e.g. Gleam's ``pub type GVal {...}``) already covers every type
-    # across the declarations and the main binding.  Each declaration's
-    # own multi-line block, by contrast, was computed from that
-    # declaration's data alone and would conflict with the unified
-    # version once duplicate lines are dropped.  Drop the multi-line
-    # entries from declaration preambles and keep their single-line
-    # entries (imports, package lines); dropping repeated lines in
-    # first-seen order handles the rest.
-    decl_preamble_lines = tuple(
+    # Each declaration emitted its data-dependent block (e.g. Gleam's
+    # ``pub type GVal {...}``) from *its own* data alone, so the
+    # per-declaration blocks disagree on which constructors they
+    # declare.  The main binding was rendered with every bound ref
+    # resolved into its data, so ``main_result.preamble`` already
+    # carries one block computed over that full union (declarations
+    # *and* the main binding); it is the single canonical copy.  Unlike
+    # the call composer there is no divergent form to reconcile: every
+    # binding renders its data-dependent construct through
+    # :meth:`Language.data_dependent_preamble`, which is a pure function
+    # of the value, so the exact strings a declaration appended to its
+    # ``preamble`` are reproducible by re-invoking it on that
+    # declaration's ``source_data``.  Drop those reproduced
+    # per-declaration blocks and let first-seen duplicate removal
+    # collapse the shared single-line entries (imports, package lines).
+    # Unlike the previous "drop any entry containing a newline"
+    # heuristic, a multi-line declaration-only block that the main
+    # binding does not reproduce is preserved.
+    dropped_declaration_blocks: set[str] = set()
+    for d in decl_results:
+        dropped_declaration_blocks.update(
+            language.data_dependent_preamble(d.source_data)
+        )
+    declaration_preamble = tuple(
         entry
         for d in decl_results
         for entry in d.preamble
-        if "\n" not in entry
+        if entry not in dropped_declaration_blocks
     )
-    seen: set[str] = set()
-    all_preamble: tuple[str, ...] = ()
-    for entry in decl_preamble_lines + main_result.preamble:
-        if entry not in seen:
-            seen.add(entry)
-            all_preamble += (entry,)
+    all_preamble = deduplicate_preamble_entries(
+        entries=declaration_preamble + main_result.preamble
+    )
     if all_preamble:
         wrapped = "\n".join(all_preamble) + "\n" + wrapped
     return LiteralizeResult(
