@@ -207,61 +207,48 @@ declarations; D rejects duplicate ``import`` lines) and a linter flags
 it (``ruff`` and ``pylint`` warn about repeated ``from typing import
 Any`` lines).
 
-Remove the duplicate preamble lines in first-seen order before
-emitting the file:
+Pass the ref values through the ``bound_refs`` argument of
+:func:`~literalizer.literalize_call` (with ``wrap_in_file=True``) and
+it renders the whole file for you: each ref is declared ahead of the
+calls, a no-op stub for the target function is injected, and one
+reconciled preamble is placed in front.  This is the call-side
+counterpart of :func:`~literalizer.literalize`'s own ``bound_refs``
+argument; the returned :attr:`~literalizer.LiteralizeResult.code` is
+the finished file:
 
 .. code-block:: python
 
-   """Compose a declaration and a call into one Haskell source file."""
+   """Render a call that declares its refs into one Haskell file."""
 
-   from literalizer import InputFormat, NewVariable, literalize, literalize_call
+   from literalizer import InputFormat, literalize_call
    from literalizer.languages import Haskell
 
-   language = Haskell()
-
-   declaration = literalize(
-       source="[1, 2, 3]",
+   composed = literalize_call(
+       source='[[{"$ref": "my_list"}, 42]]',
        input_format=InputFormat.JSON,
-       language=language,
-       variable_form=NewVariable(name="myList"),
-   )
-   call = literalize_call(
-       source='[[{"$ref": "myList"}, 42]]',
-       input_format=InputFormat.JSON,
-       language=language,
+       language=Haskell(),
        target_function="process",
        parameter_names=["data", "count"],
-       ref_values={"myList": declaration.source_data},
+       wrap_in_file=True,
+       bound_refs={"my_list": [1, 2, 3]},
    )
 
-   seen: set[str] = set()
-   merged_body_preamble: list[str] = []
-   for block in (*declaration.body_preamble, *call.body_preamble):
-       if block in seen:
-           continue
-       seen.add(block)
-       merged_body_preamble.append(block)
+   assert composed.code.count("data Val = HInt Integer | HList [Val]") == 1
 
-   # ``declaration_code`` is the bare text without ``body_preamble``
-   # prepended; ``code`` includes the body_preamble, which would
-   # reintroduce duplicates.
-   composed = "\n".join(
-       [
-           *merged_body_preamble,
-           declaration.declaration_code,
-           call.declaration_code,
-       ],
-   )
+``bound_refs`` entries double as ``ref_values``, so a name need not be
+repeated in both mappings, and they are emitted in iteration order
+ahead of their first use.
 
-   assert composed.count("data Val = HInt Integer | HList [Val]") == 1
-
-The same pattern applies to :attr:`~literalizer.LiteralizeResult.preamble`
-when ``wrap_in_file=False`` and the caller is assembling the file
-manually: concatenate the preamble tuples from both results, drop
-duplicates while preserving order, and prepend the result.
-
-A first-class composition helper is tracked separately; until then,
-this duplicate-removal step is a required part of the workflow.
+When you need to interleave your own definitions between the
+declarations and the calls — for example a ``call_transform`` wrapper
+the generated file must also define —
+:func:`~literalizer.literalize_call_with_declarations` is the
+lower-level building block ``bound_refs`` is built on.  It takes the
+already-rendered declaration and call
+:class:`~literalizer.LiteralizeResult` objects plus optional
+``extra_body_preamble`` / ``extra_preamble`` lines and performs the
+same reconciliation, returning the finished
+:attr:`~literalizer.LiteralizeResult.code`.
 
 Snake case is the recommended authoring convention for ``$ref`` names:
 ``pyhumps`` converts ``snake_case`` to every other case without loss.

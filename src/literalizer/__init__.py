@@ -37,6 +37,7 @@ from literalizer._literalize import (
     VariableForm,
     literalize,
     literalize_call,
+    literalize_call_with_declarations,
 )
 from literalizer._parsing import InputFormat
 
@@ -74,4 +75,5 @@ __all__ = [
     "fixed_open",
     "literalize",
     "literalize_call",
+    "literalize_call_with_declarations",
 ]

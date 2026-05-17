@@ -10,6 +10,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import json
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -50,17 +51,6 @@ type _Scalar = (
     | bytes
 )
 type _Value = _Scalar | list[_Value] | dict[_Scalar, _Value] | set[_Scalar]
-
-
-@beartype
-def _prepend_preamble(
-    wrapped: str,
-    preamble: tuple[str, ...],
-) -> str:
-    """Prepend *preamble* lines before *wrapped*."""
-    if not preamble:
-        return wrapped
-    return "\n".join(preamble) + "\n" + wrapped
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1812,71 +1802,63 @@ def run_call_golden_case(
                 (),
             ),
         )
-    # Recompute the body preamble across the union of types observed in
-    # every declaration *and* the call.  Concatenating each piece's
-    # already-rendered body preamble would emit overlapping
-    # type-definition strings (e.g. Haskell's ``data Val = ...`` with
-    # different constructor sets) that no string-level duplicate
-    # filter can reconcile.  Combine ``source_data`` from every piece
-    # so ``compute_body_preamble`` can inspect actual values when it
-    # needs to (e.g. Haskell's datetime microsecond-precision check).
-    empty_types: frozenset[type] = frozenset()
-    union_types = empty_types.union(
-        *(d.types_present for d in decl_results),
-        result.types_present,
+    # One library entry point assembles the declarations and the call
+    # into a single coherent file: it recomputes the body preamble
+    # across the union of types in every declaration *and* the call,
+    # recomputes the data-dependent header block over their combined
+    # source data (so a single block covers every type, replacing the
+    # old multi-line filter heuristic), wraps the pieces via
+    # ``wrap_calls_with_declarations``, and places the deduplicated
+    # preamble in front.  The call-stub lines this harness synthesizes
+    # for the otherwise-undefined target/transform names are folded in
+    # as the ``extra_*`` arguments.
+    composed = literalizer.literalize_call_with_declarations(
+        language=spec,
+        declarations=decl_results,
+        call=result,
+        extra_body_preamble=tuple(body_stubs),
+        extra_preamble=tuple(preamble_stubs),
     )
-    combined_source_data: list[_Value] = [
-        *(d.source_data for d in decl_results),
-        result.source_data,
-    ]
-    unified_body_preamble = spec.compute_body_preamble(
-        union_types, combined_source_data
-    )
-    call_body_preamble = unified_body_preamble + tuple(body_stubs)
+    # Anchor the public ``literalize_call(bound_refs=...)`` path to this
+    # golden-verified composer output.  ``bound_refs`` injects only the
+    # target stub, so the equivalence holds exactly when this case
+    # synthesizes no extra (transform-wrapper) stubs and binds no
+    # variable; those cases are exercised through the composer call
+    # directly above.
     if (
-        result.contains_standalone_comments
-        and not spec.supports_standalone_comments_in_wrapped_calls
+        config.ref_declarations
+        and config.call_transform is None
+        and not config.transform_stub_names
+        and config.variable_form is None
     ):
-        raise UnsupportedCallShapeError(
-            language_name=lang_cls.__name__,
-            reason=(
-                "standalone comments cannot be preserved when wrapping "
-                "calls in this language"
-            ),
+        bound = literalizer.literalize_call(
+            source=yaml_string,
+            input_format=literalizer.InputFormat.YAML,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            zip_source=config.zip_source,
+            zip_input_format=config.zip_input_format,
+            comment_source=config.comment_source,
+            per_element=config.per_element,
+            wrap_in_file=True,
+            ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
+            bound_refs={
+                ref_name: json.loads(s=ref_source)
+                for ref_name, ref_source in config.ref_declarations.items()
+            },
         )
-    declarations_bare_codes = tuple(d.bare_code for d in decl_results)
-    wrapped = spec.wrap_calls_with_declarations(
-        declarations=declarations_bare_codes,
-        calls=result.bare_code,
-        body_preamble=call_body_preamble,
-    )
-    # ``literalize_call`` substitutes ``ref_values`` into the data fed
-    # to its preamble computation, so ``result.preamble`` already
-    # contains the union version of any multi-line data-dependent block
-    # (e.g. Gleam's ``pub type GVal {...}``) covering every type
-    # observed across the declarations *and* the call.  Each
-    # declaration's own multi-line block, by contrast, was computed
-    # from that declaration's data alone and would conflict with the
-    # union version under string-level duplicate filtering.  Drop the
-    # multi-line entries from declaration preambles and keep their
-    # single-line entries (e.g. the Nim ``import json`` line);
-    # filtering duplicate lines handles the rest.
-    decl_preamble_lines = tuple(
-        entry
-        for d in decl_results
-        for entry in d.preamble
-        if "\n" not in entry
-    )
-    seen: set[str] = set()
-    all_preamble: tuple[str, ...] = ()
-    for entry in decl_preamble_lines + result.preamble + tuple(preamble_stubs):
-        if entry not in seen:
-            seen.add(entry)
-            all_preamble += (entry,)
-    wrapped = _prepend_preamble(wrapped=wrapped, preamble=all_preamble)
+        if bound.code != composed.code:
+            msg = (
+                "literalize_call(bound_refs=...) diverged from the "
+                "literalize_call_with_declarations composition for "
+                f"{lang_cls.__name__} / {config.case_dir_name}"
+            )
+            raise AssertionError(msg)
     check_golden(
         file_regression=file_regression,
-        contents=wrapped + "\n",
+        contents=composed.code + "\n",
         extension=lang_cls.extension,
         newline="",
         golden_path=golden_path,

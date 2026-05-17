@@ -4108,6 +4108,79 @@ def _wrap_call_in_file(
 
 
 @beartype
+def _compose_call_with_bound_ref_declarations(
+    *,
+    language: Language,
+    bound_refs: Mapping[str, Value],
+    ref_case: IdentifierCase | None,
+    call_result: LiteralizeResult,
+    variable_form: NewVariable | ExistingVariable | None,
+    target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
+    arg_values: Sequence[Value],
+    call_transform: Callable[[CallContext], str] | None,
+) -> LiteralizeResult:
+    """Emit a binding for each bound ref before the calls.
+
+    Renders one :class:`NewVariable` declaration (via
+    :func:`_literalize_value_binding`) for every name in *bound_refs*,
+    in *bound_refs* iteration order, then composes them with
+    *call_result* and a no-op stub for the target function through
+    :func:`literalize_call_with_declarations` so the duplicate-preamble
+    reconciliation is shared with every other call/declaration caller.
+
+    The stub return mode mirrors :func:`_wrap_call_in_file`: a value is
+    returned whenever the call result is consumed (a ``call_transform``
+    or a ``variable_form`` binding); otherwise a void stub suffices.
+    """
+    decl_results = [
+        _literalize_value_binding(
+            value=value,
+            language=language,
+            variable_form=NewVariable(
+                name=(
+                    ref_case.convert(name=name)
+                    if ref_case is not None
+                    else name
+                ),
+            ),
+        )
+        for name, value in bound_refs.items()
+    ]
+    stub_return = (
+        StubReturn.VALUE
+        if call_transform is not None or variable_form is not None
+        else StubReturn.VOID
+    )
+    body_stubs = language.format_call_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
+    preamble_stubs = language.format_call_preamble_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
+    # An inference-bound call result may rely on module-internal
+    # preamble or file-level compiler directives the literal binding
+    # never needs (e.g. PureScript's ``import Prelude``, Haskell's
+    # missing-signature suppression); :func:`_wrap_call_in_file` adds
+    # these for the non-bound path, so add them here too when a
+    # variable binds the call result.
+    call_binding_body_preamble: tuple[str, ...] = ()
+    call_binding_pragmas: tuple[str, ...] = ()
+    if variable_form is not None:
+        call_binding_body_preamble = (
+            language.format_call_binding_body_preamble()
+        )
+        call_binding_pragmas = language.format_call_binding_file_pragmas()
+    return literalize_call_with_declarations(
+        language=language,
+        declarations=decl_results,
+        call=call_result,
+        extra_body_preamble=call_binding_body_preamble + body_stubs,
+        extra_preamble=call_binding_pragmas + preamble_stubs,
+    )
+
+
+@beartype
 def _materialize_value_input(*, value: ValueInput) -> Value:
     """Convert a user-supplied ``ValueInput`` into the internal ``Value``
     form, replacing any non-``list`` ``Sequence`` and non-``dict``
@@ -4252,6 +4325,7 @@ def literalize_call(
     ref_case: IdentifierCase | None = None,
     consumable_refs: frozenset[str] = frozenset(),
     ref_values: Mapping[str, ValueInput] | None = None,
+    bound_refs: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
     variable_form: VariableForm | None = None,
@@ -4383,6 +4457,32 @@ def literalize_call(
             keep the historical behavior: their markers are omitted
             from preamble inference.  Keys should match the identifiers
             used in *source* before any *ref_case* conversion.
+        bound_refs: Optional mapping from ref identifier to the source
+            value that ref should be *declared* with.  The recommended
+            way to render a complete, self-contained file that declares
+            each ref and then calls the target with it: ``literalize``
+            exposes the same argument for the declaration-only case, and
+            this is its call-side counterpart.  Each entry is emitted as
+            a :class:`NewVariable` declaration (cased via *ref_case*) in
+            *bound_refs* iteration order ahead of the calls, the value
+            is folded into preamble inference exactly like *ref_values*
+            (so a name need not be repeated in both mappings; an
+            explicit *ref_values* entry for the same name wins), and the
+            declarations, calls, and a no-op stub for *target_function*
+            are wrapped into one file via
+            :meth:`~literalizer.Language.wrap_calls_with_declarations`
+            with a single reconciled preamble.  Declaration emission
+            only happens when *wrap_in_file* is ``True``; otherwise
+            *bound_refs* degrades to type information only, exactly like
+            *ref_values*, and the refs stay free identifiers.  Callers
+            that must interleave their own definitions (e.g. a
+            ``call_transform`` wrapper) can compose the pieces
+            explicitly with
+            :func:`literalize_call_with_declarations` instead.  Keys
+            should match the identifiers used in *source* before any
+            *ref_case* conversion.  Defaults to ``None`` (no bindings
+            emitted; behavior is byte-identical to omitting this
+            argument).
         ref_key: The dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as
@@ -4423,9 +4523,10 @@ def literalize_call(
         data they see.  Concatenating the results into a single file
         can produce duplicate import lines or duplicate type
         declarations, which strict compilers (Haskell, D, …) reject
-        and a linter (``ruff``, ``pylint``, …) flags.  Remove the
-        duplicate preamble entries (preserving first-seen order) before
-        emitting the file.  The "Composing declarations and calls"
+        and a linter (``ruff``, ``pylint``, …) flags.  Use
+        :func:`literalize_call_with_declarations` to render the
+        declarations and the call into one coherent file with a single
+        reconciled preamble.  The "Composing declarations and calls"
         section of :doc:`/function-call-use-case` shows a worked example.
     """
     if isinstance(variable_form, BothVariableForms):
@@ -4510,9 +4611,21 @@ def literalize_call(
     )
     target_function = language.format_call_target(target_function_parts)
 
-    materialized_ref_values: Mapping[str, Value] = {
+    explicit_ref_values: dict[str, Value] = {
         name: _materialize_value_input(value=value)
         for name, value in (ref_values or {}).items()
+    }
+    materialized_bound_refs: dict[str, Value] = {
+        name: _materialize_value_input(value=value)
+        for name, value in (bound_refs or {}).items()
+    }
+    # ``bound_refs`` entries double as ``ref_values`` so a name need not
+    # be repeated in both mappings; an explicit ``ref_values`` entry for
+    # the same name wins (it is the caller's stated type intent).  This
+    # mirrors :func:`literalize`'s ``bound_refs``/``ref_values`` rule.
+    materialized_ref_values: Mapping[str, Value] = {
+        **materialized_bound_refs,
+        **explicit_ref_values,
     }
 
     data_for_preamble = _strip_call_arg_refs_for_preamble(
@@ -4586,6 +4699,40 @@ def literalize_call(
     )
 
     if wrap_in_file:
+        if materialized_bound_refs:
+            # ``bound_refs`` requests a complete file that declares
+            # each ref and then calls the target with it.  Reconcile
+            # the declaration and call preambles through the shared
+            # composer so the result matches every other
+            # call/declaration caller.
+            call_result = LiteralizeResult(
+                declaration_code=result,
+                preamble=preamble,
+                body_preamble=computed.body,
+                types_present=computed.types_present,
+                contains_standalone_comments=contains_standalone_comments,
+                source_data=data_for_preamble,
+            )
+            # The refs are now real declarations, so the target stub's
+            # parameter types must be inferred from the ref-substituted
+            # values (``data_for_preamble``), not from the raw ``$ref``
+            # markers ``arg_values`` still carries.
+            stub_arg_values: Sequence[Value] = (
+                data_for_preamble
+                if per_element and isinstance(data_for_preamble, list)
+                else [data_for_preamble]
+            )
+            return _compose_call_with_bound_ref_declarations(
+                language=language,
+                bound_refs=materialized_bound_refs,
+                ref_case=ref_case,
+                call_result=call_result,
+                variable_form=variable_form,
+                target_function_parts=target_function_parts,
+                parameter_names=parameter_names,
+                arg_values=stub_arg_values,
+                call_transform=call_transform,
+            )
         wrapped = _wrap_call_in_file(
             language=language,
             result=result,
@@ -4613,4 +4760,152 @@ def literalize_call(
         types_present=computed.types_present,
         contains_standalone_comments=contains_standalone_comments,
         source_data=data_for_preamble,
+    )
+
+
+@beartype
+def literalize_call_with_declarations(
+    *,
+    language: Language,
+    declarations: Sequence[LiteralizeResult],
+    call: LiteralizeResult,
+    extra_body_preamble: tuple[str, ...] = (),
+    extra_preamble: tuple[str, ...] = (),
+) -> LiteralizeResult:
+    r"""Render N ref declarations and a call into one coherent file.
+
+    Composes the per-ref :func:`literalize` results in *declarations*
+    (each a ``NewVariable`` binding for a ``$ref`` target) with the
+    :func:`literalize_call` result *call* (rendered with those refs
+    folded into ``ref_values``) into a single
+    :class:`LiteralizeResult` whose :attr:`~LiteralizeResult.code` is a
+    complete file: one coherent preamble (header *and* body) followed by
+    the declarations and the calls wrapped via
+    :meth:`Language.wrap_calls_with_declarations`.
+
+    This is the recommended way to emit a call beside its ref
+    declarations.  Concatenating the two halves' independently computed
+    preambles instead would emit overlapping type definitions (e.g.
+    Haskell's ``data Val = ...`` with disjoint constructor sets) that no
+    string-level duplicate filter can reconcile.  The body preamble is
+    recomputed across the union of types observed in every declaration
+    *and* the call (so e.g. Haskell's datetime microsecond-precision
+    check sees actual values).  The data-dependent header block (e.g.
+    Gleam's ``pub type GVal {...}``) is likewise recomputed once over
+    the combined source data of every declaration and the call, so a
+    single block covers every type in the file; each declaration's own
+    narrower block is dropped.
+
+    Args:
+        language: The :class:`Language` to render with.  Must be the
+            same instance used to produce *declarations* and *call*.
+        declarations: The per-ref :func:`literalize` results, in the
+            order they should appear, ahead of their first use in the
+            call.
+        call: The :func:`literalize_call` result.  It should have been
+            rendered with every ref in *declarations* supplied via
+            ``ref_values`` so its own preamble already covers the
+            ref-reachable types.
+        extra_body_preamble: Additional body-preamble lines to append
+            after the unified body preamble (e.g. a caller-supplied
+            no-op stub for the called function).  Defaults to ``()``.
+        extra_preamble: Additional header-preamble entries to append
+            after the unified header preamble (e.g. the stub's own
+            import lines).  Defaults to ``()``.
+
+    Returns:
+        A :class:`LiteralizeResult` whose
+        :attr:`~LiteralizeResult.declaration_code` (and therefore
+        :attr:`~LiteralizeResult.code`) is the full file with the
+        unified preamble already prepended;
+        :attr:`~LiteralizeResult.preamble` and
+        :attr:`~LiteralizeResult.body_preamble` are empty (their content
+        has been folded into the code).
+
+    Raises:
+        UnsupportedCallShapeError: If *call* carries standalone comments
+            but *language* cannot preserve them when wrapping calls.
+    """
+    if (
+        call.contains_standalone_comments
+        and not language.supports_standalone_comments_in_wrapped_calls
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "standalone comments cannot be preserved when wrapping "
+                "calls in this language"
+            ),
+        )
+    empty_types: frozenset[type] = frozenset()
+    union_types = empty_types.union(
+        *(d.types_present for d in declarations),
+        call.types_present,
+    )
+    declaration_source_data: list[Value] = [
+        d.source_data for d in declarations
+    ]
+    combined_source_data: list[Value] = [
+        *declaration_source_data,
+        call.source_data,
+    ]
+    unified_body_preamble = language.compute_body_preamble(
+        union_types, combined_source_data
+    )
+    wrapped = language.wrap_calls_with_declarations(
+        declarations=tuple(d.bare_code for d in declarations),
+        calls=call.bare_code,
+        body_preamble=unified_body_preamble + extra_body_preamble,
+    )
+    # Each declaration emitted its data-dependent block (e.g. Gleam's
+    # ``pub type GVal {...}``) from *its own* data alone, so the
+    # per-declaration blocks disagree on which constructors they
+    # declare.  How they are reconciled depends on whether the language
+    # renders call arguments and declarations through the *same*
+    # data-dependent construct:
+    #
+    # * When ``call_data_dependent_preamble`` and
+    #   ``data_dependent_preamble`` agree (Gleam, C++, ...), the call
+    #   was rendered with every ref folded into ``ref_values`` so
+    #   ``call.preamble`` already carries one block computed over the
+    #   ref-substituted union (declarations *and* call).  That is the
+    #   single canonical copy; drop the narrower per-declaration
+    #   copies.  ``data_dependent_preamble`` is a pure function of the
+    #   value, so the exact strings a declaration appended to its
+    #   ``preamble`` are reproducible by re-invoking it on that
+    #   declaration's ``source_data``.
+    # * When they diverge (Nim drops ``import json`` for call
+    #   arguments), ``call.preamble`` cannot carry the
+    #   declaration-side construct, so keep each declaration's own
+    #   block; duplicate-line filtering collapses the copies.  This
+    #   also keeps a *multi-line* declaration-only block, which the
+    #   previous "drop any entry containing a newline" heuristic
+    #   silently lost.
+    call_form_matches_declaration_form = language.data_dependent_preamble(
+        combined_source_data
+    ) == language.call_data_dependent_preamble(combined_source_data)
+    dropped_declaration_blocks: set[str] = set()
+    if call_form_matches_declaration_form:
+        for d in declarations:
+            dropped_declaration_blocks.update(
+                language.data_dependent_preamble(d.source_data)
+            )
+    declaration_preamble = tuple(
+        entry
+        for d in declarations
+        for entry in d.preamble
+        if entry not in dropped_declaration_blocks
+    )
+    all_preamble = deduplicate_preamble_entries(
+        entries=(declaration_preamble + call.preamble + extra_preamble)
+    )
+    if all_preamble:
+        wrapped = "\n".join(all_preamble) + "\n" + wrapped
+    return LiteralizeResult(
+        declaration_code=wrapped,
+        preamble=(),
+        body_preamble=(),
+        types_present=union_types,
+        contains_standalone_comments=call.contains_standalone_comments,
+        source_data=call.source_data,
     )
