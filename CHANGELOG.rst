@@ -37,6 +37,27 @@ Next
   opened with ``std::vector{`` so class-template argument deduction
   infers ``std::vector<RecordN>``.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2420.
+- :class:`~literalizer.C` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  aggregate ``struct`` declared in the preamble plus a matching
+  ``(struct Record0){.field = value, ...}`` C99
+  designated-initializer compound literal, so a record-shaped dict
+  that mixes scalars with a container is rendered with cleanly typed
+  members rather than the tagged ``CVal`` union.  Field names are the
+  dict keys verbatim and each generated ``struct`` is auto-named
+  ``Record0``, ``Record1``, ...  A scalar member maps to its exact C
+  type, a
+  nested record dict to its generated ``struct`` type, and a list
+  whose every element is a record-shaped dict to a fixed-size
+  ``struct`` array member.  Every other container (a scalar or
+  heterogeneous list, or an empty list) is typed a pointer to
+  ``CVal`` and rendered as a ``CVal`` array literal, reusing C's
+  existing tagged union for arbitrary heterogeneity.  The default
+  (``ERROR``) ``CVal`` output is unchanged.  See #2476.
 - :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting ``id my_data =
   make_widget(@42);`` directly.  The literal-binding declaration boxes
