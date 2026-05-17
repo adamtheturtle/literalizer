@@ -57,8 +57,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
@@ -235,13 +233,55 @@ def _sv_call_stub(
 
 
 @beartype
+def _format_systemverilog_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a SystemVerilog declaration binding a call result.
+
+    A literal binding wraps the right-hand side in a named ``_VVal``
+    (or ``_VKV``) struct literal derived from the parsed value's runtime
+    type.  That is wrong for a call, whose return type is opaque to the
+    renderer and is never a ``_VVal`` struct-literal projection.
+
+    SystemVerilog declarations are typed and have no inference, so the
+    binding still needs an explicit declared type.  No caller-supplied
+    return-type hint is required: every generated SystemVerilog call
+    stub that yields a value returns the universal tagged ``_VVal``
+    struct (a ``StubReturn.VALUE`` stub is ``function _VVal name(...)``),
+    so the call result's static type is always ``_VVal`` -- exactly the
+    type a SystemVerilog scalar literal binding already declares.  The
+    only call-vs-literal difference is dropping the value-wrapping
+    struct literal, so the call result is bound directly with a plain
+    ``static _VVal`` declaration regardless of the source data type.
+    """
+    return f"static _VVal {name} = {value};"
+
+
+@beartype
+def _format_systemverilog_call_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
+    """Format a SystemVerilog reassignment binding a call result.
+
+    The call-expression counterpart of
+    :func:`_format_systemverilog_call_declaration`; the variable is
+    already declared ``_VVal``, so the call result is assigned directly
+    with no ``_VVal`` struct-literal wrapping.
+    """
+    return f"{name} = {value};"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -254,7 +294,13 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # A call result is bound directly with an explicit ``_VVal`` type
+    # (every generated SystemVerilog call stub that yields a value
+    # returns the universal tagged ``_VVal`` struct, so no
+    # caller-supplied return-type hint is needed); the value-wrapping
+    # ``_VVal`` struct literal a SystemVerilog literal binding uses is
+    # dropped.  See :func:`_format_systemverilog_call_declaration`.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     allows_empty_call_parens = True
@@ -554,6 +600,34 @@ class SystemVerilog(metaclass=LanguageCls):
             content=declaration + "\n" + assignment,
             variable_name=variable_name,
             body_preamble=body_preamble,
+        )
+
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in a SystemVerilog module.
+
+        In :meth:`wrap_in_file`'s ``variable_name`` branch,
+        *body_preamble* is prepended inside ``initial begin`` (where,
+        for a literal binding, it is data-dependent preamble).  For a
+        call binding
+        those lines are instead the module-scope ``task``/``function``/
+        ``class`` stubs emitted by :func:`_sv_call_stub`, and a
+        ``function`` declared inside ``initial begin`` is illegal.  Place
+        the stubs at module scope (matching the call-without-binding
+        branch of :meth:`wrap_in_file`) while keeping the
+        ``static _VVal my_data = make_widget(...);`` binding inside
+        ``initial begin``.
+        """
+        del variable_name
+        stubs_block = "".join(f"{s}\n" for s in body_preamble)
+        return (
+            f"module {self.module_name};\n"
+            f"{stubs_block}"
+            f"initial begin\n{content}\nend\nendmodule"
         )
 
     date_format: DateFormats = DateFormats.ISO
@@ -882,6 +956,34 @@ class SystemVerilog(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        A literal binding wraps the right-hand side in a named ``_VVal``
+        struct literal derived from the parsed value's runtime type; a
+        call's return type is opaque to the renderer and is always the
+        universal ``_VVal`` struct (the type every generated
+        value-returning call stub returns), so the call result is bound
+        directly with a plain ``static _VVal`` declaration and no
+        struct-literal wrapping.
+        """
+        return _format_systemverilog_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; the ``_VVal`` struct-literal
+        wrapping is dropped since the call already yields a ``_VVal``.
+        """
+        return _format_systemverilog_call_assignment
 
     @cached_property
     def compute_body_preamble(
