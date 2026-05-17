@@ -28,6 +28,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_declaration_formatter,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -215,47 +216,6 @@ def _make_variable_assignment(
         )
 
     return _format
-
-
-@beartype
-def _make_nim_call_variable_declaration(
-    *,
-    keyword: str,
-) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-    """Create a Nim declaration formatter for a call-expression binding.
-
-    The literal-binding declaration prefixes the right-hand side with
-    the ``%*`` json macro (or ``@`` for sequences) chosen from the
-    parsed literal's type, which JSON-constructs a literal rather than
-    invoking a call.  A call result is bound directly with no wrapping,
-    regardless of the source data type.
-    """
-
-    def _format(
-        name: str,
-        value: str,
-        _data: Value,
-        _modifiers: frozenset[enum.Enum],
-    ) -> str:
-        """Emit ``<keyword> <name> = <call>`` with no ``%*``/``@``."""
-        return f"{keyword} {name} = {value}"
-
-    return _format
-
-
-@beartype
-def _format_nim_call_variable_assignment(
-    name: str,
-    value: str,
-    _data: Value,
-) -> str:
-    """Format an existing-variable assignment binding a call result.
-
-    The call-expression counterpart of the literal-binding assignment
-    formatter; the ``%*``/``@`` wrapping is dropped since a call result
-    is bound directly.
-    """
-    return f"{name} = {value}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1802,12 +1762,11 @@ class Nim(metaclass=LanguageCls):
         The literal-binding declaration prefixes the right-hand side
         with the ``%*`` json macro (or ``@`` for sequences) chosen from
         the parsed literal's type; that JSON-constructs a literal and is
-        invalid for a call result, so the call expression is bound
+        invalid for a call result.  The plain ``<keyword> <name> =
+        <value>`` declaration-style formatter binds the call result
         directly with no wrapping.
         """
-        return _make_nim_call_variable_declaration(
-            keyword=self.declaration_style.name.lower(),
-        )
+        return self.declaration_style.value.formatter
 
     @cached_property
     def format_call_variable_assignment(
@@ -1817,9 +1776,11 @@ class Nim(metaclass=LanguageCls):
 
         The call-expression counterpart of
         :attr:`format_variable_assignment`; the ``%*``/``@`` wrapping is
-        dropped since a call result is bound directly.
+        dropped since a call result is bound directly.  Unlike the
+        declaration form this carries no ``var``/``let``/``const``
+        keyword, so it does not reuse the declaration-style formatter.
         """
-        return _format_nim_call_variable_assignment
+        return variable_formatter(template="{name} = {value}")
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
