@@ -1857,13 +1857,11 @@ def run_call_golden_case(
                 for ref_name, ref_source in config.ref_declarations.items()
             },
         )
-        if bound.code != composed.code:
-            msg = (
-                "literalize_call(bound_refs=...) diverged from the "
-                "shared call/declaration composition for "
-                f"{lang_cls.__name__} / {config.case_dir_name}"
-            )
-            raise AssertionError(msg)
+        assert bound.code == composed.code, (
+            "literalize_call(bound_refs=...) diverged from the shared "
+            f"call/declaration composition for {lang_cls.__name__} / "
+            f"{config.case_dir_name}"
+        )
     check_golden(
         file_regression=file_regression,
         contents=composed.code + "\n",

@@ -140,6 +140,11 @@ lint.per-file-ignores."tests/**/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
+lint.per-file-ignores."tests/integration/call_cases.py" = [
+    # Test-support module (imported only by golden-file test modules,
+    # never run under ``-O``); allow 'assert' as we use it for tests.
+    "S101",
+]
 lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     # These are generated fixture files; suppress everything except
     # unused-import checks (F401) so we catch stale imports.
