@@ -34,6 +34,11 @@ Next
   ``record_struct_name_prefix`` constructor parameter and its
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  See #2477.
+- Fixed the :class:`~literalizer.Zig` ``RECORD`` field type of an
+  integer-list record field whose first element is small but a later
+  element exceeds the signed 64-bit range: it is now ``[]const u64``
+  (typed from the widest element) instead of the ``[]const i64`` that
+  inferring from the first element alone produced.  See #2488.
 - :class:`~literalizer.Odin` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
