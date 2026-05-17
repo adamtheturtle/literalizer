@@ -113,6 +113,18 @@ Next
   nested it inside the ``x/0`` clause, producing invalid Erlang) while
   keeping the binding and the trailing ``My_data.`` return inside
   ``x()``.  See #2454.
+- :class:`~literalizer.Tcl` and :class:`~literalizer.Bash` now accept
+  ``variable_form`` on :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  Their literal-binding
+  templates treat the right-hand side as a value word, so a call result
+  is now bound through command substitution instead: Tcl emits ``set
+  my_data [make_widget 42]`` and Bash emits ``declare
+  my_data="$(make_widget 42)"`` (a bare ``my_data="$(...)"`` for an
+  :class:`~literalizer.ExistingVariable`).  Their
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding output is unchanged.  Follow-up to
+  #1961.  See #2222.
 
 2026.05.16.1
 ------------
