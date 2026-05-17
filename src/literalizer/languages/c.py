@@ -177,42 +177,37 @@ def _apply_format_c_entry_record(
     """Wrap a formatted entry in the appropriate ``CVal`` union literal
     under the ``RECORD`` strategy.
 
-    Differs from :func:`_apply_format_c_entry` because ``RECORD`` makes
-    the bare ``true`` / ``false`` / ``NULL`` literals (so a ``bool`` /
-    null record field is a clean scalar): a ``bool`` or ``None`` reached
-    as a *collection element* must therefore be wrapped here instead of
-    arriving pre-wrapped.
+    Only three element kinds differ from :func:`_apply_format_c_entry`,
+    and ``RECORD`` handles them here before delegating the rest:
 
-    A record-shaped dict element is already a generated ``struct``
-    literal, and a dict / ordered map / set element is already a
-    complete ``CVal`` expression (those formats keep the self-wrapping
-    opener and close): all are passed through.  Only a list now opens
-    with the bare ``CVal`` array form, so a list element is wrapped
-    here into a ``CVal`` so the enclosing array is well-typed.
+    * ``bool`` / ``None`` -- ``RECORD`` makes the bare ``true`` /
+      ``false`` / ``NULL`` literals (so a ``bool`` / null record field
+      is a clean scalar), so one reached as a *collection element* must
+      be wrapped here instead of arriving pre-wrapped.
+    * ``list`` -- only a list now opens with the bare ``CVal`` array
+      form, so a list element is wrapped into a ``CVal`` so the
+      enclosing array is well-typed.
+
+    Every other element is wrapped (or passed through, for a record
+    ``struct`` literal or an already-complete dict / ordered map / set
+    ``CVal`` expression) exactly as the default strategy does.
     """
     match original:
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            field = int_field
-        case str() | bytes() | datetime.date() | datetime.time():
-            field = string_field
         case bool():
-            field = bool_field
+            return f"((CVal){{.{bool_field} = {formatted}}})"
         case None:
-            field = string_field
-        # Values above ``LLONG_MAX`` cannot be assigned to the signed
-        # ``long long`` field without an implementation-defined
-        # narrowing conversion; route them to the unsigned field.
-        case int() if original > I64_MAX:
-            field = uint_field
-        case int():
-            field = int_field
-        case float():
-            field = float_field
+            return f"((CVal){{.{string_field} = {formatted}}})"
         case list():
-            field = array_field
+            return f"((CVal){{.{array_field} = {formatted}}})"
         case _:
-            return formatted
-    return f"((CVal){{.{field} = {formatted}}})"
+            return _apply_format_c_entry(
+                original=original,
+                formatted=formatted,
+                int_field=int_field,
+                uint_field=uint_field,
+                float_field=float_field,
+                string_field=string_field,
+            )
 
 
 @beartype
