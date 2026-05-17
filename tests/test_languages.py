@@ -67,17 +67,17 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
 # :func:`~literalizer._preamble._structural_type_id`
 # ``case datetime.time(): return "time"`` arm cannot ride the
 # all-languages ``type_hints`` golden axis.  That arm only fires on
-# the *Python* type-hint path: ``_has_union_in_type_hints`` recurses
-# through nested lists with divergent inner shapes (e.g. ``[[t], []]``)
-# and computes a structural id for the time scalar.  The empty inner
-# list that forces the union recursion also makes the Kotlin renderer
-# emit a nested-time-list under ``ALWAYS`` whose value type
-# (``Array<Array<LocalTime>>``) disagrees with its inferred annotation
-# (``List<Any?>``); since the per-language lint CI compiles every
-# golden fixture, an all-languages golden case for this input fails to
-# build.  No other reachable input exercises the arm.  So, like the
-# Dart ``skip_null_dict_values`` cases below, this Python-only arm
-# stays a focused pytest test driven through the public API.
+# the *Python* type-hint path: ``_has_union_in_type_hints`` walks
+# nested lists with divergent inner shapes (e.g. ``[[t], []]``) and
+# computes a structural id for the time scalar.  The empty inner list
+# that forces the union walk also makes the Kotlin renderer emit a
+# nested-time-list under ``ALWAYS`` whose rendered value type
+# disagrees with its inferred type annotation; since the per-language
+# lint CI compiles every golden fixture, an all-languages golden case
+# for this input fails to build.  No other reachable input exercises
+# the arm.  So, like the Dart ``skip_null_dict_values`` cases below,
+# this Python-only arm stays a focused pytest test driven through the
+# public API.
 
 
 def test_python_time_union_annotation_renders() -> None:
