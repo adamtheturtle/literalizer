@@ -154,7 +154,6 @@ class Jsonnet(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = False
     supports_no_variable_wrap_in_file = True
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True

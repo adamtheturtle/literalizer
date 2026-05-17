@@ -660,12 +660,6 @@ class C(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # A call result is bound directly with an explicit ``CVal`` type
-    # (every generated call stub returns the universal tagged ``CVal``
-    # union, so no caller-supplied return-type hint is needed); the
-    # value-wrapping designated-initializer compound literal a C literal
-    # binding uses is dropped.  See :func:`_format_c_call_declaration`.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True

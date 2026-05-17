@@ -226,15 +226,6 @@ class Forth(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True
-    # A call-result binding reuses the literal-binding colon definition
-    # unchanged: ``: my_data 42 make_widget ;`` is a deferred word that
-    # re-executes ``make_widget`` on every invocation.  Forth has no
-    # eager general-purpose value binding (``VALUE``/``TO`` holds only a
-    # single cell, not strings/dicts/sequences), so this is the same
-    # idiom already used for literal bindings, and ``ExistingVariable``
-    # is necessarily identical to ``NewVariable`` (no reassignment in
-    # this model).  See #2456.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
