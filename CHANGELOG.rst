@@ -59,6 +59,29 @@ Next
   ``format_call_preamble_stub`` methods, so it is now re-exported from
   the package root for consumers implementing that protocol.  See
   #1947.
+- :class:`~literalizer.D` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  The
+  default (``ERROR``) strategy keeps the homogeneous
+  ``std.json.JSONValue`` model; under ``RECORD`` each record-shaped
+  dict (non-empty, string-keyed) becomes a generated
+  ``struct RecordN { ... }`` declared in the preamble plus a matching
+  positional ``Record0(value, ...)`` constructor literal whose fields
+  are raw D values, so a record-shaped dict that mixes scalars with a
+  container is representable.  Field names are the dict keys verbatim
+  and field types are inferred structurally from the value (``long``/
+  ``ulong``, ``double``, ``bool``, ``string``, ``typeof(null)``,
+  ``T[]`` arrays, nested ``RecordN``).  Without the ``JSONValue``
+  wrapper the whole value is raw and the binding drops its
+  ``JSONValue``; the class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter and its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  A heterogeneous scalar list, a set, an ordered map or a
+  non-record dict has no raw D representation and raises
+  :class:`~literalizer.exceptions.UnrepresentableInputError` (the
+  cross-language decision for these is tracked in #2317).  See #2478.
 - :class:`~literalizer.Crystal` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -95,6 +118,23 @@ Next
   opened with ``std::vector{`` so class-template argument deduction
   infers ``std::vector<RecordN>``.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2420.
+- :class:`~literalizer.CSharp` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  positional ``record`` declared in the preamble plus a matching
+  ``new Record0(value, ...)`` literal, so a record-shaped dict that
+  mixes scalars with a container is representable even though
+  ``Dictionary`` requires a homogeneous value type.  Component names
+  are the PascalCase form of the dict keys; auto names are
+  ``Record0``, ``Record1``, ...  ``sequence_format`` is forced to
+  ``ARRAY`` under this strategy so a list-valued component has a typed
+  array form, and a list whose every element is a record-shaped dict
+  is opened with an implicitly-typed array ``new[] { ... }`` so C#
+  infers ``RecordN[]``.  The default (``ERROR``) ``Dictionary``
+  output is unchanged.  See #2475.
 - :class:`~literalizer.Swift` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -112,12 +152,34 @@ Next
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  The default (``ERROR``) ``Any`` output is unchanged.  See
   #2474.
+- :class:`~literalizer.V` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  file-scope ``struct`` declared in the preamble plus a matching
+  ``Record0{ field: value, ... }`` literal, so a record-shaped dict
+  that mixes scalars with a container is representable even though a
+  ``map`` requires a homogeneous value type.  Field names are the
+  dict keys verbatim; a field is typed from its value (an integer by
+  its own magnitude so a wide value keeps its ``i64(...)`` / ``u64(...)``
+  cast, a nested record by its generated name, a list of record-shaped
+  dicts as ``[]RecordN``, ``None`` as ``voidptr``, an empty list as
+  ``[]IVal``), and the struct-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter; its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  An ``EPOCH`` datetime is now routed through the integer
+  formatter so a post-2038 value keeps the ``i64(...)`` cast V
+  requires.  The default (``ERROR``) and ``INTERFACE`` outputs are
+  unchanged.  See #2480.
 - :class:`~literalizer.Nim` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
   :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
-  :class:`~literalizer.Python`, :class:`~literalizer.Cpp` and
-  :class:`~literalizer.Swift`).  Each record-shaped dict (non-empty,
+  :class:`~literalizer.Python`, :class:`~literalizer.Cpp`,
+  :class:`~literalizer.Swift`, :class:`~literalizer.D` and
+  :class:`~literalizer.V`).  Each record-shaped dict (non-empty,
   string-keyed) becomes a generated module-scope
   ``type Record0 = object`` declaration plus a matching
   ``Record0(field: value, ...)`` literal, so a record-shaped dict that
@@ -130,11 +192,11 @@ Next
   language-class flag is now ``True``.  Collections render with their
   native Nim constructors (``@[...]``, ``{...}.toTable``) as under
   ``OBJECT_VARIANT``, but no scalar is wrapped and no ``json``/``%*``
-  is emitted.  A null, set, ordered-map or non-record-dict field, and
-  a ``NIM``-table-literal date/datetime field, are rejected as out of
-  scope for the base port (consistent with the other non-Rust ports;
-  see #2317).  The default (``ERROR``) JSON output is unchanged.  See
-  #2479.
+  is emitted.  A null field is the Nim ``pointer`` type; a set,
+  ordered-map or non-record-dict field, and a ``NIM``-table-literal
+  date/datetime field, are rejected as out of scope for the base port
+  (consistent with the other non-Rust ports; see #2317).  The default
+  (``ERROR``) JSON output is unchanged.  See #2479.
 - :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting ``id my_data =
   make_widget(@42);`` directly.  The literal-binding declaration boxes
