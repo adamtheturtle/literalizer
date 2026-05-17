@@ -1,0 +1,958 @@
+"""Haxe language specification."""
+
+import dataclasses
+import datetime
+import enum
+from collections.abc import Callable, Sequence
+from functools import cached_property
+from typing import ClassVar, assert_never
+
+from beartype import beartype
+
+from literalizer._formatters.collection_openers import fixed_open
+from literalizer._formatters.format_dates import (
+    format_date_iso,
+    format_datetime_epoch,
+    format_datetime_iso,
+    format_time_iso,
+)
+from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
+    format_bytes_base64,
+    format_bytes_hex,
+    passthrough_sequence_entry,
+    passthrough_set_entry,
+    variable_declaration_formatter,
+    variable_formatter,
+)
+from literalizer._formatters.format_factories import set_format_factory
+from literalizer._formatters.format_floats import (
+    format_float_fixed,
+    format_float_repr,
+    format_float_scientific,
+)
+from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
+    NO_HETEROGENEOUS_BEHAVIOR,
+    NON_KEBAB_REF_CASES,
+    CallStyle,
+    CommentConfig,
+    DateFormatConfig,
+    DatetimeFormatConfig,
+    DeclarationStyleConfig,
+    DictFormatConfig,
+    FloatSpecialsMixin,
+    HeterogeneousBehavior,
+    IdentifierCase,
+    LanguageCls,
+    ModifierCombination,
+    OrderedMapFormatConfig,
+    PositionalCallStyle,
+    SequenceFormatConfig,
+    SetFormatConfig,
+    StubReturn,
+    TrailingCommaConfig,
+    body_preamble_from_scalars,
+    default_format_call_variable_assignment,
+    default_format_call_variable_declaration,
+    default_sequence_binding_declarations,
+    default_wrap_calls_with_declarations,
+    identity_call_arg,
+    identity_call_ref_identifier,
+    identity_call_statement,
+    identity_call_target,
+    never_inhibits_consuming_form,
+    no_call_binding_body_preamble,
+    no_call_binding_file_pragmas,
+    no_call_stub,
+    no_data_preamble,
+    no_format_integer_widened,
+    no_leading_preamble,
+    no_type_hint_preamble,
+    no_validate_call_arg,
+    no_validate_spec_for_data,
+    prepend_body_preamble,
+)
+from literalizer._types import Scalar, Value
+from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+
+# The Haxe ``Int`` is a 32-bit signed integer on static targets; only
+# values inside this range are guaranteed to round-trip as an ``Int``.
+# Wider values are annotated as ``Float`` (an ``Int`` literal converts
+# implicitly to ``Float``, so the annotation is always safe).
+_I32_MIN = -(2**31)
+_I32_MAX = 2**31 - 1
+
+
+@beartype
+def _haxe_scalar_hint(
+    *,
+    data: Scalar,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive the Haxe annotation for a scalar value."""
+    match data:
+        case bool():
+            hint = "Bool"
+        case int():
+            hint = "Int" if _I32_MIN <= data <= _I32_MAX else "Float"
+        case float():
+            hint = "Float"
+        case str() | bytes():
+            hint = "String"
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = "String"
+        case None:
+            hint = "Dynamic"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _haxe_type_hint(
+    *,
+    data: Value,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Derive a Haxe type annotation from *data*.
+
+    Every collection literal is rendered with an explicit
+    ``(... : Array<Dynamic>)`` / ``(... : Map<String, Dynamic>)`` cast,
+    so the matching variable annotation is the same coarse type
+    regardless of element types.
+    """
+    match data:
+        case dict():
+            return "Map<String, Dynamic>"
+        case list() | set():
+            return "Array<Dynamic>"
+        case _:
+            return _haxe_scalar_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+
+
+@beartype
+def _format_haxe_typed_declaration(
+    *,
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+    keyword: str,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Format a Haxe variable declaration with an explicit type."""
+    hint = _haxe_type_hint(
+        data=data,
+        date_hint=date_hint,
+        datetime_hint=datetime_hint,
+    )
+    return f"{keyword}{name}:{hint} = {value};"
+
+
+@beartype
+def _haxe_params(params: Sequence[str]) -> str:
+    """Render a stub parameter list, typing every parameter
+    ``Dynamic``.
+    """
+    return ", ".join(f"{param}:Dynamic" for param in params)
+
+
+@beartype
+def _haxe_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return Haxe stub declarations for a call name.
+
+    Stubs are emitted as local declarations so they are valid inside the
+    ``static function main()`` body that :meth:`Haxe.wrap_in_file`
+    produces.  A bare name becomes a local function; a dotted name
+    becomes a local bound to a nested anonymous structure of closures
+    (``var app = { client: { fetch: function(...) ... } };``).
+    """
+    param_list = _haxe_params(params=params)
+    if len(parts) == 1:
+        return (f"function {parts[0]}({param_list}):Dynamic return null;",)
+    method = parts[-1]
+    fields = parts[1:-1]
+    closure = f"function({param_list}):Dynamic return null"
+    structure = f"{{ {method}: {closure} }}"
+    for field in reversed(fields):
+        structure = f"{{ {field}: {structure} }}"
+    return (f"var {parts[0]} = {structure};",)
+
+
+_HAXE_RESERVED: frozenset[str] = frozenset(
+    {
+        "abstract",
+        "break",
+        "case",
+        "cast",
+        "catch",
+        "class",
+        "continue",
+        "default",
+        "do",
+        "dynamic",
+        "else",
+        "enum",
+        "extends",
+        "extern",
+        "false",
+        "final",
+        "for",
+        "function",
+        "if",
+        "implements",
+        "import",
+        "in",
+        "inline",
+        "interface",
+        "macro",
+        "new",
+        "null",
+        "operator",
+        "overload",
+        "override",
+        "package",
+        "private",
+        "public",
+        "return",
+        "static",
+        "switch",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typedef",
+        "untyped",
+        "using",
+        "var",
+        "while",
+    }
+)
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class Haxe(metaclass=LanguageCls):
+    """Haxe language specification.
+
+    Args:
+        date_format: How to format :class:`datetime.date` values.
+
+            * ``date_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15"``.
+
+        datetime_format: How to format :class:`datetime.datetime` values.
+
+            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+              e.g. ``"2024-01-15T12:30:00"``.
+            * ``datetime_formats.EPOCH`` — Unix timestamp integer.
+    """
+
+    format_integer_widened = no_format_integer_widened
+    format_call_variable_declaration = default_format_call_variable_declaration
+    format_call_variable_assignment = default_format_call_variable_assignment
+    sequence_binding_declarations = default_sequence_binding_declarations
+    format_call_binding_body_preamble = no_call_binding_body_preamble
+    format_call_binding_file_pragmas = no_call_binding_file_pragmas
+
+    leading_preamble = no_leading_preamble
+    validate_spec_for_data = no_validate_spec_for_data
+    extension = ".hx"
+    pygments_name = "haxe"
+    supports_special_floats = True
+    supports_variable_names = True
+    supports_no_variable_wrap_in_file = False
+    dict_supports_heterogeneous_values = True
+    supports_dotted_calls = True
+    has_free_function_calls = True
+    reserved_identifiers: ClassVar[frozenset[str]] = _HAXE_RESERVED
+    allows_empty_call_parens = True
+    supports_dotted_call_stub = True
+    call_returns_expression = True
+    supports_zero_parameter_calls = True
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
+    supports_inline_multiline_dict_args = True
+    supports_standalone_comments_in_wrapped_calls = True
+    supports_module_name = True
+    supports_empty_dict_key = False
+    supports_call_style = True
+    supports_default_dict_key_type = False
+    supports_default_dict_value_type = False
+    supports_default_sequence_element_type = False
+    supports_default_set_element_type = False
+    supports_default_ordered_map_value_type = False
+    supports_record_struct_name_prefix = False
+    supports_record_shape_names = False
+    supports_non_string_dict_keys = False
+
+    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(
+            identity_call_arg,
+        )
+    )
+    """Callable that rewrites a formatted direct call argument."""
+
+    class DateFormats(enum.Enum):
+        """Date formatting options for Haxe."""
+
+        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+
+        def __call__(self, date_value: datetime.date, /) -> str:
+            """Format a date."""
+            return self.value.formatter(date_value)
+
+    class DatetimeFormats(enum.Enum):
+        """Datetime formatting options for Haxe."""
+
+        ISO = DatetimeFormatConfig(
+            formatter=format_datetime_iso,
+            type_produced=str,
+        )
+        EPOCH = DatetimeFormatConfig(
+            formatter=format_datetime_epoch,
+            type_produced=int,
+        )
+
+        def __call__(self, dt_value: datetime.datetime, /) -> str:
+            """Format a datetime."""
+            return self.value.formatter(dt_value)
+
+    class BytesFormats(enum.Enum):
+        """Bytes formatting options."""
+
+        HEX = enum.member(value=format_bytes_hex)
+        BASE64 = enum.member(value=format_bytes_base64)
+
+        def __call__(self, data: bytes, /) -> str:
+            """Format bytes."""
+            return self.value(value=data)
+
+    class SequenceFormats(enum.Enum):
+        """Sequence type options for Haxe."""
+
+        ARRAY = SequenceFormatConfig(
+            sequence_open=fixed_open(open_str="(["),
+            close="] : Array<Dynamic>)",
+            supports_heterogeneity=True,
+            single_element_trailing_comma=False,
+            supports_trailing_comma=True,
+            empty_sequence=None,
+            preamble_lines=(),
+            format_entry=passthrough_sequence_entry,
+            typed_opener_fallback=None,
+            uses_typed_literal_for_scalars=False,
+            requires_uniform_record_shapes=False,
+            declared_type=None,
+            narrowed_empty_form=None,
+        )
+
+    class SetFormats(enum.Enum):
+        """Set type options for Haxe.
+
+        Haxe has no native set literal, so a set is rendered as a
+        type-annotated ``Array`` literal.
+        """
+
+        SET = enum.member(
+            value=set_format_factory(
+                open_template="([",
+                close="] : Array<Dynamic>)",
+                empty_template="([] : Array<Dynamic>)",
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=True,
+            )
+        )
+
+        def __call__(self, default_type: str) -> SetFormatConfig:
+            """Create a set format config for the given type."""
+            return self.value(default_type)
+
+    class CommentFormats(enum.Enum):
+        """Comment style options."""
+
+        DOUBLE_SLASH = CommentConfig(
+            prefix="//",
+            suffix="",
+        )
+        BLOCK = CommentConfig(
+            prefix="/*",
+            suffix=" */",
+        )
+
+    class DeclarationStyles(enum.Enum):
+        """Declaration style options."""
+
+        FINAL = DeclarationStyleConfig(
+            formatter=variable_declaration_formatter(
+                template="final {name} = {value};"
+            ),
+            supports_redefinition=False,
+        )
+        VAR = DeclarationStyleConfig(
+            formatter=variable_declaration_formatter(
+                template="var {name} = {value};"
+            ),
+            supports_redefinition=False,
+        )
+
+    class DictEntryStyles(enum.Enum):
+        """Dict entry style options."""
+
+        DEFAULT = enum.auto()
+
+    class DictFormats(enum.Enum):
+        """Dict/map format options."""
+
+        DEFAULT = enum.auto()
+
+    class EmptyDictKey(enum.Enum):
+        """Empty dict key options."""
+
+        ALLOW = enum.auto()
+
+    class FloatFormats(
+        FloatSpecialsMixin,
+        enum.Enum,
+        positive_infinity="Math.POSITIVE_INFINITY",
+        negative_infinity="Math.NEGATIVE_INFINITY",
+        nan="Math.NaN",
+    ):
+        """Float format options."""
+
+        REPR = enum.member(value=format_float_repr)
+        SCIENTIFIC = enum.member(value=format_float_scientific)
+        FIXED = enum.member(value=format_float_fixed)
+
+    class IntegerFormats(enum.Enum):
+        """Integer format options."""
+
+        DECIMAL = enum.member(value=str)
+        HEX = enum.member(value=format_integer_hex)
+
+        def __call__(self, value: int, /) -> str:
+            """Format an integer."""
+            formatter: Callable[[int], str] = self.value
+            return formatter(value)
+
+    class NumericLiteralSuffixes(enum.Enum):
+        """Numeric literal suffix options."""
+
+        NONE = enum.auto()
+
+    class NumericSeparators(enum.Enum):
+        """Numeric separator options."""
+
+        NONE = enum.auto()
+
+    class NumericStyles(enum.Enum):
+        """Numeric literal style options."""
+
+        OVERLOADED = enum.auto()
+
+    class StringFormats(enum.Enum):
+        """String format options.
+
+        Only double-quoted strings are emitted: Haxe performs string
+        interpolation in single-quoted strings, so double quotes give a
+        literal ``$`` with no escaping.
+        """
+
+        DOUBLE = enum.member(value=format_string_backslash)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
+
+    class TrailingCommas(enum.Enum):
+        """Trailing comma options."""
+
+        YES = TrailingCommaConfig(multiline_trailing_comma=True)
+        NO = TrailingCommaConfig(multiline_trailing_comma=False)
+
+    date_formats = DateFormats
+    datetime_formats = DatetimeFormats
+    bytes_formats = BytesFormats
+    sequence_formats = SequenceFormats
+    set_formats = SetFormats
+    comment_formats = CommentFormats
+
+    class VariableTypeHints(enum.Enum):
+        """Variable type hint options."""
+
+        NEVER = enum.auto()
+        ALWAYS = enum.auto()
+        SAFE = enum.auto()
+
+        def formatter(
+            self,
+            *,
+            auto_formatter: Callable[
+                [str, str, Value, frozenset[enum.Enum]], str
+            ],
+            keyword: str,
+            date_hint: str,
+            datetime_hint: str,
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+            """Return the variable declaration formatter.
+
+            Collection literals already carry an explicit type cast, so
+            ``NEVER`` and ``SAFE`` need no annotation; ``ALWAYS`` adds a
+            redundant-but-valid annotation.
+            """
+            if self.name in {"NEVER", "SAFE"}:
+                return auto_formatter
+
+            def _typed_formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Adapt :func:`_format_haxe_typed_declaration` to the
+                positional formatter interface.
+                """
+                return _format_haxe_typed_declaration(
+                    name=name,
+                    value=value,
+                    data=data,
+                    _modifiers=modifiers,
+                    keyword=keyword,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                )
+
+            return _typed_formatter
+
+    variable_type_hints_formats = VariableTypeHints
+    declaration_styles = DeclarationStyles
+    dict_entry_styles = DictEntryStyles
+    dict_formats = DictFormats
+    empty_dict_keys = EmptyDictKey
+    float_formats = FloatFormats
+    integer_formats = IntegerFormats
+    numeric_literal_suffixes = NumericLiteralSuffixes
+    numeric_separators = NumericSeparators
+    numeric_styles = NumericStyles
+    string_formats = StringFormats
+    trailing_commas = TrailingCommas
+
+    class StatementTerminatorStyles(enum.Enum):
+        """Statement terminator options."""
+
+        SEMICOLON = enum.auto()
+
+    statement_terminator_styles = StatementTerminatorStyles
+
+    class CallStyles(enum.Enum):
+        """Haxe call style options."""
+
+        POSITIONAL = PositionalCallStyle()
+
+    call_styles = CallStyles
+
+    class Modifiers(enum.Enum):
+        """C++/Java/C#-style declaration modifiers: this language has none."""
+
+    modifiers = Modifiers
+
+    class HeterogeneousStrategies(enum.Enum):
+        """Heterogeneous-scalar strategy options — this language only
+        supports raising.
+        """
+
+        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+
+    heterogeneous_strategies = HeterogeneousStrategies
+
+    class VersionFormats(enum.Enum):
+        """Version options for Haxe."""
+
+        V4 = enum.auto()
+
+    version_formats = VersionFormats
+
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
+        IdentifierCase.CAMEL,
+        IdentifierCase.PASCAL,
+        IdentifierCase.UPPER_SNAKE,
+    )
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
+        NON_KEBAB_REF_CASES
+    )
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
+
+    def wrap_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap code in a valid Haxe file.
+
+        Everything (reference declarations, call stubs and the value
+        itself) goes inside ``static function main()`` of a single
+        class.  Haxe permits local functions and anonymous-structure
+        closures inside a function body, so call stubs are emitted as
+        local declarations rather than file-scope types.
+        """
+        del variable_name
+        inner = prepend_body_preamble(
+            content=content,
+            body_preamble=body_preamble,
+        )
+        body_indent = self.indent + self.indent
+        indented = "\n".join(
+            f"{body_indent}{line}" if line.strip() else line
+            for line in inner.split(sep="\n")
+        )
+        return "\n".join(
+            [
+                f"class {self.module_name} {{",
+                f"{self.indent}public static function main() {{",
+                indented,
+                f"{self.indent}}}",
+                "}",
+            ]
+        )
+
+    @staticmethod
+    def wrap_combined_in_file(
+        declaration: str,
+        assignment: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Unsupported: literalize() rejects BothVariableForms
+        upstream.
+        """
+        del declaration, assignment, variable_name, body_preamble
+        raise WrapCombinedInFileNotSupportedError
+
+    date_format: DateFormats = DateFormats.ISO
+    datetime_format: DatetimeFormats = DatetimeFormats.ISO
+    bytes_format: BytesFormats = BytesFormats.HEX
+    sequence_format: SequenceFormats = SequenceFormats.ARRAY
+    set_format: SetFormats = SetFormats.SET
+    default_set_element_type: str = "Dynamic"
+    default_dict_key_type: str = "String"
+    default_dict_value_type: str = "Dynamic"
+    variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
+    comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
+    declaration_style: DeclarationStyles = DeclarationStyles.FINAL
+    dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
+    dict_format: DictFormats = DictFormats.DEFAULT
+    float_format: FloatFormats = FloatFormats.REPR
+    integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    numeric_literal_suffix: NumericLiteralSuffixes = (
+        NumericLiteralSuffixes.NONE
+    )
+    numeric_separator: NumericSeparators = NumericSeparators.NONE
+    numeric_style: NumericStyles = NumericStyles.OVERLOADED
+    string_format: StringFormats = StringFormats.DOUBLE
+    trailing_comma: TrailingCommas = TrailingCommas.YES
+    statement_terminator_style: StatementTerminatorStyles = (
+        StatementTerminatorStyles.SEMICOLON
+    )
+    call_style: CallStyles = CallStyles.POSITIONAL
+    heterogeneous_strategy: HeterogeneousStrategies = (
+        HeterogeneousStrategies.ERROR
+    )
+    # `4` matches the major version of `Haxe.language_version` (`V4`);
+    # keep in sync with the `haxe` install pinned in
+    # `.github/workflows/lint.yml`.
+    language_version: VersionFormats = VersionFormats.V4
+    module_name: str = "Main"
+    indent: str = "    "
+
+    null_literal: ClassVar[str] = "null"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
+    indent_closing_delimiter: ClassVar[bool] = False
+    element_separator: ClassVar[str] = ", "
+    skip_null_dict_values: ClassVar[bool] = False
+    supports_collection_comments: ClassVar[bool] = True
+    supports_scalar_before_comments: ClassVar[bool] = True
+    supports_scalar_inline_comments: ClassVar[bool] = False
+    statement_terminator: ClassVar[str] = ";"
+    static_preamble: ClassVar[Sequence[str]] = ()
+    static_body_preamble: ClassVar[Sequence[str]] = ()
+    special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    wrap_calls_with_declarations = default_wrap_calls_with_declarations
+
+    @cached_property
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Return call-argument validation for this language."""
+        return no_validate_call_arg
+
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Return call-statement formatting for this language."""
+        return identity_call_statement
+
+    @cached_property
+    def format_sequence_entry(self) -> Callable[[Value, str], str]:
+        """Format a sequence entry."""
+        return passthrough_sequence_entry
+
+    @cached_property
+    def format_set_entry(self) -> Callable[[Value, str], str]:
+        """Format a set entry."""
+        return passthrough_set_entry
+
+    @cached_property
+    def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
+        """Format an assignment to an existing variable."""
+        return variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
+        """Format one ordered-map entry."""
+        return dict_entry_with_separator(
+            separator=" => ", format_value=passthrough_sequence_entry
+        )
+
+    @cached_property
+    def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines."""
+        return no_data_preamble
+
+    @cached_property
+    def heterogeneous_behavior(self) -> HeterogeneousBehavior:
+        """Return the heterogeneous-behavior config."""
+        return self.heterogeneous_strategy.value
+
+    @cached_property
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Return data-dependent preamble lines for call rendering."""
+        return self.data_dependent_preamble
+
+    @cached_property
+    def type_hint_collection_preamble_lines(
+        self,
+    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+        """Return preamble lines for empty-collection type hints."""
+        return no_type_hint_preamble
+
+    @cached_property
+    def call_style_config(self) -> CallStyle:
+        """Configuration for the chosen call style."""
+        config: CallStyle = self.call_style.value
+        return config
+
+    @cached_property
+    def format_call_stub(
+        self,
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
+        """Return stub declarations for a call expression."""
+        return _haxe_call_stub
+
+    @cached_property
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
+        """Return file-scope stubs for a call expression."""
+        return no_call_stub
+
+    @cached_property
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Rewrite a dotted call target into the language's call
+        syntax.
+        """
+        return identity_call_target
+
+    @cached_property
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier into the
+        language's call expression syntax.
+        """
+        return identity_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
+        context.
+        """
+        return self.format_call_ref_identifier
+
+    @cached_property
+    def format_call_arg_ref_identifier_consumable(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Format a ``$ref`` the caller authorized as consumable."""
+        return self.format_call_arg_ref_identifier
+
+    @cached_property
+    def consumable_ref_value_inhibits_consuming_form(
+        self,
+    ) -> Callable[[Value], bool]:
+        """Predicate deciding whether a ref's underlying value type
+        inhibits the consume form.
+        """
+        return never_inhibits_consuming_form
+
+    @cached_property
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Configuration for the chosen sequence format."""
+        return self.sequence_format.value
+
+    @cached_property
+    def set_format_config(self) -> SetFormatConfig:
+        """Configuration for the chosen set format."""
+        return self.set_format(
+            default_type=self.default_set_element_type,
+        )
+
+    @cached_property
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Callable that returns the opening delimiter for a sequence."""
+        return self.sequence_format.value.sequence_open
+
+    @cached_property
+    def dict_format_config(self) -> DictFormatConfig:
+        """Configuration for dict formatting."""
+        return DictFormatConfig(
+            dict_open=fixed_open(open_str="(["),
+            close="] : Map<String, Dynamic>)",
+            format_entry=dict_entry_with_separator(
+                separator=" => ",
+                format_value=passthrough_sequence_entry,
+            ),
+            empty_dict=None,
+            preamble_lines=(),
+            narrowed_open=None,
+            supports_trailing_comma=True,
+        )
+
+    @cached_property
+    def trailing_comma_config(self) -> TrailingCommaConfig:
+        """Configuration for trailing-comma behavior."""
+        return self.trailing_comma.value
+
+    @cached_property
+    def format_bytes(self) -> Callable[[bytes], str]:
+        """Callable that formats a bytes value as a string literal."""
+        return self.bytes_format
+
+    @cached_property
+    def format_date(self) -> Callable[[datetime.date], str]:
+        """Callable that formats a date as a string literal."""
+        return self.date_format
+
+    @cached_property
+    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+        """Callable that formats a datetime as a string literal."""
+        return self.datetime_format
+
+    @cached_property
+    def format_time(self) -> Callable[[datetime.time], str]:
+        """Callable that formats a time as a string literal."""
+        return format_time_iso
+
+    @cached_property
+    def format_string(self) -> Callable[[str], str]:
+        """Callable that formats a string value as a quoted literal."""
+        return self.string_format
+
+    @cached_property
+    def format_float(self) -> Callable[[float], str]:
+        """Callable that formats a float value as a literal."""
+        return self.float_format
+
+    @cached_property
+    def format_integer(self) -> Callable[[int], str]:
+        """Callable that formats an int value as a literal."""
+        return self.integer_format
+
+    @cached_property
+    def comment_config(self) -> CommentConfig:
+        """Configuration for the language's comment syntax."""
+        return self.comment_format.value
+
+    @cached_property
+    def ordered_map_format_config(self) -> OrderedMapFormatConfig:
+        """Configuration for ordered-map formatting."""
+        return OrderedMapFormatConfig(
+            ordered_map_open=fixed_open(open_str="(["),
+            close="] : Map<String, Dynamic>)",
+            preamble_lines=(),
+        )
+
+    @cached_property
+    def format_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a new variable declaration."""
+        return self.variable_type_hints.formatter(
+            auto_formatter=self.declaration_style.value.formatter,
+            keyword=f"{self.declaration_style.name.lower()} ",
+            date_hint=(
+                "String"
+                if self.date_format.value.type_produced is str
+                else "Date"
+            ),
+            datetime_hint=(
+                "Int"
+                if self.datetime_format.value.type_produced is int
+                else (
+                    "String"
+                    if self.datetime_format.value.type_produced is str
+                    else "Date"
+                )
+            ),
+        )
+
+    @cached_property
+    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar preamble (Haxe needs none)."""
+        return {}
+
+    @cached_property
+    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+        """Per-instance scalar body preamble (Haxe needs none)."""
+        return {}
+
+    @cached_property
+    def compute_body_preamble(
+        self,
+    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
+            scalar_body_preamble=self.scalar_body_preamble,
+            format_lines=tuple,
+        )
