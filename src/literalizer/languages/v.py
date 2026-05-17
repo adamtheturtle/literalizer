@@ -978,6 +978,29 @@ class V(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
+    def _v_epoch_normalized(self, value: Value, /) -> Value:
+        """Return *value* with every ``datetime.datetime`` replaced by
+        its epoch-second integer when the active datetime format renders
+        epochs (``EPOCH``), descending through lists so a datetime
+        element is typed like the integer literal the value formatter
+        emits for it rather than as the ``string`` the generic resolver
+        would map ``datetime.datetime`` to.
+
+        A plain ``datetime.date`` / ``datetime.time`` (which always
+        renders as a string) and every non-datetime value pass through
+        unchanged; the list walk runs for every list field, so the
+        branch is exercised independently of the datetime format.
+        """
+        match value:
+            case datetime.datetime() if (
+                self.datetime_format.value.type_produced is int
+            ):
+                return datetime_epoch_seconds(value=value)
+            case list():
+                return [self._v_epoch_normalized(item) for item in value]
+            case _:
+                return value
+
     def _v_type_for_value(self, value: Value, /) -> str:
         """Return the V type the rendered literal for *value* compiles
         to.
@@ -986,11 +1009,12 @@ class V(metaclass=LanguageCls):
         magnitude to match the rendered literal (``int`` / the
         ``i64(...)``-wrapped ``i64`` / the ``u64(...)``-wrapped ``u64``)
         and an ``EPOCH`` datetime rendered as -- and sized like -- its
-        epoch integer, while every other date/datetime/time/bytes
-        format renders a string and ``None`` renders ``unsafe { nil }``
-        (a ``voidptr``).  A list compiles to ``[]`` of its element type
-        (an empty list to ``[]IVal``, matching the ``[]IVal{}`` empty
-        literal).
+        epoch integer (a list of ``EPOCH`` datetimes likewise compiles
+        to ``[]int`` / ``[]i64``), while every other
+        date/datetime/time/bytes format renders a string and ``None``
+        renders ``unsafe { nil }`` (a ``voidptr``).  A list compiles to
+        ``[]`` of its element type (an empty list to ``[]IVal``,
+        matching the ``[]IVal{}`` empty literal).
 
         An ordered map or non-record dict field is out of scope for
         the base ``RECORD`` port (the cross-language decision is
@@ -1000,11 +1024,7 @@ class V(metaclass=LanguageCls):
         rejected before formatting and no record golden reaches the
         ``map``-typed fallback.
         """
-        if (
-            isinstance(value, datetime.datetime)
-            and self.datetime_format.value.type_produced is int
-        ):
-            value = datetime_epoch_seconds(value=value)
+        value = self._v_epoch_normalized(value)
         match value:
             case bool():
                 return "bool"
