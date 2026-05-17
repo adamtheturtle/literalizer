@@ -4126,7 +4126,7 @@ def _compose_call_with_bound_ref_declarations(
     :func:`_literalize_value_binding`) for every name in *bound_refs*,
     in *bound_refs* iteration order, then composes them with
     *call_result* and a no-op stub for the target function through
-    :func:`literalize_call_with_declarations` so the duplicate-preamble
+    :func:`_literalize_call_with_declarations` so the duplicate-preamble
     reconciliation is shared with every other call/declaration caller.
 
     The stub return mode mirrors :func:`_wrap_call_in_file`: a value is
@@ -4171,7 +4171,7 @@ def _compose_call_with_bound_ref_declarations(
             language.format_call_binding_body_preamble()
         )
         call_binding_pragmas = language.format_call_binding_file_pragmas()
-    return literalize_call_with_declarations(
+    return _literalize_call_with_declarations(
         language=language,
         declarations=decl_results,
         call=call_result,
@@ -4474,11 +4474,7 @@ def literalize_call(
             with a single reconciled preamble.  Declaration emission
             only happens when *wrap_in_file* is ``True``; otherwise
             *bound_refs* degrades to type information only, exactly like
-            *ref_values*, and the refs stay free identifiers.  Callers
-            that must interleave their own definitions (e.g. a
-            ``call_transform`` wrapper) can compose the pieces
-            explicitly with
-            :func:`literalize_call_with_declarations` instead.  Keys
+            *ref_values*, and the refs stay free identifiers.  Keys
             should match the identifiers used in *source* before any
             *ref_case* conversion.  Defaults to ``None`` (no bindings
             emitted; behavior is byte-identical to omitting this
@@ -4523,11 +4519,12 @@ def literalize_call(
         data they see.  Concatenating the results into a single file
         can produce duplicate import lines or duplicate type
         declarations, which strict compilers (Haskell, D, …) reject
-        and a linter (``ruff``, ``pylint``, …) flags.  Use
-        :func:`literalize_call_with_declarations` to render the
-        declarations and the call into one coherent file with a single
-        reconciled preamble.  The "Composing declarations and calls"
-        section of :doc:`/function-call-use-case` shows a worked example.
+        and a linter (``ruff``, ``pylint``, …) flags.  Pass the ref
+        values through *bound_refs* (with ``wrap_in_file=True``) instead
+        and this function renders the declarations and the calls into
+        one coherent file with a single reconciled preamble.  The
+        "Composing declarations and calls" section of
+        :doc:`/function-call-use-case` shows a worked example.
     """
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent
@@ -4764,7 +4761,7 @@ def literalize_call(
 
 
 @beartype
-def literalize_call_with_declarations(
+def _literalize_call_with_declarations(
     *,
     language: Language,
     declarations: Sequence[LiteralizeResult],
@@ -4774,8 +4771,10 @@ def literalize_call_with_declarations(
 ) -> LiteralizeResult:
     r"""Render N ref declarations and a call into one coherent file.
 
-    Composes the per-ref :func:`literalize` results in *declarations*
-    (each a ``NewVariable`` binding for a ``$ref`` target) with the
+    Shared reconciliation core behind :func:`literalize_call`'s
+    *bound_refs* argument (and the call golden-file harness).  Composes
+    the per-ref :func:`literalize` results in *declarations* (each a
+    ``NewVariable`` binding for a ``$ref`` target) with the
     :func:`literalize_call` result *call* (rendered with those refs
     folded into ``ref_values``) into a single
     :class:`LiteralizeResult` whose :attr:`~LiteralizeResult.code` is a
@@ -4783,8 +4782,7 @@ def literalize_call_with_declarations(
     the declarations and the calls wrapped via
     :meth:`Language.wrap_calls_with_declarations`.
 
-    This is the recommended way to emit a call beside its ref
-    declarations.  Concatenating the two halves' independently computed
+    Concatenating the two halves' independently computed
     preambles instead would emit overlapping type definitions (e.g.
     Haskell's ``data Val = ...`` with disjoint constructor sets) that no
     string-level duplicate filter can reconcile.  The body preamble is

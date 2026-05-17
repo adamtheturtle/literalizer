@@ -20,20 +20,10 @@ Next
   no-op stub for the target function is injected, and one reconciled
   preamble (header and body) is placed in front, so callers no longer
   hand-roll a duplicate-removal pass.  Entries double as ``ref_values``
-  and are emitted in iteration order.
-- Added :func:`~literalizer.literalize_call_with_declarations`, the
-  lower-level building block ``bound_refs`` is built on, for callers
-  that must interleave their own definitions (e.g. a ``call_transform``
-  wrapper) between the declarations and the calls.  It takes the
-  already-rendered declaration and call
-  :class:`~literalizer.LiteralizeResult` objects (plus optional
-  ``extra_body_preamble`` / ``extra_preamble``), recomputes the body
-  preamble across the union of types, reconciles the data-dependent
-  header block into a single copy covering every type, wraps the
-  pieces through the language's call-with-declarations wrapper, and
-  returns a :class:`~literalizer.LiteralizeResult` whose
-  :attr:`~literalizer.LiteralizeResult.code` is the finished file.
-  See #1946.
+  and are emitted in iteration order.  Recomputing the body preamble
+  across the union of types and reconciling the data-dependent header
+  block into a single copy covering every type replaces the previous
+  multi-line preamble-filter heuristic.  See #1946.
 - :class:`~literalizer.D` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and

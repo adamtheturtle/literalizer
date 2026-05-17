@@ -239,17 +239,6 @@ the finished file:
 repeated in both mappings, and they are emitted in iteration order
 ahead of their first use.
 
-When you need to interleave your own definitions between the
-declarations and the calls — for example a ``call_transform`` wrapper
-the generated file must also define —
-:func:`~literalizer.literalize_call_with_declarations` is the
-lower-level building block ``bound_refs`` is built on.  It takes the
-already-rendered declaration and call
-:class:`~literalizer.LiteralizeResult` objects plus optional
-``extra_body_preamble`` / ``extra_preamble`` lines and performs the
-same reconciliation, returning the finished
-:attr:`~literalizer.LiteralizeResult.code`.
-
 Snake case is the recommended authoring convention for ``$ref`` names:
 ``pyhumps`` converts ``snake_case`` to every other case without loss.
 Inputs in other conventions are normalized to ``snake_case`` first, so

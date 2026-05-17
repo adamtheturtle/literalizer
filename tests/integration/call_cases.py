@@ -20,6 +20,14 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer import StubReturn
+
+# ``_literalize_call_with_declarations`` is the shared call/declaration
+# reconciliation core; it is intentionally not part of the public API
+# (the public surface is ``literalize_call(bound_refs=...)``).  This
+# golden-file harness must interpose its own transform-wrapper stubs
+# between rendering and composition, so it uses the internal core
+# directly.  See issue #1946.
+from literalizer._literalize import _literalize_call_with_declarations
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -1812,7 +1820,7 @@ def run_call_golden_case(
     # preamble in front.  The call-stub lines this harness synthesizes
     # for the otherwise-undefined target/transform names are folded in
     # as the ``extra_*`` arguments.
-    composed = literalizer.literalize_call_with_declarations(
+    composed = _literalize_call_with_declarations(
         language=spec,
         declarations=decl_results,
         call=result,
@@ -1852,7 +1860,7 @@ def run_call_golden_case(
         if bound.code != composed.code:
             msg = (
                 "literalize_call(bound_refs=...) diverged from the "
-                "literalize_call_with_declarations composition for "
+                "shared call/declaration composition for "
                 f"{lang_cls.__name__} / {config.case_dir_name}"
             )
             raise AssertionError(msg)
