@@ -12,6 +12,26 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Zig` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  A Zig literal binding wraps
+  the right-hand side in a designated-initializer struct literal that
+  encodes the value's runtime type (a tagged ``ZVal`` union projection,
+  or a generated ``Record0`` struct literal under the ``RECORD``
+  strategy) and declares an explicit ``ZVal`` value type, which is
+  wrong for a call whose return type is opaque to the renderer; the
+  call result is now bound with a plain inferred declaration,
+  ``const my_data = make_widget(...);``.  No caller-supplied return-type
+  hint is required: the Zig ``const``/``var`` type inference supplies
+  the binding's type.  Because the binding is a keyword declaration
+  while
+  the :class:`~literalizer.ExistingVariable` form is a bare assignment
+  to an already-declared name, only the
+  :class:`~literalizer.NewVariable` form is golden-covered.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Follow-up to #1961.  See #2510.
 - :class:`~literalizer.C` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and

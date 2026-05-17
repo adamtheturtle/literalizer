@@ -77,8 +77,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
@@ -349,13 +347,24 @@ def _zig_render_record_declaration(
 
 
 @beartype
+def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
+    """Format a Zig reassignment binding a call result.
+
+    The call-expression counterpart of
+    :attr:`Zig.format_call_variable_declaration`; the variable already
+    exists, so the call result is assigned directly with none of the
+    ``ZVal`` union tagging a literal-binding assignment applies (a call
+    result is not a ``ZVal`` union literal).
+    """
+    return f"{name} = {value};"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -366,7 +375,15 @@ class Zig(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # A call result is bound with a plain inferred declaration
+    # (``const my_data = make_widget(...);``); the Zig ``const``/``var``
+    # type inference means no caller-supplied return-type hint is
+    # needed.  The value-type ``: ZVal`` annotation and the
+    # ``Name{ .field = value, ... }`` struct-literal wrapping a Zig
+    # literal binding uses are both dropped (a call result is neither a
+    # ``ZVal`` projection nor a generated ``struct`` literal).  See
+    # :attr:`format_call_variable_declaration`.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1324,6 +1341,51 @@ class Zig(metaclass=LanguageCls):
             return f"{keyword} {name}: ZVal = {wrapped};"
 
         return _format_decl
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        A Zig literal binding wraps the right-hand side in a
+        designated-initializer ``ZVal`` projection (``.{ .int = 42 }``),
+        or a generated ``Record0{ .field = value, ... }`` struct literal
+        under the ``RECORD`` strategy, and declares an explicit value
+        type (``: ZVal``).  A call's return type is opaque to the
+        renderer and is neither, so the call result is bound with a
+        plain inferred declaration (``const my_data = make_widget(...);``
+        / ``var my_data = make_widget(...);``): the Zig ``const``/``var``
+        type inference means no caller-supplied return-type hint is
+        needed, and the value-wrapping and ``: ZVal`` annotation are
+        dropped.
+        """
+        keyword = self.declaration_style.value.keyword
+
+        @beartype
+        def _format_call_decl(
+            name: str,
+            value: str,
+            _data: Value,
+            _modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Format an inferred Zig declaration binding a call."""
+            return f"{keyword} {name} = {value};"
+
+        return _format_call_decl
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_call_variable_declaration`; the ``ZVal`` tagging a
+        literal-binding assignment applies is dropped since a call
+        result is not a ``ZVal`` union literal.
+        """
+        return _format_zig_call_assignment
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
