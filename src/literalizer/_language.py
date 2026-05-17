@@ -777,7 +777,6 @@ class LanguageCls(type):
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
     call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
-    leading_preamble: LeadingPreamble
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
