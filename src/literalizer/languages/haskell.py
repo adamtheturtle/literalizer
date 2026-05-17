@@ -315,25 +315,26 @@ def _build_date_formatters(
     is_explicit: bool,
 ) -> _DateTimeFormatters:
     """Build date and datetime formatters based on format settings."""
-    if date_format_name == "HASKELL":
-        fmt_date: Callable[[datetime.date], str] = date_ymd_formatter(
-            template=(
-                f"{constructor_prefix}Date "
-                f"(fromGregorian {{year}} {{month}} {{day}})"
-            ),
-        )
-    elif is_explicit:
-        _str_pfx = f"{constructor_prefix}Str "
-
-        def _explicit_date(value: datetime.date) -> str:
-            """Delegate to module-level implementation."""
-            return _wrap_with_str_constructor_date(
-                value=value, str_prefix=_str_pfx, formatter=date_formatter
+    match date_format_name:
+        case "HASKELL":
+            fmt_date: Callable[[datetime.date], str] = date_ymd_formatter(
+                template=(
+                    f"{constructor_prefix}Date "
+                    f"(fromGregorian {{year}} {{month}} {{day}})"
+                ),
             )
+        case _ if is_explicit:
+            _str_pfx = f"{constructor_prefix}Str "
 
-        fmt_date = _explicit_date
-    else:
-        fmt_date = date_formatter
+            def _explicit_date(value: datetime.date) -> str:
+                """Delegate to module-level implementation."""
+                return _wrap_with_str_constructor_date(
+                    value=value, str_prefix=_str_pfx, formatter=date_formatter
+                )
+
+            fmt_date = _explicit_date
+        case _:
+            fmt_date = date_formatter
 
     match datetime_format_name:
         case "HASKELL":

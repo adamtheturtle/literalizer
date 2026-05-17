@@ -19,6 +19,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -45,6 +46,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
     I64_MIN,
     format_integer_binary,
     format_integer_hex,
@@ -56,6 +58,15 @@ from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_verbatim_csharp,
 )
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -74,6 +85,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -102,7 +114,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import IncompatibleFormatsError
 
 
@@ -342,6 +354,120 @@ def _csharp_call_stub(
     )
     lines.append(f"static {root_type} {root} = new {root_type}();")
     return tuple(lines)
+
+
+# Signed 32-bit range.  An integer record field inside it is declared
+# ``int``; a wider one is declared ``long`` to match the literal C#
+# infers for the same value.  Keep these bounds in sync with
+# ``_I32_MIN`` / ``_I32_MAX`` in
+# :mod:`literalizer._formatters.type_inference` (the widening threshold
+# the value formatter uses, which has a back-reference to here).
+_CSHARP_I32_MIN = -(2**31)
+_CSHARP_I32_MAX = 2**31 - 1
+
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``), so the shared renderer always gets
+# an empty custom-name mapping.
+_CSHARP_NO_RECORD_SHAPE_NAMES: MappingProxyType[frozenset[str], str] = (
+    MappingProxyType(mapping={})
+)
+
+
+@beartype
+def _csharp_record_field_identifier(key: str, /) -> str:
+    """Return the C# record component name for a dict *key*.
+
+    C# conventions name record components in PascalCase; the literal is
+    positional so the name only labels the declaration.
+    """
+    return IdentifierCase.PASCAL.convert(name=key)
+
+
+@beartype
+def _csharp_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a C# ``new Name(value, ...)`` positional record literal as
+    structured pieces for the shared compact/multiline layout code.
+
+    C# positional records are constructed by their primary constructor,
+    so the literal emits arguments in declaration order with no field
+    names (the PascalCase identifiers label only the declaration).
+    """
+    return RenderedRecordLiteral(
+        head=f"new {name}(",
+        entries=tuple(field.formatted for field in fields),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _csharp_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a C# ``record Name(Type Id, ...);`` positional record.
+
+    A positional ``record`` (reference type, value equality, mirroring
+    the Java port) is used rather than a ``struct``; its primary
+    constructor matches the positional literal
+    :func:`_csharp_record_literal` emits.
+    """
+    components = ", ".join(
+        f"{field.type_name} {field.identifier}" for field in fields
+    )
+    return f"record {name}({components});"
+
+
+@beartype
+def _csharp_int_field_type(*, value: int) -> str:
+    """Return the C# record-component type for an in-range integer.
+
+    A value inside signed 32-bit range is declared ``int``; a wider one
+    is declared ``long``.  C# types a literal that carries no type
+    suffix by magnitude (signed 32-bit, then unsigned 32-bit, then
+    signed 64-bit), and each of those converts implicitly to the chosen
+    field type, so the declared type accepts the rendered literal.  A
+    value beyond signed 64-bit range is handled by the caller as the
+    unsigned 64-bit type, matching the literal C# infers there.
+    """
+    if _CSHARP_I32_MIN <= value <= _CSHARP_I32_MAX:
+        return "int"
+    return "long"
+
+
+@beartype
+def _all_record_shaped(items: list[Value], /) -> bool:
+    """Return whether *items* is a non-empty list whose every element is
+    a record-shaped dict (non-empty, all-string-keyed, not an ordered
+    map).
+
+    Under the ``RECORD`` strategy such a list renders each element as a
+    generated ``RecordN`` literal, so the C# sequence opener widens to
+    an implicitly-typed array (``new[] { ... }``) whose element type C#
+    infers from those literals, rather than the
+    ``Dictionary<string, object>[]`` the typed opener would otherwise
+    emit.
+
+    Uniformity of shape need not be checked here: a sibling list whose
+    record-shaped dicts do not all share one shape is rejected for every
+    ``RECORD`` language by the shared
+    :func:`literalizer._checks.check_data` guard before any value is
+    formatted, so a list reaching this predicate is always single-shape
+    and the inferred ``RecordN[]`` is well-formed.
+    """
+    if not items:
+        return False
+    return all(
+        isinstance(item, dict)
+        and not isinstance(item, OrderedMap)
+        and record_shape_for_dict(value=item) is not None
+        for item in items
+    )
 
 
 @beartype
@@ -674,11 +800,17 @@ class CSharp(metaclass=LanguageCls):
     modifiers = _CSharpModifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        ``ERROR`` raises on any value that cannot be represented.
+        ``RECORD`` renders each record-shaped dict (non-empty,
+        string-keyed) as a generated positional ``record`` declared in
+        the preamble plus a matching positional literal, rather than a
+        homogeneous ``Dictionary``.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -711,6 +843,30 @@ class CSharp(metaclass=LanguageCls):
         ),
     )
     validate_spec_for_data = no_validate_spec_for_data
+
+    def __post_init__(self) -> None:
+        """Force ``sequence_format=ARRAY`` for the ``RECORD`` strategy.
+
+        Under ``RECORD`` a list-valued record component is declared from
+        the array opener (``new <Type>[] {``) the value formatter emits,
+        so its declared type matches the rendered literal.  The default
+        tuple sequence format carries no element type in its opener and
+        no fixed-length component type, so it cannot back a generated
+        record component.  Coercing here (rather than rejecting a
+        non-array spec) keeps the golden harness simple: every ``RECORD``
+        spec, however constructed, renders.
+        """
+        strategies = type(self.heterogeneous_strategy)
+        formats = type(self.sequence_format)
+        if (
+            self.heterogeneous_strategy is strategies.RECORD
+            and self.sequence_format is not formats.ARRAY
+        ):
+            object.__setattr__(
+                self,
+                "sequence_format",
+                formats.ARRAY,
+            )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -779,6 +935,15 @@ class CSharp(metaclass=LanguageCls):
         top-level calls — wrapping them as class members sidesteps
         that ordering rule.
 
+        Under the ``RECORD`` strategy a record literal's ``var``
+        declaration would otherwise be a bare top-level statement, but
+        the generated ``record`` declarations are emitted at file scope
+        (by the data-dependent preamble) ahead of this output and C#
+        forbids a top-level statement after a type declaration; such
+        content is therefore wrapped as a ``Main`` method body inside
+        ``class Check`` rather than left as a top-level statement (call
+        stubs and class-field declarations keep their own wrapping).
+
         Otherwise the content is emitted as a top-level statement,
         which is the only context where ``var`` declarations are valid.
         """
@@ -827,20 +992,44 @@ class CSharp(metaclass=LanguageCls):
                 f"{self.indent}}}\n"
                 f"}}"
             )
+        if self._record_strategy_active:
+            body = prepend_body_preamble(
+                content=content,
+                body_preamble=body_preamble,
+            )
+            return (
+                f"class Check {{\n"
+                f"{self.indent}public static void Main() {{\n"
+                f"{body}\n"
+                f"{self.indent}}}\n"
+                f"}}"
+            )
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
+        """Wrap declaration and assignment in a valid file.
+
+        Under the ``RECORD`` strategy the declaration and assignment are
+        top-level statements that must follow the file-scope ``record``
+        declarations, so they are wrapped as a ``Main`` method body via
+        :meth:`wrap_in_file`; otherwise this is a no-op.
+        """
+        if self._record_strategy_active:
+            return self.wrap_in_file(
+                content=declaration + "\n" + assignment,
+                variable_name=variable_name,
+                body_preamble=body_preamble,
+            )
         return wrap_combined_in_file_noop(
             declaration=declaration,
             assignment=assignment,
@@ -921,14 +1110,138 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _record_strategy_active(self) -> bool:
+        """Return whether the ``RECORD`` heterogeneous strategy is set."""
+        return self.heterogeneous_strategy.name == "RECORD"
+
+    @cached_property
+    def _csharp_record_scalar_resolver(
+        self,
+    ) -> Callable[[type], str | None]:
+        """Map a scalar field's Python type to its C# type name.
+
+        Built from the same scalar mapping the collection openers use,
+        with the date/datetime names resolved from the configured
+        formats (so an ``ISO`` datetime field is typed ``string``,
+        matching the rendered literal).  A type with no entry in that
+        mapping (e.g. ``NoneType``) yields ``None`` so the caller can
+        fall back to the top type ``object``.
+        """
+        cfg = self._opener_config
+        return cfg.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=cfg.type_name(py_type=self._date_tp),
+            datetime_type=cfg.type_name(py_type=self._dt_tp),
+            enable_dict_type=False,
+        )
+
+    def _csharp_record_field_type(  # noqa: PLR0911
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
+        """Return the C# record-component type for a field, derived
+        structurally from the raw value (the Go/Java/Scala pattern).
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  A field whose value is a list of
+        record-shaped dicts (one shared shape) is typed ``RecordN[]`` to
+        match the implicitly-typed array opener
+        :attr:`sequence_open` widens it to (C# infers the element type
+        from the ``RecordN`` literals).  An integer is sized to match
+        the literal C# infers for the same value (``int``/``long``, or
+        ``ulong`` beyond signed 64-bit range, the bare-decimal overflow
+        fallback).  An ``EPOCH`` datetime renders as its epoch integer,
+        so it is sized like that integer.  A list or ordered-map field
+        is typed from the very opener the value formatter uses for that
+        value (a record field is formatted with no sibling override, so
+        the opener equals the one rendered): the ``new `` prefix and the
+        trailing `` {`` are stripped (``new int[] {`` -> ``int[]``,
+        ``new Dictionary<string, object> {`` ->
+        ``Dictionary<string, object>``).  Every other scalar uses the
+        shared scalar resolver (``date`` -> ``DateOnly``).
+
+        A set or a non-record dict (an empty or non-string-keyed dict)
+        as a record field has no precise component type under the
+        ``RECORD`` strategy.  Per the cross-language decision in #2317,
+        Rust rejects such a field while C# folds it into the ``object``
+        top type (documented best effort), which the rendered literal
+        still assigns into.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"{request.element_record_name}[]"
+        value = request.value
+        # An ``EPOCH`` datetime renders as its epoch integer, so size
+        # the field exactly like that integer; other datetime formats
+        # stay datetime-typed via the scalar resolver below.
+        if (
+            isinstance(value, datetime.datetime)
+            and self.datetime_format.value.type_produced is int
+        ):
+            value = datetime_epoch_seconds(value=value)
+        match value:
+            case bool():
+                return "bool"
+            case int() if not I64_MIN <= value <= I64_MAX:
+                return "ulong"
+            case int():
+                return _csharp_int_field_type(value=value)
+            case OrderedMap():
+                opener = self.ordered_map_format_config.ordered_map_open(
+                    value,
+                )
+            case list():
+                opener = self.sequence_open(value)
+            case _:
+                return (
+                    self._csharp_record_scalar_resolver(type(value))
+                    or "object"
+                )
+        return opener.removeprefix("new ").removesuffix(" {")
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """C# syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix="Record",
+            record_shape_names=_CSHARP_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_csharp_record_field_identifier,
+            field_type=self._csharp_record_field_type,
+            render_declaration=_csharp_render_record_declaration,
+            render_literal=_csharp_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``record``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
+        """Return data-dependent preamble lines.
+
+        Under ``HeterogeneousStrategies.RECORD`` this emits one
+        positional ``record`` declaration per record shape present in
+        the data; otherwise C# needs no data-dependent preamble.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.preamble
         return no_data_preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the heterogeneous-behavior config.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``ERROR`` uses the static raising behavior.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.behavior
+        return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def call_data_dependent_preamble(
@@ -1094,14 +1407,37 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under the ``RECORD`` strategy a list whose every element is a
+        record-shaped dict renders each element as a generated
+        ``RecordN`` literal; the typed opener would type such a list
+        ``Dictionary<string, object>[]`` (the homogeneous-map element
+        type) which the record literals cannot initialize.  Such a list
+        is instead opened with an implicitly-typed array ``new[] {`` so
+        C# infers ``RecordN[]`` from the literals.  Every other list
+        keeps the typed array opener.
+        """
         fmt = self.sequence_format_config
         if fmt.typed_opener_fallback is not None:
-            return typed_collection_open(
+            base_open = typed_collection_open(
                 type_to_opener=self._openers.seq,
                 fallback=fmt.typed_opener_fallback,
             )
-        return fmt.sequence_open
+        else:
+            base_open = fmt.sequence_open
+        if not self._record_strategy_active:
+            return base_open
+
+        def _open(items: list[Value]) -> str:
+            """Return the implicitly-typed array opener for an
+            all-record list, else the typed array opener.
+            """
+            if _all_record_shaped(items):
+                return "new[] {"
+            return base_open(items)
+
+        return _open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:

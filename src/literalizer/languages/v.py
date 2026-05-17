@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
@@ -17,6 +17,8 @@ from literalizer._formatters.collection_openers import (
     make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -36,6 +38,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -46,6 +50,15 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar_single,
 )
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import collect_heterogeneous_container_ids
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -64,6 +77,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -198,14 +212,6 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
 
     _visit(item=data)
     return frozenset(wrap_ids)
-
-
-@dataclasses.dataclass(frozen=True)
-class _VHeterogeneousStrategyConfig:
-    """Configuration for one V heterogeneous-values strategy."""
-
-    build_behavior: Callable[[], HeterogeneousBehavior]
-    build_preamble: Callable[[], Callable[[Value], tuple[str, ...]]]
 
 
 @beartype
@@ -377,6 +383,136 @@ def _v_call_stub(
     return (f"{root} := {root_type}{{}}",)
 
 
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``, consistent with the other non-Rust
+# ports), so the shared renderer always gets an empty custom-name
+# mapping.
+_V_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+# V scalar type for a record field, keyed by the value's exact Python
+# type.  ``bool`` and ``int`` are not here (they have dedicated handling
+# -- ``bool`` matches before ``int`` and an integer is sized by its own
+# magnitude).  ``None`` renders as ``unsafe { nil }``, whose V type is
+# ``voidptr``.  A ``bytes`` value renders as a hex/base64 string and
+# every date/datetime/time format V supports renders a string, so they
+# all map to ``string``; an ``EPOCH`` datetime is converted to its
+# epoch integer before this lookup is reached, so the ``datetime`` entry
+# only ever resolves an ISO datetime.
+_V_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
+    mapping={
+        type(None): "voidptr",
+        float: "f64",
+        str: "string",
+        bytes: "string",
+        datetime.date: "string",
+        datetime.datetime: "string",
+        datetime.time: "string",
+    },
+)
+
+
+@beartype
+def _v_int_field_type(value: int, /) -> str:
+    """Return the V ``struct`` field type for an integer record field.
+
+    Mirrors the literal :attr:`V.format_integer` emits: a value inside
+    signed 32-bit range is a bare literal typed ``int``; a value only
+    inside signed 64-bit range is wrapped ``i64(...)`` and is therefore
+    ``i64``; a positive value beyond signed 64-bit range is wrapped
+    ``u64(...)`` and is therefore ``u64`` (a negative value beyond
+    signed 64-bit range raises at format time, so that side is never
+    reached here).
+    """
+    if _V_I32_MIN <= value <= _V_I32_MAX:
+        return "int"
+    if I64_MIN <= value <= I64_MAX:
+        return "i64"
+    return "u64"
+
+
+@beartype
+def _v_inner_type(items: list[Value], /) -> str:
+    """Return the V element type a homogeneous *items* list compiles
+    to.
+
+    A non-empty homogeneous list is the only kind that reaches here: a
+    heterogeneous one raises before the preamble is built (V has no
+    unwrapped heterogeneous container under ``RECORD``).  The shared
+    element-type inference resolves the common Python element type (an
+    ``int`` outside signed 32-bit range widens to the ``i64`` the value
+    formatter casts every element to), and an empty list -- the one
+    ``None`` case still reachable here (e.g. ``record_sequence``'s
+    empty ``tags``) -- falls back to the empty-collection element type
+    ``IVal``, exactly matching the ``[]IVal{}`` literal the value
+    formatter emits.
+    """
+    inner = infer_element_type(items=items)
+    resolved = _v_element_to_type(inner) if inner is not None else None
+    return resolved or _V_IFACE_NAME
+
+
+@beartype
+def _v_record_field_identifier(key: str, /) -> str:
+    """Return the V ``struct`` member name for a dict *key*.
+
+    V member identifiers are the dict keys verbatim (no case
+    conversion), matching the ``Record0{ id: 1, ... }`` literal form.
+    """
+    return key
+
+
+@beartype
+def _v_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a V ``Name{ field: value, ... }`` struct literal as
+    structured pieces for the shared compact/multiline layout code.
+
+    A trailing comma after the last field is valid in a V struct
+    literal, so the language-wide trailing-comma config applies
+    unchanged in the multiline form.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}{{",
+        entries=tuple(
+            f"{field.identifier}: {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad=" ",
+    )
+
+
+@beartype
+def _build_v_record_preamble(
+    *,
+    record_preamble: Callable[[Value], tuple[str, ...]],
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build the ``RECORD``-strategy ``data_dependent_preamble``.
+
+    Composes the ``interface IVal {}`` line (emitted only when the data
+    contains an empty list, dict, or set, whose V literal is
+    ``[]IVal{}`` / ``map[string]IVal{}`` and whose declared field type
+    is correspondingly ``[]IVal`` / ``map[string]IVal``) followed by the
+    generated ``struct`` declarations.  The interface precedes the
+    declarations so a declared field may name ``[]IVal``.
+    """
+    empty_container_preamble = _build_v_empty_container_preamble()
+
+    def _record_pre(data: Value, /) -> tuple[str, ...]:
+        """Return the ``interface IVal {}`` line (when needed) plus the
+        ``struct`` declarations.
+        """
+        return tuple(empty_container_preamble(data)) + tuple(
+            record_preamble(data),
+        )
+
+    return _record_pre
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class V(metaclass=LanguageCls):
@@ -423,7 +559,7 @@ class V(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
@@ -671,16 +807,14 @@ class V(metaclass=LanguageCls):
     class HeterogeneousStrategies(enum.Enum):
         """Heterogeneous-scalar strategy options for V."""
 
-        ERROR = _VHeterogeneousStrategyConfig(
-            build_behavior=lambda: NO_HETEROGENEOUS_BEHAVIOR,
-            build_preamble=_build_v_empty_container_preamble,
-        )
+        ERROR = enum.auto()
         """Raise on heterogeneous scalar collections (default).
 
         V is statically typed and rejects unwrapped heterogeneous
         collections, so the default refuses to render them rather than
         emit code the V compiler will not accept.  Callers that want
-        to materialize such data must opt in to ``INTERFACE``.
+        to materialize such data must opt in to ``INTERFACE`` or
+        ``RECORD``.
 
         Still emits ``interface IVal {}`` when the data contains an
         empty list, dict, or set, because the empty-literal rendering
@@ -688,12 +822,22 @@ class V(metaclass=LanguageCls):
         of strategy.
         """
 
-        INTERFACE = _VHeterogeneousStrategyConfig(
-            build_behavior=_build_v_interface_behavior,
-            build_preamble=_build_v_interface_preamble,
-        )
+        INTERFACE = enum.auto()
         """Wrap heterogeneous scalars and null values with ``IVal(...)``
         and emit ``interface IVal {}`` in the file preamble.
+        """
+
+        RECORD = enum.auto()
+        """Render each record-shaped dict (non-empty, string-keyed) as a
+        generated file-scope ``struct`` plus a matching
+        ``Record0{ field: value, ... }`` literal, so a dict may mix
+        scalars and containers that a homogeneous ``map[string]V``
+        cannot.
+
+        The behavior and preamble are resolved per instance from
+        :attr:`_record_strategy` (the shared record behavior needs the
+        per-instance renderer, so it cannot be stored on the enum
+        member).
         """
 
     heterogeneous_strategies = HeterogeneousStrategies
@@ -785,6 +929,7 @@ class V(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the pinned V release downloaded by the
     # ``Install V`` step of the ``lint-v`` job in
     # ``.github/workflows/lint.yml``: the pinned ``weekly.2026.08``
@@ -835,15 +980,158 @@ class V(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
+    def _v_epoch_normalized(self, value: Value, /) -> Value:
+        """Return *value* with every ``datetime.datetime`` replaced by
+        its epoch-second integer when the active datetime format renders
+        epochs (``EPOCH``), descending through lists so a datetime
+        element is typed like the integer literal the value formatter
+        emits for it rather than as the ``string`` the generic resolver
+        would map ``datetime.datetime`` to.
+
+        A plain ``datetime.date`` / ``datetime.time`` (which always
+        renders as a string) and every non-datetime value pass through
+        unchanged; the list walk runs for every list field, so the
+        branch is exercised independently of the datetime format.
+        """
+        match value:
+            case datetime.datetime() if (
+                self.datetime_format.value.type_produced is int
+            ):
+                return datetime_epoch_seconds(value=value)
+            case list():
+                return [self._v_epoch_normalized(item) for item in value]
+            case _:
+                return value
+
+    def _v_type_for_value(self, value: Value, /) -> str:
+        """Return the V type the rendered literal for *value* compiles
+        to.
+
+        A scalar maps to its V type, with an integer sized by its own
+        magnitude to match the rendered literal (``int`` / the
+        ``i64(...)``-wrapped ``i64`` / the ``u64(...)``-wrapped ``u64``)
+        and an ``EPOCH`` datetime rendered as -- and sized like -- its
+        epoch integer (a list of ``EPOCH`` datetimes likewise compiles
+        to ``[]int`` / ``[]i64``), while every other
+        date/datetime/time/bytes format renders a string and ``None``
+        renders ``unsafe { nil }`` (a ``voidptr``).  A list compiles to
+        ``[]`` of its element type (an empty list to ``[]IVal``,
+        matching the ``[]IVal{}`` empty literal).
+
+        An ordered map or non-record dict field is out of scope for
+        the base ``RECORD`` port (the cross-language decision is
+        tracked in #2317): V's only such corpus case
+        (``multiline_sibling_list_widening``) carries heterogeneous
+        sibling lists V's array format cannot represent, so it is
+        rejected before formatting and no record golden reaches the
+        ``map``-typed fallback.
+        """
+        value = self._v_epoch_normalized(value)
+        match value:
+            case bool():
+                return "bool"
+            case int():
+                return _v_int_field_type(value)
+            case list():
+                return f"[]{_v_inner_type(value)}"
+            case _:
+                return _V_SCALAR_FIELD_TYPE.get(type(value)) or _V_IFACE_NAME
+
+    def _v_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the V ``struct`` field type for a record field.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name; a field whose value is a
+        non-empty list of record-shaped dicts of one shared shape is
+        typed ``[]RecordN`` (the element struct name the shared strategy
+        resolves, which V infers from the ``[RecordN{...}, ...]``
+        literal).  Every other value is typed structurally by
+        :meth:`_v_type_for_value`.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"[]{request.element_record_name}"
+        return self._v_type_for_value(request.value)
+
+    def _v_render_record_declaration(
+        self,
+        name: str,
+        fields: Sequence[RecordDeclarationField],
+        /,
+    ) -> str:
+        """Render a V ``struct Name { ... }`` with one
+        newline-separated ``field Type`` per line.
+
+        V struct fields are newline-separated (no terminator), matching
+        the file-scope ``struct`` declarations
+        :func:`_v_call_preamble_stub` already emits.  The block is
+        emitted at file scope by the data-dependent preamble (each V
+        fixture is compiled on its own, so file-scope ``struct``
+        declarations never collide across cases).
+        """
+        lines = [f"struct {name} {{"]
+        lines += [
+            f"{self.indent}{field.identifier} {field.type_name}"
+            for field in fields
+        ]
+        lines.append("}")
+        return "\n".join(lines)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """V syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_V_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_v_record_field_identifier,
+            field_type=self._v_record_field_type,
+            render_declaration=self._v_render_record_declaration,
+            render_literal=_v_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``struct``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
+
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        return self.heterogeneous_strategy.value.build_preamble()
+        """Return data-dependent preamble lines for the chosen strategy.
+
+        ``RECORD`` emits the ``interface IVal {}`` line (when an empty
+        container references it) followed by one ``struct`` declaration
+        per record shape; ``INTERFACE`` emits the interface when any
+        container needs wrapping; ``ERROR`` emits the interface only
+        for an empty-collection literal.
+        """
+        match self.heterogeneous_strategy.name:
+            case "RECORD":
+                return _build_v_record_preamble(
+                    record_preamble=self._record_strategy.preamble,
+                )
+            case "INTERFACE":
+                return _build_v_interface_preamble()
+            case _:
+                return _build_v_empty_container_preamble()
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value.build_behavior()
+        """Return the heterogeneous-behavior config for the chosen
+        strategy.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``INTERFACE`` wraps scalars in ``IVal(...)``;
+        ``ERROR`` raises on unwrapped heterogeneous collections.
+        """
+        match self.heterogeneous_strategy.name:
+            case "RECORD":
+                return self._record_strategy.behavior
+            case "INTERFACE":
+                return _build_v_interface_behavior()
+            case _:
+                return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def call_data_dependent_preamble(
@@ -999,7 +1287,20 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        ``EPOCH`` seconds are routed through :attr:`format_integer` so
+        a post-2038 value carries the ``i64(...)`` cast V requires for
+        an integer literal outside signed 32-bit range (a bare
+        ``4085195400`` is otherwise an out-of-range ``int`` literal),
+        matching the ``i64`` field type the ``RECORD`` strategy derives
+        for it.  In-range epoch seconds format identically to the plain
+        integer, so every checked-in golden file stays byte-identical.
+        """
+        if self.datetime_format.name == "EPOCH":
+            return datetime_epoch_formatter(
+                format_integer=self.format_integer,
+            )
         return self.datetime_format
 
     @cached_property

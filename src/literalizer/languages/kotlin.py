@@ -305,12 +305,13 @@ def _kotlin_set_hint(
     if is_empty:
         return f"{set_outer}<{default_set_element_type}>"
     unique = set(elem_types_sorted)
-    if unique == {"Int", "Long"}:
-        elem_type = "Long"
-    elif len(unique) == 1:
-        elem_type = elem_types_sorted[0]
-    else:
-        elem_type = "Any?"
+    match unique:
+        case _ if unique == {"Int", "Long"}:
+            elem_type = "Long"
+        case _ if len(unique) == 1:
+            elem_type = elem_types_sorted[0]
+        case _:
+            elem_type = "Any?"
     return f"{set_outer}<{elem_type}>"
 
 

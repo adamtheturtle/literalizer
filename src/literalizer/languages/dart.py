@@ -287,12 +287,13 @@ def _dart_call_stub(
     # positional syntax so callers can pass the value positionally.
     # An empty named-parameter block {} is invalid Dart, so use positional
     # (empty) syntax when there are no parameters at all.
-    if not params:
-        param_list = ""
-    elif all(p.startswith("_") for p in params):
-        param_list = ", ".join(f"dynamic {p}" for p in params)
-    else:
-        param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
+    match params:
+        case []:
+            param_list = ""
+        case _ if all(p.startswith("_") for p in params):
+            param_list = ", ".join(f"dynamic {p}" for p in params)
+        case _:
+            param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
     if len(parts) == 1:
         return (f"dynamic {parts[0]}({param_list}) => null;",)
     root = parts[0]

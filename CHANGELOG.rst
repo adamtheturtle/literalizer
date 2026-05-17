@@ -19,6 +19,21 @@ Next
   any declaration under ``variable_type_hints=ALWAYS``).  Call-only
   output and annotation-free literals no longer carry the unused
   future import.  See #2495.
+- :class:`~literalizer.Forth` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`, binding the call result with
+  the same colon definition Forth already uses for literal bindings:
+  ``: my_data 42 make_widget ;``.  This is a deferred word that
+  re-executes ``make_widget`` on every invocation, and (because Forth
+  has no reassignment in this model) the
+  :class:`~literalizer.ExistingVariable` output is identical to the
+  :class:`~literalizer.NewVariable` output; Forth's ``VALUE``/``TO``
+  idiom was rejected because it holds only a single cell and cannot
+  represent the string/dict/sequence values the colon form already
+  covers.  Its ``supports_call_variable_binding`` language-class flag
+  is now ``True``; existing literal-binding output is unchanged.
+  Follow-up to #1961.  See #2456.
 - :class:`~literalizer.Zig` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -41,6 +56,11 @@ Next
   ``record_struct_name_prefix`` constructor parameter and its
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  See #2477.
+- Fixed the :class:`~literalizer.Zig` ``RECORD`` field type of an
+  integer-list record field whose first element is small but a later
+  element exceeds the signed 64-bit range: it is now ``[]const u64``
+  (typed from the widest element) instead of the ``[]const i64`` that
+  inferring from the first element alone produced.  See #2488.
 - :class:`~literalizer.Odin` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -66,6 +86,29 @@ Next
   ``format_call_preamble_stub`` methods, so it is now re-exported from
   the package root for consumers implementing that protocol.  See
   #1947.
+- :class:`~literalizer.D` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  The
+  default (``ERROR``) strategy keeps the homogeneous
+  ``std.json.JSONValue`` model; under ``RECORD`` each record-shaped
+  dict (non-empty, string-keyed) becomes a generated
+  ``struct RecordN { ... }`` declared in the preamble plus a matching
+  positional ``Record0(value, ...)`` constructor literal whose fields
+  are raw D values, so a record-shaped dict that mixes scalars with a
+  container is representable.  Field names are the dict keys verbatim
+  and field types are inferred structurally from the value (``long``/
+  ``ulong``, ``double``, ``bool``, ``string``, ``typeof(null)``,
+  ``T[]`` arrays, nested ``RecordN``).  Without the ``JSONValue``
+  wrapper the whole value is raw and the binding drops its
+  ``JSONValue``; the class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter and its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  A heterogeneous scalar list, a set, an ordered map or a
+  non-record dict has no raw D representation and raises
+  :class:`~literalizer.exceptions.UnrepresentableInputError` (the
+  cross-language decision for these is tracked in #2317).  See #2478.
 - :class:`~literalizer.Crystal` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -102,6 +145,23 @@ Next
   opened with ``std::vector{`` so class-template argument deduction
   infers ``std::vector<RecordN>``.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2420.
+- :class:`~literalizer.CSharp` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  positional ``record`` declared in the preamble plus a matching
+  ``new Record0(value, ...)`` literal, so a record-shaped dict that
+  mixes scalars with a container is representable even though
+  ``Dictionary`` requires a homogeneous value type.  Component names
+  are the PascalCase form of the dict keys; auto names are
+  ``Record0``, ``Record1``, ...  ``sequence_format`` is forced to
+  ``ARRAY`` under this strategy so a list-valued component has a typed
+  array form, and a list whose every element is a record-shaped dict
+  is opened with an implicitly-typed array ``new[] { ... }`` so C#
+  infers ``RecordN[]``.  The default (``ERROR``) ``Dictionary``
+  output is unchanged.  See #2475.
 - :class:`~literalizer.Swift` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -119,6 +179,47 @@ Next
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  The default (``ERROR``) ``Any`` output is unchanged.  See
   #2474.
+- :class:`~literalizer.C` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python`, :class:`~literalizer.Cpp` and
+  :class:`~literalizer.Swift`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated aggregate ``struct`` declared in
+  the preamble plus a matching ``(struct Record0){.field = value,
+  ...}`` C99 designated-initializer compound literal, so a
+  record-shaped dict that mixes scalars with a container is rendered
+  with cleanly typed members rather than the tagged ``CVal`` union.
+  Field names are the dict keys verbatim and each generated ``struct``
+  is auto-named ``Record0``, ``Record1``, ...  A scalar member maps to
+  its exact C type, a nested record dict to its generated ``struct``
+  type, and a list whose every element is a record-shaped dict to a
+  fixed-size ``struct`` array member.  Every other container (a scalar
+  or heterogeneous list, or an empty list) is typed a pointer to
+  ``CVal`` and rendered as a ``CVal`` array literal, reusing C's
+  existing tagged union for arbitrary heterogeneity.  The default
+  (``ERROR``) ``CVal`` output is unchanged.  See #2476.
+- :class:`~literalizer.V` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  file-scope ``struct`` declared in the preamble plus a matching
+  ``Record0{ field: value, ... }`` literal, so a record-shaped dict
+  that mixes scalars with a container is representable even though a
+  ``map`` requires a homogeneous value type.  Field names are the
+  dict keys verbatim; a field is typed from its value (an integer by
+  its own magnitude so a wide value keeps its ``i64(...)`` / ``u64(...)``
+  cast, a nested record by its generated name, a list of record-shaped
+  dicts as ``[]RecordN``, ``None`` as ``voidptr``, an empty list as
+  ``[]IVal``), and the struct-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter; its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  An ``EPOCH`` datetime is now routed through the integer
+  formatter so a post-2038 value keeps the ``i64(...)`` cast V
+  requires.  The default (``ERROR``) and ``INTERFACE`` outputs are
+  unchanged.  See #2480.
 - :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting ``id my_data =
   make_widget(@42);`` directly.  The literal-binding declaration boxes

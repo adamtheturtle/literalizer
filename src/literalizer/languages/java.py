@@ -1821,14 +1821,15 @@ class Java(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         datetime_produced = self.datetime_format.value.type_produced
-        if datetime_produced is str:
-            datetime_hint = "String"
-        elif datetime_produced is int:
-            datetime_hint = "long"
-        elif self.datetime_format.name == "ZONED":
-            datetime_hint = "ZonedDateTime"
-        else:
-            datetime_hint = "Instant"
+        match datetime_produced:
+            case _ if datetime_produced is str:
+                datetime_hint = "String"
+            case _ if datetime_produced is int:
+                datetime_hint = "long"
+            case _ if self.datetime_format.name == "ZONED":
+                datetime_hint = "ZonedDateTime"
+            case _:
+                datetime_hint = "Instant"
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             int_type="long" if self._suffix_is_auto else "int",

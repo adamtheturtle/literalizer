@@ -784,25 +784,27 @@ def _format_dict_value(
         for k, v in dict_items.items()
     ]
     joined = spec.element_separator.join(pairs)
-    if open_override is not None:
-        opener = open_override
-    elif not ref_key:
-        opener = dict_cfg.dict_open(dict_items)
-    else:
-        open_items = dict_items
-        if any(
-            isinstance(v, dict)
-            and _extract_call_arg_ref_name(value=v, ref_key=ref_key)
-            is not None
-            for v in dict_items.values()
-        ):
-            open_items = {
-                k: v
-                for k, v in dict_items.items()
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-            }
-        opener = dict_cfg.dict_open(open_items or dict_items)
+    match open_override:
+        case str():
+            opener = open_override
+        case _ if not ref_key:
+            opener = dict_cfg.dict_open(dict_items)
+        case _:
+            open_items = dict_items
+            if any(
+                isinstance(v, dict)
+                and _extract_call_arg_ref_name(value=v, ref_key=ref_key)
+                is not None
+                for v in dict_items.values()
+            ):
+                open_items = {
+                    k: v
+                    for k, v in dict_items.items()
+                    if not isinstance(v, dict)
+                    or _extract_call_arg_ref_name(value=v, ref_key=ref_key)
+                    is None
+                }
+            opener = dict_cfg.dict_open(open_items or dict_items)
     return opener + joined + dict_cfg.close
 
 
@@ -1350,18 +1352,19 @@ def _format_list_value(
     # comma branch.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
-    if sequence_open_override is not None:
-        opener = sequence_open_override
-    elif not ref_key:
-        opener = spec.sequence_open(value)
-    else:
-        open_value = [
-            v
-            for v in value
-            if not isinstance(v, dict)
-            or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-        ]
-        opener = spec.sequence_open(open_value or value)
+    match sequence_open_override:
+        case str():
+            opener = sequence_open_override
+        case _ if not ref_key:
+            opener = spec.sequence_open(value)
+        case _:
+            open_value = [
+                v
+                for v in value
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+            ]
+            opener = spec.sequence_open(open_value or value)
     return f"{opener}{joined}{sequence_cfg.close}"
 
 
@@ -3136,22 +3139,28 @@ def _strip_call_arg_refs_for_preamble(
     if per_element_data is not None:
         result: list[Value] = []
         for element in per_element_data:
-            if isinstance(element, list):
-                result.append(
-                    [
-                        _strip_refs_from_value(value=v, ref_key=ref_key)
-                        for v in element
-                        if _extract_call_arg_ref_name(value=v, ref_key=ref_key)
-                        is None
-                    ]
-                )
-            elif (
-                _extract_call_arg_ref_name(value=element, ref_key=ref_key)
-                is None
-            ):
-                result.append(
-                    _strip_refs_from_value(value=element, ref_key=ref_key)
-                )
+            match element:
+                case list():
+                    result.append(
+                        [
+                            _strip_refs_from_value(value=v, ref_key=ref_key)
+                            for v in element
+                            if _extract_call_arg_ref_name(
+                                value=v, ref_key=ref_key
+                            )
+                            is None
+                        ]
+                    )
+                case _ if (
+                    _extract_call_arg_ref_name(value=element, ref_key=ref_key)
+                    is None
+                ):
+                    result.append(
+                        _strip_refs_from_value(value=element, ref_key=ref_key)
+                    )
+                case _:
+                    # A ref-named non-list element is dropped entirely.
+                    pass
         return result
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is not None:
         return []
