@@ -264,6 +264,22 @@ type FormatCallArg = Callable[[Value, str], str]
 """Callable that rewrites a formatted direct call argument."""
 
 
+@runtime_checkable
+class LeadingPreamble(Protocol):
+    """Callable returning preamble lines that must precede every other
+    preamble line (see :attr:`Language.leading_preamble`).
+
+    ``has_variable_declaration`` is keyword-only because it is a
+    boolean flag, not a value the callable formats.
+    """
+
+    def __call__(
+        self, data: Value, /, *, has_variable_declaration: bool
+    ) -> tuple[str, ...]:
+        """Return the leading preamble lines for *data*."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class CallSupport(enum.Enum):
     """Sentinel describing why a language does not have a
     :class:`CallStyle` configured.
@@ -1500,6 +1516,19 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
+    def leading_preamble(self) -> LeadingPreamble:
+        """Callable returning preamble lines that must come *before*
+        :attr:`static_preamble` (and every other preamble line).
+
+        Receives the original data value and whether a new variable is
+        being declared.  Most languages use :data:`no_leading_preamble`
+        (always ``()``); Python uses it to emit ``from __future__ import
+        annotations`` only when the rendered code actually contains an
+        annotation, since that import must be the first statement.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Maps Python scalar types to the preamble lines required when
         that type appears in the data.  For example, a language that
@@ -2029,6 +2058,30 @@ def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
 
 no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
 """Shared callable for languages with no data-dependent preamble."""
+
+
+@beartype
+def _no_leading_preamble_callable(
+    _data: Value, /, *, has_variable_declaration: bool
+) -> tuple[str, ...]:
+    """Return no leading preamble lines."""
+    del has_variable_declaration
+    return ()
+
+
+@beartype
+def _no_leading_preamble(self: "Language") -> LeadingPreamble:
+    """Default ``leading_preamble`` -- no preamble lines that must
+    precede :attr:`Language.static_preamble`.
+    """
+    del self
+    return _no_leading_preamble_callable
+
+
+no_leading_preamble: property = property(fget=_no_leading_preamble)
+"""Shared ``leading_preamble`` descriptor for languages that emit no
+preamble lines required to come before :attr:`Language.static_preamble`.
+"""
 
 
 @beartype

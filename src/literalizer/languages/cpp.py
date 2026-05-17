@@ -101,6 +101,7 @@ from literalizer._language import (
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
     no_format_integer_widened,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -1303,6 +1304,7 @@ class Cpp(metaclass=LanguageCls):
 
     module_name: str = "Module"
 
+    leading_preamble = no_leading_preamble
     extension = ".cpp"
     pygments_name = "cpp"
     supports_special_floats = True

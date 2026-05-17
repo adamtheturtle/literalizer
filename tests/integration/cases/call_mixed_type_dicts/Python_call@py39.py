@@ -1,4 +1,3 @@
-from __future__ import annotations
 class _MgrType:
     def run(self, *_args: object, **_kwargs: object) -> object: ...
 class _AppType:

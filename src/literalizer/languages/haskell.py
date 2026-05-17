@@ -75,6 +75,7 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_data_preamble,
     no_format_integer_widened,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -1133,6 +1134,7 @@ class Haskell(metaclass=LanguageCls):
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
 
+    leading_preamble = no_leading_preamble
     extension = ".hs"
     pygments_name = "haskell"
     supports_special_floats = True

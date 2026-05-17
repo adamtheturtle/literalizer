@@ -68,6 +68,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_format_integer_widened,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -231,6 +232,7 @@ class Ada(metaclass=LanguageCls):
 
     module_name: str = "Check"
 
+    leading_preamble = no_leading_preamble
     extension = ".adb"
     pygments_name = "ada"
     supports_special_floats = True

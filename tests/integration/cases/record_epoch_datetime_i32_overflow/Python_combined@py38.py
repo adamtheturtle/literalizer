@@ -1,4 +1,3 @@
-from __future__ import annotations
 import datetime
 my_data = {
     "within_i32": datetime.datetime(year=2024, month=1, day=15, hour=12, minute=0, second=0),

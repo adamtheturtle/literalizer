@@ -1,4 +1,3 @@
-from __future__ import annotations
 my_data = (
     ("ADD", "alice", "hello"),
     ("DEL", "bob", "5"),  # removes "world"

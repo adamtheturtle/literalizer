@@ -347,6 +347,7 @@ def _has_union_in_type_hints(*, data: Value) -> bool:
 class _PreambleResult:
     """Header and body preamble lines."""
 
+    leading: tuple[str, ...]
     header: tuple[str, ...]
     body: tuple[str, ...]
     types_present: frozenset[type]
@@ -393,7 +394,13 @@ def compute_preamble(
         else ()
     )
     body = language.compute_body_preamble(types, data)
+    leading = tuple(
+        language.leading_preamble(
+            data, has_variable_declaration=has_variable_declaration
+        )
+    )
     return _PreambleResult(
+        leading=leading,
         header=deduplicate_preamble_entries(
             entries=scalar + special_float + collection + type_hint,
         )
