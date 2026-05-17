@@ -118,6 +118,23 @@ Next
   opened with ``std::vector{`` so class-template argument deduction
   infers ``std::vector<RecordN>``.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2420.
+- :class:`~literalizer.CSharp` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  positional ``record`` declared in the preamble plus a matching
+  ``new Record0(value, ...)`` literal, so a record-shaped dict that
+  mixes scalars with a container is representable even though
+  ``Dictionary`` requires a homogeneous value type.  Component names
+  are the PascalCase form of the dict keys; auto names are
+  ``Record0``, ``Record1``, ...  ``sequence_format`` is forced to
+  ``ARRAY`` under this strategy so a list-valued component has a typed
+  array form, and a list whose every element is a record-shaped dict
+  is opened with an implicitly-typed array ``new[] { ... }`` so C#
+  infers ``RecordN[]``.  The default (``ERROR``) ``Dictionary``
+  output is unchanged.  See #2475.
 - :class:`~literalizer.Swift` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
