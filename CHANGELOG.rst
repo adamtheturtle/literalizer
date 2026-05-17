@@ -37,6 +37,28 @@ Next
   opened with ``std::vector{`` so class-template argument deduction
   infers ``std::vector<RecordN>``.  The default (``ERROR``)
   ``std::variant`` output is unchanged.  See #2420.
+- :class:`~literalizer.Nim` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  Each
+  record-shaped dict (non-empty, string-keyed) becomes a generated
+  module-scope ``type Record0 = object`` declaration plus a matching
+  ``Record0(field: value, ...)`` literal, so a record-shaped dict that
+  mixes scalars with a container is representable even though a Nim
+  ``Table`` requires a homogeneous value type.  Field names are the
+  dict keys in ``camelCase`` and a list field is element-typed
+  (``seq[int]``, ``seq[RecordN]``); the class-name prefix is
+  configurable via the new ``record_struct_name_prefix`` constructor
+  parameter, so its ``supports_record_struct_name_prefix``
+  language-class flag is now ``True``.  Collections render with their
+  native Nim constructors (``@[...]``, ``{...}.toTable``) as under
+  ``OBJECT_VARIANT``, but no scalar is wrapped and no ``json``/``%*``
+  is emitted.  A null, set, ordered-map or non-record-dict field, and
+  a ``NIM``-table-literal date/datetime field, are rejected as out of
+  scope for the base port (consistent with the other non-Rust ports;
+  see #2317).  The default (``ERROR``) JSON output is unchanged.  See
+  #2479.
 - :class:`~literalizer.ObjectiveC` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call`, emitting ``id my_data =
   make_widget(@42);`` directly.  The literal-binding declaration boxes
