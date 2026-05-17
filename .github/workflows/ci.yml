@@ -11,8 +11,11 @@ on:
 
 permissions: {}
 
+# We often have a long CI queue, so cancel superseded runs for a PR as soon
+# as a new commit is pushed. Non-PR runs (push/schedule on main) fall back to
+# the unique run ID so they never cancel each other.
 concurrency:
-  group: ci-${{ github.head_ref || github.run_id }}
+  group: ci-pr-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
