@@ -12,6 +12,18 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` now accepts a ``bound_refs``
+  argument, the call-side counterpart of
+  :func:`~literalizer.literalize`'s own ``bound_refs``.  With
+  ``wrap_in_file=True`` it renders a complete, self-contained file:
+  each ref is declared (cased via ``ref_case``) ahead of the calls, a
+  no-op stub for the target function is injected, and one reconciled
+  preamble (header and body) is placed in front, so callers no longer
+  hand-roll a duplicate-removal pass.  Entries double as ``ref_values``
+  and are emitted in iteration order.  Recomputing the body preamble
+  across the union of types and reconciling the data-dependent header
+  block into a single copy covering every type replaces the previous
+  multi-line preamble-filter heuristic.  See #1946.
 - The ``supports_call_variable_binding`` language-class flag has been
   removed.  Every language now binds a :func:`~literalizer.literalize_call`
   result directly with no literal-only wrapping, so the flag was

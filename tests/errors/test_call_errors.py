@@ -735,3 +735,30 @@ def test_literalize_call_both_variable_forms_unsupported_raises() -> None:
             per_element=False,
             variable_form=BothVariableForms(name="result"),
         )
+
+
+def test_literalize_call_bound_refs_with_variable_form_raises() -> None:
+    """``bound_refs`` combined with ``variable_form`` is rejected:
+    ``bound_refs`` declares the call's input refs, not a binding for
+    the call result, and the declaration-composition path cannot apply
+    a language's call-result binding file scaffold.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"variable_form cannot be combined with bound_refs; "
+            r"bound_refs declares the call's input refs, not a "
+            r"binding for the call result"
+        ),
+    ):
+        literalize_call(
+            source='{"$ref": "my_list"}',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="make_widget",
+            parameter_names=["data"],
+            per_element=False,
+            wrap_in_file=True,
+            bound_refs={"my_list": [1, 2, 3]},
+            variable_form=NewVariable(name="result"),
+        )
