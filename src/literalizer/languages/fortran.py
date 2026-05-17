@@ -57,8 +57,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     identity_call_ref_identifier,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
@@ -256,6 +254,52 @@ def _build_format_variable_assignment(
 
 
 @beartype
+def _format_fortran_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a Fortran declaration binding a call result.
+
+    A literal binding wraps the right-hand side in the ``fval_t``
+    constructor matching the parsed literal's type (the integer, real,
+    or string constructor).  That is wrong for a call: the call's
+    return type is opaque to the renderer and the result is not the
+    constructed type.
+
+    Fortran has no type inference, so the binding still needs an
+    explicit declared type.  No caller-supplied return-type hint is
+    required: every generated Fortran call stub returns ``type(fval_t)``
+    -- a ``StubReturn.VALUE`` stub is a ``function ... result(r)`` whose
+    ``r`` is declared ``type(fval_t)`` -- so the call result's static
+    type is always ``type(fval_t)``, exactly the type a Fortran literal
+    binding already declares.  The only call-vs-literal difference is
+    dropping the value-wrapping constructor, so the call result is bound
+    directly to a plain ``type(fval_t)`` declaration.
+    """
+    continued = _add_continuation(value=value)
+    return f"type(fval_t) :: {name}\n{name} = {continued}"
+
+
+@beartype
+def _format_fortran_call_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
+    """Format a Fortran reassignment binding a call result.
+
+    The call-expression counterpart of
+    :func:`_format_fortran_call_declaration`; the variable is already
+    declared ``type(fval_t)``, so the call result is assigned directly
+    with no ``fval_t``-constructor wrapping.
+    """
+    continued = _add_continuation(value=value)
+    return f"{name} = {continued}"
+
+
+@beartype
 def _fortran_call_target(parts: Sequence[str], /) -> str:
     """Return the last component of a dotted call target as the Fortran
     procedure name.
@@ -331,8 +375,6 @@ class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
@@ -344,7 +386,13 @@ class Fortran(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # A call result is bound directly with an explicit ``type(fval_t)``
+    # declaration (every generated Fortran call stub returns
+    # ``type(fval_t)``, so no caller-supplied return-type hint is
+    # needed); the value-wrapping ``fval_t`` constructor a Fortran
+    # literal binding uses is dropped.  See
+    # :func:`_format_fortran_call_declaration`.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     allows_empty_call_parens = True
@@ -679,6 +727,32 @@ class Fortran(metaclass=LanguageCls):
             "end program main"
         )
 
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in a Fortran program.
+
+        The literal-binding :meth:`wrap_in_file` variable branch places
+        *body_preamble* directly in the program body, but a call stub
+        (an internal ``function``/``subroutine``) cannot be a
+        plain executable statement: it must live in the ``contains``
+        section after the executable statements.  *content* already
+        carries the ``type(fval_t) :: name`` specification line followed
+        by the binding assignment in the order Fortran requires, so this
+        delegates to the empty-``variable_name`` (call-mode) branch of
+        :meth:`wrap_in_file`, which places *content* in the program body
+        and the stubs in ``contains``.
+        """
+        del variable_name  # the binding text already carries the name
+        return self.wrap_in_file(
+            content=content,
+            variable_name="",
+            body_preamble=body_preamble,
+        )
+
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
@@ -788,6 +862,34 @@ class Fortran(metaclass=LanguageCls):
     ]:
         """Return file-scope stubs for a call expression."""
         return no_call_stub
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        A literal binding wraps the right-hand side in a ``fval_t``
+        constructor chosen from the parsed literal's type; a call's
+        return type is opaque to the renderer and is always
+        ``type(fval_t)`` (the type every generated call stub returns),
+        so the call result is bound directly to a plain ``type(fval_t)``
+        declaration with no constructor wrapping.
+        """
+        return _format_fortran_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; the ``fval_t``-constructor
+        wrapping is dropped since the call already yields a
+        ``type(fval_t)``.
+        """
+        return _format_fortran_call_assignment
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
