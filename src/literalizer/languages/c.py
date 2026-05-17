@@ -302,11 +302,63 @@ _C_RECORD_IN_CVAL_MSG = (
 )
 
 
+_C_RECORD_ARRAY_LEN_MSG = (
+    "C cannot represent two record-shaped dicts of one shape whose "
+    "shared all-record-list field has differing lengths under the "
+    "RECORD heterogeneous strategy: that field becomes a fixed-size "
+    "struct RecordN [len] member sized from the shape's first-seen "
+    "instance, so a later instance with a different-length list would "
+    "overflow the array (excess initializers fail to compile) or "
+    "silently under-fill it -- neither faithfully represents the input "
+    "(cf. the set / non-record-dict field boundary tracked in #2317)"
+)
+
+
+@beartype
+def _check_c_record_array_field_lengths(
+    *,
+    node: dict[Scalar, Value],
+    array_lengths_by_shape: dict[tuple[Scalar, ...], dict[Scalar, int]],
+) -> None:
+    """Raise :class:`UnrepresentableInputError` if a record-shaped dict
+    shares a shape with an earlier one but its all-record-list field
+    has a different length.
+
+    An all-record-list record field becomes a fixed-size
+    ``struct RecordN[len]`` member sized from the shape's first-seen
+    instance (``record_strategy`` caches the first-seen field-type
+    request per shape, in document order).  A later same-shape instance
+    whose list has a different length would overflow that fixed array
+    (excess initializers fail to compile) or silently under-fill it, so
+    neither faithfully represents the data.  Rejecting it here keeps
+    the boundary explicit rather than emitting C that fails to compile
+    or misrepresents the input (cf. the set / non-record-dict field
+    boundary tracked in #2317).
+
+    A shape is keyed by its ordered key tuple: C does not unify record
+    shapes, so identical-keyed dicts (and only those) share one
+    generated ``struct``, exactly as
+    :func:`literalizer._formatters.type_inference.record_shape_for_dict`
+    deduces.  *array_lengths_by_shape* accumulates the first-seen
+    length per shape and field across the whole walk.
+    """
+    field_lengths = array_lengths_by_shape.setdefault(tuple(node), {})
+    for field_name, field_value in node.items():
+        if isinstance(field_value, list) and _all_record_shaped(field_value):
+            first_length = field_lengths.setdefault(
+                field_name,
+                len(field_value),
+            )
+            if first_length != len(field_value):
+                raise UnrepresentableInputError(_C_RECORD_ARRAY_LEN_MSG)
+
+
 @beartype
 def _check_c_record_nesting(  # noqa: C901
     *,
     node: Value,
     cval_context: bool,
+    array_lengths_by_shape: dict[tuple[Scalar, ...], dict[Scalar, int]],
 ) -> None:
     """Raise :class:`UnrepresentableInputError` if a record-shaped dict
     (or an all-record list) is reachable only through a ``CVal``
@@ -325,41 +377,79 @@ def _check_c_record_nesting(  # noqa: C901
     if _c_record_dict(node):
         if cval_context:
             raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
+        _check_c_record_array_field_lengths(
+            node=node,
+            array_lengths_by_shape=array_lengths_by_shape,
+        )
         for field_value in node.values():
-            _check_c_record_field(field_value)
+            _check_c_record_field(
+                field_value,
+                array_lengths_by_shape=array_lengths_by_shape,
+            )
         return
     match node:
         case OrderedMap() | dict():
             for value in node.values():
-                _check_c_record_nesting(node=value, cval_context=True)
+                _check_c_record_nesting(
+                    node=value,
+                    cval_context=True,
+                    array_lengths_by_shape=array_lengths_by_shape,
+                )
         case list() if _all_record_shaped(node):
             if cval_context:
                 raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
             for element in node:
-                _check_c_record_nesting(node=element, cval_context=False)
+                _check_c_record_nesting(
+                    node=element,
+                    cval_context=False,
+                    array_lengths_by_shape=array_lengths_by_shape,
+                )
         case list():
             for element in node:
-                _check_c_record_nesting(node=element, cval_context=True)
+                _check_c_record_nesting(
+                    node=element,
+                    cval_context=True,
+                    array_lengths_by_shape=array_lengths_by_shape,
+                )
         case _:
             return
 
 
 @beartype
-def _check_c_record_field(field_value: Value, /) -> None:
+def _check_c_record_field(
+    field_value: Value,
+    /,
+    *,
+    array_lengths_by_shape: dict[tuple[Scalar, ...], dict[Scalar, int]],
+) -> None:
     """Validate one field value of a record-shaped dict.
 
     A nested record dict stays a ``struct`` member and an all-record
     list a ``struct`` array (neither a ``CVal``), so those descend
     without entering a ``CVal`` context.  Every other field value is a
-    ``CVal`` slot.
+    ``CVal`` slot.  *array_lengths_by_shape* is threaded through so the
+    walk can reject same-shape records whose shared all-record-list
+    field has differing lengths.
     """
     if _c_record_dict(field_value):
-        _check_c_record_nesting(node=field_value, cval_context=False)
+        _check_c_record_nesting(
+            node=field_value,
+            cval_context=False,
+            array_lengths_by_shape=array_lengths_by_shape,
+        )
     elif isinstance(field_value, list) and _all_record_shaped(field_value):
         for element in field_value:
-            _check_c_record_nesting(node=element, cval_context=False)
+            _check_c_record_nesting(
+                node=element,
+                cval_context=False,
+                array_lengths_by_shape=array_lengths_by_shape,
+            )
     else:
-        _check_c_record_nesting(node=field_value, cval_context=True)
+        _check_c_record_nesting(
+            node=field_value,
+            cval_context=True,
+            array_lengths_by_shape=array_lengths_by_shape,
+        )
 
 
 @beartype
@@ -803,13 +893,20 @@ class C(metaclass=LanguageCls):
         all record-shaped dicts as a ``struct RecordN[]`` array); a
         ``struct`` is not a ``CVal`` union member, so a record reachable
         only through a non-record container would have to occupy a
-        ``CVal`` slot and cannot compile.  Rejecting it here keeps the
+        ``CVal`` slot and cannot compile.  The same walk rejects two
+        same-shape records whose shared all-record-list field has
+        differing lengths (the field's fixed-size ``struct`` array is
+        sized from the first-seen instance).  Rejecting here keeps the
         boundary explicit rather than emitting C that fails to build
         (cf. the set / non-record-dict field boundary tracked in
         #2317).  The default (``ERROR``) strategy is unconstrained.
         """
         if self._record_strategy_active:
-            _check_c_record_nesting(node=data, cval_context=False)
+            _check_c_record_nesting(
+                node=data,
+                cval_context=False,
+                array_lengths_by_shape={},
+            )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
