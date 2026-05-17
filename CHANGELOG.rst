@@ -12,6 +12,24 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.D` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  A D literal binding wraps
+  the right-hand side to encode the parsed value's runtime type (a
+  ``JSONValue(...)`` projection, or a positional ``Record0(...)``
+  struct-constructor literal under the ``RECORD`` strategy), which is
+  wrong for a call whose return type is opaque to the renderer; the
+  call result is now bound directly as ``auto my_data =
+  make_widget(...);``.  No caller-supplied return-type hint is
+  required: D infers the binding type from the initializer.  Because
+  the binding is an ``auto`` declaration while the
+  :class:`~literalizer.ExistingVariable` form is a bare assignment to
+  an already-declared name, only the :class:`~literalizer.NewVariable`
+  form is golden-covered.  Its ``supports_call_variable_binding``
+  language-class flag is now ``True``; existing literal-binding and
+  call-without-binding output is unchanged.  Follow-up to #1961.  See
+  #2511.
 - :class:`~literalizer.SystemVerilog` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and

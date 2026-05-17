@@ -37,7 +37,6 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Bash,
     Cobol,
-    D,
     Dhall,
     Elm,
     Haskell,
@@ -49,6 +48,7 @@ from literalizer.languages import (
     Racket,
     Tcl,
     Yaml,
+    Zig,
 )
 
 
@@ -741,8 +741,8 @@ def test_literalize_call_both_variable_forms_unsupported_raises() -> None:
 def test_literalize_call_variable_form_template_incompatible_raises() -> None:
     """``variable_form`` is rejected for languages whose declaration
     template wraps the right-hand side incompatibly with call expressions
-    (D wraps a scalar in ``JSONValue(...)``; tagged-enum heterogeneous
-    languages prepend a constructor; etc.).
+    (Zig projects a scalar into a ``ZVal`` tagged union; tagged-enum
+    heterogeneous languages prepend a constructor; etc.).
     """
     with pytest.raises(
         expected_exception=UnsupportedCallShapeError,
@@ -754,7 +754,7 @@ def test_literalize_call_variable_form_template_incompatible_raises() -> None:
         literalize_call(
             source="42",
             input_format=InputFormat.JSON,
-            language=D(),
+            language=Zig(),
             target_function="make_widget",
             parameter_names=["count"],
             per_element=False,

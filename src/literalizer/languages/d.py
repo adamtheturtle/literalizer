@@ -73,8 +73,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -327,13 +325,46 @@ def _d_int_field_type(value: int, /) -> str:
 
 
 @beartype
+def _format_d_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a D declaration binding a call result.
+
+    A literal binding wraps the right-hand side to encode the parsed
+    value's runtime type: a ``JSONValue(...)`` projection under the
+    default strategy, or a positional ``Record0(value, ...)``
+    struct-constructor literal under the ``RECORD`` strategy.  That is
+    wrong for a call, whose return type is opaque to the renderer and is
+    neither a ``JSONValue`` nor a generated ``struct``.
+
+    D infers the binding type from the initializer, so no caller-supplied
+    return-type hint is required: the call result is bound directly with
+    a plain inferred ``auto`` declaration and no value-wrapping.
+    """
+    return f"auto {name} = {value};"
+
+
+@beartype
+def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
+    """Format a D reassignment binding a call result.
+
+    The call-expression counterpart of
+    :func:`_format_d_call_declaration`; the variable is already
+    declared, so the call result is assigned directly with no
+    ``JSONValue`` or struct-constructor wrapping.
+    """
+    return f"{name} = {value};"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class D(metaclass=LanguageCls):
     """D language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -346,7 +377,13 @@ class D(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # A call result is bound with a plain inferred ``auto`` declaration
+    # (D infers the binding type from the initializer, so no caller-
+    # supplied return-type hint is needed); the value-wrapping
+    # ``JSONValue(...)`` projection / positional ``Record0(...)``
+    # struct-constructor literal a D literal binding uses is dropped.
+    # See :func:`_format_d_call_declaration`.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -922,6 +959,34 @@ class D(metaclass=LanguageCls):
             return _decl
 
         return self.declaration_style.value.formatter
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        A literal binding wraps the right-hand side to encode the parsed
+        value's runtime type (a ``JSONValue(...)`` projection, or a
+        positional ``Record0(...)`` struct-constructor literal under
+        ``RECORD``); a call's return type is opaque to the renderer, so
+        the call result is bound directly with a plain inferred ``auto``
+        declaration and no value-wrapping.
+        """
+        return _format_d_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; the ``JSONValue`` /
+        struct-constructor wrapping is dropped since the variable is
+        already declared.
+        """
+        return _format_d_call_assignment
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
