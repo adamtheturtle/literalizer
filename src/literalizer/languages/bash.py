@@ -56,8 +56,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -193,13 +191,31 @@ def _format_variable_declaration(
 
 
 @beartype
+def _format_call_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a Bash ``declare`` binding whose right-hand side is a
+    call.
+
+    The literal-binding template assigns the right-hand side as a value
+    word (``declare name=42``); binding a call result instead requires
+    command substitution (``declare name="$(target arg1 arg2)"``) so
+    the shell runs the command and captures its output.  A call result
+    is a scalar string, so the associative-array ``-A`` flag never
+    applies.
+    """
+    return f'declare {name}="$({value})"'
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Bash(metaclass=LanguageCls):
     """Bash language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -209,7 +225,7 @@ class Bash(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -777,6 +793,33 @@ class Bash(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return variable_formatter(template="{name}={value}")
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding template assigns the right-hand side as a
+        value word; a call result must be command-substituted with
+        ``"$(...)"`` so the shell runs the command and captures its
+        output instead of assigning the command name verbatim.
+        """
+        return _format_call_variable_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call
+        expression.
+
+        The existing-variable counterpart of
+        :attr:`format_call_variable_declaration`: a bare
+        ``name="$(...)"`` with no ``declare`` keyword, matching the
+        literal-binding assignment template.
+        """
+        return variable_formatter(template='{name}="$({value})"')
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
