@@ -123,24 +123,25 @@ def _vb_string_parts(value: str) -> list[str]:
     char_replacements = {"\n": "Chr(10)", "\r": "Chr(13)", "\t": "vbTab"}
     while i < len(value):
         c = value[i]
-        if c == '"':
-            current += '""'
-            i += 1
-        elif c == "\r" and i + 1 < len(value) and value[i + 1] == "\n":
-            current = _flush_vb_current(parts=parts, current=current)
-            parts.append("vbCrLf")
-            i += 2
-        elif c in char_replacements:
-            current = _flush_vb_current(parts=parts, current=current)
-            parts.append(char_replacements[c])
-            i += 1
-        elif ord(c) < control_char_threshold:
-            current = _flush_vb_current(parts=parts, current=current)
-            parts.append(f"Chr({ord(c)})")
-            i += 1
-        else:
-            current += c
-            i += 1
+        match c:
+            case '"':
+                current += '""'
+                i += 1
+            case "\r" if i + 1 < len(value) and value[i + 1] == "\n":
+                current = _flush_vb_current(parts=parts, current=current)
+                parts.append("vbCrLf")
+                i += 2
+            case _ if c in char_replacements:
+                current = _flush_vb_current(parts=parts, current=current)
+                parts.append(char_replacements[c])
+                i += 1
+            case _ if ord(c) < control_char_threshold:
+                current = _flush_vb_current(parts=parts, current=current)
+                parts.append(f"Chr({ord(c)})")
+                i += 1
+            case _:
+                current += c
+                i += 1
     _flush_vb_current(parts=parts, current=current)
     return parts
 

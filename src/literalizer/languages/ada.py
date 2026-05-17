@@ -188,18 +188,21 @@ def _ada_call_stub(
     method_ada = parts[-1].title()
     param_list = "; ".join(f"{p.strip('_').title()} : A_Val" for p in params)
 
-    if stub_return is StubReturn.VOID:
-        if param_list:
+    match stub_return, bool(param_list):
+        case StubReturn.VOID, True:
             stub = (
                 f"procedure {method_ada} ({param_list})"
                 f" is begin null; end {method_ada};"
             )
-        else:
+        case StubReturn.VOID, False:
             stub = f"procedure {method_ada} is begin null; end {method_ada};"
-    elif param_list:
-        stub = f"function {method_ada} ({param_list}) return A_Val is (ANull);"
-    else:
-        stub = f"function {method_ada} return A_Val is (ANull);"
+        case _, True:
+            stub = (
+                f"function {method_ada} ({param_list}) return A_Val"
+                f" is (ANull);"
+            )
+        case _:
+            stub = f"function {method_ada} return A_Val is (ANull);"
     return (stub,)
 
 

@@ -678,18 +678,19 @@ class Zig(metaclass=LanguageCls):
                 flags=re.MULTILINE,
             ),
         )
-        if self._record_strategy_active:
-            # A raw value is not a ``ZVal``, so a redefinition ``var``
-            # cannot be reset to ``.nil``; take its address instead so
-            # the final statement uses the variable without tripping
-            # the Zig "pointless discard of local variable" error after
-            # a preceding write.
-            ref = f"&{variable_name}" if is_var else variable_name
-            use = f"{self.indent}_ = {ref};"
-        elif is_var:
-            use = f"{self.indent}{variable_name} = .nil;"
-        else:
-            use = f"{self.indent}_ = {variable_name};"
+        match self._record_strategy_active, is_var:
+            case True, _:
+                # A raw value is not a ``ZVal``, so a redefinition ``var``
+                # cannot be reset to ``.nil``; take its address instead so
+                # the final statement uses the variable without tripping
+                # the Zig "pointless discard of local variable" error
+                # after a preceding write.
+                ref = f"&{variable_name}" if is_var else variable_name
+                use = f"{self.indent}_ = {ref};"
+            case False, True:
+                use = f"{self.indent}{variable_name} = .nil;"
+            case _:
+                use = f"{self.indent}_ = {variable_name};"
         return f"pub fn main() void {{\n{indented}\n{use}\n}}"
 
     def wrap_combined_in_file(
