@@ -12,6 +12,21 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Forth` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`, binding the call result with
+  the same colon definition Forth already uses for literal bindings:
+  ``: my_data 42 make_widget ;``.  This is a deferred word that
+  re-executes ``make_widget`` on every invocation, and (because Forth
+  has no reassignment in this model) the
+  :class:`~literalizer.ExistingVariable` output is identical to the
+  :class:`~literalizer.NewVariable` output; Forth's ``VALUE``/``TO``
+  idiom was rejected because it holds only a single cell and cannot
+  represent the string/dict/sequence values the colon form already
+  covers.  Its ``supports_call_variable_binding`` language-class flag
+  is now ``True``; existing literal-binding output is unchanged.
+  Follow-up to #1961.  See #2456.
 - :class:`~literalizer.Zig` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
