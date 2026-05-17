@@ -4111,7 +4111,6 @@ def _compose_call_with_bound_ref_declarations(
     contains_standalone_comments: bool,
     data_for_preamble: Value,
     per_element: bool,
-    variable_form: NewVariable | ExistingVariable | None,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
     call_transform: Callable[[CallContext], str] | None,
@@ -4129,10 +4128,10 @@ def _compose_call_with_bound_ref_declarations(
     The refs are now real declarations, so the target stub's parameter
     types are inferred from the ref-substituted values
     (*data_for_preamble*), not from the raw ``$ref`` markers a call's
-    own ``arg_values`` still carries.  The stub return mode mirrors
-    :func:`_wrap_call_in_file`: a value is returned whenever the call
-    result is consumed (a ``call_transform`` or a ``variable_form``
-    binding); otherwise a void stub suffices.
+    own ``arg_values`` still carries.  ``variable_form`` is rejected
+    upstream for the ``bound_refs`` path, so the call result is never
+    consumed here: a value stub is emitted only for a ``call_transform``
+    wrapper; otherwise a void stub suffices.
     """
     call_result = LiteralizeResult(
         declaration_code=result,
@@ -4162,9 +4161,7 @@ def _compose_call_with_bound_ref_declarations(
         for name, value in bound_refs.items()
     ]
     stub_return = (
-        StubReturn.VALUE
-        if call_transform is not None or variable_form is not None
-        else StubReturn.VOID
+        StubReturn.VALUE if call_transform is not None else StubReturn.VOID
     )
     body_stubs = language.format_call_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
@@ -4172,25 +4169,12 @@ def _compose_call_with_bound_ref_declarations(
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
     )
-    # An inference-bound call result may rely on module-internal
-    # preamble or file-level compiler directives the literal binding
-    # never needs (e.g. PureScript's ``import Prelude``, Haskell's
-    # missing-signature suppression); :func:`_wrap_call_in_file` adds
-    # these for the non-bound path, so add them here too when a
-    # variable binds the call result.
-    call_binding_body_preamble: tuple[str, ...] = ()
-    call_binding_pragmas: tuple[str, ...] = ()
-    if variable_form is not None:
-        call_binding_body_preamble = (
-            language.format_call_binding_body_preamble()
-        )
-        call_binding_pragmas = language.format_call_binding_file_pragmas()
     return _literalize_call_with_declarations(
         language=language,
         declarations=decl_results,
         call=call_result,
-        extra_body_preamble=call_binding_body_preamble + body_stubs,
-        extra_preamble=call_binding_pragmas + preamble_stubs,
+        extra_body_preamble=body_stubs,
+        extra_preamble=preamble_stubs,
     )
 
 
@@ -4223,6 +4207,24 @@ def _wrap_call_result_in_file(
     keeps that public entry point within its complexity budget.
     """
     if materialized_bound_refs:
+        if variable_form is not None:
+            # The ref declarations are composed through
+            # ``wrap_calls_with_declarations``, which routes to a
+            # language's plain ``wrap_in_file`` and so never applies
+            # the call-result variable-binding file scaffold a few
+            # languages need (the ``_SupportsCallVariableWrapInFile``
+            # protocol ``_wrap_call_in_file`` consults).  Rather than
+            # emit a silently wrong scaffold, reject the combination:
+            # ``bound_refs`` declares the call's inputs, not a binding
+            # for its result.
+            raise UnsupportedCallShapeError(
+                language_name=type(language).__name__,
+                reason=(
+                    "variable_form cannot be combined with bound_refs; "
+                    "bound_refs declares the call's input refs, not a "
+                    "binding for the call result"
+                ),
+            )
         # ``bound_refs`` requests a complete file that declares each
         # ref and then calls the target with it.  Reconcile the
         # declaration and call preambles through the shared composer so
@@ -4238,7 +4240,6 @@ def _wrap_call_result_in_file(
             contains_standalone_comments=contains_standalone_comments,
             data_for_preamble=data_for_preamble,
             per_element=per_element,
-            variable_form=variable_form,
             target_function_parts=target_function_parts,
             parameter_names=parameter_names,
             call_transform=call_transform,
@@ -4558,7 +4559,18 @@ def literalize_call(
             with a single reconciled preamble.  Declaration emission
             only happens when *wrap_in_file* is ``True``; otherwise
             *bound_refs* degrades to type information only, exactly like
-            *ref_values*, and the refs stay free identifiers.  Keys
+            *ref_values*, and the refs stay free identifiers.  Every
+            name should appear as a ``$ref`` marker in *source* (a ref
+            that is declared but never referenced is folded into
+            neither the call nor its preamble inference and so may
+            leave the declaration's data-dependent preamble entries
+            uncovered, besides being an unused binding); this mirrors
+            ``literalize``'s *bound_refs* contract.  Incompatible with
+            *variable_form* (which binds the call *result*): the two
+            are rejected together with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`
+            because the declaration-composition path cannot apply a
+            language's call-result binding file scaffold.  Keys
             should match the identifiers used in *source* before any
             *ref_case* conversion.  Defaults to ``None`` (no bindings
             emitted; behavior is byte-identical to omitting this
