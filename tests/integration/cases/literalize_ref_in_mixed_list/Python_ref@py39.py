@@ -1,4 +1,3 @@
-from __future__ import annotations
 ref_x = {
     "_": "_",
 }

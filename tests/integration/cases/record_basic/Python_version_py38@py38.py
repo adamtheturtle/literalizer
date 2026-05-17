@@ -1,4 +1,3 @@
-from __future__ import annotations
 my_data = {
     "id": 1,
     "description": "She said \"hello\", then waved",

@@ -1,4 +1,3 @@
-from __future__ import annotations
 my_data = {
     # Server configuration
     "host": "localhost",  # default host

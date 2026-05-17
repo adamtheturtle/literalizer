@@ -69,6 +69,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     LanguageCls,
+    LeadingPreamble,
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -1660,12 +1661,53 @@ class Python(metaclass=LanguageCls):
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
+    static_preamble: ClassVar[Sequence[str]] = ()
+
     @cached_property
-    def static_preamble(self) -> Sequence[str]:
-        """Return PEP 563 future import so annotations are never evaluated
-        at runtime, keeping generated files executable on Python 3.8+.
+    def leading_preamble(self) -> LeadingPreamble:
+        """Emit the PEP 563 future import, but only when the rendered
+        code actually contains an annotation.
+
+        ``from __future__ import annotations`` makes annotations lazy so
+        generated files stay executable on Python 3.8+, but it serves no
+        purpose (and misleads the reader) when nothing is annotated.  An
+        annotation is produced in exactly two cases:
+
+        * the ``RECORD`` strategy generated one or more
+          ``@dataclasses.dataclass`` blocks for the data (their fields
+          are annotated), or
+        * an inline variable type hint was produced -- which only
+          happens when a new variable is declared and either
+          ``variable_type_hints`` is ``ALWAYS`` or the data needs a
+          helper annotation (an empty collection; see
+          :func:`_needs_type_annotation`).
+
+        The import must be the first statement in the module, so it is
+        emitted via :attr:`Language.leading_preamble` rather than the
+        data-dependent preamble (which follows other imports).
         """
-        return ("from __future__ import annotations",)
+        record_preamble = self._record_strategy.preamble
+        record_eligible = self._record_eligible_for_annotation
+        always = (
+            self.variable_type_hints is type(self.variable_type_hints).ALWAYS
+        )
+
+        def _leading(
+            data: Value, /, *, has_variable_declaration: bool
+        ) -> tuple[str, ...]:
+            """Return the future import only when annotated."""
+            has_record_blocks = bool(record_preamble(data))
+            has_inline_hint = has_variable_declaration and (
+                always
+                or _needs_type_annotation(
+                    data=data, record_eligible=record_eligible
+                )
+            )
+            if has_record_blocks or has_inline_hint:
+                return ("from __future__ import annotations",)
+            return ()
+
+        return _leading
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:

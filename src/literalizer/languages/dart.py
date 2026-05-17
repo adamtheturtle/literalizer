@@ -84,6 +84,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_format_integer_widened,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     value_contains,
@@ -349,6 +350,7 @@ class Dart(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
+    leading_preamble = no_leading_preamble
     extension = ".dart"
     pygments_name = "dart"
     supports_special_floats = True

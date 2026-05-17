@@ -277,7 +277,6 @@ def test_literalize_call_wrap_in_file_emits_stubs() -> None:
     )
     expected_py = textwrap.dedent(
         text="""\
-        from __future__ import annotations
         def process(*_args: object, **_kwargs: object) -> object: ...
         process(a=1, b=2)""",
     )
@@ -300,7 +299,6 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
     )
     expected = textwrap.dedent(
         text="""\
-        from __future__ import annotations
         def process(*_args: object, **_kwargs: object) -> object: ...
         emit(process(a=1, b=2))""",
     )

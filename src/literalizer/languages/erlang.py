@@ -71,6 +71,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_format_integer_widened,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -209,6 +210,7 @@ class Erlang(metaclass=LanguageCls):
 
     module_name: str = "Module"
 
+    leading_preamble = no_leading_preamble
     extension = ".erl"
     pygments_name = "erlang"
     supports_special_floats = True

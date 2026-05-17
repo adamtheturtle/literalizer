@@ -12,6 +12,13 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Python` now emits ``from __future__ import
+  annotations`` only when the rendered code actually contains an
+  annotation: a ``RECORD``-strategy ``@dataclasses.dataclass`` block
+  or an inline variable type hint (an empty-collection helper hint, or
+  any declaration under ``variable_type_hints=ALWAYS``).  Call-only
+  output and annotation-free literals no longer carry the unused
+  future import.  See #2495.
 - :class:`~literalizer.Zig` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,

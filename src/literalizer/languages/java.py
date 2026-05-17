@@ -97,6 +97,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
@@ -665,6 +666,7 @@ class Java(metaclass=LanguageCls):
 
     module_name: str = "Module"
 
+    leading_preamble = no_leading_preamble
     extension = ".java"
     pygments_name = "java"
     supports_special_floats = True

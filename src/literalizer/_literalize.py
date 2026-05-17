@@ -2331,7 +2331,8 @@ def _literalize_apply_form(
     )
     preamble = deduplicate_preamble_entries(
         entries=(
-            tuple(language.static_preamble)
+            computed.leading
+            + tuple(language.static_preamble)
             + computed.header
             + language.data_dependent_preamble(pre_form.data_for_preamble)
         )
@@ -2550,7 +2551,8 @@ def _literalize_value_binding(
     )
     preamble = deduplicate_preamble_entries(
         entries=(
-            tuple(language.static_preamble)
+            computed.leading
+            + tuple(language.static_preamble)
             + computed.header
             + language.data_dependent_preamble(value)
         )
@@ -4567,7 +4569,8 @@ def literalize_call(
     )
     preamble = deduplicate_preamble_entries(
         entries=(
-            tuple(language.static_preamble)
+            computed.leading
+            + tuple(language.static_preamble)
             + computed.header
             + language.call_data_dependent_preamble(preamble_data)
         )

@@ -1,4 +1,3 @@
-from __future__ import annotations
 def process(*_args: object, **_kwargs: object) -> object: ...
 process(value="Dune")  # first edition
 process(value="Solaris")

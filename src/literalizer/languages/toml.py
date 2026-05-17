@@ -72,6 +72,7 @@ from literalizer._language import (
     no_call_stub,
     no_data_preamble,
     no_format_integer_widened,
+    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -133,6 +134,7 @@ class Toml(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
+    leading_preamble = no_leading_preamble
     extension = ".toml"
     pygments_name = "toml"
     supports_special_floats = True
