@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -40,10 +41,20 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_underscore,
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import format_string_backslash_hash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -62,6 +73,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -86,7 +98,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 
 
 @beartype
@@ -125,6 +137,132 @@ def _format_crystal_i128_literal(value: int) -> str:
     ``-2^127`` to ``2^127 - 1``.
     """
     return f"{value}_i128"
+
+
+# Crystal infers a bare integer literal as ``Int32`` when it fits the
+# signed 32-bit range and ``Int64`` when it only fits the signed 64-bit
+# range, so a ``RECORD`` integer field is typed by the same thresholds
+# to match the rendered literal.  Keep these bounds in sync with
+# ``_I32_MIN`` / ``_I32_MAX`` in
+# :mod:`literalizer._formatters.type_inference` (the widening threshold
+# the value formatter uses for homogeneous lists, which has a
+# back-reference to here).
+_CRYSTAL_I32_MIN = -(2**31)
+_CRYSTAL_I32_MAX = 2**31 - 1
+
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``), so the shared renderer always gets
+# an empty custom-name mapping.
+_CRYSTAL_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = (
+    MappingProxyType(mapping={})
+)
+
+# Crystal scalar type for a record field, keyed by the value's exact
+# Python type.  ``bool`` and ``int`` are not here (they have dedicated
+# width-aware handling); a ``bytes`` value renders as a hex/base64
+# string and every date/datetime/time format Crystal supports renders
+# a string, so they all map to ``String``.  An ``EPOCH`` datetime is
+# converted to its epoch integer before the lookup, so the ``datetime``
+# entry only ever resolves an ISO datetime.
+_CRYSTAL_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
+    mapping={
+        type(None): "Nil",
+        float: "Float64",
+        str: "String",
+        bytes: "String",
+        datetime.date: "String",
+        datetime.datetime: "String",
+        datetime.time: "String",
+    },
+)
+
+
+@beartype
+def _crystal_union(parts: set[str], /) -> str:
+    """Join Crystal type names into a union the way the compiler prints
+    one for an inferred container literal.
+
+    The compiler orders union members by ascending type name with
+    ``Nil`` forced last (``Int32 | String``, ``Bool | Int32 |
+    String``, ``Int32 | String | Nil``), and a single member is printed
+    without a ``|``.  An ``Array``/``Hash`` field is invariant in its
+    element type, so the declared element union must match the
+    literal's inferred one exactly.
+    """
+    return " | ".join(
+        sorted(parts, key=lambda part: (part == "Nil", part)),
+    )
+
+
+@beartype
+def _crystal_int_field_type(*, value: int) -> str:
+    """Return the Crystal ``record`` field type for an integer value.
+
+    Mirrors the literal :attr:`Crystal.format_integer` emits: a value
+    inside signed 32-bit range is a bare ``Int32`` literal, one only
+    inside signed 64-bit range is a bare ``Int64`` literal, and a value
+    beyond signed 64-bit range carries the ``_i128`` overflow-fallback
+    suffix and is therefore ``Int128``.
+    """
+    if _CRYSTAL_I32_MIN <= value <= _CRYSTAL_I32_MAX:
+        return "Int32"
+    if I64_MIN <= value <= I64_MAX:
+        return "Int64"
+    return "Int128"
+
+
+@beartype
+def _crystal_record_field_identifier(key: str, /) -> str:
+    """Return the Crystal ``record`` field name for a dict *key*.
+
+    Crystal field identifiers are the dict keys verbatim (no case
+    conversion); the literal is the positional ``Record0.new(...)``
+    constructor the ``record`` macro generates, so the field names
+    appear only in the declaration.
+    """
+    return key
+
+
+@beartype
+def _crystal_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Crystal ``Name.new(value, ...)`` constructor call as
+    structured pieces for the shared compact/multiline layout code.
+
+    The ``record`` macro generates a positional initializer in
+    declaration order; the shared strategy iterates the shape's keys in
+    document order for both the declaration and the literal, so the
+    argument order always matches the field order.  A trailing comma
+    after the last argument is valid in a Crystal call, so the
+    language-wide trailing-comma config applies unchanged.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}.new(",
+        entries=tuple(field.formatted for field in fields),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _crystal_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a Crystal ``record Name, field : Type, ...`` declaration.
+
+    The ``record`` macro expands to a ``struct`` with a positional
+    initializer and one getter per field, which is exactly what the
+    generated ``Name.new(...)`` literal needs.
+    """
+    members = ", ".join(
+        f"{field.identifier} : {field.type_name}" for field in fields
+    )
+    return f"record {name}, {members}"
 
 
 @beartype
@@ -214,7 +352,7 @@ class Crystal(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = True
 
@@ -476,11 +614,19 @@ class Crystal(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        ``ERROR`` raises for any record-shaped dict that mixes scalars
+        with a container (``Hash`` requires a homogeneous value type).
+        ``RECORD`` instead renders each record-shaped dict (non-empty,
+        string-keyed) as a generated ``record`` struct declared in the
+        per-fixture module body plus a matching positional
+        ``Record0.new(value, ...)`` literal, so such fields are
+        representable.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -574,6 +720,7 @@ class Crystal(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_struct_name_prefix: str = "Record"
     # Keep in sync with the ``crystal:`` pin passed to
     # ``crystal-lang/install-crystal`` in the ``lint-crystal`` job of
     # ``.github/workflows/lint.yml``.
@@ -616,13 +763,125 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
+        """Return data-dependent preamble lines.
+
+        The ``RECORD`` strategy's generated ``record`` declarations are
+        not emitted here (file scope): Crystal compiles every fixture in
+        one ``crystal run`` invocation, so a file-scope ``record
+        Record0`` would collide across cases.  They are emitted into the
+        per-fixture module body instead; see
+        :attr:`compute_body_preamble`.
+        """
         return no_data_preamble
 
     @cached_property
+    def _record_strategy_active(self) -> bool:
+        """Return whether the ``RECORD`` heterogeneous strategy is set."""
+        return self.heterogeneous_strategy.name == "RECORD"
+
+    def _crystal_type_for_value(self, value: Value, /) -> str:
+        """Return the Crystal type the rendered literal for *value*
+        compiles to.
+
+        Scalars map to their Crystal type (an integer sized by
+        magnitude to match the rendered literal -- ``Int32`` /
+        ``Int64`` / the ``_i128``-suffixed ``Int128``; an ``EPOCH``
+        datetime renders as its epoch integer and is sized the same
+        way, while every other date/datetime/time/bytes format renders
+        a string).  A list compiles to ``Array`` of the union of its
+        items' types (empty -> ``[] of Nil`` -> ``Array(Nil)``); an
+        ordered map compiles to ``Hash`` keyed by
+        :attr:`default_dict_key_type` of the union of its value types,
+        or -- when empty, matching the ``{} of K => V`` literal the
+        formatter emits -- of :attr:`default_dict_value_type`.  The
+        union is built to match the compiler's own canonical ordering
+        so the invariant ``Array`` / ``Hash`` field type accepts the
+        inferred literal.
+        """
+        if (
+            isinstance(value, datetime.datetime)
+            and self.datetime_format.value.type_produced is int
+        ):
+            value = datetime_epoch_seconds(value=value)
+        match value:
+            case bool():
+                return "Bool"
+            case int():
+                return _crystal_int_field_type(value=value)
+            case list() if not value:
+                return "Array(Nil)"
+            case list():
+                parts = {self._crystal_type_for_value(item) for item in value}
+                return f"Array({_crystal_union(parts)})"
+            case OrderedMap():
+                parts = {
+                    self._crystal_type_for_value(item)
+                    for item in value.values()
+                }
+                # An empty ordered map renders as ``{} of K => V`` with
+                # the configured dict defaults, so the union falls back
+                # to ``default_dict_value_type`` (``or`` keeps the
+                # never-empty corpus path branch-free).
+                value_type = (
+                    _crystal_union(parts) or self.default_dict_value_type
+                )
+                return f"Hash({self.default_dict_key_type}, {value_type})"
+            case _:
+                # A set or non-record dict field is out of scope for
+                # the base ``RECORD`` port (#2317) and is not reached
+                # by any record golden; the ``or`` widens it to ``Nil``.
+                return _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"
+
+    def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Crystal ``record`` field type for a record field.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name.  A field whose value is a list of
+        single-shape record dicts is an ``Array`` of that record's
+        name: Crystal infers the element type from the generated
+        ``Name.new(...)`` literals, and ``Array`` is invariant, so the
+        declared element type must be the record name (not the widened
+        ``Array(Nil)`` :meth:`_crystal_type_for_value` would derive
+        from the raw dicts).  Every other value is typed by
+        :meth:`_crystal_type_for_value`.  A set or non-record dict
+        field is out of scope for the base ``RECORD`` port (the
+        cross-language decision is tracked in #2317) and is not reached
+        by any record golden.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"Array({request.element_record_name})"
+        return self._crystal_type_for_value(request.value)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Crystal syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_CRYSTAL_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_crystal_record_field_identifier,
+            field_type=self._crystal_record_field_type,
+            render_declaration=_crystal_render_record_declaration,
+            render_literal=_crystal_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``record``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
+
+    @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the heterogeneous-behavior config.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``ERROR`` raises.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.behavior
+        return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def call_data_dependent_preamble(
@@ -822,11 +1081,35 @@ class Crystal(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
-        return body_preamble_from_scalars(
+        """Compute body-preamble lines from the scalar map, prefixed
+        with the ``RECORD`` strategy's generated ``record``
+        declarations.
+
+        Crystal compiles every fixture in one ``crystal run``
+        invocation, so a file-scope ``record Record0`` would collide
+        across cases.  Emitting the declarations into the body preamble
+        (which :meth:`wrap_in_file` places inside the per-fixture
+        module, ahead of the value) scopes each ``RecordN`` to its own
+        fixture; the declarations precede the scalar body lines so a
+        record type is in scope before its literal.
+        """
+        scalar_body = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+        if not self._record_strategy_active:
+            return scalar_body
+        record_preamble = self._record_strategy.preamble
+
+        def _compute(
+            types: frozenset[type],
+            data: Value,
+            /,
+        ) -> tuple[str, ...]:
+            """Record declaration lines precede scalar body lines."""
+            return record_preamble(data) + scalar_body(types, data)
+
+        return _compute
 
     @cached_property
     def call_style_config(self) -> CallStyle:

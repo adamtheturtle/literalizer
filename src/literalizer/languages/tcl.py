@@ -54,8 +54,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -112,6 +110,26 @@ def _format_tcl_declaration(
 
 
 @beartype
+def _format_tcl_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a Tcl ``set`` binding whose right-hand side is a call.
+
+    The literal-binding template treats the right-hand side as a value
+    word (``set name 42``); binding a call result instead requires
+    command substitution (``set name [target arg1 arg2]``) so the
+    interpreter runs the command and assigns its result.  ``set`` is
+    the only binding form in this language, so an assignment to an
+    existing variable uses this same template.
+    """
+    continued = _add_tcl_continuation(value=value)
+    return f"set {name} [{continued}]"
+
+
+@beartype
 def _tcl_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -152,8 +170,6 @@ class Tcl(metaclass=LanguageCls):
     """Tcl language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -163,7 +179,7 @@ class Tcl(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -714,6 +730,34 @@ class Tcl(metaclass=LanguageCls):
         """Callable that formats an assignment to an existing variable."""
         return assignment_formatter_from_declaration(
             formatter=self.declaration_style.value.formatter,
+        )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call expression.
+
+        The literal-binding template emits the right-hand side as a
+        value word; a call result must be command-substituted with
+        ``[...]`` so Tcl runs the command instead of treating its name
+        and arguments as a literal list.
+        """
+        return _format_tcl_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call
+        expression.
+
+        ``set`` is the only binding form in this language, so an
+        existing-variable assignment shares the command-substitution
+        template with :attr:`format_call_variable_declaration`.
+        """
+        return assignment_formatter_from_declaration(
+            formatter=_format_tcl_call_declaration,
         )
 
     @cached_property

@@ -235,8 +235,10 @@ language not listed exposes ``ERROR`` only.
      - ``RECORD``
    * - :class:`~literalizer.Python`
      - ``RECORD``
+   * - :class:`~literalizer.Swift`
+     - ``RECORD``
    * - :class:`~literalizer.Cpp`
-     - ``TUPLE``
+     - ``RECORD``, ``TUPLE``
    * - :class:`~literalizer.TypeScript`
      - ``TUPLE``
    * - :class:`~literalizer.Dhall`
@@ -261,7 +263,7 @@ argument that controls its name:
    * - Argument
      - Applies to
    * - ``record_struct_name_prefix`` (default ``"Record"``)
-     - ``RECORD`` on Rust, Go, Java, Python, Kotlin, Scala
+     - ``RECORD`` on Rust, Go, Java, Python, Kotlin, Scala, Cpp, Swift
    * - ``heterogeneous_value_enum_name`` (default ``"Value"``)
      - ``TAGGED_ENUM`` on Rust
    * - ``heterogeneous_value_union_name`` (default ``"Value"``)
