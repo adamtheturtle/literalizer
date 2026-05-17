@@ -221,7 +221,7 @@ class Elixir(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True
-    supports_call_variable_binding = False
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -574,6 +574,45 @@ class Elixir(metaclass=LanguageCls):
         parts.extend(f"  {stub}" for stub in module_defs)
         parts.append("  def x do")
         parts.append(indented_body)
+        parts.append("  end")
+        parts.append("end")
+        return "\n".join(parts)
+
+    def wrap_call_variable_in_file(
+        self,
+        content: str,
+        variable_name: str,
+        body_preamble: tuple[str, ...],
+    ) -> str:
+        """Wrap a call-result variable binding in an Elixir module.
+
+        :meth:`wrap_in_file`'s variable branch places *body_preamble*
+        inside ``def x do``, but for a call binding those lines are the
+        module-level stub function definitions emitted by
+        :func:`_elixir_call_stub`; nesting a ``def`` inside ``def x do``
+        is a syntax error.  This hook hoists the ``def ``-prefixed
+        preamble lines to module scope (matching the
+        call-without-binding branch of :meth:`wrap_in_file`) while
+        keeping the ``my_data = make_widget(...)`` binding, any non-stub
+        preamble lines (e.g. the dotted-call ``root = RootType_`` alias),
+        and the trailing ``_ = my_data`` use inside ``def x do``.
+        """
+        module_defs = [
+            line for line in body_preamble if line.startswith("def ")
+        ]
+        body_assigns = tuple(
+            line for line in body_preamble if not line.startswith("def ")
+        )
+        body = prepend_body_preamble(
+            content=content, body_preamble=body_assigns
+        )
+        indented_body = textwrap.indent(text=body, prefix=self.indent)
+        use_line = f"{self.indent}_ = {variable_name}"
+        parts: list[str] = ["defmodule Check do"]
+        parts.extend(f"  {stub}" for stub in module_defs)
+        parts.append("  def x do")
+        parts.append(indented_body)
+        parts.append(use_line)
         parts.append("  end")
         parts.append("end")
         return "\n".join(parts)
