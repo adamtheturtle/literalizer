@@ -1,3 +1,5 @@
+{.warning[UnusedImport]:off.}
+import tables
 type Record0 = object
     withinI32: int
     beyondI32: int

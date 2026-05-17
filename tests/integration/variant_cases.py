@@ -963,6 +963,35 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
+    """Build the Nim ``record_nonrecord_dict_field`` variant.
+
+    Nim is the only port that *rejects* a non-record-dict (here an
+    empty dict) record field under ``RECORD`` while still rendering the
+    surrounding record (the other ports either reject the whole input
+    earlier or widen the field to a map type), so this single-language
+    variant locks in that rejection path.  See #2317 for the
+    cross-language set / non-record-dict record-field decision.
+    """
+    default_spec = make_spec(lang_cls=Nim)
+    record_strategy = next(
+        strategy
+        for strategy in default_spec.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    return [
+        Variant(
+            name="Nim_record_nonrecord_dict_field",
+            spec=make_spec(
+                lang_cls=Nim, heterogeneous_strategy=record_strategy
+            ),
+            lang_cls=Nim,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+    ]
+
+
+@beartype
 def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
     """Build a ``RECORD`` + ``EPOCH`` variant for every language whose
     spec exposes both a ``RECORD`` heterogeneous strategy and an
@@ -1790,6 +1819,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "record_unify_optional_fields": (
         build_record_unify_optional_fields_variants
     ),
+    "record_nonrecord_dict_field": (
+        build_record_nonrecord_dict_field_variants
+    ),
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,
@@ -2085,6 +2117,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (
         _ci(case_dir_name="record_optional_unify", suffix=""),
+    ),
+    "record_nonrecord_dict_field": (
+        _ci(case_dir_name="record_nonrecord_dict_field", suffix=""),
     ),
     "record_epoch_i32_overflow": (
         _ci(case_dir_name="record_epoch_datetime_i32_overflow", suffix=""),

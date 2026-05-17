@@ -1,3 +1,5 @@
+{.warning[UnusedImport]:off.}
+import tables
 type Record0 = object
     id: int
     label: string

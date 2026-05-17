@@ -1,4 +1,5 @@
 {.warning[UnusedImport]:off.}
+import tables
 template process(args: varargs[untyped]) = discard
 var my_ints = @[
     1,

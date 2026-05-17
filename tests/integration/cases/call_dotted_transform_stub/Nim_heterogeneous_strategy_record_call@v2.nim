@@ -1,4 +1,5 @@
 {.warning[UnusedImport]:off.}
+import tables
 proc process[T0](value: T0): int {.discardable.} = 0
 type TracerType = object
 template emit(self: TracerType; args: varargs[untyped]) = discard

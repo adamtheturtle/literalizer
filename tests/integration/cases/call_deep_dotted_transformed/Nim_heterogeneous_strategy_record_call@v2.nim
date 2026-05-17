@@ -1,4 +1,5 @@
 {.warning[UnusedImport]:off.}
+import tables
 type ClientType = object
 type AppType = object
     client: ClientType

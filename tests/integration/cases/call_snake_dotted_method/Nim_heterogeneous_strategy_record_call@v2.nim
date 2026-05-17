@@ -1,4 +1,5 @@
 {.warning[UnusedImport]:off.}
+import tables
 type Http_ClientType = object
 type My_AppType = object
     http_client: Http_ClientType

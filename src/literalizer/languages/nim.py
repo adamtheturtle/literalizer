@@ -51,7 +51,6 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
-from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -100,7 +99,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -301,7 +300,7 @@ def _nim_variant_for_scalar(  # pylint: disable=too-complex
     return signature
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, eq=False)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Nim heterogeneous-values strategy.
 
@@ -311,6 +310,12 @@ class _HeterogeneousStrategyConfig:
     preamble callable (e.g. the object-variant type declaration).  Both
     receive the Nim instance's configurable variant-type name and
     scalar type names so the resulting functions can close over them.
+
+    ``eq=False`` keeps identity equality so two strategies that happen
+    to share builder functions (``ERROR`` and ``RECORD`` both reuse the
+    no-op error builders -- ``RECORD``'s real behavior/preamble are
+    resolved per-instance) stay distinct enum members instead of Python
+    folding the second into an alias of the first.
     """
 
     build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
@@ -340,38 +345,6 @@ def _build_error_preamble(
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
-    return no_data_preamble
-
-
-@beartype
-def _build_record_behavior_placeholder(
-    _variant_name: str,
-    _date_type: str,
-    _datetime_type: str,
-    /,
-) -> HeterogeneousBehavior:
-    """RECORD strategy: behavior is resolved per-instance via
-    :func:`build_record_strategy` (it needs the configurable struct
-    prefix / field-type resolver), so this enum-member builder is never
-    invoked.  It exists only to give ``RECORD`` an enum value distinct
-    from ``ERROR`` -- two members sharing one value would make Python
-    fold the later one into an alias of the first.
-    """
-    return NO_HETEROGENEOUS_BEHAVIOR
-
-
-@beartype
-def _build_record_preamble_placeholder(
-    _variant_name: str,
-    _date_type: str,
-    _datetime_type: str,
-    _indent: str,
-    /,
-) -> Callable[[Value], tuple[str, ...]]:
-    """RECORD strategy: preamble is resolved per-instance via
-    :func:`build_record_strategy`, so this enum-member builder is never
-    invoked (see :func:`_build_record_behavior_placeholder`).
-    """
     return no_data_preamble
 
 
@@ -485,37 +458,6 @@ def _build_object_variant_preamble(
 _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
 )
-
-
-@beartype
-def _nim_data_has_non_record_dict(data: Value, /) -> bool:
-    """Return whether *data* contains a dict that renders as a runtime
-    ``tables.Table`` under the ``RECORD`` strategy.
-
-    A record-shaped dict is intercepted by the record renderer and
-    emitted as a ``Record0(...)`` literal, so it needs no ``tables``
-    import.  A non-record dict (empty, or non-string-keyed) keeps the
-    native ``{...}.toTable`` / ``initTable`` rendering and so does need
-    ``import tables``; this walk reports whether any such dict is
-    present so the import is added precisely when used.  An
-    :class:`OrderedMap` carries its own ``import tables`` via
-    :attr:`Nim.ordered_map_format_config`, so it is not counted here.
-    """
-    match data:
-        case OrderedMap():
-            return any(
-                _nim_data_has_non_record_dict(value) for value in data.values()
-            )
-        case dict():
-            if record_shape_for_dict(value=data) is None:
-                return True
-            return any(
-                _nim_data_has_non_record_dict(value) for value in data.values()
-            )
-        case list():
-            return any(_nim_data_has_non_record_dict(item) for item in data)
-        case _:
-            return False
 
 
 @beartype
@@ -1055,9 +997,15 @@ class Nim(metaclass=LanguageCls):
         ``CONST`` requires a compile-time-expressible initializer.
         """
 
-        RECORD = _HeterogeneousStrategyConfig(
-            build_behavior=_build_record_behavior_placeholder,
-            build_preamble=_build_record_preamble_placeholder,
+        # RECORD intentionally reuses the inert ERROR builders (its
+        # real behavior/preamble are resolved per-instance, see
+        # ``heterogeneous_behavior`` / ``data_dependent_preamble``);
+        # ``_HeterogeneousStrategyConfig``'s identity equality
+        # (``eq=False``) keeps it a distinct member rather than an
+        # alias of ERROR, which ``PIE796`` cannot tell apart.
+        RECORD = _HeterogeneousStrategyConfig(  # noqa: PIE796
+            build_behavior=_build_error_behavior,
+            build_preamble=_build_error_preamble,
         )
         """Render each record-shaped dict (non-empty, string-keyed) as a
         generated module-scope ``type Record0 = object`` declaration plus
@@ -1076,7 +1024,9 @@ class Nim(metaclass=LanguageCls):
         struct preamble need the per-instance renderer, so they are
         resolved in :attr:`heterogeneous_behavior` /
         :attr:`data_dependent_preamble` rather than from the enum
-        member's config builders (which are inert for ``RECORD``).
+        member's config builders (it reuses the no-op ``ERROR``
+        builders, kept a distinct member by
+        :class:`_HeterogeneousStrategyConfig`'s identity equality).
         Incompatible with ``DeclarationStyles.CONST`` for the same
         reason as ``OBJECT_VARIANT``: ``@[...]`` / ``.toTable`` are
         runtime constructors.
@@ -1260,7 +1210,13 @@ class Nim(metaclass=LanguageCls):
 
         For ``HeterogeneousStrategies.RECORD`` emits one
         ``type Record0 = object`` block per distinct record shape in
-        the data.  For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits
+        the data, preceded by ``import tables`` and the
+        ``UnusedImport`` opt-out: a non-record dict (the empty dict, or
+        an ordered map) renders as a runtime ``Table`` that needs the
+        import, while a pure-record fixture leaves it unused, so the
+        pragma keeps the always-present import warning-free rather than
+        making the import data-dependent.  For
+        ``HeterogeneousStrategies.OBJECT_VARIANT`` emits
         a Nim ``type`` block declaring the object variant used to wrap
         heterogeneous scalars.  For ``HeterogeneousStrategies.ERROR``
         emits ``("import json",)`` when the rendered output will use
@@ -1274,14 +1230,16 @@ class Nim(metaclass=LanguageCls):
             record_preamble = self._record_strategy.preamble
 
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
-                """Emit the ``object`` type blocks, preceded by
-                ``import tables`` only when a non-record dict in the
-                data still renders as a runtime table.
+                """Emit the ``object`` type blocks, preceded by the
+                ``UnusedImport`` opt-out and ``import tables`` (used by
+                any non-record dict / ordered map, harmlessly suppressed
+                otherwise).
                 """
-                blocks = record_preamble(data)
-                if _nim_data_has_non_record_dict(data):
-                    return ("import tables", *blocks)
-                return blocks
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    "import tables",
+                    *record_preamble(data),
+                )
 
             return _record_preamble
         strategy_preamble = self.heterogeneous_strategy.value.build_preamble(
@@ -1370,7 +1328,10 @@ class Nim(metaclass=LanguageCls):
         """Return the Nim ``object`` field type for a raw
         (non-nested-record) record field value, derived structurally.
 
-        Scalars map to their Nim type; a homogeneous list maps to
+        ``None`` maps to the Nim ``pointer`` type, whose only value is
+        ``nil`` (the null literal this port emits), matching how the
+        other ports give a null field their top type.  Other scalars
+        map to their Nim type and a homogeneous list maps to
         ``seq[<element type>]`` (an empty list keeps the
         ``newSeq[string]()`` placeholder element type the value
         formatter widens it to).  A ``date`` / ``datetime`` is the
@@ -1378,37 +1339,35 @@ class Nim(metaclass=LanguageCls):
         a plain ``string`` (ISO) or ``int`` (epoch); under the default
         ``NIM`` table-literal format it would need a ``%*``
         :class:`json.JsonNode` the record literal cannot carry, so it
-        is rejected.  ``None``,
-        a set, an ordered map or a non-record dict as a record field is
-        out of scope for the base ``RECORD`` port (the cross-language
-        decision is tracked in #2317; Rust rejects these too) and is
-        rejected with :exc:`UnrepresentableInputError` so the case is
-        skipped rather than emitting non-compiling Nim.
+        is rejected.  A set, an ordered map or a non-record dict as a
+        record field is out of scope for the base ``RECORD`` port (the
+        cross-language decision is tracked in #2317; Rust rejects these
+        too) and is rejected with :exc:`UnrepresentableInputError` so
+        the case is skipped rather than emitting non-compiling Nim.
         """
         match value:
+            case None:
+                return "pointer"
             case bool():
                 return "bool"
             case int():
                 return "int"
             case float():
                 return "float"
-            case str() | bytes():
+            case str() | bytes() | datetime.time():
                 return "string"
             case datetime.datetime():
                 resolved = self._heterogeneous_variant_datetime_type
             case datetime.date():
                 resolved = self._heterogeneous_variant_date_type
-            case datetime.time():
-                return "string"
             case list():
                 if not value:
                     return "seq[string]"
                 return f"seq[{self._nim_value_field_type(value[0])}]"
             case _:
                 msg = (
-                    "Nim cannot represent a null, set, ordered-map or "
-                    "non-record-dict field under the RECORD "
-                    "heterogeneous strategy"
+                    "Nim cannot represent a set or non-record-dict "
+                    "field under the RECORD heterogeneous strategy"
                 )
                 raise UnrepresentableInputError(msg)
         if resolved == "JsonNode":
@@ -1428,8 +1387,8 @@ class Nim(metaclass=LanguageCls):
         record-shaped dict of one shared shape is typed
         ``seq[<that name>]`` (a Nim ``seq`` is element-typed, unlike
         the ``[]any`` Go widens such a list to).  Every other value is
-        typed
-        structurally from the raw value via :meth:`_nim_value_field_type`.
+        typed structurally from the raw value via
+        :meth:`_nim_value_field_type`.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1492,10 +1451,14 @@ class Nim(metaclass=LanguageCls):
 
         For ``HeterogeneousStrategies.RECORD`` emits the
         ``type Record0 = object`` blocks a record-shaped call argument's
-        literal references (prefixed with the ``UnusedImport`` opt-out
-        for the same reason as ``OBJECT_VARIANT``: a non-record dict
-        argument's ``{...}.toTable`` pulls in ``import tables`` that the
-        ``varargs[untyped]`` stub never evaluates).  For
+        literal references, preceded -- exactly as the non-call
+        :attr:`data_dependent_preamble` -- by the ``UnusedImport``
+        opt-out and ``import tables`` (``dict_format_config`` no longer
+        contributes it under ``RECORD``).  The opt-out is needed both
+        for a record-only call (the import is then unused) and because
+        a ``varargs[untyped]`` stub never evaluates its arguments, so
+        even a non-record dict argument's ``{...}.toTable`` would leave
+        the import unused.  For
         ``HeterogeneousStrategies.OBJECT_VARIANT`` emits the Nim
         ``type`` block declaring the object variant used to wrap
         heterogeneous scalars; the call rendering references that type
@@ -1507,11 +1470,15 @@ class Nim(metaclass=LanguageCls):
             record_preamble = self._record_strategy.preamble
 
             def _record_call_preamble(data: Value, /) -> tuple[str, ...]:
-                """Suppress UnusedImport for ``tables`` and emit the
-                generated ``object`` type blocks.
+                """Suppress UnusedImport for ``tables`` and emit it plus
+                the generated ``object`` type blocks (identical to the
+                non-call :attr:`data_dependent_preamble`: a non-record
+                dict argument needs the import, a record-only call
+                leaves it harmlessly suppressed).
                 """
                 return (
                     "{.warning[UnusedImport]:off.}",
+                    "import tables",
                     *record_preamble(data),
                 )
 

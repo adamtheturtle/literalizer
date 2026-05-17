@@ -1,4 +1,5 @@
 {.warning[UnusedImport]:off.}
+import tables
 template process(args: varargs[untyped]) = discard
 var my_int = 1
 var my_bool = true

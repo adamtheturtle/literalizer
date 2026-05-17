@@ -1,3 +1,5 @@
+{.warning[UnusedImport]:off.}
+import tables
 type Record0 = object
     name: string
     age: int
