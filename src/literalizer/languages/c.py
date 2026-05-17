@@ -4,9 +4,10 @@ import collections.abc
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import ClassVar
+from types import MappingProxyType
+from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
@@ -39,6 +40,17 @@ from literalizer._formatters.format_integers import (
     make_ull_fallback,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
+from literalizer._formatters.type_inference import (
+    record_shape_for_dict,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -55,6 +67,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -75,10 +88,10 @@ from literalizer._language import (
     no_format_integer_widened,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import UnrepresentableInputError
 
 
 @beartype
@@ -137,6 +150,268 @@ def _make_format_c_entry(
         )
 
     return _format_c_entry
+
+
+# The ``RECORD`` strategy auto-names generated ``struct`` types
+# ``Record0``, ``Record1``, ...  C exposes no ``record_shape_names``
+# (see issue #2476), so the shared renderer always gets an empty
+# custom-name mapping and the document-order auto counter.
+_C_RECORD_PREFIX = "Record"
+_C_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+
+@beartype
+def _apply_format_c_entry_record(
+    *,
+    original: Value,
+    formatted: str,
+    int_field: str,
+    uint_field: str,
+    float_field: str,
+    string_field: str,
+    bool_field: str,
+    array_field: str,
+) -> str:
+    """Wrap a formatted entry in the appropriate ``CVal`` union literal
+    under the ``RECORD`` strategy.
+
+    Only three element kinds differ from :func:`_apply_format_c_entry`,
+    and ``RECORD`` handles them here before delegating the rest:
+
+    * ``bool`` / ``None`` -- ``RECORD`` makes the bare ``true`` /
+      ``false`` / ``NULL`` literals (so a ``bool`` / null record field
+      is a clean scalar), so one reached as a *collection element* must
+      be wrapped here instead of arriving pre-wrapped.
+    * ``list`` -- only a list now opens with the bare ``CVal`` array
+      form, so a list element is wrapped into a ``CVal`` so the
+      enclosing array is well-typed.
+
+    Every other element is wrapped (or passed through, for a record
+    ``struct`` literal or an already-complete dict / ordered map / set
+    ``CVal`` expression) exactly as the default strategy does.
+    """
+    match original:
+        case bool():
+            return f"((CVal){{.{bool_field} = {formatted}}})"
+        case None:
+            return f"((CVal){{.{string_field} = {formatted}}})"
+        case list():
+            return f"((CVal){{.{array_field} = {formatted}}})"
+        case _:
+            return _apply_format_c_entry(
+                original=original,
+                formatted=formatted,
+                int_field=int_field,
+                uint_field=uint_field,
+                float_field=float_field,
+                string_field=string_field,
+            )
+
+
+@beartype
+def _make_format_c_entry_record(
+    *,
+    int_field: str,
+    uint_field: str,
+    float_field: str,
+    string_field: str,
+    bool_field: str,
+    array_field: str,
+) -> collections.abc.Callable[[Value, str], str]:
+    """Return the ``RECORD``-strategy ``CVal``-wrapping entry
+    formatter.
+    """
+
+    def _format_c_entry(original: Value, formatted: str) -> str:
+        """Delegate to module-level implementation."""
+        return _apply_format_c_entry_record(
+            original=original,
+            formatted=formatted,
+            int_field=int_field,
+            uint_field=uint_field,
+            float_field=float_field,
+            string_field=string_field,
+            bool_field=bool_field,
+            array_field=array_field,
+        )
+
+    return _format_c_entry
+
+
+@beartype
+def _c_record_field_identifier(key: str, /) -> str:
+    """Return the C ``struct`` member name for a dict *key*.
+
+    C member identifiers are the dict keys verbatim (no case
+    conversion), matching the designated-initializer literal form
+    ``(struct Record0){.id = 1, ...}``.
+    """
+    return key
+
+
+@beartype
+def _all_record_shaped(items: list[Value], /) -> bool:
+    """Return whether *items* is a non-empty list whose every element
+    is a record-shaped dict (non-empty, all-string-keyed, not an
+    ordered map).
+
+    Under the ``RECORD`` strategy such a list renders each element as a
+    generated ``(struct RecordN){...}`` literal, so the C sequence
+    opener emits a bare ``{`` (a brace-enclosed initializer for the
+    enclosing ``struct RecordN`` array member or array variable) rather
+    than the ``(CVal[]){`` opener every other list keeps.
+
+    Uniformity of shape need not be checked here: a sibling list whose
+    record-shaped dicts do not all share one shape is rejected for
+    every ``RECORD`` language by the shared
+    :func:`literalizer._checks.check_data` guard before any value is
+    formatted, so a list reaching this predicate is single-shape and
+    the deduced ``struct RecordN[N]`` member is well-formed.
+    """
+    if not items:
+        return False
+    return all(_c_record_dict(item) for item in items)
+
+
+@beartype
+def _c_record_dict(value: Value, /) -> TypeGuard[dict[Scalar, Value]]:
+    """Return whether *value* is a record-shaped dict.
+
+    A record-shaped dict (non-empty, all-string-keyed, not an ordered
+    map) renders as a ``(struct RecordN){...}`` literal under the
+    ``RECORD`` strategy.
+    """
+    return (
+        isinstance(value, dict)
+        and not isinstance(value, OrderedMap)
+        and record_shape_for_dict(value=value) is not None
+    )
+
+
+_C_RECORD_IN_CVAL_MSG = (
+    "C cannot represent a record-shaped dict (or a list whose every "
+    "element is one) nested under a non-record container -- a "
+    "non-all-record list, a non-record dict, an ordered map, or a set "
+    "-- under the RECORD heterogeneous strategy: it renders as a "
+    "generated struct, which is not a CVal union member, so it is "
+    "representable only as a record-field value, an element of such a "
+    "field's struct array, or the document root (cf. the set / "
+    "non-record-dict field boundary tracked in #2317)"
+)
+
+
+@beartype
+def _check_c_record_nesting(  # noqa: C901
+    *,
+    node: Value,
+    cval_context: bool,
+) -> None:
+    """Raise :class:`UnrepresentableInputError` if a record-shaped dict
+    (or an all-record list) is reachable only through a ``CVal``
+    context.
+
+    Under C's ``RECORD`` strategy a record-shaped dict renders as a
+    ``(struct RecordN){...}`` literal and a list whose elements are all
+    record-shaped dicts as a ``struct RecordN[]`` array; neither is a
+    ``CVal`` union member.  Either is therefore representable only as a
+    record-field value, an element of such a field's struct array, or
+    the document root.  *cval_context* is ``True`` once the walk has
+    descended through a non-record container, where the value must
+    occupy a ``CVal`` slot and a record there cannot be represented.
+    """
+    # pylint: disable=too-complex
+    if _c_record_dict(node):
+        if cval_context:
+            raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
+        for field_value in node.values():
+            _check_c_record_field(field_value)
+        return
+    match node:
+        case OrderedMap() | dict():
+            for value in node.values():
+                _check_c_record_nesting(node=value, cval_context=True)
+        case list() if _all_record_shaped(node):
+            if cval_context:
+                raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
+            for element in node:
+                _check_c_record_nesting(node=element, cval_context=False)
+        case list():
+            for element in node:
+                _check_c_record_nesting(node=element, cval_context=True)
+        case _:
+            return
+
+
+@beartype
+def _check_c_record_field(field_value: Value, /) -> None:
+    """Validate one field value of a record-shaped dict.
+
+    A nested record dict stays a ``struct`` member and an all-record
+    list a ``struct`` array (neither a ``CVal``), so those descend
+    without entering a ``CVal`` context.  Every other field value is a
+    ``CVal`` slot.
+    """
+    if _c_record_dict(field_value):
+        _check_c_record_nesting(node=field_value, cval_context=False)
+    elif isinstance(field_value, list) and _all_record_shaped(field_value):
+        for element in field_value:
+            _check_c_record_nesting(node=element, cval_context=False)
+    else:
+        _check_c_record_nesting(node=field_value, cval_context=True)
+
+
+@beartype
+def _c_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+) -> str:
+    """Render a C aggregate ``struct`` declaration block.
+
+    A pointer type abuts its identifier (the type already ends in
+    ``*``); a fixed-size record-array field carries its dimension after
+    the identifier (the type ends in a bracketed length); every other
+    type takes a single separating space.
+    """
+    members: list[str] = []
+    for field in fields:
+        type_name = field.type_name
+        if type_name.endswith("]"):
+            base, _, dimension = type_name.partition(" [")
+            members.append(f"{base} {field.identifier}[{dimension};")
+        elif type_name.endswith("*"):
+            members.append(f"{type_name}{field.identifier};")
+        else:
+            members.append(f"{type_name} {field.identifier};")
+    return f"struct {name} {{ {' '.join(members)} }};"
+
+
+@beartype
+def _c_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a C designated-initializer compound literal ``(struct
+    Name){.field = value, ...}`` as structured pieces for the shared
+    compact/multiline layout code.
+
+    The shared strategy iterates the shape's keys in document order for
+    both the declaration and the literal, so designated initializers
+    appear in declaration order.  A trailing comma after the last
+    initializer is valid in a brace-enclosed initializer list, so the
+    language-wide trailing-comma config applies unchanged.
+    """
+    return RenderedRecordLiteral(
+        head=f"(struct {name}){{",
+        entries=tuple(
+            f".{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad="",
+    )
 
 
 # Maximum parameter count of any existing call case; stubs above this
@@ -485,11 +760,20 @@ class C(metaclass=LanguageCls):
     modifiers = Modifiers
 
     class HeterogeneousStrategies(enum.Enum):
-        """Heterogeneous-scalar strategy options — this language only
-        supports raising.
+        """Heterogeneous-scalar strategy options.
+
+        C represents heterogeneous scalar collections with its tagged
+        ``CVal`` union by default (``ERROR``).  ``RECORD`` instead
+        renders each record-shaped dict (non-empty, string-keyed) as a
+        generated aggregate ``struct`` declared in the preamble plus a
+        matching ``(struct Record0){.field = value, ...}``
+        designated-initializer compound literal, so a field may be a
+        cleanly-typed scalar or a nested ``struct`` rather than a
+        ``CVal`` union slot.
         """
 
-        ERROR = NO_HETEROGENEOUS_BEHAVIOR
+        ERROR = enum.auto()
+        RECORD = enum.auto()
 
     heterogeneous_strategies = HeterogeneousStrategies
 
@@ -511,7 +795,21 @@ class C(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid C for *data*.
+
+        Under the ``RECORD`` strategy a record-shaped dict renders as a
+        ``(struct RecordN){...}`` literal (and a list whose elements are
+        all record-shaped dicts as a ``struct RecordN[]`` array); a
+        ``struct`` is not a ``CVal`` union member, so a record reachable
+        only through a non-record container would have to occupy a
+        ``CVal`` slot and cannot compile.  Rejecting it here keeps the
+        boundary explicit rather than emitting C that fails to build
+        (cf. the set / non-record-dict field boundary tracked in
+        #2317).  The default (``ERROR``) strategy is unconstrained.
+        """
+        if self._record_strategy_active:
+            _check_c_record_nesting(node=data, cval_context=False)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -620,14 +918,111 @@ class C(metaclass=LanguageCls):
         return self.call_style.value
 
     @cached_property
+    def _record_strategy_active(self) -> bool:
+        """Return whether the ``RECORD`` heterogeneous strategy is set."""
+        return self.heterogeneous_strategy.name == "RECORD"
+
+    def _c_record_field_type(  # noqa: C901, PLR0911
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
+        """Return the C ``struct`` member type for one record field.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated ``struct`` type.  A field whose value
+        is a list whose every element is a record-shaped dict of one
+        shared shape becomes a fixed-size ``struct`` array member
+        (records are the uniform, exactly-representable container
+        case).  Every scalar maps to its exact C type.
+
+        A scalar or heterogeneous list, or an empty list, is typed a
+        pointer to ``CVal`` and rendered as a ``CVal`` array literal:
+        C's tagged ``CVal`` union already represents arbitrary
+        heterogeneity, so reusing it for these fields keeps every
+        literal and type pair valid (a fixed-size scalar array would be
+        the wrong length when two same-shape records carry
+        different-length lists, and is ill-formed -- a zero-length
+        array -- for an empty list).  This is the recorded answer to
+        the issue's "fixed-size array versus pointer" container-field
+        design call.
+
+        A set, an ordered map, or a non-record dict field (out of
+        scope for the base port, #2476/#2317) keeps its own
+        self-wrapping ``CVal`` form and is typed ``CVal``.
+        """
+        # pylint: disable=too-complex
+        if request.record_name is not None:
+            return f"struct {request.record_name}"
+        value = request.value
+        if request.element_record_name is not None and isinstance(
+            value,
+            list,
+        ):
+            return f"struct {request.element_record_name} [{len(value)}]"
+        epoch = self.datetime_format.value.type_produced is int
+        match value:
+            case bool():
+                return "bool"
+            case int() as int_value if int_value > I64_MAX:
+                return "unsigned long long"
+            case int():
+                return "long long"
+            case float():
+                return "double"
+            case str() | bytes():
+                return "const char *"
+            case None:
+                return "const void *"
+            case datetime.datetime():
+                return "long long" if epoch else "const char *"
+            case datetime.date() | datetime.time():
+                return "const char *"
+            case list():
+                return "const CVal *"
+            case _:
+                return "CVal"
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """C syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=_C_RECORD_PREFIX,
+            record_shape_names=_C_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_c_record_field_identifier,
+            field_type=self._c_record_field_type,
+            render_declaration=_c_render_record_declaration,
+            render_literal=_c_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``struct``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
+        """Return data-dependent preamble lines.
+
+        Under ``RECORD`` these are the generated ``struct RecordN``
+        declarations, emitted after the static ``CVal`` / ``CKV`` type
+        declarations (a record field may itself be ``const CVal *``).
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.preamble
         return no_data_preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
-        return self.heterogeneous_strategy.value
+        """Return the heterogeneous-behavior config.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``ERROR`` keeps the ``CVal``-union default.
+        """
+        if self._record_strategy_active:
+            return self._record_strategy.behavior
+        return NO_HETEROGENEOUS_BEHAVIOR
 
     @cached_property
     def call_data_dependent_preamble(
@@ -731,7 +1126,22 @@ class C(metaclass=LanguageCls):
     def _format_entry(self) -> Callable[[Value, str], str]:
         """Shared entry formatter that wraps values in ``CVal``
         literals.
+
+        Under ``RECORD`` the bare ``true`` / ``false`` / ``NULL``
+        literals reach this hook unwrapped (so a scalar record field is
+        clean), so the ``RECORD`` variant additionally wraps ``bool`` /
+        ``None`` and passes a record-shaped dict (already a ``struct``
+        literal) through untouched.
         """
+        if self._record_strategy_active:
+            return _make_format_c_entry_record(
+                int_field=self.int_field,
+                uint_field=self.uint_field,
+                float_field=self.float_field,
+                string_field=self.string_field,
+                bool_field=self.bool_field,
+                array_field=self.array_field,
+            )
         return _make_format_c_entry(
             int_field=self.int_field,
             uint_field=self.uint_field,
@@ -751,23 +1161,92 @@ class C(metaclass=LanguageCls):
 
     @cached_property
     def null_literal(self) -> str:
-        """Literal representing ``None``."""
+        """Literal representing ``None``.
+
+        Bare ``NULL`` under ``RECORD`` (a clean ``const void *`` record
+        field); ``_format_entry`` re-wraps it for ``CVal`` contexts.
+        """
+        if self._record_strategy_active:
+            return "NULL"
         return f"((CVal){{.{self.string_field} = NULL}})"
 
     @cached_property
     def true_literal(self) -> str:
-        """Literal representing ``True``."""
+        """Literal representing ``True``.
+
+        Bare ``true`` under ``RECORD`` (a clean ``bool`` record field);
+        ``_format_entry`` re-wraps it for ``CVal`` contexts.
+        """
+        if self._record_strategy_active:
+            return "true"
         return f"((CVal){{.{self.bool_field} = true}})"
 
     @cached_property
     def false_literal(self) -> str:
-        """Literal representing ``False``."""
+        """Literal representing ``False``.
+
+        Bare ``false`` under ``RECORD`` (a clean ``bool`` record
+        field); ``_format_entry`` re-wraps it for ``CVal`` contexts.
+        """
+        if self._record_strategy_active:
+            return "false"
         return f"((CVal){{.{self.bool_field} = false}})"
 
     @cached_property
+    def _record_sequence_open(self) -> Callable[[list[Value]], str]:
+        """Return the ``RECORD``-strategy sequence opener.
+
+        A list whose every element is a record-shaped dict opens with a
+        bare ``{`` -- the enclosing ``struct RecordN`` array member (or
+        array variable) supplies the type and the elements are
+        ``(struct RecordN){...}`` literals.  Every other list opens with
+        ``(CVal[]){`` and closes with ``}`` (the paired close is set on
+        the config), reusing C's tagged union for arbitrary
+        heterogeneity; ``_format_entry`` wraps each element so the
+        compound-literal array is a valid ``const CVal *`` field value.
+        """
+
+        def _open(items: list[Value]) -> str:
+            """Return the bare-brace or ``(CVal[]){`` opener."""
+            if _all_record_shaped(items):
+                return "{"
+            return "(CVal[]){"
+
+        return _open
+
+    @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
+        """Configuration for the chosen sequence format.
+
+        Under ``RECORD`` the asymmetric ``((CVal){.a = (CVal[]){`` ...
+        ``}})`` wrapper is dropped: every list is a ``(CVal[]){...}`` /
+        ``{...}`` initializer closing with a single ``}`` (a record
+        field or a ``struct`` array, never a free-standing ``CVal``), so
+        the close pairs with :attr:`_record_sequence_open`.
+        """
         fmt = self.sequence_format.value
+        if self._record_strategy_active:
+            return SequenceFormatConfig(
+                sequence_open=self._record_sequence_open,
+                close="}",
+                supports_heterogeneity=fmt.supports_heterogeneity,
+                single_element_trailing_comma=(
+                    fmt.single_element_trailing_comma
+                ),
+                supports_trailing_comma=fmt.supports_trailing_comma,
+                empty_sequence=fmt.empty_sequence,
+                preamble_lines=fmt.preamble_lines,
+                format_entry=fmt.format_entry,
+                typed_opener_fallback=fmt.typed_opener_fallback,
+                uses_typed_literal_for_scalars=(
+                    fmt.uses_typed_literal_for_scalars
+                ),
+                requires_uniform_record_shapes=(
+                    fmt.requires_uniform_record_shapes
+                ),
+                declared_type=fmt.declared_type,
+                narrowed_empty_form=None,
+            )
         return SequenceFormatConfig(
             sequence_open=fixed_open(open_str=self._seq_open_str),
             close="}})",
@@ -894,11 +1373,42 @@ class C(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return braced_dict_entry(format_value=self._format_entry)
 
+    def _record_binding_lhs(self, data: Value, /) -> str | None:
+        """Return the typed left-hand side for a ``RECORD`` top-level
+        binding, or ``None`` to fall back to the ``CVal`` form.
+
+        The shared strategy names record shapes in document order with
+        no custom names, so the outermost record-shaped dict (or the
+        shared element shape of a top-level all-record list) is always
+        ``Record0``: a record-shaped root binds ``struct Record0 NAME``
+        and an all-record-list root binds ``struct Record0 NAME[]``;
+        every other root keeps the ``CVal`` union.
+        """
+        if not self._record_strategy_active:
+            return None
+        root = f"struct {_C_RECORD_PREFIX}0"
+        if (
+            isinstance(data, dict)
+            and not isinstance(data, OrderedMap)
+            and record_shape_for_dict(value=data) is not None
+        ):
+            return root
+        if isinstance(data, list) and _all_record_shaped(data):
+            return f"{root}[]"
+        return None
+
     @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under ``RECORD`` a record-shaped root is declared with its
+        generated ``struct`` type (``struct Record0 my_data = (struct
+        Record0){...};``) and an all-record-list root as an array
+        (``struct Record0 my_data[] = {...};``); every other value keeps
+        the ``CVal``-wrapped form.
+        """
         format_entry = self._format_entry
 
         @beartype
@@ -909,6 +1419,11 @@ class C(metaclass=LanguageCls):
             _modifiers: frozenset[enum.Enum],
         ) -> str:
             """Format a C variable declaration."""
+            lhs = self._record_binding_lhs(data)
+            if lhs is not None and lhs.endswith("[]"):
+                return f"{lhs[:-2]} {name}[] = {value};"
+            if lhs is not None:
+                return f"{lhs} {name} = {value};"
             wrapped = format_entry(data, value)
             return f"CVal {name} = {wrapped};"
 
@@ -918,12 +1433,20 @@ class C(metaclass=LanguageCls):
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
-        """Callable that formats an assignment to an existing variable."""
+        """Callable that formats an assignment to an existing variable.
+
+        The combined declaration+assignment form is only exercised for a
+        top-level record-shaped dict, so a ``RECORD`` reassignment is a
+        plain ``my_data = (struct Record0){...};`` struct copy.
+        """
         format_entry = self._format_entry
 
         @beartype
         def _format_assign(name: str, value: str, data: Value) -> str:
             """Format a C variable assignment."""
+            lhs = self._record_binding_lhs(data)
+            if lhs is not None and not lhs.endswith("[]"):
+                return f"{name} = {value};"
             wrapped = format_entry(data, value)
             return f"{name} = {wrapped};"
 

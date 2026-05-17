@@ -172,6 +172,26 @@ Next
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  The default (``ERROR``) ``Any`` output is unchanged.  See
   #2474.
+- :class:`~literalizer.C` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python`, :class:`~literalizer.Cpp` and
+  :class:`~literalizer.Swift`).  Each record-shaped dict (non-empty,
+  string-keyed) becomes a generated aggregate ``struct`` declared in
+  the preamble plus a matching ``(struct Record0){.field = value,
+  ...}`` C99 designated-initializer compound literal, so a
+  record-shaped dict that mixes scalars with a container is rendered
+  with cleanly typed members rather than the tagged ``CVal`` union.
+  Field names are the dict keys verbatim and each generated ``struct``
+  is auto-named ``Record0``, ``Record1``, ...  A scalar member maps to
+  its exact C type, a nested record dict to its generated ``struct``
+  type, and a list whose every element is a record-shaped dict to a
+  fixed-size ``struct`` array member.  Every other container (a scalar
+  or heterogeneous list, or an empty list) is typed a pointer to
+  ``CVal`` and rendered as a ``CVal`` array literal, reusing C's
+  existing tagged union for arbitrary heterogeneity.  The default
+  (``ERROR``) ``CVal`` output is unchanged.  See #2476.
 - :class:`~literalizer.V` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
