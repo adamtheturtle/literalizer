@@ -1,7 +1,6 @@
 """Language-specific tests for literalizer converter."""
 
 import dataclasses
-import datetime
 import textwrap
 from typing import ClassVar
 
@@ -13,54 +12,10 @@ from literalizer import (
     literalize_call,
 )
 from literalizer.languages import (
-    Cobol,
     Dart,
-    Dhall,
-    Go,
     Haskell,
-    Matlab,
     Python,
-    Rust,
-    Sml,
 )
-
-COBOL = Cobol(
-    date_format=Cobol.date_formats.ISO,
-    datetime_format=Cobol.datetime_formats.ISO,
-    bytes_format=Cobol.bytes_formats.HEX,
-    sequence_format=Cobol.sequence_formats.SEQUENCE,
-)
-
-
-def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
-    """Whole-hour timezone offsets do not include zero minutes."""
-    result = Python(
-        date_format=Python.date_formats.PYTHON,
-        datetime_format=Python.datetime_formats.PYTHON,
-    ).format_datetime(
-        datetime.datetime(
-            year=2024,
-            month=1,
-            day=1,
-            hour=12,
-            tzinfo=datetime.timezone(offset=datetime.timedelta(hours=5)),
-        )
-    )
-
-    assert result == (
-        "datetime.datetime("
-        "year=2024, "
-        "month=1, "
-        "day=1, "
-        "hour=12, "
-        "minute=0, "
-        "second=0, "
-        "tzinfo=datetime.timezone("
-        "offset=datetime.timedelta(hours=5)"
-        ")"
-        ")"
-    )
-
 
 # Issue #2518 replaced the per-language ``datetime.time`` coverage
 # shims with golden-file cases, but the
@@ -104,7 +59,27 @@ def test_python_time_union_annotation_renders() -> None:
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
-    """Explicit Haskell epoch datetimes use the integer constructor."""
+    """Explicit Haskell epoch datetimes use the integer constructor.
+
+    Issue #2519 migrated the production-language string-assertion tests
+    in this module to golden-file cases, but this one cannot ride the
+    golden harness for two independent reasons, so it stays a focused
+    public-API pytest test (like the Dart ``skip_null_dict_values``
+    cases below and the #2518 ``time`` union arm above):
+
+    * It is the only thing that exercises the
+      :attr:`~literalizer._literalize.LiteralizeResult.code` arm that
+      joins ``body_preamble`` / ``pre_declaration_comments`` ahead of
+      the declaration.  That arm only fires when ``wrap_in_file`` is
+      ``False`` (otherwise the file wrapper absorbs the preamble), but
+      every golden-file harness path calls ``literalize`` with
+      ``wrap_in_file=True``, so no generated golden can reach it.
+    * It pins the Haskell ``format_datetime`` override that fires only
+      when ``datetime_format == EPOCH`` *and* ``numeric_style ==
+      EXPLICIT``.  No variant axis crosses ``datetime_format`` with
+      ``numeric_style``, so there is no golden configuration that
+      activates the override.
+    """
     result = literalize(
         source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
         input_format=InputFormat.YAML,
@@ -124,24 +99,6 @@ def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
         '    ("ts", HInt 1705321800),\n'
         '    ("name", HStr "hi")\n'
         "    ]"
-    )
-
-
-def test_sml_negative_epoch_datetime_parenthesizes_int_constructor() -> None:
-    """Negative SML epoch datetimes wrap the converted integer."""
-    result = literalize(
-        source="1900-01-01T00:00:00+00:00",
-        input_format=InputFormat.YAML,
-        language=Sml(datetime_format=Sml.datetime_formats.EPOCH),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data"),
-    )
-
-    assert result.code == (
-        "datatype val_t =\n"
-        "    SInt of LargeInt.int\n"
-        "val my_data : val_t = SInt (~2208988800)"
     )
 
 
@@ -229,91 +186,6 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
     )
 
 
-def test_matlab_dict_key_with_quote() -> None:
-    """MATLAB struct keys containing double quotes are decoded correctly.
-
-    The ``_decode_matlab_string_expr`` helper must handle ``""`` inside a
-    double-quoted string, which represents a literal ``"`` character.
-    """
-    yaml_string = '{"hello \\"world\\"": 1}\n'
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=Matlab(
-            date_format=Matlab.date_formats.ISO,
-            datetime_format=Matlab.datetime_formats.ISO,
-            bytes_format=Matlab.bytes_formats.HEX,
-            sequence_format=Matlab.sequence_formats.CELL_ARRAY,
-        ),
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-
-    assert result.code == "'hello \"world\"', 1"
-
-
-def test_cobol_key_name_trailing_hyphen_after_truncation() -> None:
-    """COBOL data names must not end with a hyphen after truncation."""
-    long_key = "a-b-c-d-e-f-g-h-i-j-k-l-m-n-o"
-    yaml_string = f'"{long_key}": 1\n'
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=COBOL,
-        pre_indent_level=1,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    for line in result.code.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("05 F-"):
-            name = stripped.split()[1]
-            assert not name.endswith("-")
-
-
-def test_literalize_call_wrap_in_file_emits_stubs() -> None:
-    """``wrap_in_file=True`` produces a self-contained file that
-    defines the ``target_function`` so the output compiles on its own.
-    """
-    go_result = literalize_call(
-        source="[[1, 2]]",
-        input_format=InputFormat.JSON,
-        language=Go(),
-        target_function="process",
-        parameter_names=["a", "b"],
-        wrap_in_file=True,
-    )
-    expected_go = textwrap.dedent(
-        text="""\
-        package main
-        func process(args ...any) any { return nil }
-
-        func main() {
-        process(1, 2)
-        }""",
-    )
-    assert go_result.code == expected_go
-    assert not go_result.preamble
-    assert not go_result.body_preamble
-
-    py_result = literalize_call(
-        source="[[1, 2]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["a", "b"],
-        wrap_in_file=True,
-    )
-    expected_py = textwrap.dedent(
-        text="""\
-        def process(*_args: object, **_kwargs: object) -> object: ...
-        process(a=1, b=2)""",
-    )
-    assert py_result.code == expected_py
-    assert not py_result.preamble
-
-
 def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
     """When ``call_transform`` consumes the call result, the stub
     returns a value instead of ``void``.
@@ -333,19 +205,6 @@ def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
         emit(process(a=1, b=2))""",
     )
     assert result.code == expected
-
-
-def test_dhall_quoted_dict_key() -> None:
-    """Dhall backtick-label validation decodes simple escapes."""
-    result = literalize(
-        source='{"a\\"b": 1}\n',
-        input_format=InputFormat.YAML,
-        language=Dhall(),
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-
-    assert result.code == '{\n  `a"b` = +1,\n}'
 
 
 def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
@@ -473,33 +332,3 @@ def test_haskell_without_ref_values_strips_per_element_ref() -> None:
 
     assert result.types_present == frozenset({list})
     assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:
-    """Epoch datetime variants use the configured integer type."""
-    rust = Rust(
-        datetime_format=Rust.datetime_formats.EPOCH,
-        heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
-    )
-    timestamp = datetime.datetime(
-        year=2024,
-        month=1,
-        day=1,
-        tzinfo=datetime.UTC,
-    )
-    result = literalize(
-        source=f"- {timestamp.isoformat()}\n- 1\n",
-        input_format=InputFormat.YAML,
-        language=rust,
-        variable_form=None,
-    )
-
-    assert result.preamble == (
-        "enum Value {",
-        "    I64(i64),",
-        "    I32(i32),",
-        "}",
-    )
-    assert result.code == (
-        "vec![\n    Value::I64(1704067200),\n    Value::I32(1),\n]"
-    )
