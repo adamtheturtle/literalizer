@@ -5,7 +5,7 @@ import datetime
 import enum
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, assert_never
+from typing import ClassVar
 
 from beartype import beartype
 
@@ -75,60 +75,18 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
-# The Haxe ``Int`` is a 32-bit signed integer on static targets; only
-# values inside this range are guaranteed to round-trip as an ``Int``.
-# Wider values are annotated as ``Float`` (an ``Int`` literal converts
-# implicitly to ``Float``, so the annotation is always safe).
-_I32_MIN = -(2**31)
-_I32_MAX = 2**31 - 1
-
 
 @beartype
-def _haxe_scalar_hint(
-    *,
-    data: Scalar,
-    date_hint: str,
-    datetime_hint: str,
-) -> str:
-    """Derive the Haxe annotation for a scalar value."""
-    match data:
-        case bool():
-            hint = "Bool"
-        case int():
-            hint = "Int" if _I32_MIN <= data <= _I32_MAX else "Float"
-        case float():
-            hint = "Float"
-        case str() | bytes():
-            hint = "String"
-        case datetime.datetime():
-            hint = datetime_hint
-        case datetime.date():
-            hint = date_hint
-        case datetime.time():
-            hint = "String"
-        case None:
-            hint = "Dynamic"
-        case _ as unreachable:
-            assert_never(unreachable)
-    return hint
-
-
-@beartype
-def _haxe_type_hint(
-    *,
-    data: Value,
-    date_hint: str,
-    datetime_hint: str,
-) -> str:
-    """Derive a Haxe type annotation from *data*.
+def _haxe_type_hint(data: Value, /) -> str:
+    """Derive the coarse Haxe annotation for *data*.
 
     Every collection literal is rendered with an explicit
-    ``(... : Array<Dynamic>)`` / ``(... : Map<String, Dynamic>)`` cast,
-    so the matching variable annotation is the same coarse type
-    regardless of element types.
+    ``(... : Array<Dynamic>)`` / ``(... : Map<String, Dynamic>)`` cast
+    and every scalar is assignable to ``Dynamic``, so the variable
+    annotation is the same coarse type regardless of element types.
     """
     match data:
         case dict():
@@ -136,11 +94,7 @@ def _haxe_type_hint(
         case list() | set():
             return "Array<Dynamic>"
         case _:
-            return _haxe_scalar_hint(
-                data=data,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-            )
+            return "Dynamic"
 
 
 @beartype
@@ -151,16 +105,9 @@ def _format_haxe_typed_declaration(
     data: Value,
     _modifiers: frozenset[enum.Enum],
     keyword: str,
-    date_hint: str,
-    datetime_hint: str,
 ) -> str:
     """Format a Haxe variable declaration with an explicit type."""
-    hint = _haxe_type_hint(
-        data=data,
-        date_hint=date_hint,
-        datetime_hint=datetime_hint,
-    )
-    return f"{keyword}{name}:{hint} = {value};"
+    return f"{keyword}{name}:{_haxe_type_hint(data)} = {value};"
 
 
 @beartype
@@ -512,8 +459,6 @@ class Haxe(metaclass=LanguageCls):
                 [str, str, Value, frozenset[enum.Enum]], str
             ],
             keyword: str,
-            date_hint: str,
-            datetime_hint: str,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter.
 
@@ -539,8 +484,6 @@ class Haxe(metaclass=LanguageCls):
                     data=data,
                     _modifiers=modifiers,
                     keyword=keyword,
-                    date_hint=date_hint,
-                    datetime_hint=datetime_hint,
                 )
 
             return _typed_formatter
@@ -921,20 +864,6 @@ class Haxe(metaclass=LanguageCls):
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=f"{self.declaration_style.name.lower()} ",
-            date_hint=(
-                "String"
-                if self.date_format.value.type_produced is str
-                else "Date"
-            ),
-            datetime_hint=(
-                "Int"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "String"
-                    if self.datetime_format.value.type_produced is str
-                    else "Date"
-                )
-            ),
         )
 
     @cached_property
