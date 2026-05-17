@@ -73,8 +73,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_ref_identifier,
@@ -605,13 +603,51 @@ def _c_call_stub(
 
 
 @beartype
+def _format_c_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a C declaration binding a call result.
+
+    A literal binding wraps the right-hand side in a designated-
+    initializer compound literal that encodes the value's runtime type:
+    a tagged-union projection for the default strategy, or
+    ``struct Record0 my_data = (struct Record0){...};`` under the
+    ``RECORD`` strategy.  That is wrong for a call, whose return type is
+    opaque to the renderer and is neither a union-field projection nor a
+    generated ``struct``.
+
+    C has no type inference, so the binding still needs an explicit
+    declared type.  No caller-supplied return-type hint is required:
+    every generated call stub returns the universal tagged ``CVal``
+    union (a ``StubReturn.VALUE`` stub returns ``CVal``), so the call
+    result's static type is always ``CVal`` -- exactly the type a C
+    literal binding already declares.  The only call-vs-literal
+    difference is dropping the value-wrapping compound literal, so the
+    call result is bound directly with a plain ``CVal`` declaration.
+    """
+    return f"CVal {name} = {value};"
+
+
+@beartype
+def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
+    """Format a C reassignment binding a call result.
+
+    The call-expression counterpart of :func:`_format_c_call_declaration`;
+    the variable is already declared ``CVal``, so the call result is
+    assigned directly with no compound-literal wrapping.
+    """
+    return f"{name} = {value};"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class C(metaclass=LanguageCls):
     """C language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -624,7 +660,12 @@ class C(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # A call result is bound directly with an explicit ``CVal`` type
+    # (every generated call stub returns the universal tagged ``CVal``
+    # union, so no caller-supplied return-type hint is needed); the
+    # value-wrapping designated-initializer compound literal a C literal
+    # binding uses is dropped.  See :func:`_format_c_call_declaration`.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1550,6 +1591,33 @@ class C(metaclass=LanguageCls):
             return f"{name} = {wrapped};"
 
         return _format_assign
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        A literal binding wraps the right-hand side in a designated-
+        initializer compound literal that encodes the value's runtime
+        type; a call's return type is opaque to the renderer and is
+        always the universal ``CVal`` union (the type every generated
+        call stub returns), so the call result is bound directly with a
+        plain ``CVal`` declaration and no compound-literal wrapping.
+        """
+        return _format_c_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; the compound-literal
+        wrapping is dropped since the call already yields a ``CVal``.
+        """
+        return _format_c_call_assignment
 
     @cached_property
     def static_preamble(self) -> Sequence[str]:
