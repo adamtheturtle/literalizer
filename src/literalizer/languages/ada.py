@@ -57,8 +57,6 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     identity_call_ref_identifier,
     identity_call_statement,
@@ -171,6 +169,51 @@ def _format_variable_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
+def _format_ada_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format an Ada object declaration binding a call result.
+
+    A literal binding wraps the right-hand side in the ``A_Val``
+    constructor chosen from the parsed literal's runtime type
+    (``AInt``/``AFloat``/``AStr``/...).  That is wrong for a call, whose
+    return type is opaque to the renderer and whose result is not an
+    ``A_Val`` projection of a known scalar.
+
+    Ada has no type inference for object declarations, so the binding
+    still needs an explicit declared type.  No caller-supplied
+    return-type hint is required: every generated Ada call stub returns
+    ``A_Val`` (see :func:`_ada_call_stub`), so the call result's static
+    type is always ``A_Val`` -- exactly the type a literal binding
+    already declares.  The only call-vs-literal difference is dropping
+    the value-wrapping ``A_Val`` constructor, so the call result is
+    bound directly with a plain ``A_Val`` declaration.
+
+    Example: ``"my_data"`` and ``"Make_Widget (AInt (42))"`` →
+    ``"my_data : A_Val := Make_Widget (AInt (42));"``
+    """
+    return f"{name} : A_Val := {value};"
+
+
+@beartype
+def _format_ada_call_assignment(name: str, value: str, _data: Value) -> str:
+    """Format an Ada assignment binding a call result.
+
+    The call-expression counterpart of
+    :func:`_format_ada_call_declaration`; the variable is already
+    declared ``A_Val``, so the call result is assigned directly with no
+    ``A_Val`` constructor wrapping.
+
+    Example: ``"my_data"`` and ``"Make_Widget (AInt (42))"`` →
+    ``"my_data := Make_Widget (AInt (42));"``
+    """
+    return f"{name} := {value};"
+
+
+@beartype
 def _ada_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -224,8 +267,6 @@ class Ada(metaclass=LanguageCls):
     """Ada language specification."""
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -238,7 +279,12 @@ class Ada(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # A call result is bound directly with an explicit ``A_Val`` type
+    # (every generated Ada call stub returns ``A_Val``, so no
+    # caller-supplied return-type hint is needed); the value-wrapping
+    # ``A_Val`` constructor an Ada literal binding uses is dropped.  See
+    # :func:`_format_ada_call_declaration`.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     allows_empty_call_parens = False
@@ -646,6 +692,32 @@ class Ada(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return _format_variable_assignment
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        Unlike :attr:`format_variable_declaration`, the call result is
+        opaque (it is whatever the ``A_Val``-returning call stub
+        returns), so the call result is bound directly with a plain
+        ``A_Val`` declaration and no ``A_Val`` constructor wrapping.
+        """
+        return _format_ada_call_declaration
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_call_variable_declaration`; the ``A_Val``
+        constructor wrapping is dropped since the call already yields an
+        ``A_Val``.
+        """
+        return _format_ada_call_assignment
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

@@ -12,6 +12,23 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Ada` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  An Ada literal binding wraps
+  the right-hand side in the ``A_Val`` constructor chosen from the
+  parsed literal's runtime type, which is wrong for a call whose return
+  type is opaque to the renderer; the call result is now bound directly
+  as ``my_data : A_Val := Make_Widget (...);``.  No caller-supplied
+  return-type hint is required: every generated Ada call stub returns
+  ``A_Val``, so the binding's declared type is always ``A_Val`` (the
+  same type an Ada literal binding declares).  Because the binding is a
+  typed declaration while the :class:`~literalizer.ExistingVariable`
+  form is a bare assignment to an already-declared name, only the
+  :class:`~literalizer.NewVariable` form is golden-covered.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Follow-up to #1961.  See #2509.
 - :class:`~literalizer.Fortran` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
