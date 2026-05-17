@@ -22,6 +22,11 @@ Next
   inside ``static function main()``.  A new ``lint-haxe`` job in
   ``.github/workflows/lint.yml`` compiles and runs every ``.hx``
   fixture in a single ``haxe --interp`` invocation.
+
+2026.05.17.1
+------------
+
+
 - :class:`~literalizer.CSharp` array sequence-format no longer emits
   ``using System;`` or ``using System.Collections.Generic;``.  A C#
   array literal (``new T[] {...}``) is a built-in language feature and
