@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System;
 record Record1(int Id, string Label);
 record Record0(string Name, Record1[] Items);
 class Check {

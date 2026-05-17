@@ -12,6 +12,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.CSharp` array sequence-format no longer emits
+  ``using System;`` or ``using System.Collections.Generic;``.  A C#
+  array literal (``new T[] {...}``) is a built-in language feature and
+  requires no ``using`` directives, so those lines were dead noise on
+  the array path (for example a ``Dictionary`` whose values are arrays
+  picked up a spurious ``using System;``).  ``using
+  System.Collections.Generic;`` is still emitted for the collection
+  types that need it (``List<T>``, ``Dictionary<TKey, TValue>``, and
+  the set types), and ``using System;`` for ``System`` scalar types
+  such as ``DateOnly``.  The array empty form is now the typed
+  literal ``new T[] {}`` rather than ``Array.Empty<T>()``, keeping the
+  array path free of any ``System`` reference.  See #2524.
 - :func:`~literalizer.literalize_call` now accepts a ``bound_refs``
   argument, the call-side counterpart of
   :func:`~literalizer.literalize`'s own ``bound_refs``.  With

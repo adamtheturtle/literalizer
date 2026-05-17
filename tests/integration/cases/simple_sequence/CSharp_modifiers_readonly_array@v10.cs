@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 class Check {
 readonly object[] my_data = new object[] {
     1,

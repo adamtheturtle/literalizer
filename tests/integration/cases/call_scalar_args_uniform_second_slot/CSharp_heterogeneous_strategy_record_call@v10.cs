@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 class Check {
 static object process(object value = null, object label = null) => null;
     public static void Main() {

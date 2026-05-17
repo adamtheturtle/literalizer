@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 class Check {
 readonly double[] my_data = new double[] {
     1,
