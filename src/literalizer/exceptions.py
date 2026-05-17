@@ -414,6 +414,35 @@ class UnsupportedCallShapeError(Exception):
         self.reason = reason
 
 
+class UnsupportedLanguageOptionError(Exception):
+    """Raised when :meth:`~literalizer.LanguageCls.configured` is given a
+    :class:`~literalizer.LanguageOptions` value the target language
+    cannot accept.
+
+    This covers two cases: an option whose backing field the language
+    does not have (e.g. ``module_name`` for a language whose
+    ``supports_module_name`` is ``False``), and a format option whose
+    string value does not name a member of that language's
+    corresponding nested format enum.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        option_name: str,
+        reason: str,
+    ) -> None:
+        """Create an ``UnsupportedLanguageOptionError``."""
+        super().__init__(
+            f"{language_name} cannot be configured with option "
+            f"{option_name!r}: {reason}"
+        )
+        self.language_name = language_name
+        self.option_name = option_name
+        self.reason = reason
+
+
 class WrapCombinedInFileNotSupportedError(Exception):
     """Raised when a language does not support ``wrap_combined_in_file``.
 

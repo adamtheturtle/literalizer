@@ -12,6 +12,21 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.LanguageOptions` and
+  :meth:`~literalizer.LanguageCls.configured` provide a
+  statically-typed path for constructing a language from one generic
+  options object.  Downstream code that resolves a language class from
+  a runtime string (``dict[str, LanguageCls]``) and then applies
+  generic options can now build it with a single, fully type-checked
+  ``language_cls.configured(options=...)`` call instead of an
+  unverifiable ``**kwargs`` construction; the result is typed
+  :class:`~literalizer.Language`.  ``configured`` resolves each
+  generic option onto the concrete per-language field or nested format
+  enum internally and raises
+  :class:`~literalizer.exceptions.UnsupportedLanguageOptionError` for
+  an option a given language does not support.  This is purely an
+  additive, statically-expressible construction path; runtime
+  behavior is identical to direct construction.  See #2528.
 - :class:`~literalizer.CSharp` array sequence-format no longer emits
   ``using System;`` or ``using System.Collections.Generic;``.  A C#
   array literal (``new T[] {...}``) is a built-in language feature and

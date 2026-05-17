@@ -18,6 +18,7 @@ from literalizer._formatters.type_inference import (
     RecordShape,
 )
 from literalizer._types import Scalar, Value
+from literalizer.exceptions import UnsupportedLanguageOptionError
 
 
 @dataclasses.dataclass(frozen=True)
@@ -709,6 +710,89 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LanguageOptions:
+    """A single, generic options surface for constructing a language.
+
+    Every field is optional; a ``None`` value means "use this
+    language's default for that field".  The format-selection fields
+    take the *member name* (a ``str``) of the chosen language's
+    corresponding nested format ``Enum`` (e.g. ``string_format="SINGLE"``
+    resolves to ``SomeLanguage.StringFormats.SINGLE``), because each
+    language defines its own distinct nested enums rather than a shared
+    base.  :meth:`LanguageCls.configured` maps these generic options
+    onto the concrete per-language fields and enums internally, where
+    the concrete types are in scope, and raises
+    :class:`~literalizer.exceptions.UnsupportedLanguageOptionError` for
+    an option a given language does not support.
+
+    The plain-``str`` fields (``module_name``, the ``default_*`` element
+    and key/value type names, ``record_struct_name_prefix``, ``indent``)
+    are passed through unchanged to the languages that have them.
+    """
+
+    date_format: str | None = None
+    datetime_format: str | None = None
+    bytes_format: str | None = None
+    sequence_format: str | None = None
+    set_format: str | None = None
+    comment_format: str | None = None
+    variable_type_hints: str | None = None
+    declaration_style: str | None = None
+    dict_entry_style: str | None = None
+    dict_format: str | None = None
+    float_format: str | None = None
+    integer_format: str | None = None
+    numeric_literal_suffix: str | None = None
+    numeric_separator: str | None = None
+    numeric_style: str | None = None
+    string_format: str | None = None
+    trailing_comma: str | None = None
+    statement_terminator_style: str | None = None
+    call_style: str | None = None
+    heterogeneous_strategy: str | None = None
+    language_version: str | None = None
+    module_name: str | None = None
+    default_set_element_type: str | None = None
+    default_sequence_element_type: str | None = None
+    default_dict_key_type: str | None = None
+    default_dict_value_type: str | None = None
+    default_ordered_map_value_type: str | None = None
+    record_struct_name_prefix: str | None = None
+    indent: str | None = None
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _EnumOptionResolution:
+    """One pending format option to resolve against a nested enum.
+
+    ``enum_cls`` is the concrete nested format enum on the target
+    language; ``member_name`` is the requested member name (or ``None``
+    when the option was not supplied); ``supported`` is the language's
+    own support flag for the backing field.
+    """
+
+    option_name: str
+    member_name: str | None
+    enum_cls: type[enum.Enum]
+    supported: bool
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _StrOptionResolution:
+    """One pending plain-``str`` option to pass through.
+
+    ``value`` is the requested string (or ``None`` when the option was
+    not supplied); ``supported`` is the language's own support flag for
+    the backing field.
+    """
+
+    option_name: str
+    value: str | None
+    supported: bool
+
+
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -781,6 +865,231 @@ class LanguageCls(type):
         """Construct a language instance, typed as :class:`Language`."""
         instance: Language = super().__call__(*args, **kwargs)
         return instance
+
+    def configured(cls, *, options: LanguageOptions) -> "Language":
+        """Construct this language from a generic options surface.
+
+        This is the statically-typed construction path: ``options`` is
+        a concrete :class:`LanguageOptions`, so a call site that holds
+        only ``LanguageCls`` (e.g. a language resolved from a runtime
+        string in a ``dict[str, LanguageCls]``) is fully verifiable by
+        a type checker without ``cast`` or suppression, and the result
+        is typed :class:`Language`.
+
+        The per-language string-to-nested-enum and per-language
+        support resolution happens here, where the concrete types are
+        in scope.  A format option whose value does not name a member
+        of this language's corresponding nested enum, or any option
+        whose backing field this language does not have, raises
+        :class:`~literalizer.exceptions.UnsupportedLanguageOptionError`.
+        """
+        enum_options: tuple[_EnumOptionResolution, ...] = (
+            _EnumOptionResolution(
+                option_name="date_format",
+                member_name=options.date_format,
+                enum_cls=cls.DateFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="datetime_format",
+                member_name=options.datetime_format,
+                enum_cls=cls.DatetimeFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="bytes_format",
+                member_name=options.bytes_format,
+                enum_cls=cls.BytesFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="sequence_format",
+                member_name=options.sequence_format,
+                enum_cls=cls.SequenceFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="set_format",
+                member_name=options.set_format,
+                enum_cls=cls.SetFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="comment_format",
+                member_name=options.comment_format,
+                enum_cls=cls.CommentFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="variable_type_hints",
+                member_name=options.variable_type_hints,
+                enum_cls=cls.VariableTypeHints,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="declaration_style",
+                member_name=options.declaration_style,
+                enum_cls=cls.DeclarationStyles,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="dict_entry_style",
+                member_name=options.dict_entry_style,
+                enum_cls=cls.DictEntryStyles,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="dict_format",
+                member_name=options.dict_format,
+                enum_cls=cls.DictFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="float_format",
+                member_name=options.float_format,
+                enum_cls=cls.FloatFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="integer_format",
+                member_name=options.integer_format,
+                enum_cls=cls.IntegerFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="numeric_literal_suffix",
+                member_name=options.numeric_literal_suffix,
+                enum_cls=cls.NumericLiteralSuffixes,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="numeric_separator",
+                member_name=options.numeric_separator,
+                enum_cls=cls.NumericSeparators,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="numeric_style",
+                member_name=options.numeric_style,
+                enum_cls=cls.NumericStyles,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="string_format",
+                member_name=options.string_format,
+                enum_cls=cls.StringFormats,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="trailing_comma",
+                member_name=options.trailing_comma,
+                enum_cls=cls.TrailingCommas,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="statement_terminator_style",
+                member_name=options.statement_terminator_style,
+                enum_cls=cls.StatementTerminatorStyles,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="call_style",
+                member_name=options.call_style,
+                enum_cls=cls.CallStyles,
+                supported=cls.supports_call_style,
+            ),
+            _EnumOptionResolution(
+                option_name="heterogeneous_strategy",
+                member_name=options.heterogeneous_strategy,
+                enum_cls=cls.HeterogeneousStrategies,
+                supported=True,
+            ),
+            _EnumOptionResolution(
+                option_name="language_version",
+                member_name=options.language_version,
+                enum_cls=cls.VersionFormats,
+                supported=True,
+            ),
+        )
+        str_options: tuple[_StrOptionResolution, ...] = (
+            _StrOptionResolution(
+                option_name="module_name",
+                value=options.module_name,
+                supported=cls.supports_module_name,
+            ),
+            _StrOptionResolution(
+                option_name="default_set_element_type",
+                value=options.default_set_element_type,
+                supported=cls.supports_default_set_element_type,
+            ),
+            _StrOptionResolution(
+                option_name="default_sequence_element_type",
+                value=options.default_sequence_element_type,
+                supported=cls.supports_default_sequence_element_type,
+            ),
+            _StrOptionResolution(
+                option_name="default_dict_key_type",
+                value=options.default_dict_key_type,
+                supported=cls.supports_default_dict_key_type,
+            ),
+            _StrOptionResolution(
+                option_name="default_dict_value_type",
+                value=options.default_dict_value_type,
+                supported=cls.supports_default_dict_value_type,
+            ),
+            _StrOptionResolution(
+                option_name="default_ordered_map_value_type",
+                value=options.default_ordered_map_value_type,
+                supported=cls.supports_default_ordered_map_value_type,
+            ),
+            _StrOptionResolution(
+                option_name="record_struct_name_prefix",
+                value=options.record_struct_name_prefix,
+                supported=cls.supports_record_struct_name_prefix,
+            ),
+            _StrOptionResolution(
+                option_name="indent",
+                value=options.indent,
+                supported=True,
+            ),
+        )
+
+        kwargs: dict[str, object] = {}
+        for enum_option in enum_options:
+            if enum_option.member_name is None:
+                continue
+            if not enum_option.supported:
+                raise UnsupportedLanguageOptionError(
+                    language_name=cls.__name__,
+                    option_name=enum_option.option_name,
+                    reason="this language has no such field",
+                )
+            try:
+                member = enum_option.enum_cls[enum_option.member_name]
+            except KeyError as exc:
+                valid = ", ".join(sorted(enum_option.enum_cls.__members__))
+                raise UnsupportedLanguageOptionError(
+                    language_name=cls.__name__,
+                    option_name=enum_option.option_name,
+                    reason=(
+                        f"{enum_option.member_name!r} is not a valid "
+                        f"choice; valid choices are: {valid}"
+                    ),
+                ) from exc
+            kwargs[enum_option.option_name] = member
+
+        for str_option in str_options:
+            if str_option.value is None:
+                continue
+            if not str_option.supported:
+                raise UnsupportedLanguageOptionError(
+                    language_name=cls.__name__,
+                    option_name=str_option.option_name,
+                    reason="this language has no such field",
+                )
+            kwargs[str_option.option_name] = str_option.value
+
+        return cls(**kwargs)
 
 
 @runtime_checkable
