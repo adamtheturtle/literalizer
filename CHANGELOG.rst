@@ -12,6 +12,29 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.SystemVerilog` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  A SystemVerilog literal
+  binding wraps the right-hand side in a named ``_VVal`` struct literal
+  derived from the parsed value's runtime type, which is wrong for a
+  call whose return type is opaque to the renderer; the call result is
+  now bound directly as
+  ``static _VVal my_data = make_widget(...);``.  SystemVerilog
+  declarations are typed and have no inference, so the binding needs an
+  explicit declared type; no caller-supplied return-type hint is
+  required because every generated value-returning call stub returns
+  the universal tagged ``_VVal`` struct, so the binding's declared type
+  is always ``_VVal`` (the same type a SystemVerilog scalar literal
+  binding declares).  The call stub is emitted at module scope rather
+  than inside ``initial begin``, where a ``function`` declaration is
+  illegal.  Because the binding is a typed declaration while the
+  :class:`~literalizer.ExistingVariable` form is a bare assignment to an
+  already-declared name, only the :class:`~literalizer.NewVariable`
+  form is golden-covered.  Its ``supports_call_variable_binding``
+  language-class flag is now ``True``; existing literal-binding and
+  call-without-binding output is unchanged.  Follow-up to #1961.  See
+  #2507.
 - :class:`~literalizer.C` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
