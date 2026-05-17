@@ -247,6 +247,13 @@ jobs:
           find tests/integration/cases -name '*@jdk_16.java' -print0 > /tmp/files-java-16 && test -s /tmp/files-java-16
           xargs -0 java CheckJavaSyntax.java 16 < /tmp/files-java-16
 
+      # Basic JSON -> Java -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the JDK toolchain; `uv run` (project
+      # mode, not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_java_roundtrip.py`.
+      - name: Java roundtrip
+        run: uv run python .github/scripts/run_java_roundtrip.py
+
       - name: Lint Php
         run: |-
           find tests/integration/cases -name '*.php' -print0 > /tmp/files-php && test -s /tmp/files-php
