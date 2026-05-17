@@ -1480,8 +1480,6 @@ def _variable_form_expected_exception(
         return VariableNameNotSupportedError
     if not lang_cls.call_returns_expression:
         return UnsupportedCallShapeError
-    if not lang_cls.supports_call_variable_binding:
-        return UnsupportedCallShapeError
     return None
 
 

@@ -3920,15 +3920,6 @@ def _validate_call_variable_form(
                 "so the call result cannot be bound to a variable"
             ),
         )
-    if not language.supports_call_variable_binding:
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                "this language's variable-declaration template wraps or "
-                "transforms the right-hand side in a way that is only "
-                "valid for literal values, not call expressions"
-            ),
-        )
 
 
 @beartype

@@ -279,12 +279,6 @@ class Ada(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # A call result is bound directly with an explicit ``A_Val`` type
-    # (every generated Ada call stub returns ``A_Val``, so no
-    # caller-supplied return-type hint is needed); the value-wrapping
-    # ``A_Val`` constructor an Ada literal binding uses is dropped.  See
-    # :func:`_format_ada_call_declaration`.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     allows_empty_call_parens = False

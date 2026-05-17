@@ -24,6 +24,12 @@ Next
   across the union of types and reconciling the data-dependent header
   block into a single copy covering every type replaces the previous
   multi-line preamble-filter heuristic.  See #1946.
+- The ``supports_call_variable_binding`` language-class flag has been
+  removed.  Every language now binds a :func:`~literalizer.literalize_call`
+  result directly with no literal-only wrapping, so the flag was
+  ``True`` for all languages and its
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError` rejection
+  path was unreachable.  No generated output changes.  See #2521.
 
 2026.05.17
 ----------
