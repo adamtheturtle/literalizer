@@ -12,6 +12,18 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.Elixir` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  The call stub is emitted at
+  module scope and the binding lives inside the generated ``def x do``
+  entry function, so ``my_data = make_widget(42)`` no longer needs a
+  ``def`` nested inside another ``def``.  Because Elixir rebinds names
+  with ``=``, the :class:`~literalizer.ExistingVariable` output is
+  identical to the :class:`~literalizer.NewVariable` output.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Follow-up to #1961.  See #2226.
 - :class:`~literalizer.Python` now emits ``from __future__ import
   annotations`` only when the rendered code actually contains an
   annotation: a ``RECORD``-strategy ``@dataclasses.dataclass`` block
