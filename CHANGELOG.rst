@@ -18,6 +18,29 @@ Next
   ``format_call_preamble_stub`` methods, so it is now re-exported from
   the package root for consumers implementing that protocol.  See
   #1947.
+- :class:`~literalizer.D` gains the ``RECORD``
+  ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
+  :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
+  :class:`~literalizer.Scala`, :class:`~literalizer.Java`,
+  :class:`~literalizer.Python` and :class:`~literalizer.Cpp`).  The
+  default (``ERROR``) strategy keeps the homogeneous
+  ``std.json.JSONValue`` model; under ``RECORD`` each record-shaped
+  dict (non-empty, string-keyed) becomes a generated
+  ``struct RecordN { ... }`` declared in the preamble plus a matching
+  positional ``Record0(value, ...)`` constructor literal whose fields
+  are raw D values, so a record-shaped dict that mixes scalars with a
+  container is representable.  Field names are the dict keys verbatim
+  and field types are inferred structurally from the value (``long``/
+  ``ulong``, ``double``, ``bool``, ``string``, ``typeof(null)``,
+  ``T[]`` arrays, nested ``RecordN``).  Without the ``JSONValue``
+  wrapper the whole value is raw and the binding drops its
+  ``JSONValue``; the class-name prefix is configurable via the new
+  ``record_struct_name_prefix`` constructor parameter and its
+  ``supports_record_struct_name_prefix`` language-class flag is now
+  ``True``.  A heterogeneous scalar list, a set, an ordered map or a
+  non-record dict has no raw D representation and raises
+  :class:`~literalizer.exceptions.UnrepresentableInputError` (the
+  cross-language decision for these is tracked in #2317).  See #2478.
 - :class:`~literalizer.Cpp` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
