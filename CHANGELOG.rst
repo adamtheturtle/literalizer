@@ -24,6 +24,11 @@ Next
   across the union of types and reconciling the data-dependent header
   block into a single copy covering every type replaces the previous
   multi-line preamble-filter heuristic.  See #1946.
+
+2026.05.17
+----------
+
+
 - :class:`~literalizer.D` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
