@@ -54,10 +54,17 @@ from .language_specs import (
 # is meaningful for it -- under the default strategy it is just another
 # heterogeneous dict already covered elsewhere -- so it stays out of
 # the all-languages base discovery.
+# ``record_nonrecord_dict_field`` carries a record-shaped dict whose
+# ``meta`` field is an empty (non-record) dict.  It exists only to
+# exercise the per-language rejection of a non-record-dict record field
+# under the ``RECORD`` strategy (the cross-language decision in #2317):
+# the Nim variant builder is the sole consumer, so it stays out of the
+# all-languages base discovery.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
         "record_list_of_records",
+        "record_nonrecord_dict_field",
         "tuple_pair_record_field",
         "tuple_pair_top_level",
         "tuple_triple_record_field",

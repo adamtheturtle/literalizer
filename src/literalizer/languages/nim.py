@@ -3,7 +3,7 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar, assert_never
@@ -43,6 +43,14 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.record_strategy import (
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    RecordStrategy,
+    build_record_strategy,
+)
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     iter_wrapped_scalars,
@@ -64,6 +72,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -91,7 +100,10 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 
 @beartype
@@ -288,7 +300,7 @@ def _nim_variant_for_scalar(  # pylint: disable=too-complex
     return signature
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, eq=False)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Nim heterogeneous-values strategy.
 
@@ -298,6 +310,12 @@ class _HeterogeneousStrategyConfig:
     preamble callable (e.g. the object-variant type declaration).  Both
     receive the Nim instance's configurable variant-type name and
     scalar type names so the resulting functions can close over them.
+
+    ``eq=False`` keeps identity equality so two strategies that happen
+    to share builder functions (``ERROR`` and ``RECORD`` both reuse the
+    no-op error builders -- ``RECORD``'s real behavior/preamble are
+    resolved per-instance) stay distinct enum members instead of Python
+    folding the second into an alias of the first.
     """
 
     build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
@@ -431,6 +449,75 @@ def _build_object_variant_preamble(
         return tuple(lines)
 
     return _preamble
+
+
+# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
+# names (no ``record_shape_names``, consistent with the other non-Rust
+# ports), so the shared renderer always gets an empty custom-name
+# mapping.
+_NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+    mapping={},
+)
+
+
+@beartype
+def _nim_record_field_identifier(key: str, /) -> str:
+    """Return the Nim ``object`` field name for a dict *key*.
+
+    Nim has style-insensitive identifiers that accept the original
+    key, but the generated declaration and ``Record0(field: value,
+    ...)`` literal read most naturally in the conventional Nim
+    ``camelCase`` (e.g. ``is_done`` -> ``isDone``); the same conversion
+    is applied to both so they always agree.
+    """
+    return IdentifierCase.CAMEL.convert(name=key)
+
+
+@beartype
+def _nim_render_record_declaration(
+    name: str,
+    fields: Sequence[RecordDeclarationField],
+    /,
+    *,
+    indent: str,
+) -> str:
+    """Render a Nim ``type Name = object`` declaration with one
+    indented ``field: Type`` member per resolved field.
+
+    Emitted at module scope by the data-dependent preamble (each
+    fixture is its own compilation unit, so file-scope ``type``
+    sections never collide); the matching record *literal* stays in
+    the value position via the normal value path.
+    """
+    lines = [f"type {name} = object"]
+    lines += [
+        f"{indent}{field.identifier}: {field.type_name}" for field in fields
+    ]
+    return "\n".join(lines)
+
+
+@beartype
+def _nim_record_literal(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a Nim ``Name(field: value, ...)`` object-construction
+    literal as structured pieces for the shared compact/multiline
+    layout code.
+
+    A trailing comma after the last field is valid in a Nim object
+    constructor, so the language-wide trailing-comma config applies
+    unchanged in the multiline form.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}(",
+        entries=tuple(
+            f"{field.identifier}: {field.formatted}" for field in fields
+        ),
+        closer=")",
+        compact_pad="",
+    )
 
 
 @beartype
@@ -583,7 +670,7 @@ class Nim(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    supports_record_struct_name_prefix = False
+    supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
@@ -910,6 +997,41 @@ class Nim(metaclass=LanguageCls):
         ``CONST`` requires a compile-time-expressible initializer.
         """
 
+        # RECORD intentionally reuses the inert ERROR builders (its
+        # real behavior/preamble are resolved per-instance, see
+        # ``heterogeneous_behavior`` / ``data_dependent_preamble``);
+        # ``_HeterogeneousStrategyConfig`` uses identity equality so
+        # this stays a distinct member rather than an alias of ERROR,
+        # which ``PIE796`` cannot tell apart.
+        RECORD = _HeterogeneousStrategyConfig(  # noqa: PIE796
+            build_behavior=_build_error_behavior,
+            build_preamble=_build_error_preamble,
+        )
+        """Render each record-shaped dict (non-empty, string-keyed) as a
+        generated module-scope ``type Record0 = object`` declaration plus
+        a matching ``Record0(field: value, ...)`` literal, so a dict
+        mixing scalars with a container is representable even though a
+        Nim ``Table`` requires a homogeneous value type.
+
+        Like ``OBJECT_VARIANT`` this switches collections to their
+        native Nim constructors (``@[...]``, ``{...}.toTable``) so a
+        ``seq``/``Table`` field is well-typed, but it wraps no scalars
+        and emits no ``json``/``%*`` rendering.  Auto names
+        ``Record0``, ``Record1``, ... (prefix configurable via
+        :attr:`Nim.record_struct_name_prefix`); **no**
+        ``record_shape_names``, **no** ``record_unify_optional_fields``,
+        consistent with the other non-Rust ports.  Its behavior and
+        struct preamble need the per-instance renderer, so they are
+        resolved in :attr:`heterogeneous_behavior` /
+        :attr:`data_dependent_preamble` rather than from the enum
+        member's config builders (it reuses the no-op ``ERROR``
+        builders, kept a distinct member by
+        :class:`_HeterogeneousStrategyConfig`'s identity equality).
+        Incompatible with ``DeclarationStyles.CONST`` for the same
+        reason as ``OBJECT_VARIANT``: ``@[...]`` / ``.toTable`` are
+        runtime constructors.
+        """
+
     heterogeneous_strategies = HeterogeneousStrategies
 
     class VersionFormats(enum.Enum):
@@ -996,6 +1118,7 @@ class Nim(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     heterogeneous_value_variant_name: str = "Value"
+    record_struct_name_prefix: str = "Record"
     call_style: CallStyles = CallStyles.POSITIONAL
     # Keep in sync with the ``NIM_VERSION`` pin in the ``lint-nim`` job
     # of ``.github/workflows/lint.yml``; the pinned compiler must be
@@ -1006,21 +1129,22 @@ class Nim(metaclass=LanguageCls):
     def __post_init__(self) -> None:
         """Validate that incompatible formats are not combined.
 
-        ``OBJECT_VARIANT`` replaces the JSON-based rendering for Nim
-        with runtime ``.toTable`` / ``@[]`` constructors, so ``CONST``
-        (which requires a compile-time-expressible initializer)
-        cannot be combined with it.
+        ``OBJECT_VARIANT`` and ``RECORD`` replace the JSON-based
+        rendering for Nim with runtime ``.toTable`` / ``@[]``
+        constructors, so ``CONST`` (which requires a
+        compile-time-expressible initializer) cannot be combined with
+        either.
         """
         _decl_cls = type(self.declaration_style)
         _strategy_cls = type(self.heterogeneous_strategy)
-        if (
-            self.declaration_style is _decl_cls.CONST
-            and self.heterogeneous_strategy is _strategy_cls.OBJECT_VARIANT
+        if self.declaration_style is _decl_cls.CONST and (
+            self.heterogeneous_strategy
+            in {_strategy_cls.OBJECT_VARIANT, _strategy_cls.RECORD}
         ):
             msg = (
                 "Nim CONST requires a constant-expression initializer, "
-                "but OBJECT_VARIANT produces runtime .toTable / @[] "
-                "calls which are not constant expressions. "
+                f"but {self.heterogeneous_strategy.name} produces runtime "
+                ".toTable / @[] calls which are not constant expressions. "
                 "Use VAR or LET instead."
             )
             raise IncompatibleFormatsError(msg)
@@ -1084,8 +1208,16 @@ class Nim(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits a Nim
-        ``type`` block declaring the object variant used to wrap
+        For ``HeterogeneousStrategies.RECORD`` emits one
+        ``type Record0 = object`` block per distinct record shape in
+        the data, preceded by ``import tables`` and the
+        ``UnusedImport`` opt-out: a non-record dict (the empty dict, or
+        an ordered map) renders as a runtime ``Table`` that needs the
+        import, while a pure-record fixture leaves it unused, so the
+        pragma keeps the always-present import warning-free rather than
+        making the import data-dependent.  For
+        ``HeterogeneousStrategies.OBJECT_VARIANT`` emits
+        a Nim ``type`` block declaring the object variant used to wrap
         heterogeneous scalars.  For ``HeterogeneousStrategies.ERROR``
         emits ``("import json",)`` when the rendered output will use
         the ``%*`` JSON-construction operator (every variable
@@ -1094,6 +1226,22 @@ class Nim(metaclass=LanguageCls):
         ``json`` unconditionally would trigger the Nim compiler's
         ``UnusedImport`` warning.
         """
+        if self._uses_record:
+            record_preamble = self._record_strategy.preamble
+
+            def _record_preamble(data: Value, /) -> tuple[str, ...]:
+                """Emit the ``object`` type blocks, preceded by the
+                ``UnusedImport`` opt-out and ``import tables`` (used by
+                any non-record dict / ordered map, harmlessly suppressed
+                otherwise).
+                """
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    "import tables",
+                    *record_preamble(data),
+                )
+
+            return _record_preamble
         strategy_preamble = self.heterogeneous_strategy.value.build_preamble(
             self.heterogeneous_value_variant_name,
             self._heterogeneous_variant_date_type,
@@ -1128,7 +1276,15 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the behavior for the chosen heterogeneous strategy."""
+        """Return the behavior for the chosen heterogeneous strategy.
+
+        ``RECORD`` resolves to the shared record behavior (its value
+        needs the per-instance renderer, so it cannot be stored on the
+        enum member); ``ERROR`` and ``OBJECT_VARIANT`` use their
+        config-built behaviors.
+        """
+        if self._uses_record:
+            return self._record_strategy.behavior
         return self.heterogeneous_strategy.value.build_behavior(
             self.heterogeneous_value_variant_name,
             self._heterogeneous_variant_date_type,
@@ -1142,6 +1298,123 @@ class Nim(metaclass=LanguageCls):
         """
         cls = type(self.heterogeneous_strategy)
         return self.heterogeneous_strategy is cls.OBJECT_VARIANT
+
+    @cached_property
+    def _uses_record(self) -> bool:
+        """Whether the instance is configured for the RECORD
+        heterogeneous strategy.
+        """
+        cls = type(self.heterogeneous_strategy)
+        return self.heterogeneous_strategy is cls.RECORD
+
+    @cached_property
+    def _uses_native_nim_collections(self) -> bool:
+        """Whether collections render with their native Nim
+        constructors (``@[...]`` / ``{...}.toTable``) rather than the
+        ``%*`` JSON form.
+
+        Both ``OBJECT_VARIANT`` (its wrapped values are native objects)
+        and ``RECORD`` (its struct fields must be well-typed ``seq`` /
+        ``Table`` values) need this; the default ``ERROR`` strategy
+        keeps the JSON rendering.
+        """
+        return self._uses_object_variant or self._uses_record
+
+    def _nim_value_field_type(  # noqa: C901, PLR0911  # pylint: disable=too-complex
+        self,
+        value: Value,
+        /,
+    ) -> str:
+        """Return the Nim ``object`` field type for a raw
+        (non-nested-record) record field value, derived structurally.
+
+        ``None`` maps to the Nim ``pointer`` type, whose only value is
+        ``nil`` (the null literal this port emits), matching how the
+        other ports give a null field their top type.  Other scalars
+        map to their Nim type and a homogeneous list maps to
+        ``seq[<element type>]`` (an empty list keeps the
+        ``newSeq[string]()`` placeholder element type the value
+        formatter widens it to).  A ``date`` / ``datetime`` is the
+        spec-driven Nim type only when the active format renders it as
+        a plain ``string`` (ISO) or ``int`` (epoch); under the default
+        ``NIM`` table-literal format it would need a ``%*``
+        :class:`json.JsonNode` the record literal cannot carry, so it
+        is rejected.  A set, an ordered map or a non-record dict as a
+        record field is out of scope for the base ``RECORD`` port (the
+        cross-language decision is tracked in #2317; Rust rejects these
+        too) and is rejected with :exc:`UnrepresentableInputError` so
+        the case is skipped rather than emitting non-compiling Nim.
+        """
+        match value:
+            case None:
+                return "pointer"
+            case bool():
+                return "bool"
+            case int():
+                return "int"
+            case float():
+                return "float"
+            case str() | bytes() | datetime.time():
+                return "string"
+            case datetime.datetime():
+                resolved = self._heterogeneous_variant_datetime_type
+            case datetime.date():
+                resolved = self._heterogeneous_variant_date_type
+            case list():
+                if not value:
+                    return "seq[string]"
+                return f"seq[{self._nim_value_field_type(value[0])}]"
+            case _:
+                msg = (
+                    "Nim cannot represent a set or non-record-dict "
+                    "field under the RECORD heterogeneous strategy"
+                )
+                raise UnrepresentableInputError(msg)
+        if resolved == "JsonNode":
+            msg = (
+                "Nim cannot represent a NIM-table-literal date/datetime "
+                "field under the RECORD heterogeneous strategy; use the "
+                "ISO or EPOCH format"
+            )
+            raise UnrepresentableInputError(msg)
+        return resolved
+
+    def _nim_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the Nim ``object`` field type for a record field.
+
+        A field whose value is itself a nested record-shaped dict uses
+        that record's generated name; a list whose every element is a
+        record-shaped dict of one shared shape is typed
+        ``seq[<that name>]`` (a Nim ``seq`` is element-typed, unlike
+        the ``[]any`` Go widens such a list to).  Every other value is
+        typed structurally from the raw value via
+        :meth:`_nim_value_field_type`.
+        """
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"seq[{request.element_record_name}]"
+        return self._nim_value_field_type(request.value)
+
+    @cached_property
+    def _record_renderer(self) -> RecordRenderer:
+        """Nim syntax hooks for the ``RECORD`` strategy."""
+        return RecordRenderer(
+            name_prefix=self.record_struct_name_prefix,
+            record_shape_names=_NIM_NO_RECORD_SHAPE_NAMES,
+            field_identifier=_nim_record_field_identifier,
+            field_type=self._nim_record_field_type,
+            render_declaration=partial(
+                _nim_render_record_declaration,
+                indent=self.indent,
+            ),
+            render_literal=_nim_record_literal,
+        )
+
+    @cached_property
+    def _record_strategy(self) -> RecordStrategy:
+        """Behavior + ``type``-declaration preamble for ``RECORD``."""
+        return build_record_strategy(renderer=self._record_renderer)
 
     @cached_property
     def type_hint_collection_preamble_lines(
@@ -1176,13 +1449,40 @@ class Nim(metaclass=LanguageCls):
     ) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines for a call context.
 
-        For ``HeterogeneousStrategies.OBJECT_VARIANT`` emits the Nim
+        For ``HeterogeneousStrategies.RECORD`` emits the
+        ``type Record0 = object`` blocks a record-shaped call argument's
+        literal references, preceded -- exactly as the non-call
+        :attr:`data_dependent_preamble` -- by the ``UnusedImport``
+        opt-out and ``import tables`` (``dict_format_config`` no longer
+        contributes it under ``RECORD``).  The opt-out is needed both
+        for a record-only call (the import is then unused) and because
+        a ``varargs[untyped]`` stub never evaluates its arguments, so
+        even a non-record dict argument's ``{...}.toTable`` would leave
+        the import unused.  For
+        ``HeterogeneousStrategies.OBJECT_VARIANT`` emits the Nim
         ``type`` block declaring the object variant used to wrap
         heterogeneous scalars; the call rendering references that type
         by name, so the declaration must be present.  For other
         strategies, call arguments are inline literals that never use
         ``%*``, so ``import json`` is never needed in a call context.
         """
+        if self._uses_record:
+            record_preamble = self._record_strategy.preamble
+
+            def _record_call_preamble(data: Value, /) -> tuple[str, ...]:
+                """Suppress UnusedImport for ``tables`` and emit it plus
+                the generated ``object`` type blocks (identical to the
+                non-call :attr:`data_dependent_preamble`: a non-record
+                dict argument needs the import, a record-only call
+                leaves it harmlessly suppressed).
+                """
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    "import tables",
+                    *record_preamble(data),
+                )
+
+            return _record_call_preamble
         if self._uses_object_variant:
             strategy_preamble = (
                 self.heterogeneous_strategy.value.build_preamble(
@@ -1267,16 +1567,18 @@ class Nim(metaclass=LanguageCls):
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
-        ``OBJECT_VARIANT`` replaces the JSON-array opener with
-        ``@[`` so nested sequences render as Nim-native ``seq``
+        ``OBJECT_VARIANT`` and ``RECORD`` replace the JSON-array opener
+        with ``@[`` so nested sequences render as Nim-native ``seq``
         literals at every level (the declaration formatter no longer
         adds a leading ``@`` because ``uses_typed_literal_for_scalars``
         is turned off).  Empty sequences widen to ``newSeq[string]()`` so
         the compiler does not reject ``var x = @[]`` with "cannot
-        infer the type of the sequence".
+        infer the type of the sequence" -- and, under ``RECORD``, so the
+        widened element type matches the ``seq[string]`` an empty-list
+        record field is declared.
         """
         base = self.sequence_format.value
-        if not self._uses_object_variant:
+        if not self._uses_native_nim_collections:
             return base
         return dataclasses.replace(
             base,
@@ -1300,16 +1602,25 @@ class Nim(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
-        ``OBJECT_VARIANT`` appends ``.toTable`` to the closing brace so
-        every rendered dict becomes a runtime :class:`tables.Table`,
-        and imports the ``tables`` module instead of ``json``.  An empty
-        dict widens to ``initTable[string, string]()`` so the compiler
-        does not reject ``{}.toTable``: an empty ``{}`` literal is an
-        empty set rather than a table, so the call does not resolve and
-        the key/value types cannot be inferred.  This mirrors the
-        ``newSeq[string]()`` widening for empty sequences.
+        ``OBJECT_VARIANT`` and ``RECORD`` append ``.toTable`` to the
+        closing brace so every rendered (non-record) dict becomes a
+        runtime :class:`tables.Table`.  An empty dict widens to
+        ``initTable[string, string]()`` so the compiler does not reject
+        ``{}.toTable``: an empty ``{}`` literal is an empty set rather
+        than a table, so the call does not resolve and the key/value
+        types cannot be inferred.  This mirrors the ``newSeq[string]()``
+        widening for empty sequences.
+
+        ``OBJECT_VARIANT`` always wraps its dicts as tables, so it
+        carries the ``import tables`` preamble here.  Under ``RECORD`` a
+        record-shaped dict never reaches this config (it is intercepted
+        by the record renderer and emitted as a ``Record0(...)``
+        literal), so ``import tables`` would be an ``UnusedImport`` for
+        the common record-only fixture; the import is instead added by
+        :attr:`data_dependent_preamble` only when the data still carries
+        a genuinely non-record dict that renders as a table.
         """
-        if self._uses_object_variant:
+        if self._uses_native_nim_collections:
             return DictFormatConfig(
                 dict_open=fixed_open(open_str="{"),
                 close="}.toTable",
@@ -1318,7 +1629,9 @@ class Nim(metaclass=LanguageCls):
                     format_value=passthrough_sequence_entry,
                 ),
                 empty_dict="initTable[string, string]()",
-                preamble_lines=("import tables",),
+                preamble_lines=(
+                    () if self._uses_record else ("import tables",)
+                ),
                 narrowed_open=None,
                 supports_trailing_comma=True,
             )
@@ -1382,8 +1695,13 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
-        """Configuration for ordered-map formatting."""
-        if self._uses_object_variant:
+        """Configuration for ordered-map formatting.
+
+        ``OBJECT_VARIANT`` and ``RECORD`` render an ordered map with its
+        native ``{...}.toOrderedTable`` constructor (an ordered map is
+        never record-shaped, so ``RECORD`` leaves it on this path).
+        """
+        if self._uses_native_nim_collections:
             return OrderedMapFormatConfig(
                 ordered_map_open=fixed_open(open_str="{"),
                 close="}.toOrderedTable",
@@ -1415,7 +1733,7 @@ class Nim(metaclass=LanguageCls):
             ),
             keyword=self.declaration_style.name.lower(),
             force_sequence=is_const,
-            uses_json_wrap=not self._uses_object_variant,
+            uses_json_wrap=not self._uses_native_nim_collections,
         )
 
     @cached_property
@@ -1427,7 +1745,7 @@ class Nim(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=(
                 self.sequence_format_config.uses_typed_literal_for_scalars
             ),
-            uses_json_wrap=not self._uses_object_variant,
+            uses_json_wrap=not self._uses_native_nim_collections,
         )
 
     @cached_property
