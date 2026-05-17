@@ -2632,11 +2632,11 @@ def _compose_bound_refs(
     # of the value, so the exact strings a declaration appended to its
     # ``preamble`` are reproducible by re-invoking it on that
     # declaration's ``source_data``.  Drop those reproduced
-    # per-declaration blocks and let first-seen deduplication collapse
-    # the shared single-line entries (imports, package lines).  Unlike
-    # the previous "drop any entry containing a newline" heuristic, a
-    # multi-line declaration-only block that the main binding does not
-    # reproduce is preserved.
+    # per-declaration blocks and let first-seen duplicate removal
+    # collapse the shared single-line entries (imports, package lines).
+    # Unlike the previous "drop any entry containing a newline"
+    # heuristic, a multi-line declaration-only block that the main
+    # binding does not reproduce is preserved.
     dropped_declaration_blocks: set[str] = set()
     for d in decl_results:
         dropped_declaration_blocks.update(
