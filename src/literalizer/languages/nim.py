@@ -28,6 +28,7 @@ from literalizer._formatters.format_entries import (
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_declaration_formatter,
+    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -78,8 +79,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -640,8 +639,6 @@ class Nim(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -652,7 +649,13 @@ class Nim(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    supports_call_variable_binding = False
+    # The literal-binding declaration template prefixes the right-hand
+    # side with the ``%*`` json macro (or ``@`` for sequences), which is
+    # only valid for literal values.  ``format_call_variable_declaration``
+    # / ``format_call_variable_assignment`` supply call-specific
+    # templates that bind the call result directly with no wrapping, so
+    # call-result bindings are supported.
+    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1749,6 +1752,35 @@ class Nim(metaclass=LanguageCls):
             ),
             uses_json_wrap=not self._uses_native_nim_collections,
         )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        The literal-binding declaration prefixes the right-hand side
+        with the ``%*`` json macro (or ``@`` for sequences) chosen from
+        the parsed literal's type; that JSON-constructs a literal and is
+        invalid for a call result.  The plain ``<keyword> <name> =
+        <value>`` declaration-style formatter binds the call result
+        directly with no wrapping.
+        """
+        return self.declaration_style.value.formatter
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_variable_assignment`; the ``%*``/``@`` wrapping is
+        dropped since a call result is bound directly.  Unlike the
+        declaration form this carries no ``var``/``let``/``const``
+        keyword, so it does not reuse the declaration-style formatter.
+        """
+        return variable_formatter(template="{name} = {value}")
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
