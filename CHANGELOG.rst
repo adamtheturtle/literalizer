@@ -34,6 +34,20 @@ Next
   covers.  Its ``supports_call_variable_binding`` language-class flag
   is now ``True``; existing literal-binding output is unchanged.
   Follow-up to #1961.  See #2456.
+- :class:`~literalizer.Nim` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call`, binding the call result
+  directly: ``var my_data = make_widget(42)``.  The literal-binding
+  declaration template prefixes the right-hand side with the ``%*``
+  json macro (or ``@`` for sequences) chosen from the parsed literal's
+  type, which JSON-constructs a literal rather than invoking a call;
+  the new call-specific declaration and assignment templates drop that
+  wrapping regardless of the source data type.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Only the :class:`~literalizer.NewVariable` form emits a
+  golden because the :class:`~literalizer.ExistingVariable` bare
+  assignment (``my_data = make_widget(42)``) to an undeclared name is
+  not self-contained.  Follow-up to #1961.  See #2455.
 - :class:`~literalizer.Zig` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
