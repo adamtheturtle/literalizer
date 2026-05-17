@@ -286,6 +286,21 @@ _ZIG_INFERRED_ELEMENT_TYPES: Mapping[object, str] = MappingProxyType(
 
 
 @beartype
+def _zig_int_sort_key(value: Value, /) -> int:
+    """Return the ``max`` sort key selecting a list's widest int.
+
+    An ``int`` sorts by its value so :meth:`Zig._zig_list_type` types a
+    :class:`WideInt` slice from the element that widens it (``u64``
+    once any value passes i64 range), not from ``items[0]``.  Every
+    other value sorts equal (``0``), so for a homogeneous non-int list
+    ``max`` keeps the first element -- an arbitrary but type-equivalent
+    representative -- and the int-vs-other branch is exercised by the
+    int and string record-list fixtures alike.
+    """
+    return value if isinstance(value, int) else 0
+
+
+@beartype
 def _zig_record_field_identifier(key: str, /) -> str:
     """Return the Zig ``struct`` member name for a dict *key*.
 
@@ -910,6 +925,16 @@ class Zig(metaclass=LanguageCls):
         (its int literals coerce to ``f64``); a heterogeneous list is a
         Zig tuple ``struct { T0, T1, ... }`` (its literal is the
         anonymous tuple ``.{ ... }``, matching :attr:`sequence_open`).
+
+        An int list with a value outside i32 range infers to
+        :class:`WideInt`; its element type is taken from the *widest*
+        element (``max`` keyed by :func:`_zig_int_sort_key`) via
+        :meth:`_zig_value_type`, so a list whose later element exceeds
+        i64 range is ``[]const u64`` rather than the ``[]const i64``
+        that typing from ``items[0]`` alone would wrongly produce for
+        e.g. ``[1, 1 << 63]``.  For every non-int homogeneous list the
+        key ties on every element, so ``max`` keeps ``items[0]`` -- an
+        arbitrary but type-equivalent representative.
         """
         if not items:
             return "[]const i64"
@@ -921,7 +946,7 @@ class Zig(metaclass=LanguageCls):
             return f"struct {{ {members} }}"
         element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
             inferred,
-            self._zig_value_type(items[0]),
+            self._zig_value_type(max(items, key=_zig_int_sort_key)),
         )
         return f"[]const {element_type}"
 
