@@ -24,6 +24,7 @@ from .gleam import Gleam
 from .go import Go
 from .groovy import Groovy
 from .haskell import Haskell
+from .haxe import Haxe
 from .hcl import Hcl
 from .java import Java
 from .javascript import JavaScript
@@ -90,6 +91,7 @@ ALL_LANGUAGES: frozenset[LanguageCls] = frozenset(
         Go,
         Groovy,
         Haskell,
+        Haxe,
         Hcl,
         Java,
         JavaScript,
@@ -158,6 +160,7 @@ __all__ = [
     "Go",
     "Groovy",
     "Haskell",
+    "Haxe",
     "Hcl",
     "Java",
     "JavaScript",

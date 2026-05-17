@@ -12,6 +12,17 @@ Changelog
 Next
 ----
 
+- Added support for Haxe as a new output language.  ``Haxe`` renders
+  every collection literal with an explicit ``(... : Array<Dynamic>)``
+  or ``(... : Map<String, Dynamic>)`` cast, so heterogeneous and empty
+  collections type-check without per-variable annotations.  Maps use
+  Haxe's ``["key" => value]`` literal syntax and strings use the
+  double-quoted form (no interpolation).  Calls use positional syntax
+  with local-function and anonymous-structure-closure stubs emitted
+  inside ``static function main()``.  A new ``lint-haxe`` job in
+  ``.github/workflows/lint.yml`` compiles and runs every ``.hx``
+  fixture in a single ``haxe --interp`` invocation.
+
 2026.05.17.1
 ------------
 

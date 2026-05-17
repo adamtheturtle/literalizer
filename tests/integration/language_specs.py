@@ -20,6 +20,7 @@ from literalizer.languages import (
     Erlang,
     Gleam,
     Haskell,
+    Haxe,
     Scala,
 )
 
@@ -91,6 +92,20 @@ def haskell_module_name(*, golden_path: Path) -> str:
 
 
 @beartype
+def haxe_module_name(*, golden_path: Path) -> str:
+    """Return the Haxe class name for *golden_path*.
+
+    Produces a deterministic, per-fixture name so every compiled
+    ``.hx`` file in CI has a unique class declaration (and so the file
+    can be renamed to match the class for ``haxe --main``) without
+    needing ``sed`` rewriting.
+    """
+    dir_name = golden_path.parent.name
+    stem = _logical_stem(path=golden_path)
+    return f"Fixture_{dir_name}_{stem}"
+
+
+@beartype
 def with_per_fixture_module_name(
     *,
     spec: literalizer.Language,
@@ -99,8 +114,8 @@ def with_per_fixture_module_name(
     """Return *spec* with a per-fixture ``module_name`` if applicable.
 
     Languages whose CI lint requires unique module names (Crystal, Erlang,
-    Haskell, Scala) get a deterministic name derived from *golden_path*; all
-    other languages are returned unchanged.
+    Haskell, Haxe, Scala) get a deterministic name derived from
+    *golden_path*; all other languages are returned unchanged.
     """
     if isinstance(spec, Crystal):
         return dataclasses.replace(
@@ -116,6 +131,11 @@ def with_per_fixture_module_name(
         return dataclasses.replace(
             spec,
             module_name=haskell_module_name(golden_path=golden_path),
+        )
+    if isinstance(spec, Haxe):
+        return dataclasses.replace(
+            spec,
+            module_name=haxe_module_name(golden_path=golden_path),
         )
     if isinstance(spec, Scala):
         return dataclasses.replace(

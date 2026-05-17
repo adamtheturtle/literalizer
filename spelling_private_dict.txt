@@ -54,6 +54,7 @@ HNull
 HSet
 HStr
 HashiCorp
+Haxe
 Hcl
 JSONDecodeError
 Jsonnet

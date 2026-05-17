@@ -1394,6 +1394,46 @@ jobs:
           printf '}\n' >> "$main"
           scala-cli run "$workspace" -S 3 --main-class __run
 
+  lint-haxe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Find files to lint
+        shell: bash
+        run: find tests/integration/cases -name '*.hx' -print0 > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
+      # `haxe-version: 4.3.6` matches the major version of
+      # `Haxe.language_version` (`V4`) in
+      # `src/literalizer/languages/haxe.py`; keep them in sync.
+      - name: Install Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.6
+      # Each fixture already carries a unique class name derived from
+      # its case directory and stem (`Fixture_<dir>_<stem>`), so a plain
+      # copy to `<class>.hx` suffices; no sed rewriting needed. The
+      # fixtures are compiled and run in a single `haxe --interp`
+      # invocation via a generated `Driver` that calls every fixture's
+      # `main()`, paying Haxe compiler startup once across all fixtures.
+      - name: Check Haxe syntax and run fixtures
+        run: |-
+          workspace=$(mktemp -d)
+          driver="$workspace/Driver.hx"
+          printf 'class Driver {\n  public static function main() {\n' > "$driver"
+          while IFS= read -r -d '' f; do
+            dir=$(basename "$(dirname "$f")")
+            stem=$(basename "$f" .hx)
+            stem="${stem%@*}"  # strip @version so the Haxe class name is a valid identifier
+            name="Fixture_${dir}_${stem}"
+            cp "$f" "$workspace/${name}.hx"
+            printf '%s.hx <- %s\n' "$name" "$f"
+            printf '    %s.main();\n' "$name" >> "$driver"
+          done < /tmp/files-to-lint
+          printf '  }\n}\n' >> "$driver"
+          haxe -p "$workspace" --main Driver --interp
+
   lint-dart:
     runs-on: ubuntu-latest
     steps:
@@ -2111,6 +2151,7 @@ jobs:
       - lint-ocaml
       - lint-commonlisp
       - lint-scala
+      - lint-haxe
       - lint-dart
       - lint-go
       - lint-julia
