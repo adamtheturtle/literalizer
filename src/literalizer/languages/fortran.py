@@ -386,13 +386,6 @@ class Fortran(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # A call result is bound directly with an explicit ``type(fval_t)``
-    # declaration (every generated Fortran call stub returns
-    # ``type(fval_t)``, so no caller-supplied return-type hint is
-    # needed); the value-wrapping ``fval_t`` constructor a Fortran
-    # literal binding uses is dropped.  See
-    # :func:`_format_fortran_call_declaration`.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     allows_empty_call_parens = True

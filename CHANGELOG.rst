@@ -12,6 +12,17 @@ Changelog
 Next
 ----
 
+- The ``supports_call_variable_binding`` language-class flag has been
+  removed.  Every language now binds a :func:`~literalizer.literalize_call`
+  result directly with no literal-only wrapping, so the flag was
+  ``True`` for all languages and its
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError` rejection
+  path was unreachable.  No generated output changes.  See #2521.
+
+2026.05.17
+----------
+
+
 - :class:`~literalizer.D` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and

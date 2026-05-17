@@ -649,13 +649,6 @@ class Nim(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # The literal-binding declaration template prefixes the right-hand
-    # side with the ``%*`` json macro (or ``@`` for sequences), which is
-    # only valid for literal values.  ``format_call_variable_declaration``
-    # / ``format_call_variable_assignment`` supply call-specific
-    # templates that bind the call result directly with no wrapping, so
-    # call-result bindings are supported.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = False
     supports_dotted_calls = True
     has_free_function_calls = True
