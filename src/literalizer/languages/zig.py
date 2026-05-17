@@ -375,15 +375,6 @@ class Zig(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # A call result is bound with a plain inferred declaration
-    # (``const my_data = make_widget(...);``); the Zig ``const``/``var``
-    # type inference means no caller-supplied return-type hint is
-    # needed.  The value-type ``: ZVal`` annotation and the
-    # ``Name{ .field = value, ... }`` struct-literal wrapping a Zig
-    # literal binding uses are both dropped (a call result is neither a
-    # ``ZVal`` projection nor a generated ``struct`` literal).  See
-    # :attr:`format_call_variable_declaration`.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True

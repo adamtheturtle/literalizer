@@ -377,13 +377,6 @@ class D(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # A call result is bound with a plain inferred ``auto`` declaration
-    # (D infers the binding type from the initializer, so no caller-
-    # supplied return-type hint is needed); the value-wrapping
-    # ``JSONValue(...)`` projection / positional ``Record0(...)``
-    # struct-constructor literal a D literal binding uses is dropped.
-    # See :func:`_format_d_call_declaration`.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True

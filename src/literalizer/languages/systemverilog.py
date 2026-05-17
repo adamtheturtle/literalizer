@@ -294,13 +294,6 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    # A call result is bound directly with an explicit ``_VVal`` type
-    # (every generated SystemVerilog call stub that yields a value
-    # returns the universal tagged ``_VVal`` struct, so no
-    # caller-supplied return-type hint is needed); the value-wrapping
-    # ``_VVal`` struct literal a SystemVerilog literal binding uses is
-    # dropped.  See :func:`_format_systemverilog_call_declaration`.
-    supports_call_variable_binding = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     allows_empty_call_parens = True
