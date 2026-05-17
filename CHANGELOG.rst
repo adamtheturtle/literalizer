@@ -20,6 +20,9 @@ Next
   ``{.field = value}`` struct literals.  Fixtures are compiled in CI
   by the ``lint-carbon`` job against a pinned ``carbon`` nightly.
 
+2026.05.17.1
+------------
+
 - :class:`~literalizer.CSharp` array sequence-format no longer emits
   ``using System;`` or ``using System.Collections.Generic;``.  A C#
   array literal (``new T[] {...}``) is a built-in language feature and
