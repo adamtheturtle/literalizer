@@ -5,34 +5,23 @@ import datetime
 import textwrap
 from typing import ClassVar
 
-import pytest
-
 from literalizer import (
     IdentifierCase,
     InputFormat,
-    Language,
-    LanguageCls,
     NewVariable,
     literalize,
     literalize_call,
 )
 from literalizer.languages import (
-    ALL_LANGUAGES,
     Cobol,
-    CSharp,
     Dart,
     Dhall,
     Go,
     Haskell,
-    Java,
-    Kotlin,
     Matlab,
-    Nim,
     Python,
     Rust,
     Sml,
-    Swift,
-    TypeScript,
 )
 
 COBOL = Cobol(
@@ -71,6 +60,47 @@ def test_python_datetime_whole_hour_offset_omits_minutes() -> None:
         ")"
         ")"
     )
+
+
+# Issue #2518 replaced the per-language ``datetime.time`` coverage
+# shims with golden-file cases, but the
+# :func:`~literalizer._preamble._structural_type_id`
+# ``case datetime.time(): return "time"`` arm cannot ride the
+# all-languages ``type_hints`` golden axis.  That arm only fires on
+# the *Python* type-hint path: ``_has_union_in_type_hints`` walks
+# nested lists with divergent inner shapes (e.g. ``[[t], []]``) and
+# computes a structural id for the time scalar.  The empty inner list
+# that forces the union walk also makes the Kotlin renderer emit a
+# nested-time-list under ``ALWAYS`` whose rendered value type
+# disagrees with its inferred type annotation; since the per-language
+# lint CI compiles every golden fixture, an all-languages golden case
+# for this input fails to build.  No other reachable input exercises
+# the arm.  So, like the Dart ``skip_null_dict_values`` cases below,
+# this Python-only arm stays a focused pytest test driven through the
+# public API.
+
+
+def test_python_time_union_annotation_renders() -> None:
+    """Python ``ALWAYS`` type hints render a nested time union.
+
+    Covers the ``case datetime.time(): return "time"`` arm of
+    :func:`~literalizer._preamble._structural_type_id`, which only runs
+    when a typed Python variable declaration drives
+    ``_has_union_in_type_hints`` to walk a list containing a time
+    scalar.  See the module comment above for why this is not an
+    all-languages golden-file case.
+    """
+    result = literalize(
+        source="mixed = [[09:30:00], []]\n",
+        input_format=InputFormat.TOML,
+        language=Python(
+            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
+        ),
+        variable_form=NewVariable(name="x"),
+        wrap_in_file=True,
+    )
+
+    assert result.code
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
@@ -443,230 +473,6 @@ def test_haskell_without_ref_values_strips_per_element_ref() -> None:
 
     assert result.types_present == frozenset({list})
     assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-_SORTED_LANGUAGES: list[LanguageCls] = sorted(
-    ALL_LANGUAGES,
-    key=lambda c: c.__name__,
-)
-
-
-@pytest.mark.parametrize(
-    argnames="lang_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
-)
-@pytest.mark.parametrize(
-    argnames="source",
-    argvalues=[
-        "starts_at = 09:30:00\n",
-        "starts_at = 09:30:15.123456\n",
-    ],
-)
-def test_datetime_time_renders(lang_cls: LanguageCls, source: str) -> None:
-    """Every language renders a ``datetime.time`` value without crashing.
-
-    Coverage shim for the per-language ``format_time`` and
-    ``datetime.time`` scalar-hint arms.  Delete once issue #2230 lands
-    per-language golden-file cases for time scalars.
-    """
-    spec = lang_cls()
-    variable_form = (
-        NewVariable(name="my_data") if spec.supports_variable_names else None
-    )
-    wrap_in_file = (
-        variable_form is not None or spec.supports_no_variable_wrap_in_file
-    )
-    result = literalize(
-        source=source,
-        input_format=InputFormat.TOML,
-        language=spec,
-        variable_form=variable_form,
-        wrap_in_file=wrap_in_file,
-    )
-    assert result.code
-
-
-def test_datetime_time_csharp_typed_decl_renders() -> None:
-    """C# emits ``TimeOnly`` in a typed declaration for a
-    ``datetime.time``.
-
-    Covers the ``case datetime.time(): return "TimeOnly"`` arm of
-    ``_csharp_scalar_type``, which only runs when modifiers force a
-    typed declaration.  Delete with the rest of the time-coverage
-    shims once issue #2230 lands.
-    """
-    result = literalize(
-        source="starts_at = 09:30:00\n",
-        input_format=InputFormat.TOML,
-        language=CSharp(),
-        variable_form=NewVariable(
-            name="x",
-            modifiers=frozenset({CSharp.modifiers.PUBLIC}),
-        ),
-        wrap_in_file=True,
-    )
-    assert "TimeOnly" in result.code
-
-
-_ALWAYS_TYPE_HINT_LANGUAGES: tuple[tuple[str, Language], ...] = (
-    (
-        "Dart",
-        Dart(
-            variable_type_hints=Dart.variable_type_hints_formats.ALWAYS,
-        ),
-    ),
-    (
-        "Java",
-        Java(
-            variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
-        ),
-    ),
-    (
-        "Kotlin",
-        Kotlin(
-            variable_type_hints=Kotlin.variable_type_hints_formats.ALWAYS,
-        ),
-    ),
-    (
-        "Python",
-        Python(
-            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
-        ),
-    ),
-    (
-        "Swift",
-        Swift(
-            variable_type_hints=Swift.variable_type_hints_formats.ALWAYS,
-        ),
-    ),
-    (
-        "TypeScript",
-        TypeScript(
-            variable_type_hints=(
-                TypeScript.variable_type_hints_formats.ALWAYS
-            ),
-        ),
-    ),
-)
-
-
-@pytest.mark.parametrize(
-    argnames="spec",
-    argvalues=[s for _, s in _ALWAYS_TYPE_HINT_LANGUAGES],
-    ids=[name for name, _ in _ALWAYS_TYPE_HINT_LANGUAGES],
-)
-def test_datetime_time_always_type_hint_renders(spec: Language) -> None:
-    """Languages with ALWAYS variable_type_hints render time scalars.
-
-    Covers the ``case datetime.time():`` arm of each language's
-    scalar-hint match (and Python's ``time_hint`` propagation).
-    Delete with the rest of the time-coverage shims once issue #2230
-    lands.
-    """
-    result = literalize(
-        source="starts_at = 09:30:00\n",
-        input_format=InputFormat.TOML,
-        language=spec,
-        variable_form=NewVariable(name="x"),
-        wrap_in_file=True,
-    )
-    assert result.code
-
-
-_HETEROGENEOUS_VARIANT_LANGUAGES: tuple[tuple[str, Language], ...] = (
-    (
-        "Rust",
-        Rust(heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM),
-    ),
-    (
-        "Dhall",
-        Dhall(
-            heterogeneous_strategy=Dhall.heterogeneous_strategies.UNION_TYPE,
-        ),
-    ),
-    (
-        "Nim",
-        Nim(
-            heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
-        ),
-    ),
-)
-
-
-@pytest.mark.parametrize(
-    argnames="spec",
-    argvalues=[s for _, s in _HETEROGENEOUS_VARIANT_LANGUAGES],
-    ids=[name for name, _ in _HETEROGENEOUS_VARIANT_LANGUAGES],
-)
-def test_datetime_time_heterogeneous_variant_renders(spec: Language) -> None:
-    """Wrap-as-variant strategies emit a Time variant for
-    ``datetime.time``.
-
-    Covers the ``case datetime.time():`` arm of each language's
-    heterogeneous-variant signature builder.  Delete with the rest of
-    the time-coverage shims once issue #2230 lands.
-    """
-    result = literalize(
-        source='mixed = [09:30:00, "hello"]\n',
-        input_format=InputFormat.TOML,
-        language=spec,
-    )
-    assert "Time" in result.code
-
-
-def test_datetime_time_union_annotation_renders() -> None:
-    """Annotated heterogeneous sequence with a ``datetime.time`` element
-    renders without crashing.
-
-    Covers the ``case datetime.time(): return "time"`` arm of
-    ``_structural_type_id`` in ``_preamble.py``, which only runs when a
-    variable declaration drives ``_has_union_in_type_hints`` to walk a
-    list containing a time scalar.  Delete with the rest of the
-    time-coverage shims once issue #2230 lands.
-    """
-    result = literalize(
-        source="mixed = [[09:30:00], []]\n",
-        input_format=InputFormat.TOML,
-        language=Python(
-            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
-        ),
-        variable_form=NewVariable(name="x"),
-        wrap_in_file=True,
-    )
-    assert result.code
-
-
-def test_format_time_csharp_exact_millisecond_renders() -> None:
-    """``new TimeOnly(...)`` handles times whose microseconds are exact ms.
-
-    Covers the millisecond-only branch of ``_time_only_args`` where
-    ``microsecond % 1000 == 0``.  Delete with the rest of the
-    time-coverage shims once issue #2230 lands.
-    """
-    result = literalize(
-        source="starts_at = 09:30:15.123000\n",
-        input_format=InputFormat.TOML,
-        language=CSharp(),
-    )
-    assert "new TimeOnly(9, 30, 15, 123)" in result.code
-
-
-def test_format_time_local_time_of_with_microseconds_exact_ms() -> None:
-    """``LocalTime.of(...)`` handles times whose microseconds are exact ms.
-
-    Covers the ``microseconds`` branch of ``_time_only_args`` and the
-    nanosecond-output branch of ``format_time_local_time_of``.  Delete
-    with the rest of the time-coverage shims once issue #2230 lands.
-    """
-    result = literalize(
-        source="starts_at = 09:30:15.123000\n",
-        input_format=InputFormat.TOML,
-        language=Java(),
-        variable_form=NewVariable(name="x"),
-        wrap_in_file=True,
-    )
-    assert "LocalTime.of(9, 30, 15, 123000000)" in result.code
 
 
 def test_rust_tagged_enum_epoch_datetime_uses_integer_variant() -> None:

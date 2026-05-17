@@ -1505,6 +1505,7 @@ def build_modifier_variant_cases() -> list[VariantCase]:
         "empty_set",
         "scalar_date",
         "scalar_datetime",
+        "scalar_time",
     )
     for lang_cls in sorted_languages():
         spec = make_spec(lang_cls=lang_cls)
@@ -1992,6 +1993,15 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "type_hints",
             "scalar_date",
             "scalar_datetime",
+            # ``scalar_time`` pins the ``case datetime.time():`` scalar
+            # type-hint arm under non-default (``ALWAYS``)
+            # ``variable_type_hints``, replacing the
+            # ``test_datetime_time_always_type_hint_renders`` shim
+            # (issue #2518).  The Python-only ``_structural_type_id``
+            # time arm cannot ride this all-languages axis (it would
+            # force non-compiling Kotlin nested-time-list output); it
+            # keeps a focused pytest test instead.
+            "scalar_time",
             "binary",
             "mixed_type_dicts_in_sequence",
             "empty_dicts_in_sequence",
@@ -2104,7 +2114,17 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="simple_sequence", suffix=""),
     ),
     "constructor_name": (_ci(case_dir_name="simple_dict", suffix=""),),
-    "heterogeneous_strategy": HETEROGENEOUS_STRATEGY_INPUTS,
+    "heterogeneous_strategy": (
+        *HETEROGENEOUS_STRATEGY_INPUTS,
+        # ``heterogeneous_time_string`` carries a time and a string in
+        # one list to pin the ``datetime.time`` arm of each language's
+        # heterogeneous-variant signature builder under its non-default
+        # wrap-as-variant strategies (Rust tagged enum, Dhall union
+        # type, Nim object variant).  It replaces the
+        # ``test_datetime_time_heterogeneous_variant_renders`` shim
+        # (issue #2518).
+        _ci(case_dir_name="heterogeneous_time_string", suffix=""),
+    ),
     "heterogeneous_strategy_datetime_cross": (
         _ci(case_dir_name="dict_all_scalar_types", suffix=""),
     ),

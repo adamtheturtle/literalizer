@@ -60,6 +60,16 @@ from .language_specs import (
 # under the ``RECORD`` strategy (the cross-language decision in #2317):
 # the Nim variant builder is the sole consumer, so it stays out of the
 # all-languages base discovery.
+#
+# ``heterogeneous_time_string`` carries ``[09:30:00, "hello"]`` solely
+# to drive the ``case datetime.time():`` arm of each language's
+# heterogeneous-variant signature builder under the
+# ``heterogeneous_strategy`` axis (replacing the
+# ``test_datetime_time_heterogeneous_variant_renders`` shim, issue
+# #2518).  Under the default per-language strategy it is just another
+# heterogeneous list already covered elsewhere, so it stays out of the
+# all-languages base discovery; only the ``heterogeneous_strategy``
+# axis consumes it.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
@@ -69,6 +79,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "tuple_pair_top_level",
         "tuple_triple_record_field",
         "tuple_triple_top_level",
+        "heterogeneous_time_string",
     }
 )
 

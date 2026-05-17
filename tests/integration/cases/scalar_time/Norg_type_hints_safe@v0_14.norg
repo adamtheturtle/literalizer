@@ -1,0 +1,6 @@
+* my_data
+@code json
+{
+    "starts_at": "09:30:00"
+}
+@end
