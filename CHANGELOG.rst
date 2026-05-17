@@ -29,12 +29,67 @@ Next
   binding declares).  The call stub is emitted at module scope rather
   than inside ``initial begin``, where a ``function`` declaration is
   illegal.  Because the binding is a typed declaration while the
+- :class:`~literalizer.Zig` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  A Zig literal binding wraps
+  the right-hand side in a designated-initializer struct literal that
+  encodes the value's runtime type (a tagged ``ZVal`` union projection,
+  or a generated ``Record0`` struct literal under the ``RECORD``
+  strategy) and declares an explicit ``ZVal`` value type, which is
+  wrong for a call whose return type is opaque to the renderer; the
+  call result is now bound with a plain inferred declaration,
+  ``const my_data = make_widget(...);``.  No caller-supplied return-type
+  hint is required: the Zig ``const``/``var`` type inference supplies
+  the binding's type.  Because the binding is a keyword declaration
+  while
+  the :class:`~literalizer.ExistingVariable` form is a bare assignment
+  to an already-declared name, only the
+  :class:`~literalizer.NewVariable` form is golden-covered.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Follow-up to #1961.  See #2510.
+- :class:`~literalizer.Ada` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  An Ada literal binding wraps
+  the right-hand side in the ``A_Val`` constructor chosen from the
+  parsed literal's runtime type, which is wrong for a call whose return
+  type is opaque to the renderer; the call result is now bound directly
+  as ``my_data : A_Val := Make_Widget (...);``.  No caller-supplied
+  return-type hint is required: every generated Ada call stub returns
+  ``A_Val``, so the binding's declared type is always ``A_Val`` (the
+  same type an Ada literal binding declares).  Because the binding is a
+  typed declaration while the :class:`~literalizer.ExistingVariable`
+  form is a bare assignment to an already-declared name, only the
+  :class:`~literalizer.NewVariable` form is golden-covered.  Its
+  ``supports_call_variable_binding`` language-class flag is now
+  ``True``; existing literal-binding and call-without-binding output is
+  unchanged.  Follow-up to #1961.  See #2509.
+- :class:`~literalizer.Fortran` now accepts ``variable_form`` on
+  :func:`~literalizer.literalize_call` for both
+  :class:`~literalizer.NewVariable` and
+  :class:`~literalizer.ExistingVariable`.  A Fortran literal binding
+  wraps the right-hand side in the ``fval_t`` constructor matching the
+  parsed literal's type (the integer, real, or string constructor),
+  which is wrong for a call whose return type is opaque to the
+  renderer; the call result is now bound directly as
+  ``type(fval_t) :: my_data`` followed by
+  ``my_data = make_widget(...)``.  No caller-supplied return-type hint
+  is required: every generated Fortran call stub returns
+  ``type(fval_t)``, so the binding's declared type is always
+  ``type(fval_t)`` (the same type a Fortran literal binding declares).
+  The call stub is emitted in the program's ``contains`` section, after
+  the binding, so a value-returning call no longer needs an inline
+  procedure body.  Because the :class:`~literalizer.NewVariable` binding
+  is a typed declaration while the
   :class:`~literalizer.ExistingVariable` form is a bare assignment to an
   already-declared name, only the :class:`~literalizer.NewVariable`
   form is golden-covered.  Its ``supports_call_variable_binding``
   language-class flag is now ``True``; existing literal-binding and
   call-without-binding output is unchanged.  Follow-up to #1961.  See
   #2507.
+  #2508.
 - :class:`~literalizer.C` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
