@@ -112,6 +112,25 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
+
+class _RustModifiers(enum.Enum):
+    """Declaration modifiers supported by Rust.
+
+    Rust has no C++/Java/C#-style storage or qualifier keywords, but a
+    ``let`` binding is immutable by default and a mutate-after-bind
+    sequence needs ``let mut``.  ``MUT`` requests that mutable binding
+    (issue #2537); the member's value is the ``mut`` keyword it renders
+    to.  It applies to the default ``LET`` declaration style only.
+
+    Exposed as :attr:`Rust.Modifiers` / :attr:`Rust.modifiers`.
+    """
+
+    MUT = "mut"
+    """Mutability: the binding may be mutated through its name, so a
+    subsequent ``&mut self`` method call on the bound value compiles.
+    """
+
+
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 # Rust keywords (strict, reserved, weak) that are syntactically valid
@@ -430,6 +449,25 @@ def _lazy_static_placeholder_formatter(
         "placeholder and must not be called directly."
     )
     raise NotImplementedError(msg)
+
+
+@beartype
+def _format_let_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a Rust ``let`` binding for the ``LET`` declaration style.
+
+    ``LET`` is immutable by default.  When the caller requests
+    :attr:`Rust.Modifiers.MUT` via ``NewVariable(modifiers=…)`` the
+    rendered binding gains a ``mut`` keyword after ``let`` so the bound
+    value can be mutated through the name (issue #2537).  Modifier
+    members of other languages' enums are silently ignored.
+    """
+    keyword = "let mut" if _RustModifiers.MUT in modifiers else "let"
+    return f"{keyword} {name} = {value};"
 
 
 @beartype
@@ -1477,9 +1515,7 @@ class Rust(metaclass=LanguageCls):
         """Declaration style options."""
 
         LET = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="let {name} = {value};"
-            ),
+            formatter=_format_let_declaration,
             supports_redefinition=False,
         )
         LET_MUT = DeclarationStyleConfig(
@@ -1790,10 +1826,9 @@ class Rust(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
-    class Modifiers(enum.Enum):
-        """C++/Java/C#-style declaration modifiers: this language has none."""
+    Modifiers = _RustModifiers
 
-    modifiers = Modifiers
+    modifiers = _RustModifiers
 
     class HeterogeneousStrategies(enum.Enum):
         """Strategy for representing dicts or lists whose scalar values
