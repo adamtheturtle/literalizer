@@ -81,7 +81,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -779,7 +778,6 @@ class Python(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -1362,6 +1360,23 @@ class Python(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        A literal binding adds an inline ``name: T = ...`` annotation
+        for values whose type a checker cannot infer from the literal
+        (empty collections, etc.).  A call's return type is opaque to
+        the renderer -- the annotation would be derived from the call's
+        *argument* data, not its result, and a strict checker rejects
+        the mismatch -- so the call result is bound with a plain
+        ``name = value`` and the type is left to inference.  Python has
+        no declaration modifiers, so the modifier set is ignored.
+        """
+        return variable_declaration_formatter(template="{name} = {value}")
 
     def _python_render_declaration(
         self,

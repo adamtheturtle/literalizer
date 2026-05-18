@@ -3520,6 +3520,54 @@ def _resolve_comment_literals(
 
 
 @beartype
+def _render_variable_bound_call(
+    *,
+    target_function: str,
+    args_str: str,
+    call_transform: Callable[[CallContext], str] | None,
+    style: CallStyle,
+    index: int,
+    row: Sequence[Value],
+    zipped: str | None,
+    language: Language,
+    data: Value,
+    variable_form: NewVariable | ExistingVariable,
+    comment: str,
+) -> str:
+    """Assemble one call expression and bind it to *variable_form*.
+
+    Shared by the whole-value and single-element call paths.  The call
+    is assembled with an empty statement terminator (the binding
+    template supplies its own), wrapped via the language's
+    call-binding declaration/assignment hook, and any trailing
+    *comment* appended to the fully terminated binding so a line-comment
+    leader cannot swallow the terminator.
+    """
+    call_expr = _assemble_call(
+        target_function=target_function,
+        args_str=args_str,
+        call_transform=call_transform,
+        statement_terminator="",
+        style=style,
+        index=index,
+        row=row,
+        zipped=zipped,
+    )
+    return _append_trailing_comment(
+        rendered=_apply_variable_wrapper(
+            result=call_expr,
+            language=language,
+            data=data,
+            variable_form=variable_form,
+            line_prefix="",
+            is_call_binding=True,
+        ),
+        comment=comment,
+        language=language,
+    )
+
+
+@beartype
 def _render_call_per_element(
     *,
     data: list[Value],
@@ -3534,6 +3582,7 @@ def _render_call_per_element(
     ref_values: Mapping[str, Value],
     ref_key: str,
     comment_literals: Sequence[str] | None,
+    variable_form: NewVariable | ExistingVariable | None,
     collection_comments: CollectionComments | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> str:
@@ -3547,6 +3596,13 @@ def _render_call_per_element(
     :func:`_compute_call_per_element_wrap_ids` similarly filter them
     out so the marker's ``{str: str}`` shape does not influence
     per-slot widening.
+
+    When *variable_form* is supplied the single generated call
+    (:func:`_validate_call_variable_form` has already required exactly
+    one element) is bound to the variable instead of being routed
+    through ``format_call_statement`` -- the path that produces the
+    zero-argument ``p2 = Playlist()`` constructor from a ``[[]]``
+    source.
     """
     slot_overrides = _compute_call_slot_overrides(
         elements=data,
@@ -3613,32 +3669,50 @@ def _render_call_per_element(
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
-        rendered_elements.append(
-            _append_trailing_comment(
-                rendered=language.format_call_statement(
-                    _assemble_call(
-                        target_function=target_function,
-                        args_str=args_str,
-                        call_transform=call_transform,
-                        statement_terminator=language.statement_terminator,
-                        style=style,
-                        index=index,
-                        row=arg_values,
-                        zipped=(
-                            zip_literals[index]
-                            if zip_literals is not None
-                            else None
-                        ),
-                    )
-                ),
-                comment=(
-                    comment_literals[index]
-                    if comment_literals is not None
-                    else ""
-                ),
-                language=language,
-            )
+        zipped = zip_literals[index] if zip_literals is not None else None
+        comment = (
+            comment_literals[index] if comment_literals is not None else ""
         )
+        if variable_form is not None:
+            # Exactly one element here: ``_validate_call_variable_form``
+            # rejected any other call count, so the single name binds
+            # this one call's result.
+            rendered_elements.append(
+                _render_variable_bound_call(
+                    target_function=target_function,
+                    args_str=args_str,
+                    call_transform=call_transform,
+                    style=style,
+                    index=index,
+                    row=arg_values,
+                    zipped=zipped,
+                    language=language,
+                    data=element,
+                    variable_form=variable_form,
+                    comment=comment,
+                )
+            )
+        else:
+            rendered_elements.append(
+                _append_trailing_comment(
+                    rendered=language.format_call_statement(
+                        _assemble_call(
+                            target_function=target_function,
+                            args_str=args_str,
+                            call_transform=call_transform,
+                            statement_terminator=(
+                                language.statement_terminator
+                            ),
+                            style=style,
+                            index=index,
+                            row=arg_values,
+                            zipped=zipped,
+                        )
+                    ),
+                    comment=comment,
+                    language=language,
+                )
+            )
     if collection_comments is not None:
         comment_cfg = language.comment_config
         return apply_collection_comments_to_elements(
@@ -3735,27 +3809,18 @@ def _render_call_whole(
             comment=comment,
             language=language,
         )
-    call_expr = _assemble_call(
+    return _render_variable_bound_call(
         target_function=target_function,
         args_str=args_str,
         call_transform=call_transform,
-        statement_terminator="",
         style=style,
         index=0,
         row=[data],
         zipped=zip_literal,
-    )
-    return _append_trailing_comment(
-        rendered=_apply_variable_wrapper(
-            result=call_expr,
-            language=language,
-            data=data,
-            variable_form=variable_form,
-            line_prefix="",
-            is_call_binding=True,
-        ),
-        comment=comment,
         language=language,
+        data=data,
+        variable_form=variable_form,
+        comment=comment,
     )
 
 
@@ -3901,20 +3966,32 @@ def _validate_call_variable_form(
     *,
     language: Language,
     variable_form: NewVariable | ExistingVariable,
-    per_element: bool,
+    call_count: int,
 ) -> None:
     """Raise typed errors for unsupported ``variable_form``
     combinations.
 
     ``BothVariableForms`` is rejected upstream by ``literalize_call``
     itself, so the ``variable_form`` parameter here is narrower.
+
+    A ``variable_form`` binds the result of one call to one name, so it
+    is well-defined only when the input produces exactly one call.  With
+    ``per_element=False`` that is always the case (the whole value is a
+    single call's argument); with ``per_element=True`` it holds when the
+    source has exactly one top-level element (the zero-argument
+    constructor ``p2 = Playlist()`` is reached this way, via a
+    single-element ``[[]]`` source).  Zero calls (an empty
+    ``per_element`` source) or more than one call leave the single name
+    with nothing, or with several call results, to bind.
     """
-    if per_element:
+    if call_count != 1:
         raise UnsupportedCallShapeError(
             language_name=type(language).__name__,
             reason=(
-                "variable_form is incompatible with per_element=True; "
-                "the API does not provide a name per element"
+                "variable_form binds a single call result, but this "
+                f"input produces {call_count} calls; supply exactly one "
+                "call (per_element=False, or per_element=True with a "
+                "single-element source)"
             ),
         )
     if not language.supports_variable_names:
@@ -3945,9 +4022,13 @@ def _validate_call_preconditions(
     call_transform: Callable[[CallContext], str] | None,
     style: CallStyle,
     variable_form: NewVariable | ExistingVariable | None,
-    per_element: bool,
 ) -> None:
-    """Raise typed errors for unsupported ``literalize_call`` inputs."""
+    """Raise typed errors for unsupported ``literalize_call`` inputs.
+
+    *arg_values* has one entry per generated call (a per-element row, or
+    the single whole-value argument), so its length is the call count
+    that ``variable_form`` validation requires to be exactly one.
+    """
     _validate_parameter_count(
         language=language, parameter_names=parameter_names
     )
@@ -3955,7 +4036,7 @@ def _validate_call_preconditions(
         _validate_call_variable_form(
             language=language,
             variable_form=variable_form,
-            per_element=per_element,
+            call_count=len(arg_values),
         )
     if (
         not language.supports_inline_multiline_dict_args
@@ -4543,8 +4624,14 @@ def literalize_call(
             :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls`
             is ``True``.
         per_element: If ``True`` (default), each top-level list element
-            becomes a separate call.  If ``False``, the whole
-            literalized value is passed as a single argument.
+            becomes a separate call (an element that is itself an empty
+            list yields a zero-argument call).  If ``False``, the whole
+            literalized value is passed as a single argument.  A
+            *variable_form* binding requires exactly one call, so it is
+            valid with ``per_element=False`` (always one call) or with
+            ``per_element=True`` over a single-element source; the
+            zero-argument constructor ``p2 = Playlist()`` is produced by
+            the latter with a ``[[]]`` source.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
             complete, self-contained source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.  A
@@ -4641,9 +4728,16 @@ def literalize_call(
             inference are controlled by the per-language
             ``declaration_style`` and ``Modifiers`` enums on the
             supplied ``Language`` instance, not by extra arguments
-            here.  Incompatible with ``per_element=True`` (no
-            per-element name vector is provided); incompatible with
-            languages whose call form is not an expression
+            here.  A single name can bind only one call result, so the
+            input must produce exactly one call: ``per_element=False``
+            always does, and ``per_element=True`` does when the source
+            has exactly one top-level element (a single-element ``[[]]``
+            source is how the zero-argument constructor
+            ``p2 = Playlist()`` is reached).  Zero calls (an empty
+            ``per_element`` source) or more than one call are rejected
+            with
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`,
+            as are languages whose call form is not an expression
             (``call_returns_expression=False``).
 
     .. note::
@@ -4717,7 +4811,6 @@ def literalize_call(
         call_transform=call_transform,
         style=style,
         variable_form=variable_form,
-        per_element=per_element,
     )
     zip_resolution = _resolve_zip_literals(
         zip_source=zip_source,
@@ -4793,6 +4886,7 @@ def literalize_call(
             ref_values=materialized_ref_values,
             ref_key=ref_key,
             comment_literals=comment_literals,
+            variable_form=variable_form,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
         )
@@ -4822,7 +4916,14 @@ def literalize_call(
     computed = compute_preamble(
         data=preamble_data,
         language=language,
-        has_variable_declaration=isinstance(variable_form, NewVariable),
+        # A ``variable_form`` here binds a *call result*, not a literal,
+        # so the call-binding declaration carries no value-type
+        # annotation (languages whose literal binding injects one drop
+        # it via ``format_call_variable_declaration``).  Treating it as
+        # an annotated declaration would emit an annotation-only
+        # preamble (e.g. Python's ``from typing import Any``) that the
+        # call binding never uses, leaving a stale import.
+        has_variable_declaration=False,
     )
     preamble = deduplicate_preamble_entries(
         entries=(

@@ -23,6 +23,29 @@ Next
   ``supports_dotted_call_stub`` properties;
   :func:`~literalizer.literalize_call` does not inspect them.
 
+2026.05.18
+----------
+
+
+- :func:`~literalizer.literalize_call` can now bind a zero-argument
+  call to a ``variable_form``.  Previously a ``variable_form`` was
+  rejected outright with ``per_element=True`` and the whole-value path
+  (``per_element=False``) always passed one argument, so the
+  zero-argument constructor case (``p2 = Playlist()``,
+  ``let p2 = Playlist::new();``) had no representation.  A
+  ``variable_form`` is now accepted whenever the input produces exactly
+  one call: ``per_element=False`` as before, or ``per_element=True``
+  over a single-element source (a ``[[]]`` source yields the
+  zero-argument constructor).  Zero calls or more than one call are
+  rejected with
+  :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+  As part of this, a call-result binding no longer carries a type
+  annotation derived from the call's *argument* data (which a strict
+  type-checker rejected, since the annotation describes the argument,
+  not the call's return type): :class:`~literalizer.Python` now binds
+  the call result with a plain ``name = value`` and the annotation-only
+  preamble it would have required is no longer emitted.
+
 - :func:`~literalizer.literalize_call` now honors
   ``collection_layout=CollectionLayout.COMPACT`` for the ``$zipped``
   literal exposed on :class:`~literalizer.CallContext`.  Previously a
