@@ -1877,13 +1877,13 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Value | None], str]:
         """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
-        except for trivially-copyable scalars.
+        except for ``trivially-copyable`` scalars.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
         the variable is never modified, so ``std::move`` is used for
         container-typed refs to satisfy the linter.  Applying
-        ``std::move`` to a trivially-copyable scalar (``int``, ``bool``,
+        ``std::move`` to a ``trivially-copyable`` scalar (``int``, ``bool``,
         ``float``) is itself a clang-tidy
         ``hicpp-move-const-arg`` / ``performance-move-const-arg``
         warning ("has no effect; remove std::move()"), so we drop the
@@ -1896,7 +1896,7 @@ class Cpp(metaclass=LanguageCls):
             name: str, value: Value | None, /
         ) -> str:
             """Wrap the identifier in ``std::move()`` unless *value* is
-            a trivially-copyable scalar.
+            a ``trivially-copyable`` scalar.
             """
             if isinstance(value, bool | int | float):
                 return name

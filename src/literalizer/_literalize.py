@@ -197,9 +197,9 @@ class LiteralizeResult:
     callers do not need it.  Callers that combine multiple
     ``literalize`` results and re-invoke
     :attr:`Language.compute_body_preamble` to derive a single body
-    preamble surface this so the recomputation can inspect actual
-    values (e.g. datetime microsecond precision) rather than passing
-    a placeholder.
+    preamble surface this so the second call can inspect the actual
+    values (e.g. datetime microsecond precision) rather than a
+    placeholder.
     """
 
     @property

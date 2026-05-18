@@ -9,8 +9,7 @@ Changelog
    per-language support matrix.  New strategy additions are recorded
    there as well as in the entries below.
 
-Next
-----
+.. towncrier release notes start
 
 2026.05.18.1
 ------------
@@ -871,7 +870,7 @@ Next
   and :class:`~literalizer.Rust`, and ``False`` on every other language.
 
 - :class:`~literalizer.Java` now offers ``VersionFormats.JDK_16``
-  alongside ``VersionFormats.JDK_11`` (still the default), selectable
+  alongside ``VersionFormats.JDK_11`` (still the default), selected
   via ``language_version``.  Generated code is currently identical for
   both targets; the member exists so a future Java ``RECORD``
   ``heterogeneous_strategy`` (whose ``record`` declarations require
@@ -1098,13 +1097,13 @@ Next
   from ref identifier to the value declared elsewhere for that ref.
   Languages whose ``$ref`` rendering depends on the referenced type
   (V's ``.clone()`` for arrays and maps, Mojo's ``^`` for non-trivial
-  values, C++'s ``std::move`` for non-trivially-copyable values)
+  values, C++'s ``std::move`` for ``non-trivially-copyable`` values)
   consult it to choose the right form; when omitted these languages
   keep their type-agnostic default.  ``V`` now emits a bare identifier
   for scalar refs (``int``, ``bool``, ``f64``) because ``int.clone()``
   is rejected by the V compiler; ``Mojo`` drops ``^`` for
   register-trivial scalars where it is a hard error under ``--Werror``;
-  ``Cpp`` drops ``std::move`` for trivially-copyable scalars where
+  ``Cpp`` drops ``std::move`` for ``trivially-copyable`` scalars where
   clang-tidy's ``hicpp-move-const-arg`` rejects it.  Preamble inference
   also walks the resolved ``ref_values`` so sum-type body declarations
   (Haskell's ``data Val``, OCaml's ``val_t``, Roc's ``Val``, …) include
@@ -1729,7 +1728,7 @@ Next
   ``func(arg1, arg2)``.
 - ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
   names for the ``static const struct`` globals that back dotted call
-  targets, so a user-written ``throttler.check(...)`` literalizes to
+  targets, so a user-written ``throttler.check(...)`` is rendered as
   ``kThrottler.check(...)`` (and ``app.client.fetch`` to
   ``kApp.client.fetch``).  clang-tidy's
   ``google-objc-global-variable-declaration`` check, previously
