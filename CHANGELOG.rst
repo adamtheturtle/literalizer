@@ -12,6 +12,10 @@ Changelog
 Next
 ----
 
+2026.05.18
+----------
+
+
 - :func:`~literalizer.literalize_call` can now bind a zero-argument
   call to a ``variable_form``.  Previously a ``variable_form`` was
   rejected outright with ``per_element=True`` and the whole-value path
