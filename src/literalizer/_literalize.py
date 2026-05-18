@@ -4328,6 +4328,42 @@ def _preamble_data_with_zip(
 
 
 @beartype
+def _render_zip_literal(
+    *,
+    value: Value,
+    language: Language,
+    collection_layout: CollectionLayout,
+) -> str:
+    """Render one paired zip value as a language-native literal.
+
+    The whole value is rendered through :func:`_format_value` -- the
+    same path call arguments take -- so ``$zipped`` is symmetric with
+    the call-argument value rendered by the same call for every
+    *collection_layout* (issue #2532): under
+    :attr:`CollectionLayout.COMPACT` a mapping stays single-line, and
+    under :attr:`CollectionLayout.MULTILINE` it expands exactly as a
+    call-argument mapping would.  Refs are disabled here just as in the
+    surrounding zip path, so the whole-value renderer needs no ref
+    wiring.
+    """
+    check_data(data=value, spec=language)
+    return _format_value(
+        value=value,
+        spec=language,
+        dict_open_override=None,
+        wrap_ids=_compute_wrap_ids(data=value, spec=language),
+        tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
+        sequence_open_override=None,
+        ref_case=None,
+        ref_values=None,
+        expand_refs=False,
+        ref_key=_DISABLED_REF_KEY,
+        collection_layout=collection_layout,
+        multiline_prefix="",
+    )
+
+
+@beartype
 def _resolve_zip_literals(
     *,
     zip_source: str | None,
@@ -4353,9 +4389,10 @@ def _resolve_zip_literals(
     :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`,
     :class:`~literalizer.exceptions.PerElementNotListError`, or
     :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
-    Each entry is rendered the same way :func:`literalize` renders a
-    whole value, so the paired literal matches the target language
-    (``True`` in Python, ``true`` in TypeScript, ...).
+    Each entry is rendered by :func:`_render_zip_literal` so the paired
+    literal matches the target language (``True`` in Python, ``true``
+    in TypeScript, ...) and honors *collection_layout* consistently
+    with the call arguments rendered by the same call.
     """
     if zip_source is None:
         return None
@@ -4389,14 +4426,9 @@ def _resolve_zip_literals(
         language.validate_spec_for_data(data=value)
         values.append(value)
         literals.append(
-            _literalize(
-                data=value,
+            _render_zip_literal(
+                value=value,
                 language=language,
-                line_prefix="",
-                include_delimiters=True,
-                ref_case=None,
-                ref_values=None,
-                ref_key=_DISABLED_REF_KEY,
                 collection_layout=collection_layout,
             )
         )
