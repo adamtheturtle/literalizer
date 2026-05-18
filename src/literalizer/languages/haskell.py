@@ -381,7 +381,7 @@ def _wrap_str_with_constructor(
     base_format_string: Callable[[str], str],
 ) -> str:
     """Wrap a formatted string with the constructor prefix."""
-    return f"{string_constructor}{base_format_string(value=value)}"
+    return f"{string_constructor}{base_format_string(value)}"
 
 
 @beartype
