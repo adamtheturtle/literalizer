@@ -164,7 +164,7 @@ def run_elm_make(
             cwd=cwd,
             env=dict(env),
         )
-        if result.returncode == 0 or not _is_elm_transient_error(result):
+        if result.returncode == 0 or not _is_elm_transient_error(result=result):
             return result
         # Transient failures (especially CORRUPT CACHE) leave a
         # bad ``elm-stuff`` cache on disk; subsequent attempts

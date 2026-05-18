@@ -11,7 +11,7 @@ def main() -> None:
     filename = sys.argv[1]
     with Path(filename).open(mode="rb") as fp:
         try:
-            tomli.load(fp)
+            tomli.load(__fp=fp)
         except tomli.TOMLDecodeError as e:
             sys.stderr.write(f"{filename}: {e}\n")
             sys.exit(1)
