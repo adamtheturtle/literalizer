@@ -647,18 +647,47 @@ def test_literalize_wrap_in_file_without_variable_not_supported_raises() -> (
         )
 
 
-def test_literalize_call_variable_form_per_element_raises() -> None:
-    """``variable_form`` with ``per_element=True`` is rejected.
+def test_literalize_call_variable_form_multiple_calls_raises() -> None:
+    """``variable_form`` with a ``per_element`` source of more than one
+    element is rejected.
 
-    The API does not provide a name vector per element, so this
-    combination cannot be made to render a binding for each call.
+    A single name can bind only one call result, so a source producing
+    several calls leaves it ambiguous which call's result to bind.
     """
     with pytest.raises(
         expected_exception=UnsupportedCallShapeError,
-        match=(r"variable_form is incompatible with per_element=True"),
+        match=(
+            r"variable_form binds a single call result, but this input "
+            r"produces 2 calls"
+        ),
     ):
         literalize_call(
             source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            per_element=True,
+            variable_form=NewVariable(name="result"),
+        )
+
+
+def test_literalize_call_variable_form_zero_calls_raises() -> None:
+    """``variable_form`` with an empty ``per_element`` source is
+    rejected.
+
+    An empty top-level list produces no calls, so there is no result
+    for the variable to bind.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match=(
+            r"variable_form binds a single call result, but this input "
+            r"produces 0 calls"
+        ),
+    ):
+        literalize_call(
+            source="[]",
             input_format=InputFormat.JSON,
             language=Python(),
             target_function="process",

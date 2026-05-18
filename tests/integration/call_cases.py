@@ -1236,6 +1236,37 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         skip_lang_names=frozenset(),
     ),
     CallCaseConfig(
+        # Zero-argument call bound to a variable: the
+        # ``p2 = Playlist()`` constructor case from issue #2534.  The
+        # ``input.yaml`` is a single-element list whose element is an
+        # empty list (``- []``), so ``per_element=True`` yields exactly
+        # one zero-argument call -- the only shape that produces a call
+        # with no arguments (``per_element=False`` always passes the
+        # whole value as one argument).  ``variable_form`` is valid
+        # here because a single-element source is exactly one call.
+        case_dir_name="call_variable_form_no_args",
+        target_function="make_widget",
+        parameter_names=[],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=literalizer.NewVariable(name="my_data"),
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        skip_lang_names=frozenset(),
+    ),
+    CallCaseConfig(
         # 27-parameter call exercises the type-variable generators in
         # languages whose call-stub signatures use one type variable per
         # parameter past the 26-letter alphabet (Gleam ``a1``, Roc
