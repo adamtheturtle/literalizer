@@ -26,11 +26,11 @@ extensions = [
 
 # Render the unreleased ``newsfragments/`` entries into
 # ``docs/source/unreleased.rst`` so the Sphinx spelling, doc-build and
-# linkcheck gates cover changelog prose before it is assembled into
+# link-checking gates cover the prose before it is assembled into
 # CHANGELOG.rst at release time.  ``include_empty=True`` makes the page
-# show the towncrier template's "No significant changes." line between
-# releases instead of an empty section (which would otherwise be a
-# document with no body).
+# show the "No significant changes." placeholder line between releases
+# instead of an empty section (which would otherwise be a document
+# with no body).
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = True
 towncrier_draft_working_directory = f"{_pyproject_file.parent}"
