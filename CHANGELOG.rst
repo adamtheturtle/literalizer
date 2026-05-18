@@ -12,6 +12,16 @@ Changelog
 Next
 ----
 
+- :class:`~literalizer.languages.rust.Rust` now exposes a non-empty
+  ``Modifiers`` enum with a single ``MUT`` member.  Passing
+  ``NewVariable(name=..., modifiers={Rust.Modifiers.MUT})`` (or the same
+  via :func:`~literalizer.literalize_call`) renders a mutable binding
+  (``let mut name = ...;``) instead of the immutable default
+  (``let name = ...;``), so a value constructed and bound through the
+  variable form can then be mutated through that binding.  The modifier
+  applies to the default ``LET`` declaration style; other declaration
+  styles ignore it.
+
 - Added two metadata properties to the :class:`~literalizer.Language`
   protocol: ``supports_multi_param_call_wrapper_stub`` (whether the
   language can declare and positionally invoke a wrapper stub that
