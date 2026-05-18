@@ -380,13 +380,13 @@ def format_string_raw_python(value: str) -> str:
     stripped = value.rstrip("\\")
     trailing_backslashes = len(value) - len(stripped)
     if trailing_backslashes % 2 == 1:
-        return format_string_backslash(value)
+        return format_string_backslash(quote_char=value)
     has_newline = "\n" in value or "\r" in value
     if '"' not in value and not has_newline:
         return f'r"{value}"'
     if "'''" not in value:
         return f"r'''{value}'''"
-    return format_string_backslash(value)
+    return format_string_backslash(quote_char=value)
 
 
 @beartype
@@ -403,7 +403,7 @@ def format_string_raw_rust(value: str) -> str:
     Example: ``hello\nworld`` -> ``r#"hello\nworld"#``.
     """
     if "\n" in value or "\r" in value:
-        return format_string_backslash(value)
+        return format_string_backslash(quote_char=value)
     hashes = "#"
     while f'"{hashes}' in value:
         hashes += "#"

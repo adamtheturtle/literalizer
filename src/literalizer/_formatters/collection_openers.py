@@ -141,7 +141,7 @@ def make_narrowed_empty_form(
     def _narrowed_empty_form(siblings: Sequence[list[Value]]) -> str:
         """Compute the typed empty literal for the parent's siblings."""
         inner = infer_element_type(items=siblings[0])
-        type_name = element_to_type(inner) if inner is not None else None
+        type_name = element_to_type(element_type=inner) if inner is not None else None
         return template.format(type=type_name or fallback_type)
 
     return _narrowed_empty_form
@@ -203,7 +203,7 @@ def _apply_type_to_opener(
     opener_template: str,
 ) -> str | None:
     """Resolve a Python element type to a collection opener."""
-    type_name = element_to_type(element_type)
+    type_name = element_to_type(element_type=element_type)
     if type_name is None:
         return None
     return opener_template.format(type_name=type_name)
@@ -249,7 +249,7 @@ def _typed_collection_open_impl(
     element_type = infer_element_type(items=items)
     if element_type is None:
         return fallback
-    return type_to_opener(element_type) or fallback
+    return type_to_opener(element_type=element_type) or fallback
 
 
 @beartype
@@ -299,7 +299,7 @@ def _typed_dict_open_impl(
     element_type = infer_element_type(items=list(items.values()))
     if element_type is None:
         return fallback
-    return type_to_opener(element_type) or fallback
+    return type_to_opener(element_type=element_type) or fallback
 
 
 @beartype

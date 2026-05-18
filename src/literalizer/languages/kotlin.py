@@ -1575,7 +1575,7 @@ class Kotlin(metaclass=LanguageCls):
                 for item in items
             ):
                 return any_open
-            return base(items)
+            return base(cfg=items)
 
         return _open
 

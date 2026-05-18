@@ -1256,7 +1256,7 @@ class Gleam(metaclass=LanguageCls):
                     "the Erlang target."
                 )
                 raise UnrepresentableSpecialFloatError(msg)
-            return finite(value)
+            return finite(prefix=value)
 
         return _format
 
