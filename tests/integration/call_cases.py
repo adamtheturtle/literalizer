@@ -576,8 +576,8 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         ref_case_per_language=False,
         consumable_refs=frozenset[str](),
         requires_call_returns_expression=True,
-        # The compact ``$zipped`` mapping is single-line, so no
-        # inline-multiline-dict-arg support is needed.
+        # The compact ``$zipped`` mapping is single-line, so this case
+        # does not need multiline dictionary call argument support.
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
@@ -586,8 +586,12 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         zip_input_format=literalizer.InputFormat.YAML,
         comment_source=None,
         transform_stub_param_names=["_call", "_zip"],
-        # Same wrapper-stub limitations as ``call_zip_values``.
-        skip_lang_names=frozenset({"Zig", "Groovy"}),
+        # Zig and Groovy share ``call_zip_values``' wrapper-stub
+        # limitations.  SystemVerilog renders a mapping as a bare
+        # ``'{...}`` assignment pattern, which is only legal with a
+        # typed left-hand side; spliced into the ``call_transform`` as
+        # a free expression it cannot be sized, so it is skipped here.
+        skip_lang_names=frozenset({"Zig", "Groovy", "SystemVerilog"}),
     ),
     CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
