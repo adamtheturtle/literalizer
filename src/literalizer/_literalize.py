@@ -4328,6 +4328,53 @@ def _preamble_data_with_zip(
 
 
 @beartype
+def _render_zip_literal(
+    *,
+    value: Value,
+    language: Language,
+    collection_layout: CollectionLayout,
+) -> str:
+    """Render one paired zip value as a language-native literal.
+
+    Under :attr:`CollectionLayout.MULTILINE` this delegates to
+    :func:`_literalize`, whose top-level mappings expand one key-value
+    pair per line.  Under :attr:`CollectionLayout.COMPACT` it instead
+    renders the whole value through :func:`_format_value` -- the same
+    path call arguments use -- so a ``$zipped`` mapping stays
+    single-line, consistent with the call-argument mapping rendered by
+    the same call (issue #2532).  Refs are disabled here just as in the
+    :func:`_literalize` zip path, so the dedicated whole-value renderer
+    needs no ref wiring.
+    """
+    if collection_layout is CollectionLayout.MULTILINE:
+        return _literalize(
+            data=value,
+            language=language,
+            line_prefix="",
+            include_delimiters=True,
+            ref_case=None,
+            ref_values=None,
+            ref_key=_DISABLED_REF_KEY,
+            collection_layout=collection_layout,
+        )
+    check_data(data=value, spec=language)
+    return _format_value(
+        value=value,
+        spec=language,
+        dict_open_override=None,
+        wrap_ids=_compute_wrap_ids(data=value, spec=language),
+        tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
+        sequence_open_override=None,
+        ref_case=None,
+        ref_values=None,
+        expand_refs=False,
+        ref_key=_DISABLED_REF_KEY,
+        collection_layout=CollectionLayout.COMPACT,
+        multiline_prefix="",
+    )
+
+
+@beartype
 def _resolve_zip_literals(
     *,
     zip_source: str | None,
@@ -4353,9 +4400,10 @@ def _resolve_zip_literals(
     :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`,
     :class:`~literalizer.exceptions.PerElementNotListError`, or
     :class:`~literalizer.exceptions.ZipValuesLengthMismatchError`.
-    Each entry is rendered the same way :func:`literalize` renders a
-    whole value, so the paired literal matches the target language
-    (``True`` in Python, ``true`` in TypeScript, ...).
+    Each entry is rendered by :func:`_render_zip_literal` so the paired
+    literal matches the target language (``True`` in Python, ``true``
+    in TypeScript, ...) and honors *collection_layout* consistently
+    with the call arguments rendered by the same call.
     """
     if zip_source is None:
         return None
@@ -4389,14 +4437,9 @@ def _resolve_zip_literals(
         language.validate_spec_for_data(data=value)
         values.append(value)
         literals.append(
-            _literalize(
-                data=value,
+            _render_zip_literal(
+                value=value,
                 language=language,
-                line_prefix="",
-                include_delimiters=True,
-                ref_case=None,
-                ref_values=None,
-                ref_key=_DISABLED_REF_KEY,
                 collection_layout=collection_layout,
             )
         )

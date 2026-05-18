@@ -559,6 +559,37 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         skip_lang_names=frozenset({"Zig", "Groovy"}),
     ),
     CallCaseConfig(
+        # Mapping-valued ``zip_source`` exercising issue #2532: under
+        # the default ``CollectionLayout.COMPACT`` the ``$zipped``
+        # mapping must render single-line, consistent with the
+        # call-argument mapping rendered by the same call, so a
+        # one-line ``call_transform`` stays on one physical line.
+        case_dir_name="call_zip_dict_values",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
+        transform_stub_names=["emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        # The compact ``$zipped`` mapping is single-line, so no
+        # inline-multiline-dict-arg support is needed.
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source="---\n- a: 1\n  b: 2\n- c: 3\n  d: 4\n",
+        zip_input_format=literalizer.InputFormat.YAML,
+        comment_source=None,
+        transform_stub_param_names=["_call", "_zip"],
+        # Same wrapper-stub limitations as ``call_zip_values``.
+        skip_lang_names=frozenset({"Zig", "Groovy"}),
+    ),
+    CallCaseConfig(
         case_dir_name="call_transform_no_wrapper",
         target_function="process",
         parameter_names=["value"],

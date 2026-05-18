@@ -12,6 +12,16 @@ Changelog
 Next
 ----
 
+- :func:`~literalizer.literalize_call` now honors
+  ``collection_layout=CollectionLayout.COMPACT`` for the ``$zipped``
+  literal exposed on :class:`~literalizer.CallContext`.  Previously a
+  mapping paired through ``zip_source`` always rendered multi-line,
+  even though the call-argument mapping rendered by the same call was
+  single-line under the same setting, which split a one-line
+  ``call_transform`` across several physical lines.  The ``$zipped``
+  literal is now rendered through the same whole-value path as call
+  arguments, so a compact mapping stays on one line.
+
 - Added support for Haxe as a new output language.  ``Haxe`` renders
   every collection literal with an explicit ``(... : Array<Dynamic>)``
   or ``(... : Map<String, Dynamic>)`` cast, so heterogeneous and empty
