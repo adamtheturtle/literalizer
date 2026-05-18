@@ -760,6 +760,8 @@ class LanguageCls(type):
     max_call_parameters: int
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
+    supports_multi_param_call_wrapper_stub: bool
+    supports_dict_literal_as_free_expression: bool
     supports_module_name: bool
     supports_empty_dict_key: bool
     supports_call_style: bool
@@ -1031,6 +1033,27 @@ class Language(Protocol):
     for callers and the test harness, which use it to decide whether a
     generated bare-wrapper stub can compile in this language;
     :func:`~literalizer.literalize_call` does not inspect it.
+    """
+
+    supports_multi_param_call_wrapper_stub: bool
+    """Whether the language can declare, and positionally invoke, a
+    harness wrapper stub that receives the call's result alongside one
+    or more additional positional arguments.  Metadata for the test
+    harness only; :func:`~literalizer.literalize_call` does not inspect
+    it.  ``False`` for languages whose generated multi-parameter stub
+    cannot accept the call expression positionally -- e.g. a strongly
+    typed stub fed a ``void``-returning call, or an object-style stub
+    that rejects a positional multi-argument invocation.
+    """
+
+    supports_dict_literal_as_free_expression: bool
+    """Whether a dict/map literal can appear as a free-standing
+    expression (e.g. spliced as a call argument) rather than only on
+    the right-hand side of a typed assignment.  Metadata for the test
+    harness only; :func:`~literalizer.literalize_call` does not inspect
+    it.  ``False`` for languages whose map-literal syntax needs a typed
+    left-hand side to be sized -- e.g. SystemVerilog ``'{...}``
+    assignment patterns.
     """
 
     @property
