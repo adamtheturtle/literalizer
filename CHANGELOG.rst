@@ -12,6 +12,10 @@ Changelog
 Next
 ----
 
+2026.05.18.1
+------------
+
+
 - :class:`~literalizer.languages.rust.Rust` now exposes a non-empty
   ``Modifiers`` enum with a single ``MUT`` member.  Passing
   ``NewVariable(name=..., modifiers={Rust.Modifiers.MUT})`` (or the same
