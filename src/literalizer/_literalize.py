@@ -4336,27 +4336,16 @@ def _render_zip_literal(
 ) -> str:
     """Render one paired zip value as a language-native literal.
 
-    Under :attr:`CollectionLayout.MULTILINE` this delegates to
-    :func:`_literalize`, whose top-level mappings expand one key-value
-    pair per line.  Under :attr:`CollectionLayout.COMPACT` it instead
-    renders the whole value through :func:`_format_value` -- the same
-    path call arguments use -- so a ``$zipped`` mapping stays
-    single-line, consistent with the call-argument mapping rendered by
-    the same call (issue #2532).  Refs are disabled here just as in the
-    :func:`_literalize` zip path, so the dedicated whole-value renderer
-    needs no ref wiring.
+    The whole value is rendered through :func:`_format_value` -- the
+    same path call arguments take -- so ``$zipped`` is symmetric with
+    the call-argument value rendered by the same call for every
+    *collection_layout* (issue #2532): under
+    :attr:`CollectionLayout.COMPACT` a mapping stays single-line, and
+    under :attr:`CollectionLayout.MULTILINE` it expands exactly as a
+    call-argument mapping would.  Refs are disabled here just as in the
+    surrounding zip path, so the whole-value renderer needs no ref
+    wiring.
     """
-    if collection_layout is CollectionLayout.MULTILINE:
-        return _literalize(
-            data=value,
-            language=language,
-            line_prefix="",
-            include_delimiters=True,
-            ref_case=None,
-            ref_values=None,
-            ref_key=_DISABLED_REF_KEY,
-            collection_layout=collection_layout,
-        )
     check_data(data=value, spec=language)
     return _format_value(
         value=value,
@@ -4369,7 +4358,7 @@ def _render_zip_literal(
         ref_values=None,
         expand_refs=False,
         ref_key=_DISABLED_REF_KEY,
-        collection_layout=CollectionLayout.COMPACT,
+        collection_layout=collection_layout,
         multiline_prefix="",
     )
 
