@@ -86,6 +86,7 @@ optional-dependencies.dev = [
     # ``towncrier`` at docs-build time, so towncrier is required here as
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
+    "strict-kwargs==2026.5.19",
     "towncrier==25.8.0",
     "ty==0.0.37",
     "types-pygments==2.20.0.20260518",
