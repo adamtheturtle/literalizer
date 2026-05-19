@@ -268,7 +268,9 @@ MESSAGES-CONTROL.disable = [
 MESSAGES-CONTROL.per-file-ignores = [
     "docs/source/conf.py:invalid-name",
     "docs/source/doccmd_*.py:invalid-name",
+    "docs/source/doccmd_*/*.py:invalid-name",
     "doccmd_README_rst_*.py:invalid-name",
+    "doccmd_*/*.py:invalid-name",
 ]
 # Spelling dictionary name. Available dictionaries: none. To make it working
 # install python-enchant package.
