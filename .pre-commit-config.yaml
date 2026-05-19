@@ -368,7 +368,6 @@ repos:
         priority: 190
         stages: [pre-commit]
 
-
       - id: strict-kwargs-fix
         name: strict-kwargs
         entry: uv run --extra=dev strict-kwargs fix

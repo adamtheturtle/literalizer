@@ -448,7 +448,7 @@ def discover_cases(
         special_float = case_dir.name in special_float_cases
         for lang_cls in sorted_languages():
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
-                lang_cls
+                lang_cls=lang_cls
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:
@@ -513,7 +513,7 @@ def discover_combined_cases(
         for lang_cls in sorted_languages():
             lang_name = lang_cls.__name__
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
-                lang_cls
+                lang_cls=lang_cls
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:

@@ -54,7 +54,7 @@ ITERS = 200_000
 def main() -> None:
     """Run ``ITERS`` ``isinstance`` checks for one (mode, size) pair."""
     mode = sys.argv[1]
-    last_label, n_label = mode.split("-")
+    last_label, n_label = mode.split(sep="-")
     n_attrs = int(n_label)
     last_value: object = None if last_label == "none" else True
 
