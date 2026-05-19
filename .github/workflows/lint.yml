@@ -1415,7 +1415,7 @@ jobs:
       # `Haxe.language_version` (`V4`) in
       # `src/literalizer/languages/haxe.py`; keep them in sync.
       - name: Install Haxe
-        uses: krdlab/setup-haxe@v1
+        uses: krdlab/setup-haxe@v2
         with:
           haxe-version: 4.3.6
       # Each fixture already carries a unique class name derived from
