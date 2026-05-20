@@ -24,40 +24,99 @@ class HeterogeneousElements:
     """
 
 
+@dataclasses.dataclass(frozen=True)
+class _PreambleFacts:
+    """Preamble-relevant facts gathered from one data-tree walk."""
+
+    types_present: frozenset[type]
+    has_special_float: bool
+
+
 @beartype
-def _collect_value_types(*, data: Value) -> frozenset[type]:
-    """Return the set of Python types present in *data*."""
+def _collect_preamble_facts(
+    *,
+    data: Value,
+    check_special_float: bool,
+) -> _PreambleFacts:
+    """Return preamble-relevant facts from a single walk over *data*.
+
+    ``check_special_float`` preserves the historical special-float behavior:
+    dict keys contribute preamble types, but only values contribute
+    special-float preamble requirements.
+    """
     match data:
         case dict():
-            child_types: frozenset[type] = frozenset()
-            for k, v in data.items():
-                child_types = child_types | _collect_value_types(data=k)
-                child_types = child_types | _collect_value_types(data=v)
+            dict_types: set[type] = set()
             container_type = (
                 OrderedMap if isinstance(data, OrderedMap) else dict
             )
-            # ``str`` is included unconditionally because typed-map
-            # languages whose dict opener hard-codes the default key
-            # type (e.g. ``std::map<std::string, ...>`` in C++) still
-            # need the string preamble even when the data has no string
-            # keys or values.  The actual rendered code references
-            # ``std::string`` regardless of payload.
-            return frozenset({container_type, str}) | child_types
-        case set():
-            scalar_types: frozenset[type] = frozenset(
-                t
-                for v in data
-                if (t := _preamble_scalar_type(value=v)) is not None
+            dict_types.update({container_type, str})
+            has_special_float = False
+            for k, v in data.items():
+                key_facts = _collect_preamble_facts(
+                    data=k,
+                    check_special_float=False,
+                )
+                value_facts = _collect_preamble_facts(
+                    data=v,
+                    check_special_float=check_special_float,
+                )
+                dict_types.update(key_facts.types_present)
+                dict_types.update(value_facts.types_present)
+                has_special_float = (
+                    value_facts.has_special_float or has_special_float
+                )
+            return _PreambleFacts(
+                types_present=frozenset(dict_types),
+                has_special_float=has_special_float,
             )
-            return frozenset({set}) | scalar_types
-        case list():
-            child_types = frozenset()
+        case set():
+            set_types: set[type] = {set}
+            has_special_float = False
             for v in data:
-                child_types = child_types | _collect_value_types(data=v)
-            return frozenset({list}) | child_types
+                scalar_type = _preamble_scalar_type(value=v)
+                if scalar_type is not None:
+                    set_types.add(scalar_type)
+                has_special_float = (
+                    check_special_float
+                    and isinstance(v, float)
+                    and (math.isinf(v) or math.isnan(v))
+                ) or has_special_float
+            return _PreambleFacts(
+                types_present=frozenset(set_types),
+                has_special_float=has_special_float,
+            )
+        case list():
+            list_types: set[type] = {list}
+            has_special_float = False
+            for v in data:
+                facts = _collect_preamble_facts(
+                    data=v,
+                    check_special_float=check_special_float,
+                )
+                list_types.update(facts.types_present)
+                has_special_float = (
+                    facts.has_special_float or has_special_float
+                )
+            return _PreambleFacts(
+                types_present=frozenset(list_types),
+                has_special_float=has_special_float,
+            )
         case _:
-            result = _preamble_scalar_type(value=data)
-            return frozenset({result}) if result is not None else frozenset()
+            scalar_type = _preamble_scalar_type(value=data)
+            has_special_float = (
+                check_special_float
+                and isinstance(data, float)
+                and (math.isinf(data) or math.isnan(data))
+            )
+            return _PreambleFacts(
+                types_present=(
+                    frozenset({scalar_type})
+                    if scalar_type is not None
+                    else frozenset()
+                ),
+                has_special_float=has_special_float,
+            )
 
 
 @beartype
@@ -187,22 +246,6 @@ def deduplicate_preamble_entries(
             seen.add(entry)
             result.append(entry)
     return tuple(result)
-
-
-@beartype
-def _has_special_float(*, data: Value) -> bool:
-    """Return ``True`` if *data* contains any special float value
-    (inf, -inf, or nan).
-    """
-    match data:
-        case float():
-            return math.isinf(data) or math.isnan(data)
-        case dict():
-            return any(_has_special_float(data=v) for v in data.values())
-        case list() | set():
-            return any(_has_special_float(data=v) for v in data)
-        case _:
-            return False
 
 
 @beartype
@@ -363,7 +406,11 @@ def compute_preamble(
     """Compute preamble lines from the data types present and the
     language configuration.
     """
-    types = _collect_value_types(data=data)
+    preamble_facts = _collect_preamble_facts(
+        data=data,
+        check_special_float=True,
+    )
+    types = preamble_facts.types_present
 
     scalar = tuple(
         line
@@ -373,7 +420,7 @@ def compute_preamble(
     )
     special_float = (
         language.special_float_preamble
-        if float in types and _has_special_float(data=data)
+        if float in types and preamble_facts.has_special_float
         else ()
     )
     collection = _collection_preamble(types=types, language=language)
