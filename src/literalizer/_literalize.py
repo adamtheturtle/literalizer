@@ -343,14 +343,83 @@ _SCALAR_TYPES: Final = (
 )
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _RenderContext:
+    """State shared by recursive formatter calls."""
+
+    spec: Language
+    wrap_ids: frozenset[int]
+    tuple_list_ids: frozenset[int]
+    ref_case: IdentifierCase | None
+    ref_values: Mapping[str, Value] | None
+    expand_refs: bool
+    ref_key: str
+    collection_layout: CollectionLayout
+    multiline_prefix: str
+
+    def compact(self) -> "_RenderContext":
+        """Return this context with compact collection rendering."""
+        if self.collection_layout is CollectionLayout.COMPACT:
+            return self
+        return _RenderContext(
+            spec=self.spec,
+            wrap_ids=self.wrap_ids,
+            tuple_list_ids=self.tuple_list_ids,
+            ref_case=self.ref_case,
+            ref_values=self.ref_values,
+            expand_refs=self.expand_refs,
+            ref_key=self.ref_key,
+            collection_layout=CollectionLayout.COMPACT,
+            multiline_prefix=self.multiline_prefix,
+        )
+
+    def with_multiline(
+        self,
+        *,
+        multiline_prefix: str,
+    ) -> "_RenderContext":
+        """Return this context with multiline collection rendering."""
+        if (
+            self.collection_layout is CollectionLayout.MULTILINE
+            and self.multiline_prefix == multiline_prefix
+        ):
+            return self
+        return _RenderContext(
+            spec=self.spec,
+            wrap_ids=self.wrap_ids,
+            tuple_list_ids=self.tuple_list_ids,
+            ref_case=self.ref_case,
+            ref_values=self.ref_values,
+            expand_refs=self.expand_refs,
+            ref_key=self.ref_key,
+            collection_layout=CollectionLayout.MULTILINE,
+            multiline_prefix=multiline_prefix,
+        )
+
+    def with_prefix(self, *, multiline_prefix: str) -> "_RenderContext":
+        """Return this context with a different multiline prefix."""
+        if self.multiline_prefix == multiline_prefix:
+            return self
+        return _RenderContext(
+            spec=self.spec,
+            wrap_ids=self.wrap_ids,
+            tuple_list_ids=self.tuple_list_ids,
+            ref_case=self.ref_case,
+            ref_values=self.ref_values,
+            expand_refs=self.expand_refs,
+            ref_key=self.ref_key,
+            collection_layout=self.collection_layout,
+            multiline_prefix=multiline_prefix,
+        )
+
+
 @beartype
 def _maybe_wrap_child(
     *,
     parent_id: int,
-    wrap_ids: frozenset[int],
     raw_value: Value,
     formatted_value: str,
-    spec: Language,
+    ctx: _RenderContext,
 ) -> str:
     """Wrap *formatted_value* when *parent_id* is in *wrap_ids*.
 
@@ -359,14 +428,15 @@ def _maybe_wrap_child(
     and non-scalar children (ref markers, containers) through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
     """
+    spec = ctx.spec
     behavior = spec.heterogeneous_behavior
     if isinstance(raw_value, _SCALAR_TYPES):
         wrap_scalar = behavior.wrap_scalar
-        if wrap_scalar is None or parent_id not in wrap_ids:
+        if wrap_scalar is None or parent_id not in ctx.wrap_ids:
             return formatted_value
         return wrap_scalar(raw_value, formatted_value)
     wrap_non_scalar = behavior.wrap_non_scalar
-    if wrap_non_scalar is None or parent_id not in wrap_ids:
+    if wrap_non_scalar is None or parent_id not in ctx.wrap_ids:
         return formatted_value
     return wrap_non_scalar(raw_value, formatted_value)
 
@@ -410,10 +480,10 @@ def _build_dict_entry(
 def _format_set_value(
     *,
     value: set[Scalar],
-    spec: Language,
-    wrap_ids: frozenset[int],
+    ctx: _RenderContext,
 ) -> str:
     """Format a set value as a native language literal."""
+    spec = ctx.spec
     set_cfg = spec.set_format_config
 
     if not value and set_cfg.empty_set is not None:
@@ -431,10 +501,9 @@ def _format_set_value(
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
-                wrap_ids=wrap_ids,
                 raw_value=v,
                 formatted_value=item,
-                spec=spec,
+                ctx=ctx,
             ),
         )
         for v, item in zip(sorted_items, formatted, strict=True)
@@ -467,17 +536,10 @@ def _guard_dict_keys_supported(
 def _format_ordered_map_value(
     *,
     value: OrderedMap,
-    spec: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str:
     """Format an ordered map as a native language literal."""
+    spec = ctx.spec
     _guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
@@ -507,38 +569,21 @@ def _format_ordered_map_value(
         spec.format_ordered_map_entry(
             _format_value(
                 value=k,
-                spec=spec,
                 dict_open_override=None,
-                wrap_ids=wrap_ids,
-                tuple_list_ids=tuple_list_ids,
                 sequence_open_override=None,
-                ref_case=ref_case,
-                ref_values=ref_values,
-                expand_refs=expand_refs,
-                ref_key=ref_key,
-                collection_layout=CollectionLayout.COMPACT,
-                multiline_prefix=multiline_prefix,
+                ctx=ctx.compact(),
             ),
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
-                wrap_ids=wrap_ids,
                 raw_value=v,
                 formatted_value=_format_dict_entry_value(
                     value=v,
-                    spec=spec,
-                    wrap_ids=wrap_ids,
-                    tuple_list_ids=tuple_list_ids,
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
-                    ref_case=ref_case,
-                    ref_values=ref_values,
-                    expand_refs=expand_refs,
-                    ref_key=ref_key,
-                    collection_layout=collection_layout,
-                    multiline_prefix=multiline_prefix,
+                    ctx=ctx,
                 ),
-                spec=spec,
+                ctx=ctx,
             ),
         )
         for k, v in ordered_map_items
@@ -552,15 +597,7 @@ def _format_ordered_map_value(
 def _maybe_format_record_literal(
     *,
     value: dict[Scalar, Value],
-    spec: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str | None:
     """Render *value* as a record-struct literal if eligible.
 
@@ -568,6 +605,7 @@ def _maybe_format_record_literal(
     RECORD-enabled or when *value* is not record-shaped (empty,
     non-string keys, or an ordered map).
     """
+    spec = ctx.spec
     behavior = spec.heterogeneous_behavior
     render_record_literal = behavior.render_record_literal
     if render_record_literal is None:
@@ -575,9 +613,11 @@ def _maybe_format_record_literal(
     record_shape = record_shape_for_dict(value=value)
     if record_shape is None:
         return None
-    is_multiline = collection_layout is CollectionLayout.MULTILINE
-    body_prefix = multiline_prefix + spec.indent if is_multiline else ""
-    field_multiline_prefix = body_prefix if is_multiline else multiline_prefix
+    is_multiline = ctx.collection_layout is CollectionLayout.MULTILINE
+    body_prefix = ctx.multiline_prefix + spec.indent if is_multiline else ""
+    field_ctx = ctx.with_prefix(
+        multiline_prefix=body_prefix if is_multiline else ctx.multiline_prefix
+    )
     # ``record_shape.keys`` holds *value*'s own keys in insertion order
     # (``record_shape_for_dict`` already guaranteed they are all
     # strings); missing-from-this-dict keys are filled in by the
@@ -587,17 +627,9 @@ def _maybe_format_record_literal(
     formatted_fields: dict[str, str] = {
         key: _format_value(
             value=value[key],
-            spec=spec,
             dict_open_override=None,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
             sequence_open_override=None,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=field_multiline_prefix,
+            ctx=field_ctx,
         )
         for key in str_keys
     }
@@ -619,22 +651,14 @@ def _maybe_format_record_literal(
         f"{body_prefix}{entry}{sep if i < last_idx or trailing_comma else ''}"
         for i, entry in enumerate(iterable=rendered.entries)
     )
-    return f"{rendered.head}\n{body}\n{multiline_prefix}{rendered.closer}"
+    return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
 
 
 @beartype
 def _maybe_format_tuple_literal(
     *,
     value: list[Value],
-    spec: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str | None:
     """Render *value* as a fixed-size heterogeneous tuple if eligible.
 
@@ -645,32 +669,27 @@ def _maybe_format_tuple_literal(
     assembler as :func:`_maybe_format_record_literal` so the compact
     and multiline layouts stay identical to record literals.
     """
+    spec = ctx.spec
     behavior = spec.heterogeneous_behavior
     render_tuple_literal = behavior.render_tuple_literal
     if render_tuple_literal is None:
         return None
-    if id(value) not in tuple_list_ids:
+    if id(value) not in ctx.tuple_list_ids:
         return None
-    is_multiline = collection_layout is CollectionLayout.MULTILINE
-    body_prefix = multiline_prefix + spec.indent if is_multiline else ""
-    element_prefix = body_prefix if is_multiline else multiline_prefix
+    is_multiline = ctx.collection_layout is CollectionLayout.MULTILINE
+    body_prefix = ctx.multiline_prefix + spec.indent if is_multiline else ""
+    element_ctx = ctx.with_prefix(
+        multiline_prefix=body_prefix if is_multiline else ctx.multiline_prefix
+    )
     # Tuple-eligible lists are all-scalar (see ``collect_tuple_list_ids``),
     # so every element formats to a single-line literal regardless of
     # the layout; the layout only governs how the elements are joined.
     formatted_elements = [
         _format_value(
             value=element,
-            spec=spec,
             dict_open_override=None,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
             sequence_open_override=None,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=element_prefix,
+            ctx=element_ctx,
         )
         for element in value
     ]
@@ -696,25 +715,18 @@ def _maybe_format_tuple_literal(
         f"{body_prefix}{entry}{sep if i < last_idx or trailing_comma else ''}"
         for i, entry in enumerate(iterable=rendered.entries)
     )
-    return f"{rendered.head}\n{body}\n{multiline_prefix}{rendered.closer}"
+    return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
 
 
 @beartype
 def _format_dict_value(
     *,
     value: dict[Scalar, Value],
-    spec: Language,
     open_override: str | None,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str:
     """Format a dict as a native language literal."""
+    spec = ctx.spec
     _guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
@@ -746,38 +758,21 @@ def _format_dict_value(
         _build_dict_entry(
             key_str=_format_value(
                 value=k,
-                spec=spec,
                 dict_open_override=None,
-                wrap_ids=wrap_ids,
-                tuple_list_ids=tuple_list_ids,
                 sequence_open_override=None,
-                ref_case=ref_case,
-                ref_values=ref_values,
-                expand_refs=expand_refs,
-                ref_key=ref_key,
-                collection_layout=CollectionLayout.COMPACT,
-                multiline_prefix=multiline_prefix,
+                ctx=ctx.compact(),
             ),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
                 parent_id=parent_id,
-                wrap_ids=wrap_ids,
                 raw_value=v,
                 formatted_value=_format_dict_entry_value(
                     value=v,
-                    spec=spec,
-                    wrap_ids=wrap_ids,
-                    tuple_list_ids=tuple_list_ids,
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
-                    ref_case=ref_case,
-                    ref_values=ref_values,
-                    expand_refs=expand_refs,
-                    ref_key=ref_key,
-                    collection_layout=collection_layout,
-                    multiline_prefix=multiline_prefix,
+                    ctx=ctx,
                 ),
-                spec=spec,
+                ctx=ctx,
             ),
             spec=spec,
         )
@@ -787,13 +782,13 @@ def _format_dict_value(
     match open_override:
         case str():
             opener = open_override
-        case _ if not ref_key:
+        case _ if not ctx.ref_key:
             opener = dict_cfg.dict_open(dict_items)
         case _:
             open_items = dict_items
             if any(
                 isinstance(v, dict)
-                and _extract_call_arg_ref_name(value=v, ref_key=ref_key)
+                and _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
                 is not None
                 for v in dict_items.values()
             ):
@@ -801,7 +796,7 @@ def _format_dict_value(
                     k: v
                     for k, v in dict_items.items()
                     if not isinstance(v, dict)
-                    or _extract_call_arg_ref_name(value=v, ref_key=ref_key)
+                    or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
                     is None
                 }
             opener = dict_cfg.dict_open(open_items or dict_items)
@@ -812,17 +807,9 @@ def _format_dict_value(
 def _format_dict_entry_value(
     *,
     value: Value,
-    spec: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -837,45 +824,21 @@ def _format_dict_entry_value(
     if isinstance(value, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
-            spec=spec,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=multiline_prefix,
+            ctx=ctx,
         )
         if tuple_literal is not None:
             return tuple_literal
         return _format_list_value(
             value=value,
-            spec=spec,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=multiline_prefix,
+            ctx=ctx,
         )
     return _format_value(
         value=value,
-        spec=spec,
         dict_open_override=None,
-        wrap_ids=wrap_ids,
-        tuple_list_ids=tuple_list_ids,
         sequence_open_override=None,
-        ref_case=ref_case,
-        ref_values=ref_values,
-        expand_refs=expand_refs,
-        ref_key=ref_key,
-        collection_layout=collection_layout,
-        multiline_prefix=multiline_prefix,
+        ctx=ctx,
     )
 
 
@@ -1180,17 +1143,9 @@ def _format_sequence_child(
     value: list[Value],
     position: int,
     child: Value,
-    spec: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -1218,7 +1173,7 @@ def _format_sequence_child(
         else _empty_child_sibling_opener(
             value=value,
             position=position,
-            spec=spec,
+            spec=ctx.spec,
         )
     )
     if (
@@ -1227,7 +1182,9 @@ def _format_sequence_child(
         and not child
         and sibling_open is not None
     ):
-        narrowed_empty_form = spec.sequence_format_config.narrowed_empty_form
+        narrowed_empty_form = (
+            ctx.spec.sequence_format_config.narrowed_empty_form
+        )
         if narrowed_empty_form is not None:
             non_empty_siblings = [
                 other for other in value if isinstance(other, list) and other
@@ -1235,19 +1192,11 @@ def _format_sequence_child(
             return narrowed_empty_form(non_empty_siblings)
     return _format_value(
         value=child,
-        spec=spec,
         dict_open_override=dict_open_override,
-        wrap_ids=wrap_ids,
-        tuple_list_ids=tuple_list_ids,
         sequence_open_override=(
             parent_override if parent_override is not None else sibling_open
         ),
-        ref_case=ref_case,
-        ref_values=ref_values,
-        expand_refs=expand_refs,
-        ref_key=ref_key,
-        collection_layout=collection_layout,
-        multiline_prefix=multiline_prefix,
+        ctx=ctx,
     )
 
 
@@ -1255,17 +1204,9 @@ def _format_sequence_child(
 def _format_list_value(
     *,
     value: list[Value],
-    spec: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
     sequence_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
 ) -> str:
     """Format a list as a native language literal.
 
@@ -1277,6 +1218,7 @@ def _format_list_value(
     openers for child lists, so nested sequences at matching positions
     across sibling containers can share a widened type.
     """
+    spec = ctx.spec
     sequence_cfg = spec.sequence_format_config
 
     # When a parent has widened this position's opener, skip the
@@ -1288,21 +1230,14 @@ def _format_list_value(
     if (
         not value
         and sequence_cfg.empty_sequence is not None
-        and (sequence_open_override is None or id(value) in wrap_ids)
+        and (sequence_open_override is None or id(value) in ctx.wrap_ids)
     ):
         return sequence_cfg.empty_sequence
-    if collection_layout is CollectionLayout.MULTILINE and value:
+    if ctx.collection_layout is CollectionLayout.MULTILINE and value:
         return _format_multiline_collection_value(
             value=value,
-            spec=spec,
-            line_prefix=multiline_prefix,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
             sequence_open_override=sequence_open_override,
+            ctx=ctx,
         )
     dict_open_override = _compute_sequence_dict_override(
         items=value,
@@ -1314,27 +1249,18 @@ def _format_list_value(
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
-                wrap_ids=wrap_ids,
                 raw_value=v,
                 formatted_value=_format_sequence_child(
                     value=value,
                     position=position,
                     child=v,
-                    spec=spec,
-                    wrap_ids=wrap_ids,
-                    tuple_list_ids=tuple_list_ids,
                     dict_open_override=dict_open_override,
                     child_sequence_open_overrides=(
                         child_sequence_open_overrides
                     ),
-                    ref_case=ref_case,
-                    ref_values=ref_values,
-                    expand_refs=expand_refs,
-                    ref_key=ref_key,
-                    collection_layout=collection_layout,
-                    multiline_prefix=multiline_prefix,
+                    ctx=ctx,
                 ),
-                spec=spec,
+                ctx=ctx,
             ),
         )
         for position, v in enumerate(iterable=value)
@@ -1355,14 +1281,15 @@ def _format_list_value(
     match sequence_open_override:
         case str():
             opener = sequence_open_override
-        case _ if not ref_key:
+        case _ if not ctx.ref_key:
             opener = spec.sequence_open(value)
         case _:
             open_value = [
                 v
                 for v in value
                 if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
+                is None
             ]
             opener = spec.sequence_open(open_value or value)
     return f"{opener}{joined}{sequence_cfg.close}"
@@ -1372,17 +1299,9 @@ def _format_list_value(
 def _format_value(  # noqa: C901  # pylint: disable=too-complex
     *,
     value: Value,
-    spec: Language,
     dict_open_override: str | None,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
     sequence_open_override: str | None,
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
-    collection_layout: CollectionLayout,
-    multiline_prefix: str,
+    ctx: _RenderContext,
     int_formatter: Callable[[int], str] | None = None,
 ) -> str:
     """Format any JSON value as a native language literal.
@@ -1399,133 +1318,90 @@ def _format_value(  # noqa: C901  # pylint: disable=too-complex
     widens nested sequence types at matching positions across sibling
     containers.
 
-    *wrap_ids* is the set of container ids whose scalar children should
-    be wrapped by the spec's
+    The render context carries the language spec, ref policy, layout,
+    indentation prefix, and the set of container ids whose scalar
+    children should be wrapped by the spec's
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
     hook.
 
     ``{"$ref": "name"}`` markers anywhere in the value tree are rendered
     as bare identifiers.  ``literalize`` uses
     :attr:`~literalizer._language.Language.format_call_ref_identifier`;
-    ``literalize_call`` sets *expand_refs* so nested argument refs use
+    ``literalize_call`` sets the context's ``expand_refs`` so nested
+    argument refs use
     :attr:`~literalizer._language.Language.format_call_arg_ref_identifier`.
-    When *ref_case* is set the identifier name is converted to that case
-    first.
+    When the context's ``ref_case`` is set, the identifier name is
+    converted to that case first.
     """
-    if ref_key and isinstance(value, dict):
-        raw_ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+    spec = ctx.spec
+    if ctx.ref_key and isinstance(value, dict):
+        raw_ref_name = _extract_call_arg_ref_name(
+            value=value, ref_key=ctx.ref_key
+        )
         if raw_ref_name is not None:
             ref_name = (
-                ref_case.convert(name=raw_ref_name)
-                if ref_case is not None
+                ctx.ref_case.convert(name=raw_ref_name)
+                if ctx.ref_case is not None
                 else raw_ref_name
             )
             ref_value = (
-                ref_values.get(raw_ref_name)
-                if ref_values is not None
+                ctx.ref_values.get(raw_ref_name)
+                if ctx.ref_values is not None
                 else None
             )
             return (
                 spec.format_call_arg_ref_identifier(ref_name, ref_value)
-                if expand_refs
+                if ctx.expand_refs
                 else spec.format_call_ref_identifier(ref_name, ref_value)
             )
     if isinstance(value, dict) and not isinstance(value, OrderedMap):
         record_literal = _maybe_format_record_literal(
             value=value,
-            spec=spec,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=multiline_prefix,
+            ctx=ctx,
         )
         if record_literal is not None:
             return record_literal
     if isinstance(value, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
-            spec=spec,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=multiline_prefix,
+            ctx=ctx,
         )
         if tuple_literal is not None:
             return tuple_literal
     if (
-        collection_layout is CollectionLayout.MULTILINE
+        ctx.collection_layout is CollectionLayout.MULTILINE
         and isinstance(value, (dict, list, set, OrderedMap))
         and value
     ):
         return _format_multiline_collection_value(
             value=value,
-            spec=spec,
-            line_prefix=multiline_prefix,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=expand_refs,
-            ref_key=ref_key,
             dict_open_override=dict_open_override,
             sequence_open_override=sequence_open_override,
+            ctx=ctx,
         )
     match value:
         case OrderedMap():
             result = _format_ordered_map_value(
                 value=value,
-                spec=spec,
-                wrap_ids=wrap_ids,
-                tuple_list_ids=tuple_list_ids,
-                ref_case=ref_case,
-                ref_values=ref_values,
-                expand_refs=expand_refs,
-                ref_key=ref_key,
-                collection_layout=collection_layout,
-                multiline_prefix=multiline_prefix,
+                ctx=ctx,
             )
         case dict():
             result = _format_dict_value(
                 value=value,
-                spec=spec,
                 open_override=dict_open_override,
-                wrap_ids=wrap_ids,
-                tuple_list_ids=tuple_list_ids,
-                ref_case=ref_case,
-                ref_values=ref_values,
-                expand_refs=expand_refs,
-                ref_key=ref_key,
-                collection_layout=collection_layout,
-                multiline_prefix=multiline_prefix,
+                ctx=ctx,
             )
         case set():
             result = _format_set_value(
                 value=value,
-                spec=spec,
-                wrap_ids=wrap_ids,
+                ctx=ctx,
             )
         case list():
             result = _format_list_value(
                 value=value,
-                spec=spec,
-                wrap_ids=wrap_ids,
-                tuple_list_ids=tuple_list_ids,
                 sequence_open_override=sequence_open_override,
                 child_sequence_open_overrides=(),
-                ref_case=ref_case,
-                ref_values=ref_values,
-                expand_refs=expand_refs,
-                ref_key=ref_key,
-                collection_layout=collection_layout,
-                multiline_prefix=multiline_prefix,
+                ctx=ctx,
             )
         case _:
             result = _format_scalar(
@@ -1574,31 +1450,30 @@ def _wrap_body(
 def _collection_open_for_multiline_value(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
-    spec: Language,
     is_ordered_map: bool,
     dict_open_override: str | None,
     sequence_open_override: str | None,
-    expand_refs: bool,
-    ref_key: str,
+    ctx: _RenderContext,
 ) -> str:
     """Return an opener without a leading prefix.
 
     Used for a nested multiline collection.
     """
-    del expand_refs
+    spec = ctx.spec
     match data:
         case dict() if is_ordered_map:
             opener = spec.ordered_map_format_config.ordered_map_open(data)
         case dict() if dict_open_override is not None:
             opener = dict_open_override
-        case dict() if not ref_key:
+        case dict() if not ctx.ref_key:
             opener = spec.dict_format_config.dict_open(data)
         case dict():
             dict_open_items = {
                 k: v
                 for k, v in data.items()
                 if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
+                is None
             }
             opener = spec.dict_format_config.dict_open(dict_open_items or data)
         case set():
@@ -1609,14 +1484,15 @@ def _collection_open_for_multiline_value(
             opener = spec.set_format_config.set_open(sorted_set)
         case _ if sequence_open_override is not None:
             opener = sequence_open_override
-        case _ if not ref_key:
+        case _ if not ctx.ref_key:
             opener = spec.sequence_open(data)
         case _:
             sequence_open_items = [
                 v
                 for v in data
                 if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
+                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
+                is None
             ]
             opener = spec.sequence_open(sequence_open_items or data)
     return opener
@@ -1626,14 +1502,7 @@ def _collection_open_for_multiline_value(
 def _format_multiline_collection_value(
     *,
     value: dict[Scalar, Value] | set[Scalar] | list[Value],
-    spec: Language,
-    line_prefix: str,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
+    ctx: _RenderContext,
     dict_open_override: str | None = None,
     sequence_open_override: str | None = None,
 ) -> str:
@@ -1644,35 +1513,28 @@ def _format_multiline_collection_value(
     lines and the closing delimiter are prefixed here so nested layouts align
     under that entry.
     """
+    spec = ctx.spec
     is_ordered_map = isinstance(value, OrderedMap)
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
-    body_prefix = line_prefix + spec.indent
+    body_prefix = ctx.multiline_prefix + spec.indent
     lines = _format_collection_lines(
         data=value,
-        spec=spec,
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
-        wrap_ids=wrap_ids,
-        tuple_list_ids=tuple_list_ids,
-        ref_case=ref_case,
-        ref_values=ref_values,
-        expand_refs=expand_refs,
-        ref_key=ref_key,
         collection_layout=CollectionLayout.MULTILINE,
+        ctx=ctx,
     )
     body = "\n".join(lines)
     opening = _collection_open_for_multiline_value(
         data=value,
-        spec=spec,
         is_ordered_map=is_ordered_map,
         dict_open_override=dict_open_override,
         sequence_open_override=sequence_open_override,
-        expand_refs=expand_refs,
-        ref_key=ref_key,
+        ctx=ctx,
     ).rstrip()
     closing_indent = spec.indent if spec.indent_closing_delimiter else ""
-    close_prefix = line_prefix + closing_indent
+    close_prefix = ctx.multiline_prefix + closing_indent
     match value:
         case dict() if is_ordered_map:
             close = spec.ordered_map_format_config.close
@@ -1712,19 +1574,16 @@ def _append_entries(
 def _format_collection_lines(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
-    spec: Language,
     body_prefix: str,
     trailing_comma: bool,
     is_ordered_map: bool,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    expand_refs: bool,
-    ref_key: str,
     collection_layout: CollectionLayout,
+    ctx: _RenderContext,
 ) -> list[str]:
     """Format collection elements as indented lines."""
+    spec = ctx.spec
+    del collection_layout
+    line_ctx = ctx.with_prefix(multiline_prefix=body_prefix)
     lines: list[str] = []
     parent_id = id(data)
     match data:
@@ -1750,37 +1609,20 @@ def _format_collection_lines(
             for k, v in entries:
                 formatted_key: str = _format_value(
                     value=k,
-                    spec=spec,
                     dict_open_override=None,
-                    wrap_ids=wrap_ids,
-                    tuple_list_ids=tuple_list_ids,
                     sequence_open_override=None,
-                    ref_case=ref_case,
-                    ref_values=ref_values,
-                    expand_refs=False,
-                    ref_key=ref_key,
-                    collection_layout=CollectionLayout.COMPACT,
-                    multiline_prefix=body_prefix,
+                    ctx=line_ctx.compact(),
                 )
                 formatted_val = _maybe_wrap_child(
                     parent_id=parent_id,
-                    wrap_ids=wrap_ids,
                     raw_value=v,
                     formatted_value=_format_dict_entry_value(
                         value=v,
-                        spec=spec,
-                        wrap_ids=wrap_ids,
-                        tuple_list_ids=tuple_list_ids,
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
-                        ref_case=ref_case,
-                        ref_values=ref_values,
-                        expand_refs=expand_refs,
-                        ref_key=ref_key,
-                        collection_layout=collection_layout,
-                        multiline_prefix=body_prefix,
+                        ctx=line_ctx,
                     ),
-                    spec=spec,
+                    ctx=ctx,
                 )
                 entry = (
                     spec.format_ordered_map_entry(
@@ -1821,24 +1663,15 @@ def _format_collection_lines(
                     item,
                     _maybe_wrap_child(
                         parent_id=set_parent_id,
-                        wrap_ids=wrap_ids,
                         raw_value=item,
                         formatted_value=_format_value(
                             value=item,
-                            spec=spec,
                             dict_open_override=None,
-                            wrap_ids=wrap_ids,
-                            tuple_list_ids=tuple_list_ids,
                             sequence_open_override=None,
-                            ref_case=ref_case,
-                            ref_values=ref_values,
-                            expand_refs=expand_refs,
-                            ref_key=ref_key,
-                            collection_layout=collection_layout,
-                            multiline_prefix=body_prefix,
+                            ctx=line_ctx,
                             int_formatter=set_int_formatter,
                         ),
-                        spec=spec,
+                        ctx=ctx,
                     ),
                 )
                 for item in sorted_items
@@ -1868,25 +1701,16 @@ def _format_collection_lines(
                     element,
                     _maybe_wrap_child(
                         parent_id=parent_id,
-                        wrap_ids=wrap_ids,
                         raw_value=element,
                         formatted_value=_format_sequence_child(
                             value=list_data,
                             position=position,
                             child=element,
-                            spec=spec,
-                            wrap_ids=wrap_ids,
-                            tuple_list_ids=tuple_list_ids,
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
-                            ref_case=ref_case,
-                            ref_values=ref_values,
-                            expand_refs=expand_refs,
-                            ref_key=ref_key,
-                            collection_layout=collection_layout,
-                            multiline_prefix=body_prefix,
+                            ctx=line_ctx,
                         ),
-                        spec=spec,
+                        ctx=ctx,
                     ),
                 )
                 for position, element in enumerate(iterable=list_data)
@@ -1977,6 +1801,17 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
 
     wrap_ids = _compute_wrap_ids(data=data, spec=language)
     tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)
+    ctx = _RenderContext(
+        spec=language,
+        wrap_ids=wrap_ids,
+        tuple_list_ids=tuple_list_ids,
+        ref_case=ref_case,
+        ref_values=ref_values,
+        expand_refs=False,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        multiline_prefix=line_prefix,
+    )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
     # Sequence, and datetime before date since datetime subclasses
@@ -2000,17 +1835,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     if not data and include_delimiters:
         formatted: str = _format_value(
             value=data,
-            spec=language,
             dict_open_override=None,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
             sequence_open_override=None,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=False,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=line_prefix,
+            ctx=ctx,
         )
         return f"{line_prefix}{formatted}"
 
@@ -2028,17 +1855,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         )
         formatted = _format_value(
             value=empty_value,
-            spec=language,
             dict_open_override=None,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
             sequence_open_override=None,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=False,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix=line_prefix,
+            ctx=ctx,
         )
         return f"{line_prefix}{formatted}"
 
@@ -2049,15 +1868,7 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     ):
         record_literal = _maybe_format_record_literal(
             value=data,
-            spec=language,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=False,
-            ref_key=ref_key,
-            collection_layout=CollectionLayout.MULTILINE,
-            multiline_prefix=line_prefix,
+            ctx=ctx.with_multiline(multiline_prefix=line_prefix),
         )
         if record_literal is not None:
             return f"{line_prefix}{record_literal}"
@@ -2065,15 +1876,7 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     if include_delimiters and isinstance(data, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=data,
-            spec=language,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=False,
-            ref_key=ref_key,
-            collection_layout=CollectionLayout.MULTILINE,
-            multiline_prefix=line_prefix,
+            ctx=ctx.with_multiline(multiline_prefix=line_prefix),
         )
         if tuple_literal is not None:
             return f"{line_prefix}{tuple_literal}"
@@ -2086,17 +1889,11 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
     lines: list[str] = _format_collection_lines(
         data=data,
-        spec=language,
         body_prefix=body_prefix,
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
-        wrap_ids=wrap_ids,
-        tuple_list_ids=tuple_list_ids,
-        ref_case=ref_case,
-        ref_values=ref_values,
-        expand_refs=False,
-        ref_key=ref_key,
         collection_layout=collection_layout,
+        ctx=ctx,
     )
 
     body = "\n".join(lines)
@@ -3237,21 +3034,24 @@ def _format_single_call_arg(
                 ref_name, ref_value
             )
         return language.format_call_arg_ref_identifier(ref_name, ref_value)
+    ctx = _RenderContext(
+        spec=language,
+        wrap_ids=wrap_ids,
+        tuple_list_ids=tuple_list_ids,
+        ref_case=ref_case,
+        ref_values=ref_values,
+        expand_refs=True,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        multiline_prefix="",
+    )
     formatted = wrap_arg(
         value,
         _format_value(
             value=value,
-            spec=language,
             dict_open_override=dict_open_override,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
             sequence_open_override=None,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            expand_refs=True,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-            multiline_prefix="",
+            ctx=ctx,
         ),
     )
     wrap_scalar = language.heterogeneous_behavior.wrap_scalar
@@ -4428,19 +4228,22 @@ def _render_zip_literal(
     wiring.
     """
     check_data(data=value, spec=language)
-    return _format_value(
-        value=value,
+    ctx = _RenderContext(
         spec=language,
-        dict_open_override=None,
         wrap_ids=_compute_wrap_ids(data=value, spec=language),
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
-        sequence_open_override=None,
         ref_case=None,
         ref_values=None,
         expand_refs=False,
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
         multiline_prefix="",
+    )
+    return _format_value(
+        value=value,
+        dict_open_override=None,
+        sequence_open_override=None,
+        ctx=ctx,
     )
 
 
