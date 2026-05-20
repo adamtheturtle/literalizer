@@ -39,6 +39,21 @@ def _apply_backslash_formatter(
     extra_replacements: Sequence[tuple[str, str]],
 ) -> str:
     """Format *value* using backslash escaping."""
+    # Performance fast path: most strings are simple identifiers, keys, or
+    # labels, so avoid the replacement chain unless the value contains a
+    # character or sequence that would actually change the escaped output.
+    has_base_escape = (
+        "\\" in value
+        or quote_char in value
+        or "\r" in value
+        or "\n" in value
+        or "\t" in value
+    )
+    if not has_base_escape and not any(
+        old in value for old, _new in extra_replacements
+    ):
+        return f"{quote_char}{value}{quote_char}"
+
     escaped = _backslash_escape(value=value, quote_char=quote_char)
     for old, new in extra_replacements:
         escaped = escaped.replace(old, new)
