@@ -11,6 +11,11 @@ Changelog
 
 .. towncrier release notes start
 
+2026.05.20
+----------
+
+- Reduce recursive renderer overhead for large JSON inputs.
+
 2026.05.18.1
 ------------
 
