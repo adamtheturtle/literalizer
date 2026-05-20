@@ -75,8 +75,10 @@ def _collect_preamble_facts(
             has_special_float = False
             for v in data:
                 scalar_type = _preamble_scalar_type(value=v)
-                if scalar_type is not None:
-                    set_types.add(scalar_type)
+                if scalar_type is None:  # pragma: no cover
+                    message = "set members must be scalar values"
+                    raise TypeError(message)
+                set_types.add(scalar_type)
                 has_special_float = (
                     check_special_float
                     and isinstance(v, float)
