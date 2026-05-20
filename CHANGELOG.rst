@@ -3,6 +3,11 @@ Changelog
 
 .. towncrier release notes start
 
+2026.05.20.1
+------------
+
+- Speed up backslash string formatting for strings that do not need escaping.
+
 2026.05.20
 ----------
 
