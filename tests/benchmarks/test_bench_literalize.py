@@ -10,6 +10,9 @@ Each case exercises a distinct code path so regressions localize cleanly:
 * ``test_json_nested`` — large nested JSON document, exercising the
   formatter recursion and language-spec dispatch without the YAML
   machinery.
+* ``test_json_large_flat_records`` — large flat JSON record array,
+  exercising repeated dict/list/scalar rendering and large output
+  generation.
 * ``test_heterogeneous_widening`` — sibling dicts and lists with
   diverging inferred types, exercising the sequence/dict opener
   widening logic.
@@ -62,9 +65,31 @@ def _build_json_source(*, depth: int, fanout: int) -> str:
     return json.dumps(obj=build(level=depth))
 
 
+def _build_json_flat_records_source(*, n_records: int) -> str:
+    """Return a large flat JSON array of repeated record-shaped dicts."""
+    return json.dumps(
+        obj=[
+            {
+                "id": i,
+                "name": f"user_{i}",
+                "active": i % 2 == 0,
+                "score": i * 1.25,
+                "tags": [f"tag_{i % 10}", f"group_{i % 25}"],
+                "metrics": {
+                    "views": i * 3,
+                    "clicks": i % 17,
+                    "ratio": (i % 100) / 100,
+                },
+            }
+            for i in range(n_records)
+        ],
+    )
+
+
 _YAML_FAST = _build_yaml_source(n_records=100, with_comments=False)
 _YAML_WITH_COMMENTS = _build_yaml_source(n_records=100, with_comments=True)
 _JSON_NESTED = _build_json_source(depth=4, fanout=4)
+_JSON_LARGE_FLAT_RECORDS = _build_json_flat_records_source(n_records=5_000)
 _JSON_HETEROGENEOUS = json.dumps(
     obj={
         "rows": [
@@ -103,6 +128,15 @@ def test_yaml_with_comments(benchmark: BenchmarkFixture) -> None:
 def test_json_nested(benchmark: BenchmarkFixture) -> None:
     """Deeply nested JSON exercising formatter recursion."""
     benchmark(_run, source=_JSON_NESTED, input_format=InputFormat.JSON)
+
+
+def test_json_large_flat_records(benchmark: BenchmarkFixture) -> None:
+    """Flat JSON record array exercising high-volume rendering."""
+    benchmark(
+        _run,
+        source=_JSON_LARGE_FLAT_RECORDS,
+        input_format=InputFormat.JSON,
+    )
 
 
 def test_heterogeneous_widening(benchmark: BenchmarkFixture) -> None:
