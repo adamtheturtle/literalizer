@@ -1,14 +1,6 @@
 Changelog
 =========
 
-.. seealso::
-
-   :doc:`heterogeneous-strategies` documents the strategies for
-   rendering mixed-type collections (``ERROR``, ``TAGGED_ENUM``,
-   ``RECORD``, ``TUPLE``, and per-language equivalents) and the
-   per-language support matrix.  New strategy additions are recorded
-   there as well as in the entries below.
-
 .. towncrier release notes start
 
 2026.05.20
