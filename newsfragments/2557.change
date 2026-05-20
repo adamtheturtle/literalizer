@@ -1,0 +1,1 @@
+Speed up backslash string formatting for strings that do not need escaping.
