@@ -852,8 +852,6 @@ class V(metaclass=LanguageCls):
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
-        IdentifierCase.PASCAL,
-        IdentifierCase.CAMEL,
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = frozenset(
         {IdentifierCase.SNAKE}
