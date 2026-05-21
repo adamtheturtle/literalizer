@@ -98,7 +98,11 @@ def main() -> None:
             f"{run_result.stderr}",
         )
         sys.exit(1)
-    roundtrip_common.verify(label=_LABEL, produced_json=run_result.stdout)
+    roundtrip_common.verify(
+        label=_LABEL,
+        produced_json=run_result.stdout,
+        exclude_keys=(),
+    )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 

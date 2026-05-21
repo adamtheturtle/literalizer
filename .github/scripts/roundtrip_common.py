@@ -26,25 +26,44 @@ def read_input() -> str:
     return INPUT_PATH.read_text(encoding="utf-8")
 
 
-def expected() -> object:
-    """Return the parsed value the round-trip must reproduce."""
-    return json.loads(s=read_input())
+def expected() -> dict[str, object]:
+    """Return the parsed value the round-trip must reproduce.
+
+    The shared ``roundtrip_input.json`` document is a top-level JSON
+    object, so the parsed value is always a ``dict``.
+    """
+    parsed: dict[str, object] = json.loads(s=read_input())
+    return parsed
 
 
-def verify(label: str, produced_json: str) -> None:
+def verify(
+    label: str,
+    produced_json: str,
+    exclude_keys: tuple[str, ...],
+) -> None:
     """Compare *produced_json* to :func:`expected`, exiting 1 on mismatch.
 
     *label* names the language for the diagnostic.  JSON object key order
     is irrelevant because the comparison is on parsed Python values.
+
+    *exclude_keys* drops the named top-level object keys from both sides
+    before comparing.  This is for languages whose JSON number type
+    cannot represent a value in the shared input losslessly (e.g. the
+    wide ``biginteger`` field in TypeScript, where the literalized
+    program collapses the 26-digit literal to a JS ``number`` before
+    serialization).  Pass ``()`` when no field needs to be skipped.
     """
     want = expected()
     try:
-        got = json.loads(s=produced_json)
+        got: dict[str, object] = json.loads(s=produced_json)
     except json.JSONDecodeError as exc:
         sys.stderr.write(
             f"{label}: produced invalid JSON ({exc})\n{produced_json!r}\n",
         )
         sys.exit(1)
+    for key in exclude_keys:
+        want.pop(key, None)
+        got.pop(key, None)
     if got != want:
         sys.stderr.write(
             f"{label}: round-trip mismatch\n"
