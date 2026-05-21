@@ -1,0 +1,2 @@
+type(fval_t) :: p
+p = Playlist()

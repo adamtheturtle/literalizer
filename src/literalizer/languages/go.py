@@ -88,6 +88,7 @@ from literalizer._language import (
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
+    go_constructor_target,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
@@ -309,6 +310,9 @@ class Go(metaclass=LanguageCls):
     format_integer_widened = no_format_integer_widened
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(go_constructor_target)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

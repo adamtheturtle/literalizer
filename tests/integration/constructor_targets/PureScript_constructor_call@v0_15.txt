@@ -1,0 +1,3 @@
+data Val
+    = PList (Array Val)
+p = Playlist

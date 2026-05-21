@@ -97,6 +97,45 @@ in the output.
 You do not need to choose a style — it is determined automatically by
 the language you pass to :func:`~literalizer.literalize_call`.
 
+Constructor targets
+-------------------
+
+To bind the result of a zero-argument constructor call, ask the language
+for its constructor target and pass that to
+:func:`~literalizer.literalize_call` as ``target_function``:
+
+.. code-block:: python
+
+   """Bind a zero-argument constructor call."""
+
+   from literalizer import InputFormat, NewVariable, literalize_call
+   from literalizer.languages import Rust
+
+   language = Rust()
+   result = literalize_call(
+       source="[[]]",
+       input_format=InputFormat.JSON,
+       language=language,
+       target_function=language.format_constructor_target("Playlist"),
+       parameter_names=[],
+       variable_form=NewVariable(
+           name="p",
+           modifiers=frozenset({Rust.modifiers.MUT}),
+       ),
+   )
+
+   assert result.code == "let mut p = Playlist::new();"
+
+The default constructor target is ``ClassName``.  Languages with
+different common constructor syntax override it; for example Java and
+JavaScript return ``new ClassName``, Go returns ``NewClassName``, Ruby
+returns ``ClassName.new``, and Rust returns ``ClassName::new``.
+
+For languages whose default call style wraps arguments in an object,
+use the positional call-style option when rendering a no-argument
+constructor so the call is emitted as ``new Playlist()`` rather than
+``new Playlist({})``.
+
 Variable references as arguments
 --------------------------------
 

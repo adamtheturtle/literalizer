@@ -87,6 +87,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
+    ruby_constructor_target,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -195,6 +196,9 @@ class Ruby(metaclass=LanguageCls):
     format_integer_widened = no_format_integer_widened
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(ruby_constructor_target)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
