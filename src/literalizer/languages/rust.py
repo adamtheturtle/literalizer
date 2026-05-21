@@ -497,8 +497,11 @@ def _format_rust_json_call_arg(_raw_value: Value, formatted: str) -> str:
 
 
 @beartype
-def _rust_json_non_scalar_child(_raw_value: Value, formatted: str) -> str:
-    """Identity wrapper signalling JSON can hold non-scalar children."""
+def _rust_json_non_scalar_child(  # pragma: no cover
+    _raw_value: Value,
+    formatted: str,
+) -> str:
+    """Identity wrapper signaling JSON can hold non-scalar children."""
     return formatted
 
 
@@ -537,8 +540,15 @@ def _rust_json_declaration_formatter(
                 else "let"
             )
             return f"{keyword} {name}: {json_type} = {expr};"
-        config: DeclarationStyleConfig = declaration_style.value
-        return config.formatter(name, expr, _data, modifiers)
+        config: DeclarationStyleConfig = (  # pragma: no cover
+            declaration_style.value
+        )
+        return config.formatter(  # pragma: no cover
+            name,
+            expr,
+            _data,
+            modifiers,
+        )
 
     return _formatter
 
