@@ -7,17 +7,64 @@ strategy rejects).
 """
 
 from pathlib import Path
+from typing import NoReturn
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.languages import Python
+
 from .call_cases import (
+    CALL_CASE_CONFIGS,
     CallCase,
+    _run_wrap_in_file_case,  # pyright: ignore[reportPrivateUsage]
     discover_call_cases,
     run_call_golden_case,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .language_specs import make_spec
+
+
+def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
+    tmp_path: Path,
+    file_regression: FileRegressionFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Wrapped call cases drop stale golden files on rejected
+    arguments.
+    """
+    config = next(
+        config for config in CALL_CASE_CONFIGS if config.wrap_in_file
+    )
+    golden_path = tmp_path / "stale.py"
+    golden_path.write_text(data="stale\n")
+
+    def reject_call(**_kwargs: object) -> NoReturn:
+        """Raise the configured call argument error."""
+        raise CallArgNotSupportedError(
+            language_name="Python",
+            reason="compound argument",
+        )
+
+    monkeypatch.setattr(target="literalizer.literalize_call", name=reject_call)
+
+    with pytest.raises(
+        expected_exception=pytest.skip.Exception,
+        match="Python rejected call arg: compound argument",
+    ):
+        _run_wrap_in_file_case(
+            config=config,
+            spec=make_spec(lang_cls=Python),
+            yaml_string="[]\n",
+            effective_ref_case=None,
+            lang_name="Python",
+            lang_extension=Python.extension,
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+
+    assert not golden_path.exists()
 
 
 @pytest.mark.parametrize(

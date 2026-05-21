@@ -3112,7 +3112,7 @@ def _format_call_args(
 
     For infix styles returns the parenthesized argument list
     ``(arg1, arg2)``.  A positional style can instead parenthesize
-    each argument separately for curried application syntaxes such as
+    each argument separately for curried application forms such as
     Dhall's ``target (arg1) (arg2)``. For :class:`PostfixCallStyle`
     returns the unwrapped, space-separated argument list so the caller
     can assemble ``args target`` directly.
