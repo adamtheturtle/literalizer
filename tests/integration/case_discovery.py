@@ -119,16 +119,12 @@ class LiteralizeRefCaseConfig:
     using the language's default (``identifier_cases[0]``).  Discovery
     skips any language whose ``supported_ref_cases`` does not include
     the override.
-
-    When *include_language_names* is set, discovery emits the case only
-    for language classes with matching names.
     """
 
     case_dir_name: str
     ref_key: str
     ref_value_sources: tuple[tuple[str, str], ...]
     ref_case_override: literalizer.IdentifierCase | None
-    include_language_names: frozenset[str] | None = None
 
 
 LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
@@ -173,7 +169,6 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         ref_key="$ref",
         ref_value_sources=(),
         ref_case_override=literalizer.IdentifierCase.CAMEL,
-        include_language_names=frozenset({"Python"}),
     ),
     LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_deep_nesting",

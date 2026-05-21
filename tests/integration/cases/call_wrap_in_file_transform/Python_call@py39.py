@@ -1,2 +1,2 @@
 def process(*_args: object, **_kwargs: object) -> object: ...
-process(a=1, b=2)
+my_data = process(a=1, b=2)

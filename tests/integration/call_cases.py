@@ -146,9 +146,6 @@ class CallCaseConfig:
     # the resulting fixture and are skipped (no golden) instead of
     # emitting non-compiling output.
     requires_dict_literal_as_free_expression: bool
-    # Optional narrow language allow-list for compatibility-only
-    # regression fixtures that replace a language-specific unit test.
-    include_language_names: frozenset[str] | None = None
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -1208,13 +1205,12 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
-        variable_form=None,
+        variable_form=literalizer.NewVariable(name="my_data"),
         zip_source=None,
         zip_input_format=None,
         comment_source=None,
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
-        include_language_names=frozenset({"Python"}),
     ),
     CallCaseConfig(
         case_dir_name="call_variable_form_new",
@@ -1638,11 +1634,6 @@ def discover_call_cases() -> list[CallCase]:
     for config in CALL_CASE_CONFIGS:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
-                continue
-            if (
-                config.include_language_names is not None
-                and lang_cls.__name__ not in config.include_language_names
-            ):
                 continue
             if config.call_style_type is not None:
                 # Only include languages that have this as a
