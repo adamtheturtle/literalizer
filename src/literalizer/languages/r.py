@@ -436,7 +436,9 @@ class R(metaclass=LanguageCls):
         """R call style options."""
 
         KEYWORD = KeywordCallStyle(separator=" = ")
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
 
     call_styles = CallStyles
 

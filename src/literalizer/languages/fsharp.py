@@ -590,7 +590,9 @@ class FSharp(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """FSharp call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
         CURRIED = CommandCallStyle(
             arg_separator=" ",
         )

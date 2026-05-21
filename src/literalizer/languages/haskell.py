@@ -1403,7 +1403,9 @@ class Haskell(metaclass=LanguageCls):
         CURRIED = CommandCallStyle(
             arg_separator=" ",
         )
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
 
     call_styles = CallStyles
 

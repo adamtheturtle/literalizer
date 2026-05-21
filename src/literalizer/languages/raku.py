@@ -468,7 +468,9 @@ class Raku(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Raku call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
         KEYWORD = KeywordCallStyle(separator=" => ")
 
     call_styles = CallStyles

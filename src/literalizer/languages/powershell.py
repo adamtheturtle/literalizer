@@ -402,7 +402,9 @@ class PowerShell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """PowerShell call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
 
     call_styles = CallStyles
 

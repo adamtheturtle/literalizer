@@ -186,8 +186,8 @@ class DeclarationStyleConfig:
 class PositionalCallStyle:
     """Positional arguments only: ``func(value1, value2)``."""
 
-    arg_separator: str = ", "
-    parenthesize_each_arg: bool = False
+    arg_separator: str
+    parenthesize_each_arg: bool
 
 
 @dataclasses.dataclass(frozen=True)
