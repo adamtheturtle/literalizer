@@ -1,1 +1,1 @@
-final p = Playlist();
+final p = new Playlist();

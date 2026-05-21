@@ -1,1 +1,1 @@
-var p = Playlist.call()
+var p = Playlist.new()
