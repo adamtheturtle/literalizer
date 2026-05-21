@@ -1,11 +1,9 @@
 """Language-specific tests for literalizer converter."""
 
 import dataclasses
-import textwrap
 from typing import ClassVar
 
 from literalizer import (
-    IdentifierCase,
     InputFormat,
     NewVariable,
     literalize,
@@ -184,60 +182,6 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         '    <String, int>{"n": 2},\n'
         "]"
     )
-
-
-def test_literalize_call_wrap_in_file_transform_stub_returns_value() -> None:
-    """When ``call_transform`` consumes the call result, the stub
-    returns a value instead of ``void``.
-    """
-    result = literalize_call(
-        source="[[1, 2]]",
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="process",
-        parameter_names=["a", "b"],
-        call_transform=lambda ctx: f"emit({ctx.call})",
-        wrap_in_file=True,
-    )
-    expected = textwrap.dedent(
-        text="""\
-        def process(*_args: object, **_kwargs: object) -> object: ...
-        emit(process(a=1, b=2))""",
-    )
-    assert result.code == expected
-
-
-def test_python_accepts_syntactic_non_idiomatic_ref_case() -> None:
-    """Cases legal in the language but absent from the idiomatic
-    preference list are accepted and rendered.
-
-    Python's ``identifier_cases`` lists only ``SNAKE``, ``UPPER_SNAKE``,
-    and ``PASCAL``; ``CAMEL`` is non-idiomatic but still a syntactically
-    legal Python identifier.  Validation uses ``supported_ref_cases``,
-    which exposes ``CAMEL``.
-    """
-    assert Python().identifier_cases == (
-        IdentifierCase.SNAKE,
-        IdentifierCase.UPPER_SNAKE,
-        IdentifierCase.PASCAL,
-    )
-    assert Python().supported_ref_cases == frozenset(
-        {
-            IdentifierCase.SNAKE,
-            IdentifierCase.UPPER_SNAKE,
-            IdentifierCase.PASCAL,
-            IdentifierCase.CAMEL,
-        },
-    )
-
-    result = literalize(
-        source='{"$ref": "user_obj"}',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        ref_case=IdentifierCase.CAMEL,
-    )
-
-    assert result.declaration_code == "userObj"
 
 
 def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:

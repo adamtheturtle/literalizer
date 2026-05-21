@@ -63,8 +63,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     identity_constructor_target,
     never_inhibits_consuming_form,
@@ -355,6 +353,33 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
 
 
 @beartype
+def _dhall_format_call_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+    /,
+) -> str:
+    """Format a Dhall call-result declaration after validating the
+    call.
+    """
+    _dhall_validate_call_stmt(call_expr=value)
+    return f"let {name} = {value} in {name}"
+
+
+@beartype
+def _dhall_format_call_variable_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+    /,
+) -> str:
+    """Format a Dhall call-result assignment after validating the call."""
+    _dhall_validate_call_stmt(call_expr=value)
+    return f"let {name} = {value} in {name}"
+
+
+@beartype
 def _dhall_reject_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     any ``$ref`` argument.
@@ -569,8 +594,12 @@ class Dhall(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_declaration: ClassVar[property] = property(
+        fget=lambda _self: _dhall_format_call_variable_declaration,
+    )
+    format_call_variable_assignment: ClassVar[property] = property(
+        fget=lambda _self: _dhall_format_call_variable_assignment,
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

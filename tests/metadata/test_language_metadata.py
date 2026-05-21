@@ -230,3 +230,17 @@ def test_supported_ref_cases_independent_of_identifier_cases() -> None:
     raku = Raku()
     assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
     assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_identifier_cases_are_supported_ref_cases(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every preferred identifier case must be valid for refs."""
+    preferred_cases = frozenset(language_cls.identifier_cases)
+    assert preferred_cases <= language_cls.supported_ref_cases
