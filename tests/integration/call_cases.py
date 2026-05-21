@@ -1272,6 +1272,34 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
     ),
     CallCaseConfig(
+        # Same zero-argument variable binding, but forced through
+        # positional call style for languages where positional is a
+        # non-default call style.  This keeps call-style coverage in the
+        # generic call-case harness rather than in a language-specific
+        # variant builder.
+        case_dir_name="call_variable_form_no_args_positional",
+        target_function="make_widget",
+        parameter_names=[],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=literalizer.PositionalCallStyle,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=literalizer.NewVariable(name="my_data"),
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+    ),
+    CallCaseConfig(
         # 27-parameter call exercises the type-variable generators in
         # languages whose call-stub signatures use one type variable per
         # parameter past the 26-letter alphabet (Gleam ``a1``, Roc

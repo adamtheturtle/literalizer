@@ -73,7 +73,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -380,7 +379,6 @@ class TypeScript(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -1149,6 +1147,20 @@ class TypeScript(metaclass=LanguageCls):
         )
         return self.statement_terminator_style.wrap_formatter(
             formatter=base_decl
+        )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        The input row describes call arguments, not the call's return
+        type, so TypeScript call-result bindings intentionally rely on
+        inference instead of reusing literal-derived annotations.
+        """
+        return self.statement_terminator_style.wrap_formatter(
+            formatter=self.declaration_style.value.formatter
         )
 
     @cached_property
