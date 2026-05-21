@@ -42,6 +42,7 @@ from literalizer._heterogeneous import (
     iter_wrapped_scalars,
 )
 from literalizer._language import (
+    NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     CallStyle,
@@ -62,8 +63,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
@@ -353,6 +352,33 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
 
 
 @beartype
+def _dhall_format_call_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+    /,
+) -> str:
+    """Format a Dhall call-result declaration after validating the
+    call.
+    """
+    _dhall_validate_call_stmt(call_expr=value)
+    return f"let {name} = {value} in {name}"
+
+
+@beartype
+def _dhall_format_call_variable_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+    /,
+) -> str:
+    """Format a Dhall call-result assignment after validating the call."""
+    _dhall_validate_call_stmt(call_expr=value)
+    return f"let {name} = {value} in {name}"
+
+
+@beartype
 def _dhall_reject_ref_identifier(name: str, _value: Value | None, /) -> str:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     any ``$ref`` argument.
@@ -564,8 +590,12 @@ class Dhall(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_declaration: ClassVar[property] = property(
+        fget=lambda _self: _dhall_format_call_variable_declaration,
+    )
+    format_call_variable_assignment: ClassVar[property] = property(
+        fget=lambda _self: _dhall_format_call_variable_assignment,
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -584,7 +614,7 @@ class Dhall(metaclass=LanguageCls):
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_zero_parameter_calls = False
-    max_call_parameters = 1
+    max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True
