@@ -226,6 +226,14 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-ruby
           xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-ruby
 
+      # Basic JSON -> Ruby -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Ruby toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_ruby_roundtrip.py`.
+      - name: Ruby roundtrip
+        run: uv run python .github/scripts/run_ruby_roundtrip.py
+
       - name: Lint JavaScript
         run: |-
           find tests/integration/cases -name '*.js' -print0 > /tmp/files-js && test -s /tmp/files-js
