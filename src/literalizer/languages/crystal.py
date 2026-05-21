@@ -98,7 +98,6 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
-    ruby_constructor_target,
 )
 from literalizer._types import OrderedMap, Value
 
@@ -107,6 +106,15 @@ from literalizer._types import OrderedMap, Value
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
     return IdentifierCase.PASCAL.convert(name=name)
+
+
+@beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Crystal ``ClassName.new`` constructor call target."""
+    return f"{class_name}.new"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
 
 
 _crystal_narrowed_empty_form = make_narrowed_empty_form(
@@ -324,7 +332,7 @@ class Crystal(metaclass=LanguageCls):
 
     format_integer_widened = no_format_integer_widened
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
-        staticmethod(ruby_constructor_target)
+        staticmethod(_constructor_target)
     )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment

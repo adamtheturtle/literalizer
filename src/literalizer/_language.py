@@ -735,36 +735,6 @@ new_constructor_target: Callable[[str], str] = _new_constructor_target
 """
 
 
-@beartype
-def _go_constructor_target(class_name: str, /) -> str:
-    """Return a Go ``NewClassName`` constructor call target."""
-    return f"New{class_name}"
-
-
-go_constructor_target: Callable[[str], str] = _go_constructor_target
-"""Shared callable for Go-style constructor functions."""
-
-
-@beartype
-def _ruby_constructor_target(class_name: str, /) -> str:
-    """Return a Ruby ``ClassName.new`` constructor call target."""
-    return f"{class_name}.new"
-
-
-ruby_constructor_target: Callable[[str], str] = _ruby_constructor_target
-"""Shared callable for Ruby constructor calls."""
-
-
-@beartype
-def _rust_constructor_target(class_name: str, /) -> str:
-    """Return a Rust ``ClassName::new`` constructor call target."""
-    return f"{class_name}::new"
-
-
-rust_constructor_target: Callable[[str], str] = _rust_constructor_target
-"""Shared callable for Rust constructor calls."""
-
-
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 

@@ -104,7 +104,6 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
-    rust_constructor_target,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
@@ -183,6 +182,15 @@ def _make_rust_integer_suffix_formatter(
         return _apply_rust_integer_suffix(value=value, base=base)
 
     return _format
+
+
+@beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Rust ``ClassName::new`` constructor call target."""
+    return f"{class_name}::new"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
 
 
 @beartype
@@ -1306,7 +1314,7 @@ class Rust(metaclass=LanguageCls):
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
-        staticmethod(rust_constructor_target)
+        staticmethod(_constructor_target)
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble

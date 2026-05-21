@@ -87,7 +87,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
-    ruby_constructor_target,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -99,6 +98,15 @@ from literalizer.exceptions import CallArgNotSupportedError
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
     return IdentifierCase.PASCAL.convert(name=name)
+
+
+@beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Ruby ``ClassName.new`` constructor call target."""
+    return f"{class_name}.new"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
 
 
 @beartype
@@ -197,7 +205,7 @@ class Ruby(metaclass=LanguageCls):
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
-        staticmethod(ruby_constructor_target)
+        staticmethod(_constructor_target)
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
