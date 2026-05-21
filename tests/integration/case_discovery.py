@@ -165,6 +165,12 @@ LITERALIZE_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
         ref_case_override=None,
     ),
     LiteralizeRefCaseConfig(
+        case_dir_name="literalize_ref_forced_camel_name",
+        ref_key="$ref",
+        ref_value_sources=(),
+        ref_case_override=literalizer.IdentifierCase.CAMEL,
+    ),
+    LiteralizeRefCaseConfig(
         case_dir_name="literalize_ref_deep_nesting",
         ref_key="$ref",
         ref_value_sources=(),
