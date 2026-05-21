@@ -1200,7 +1200,9 @@ class Python(metaclass=LanguageCls):
         """Call style options for Python."""
 
         KEYWORD = KeywordCallStyle(separator="=")
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
 
     call_styles = CallStyles
 

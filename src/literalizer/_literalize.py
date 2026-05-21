@@ -3111,9 +3111,11 @@ def _format_call_args(
     """Format argument values for a single function call.
 
     For infix styles returns the parenthesized argument list
-    ``(arg1, arg2)``.  For :class:`PostfixCallStyle` returns the
-    unwrapped, space-separated argument list so the caller can
-    assemble ``args target`` directly.
+    ``(arg1, arg2)``.  A positional style can instead parenthesize
+    each argument separately for curried application forms such as
+    Dhall's ``target (arg1) (arg2)``. For :class:`PostfixCallStyle`
+    returns the unwrapped, space-separated argument list so the caller
+    can assemble ``args target`` directly.
 
     A value shaped like ``{"$ref": "name"}`` renders as the bare
     identifier ``name`` instead of being formatted as a literal, so
@@ -3152,8 +3154,15 @@ def _format_call_args(
         return ""
 
     match style:
-        case PositionalCallStyle():
-            return f"({', '.join(formatted)})"
+        case PositionalCallStyle(
+            arg_separator=sep,
+            parenthesize_each_arg=parenthesize_each_arg,
+        ):
+            result = (
+                sep.join(f"({value})" for value in formatted)
+                if parenthesize_each_arg
+                else f"({sep.join(formatted)})"
+            )
         case KeywordCallStyle(separator=kw_sep):
             if len(params) != len(formatted):
                 raise ParameterCountMismatchError(
@@ -3163,7 +3172,7 @@ def _format_call_args(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
-            return f"({inner})"
+            result = f"({inner})"
         case ObjectCallStyle(separator=kw_sep):
             if len(params) != len(formatted):
                 raise ParameterCountMismatchError(
@@ -3173,14 +3182,14 @@ def _format_call_args(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
-            return f"({{ {named} }})"
+            result = f"({{ {named} }})"
         case (
             PostfixCallStyle(arg_separator=sep)
             | CommandCallStyle(arg_separator=sep)
         ):
-            return sep.join(formatted)
+            result = sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
-            return _format_prefix_call_args(
+            result = _format_prefix_call_args(
                 formatted=formatted,
                 params=params,
                 sep=sep,
@@ -3188,6 +3197,7 @@ def _format_call_args(
             )
         case _ as unreachable:
             assert_never(unreachable)
+    return result
 
 
 @beartype

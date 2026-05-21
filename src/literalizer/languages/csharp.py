@@ -911,7 +911,9 @@ class CSharp(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """CSharp call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=", ", parenthesize_each_arg=False
+        )
         NAMED = KeywordCallStyle(separator=": ")
 
     call_styles = CallStyles
