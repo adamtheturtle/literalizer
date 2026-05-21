@@ -11,9 +11,11 @@ AStr
 Args
 Bool
 CPP
+CPython
 CSharp
 Changelog
 Cobol
+Cobol's
 Cpp
 Dhall
 Dhall's
@@ -124,6 +126,7 @@ beartype
 bool
 booleans
 chrono
+closers
 commonjs
 config
 const
@@ -150,6 +153,7 @@ gnatmake
 gofmt
 gregorian
 haskell
+inhomogeneous
 init
 initialisation
 initializer
@@ -165,15 +169,18 @@ kotlinc
 kroc
 kts
 kwargs
+lang
 linter
 literalize
 literalized
 literalizer
 literalizer's
+literalizing
 localhost
 luac
 matlab
 misclassifies
+misclassify
 mixin
 multiline
 mypy
@@ -215,6 +222,7 @@ reportUnknownMemberType
 reportUnknownVariableType
 repr
 representable
+reproducibility
 roundtrip
 ruamel
 scala
@@ -235,6 +243,8 @@ typeclass
 unescape
 unhandled
 unicode
+unmapped
+unresolvable
 unterminated
 uv
 val_t

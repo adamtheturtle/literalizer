@@ -6,9 +6,10 @@ from typing import Protocol, runtime_checkable
 
 import pytest
 from pygments.lexers import find_lexer_class_by_name
+from typing_extensions import get_protocol_members
 
 import literalizer.languages
-from literalizer import LanguageCls
+from literalizer import Language, LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import Python, Raku
 
@@ -83,6 +84,30 @@ def test_protocol_properties_accessible(
     assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
     assert isinstance(spec.supports_multi_param_call_wrapper_stub, bool)
     assert isinstance(spec.supports_dict_literal_as_free_expression, bool)
+
+
+def test_language_protocol_members_are_not_class_level_none() -> None:
+    """Built-in languages never store Protocol members as literal ``None``.
+
+    The runtime Protocol checker treats class-level ``None`` as the
+    PEP 544 "attribute is not implemented" marker.  That prevents ABC cache
+    warming and makes repeated ``isinstance(_, Language)`` checks traverse the
+    whole protocol.  Related upstream context:
+    https://github.com/python/cpython/issues/102433.
+    """
+    missing = object()
+    protocol_members = get_protocol_members(Language)
+    violations: dict[str, tuple[str, ...]] = {}
+
+    for language_cls in _SORTED_LANGUAGES:
+        class_level_none = [
+            member
+            for member in protocol_members
+            if vars(language_cls).get(member, missing) is None
+        ]
+        violations[language_cls.__name__] = tuple(sorted(class_level_none))
+
+    assert not any(violations.values()), violations
 
 
 @pytest.mark.parametrize(
