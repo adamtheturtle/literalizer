@@ -6,7 +6,12 @@ import enum
 import math
 import sys
 from collections.abc import Callable, Mapping, Sequence
-from typing import Final, Protocol, assert_never, runtime_checkable
+from typing import (
+    Final,
+    Protocol,
+    assert_never,
+    runtime_checkable,
+)
 
 import humps
 from beartype import beartype
@@ -2126,6 +2131,31 @@ no_leading_preamble: property = property(fget=_no_leading_preamble)
 """Shared ``leading_preamble`` descriptor for languages that emit no
 preamble lines required to come before :attr:`Language.static_preamble`.
 """
+
+
+class _NoPygmentsName(str):
+    """Descriptor for languages with no matching Pygments lexer alias."""
+
+    __slots__ = ()
+
+    @beartype
+    def __get__(
+        self, _instance: object | None, _owner: type[object] | None = None
+    ) -> None:
+        """Return ``None`` for both class and instance access."""
+        del self, _instance, _owner
+
+
+# Shared ``pygments_name`` descriptor for languages unsupported by Pygments.
+#
+# This resolves to ``None`` without storing literal ``None`` in a language
+# class ``__dict__``. The interpreter treats that literal value as the PEP 544
+# "attribute is not implemented" signal during runtime Protocol checks,
+# which prevents ABC cache warming and makes repeated ``isinstance(_,
+# Language)`` calls walk every protocol member.
+# See https://github.com/python/cpython/issues/102433 for related
+# runtime Protocol attribute lookup context.
+no_pygments_name = _NoPygmentsName()
 
 
 @beartype

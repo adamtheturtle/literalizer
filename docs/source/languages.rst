@@ -115,14 +115,18 @@ of the protocol's nested enum classes and attributes.
 
    from literalizer._formatters.collection_openers import fixed_open
    from literalizer._formatters.format_entries import passthrough_sequence_entry
-   from literalizer._language import LanguageCls, SequenceFormatConfig
+   from literalizer._language import (
+       LanguageCls,
+       SequenceFormatConfig,
+       no_pygments_name,
+   )
 
 
    class MyLanguage(metaclass=LanguageCls):
        """Sketch only; a complete language defines many more nested enums."""
 
        extension = ".my"
-       pygments_name = None
+       pygments_name = no_pygments_name
 
        class SequenceFormats(enum.Enum):
            """Available sequence wrappers."""
@@ -152,6 +156,15 @@ of the protocol's nested enum classes and attributes.
    assert list_member.name == "LIST"
    assert MyLanguage.extension == ".my"
    assert MyLanguage.pygments_name is None
+
+When an attribute is part of the :class:`~literalizer.Language` protocol but
+should resolve to ``None``, expose that value through a descriptor or property
+instead of storing literal ``None`` on the class.  CPython treats class-level
+``None`` as "attribute is not implemented" during runtime protocol checks,
+which can prevent ABC cache warming for large ``@runtime_checkable`` protocols;
+see `python/cpython#102433 <https://github.com/python/cpython/issues/102433>`__.
+Built-in languages use shared descriptors such as ``no_pygments_name`` and
+``no_format_integer_widened`` for this pattern.
 
 Look at any built-in language module under ``literalizer/languages/`` for a
 complete working example.
