@@ -3,6 +3,11 @@ Changelog
 
 .. towncrier release notes start
 
+2026.05.21.1
+------------
+
+- Added ``format_constructor_target`` to the :class:`~literalizer.Language` protocol. It returns the language-specific target string for a zero-argument constructor call, suitable for passing to :func:`~literalizer.literalize_call` as ``target_function``. The default is ``ClassName``; Java, JavaScript, TypeScript, C#, Scala, Go, Ruby, and Rust override it for their common constructor forms (``new ClassName``, ``NewClassName``, ``ClassName.new``, and ``ClassName::new``).
+
 2026.05.21
 ----------
 
