@@ -1,1 +1,1 @@
-def p = Playlist()
+def p = new Playlist()
