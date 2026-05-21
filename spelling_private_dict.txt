@@ -111,6 +111,7 @@ SNull
 SReal
 SSet
 SStr
+Serde
 Sml
 SystemVerilog
 Tcl
