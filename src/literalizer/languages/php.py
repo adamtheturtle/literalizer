@@ -76,6 +76,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_statement,
     never_inhibits_consuming_form,
+    new_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
@@ -157,6 +158,9 @@ class Php(metaclass=LanguageCls):
     """PHP language specification."""
 
     format_integer_widened = no_format_integer_widened
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(new_constructor_target)
+    )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations

@@ -80,6 +80,15 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Wren ``ClassName.new`` constructor call target."""
+    return f"{class_name}.new"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
+
+
+@beartype
 def _wren_call_stub(
     indent: str,
     parts: Sequence[str],
@@ -170,6 +179,9 @@ class Wren(metaclass=LanguageCls):
     """Wren language specification."""
 
     format_integer_widened = no_format_integer_widened
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(_constructor_target)
+    )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations

@@ -62,6 +62,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_statement,
     identity_call_target,
+    identity_constructor_target,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -108,6 +109,9 @@ class Scheme(metaclass=LanguageCls):
     """Scheme language specification."""
 
     format_integer_widened = no_format_integer_widened
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(identity_constructor_target)
+    )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations

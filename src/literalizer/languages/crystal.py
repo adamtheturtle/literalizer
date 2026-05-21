@@ -108,6 +108,15 @@ def _to_pascal_case(name: str) -> str:
     return IdentifierCase.PASCAL.convert(name=name)
 
 
+@beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Crystal ``ClassName.new`` constructor call target."""
+    return f"{class_name}.new"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
+
+
 _crystal_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=make_element_to_type(
         str_type="String",
@@ -322,6 +331,9 @@ class Crystal(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(_constructor_target)
+    )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations

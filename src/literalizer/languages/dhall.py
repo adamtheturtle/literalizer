@@ -64,6 +64,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
+    identity_constructor_target,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -590,6 +591,9 @@ class Dhall(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(identity_constructor_target)
+    )
     format_call_variable_declaration: ClassVar[property] = property(
         fget=lambda _self: _dhall_format_call_variable_declaration,
     )

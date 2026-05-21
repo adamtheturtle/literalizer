@@ -284,6 +284,15 @@ def _nil_safe_declaration(
 
 
 @beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Go ``NewClassName`` constructor call target."""
+    return f"New{class_name}"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Go(metaclass=LanguageCls):
     """Go language specification.
@@ -309,6 +318,9 @@ class Go(metaclass=LanguageCls):
     format_integer_widened = no_format_integer_widened
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(_constructor_target)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

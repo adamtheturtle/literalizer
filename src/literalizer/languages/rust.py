@@ -185,6 +185,15 @@ def _make_rust_integer_suffix_formatter(
 
 
 @beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return a Rust ``ClassName::new`` constructor call target."""
+    return f"{class_name}::new"
+
+
+_constructor_target: Callable[[str], str] = _format_constructor_target
+
+
+@beartype
 def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
@@ -1304,6 +1313,9 @@ class Rust(metaclass=LanguageCls):
     format_integer_widened = no_format_integer_widened
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(_constructor_target)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

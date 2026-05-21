@@ -709,6 +709,32 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
+@beartype
+def _identity_constructor_target(class_name: str, /) -> str:
+    """Return *class_name* as a zero-argument constructor call target."""
+    return class_name
+
+
+identity_constructor_target: Callable[[str], str] = (
+    _identity_constructor_target
+)
+"""Shared callable for languages whose constructors are called as
+``ClassName()``.
+"""
+
+
+@beartype
+def _new_constructor_target(class_name: str, /) -> str:
+    """Return a ``new ClassName`` constructor call target."""
+    return f"new {class_name}"
+
+
+new_constructor_target: Callable[[str], str] = _new_constructor_target
+"""Shared callable for languages whose constructors are called as
+``new ClassName()``.
+"""
+
+
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -775,6 +801,7 @@ class LanguageCls(type):
     supports_record_shape_names: bool
     dict_supports_heterogeneous_values: bool
     format_call_arg: FormatCallArg
+    format_constructor_target: Callable[[str], str]
     validate_call_arg: Callable[[Value], None]
     format_call_statement: Callable[[str], str]
     call_data_dependent_preamble: Callable[[Value], tuple[str, ...]]
@@ -1790,6 +1817,20 @@ class Language(Protocol):
         Most languages accept dotted member-access as-is and use
         :data:`identity_call_target`.  PHP overrides this to produce
         ``$app->client->fetch``.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_constructor_target(self) -> Callable[[str], str]:
+        """Return a zero-argument constructor target for *class_name*.
+
+        The returned string is intended to be passed to
+        :func:`~literalizer.literalize_call` as ``target_function``.
+        Most languages call constructors as ``ClassName()`` and use
+        :data:`identity_constructor_target`; languages with constructor
+        syntax outside regular function names override this to produce
+        targets such as ``new ClassName``, ``NewClassName``,
+        ``ClassName.new``, or ``ClassName::new``.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

@@ -93,6 +93,7 @@ from literalizer._language import (
     identity_call_statement,
     identity_call_target,
     never_inhibits_consuming_form,
+    new_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
@@ -660,6 +661,9 @@ class Java(metaclass=LanguageCls):
 
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(new_constructor_target)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

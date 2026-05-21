@@ -1,0 +1,1 @@
+final Object[] p = new Playlist();

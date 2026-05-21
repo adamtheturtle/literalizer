@@ -262,6 +262,15 @@ def _format_variable_declaration(
 
 
 @beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Format a VB.NET constructor call target."""
+    return f"New {class_name}"
+
+
+format_constructor_target: Callable[[str], str] = _format_constructor_target
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class VisualBasic(metaclass=LanguageCls):
     """Visual Basic (.NET) language specification.
@@ -276,6 +285,9 @@ class VisualBasic(metaclass=LanguageCls):
 
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
+    format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
+        staticmethod(format_constructor_target)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
