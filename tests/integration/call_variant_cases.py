@@ -19,6 +19,7 @@ from .variant_cases import (
     Variant,
     build_heterogeneous_value_name_variants,
     build_heterogeneous_value_variant_name_variants,
+    build_json_type_variants,
 )
 
 
@@ -94,6 +95,7 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
 
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
+    ("call_scalar_args", build_json_type_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
     (
         "call_mixed_type_dicts",

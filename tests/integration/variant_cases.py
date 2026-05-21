@@ -465,6 +465,22 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
     ]
 
 
+@beartype
+def build_json_type_variants() -> Iterable[Variant]:
+    """Build JSON value type variants for languages that support them."""
+    return [
+        Variant(
+            name="Rust_json_type_serde_json_value",
+            spec=make_spec(
+                lang_cls=Rust,
+                json_type=Rust.json_types.SERDE_JSON_VALUE,
+            ),
+            lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+    ]
+
+
 @runtime_checkable
 class _HasEmptyDictKey(Protocol):
     """Structural type for languages that expose an ``empty_dict_key``
@@ -1777,6 +1793,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "default_sequence_element_type": (
         build_default_sequence_element_type_variants
     ),
+    "json_type": build_json_type_variants,
     "default_dict_value_type": build_default_dict_value_type_variants,
     "empty_dict_key": build_empty_dict_key_variants,
     "default_dict_key_type": build_default_dict_key_type_variants,
@@ -1979,6 +1996,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "default_sequence_element_type": (
         _ci(case_dir_name="empty_sequence", suffix=""),
         _ci(case_dir_name="simple_sequence", suffix=""),
+    ),
+    "json_type": (
+        _ci(case_dir_name="dict_with_list_value", suffix=""),
+        _ci(case_dir_name="nested_mixed_inner", suffix="_nested_mixed"),
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
