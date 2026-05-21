@@ -87,6 +87,8 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
         for config in LITERALIZE_REF_CASE_CONFIGS
         for lang_cls in sorted_languages()
+        if config.include_language_names is None
+        or lang_cls.__name__ in config.include_language_names
         if config.ref_case_override is None
         or config.ref_case_override in lang_cls.supported_ref_cases
     ]
