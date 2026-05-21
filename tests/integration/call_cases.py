@@ -1185,6 +1185,34 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
     ),
     CallCaseConfig(
+        # Same direct ``wrap_in_file=True`` path, but with a
+        # ``call_transform`` present.  Even though the transform returns
+        # the call unchanged, the opaque hook means the core must treat
+        # the call result as consumed and emit a value-returning target
+        # stub instead of a void one.
+        case_dir_name="call_wrap_in_file_transform",
+        target_function="process",
+        parameter_names=["a", "b"],
+        call_transform=lambda ctx: ctx.call,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+    ),
+    CallCaseConfig(
         case_dir_name="call_variable_form_new",
         target_function="make_widget",
         parameter_names=["count"],
