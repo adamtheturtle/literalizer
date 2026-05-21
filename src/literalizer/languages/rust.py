@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -102,7 +103,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
@@ -142,6 +142,7 @@ _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
 _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
+_SERDE_JSON_MACRO = "serde_json::json!"
 
 
 @beartype
@@ -477,6 +478,79 @@ def _format_let_declaration(
     """
     keyword = "let mut" if _RustModifiers.MUT in modifiers else "let"
     return f"{keyword} {name} = {value};"
+
+
+@beartype
+def _rust_json_value_expression(value: str, /) -> str:
+    """Wrap *value* in ``serde_json::json!`` unless it is already a
+    JSON macro expression.
+    """
+    if value.startswith(f"{_SERDE_JSON_MACRO}("):
+        return value
+    return f"{_SERDE_JSON_MACRO}({value})"
+
+
+@beartype
+def _format_rust_json_call_arg(_raw_value: Value, formatted: str) -> str:
+    """Format a direct Rust call argument as ``serde_json::Value``."""
+    return _rust_json_value_expression(formatted)
+
+
+@beartype
+def _rust_json_non_scalar_child(  # pragma: no cover
+    _raw_value: Value,
+    formatted: str,
+) -> str:
+    """Identity wrapper signaling JSON can hold non-scalar children."""
+    return formatted
+
+
+@beartype
+def _format_rust_json_assignment(name: str, value: str, _data: Value) -> str:
+    """Assign a rendered literal to a Rust JSON value binding."""
+    return f"{name} = {_rust_json_value_expression(value)};"
+
+
+@beartype
+def _rust_json_declaration_formatter(
+    *,
+    declaration_style: enum.Enum,
+    json_type: str,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Return a declaration formatter for ``serde_json::Value`` output."""
+
+    def _formatter(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format a JSON-backed declaration."""
+        expr = _rust_json_value_expression(value)
+        if declaration_style.name == "LAZY_STATIC":
+            return (
+                f"static {name}: LazyLock<{json_type}> = "
+                f"LazyLock::new(|| {expr});"
+            )
+        if declaration_style.name in {"LET", "LET_MUT"}:
+            keyword = (
+                "let mut"
+                if declaration_style.name == "LET_MUT"
+                or _RustModifiers.MUT in modifiers
+                else "let"
+            )
+            return f"{keyword} {name}: {json_type} = {expr};"
+        config: DeclarationStyleConfig = (  # pragma: no cover
+            declaration_style.value
+        )
+        return config.formatter(  # pragma: no cover
+            name,
+            expr,
+            _data,
+            modifiers,
+        )
+
+    return _formatter
 
 
 @beartype
@@ -1308,6 +1382,10 @@ class Rust(metaclass=LanguageCls):
         default_sequence_element_type: Type name used for empty
             ``Vec`` literals, e.g. ``Vec::<String>::new()``.
             Defaults to ``"String"``.
+
+        json_type: When set to ``json_types.SERDE_JSON_VALUE``, render
+            values through ``serde_json::json!`` instead of Rust's narrow
+            collection types.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1350,13 +1428,6 @@ class Rust(metaclass=LanguageCls):
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = True
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""
@@ -1812,6 +1883,14 @@ class Rust(metaclass=LanguageCls):
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
+
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Rust."""
+
+        SERDE_JSON_VALUE = "serde_json::Value"
+        """Serde's dynamic JSON value type."""
+
+    json_types = JsonTypes
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -1969,6 +2048,7 @@ class Rust(metaclass=LanguageCls):
     default_set_element_type: str = "String"
     default_dict_key_type: str = "String"
     default_dict_value_type: str = "String"
+    json_type: JsonTypes | None = None
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.LET
@@ -2002,7 +2082,7 @@ class Rust(metaclass=LanguageCls):
     language_version: VersionFormats = VersionFormats.EDITION_2021
     indent: str = "    "
 
-    null_literal: ClassVar[str] = "None::<()>"
+    _default_null_literal: ClassVar[str] = "None::<()>"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -2014,6 +2094,18 @@ class Rust(metaclass=LanguageCls):
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether Rust should render via ``serde_json::Value``."""
+        return self.json_type is not None
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Null literal for the active Rust representation."""
+        if self._json_type_active:
+            return "null"
+        return self._default_null_literal
 
     @cached_property
     def static_preamble(self) -> Sequence[str]:
@@ -2028,6 +2120,13 @@ class Rust(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument."""
+        if self._json_type_active:
+            return _format_rust_json_call_arg
+        return identity_call_arg
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -2040,6 +2139,8 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._json_type_active:
+            return _format_rust_json_assignment
         return variable_formatter(template="{name} = {value};")
 
     @cached_property
@@ -2080,6 +2181,12 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+                wrap_non_scalar=_rust_json_non_scalar_child,
+            )
         return self.heterogeneous_strategy.value.build_behavior(
             self._strategy_params,
         )
@@ -2095,6 +2202,8 @@ class Rust(metaclass=LanguageCls):
         declaration per record shape present in the data.  Other
         strategies produce no preamble.
         """
+        if self._json_type_active:
+            return no_data_preamble
         return self.heterogeneous_strategy.value.build_preamble(
             self._strategy_params,
         )
@@ -2191,6 +2300,16 @@ class Rust(metaclass=LanguageCls):
         """Validate that incompatible formats are not combined."""
         _decl_cls = type(self.declaration_style)
         _seq_cls = type(self.sequence_format)
+        if self._json_type_active and self.declaration_style in {
+            _decl_cls.CONST,
+            _decl_cls.STATIC,
+        }:
+            msg = (
+                "Rust json_type uses serde_json::json!(…), which is not "
+                "a constant-expression initializer. Use LET, LET_MUT, or "
+                "LAZY_STATIC instead."
+            )
+            raise IncompatibleFormatsError(msg)
         if (
             self.declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
             and self.sequence_format is _seq_cls.VEC
@@ -2204,6 +2323,27 @@ class Rust(metaclass=LanguageCls):
             )
             raise IncompatibleFormatsError(msg)
         self._validate_record_naming()
+
+    def _validate_json_value_keys(self, data: Value, /) -> None:
+        """Reject non-string object keys for ``serde_json::Value``."""
+        match data:
+            case dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Rust json_type can only represent dict keys "
+                            f"as JSON object strings, not {type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(value)
+            case list():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case set():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case _:
+                return
 
     def _validate_record_naming(self) -> None:
         """Validate ``record_struct_name_prefix`` and
@@ -2271,11 +2411,34 @@ class Rust(metaclass=LanguageCls):
         """Return call-statement formatting for this language."""
         return identity_call_statement
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate Rust-specific data/format combinations."""
+        if self._json_type_active:
+            self._validate_json_value_keys(data)
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return SequenceFormatConfig(
+                sequence_open=fixed_open(open_str=f"{_SERDE_JSON_MACRO}(["),
+                close="])",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_sequence=f"{_SERDE_JSON_MACRO}([])",
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback=None,
+                uses_typed_literal_for_scalars=False,
+                requires_uniform_record_shapes=False,
+                declared_type=(
+                    self.json_type.value
+                    if self.json_type is not None
+                    else None
+                ),
+                narrowed_empty_form=None,
+            )
         return self.sequence_format(
             default_type=self.default_sequence_element_type,
         )
@@ -2283,6 +2446,16 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return SetFormatConfig(
+                set_open=fixed_open(open_str=f"{_SERDE_JSON_MACRO}(["),
+                close="])",
+                empty_set=f"{_SERDE_JSON_MACRO}([])",
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=True,
+            )
         return self.set_format(default_type=self.default_set_element_type)
 
     @cached_property
@@ -2293,6 +2466,19 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str=f"{_SERDE_JSON_MACRO}({{"),
+                close="})",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=f"{_SERDE_JSON_MACRO}({{}})",
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+            )
         return self.dict_format(
             default_type=self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
@@ -2311,11 +2497,18 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return format_date_iso
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if (
+            self._json_type_active
+            and self.datetime_format.value.type_produced is not int
+        ):
+            return format_datetime_iso
         return self.datetime_format
 
     @cached_property
@@ -2350,6 +2543,14 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(
+                    open_str=f"{_SERDE_JSON_MACRO}({{"
+                ),
+                close="})",
+                preamble_lines=(),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="HashMap::from(["),
             close="])",
@@ -2359,6 +2560,11 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
+        if self._json_type_active:
+            return dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            )
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
@@ -2366,6 +2572,12 @@ class Rust(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self._json_type_active:
+            assert self.json_type is not None  # noqa: S101
+            return _rust_json_declaration_formatter(
+                declaration_style=self.declaration_style,
+                json_type=self.json_type.value,
+            )
         return self.declaration_style.build_formatter(
             date_type=(
                 "&str"
@@ -2402,6 +2614,8 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
+        if self._json_type_active:
+            return {}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,

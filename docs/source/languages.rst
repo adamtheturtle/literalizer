@@ -96,6 +96,31 @@ constructor argument controls the outcome.  Every language defaults to
 ``RECORD``.  See :ref:`heterogeneous-strategies` for the strategies,
 worked examples, and the per-language support matrix.
 
+JSON value types
+----------------
+
+Some languages also have a single runtime JSON value type that is a better
+fit than native narrow collection types.  Rust supports this through the
+``json_type`` constructor argument:
+
+.. code-block:: python
+
+   """Render Rust data as serde_json::Value."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Rust
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Rust(json_type=Rust.json_types.SERDE_JSON_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
+homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
+to be strings so they remain valid JSON object keys.
+
 Custom language implementations
 -------------------------------
 

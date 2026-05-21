@@ -1577,10 +1577,13 @@ jobs:
           trap 'rm -rf "$tmpdir"' EXIT
           cargo init "$tmpdir/chrono-check"
           cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
+          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" serde_json
           cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
           deps="$tmpdir/chrono-check/target/debug/deps"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
           test -n "$chrono_rlib"
+          serde_json_rlib=$(find "$deps" -name "libserde_json-*.rlib" -print -quit)
+          test -n "$serde_json_rlib"
           # ``--edition 2021`` matches ``Rust.language_version`` in
           # ``src/literalizer/languages/rust.py``; keep them in sync.
           # rustc infers a crate name from the source filename and
@@ -1593,6 +1596,7 @@ jobs:
               --crate-name "$crate_name" \
               -L "dependency=$deps" \
               --extern "chrono=$chrono_rlib" \
+              --extern "serde_json=$serde_json_rlib" \
               "$f" -o "$tmpdir/out" 2>&1 || exit 1
             "$tmpdir/out" || exit 1
           done < /tmp/files-to-lint

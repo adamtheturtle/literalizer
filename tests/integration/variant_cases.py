@@ -391,7 +391,7 @@ class VariantCase:
     variant_name: str
     variant: Variant
     case_dir_name: str
-    variable_form: literalizer.NewVariable
+    variable_form: literalizer.VariableForm
 
 
 @beartype
@@ -462,6 +462,22 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         )
         for lang_cls, type_name in DEFAULT_SEQUENCE_ELEMENT_TYPES.items()
+    ]
+
+
+@beartype
+def build_json_type_variants() -> Iterable[Variant]:
+    """Build JSON value type variants for languages that support them."""
+    return [
+        Variant(
+            name="Rust_json_type_serde_json_value",
+            spec=make_spec(
+                lang_cls=Rust,
+                json_type=Rust.json_types.SERDE_JSON_VALUE,
+            ),
+            lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
     ]
 
 
@@ -1777,6 +1793,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "default_sequence_element_type": (
         build_default_sequence_element_type_variants
     ),
+    "json_type": build_json_type_variants,
     "default_dict_value_type": build_default_dict_value_type_variants,
     "empty_dict_key": build_empty_dict_key_variants,
     "default_dict_key_type": build_default_dict_key_type_variants,
@@ -1979,6 +1996,14 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "default_sequence_element_type": (
         _ci(case_dir_name="empty_sequence", suffix=""),
         _ci(case_dir_name="simple_sequence", suffix=""),
+    ),
+    "json_type": (
+        _ci(case_dir_name="dict_with_list_value", suffix=""),
+        _ci(case_dir_name="nested_mixed_inner", suffix="_nested_mixed"),
+        _ci(case_dir_name="dates", suffix="_dates"),
+        _ci(case_dir_name="dict_with_nulls", suffix="_nulls"),
+        _ci(case_dir_name="date_set", suffix="_date_set"),
+        _ci(case_dir_name="ordered_map", suffix="_ordered_map"),
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
@@ -2197,6 +2222,40 @@ def build_variant_cases() -> list[VariantCase]:
                 )
             )
     cases.extend(build_modifier_variant_cases())
+    cases.extend(
+        (
+            VariantCase(
+                variant_name="Rust_json_type_serde_json_value_combined",
+                variant=Variant(
+                    name="Rust_json_type_serde_json_value_combined",
+                    spec=make_spec(
+                        lang_cls=Rust,
+                        json_type=Rust.json_types.SERDE_JSON_VALUE,
+                        declaration_style=Rust.declaration_styles.LET_MUT,
+                    ),
+                    lang_cls=Rust,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Rust_json_type_serde_json_value_lazy_static",
+                variant=Variant(
+                    name="Rust_json_type_serde_json_value_lazy_static",
+                    spec=make_spec(
+                        lang_cls=Rust,
+                        json_type=Rust.json_types.SERDE_JSON_VALUE,
+                        declaration_style=Rust.declaration_styles.LAZY_STATIC,
+                    ),
+                    lang_cls=Rust,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=wrap_variable_form(),
+            ),
+        )
+    )
     return cases
 
 
