@@ -221,14 +221,15 @@ def _dhall_call_preamble_stub(
 @beartype
 def _dhall_call_stub(
     parts: Sequence[str],
-    _params: Sequence[str],
+    params: Sequence[str],
     stub_return: StubReturn,
     _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
     r"""Return Dhall let-binding stub declarations for a call target.
 
-    Single-part targets produce ``let name = \(_ : DVal) -> body``.
+    Single-part targets produce curried functions such as
+    ``let name = \(_ : DVal) -> \(_ : DVal) -> body``.
     Dotted targets nest record literals: ``app.client.fetch`` becomes
     ``let app = { client = { fetch = \(_ : DVal) -> body } }``.
     The *stub_return* controls the body: ``VOID`` stubs return ``{=}``;
@@ -237,7 +238,9 @@ def _dhall_call_stub(
     wrapper like ``emit``).
     """
     body = "{=}" if stub_return is StubReturn.VOID else "DVal.DBool True"
-    fn_expr = f"\\(_ : DVal) -> {body}"
+    fn_expr = body
+    for _param in reversed(params):
+        fn_expr = f"\\(_ : DVal) -> {fn_expr}"
     if len(parts) == 1:
         return (f"let {parts[0]} = {fn_expr}",)
     root = parts[0]
@@ -276,23 +279,12 @@ def _dhall_format_call_target(parts: Sequence[str], /) -> str:
     """Join call target parts with dots and append a trailing space.
 
     Dhall requires whitespace between a function expression and its
-    argument.  :class:`~literalizer._language.PositionalCallStyle`
-    emits ``target(args)`` with no gap; a trailing space on the target
-    string turns that into ``target (args)``, which is valid Dhall
-    function-application syntax.
+    argument.  Dhall's positional style parenthesizes each argument, so
+    a trailing space on the target string yields valid curried
+    application such as ``target (arg1) (arg2)``.
     """
     return ".".join(parts) + " "
 
-
-# Maps closing/brace/bracket chars to their depth-tracking key and delta.
-# ``(`` is handled separately so the word-before-paren check fires first.
-_DHALL_BRACKET_DELTA: dict[str, tuple[str, int]] = {
-    ")": ("paren", -1),
-    "{": ("brace", +1),
-    "}": ("brace", -1),
-    "[": ("bracket", +1),
-    "]": ("bracket", -1),
-}
 
 # Matches a Dhall double-quoted string literal including escape sequences,
 # so string contents are stripped before scanning for structural patterns.
@@ -304,20 +296,15 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
     """Raise :exc:`~literalizer.exceptions.CallArgNotSupportedError` for
     call expressions that cannot be represented as valid Dhall.
 
-    Two patterns are rejected:
+    This rejects function-application wrappers with a word character
+    directly followed by ``(`` -- for example a call-transform wrapper
+    like ``emit(...)`` written without the whitespace that Dhall
+    requires before a function argument.
 
-    * A word character directly followed by ``(`` — a call-transform
-      wrapper (e.g. ``emit(...)``) written without the whitespace that
-      Dhall requires before a function argument.
-    * A top-level comma inside parentheses — indicates more than one
-      positional argument, which Dhall cannot represent because it has
-      no tuple type.
-
-    String literals are stripped first so that quoted content is never
-    mistaken for one of these patterns.
+    String literals are stripped first so quoted content is never
+    mistaken for this pattern.
     """
     sanitized = _DHALL_STRING_RE.sub(repl="", string=call_expr)
-    depths: dict[str, int] = {"paren": 0, "brace": 0, "bracket": 0}
     prev_is_word = False
     for c in sanitized:
         next_prev_is_word = False
@@ -332,22 +319,6 @@ def _dhall_validate_call_stmt(call_expr: str) -> None:
                             f"(in: {call_expr!r})"
                         ),
                     )
-                depths["paren"] += 1
-            case "," if (
-                depths["paren"] >= 1
-                and depths["brace"] == 0
-                and depths["bracket"] == 0
-            ):
-                raise CallArgNotSupportedError(
-                    language_name="Dhall",
-                    reason=(
-                        "Dhall has no tuple type; PositionalCallStyle cannot "
-                        "represent calls with more than one argument"
-                    ),
-                )
-            case _ if c in _DHALL_BRACKET_DELTA:
-                key, delta = _DHALL_BRACKET_DELTA[c]
-                depths[key] += delta
             case _:
                 next_prev_is_word = c.isalnum() or c == "_"
         prev_is_word = next_prev_is_word
@@ -823,7 +794,10 @@ class Dhall(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """Dhall call style options."""
 
-        POSITIONAL = PositionalCallStyle()
+        POSITIONAL = PositionalCallStyle(
+            arg_separator=" ",
+            parenthesize_each_arg=True,
+        )
 
     call_styles = CallStyles
 
