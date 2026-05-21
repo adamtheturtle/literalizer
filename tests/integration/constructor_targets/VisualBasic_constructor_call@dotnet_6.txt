@@ -1,1 +1,1 @@
-Dim p = Playlist()
+Dim p = New Playlist()
