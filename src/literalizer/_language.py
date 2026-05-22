@@ -304,6 +304,20 @@ class CallSupport(enum.Enum):
     """
 
 
+class BareIntegerWidthStrategies(enum.Enum):
+    """Default integer-width strategies: only the no-op ``BARE`` member.
+
+    Most languages render integers as bare numeric literals regardless
+    of magnitude, so they share this enum.  Languages whose native
+    scalar integer type silently loses precision past a fixed width
+    (notably Perl, whose scalars fall back to an NV float past 2**53)
+    override this with a wider enum exposing additional strategies
+    such as a ``Math::BigInt``-style wrap.
+    """
+
+    BARE = enum.auto()
+
+
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
@@ -765,6 +779,7 @@ class LanguageCls(type):
     EmptyDictKey: type[enum.Enum]
     FloatFormats: type[enum.Enum]
     IntegerFormats: type[enum.Enum]
+    IntegerWidthStrategies: type[enum.Enum]
     NumericLiteralSuffixes: type[enum.Enum]
     NumericSeparators: type[enum.Enum]
     NumericStyles: type[enum.Enum]
@@ -932,6 +947,19 @@ class Language(Protocol):
     def integer_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the integer format options
         this language supports.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def integer_width_strategies(self) -> type[enum.Enum]:
+        """Enum class whose members list the integer-width rendering
+        strategies this language supports.
+
+        Most languages support only :attr:`BareIntegerWidthStrategies.BARE`
+        (a bare numeric literal).  Languages whose native scalar integer
+        type silently loses precision past a fixed mantissa (notably
+        Perl past ``2**53``) expose additional opt-in strategies that
+        wrap wide values in an arbitrary-precision constructor.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -1498,6 +1526,13 @@ class Language(Protocol):
     @property
     def integer_format(self) -> enum.Enum:
         """The integer format chosen for this language instance."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def integer_width_strategy(self) -> enum.Enum:
+        """The integer-width strategy chosen for this language
+        instance.
+        """
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property

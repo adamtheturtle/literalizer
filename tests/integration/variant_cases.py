@@ -10,7 +10,7 @@ import enum
 import functools
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -979,49 +979,6 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
 
 
 @beartype
-def build_integer_width_strategy_variants() -> Iterable[Variant]:
-    """Build non-default integer-width-strategy variants.
-
-    For every language whose spec exposes an
-    ``integer_width_strategies`` enum, emit a variant for each
-    non-default member.  Languages whose default integer rendering
-    already preserves arbitrary-precision integers need no such
-    strategy and are silently skipped.  Discovered originally for the
-    Perl ``MATH_BIG_INT`` opt-in (#2588), where bare Perl literals
-    silently lose precision past the NV mantissa.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        lang_cls_any: Any = lang_cls
-        fields_by_name = {
-            f.name: f
-            for f in dataclasses.fields(class_or_instance=lang_cls_any)
-        }
-        field = fields_by_name.get("integer_width_strategy")
-        if field is None:
-            continue
-        default_strategy: enum.Enum = field.default
-        for strategy in type(default_strategy):
-            if strategy is default_strategy:
-                continue
-            variants.append(
-                Variant(
-                    name=(
-                        f"{lang_cls.__name__}_integer_width_strategy"
-                        f"_{strategy.name.lower()}"
-                    ),
-                    spec=make_spec(
-                        lang_cls=lang_cls,
-                        integer_width_strategy=strategy,
-                    ),
-                    lang_cls=lang_cls,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
-                )
-            )
-    return variants
-
-
-@beartype
 def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
     """Build the Nim ``record_nonrecord_dict_field`` variant.
 
@@ -1725,6 +1682,12 @@ _SIMPLE_AXES: dict[str, _SimpleAxis] = {
         get_default=lambda s: s.integer_format,
         get_formats=lambda s: s.integer_formats,
     ),
+    "integer_width_strategy": _SimpleAxis(
+        category="integer_width_strategy",
+        kwarg="integer_width_strategy",
+        get_default=lambda s: s.integer_width_strategy,
+        get_formats=lambda s: s.integer_width_strategies,
+    ),
     "numeric_literal_suffix": _SimpleAxis(
         category="numeric_literal_suffix",
         kwarg="numeric_literal_suffix",
@@ -1885,7 +1848,6 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
-    "integer_width_strategy": build_integer_width_strategy_variants,
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
@@ -2216,6 +2178,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "record_numeric_cross": (_ci(case_dir_name="record_wide_int", suffix=""),),
     "integer_width_strategy": (
         _ci(case_dir_name="record_wide_int", suffix=""),
+        _ci(case_dir_name="int_list", suffix=""),
     ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name, suffix="")

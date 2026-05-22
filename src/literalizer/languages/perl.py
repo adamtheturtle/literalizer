@@ -467,6 +467,7 @@ class Perl(metaclass=LanguageCls):
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
     integer_formats = IntegerFormats
+    integer_width_strategies = IntegerWidthStrategies
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -622,11 +623,11 @@ class Perl(metaclass=LanguageCls):
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
-        match self.integer_width_strategy:
-            case Perl.IntegerWidthStrategies.BARE:
-                return no_data_preamble
-            case Perl.IntegerWidthStrategies.MATH_BIG_INT:
+        match self.integer_width_strategy.name:
+            case "MATH_BIG_INT":
                 return _perl_math_bigint_preamble
+            case _:
+                return no_data_preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -791,16 +792,16 @@ class Perl(metaclass=LanguageCls):
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
-        match self.integer_width_strategy:
-            case Perl.IntegerWidthStrategies.BARE:
-                return base
-            case Perl.IntegerWidthStrategies.MATH_BIG_INT:
+        match self.integer_width_strategy.name:
+            case "MATH_BIG_INT":
                 return make_overflow_fallback_formatter(
                     base=base,
                     fallback=_format_perl_math_bigint_literal,
                     min_value=_PERL_NV_INT_MIN,
                     max_value=_PERL_NV_INT_MAX,
                 )
+            case _:
+                return base
 
     @cached_property
     def comment_config(self) -> CommentConfig:

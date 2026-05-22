@@ -535,6 +535,7 @@ ignore_names = [
     "MAP",
     "MAP_OF_ENTRIES",
     "MAP_SET",
+    "MATH_BIG_INT",
     "MUT",
     "NAMED",
     "EPOCH",
