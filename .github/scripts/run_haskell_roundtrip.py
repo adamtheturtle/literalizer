@@ -3,26 +3,25 @@
 Literalize the shared ``roundtrip_input.json`` document to a Haskell
 ``myData = ...`` binding (with the generated tagged ``Val`` algebraic
 type and the helper ``Num``/``Fractional`` instances that go with it),
-wrap it in a tiny module that serializes ``myData`` back to JSON via a
-hand-written ``toJson :: Val -> String``, compile and run it with GHC,
-and hand the emitted JSON to :func:`roundtrip_common.verify`.
+wrap it in a cabal-script ``Main`` that serializes ``myData`` back to
+JSON via Aeson, run it through ``cabal run``, and hand the emitted JSON
+to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Haskell roundtrip`` step of the
 ``lint-haskell-family`` job in ``.github/workflows/lint.yml``, because
-that job is where the GHC toolchain is installed.  It shares the same
-input and comparison logic as the other per-language round-trip
+that job is where the GHC/cabal toolchain is installed.  It shares the
+same input and comparison logic as the other per-language round-trip
 helpers.
 
-The literalized Haskell ``Val`` algebraic type only carries the
+The generated Haskell ``Val`` algebraic type only carries the
 constructors needed for the values that actually appear in the input,
-so ``toJson`` here covers exactly the six variants the shared input
+so ``valToValue`` here covers exactly the six variants the shared input
 exercises (``HBool``, ``HInt``, ``HFloat``, ``HStr``, ``HList``,
-``HMap``).  If a future expansion of ``roundtrip_input.json`` adds a
-new scalar kind, both this serializer and the Haskell backend's ``Val``
-type would grow together.
+``HMap``).  ``-Wall -Werror`` plus exhaustive pattern matching means a
+future expansion of ``roundtrip_input.json`` that adds a new scalar
+kind would fail compilation here until ``valToValue`` is extended.
 """
 
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -37,38 +36,37 @@ _VAR_NAME = "myData"
 _LABEL = "Haskell"
 _MODULE_NAME = "Main"
 
-_TO_JSON = """\
-toJson :: Val -> String
-toJson (HBool True) = "true"
-toJson (HBool False) = "false"
-toJson (HInt n) = show n
-toJson (HFloat d) = show d
-toJson (HStr s) = encodeStr s
-toJson (HList xs) = "[" ++ intercalate "," (map toJson xs) ++ "]"
-toJson (HMap kvs) =
-    "{" ++ intercalate "," (map kv kvs) ++ "}"
-  where
-    kv (k, v) = encodeStr k ++ ":" ++ toJson v
+# ``default-language: GHC2021`` matches ``Haskell.language_version`` in
+# ``src/literalizer/languages/haskell.py``; keep them in sync.
+_CABAL_HEADER = """\
+{- cabal:
+build-depends: base, aeson, bytestring
+default-language: GHC2021
+ghc-options: -Wall -Werror
+-}
+"""
 
-encodeStr :: String -> String
-encodeStr s = "\\"" ++ concatMap escapeChar s ++ "\\""
-
-escapeChar :: Char -> String
-escapeChar '"' = "\\\\\\""
-escapeChar '\\\\' = "\\\\\\\\"
-escapeChar '\\n' = "\\\\n"
-escapeChar '\\r' = "\\\\r"
-escapeChar '\\t' = "\\\\t"
-escapeChar c
-    | ord c < 0x20 =
-        let h = showHex (ord c) ""
-        in "\\\\u" ++ replicate (4 - length h) '0' ++ h
-    | otherwise = [c]
+# Go through Aeson's ``Encoding`` builder (not ``Value``) so HFloat
+# routes through ``E.double``'s shortest-roundtrip formatter. Building
+# ``A.Value`` would funnel HFloat through ``Scientific``, where (a) the
+# encoder renders integer-valued Scientifics as plain digits regardless
+# of magnitude (turning ``1.7976e308`` into a 309-digit integer) and
+# (b) ``Scientific.fromFloatDigits (-0.0)`` collapses the sign.
+_VAL_TO_ENCODING = """\
+valToEncoding :: Val -> E.Encoding
+valToEncoding (HBool b) = E.bool b
+valToEncoding (HInt n) = E.integer n
+valToEncoding (HFloat d) = E.double d
+valToEncoding (HStr s) = E.string s
+valToEncoding (HList xs) = E.list valToEncoding xs
+valToEncoding (HMap kvs) =
+    E.pairs (mconcat [E.pair (K.fromString k) (valToEncoding v)
+                      | (k, v) <- kvs])
 """
 
 
 def _build_program(json_text: str) -> str:
-    """Return a runnable Haskell program literalized from *json_text*."""
+    """Return a runnable Haskell cabal-script program for *json_text*."""
     result = literalize(
         source=json_text,
         input_format=InputFormat.JSON,
@@ -85,55 +83,31 @@ def _build_program(json_text: str) -> str:
     # duplicate the ``Val`` type and break compilation.
     preamble = "\n".join(result.preamble)
     return (
+        f"{_CABAL_HEADER}"
         f"module {_MODULE_NAME} where\n"
-        "import Data.Char (ord)\n"
-        "import Data.List (intercalate)\n"
-        "import Numeric (showHex)\n"
+        "import qualified Data.Aeson.Encoding as E\n"
+        "import qualified Data.Aeson.Key as K\n"
+        "import qualified Data.ByteString.Lazy as BL\n"
         f"{preamble}\n"
         f"{result.code}\n"
-        f"{_TO_JSON}"
+        f"{_VAL_TO_ENCODING}"
         "main :: IO ()\n"
-        f"main = putStr (toJson {_VAR_NAME})\n"
+        "main = BL.putStr (E.encodingToLazyByteString"
+        f" (valToEncoding {_VAR_NAME}))\n"
     )
 
 
 def main() -> None:
     """Round-trip the shared document through the Haskell backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
-    ghc = shutil.which(cmd="ghc") or "ghc"
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
         source_path = tmpdir / f"{_MODULE_NAME}.hs"
         source_path.write_text(data=program, encoding="utf-8")
-        binary_path = tmpdir / "run"
-        # ``-XGHC2021`` matches ``Haskell.language_version``; ``-Wall
-        # -Werror`` matches the policy of the ``Lint Haskell`` step.
-        compile_result = subprocess.run(
-            args=[
-                ghc,
-                "-XGHC2021",
-                "-Wall",
-                "-Werror",
-                "-outputdir",
-                str(tmpdir / "build"),
-                "-o",
-                str(binary_path),
-                str(source_path),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-        if compile_result.returncode != 0:
-            sys.stderr.write(
-                f"{_LABEL}: ghc compile error\n{compile_result.stdout}"
-                f"{compile_result.stderr}",
-            )
-            sys.stderr.write(f"\nProgram:\n{program}\n")
-            sys.exit(1)
+        # ``--verbose=0`` keeps cabal's progress chatter off stdout so
+        # only the program's encoded JSON reaches ``run_result.stdout``.
         run_result = subprocess.run(
-            args=[str(binary_path)],
+            args=["cabal", "run", "--verbose=0", str(source_path)],
             capture_output=True,
             text=True,
             check=False,
@@ -141,8 +115,10 @@ def main() -> None:
         )
     if run_result.returncode != 0:
         sys.stderr.write(
-            f"{_LABEL}: runtime error\n{run_result.stdout}{run_result.stderr}",
+            f"{_LABEL}: cabal run error\n"
+            f"{run_result.stdout}{run_result.stderr}",
         )
+        sys.stderr.write(f"\nProgram:\n{program}\n")
         sys.exit(1)
     roundtrip_common.verify(
         label=_LABEL,
