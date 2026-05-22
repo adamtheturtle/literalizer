@@ -35,6 +35,7 @@ from literalizer.languages import (
     Nim,
     OCaml,
     Odin,
+    Perl,
     PureScript,
     Python,
     Roc,
@@ -1786,6 +1787,25 @@ def _build_declaration_style_variants() -> list[Variant]:
     )
 
 
+@beartype
+def build_perl_bool_format_variants() -> Iterable[Variant]:
+    """Build :class:`~literalizer.languages.perl.Perl` boolean-format
+    variants.  Perl is the only language with a ``bool_format`` option,
+    so this axis is built explicitly rather than via
+    :data:`_SIMPLE_AXES`.
+    """
+    return [
+        Variant(
+            name=f"Perl_bool_format_{fmt.name.lower()}",
+            spec=make_spec(lang_cls=Perl, bool_format=fmt),
+            lang_cls=Perl,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+        for fmt in Perl.BoolFormats
+        if fmt is not Perl.BoolFormats.INTEGER
+    ]
+
+
 _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "collection_layout": build_collection_layout_variants,
     "declaration_style": _build_declaration_style_variants,
@@ -1846,6 +1866,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
     ),
+    "perl_bool_format": build_perl_bool_format_variants,
 }
 
 
@@ -2180,6 +2201,12 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "language_version_cross_dict_type": (
         _ci(case_dir_name="empty_dict", suffix=""),
         _ci(case_dir_name="empty_ordered_map", suffix=""),
+    ),
+    "perl_bool_format": (
+        _ci(case_dir_name="scalar_bool", suffix=""),
+        _ci(case_dir_name="bool_list", suffix=""),
+        _ci(case_dir_name="nested_bool_list", suffix=""),
+        _ci(case_dir_name="bool_key_dict", suffix=""),
     ),
 }
 
