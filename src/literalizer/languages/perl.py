@@ -134,27 +134,57 @@ def _format_datetime_perl(value: datetime.datetime) -> str:
     return parts + ", time_zone => 'UTC')"
 
 
+@dataclasses.dataclass(frozen=True)
+class _BoolFormatConfig:
+    """Configuration for a single Perl boolean format."""
+
+    true_literal: str
+    false_literal: str
+    preamble_lines: tuple[str, ...]
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Perl(metaclass=LanguageCls):
-    """Perl language specification.
+    r"""Perl language specification.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.PERL`` — ``DateTime->new(...)`` call,
+            * ``date_formats.PERL`` -- ``DateTime->new(...)`` call,
               e.g. ``DateTime->new(year => 2024, month => 1, day => 15)``.
-            * ``date_formats.ISO`` — ISO 8601 quoted string,
+            * ``date_formats.ISO`` -- ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
-            * ``datetime_formats.PERL`` — ``DateTime->new(...)`` call,
+            * ``datetime_formats.PERL`` -- ``DateTime->new(...)`` call,
               e.g. ``DateTime->new(year => 2024, month => 1, day => 15,
               hour => 12, minute => 30, second => 0,
               time_zone => 'UTC')``.
-            * ``datetime_formats.ISO`` — ISO 8601 quoted string,
+            * ``datetime_formats.ISO`` -- ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00+00:00"``.
+
+        bool_format: How to format :class:`bool` values.  Perl has no
+            native boolean type, so the choice trades off readability
+            against round-trip fidelity through JSON and YAML libraries.
+
+            * ``bool_formats.INTEGER`` -- bare ``1`` / ``0`` (default,
+              preserves prior output).  Re-encoding to JSON loses the
+              boolean type.
+            * ``bool_formats.JSON_PP_REF`` -- ``\1`` / ``\0`` scalar
+              references, the conventional form used by ``JSON::PP``,
+              ``JSON::XS``, ``Cpanel::JSON::XS`` and ``Mojo::JSON``.
+              Round-trips back to JSON ``true`` / ``false`` with no
+              ``use`` preamble required.
+            * ``bool_formats.JSON_PP_SINGLETON`` -- ``JSON::PP::true`` /
+              ``JSON::PP::false`` blessed singletons; adds a
+              ``use JSON::PP;`` preamble (``JSON::PP`` is a core
+              module).
+
+            Only boolean *values* round-trip; Perl coerces every hash
+            key to a string, so a boolean dict key cannot preserve any
+            non-string representation regardless of ``bool_format``.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -241,6 +271,25 @@ class Perl(metaclass=LanguageCls):
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
             return self.value.formatter(dt_value)
+
+    class BoolFormats(enum.Enum):
+        """Boolean format options for Perl."""
+
+        INTEGER = _BoolFormatConfig(
+            true_literal="1",
+            false_literal="0",
+            preamble_lines=(),
+        )
+        JSON_PP_REF = _BoolFormatConfig(
+            true_literal=r"\1",
+            false_literal=r"\0",
+            preamble_lines=(),
+        )
+        JSON_PP_SINGLETON = _BoolFormatConfig(
+            true_literal="JSON::PP::true",
+            false_literal="JSON::PP::false",
+            preamble_lines=("use JSON::PP;",),
+        )
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -402,6 +451,7 @@ class Perl(metaclass=LanguageCls):
 
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
+    bool_formats = BoolFormats
     bytes_formats = BytesFormats
     sequence_formats = SequenceFormats
     set_formats = SetFormats
@@ -516,6 +566,7 @@ class Perl(metaclass=LanguageCls):
 
     date_format: DateFormats = DateFormats.PERL
     datetime_format: DatetimeFormats = DatetimeFormats.PERL
+    bool_format: BoolFormats = BoolFormats.INTEGER
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
@@ -546,8 +597,6 @@ class Perl(metaclass=LanguageCls):
     indent: str = "    "
 
     null_literal: ClassVar[str] = "undef"
-    true_literal: ClassVar[str] = "1"
-    false_literal: ClassVar[str] = "0"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
@@ -775,11 +824,28 @@ class Perl(metaclass=LanguageCls):
         return variable_formatter(template="${name} = {value};")
 
     @cached_property
+    def true_literal(self) -> str:
+        """Perl literal representing :data:`True`."""
+        return self.bool_format.value.true_literal
+
+    @cached_property
+    def false_literal(self) -> str:
+        """Perl literal representing :data:`False`."""
+        return self.bool_format.value.false_literal
+
+    @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble computed from date/datetime format."""
+        """Per-instance scalar preamble computed from date/datetime/bool
+        format.
+        """
+        bool_preamble = self.bool_format.value.preamble_lines
+        extra: dict[type, tuple[str, ...]] | None = (
+            {bool: bool_preamble} if bool_preamble else None
+        )
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra=extra,
         )
 
     @cached_property
