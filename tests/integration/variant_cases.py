@@ -35,6 +35,7 @@ from literalizer.languages import (
     Nim,
     OCaml,
     Odin,
+    Perl,
     PureScript,
     Python,
     Roc,
@@ -979,6 +980,28 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_perl_integer_width_strategy_variants() -> Iterable[Variant]:
+    """Build the Perl ``MATH_BIG_INT`` integer-width variant.
+
+    Perl scalars hold integers in a fixed-precision NV (float-64) once
+    they exceed the IV range, so values above ~2**53 silently lose
+    precision when the source file is parsed.  Perl is the only
+    language whose default rendering has this NV-precision trap, so the
+    opt-in :attr:`Perl.IntegerWidthStrategies.MATH_BIG_INT` is a
+    single-language variant.  See #2588.
+    """
+    strategy = Perl.IntegerWidthStrategies.MATH_BIG_INT
+    return [
+        Variant(
+            name="Perl_integer_width_strategy_math_big_int",
+            spec=make_spec(lang_cls=Perl, integer_width_strategy=strategy),
+            lang_cls=Perl,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+    ]
+
+
+@beartype
 def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
     """Build the Nim ``record_nonrecord_dict_field`` variant.
 
@@ -1842,6 +1865,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
+    "perl_integer_width_strategy": (
+        build_perl_integer_width_strategy_variants
+    ),
     "language_version": build_language_version_variants,
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
@@ -2170,6 +2196,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="record_epoch_datetime_i32_overflow", suffix=""),
     ),
     "record_numeric_cross": (_ci(case_dir_name="record_wide_int", suffix=""),),
+    "perl_integer_width_strategy": (
+        _ci(case_dir_name="record_wide_int", suffix=""),
+    ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name, suffix="")
         for case_dir_name in dict.fromkeys(
