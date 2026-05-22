@@ -2186,6 +2186,11 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="binary", suffix="_binary"),
         _ci(case_dir_name="scalar_string", suffix=""),
         _ci(case_dir_name="time_list", suffix="_time"),
+        # Pins the non-ASCII branch of each non-default string format:
+        # Perl ``DOUBLE_UTF8`` adds ``use utf8;`` and emits literal
+        # characters (#2600), and every other multi-format language's
+        # alternate quoting style is exercised against the same input.
+        _ci(case_dir_name="string_unicode", suffix=""),
     ),
     "string_format_date_cross": (_ci(case_dir_name="scalar_date", suffix=""),),
     "string_format_datetime_cross": (
