@@ -1,0 +1,1 @@
+Add an opt-in ``Perl.string_formats.DOUBLE_UTF8`` variant that emits non-ASCII characters literally in double-quoted strings and contributes ``use utf8;`` to the file preamble whenever the literalized value contains a non-ASCII string.

@@ -168,6 +168,50 @@ def _format_perl_string_double(value: str) -> str:
 
 
 @beartype
+def _format_perl_string_double_utf8(value: str) -> str:
+    r"""Perl double-quoted string with non-ASCII emitted literally.
+
+    Paired with a ``use utf8;`` preamble (see
+    :func:`_perl_use_utf8_preamble`) so Perl decodes the source as
+    UTF-8 and each non-ASCII character becomes one Unicode character
+    rather than its raw byte sequence.  Matches the style a human Perl
+    author would write in a UTF-8 source file.
+    """
+    return format_string_backslash(value)
+
+
+@beartype
+def _data_has_non_ascii_string(*, data: Value) -> bool:
+    """Return ``True`` if *data* contains a string with non-ASCII text.
+
+    Descends into lists, sets, and both dict keys and values.  Used by
+    the ``DOUBLE_UTF8`` string format to decide whether the
+    ``use utf8;`` pragma needs to be added to the file preamble.
+    """
+    match data:
+        case str():
+            return not data.isascii()
+        case list() | set():
+            return any(_data_has_non_ascii_string(data=item) for item in data)
+        case dict():
+            return any(
+                _data_has_non_ascii_string(data=item)
+                for entry in data.items()
+                for item in entry
+            )
+        case _:
+            return False
+
+
+@beartype
+def _perl_use_utf8_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``use utf8;`` if *data* contains any non-ASCII string."""
+    if _data_has_non_ascii_string(data=data):
+        return ("use utf8;",)
+    return ()
+
+
+@beartype
 def _format_datetime_perl(value: datetime.datetime) -> str:
     """Format a datetime as a Perl ``DateTime`` constructor."""
     if value.tzinfo is not None:
@@ -234,6 +278,24 @@ class Perl(metaclass=LanguageCls):
             Only boolean *values* round-trip; Perl coerces every hash
             key to a string, so a boolean dict key cannot preserve any
             non-string representation regardless of ``bool_format``.
+
+        string_format: How to format :class:`str` values.
+
+            * ``string_formats.DOUBLE`` (default) -- double-quoted with
+              every non-ASCII character escaped as ``\x{HHHH}``.  The
+              output is pure ASCII and round-trips regardless of the
+              surrounding source-file encoding.
+            * ``string_formats.DOUBLE_UTF8`` -- double-quoted with
+              non-ASCII characters emitted literally; contributes
+              ``use utf8;`` to the file preamble whenever the
+              literalized value contains a non-ASCII string, so Perl
+              decodes the source as UTF-8.  Matches the style a human
+              Perl author would write in a UTF-8 source file.
+            * ``string_formats.SINGLE`` -- single-quoted, with only
+              ``\\`` and ``\'`` recognized as escapes.  Non-ASCII
+              characters are emitted as their raw UTF-8 bytes; the
+              caller is responsible for placing the snippet in a
+              source file whose encoding declaration matches.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -502,6 +564,7 @@ class Perl(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=_format_perl_string_double)
+        DOUBLE_UTF8 = enum.member(value=_format_perl_string_double_utf8)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
@@ -689,12 +752,32 @@ class Perl(metaclass=LanguageCls):
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines."""
-        match self.integer_width_strategy.name:
-            case "MATH_BIG_INT":
-                return _perl_math_bigint_preamble
-            case _:
-                return no_data_preamble
+        """Return data-dependent preamble lines.
+
+        Composes the ``MATH_BIG_INT`` integer-width contribution with
+        the ``DOUBLE_UTF8`` string-format contribution so a value
+        triggering both gets both preamble lines in a stable order.
+        """
+        contributors: tuple[Callable[[Value], tuple[str, ...]], ...] = (
+            *(
+                (_perl_math_bigint_preamble,)
+                if self.integer_width_strategy.name == "MATH_BIG_INT"
+                else ()
+            ),
+            *(
+                (_perl_use_utf8_preamble,)
+                if self.string_format.name == "DOUBLE_UTF8"
+                else ()
+            ),
+        )
+        if not contributors:
+            return no_data_preamble
+
+        def _composed(data: Value, /) -> tuple[str, ...]:
+            """Concatenate every contributor's preamble lines."""
+            return tuple(line for fn in contributors for line in fn(data))
+
+        return _composed
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:

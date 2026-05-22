@@ -546,6 +546,7 @@ ignore_names = [
     "FROZENSET",
     "ELIXIR",
     "ERLANG",
+    "DOUBLE_UTF8",
     "EXPLICIT",
     "NO",
     "OBJECT",
