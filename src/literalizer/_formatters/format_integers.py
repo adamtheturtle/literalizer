@@ -348,10 +348,13 @@ def data_has_int_outside_range(
     """Return ``True`` if *data* contains an integer outside
     ``[min_value, max_value]``.
 
-    Descends into lists, sets, and dict values.  Used by languages that
-    need to add a preamble (e.g. an ``import`` statement) conditionally
-    on the presence of an integer whose magnitude exceeds the language's
-    native fixed-precision range.
+    Descends into lists, sets, and both dict keys and values.  Used by
+    languages that need to add a preamble (e.g. an ``import``
+    statement) conditionally on the presence of an integer whose
+    magnitude exceeds the language's native fixed-precision range; a
+    wide integer appearing only as a dict key still drives the
+    fallback formatter that emits the wrapping constructor, so the
+    preamble has to follow.
     """
     match data:
         case bool():
@@ -375,9 +378,10 @@ def data_has_int_outside_range(
         case dict():
             return any(
                 data_has_int_outside_range(
-                    data=v, min_value=min_value, max_value=max_value
+                    data=item, min_value=min_value, max_value=max_value
                 )
-                for v in data.values()
+                for entry in data.items()
+                for item in entry
             )
         case _:
             return False

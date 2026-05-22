@@ -70,6 +70,13 @@ from .language_specs import (
 # heterogeneous list already covered elsewhere, so it stays out of the
 # all-languages base discovery; only the ``heterogeneous_strategy``
 # axis consumes it.
+#
+# ``dict_wide_int_key`` carries a single ``{>2^53: "tag"}`` entry to
+# pin the dict-key arm of the Perl ``MATH_BIG_INT`` preamble check
+# (#2588 follow-up): a wide integer that appears only as a key still
+# drives the ``Math::BigInt`` wrapper, so the ``use Math::BigInt;``
+# preamble must follow.  Other languages cannot represent the key in a
+# base golden, so it stays out of the all-languages base discovery.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
@@ -80,6 +87,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "tuple_triple_record_field",
         "tuple_triple_top_level",
         "heterogeneous_time_string",
+        "dict_wide_int_key",
     }
 )
 

@@ -2179,6 +2179,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "integer_width_strategy": (
         _ci(case_dir_name="record_wide_int", suffix=""),
         _ci(case_dir_name="int_list", suffix=""),
+        _ci(case_dir_name="dict_wide_int_key", suffix=""),
     ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name, suffix="")
