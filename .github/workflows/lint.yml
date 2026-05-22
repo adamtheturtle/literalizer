@@ -1151,6 +1151,21 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
+      # The `aeson` and `text` packages are needed by the
+      # `Haskell(json_type=Haskell.json_types.AESON_VALUE)` fixtures so
+      # they compile under the bare `ghc` invocation below (which does
+      # not see the cabal-script `build-depends` block used by the
+      # `Haskell roundtrip` step). `cabal install --lib` registers them
+      # in the user package database so the subsequent `ghc` call
+      # resolves `Data.Aeson` and `Data.Text.Encoding`. `bytestring` is
+      # bundled with GHC.  Keep this paired with the `AESON_VALUE`
+      # member in `Haskell.JsonTypes` in
+      # `src/literalizer/languages/haskell.py`.
+      - name: Install aeson / text for Haskell lint
+        run: |-
+          cabal update
+          cabal install --lib aeson text
+
       # Compile all fixtures in a single ghc invocation to pay GHC's
       # startup cost once. Each fixture already carries a unique module
       # name derived from its case directory and stem, so a plain copy

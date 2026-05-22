@@ -1,0 +1,1 @@
+Add ``Haskell(json_type=Haskell.json_types.AESON_VALUE)`` to render values through ``Data.Aeson.eitherDecodeStrict`` so the binding has the static type ``Data.Aeson.Value`` instead of Haskell's narrow custom ``Val`` algebraic type.

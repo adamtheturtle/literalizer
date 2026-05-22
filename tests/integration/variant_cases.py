@@ -525,6 +525,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=Nim,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="Haskell_json_type_aeson_value",
+            spec=make_spec(
+                lang_cls=Haskell,
+                json_type=Haskell.json_types.AESON_VALUE,
+            ),
+            lang_cls=Haskell,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 

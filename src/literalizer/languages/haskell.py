@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import json
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -21,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -1056,6 +1058,177 @@ def _wrap_float_with_constructor(
     return f"{float_prefix}({formatted})"
 
 
+_AESON_VALUE_STATIC_PREAMBLE: tuple[str, ...] = (
+    "{-# LANGUAGE OverloadedStrings #-}",
+)
+
+_AESON_VALUE_BODY_PREAMBLE: tuple[str, ...] = (
+    "import Data.Aeson (Value, eitherDecodeStrict)",
+    "import Data.Text.Encoding (encodeUtf8)",
+)
+
+
+@beartype
+def _aeson_value_body_preamble(
+    _types: frozenset[type], _data: Value, /
+) -> tuple[str, ...]:
+    """Return the ``Data.Aeson.Value`` import preamble lines."""
+    return _AESON_VALUE_BODY_PREAMBLE
+
+
+# Sequence/dict format definitions used while ``json_type`` is active.
+# The framework still walks the data to compute a formatted ``value``,
+# but that string is discarded by :func:`_format_haskell_json_declaration`
+# and friends in favor of a fresh ``json.dumps`` of the raw data.  These
+# definitions only need to be permissive enough that the formatting pass
+# does not error on heterogeneous data or nulls inside containers.
+_AESON_VALUE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+_AESON_VALUE_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="["),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=True,
+)
+
+_AESON_VALUE_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_template(
+        template="{key}: {value}",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=True,
+)
+
+_AESON_VALUE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _aeson_temporal_to_iso(data: datetime.date | datetime.time) -> str:
+    """Return ISO-8601 text for a date / datetime / time value.
+
+    Naive datetimes are anchored to UTC so the rendered JSON document
+    round-trips through ``Data.Aeson`` without a missing-offset error.
+    """
+    if isinstance(data, datetime.datetime):
+        iso = data.isoformat()
+        if data.tzinfo is None:
+            iso += "Z"
+        return iso
+    return data.isoformat()
+
+
+@beartype
+def _aeson_to_jsonable(data: Value) -> object:
+    """Convert *data* into a value that :func:`json.dumps` can serialize.
+
+    Dates, datetimes, and times become ISO-8601 strings (JSON has no
+    temporal type).  Bytes become a hex-encoded string.  Sets and
+    :class:`OrderedMap` are folded into list/dict respectively.  Non-string
+    dict keys are not handled here; the caller validates first.
+    """
+    match data:
+        case datetime.datetime() | datetime.date() | datetime.time():
+            return _aeson_temporal_to_iso(data=data)
+        case bytes():
+            return data.hex()
+        case OrderedMap() | dict():
+            return {
+                key: _aeson_to_jsonable(data=value)
+                for key, value in data.items()
+            }
+        case set():
+            items = [_aeson_to_jsonable(data=item) for item in data]
+            items.sort(key=repr)
+            return items
+        case list():
+            return [_aeson_to_jsonable(data=item) for item in data]
+        case _:
+            return data
+
+
+@beartype
+def _format_aeson_value_json_text(data: Value) -> str:
+    """Serialize *data* as a single-line JSON expression."""
+    return json.dumps(obj=_aeson_to_jsonable(data=data), ensure_ascii=False)
+
+
+@beartype
+def _aeson_decode_expression(data: Value) -> str:
+    """Render ``either error id (eitherDecodeStrict (encodeUtf8 "..."))``.
+
+    With the ``OverloadedStrings`` pragma the embedded literal resolves
+    to :class:`Data.Text.Text`; ``encodeUtf8`` widens it to a strict
+    ``ByteString`` that :func:`Data.Aeson.eitherDecodeStrict` accepts.
+    """
+    json_text = _format_aeson_value_json_text(data=data)
+    haskell_literal = format_string_backslash_control(
+        value=json_text,
+        control_char_fmt="\\x{:02x}",
+    )
+    return (
+        f"either error id (eitherDecodeStrict (encodeUtf8 {haskell_literal}))"
+    )
+
+
+@beartype
+def _format_haskell_json_declaration(
+    name: str,
+    _value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a ``Value`` declaration backed by ``eitherDecodeStrict``."""
+    expression = _aeson_decode_expression(data=data)
+    return f"{name} :: Value\n{name} = {expression}"
+
+
+@beartype
+def _format_haskell_json_assignment(
+    name: str,
+    _value: str,
+    data: Value,
+) -> str:
+    """Format a ``Value`` assignment backed by ``eitherDecodeStrict``."""
+    return f"{name} = {_aeson_decode_expression(data=data)}"
+
+
+@beartype
+def _format_haskell_json_call_arg(raw_value: Value, _formatted: str) -> str:
+    """Format a direct call argument as a parenthesized ``Value`` literal.
+
+    Haskell curried calls parenthesize each argument to keep
+    constructor / operator applications from being parsed as additional
+    arguments to the outer call.
+    """
+    return f"({_aeson_decode_expression(data=raw_value)})"
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Haskell(metaclass=LanguageCls):
@@ -1129,6 +1302,12 @@ class Haskell(metaclass=LanguageCls):
             * ``numeric_styles.EXPLICIT`` — wrap every numeric literal
               with its constructor (``HInt 42``, ``HFloat (3.14)``)
               and omit the typeclass instances.
+
+        json_type: When set to ``json_types.AESON_VALUE``, render values
+            through :func:`Data.Aeson.eitherDecodeStrict` so the output
+            produces a :class:`Data.Aeson.Value` instead of Haskell's
+            narrow custom ``Val`` algebraic type.  Dict keys must be
+            strings so they remain valid JSON object keys.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1425,6 +1604,16 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Haskell."""
+
+        AESON_VALUE = "Data.Aeson.Value"
+        """``Data.Aeson.Value`` — the dynamic JSON value type from the
+        ``aeson`` package.
+        """
+
+    json_types = JsonTypes
+
     class VersionFormats(enum.Enum):
         """Version options for Haskell."""
 
@@ -1563,6 +1752,7 @@ class Haskell(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # Keep in sync with the `-XGHC2021` flag passed to the Haskell
     # linter in `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.GHC2021
@@ -1578,9 +1768,28 @@ class Haskell(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether Haskell should render via
+        ``Data.Aeson.Value``.
+        """
+        return self.json_type is not None
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file.
+
+        When :attr:`json_type` is active the ``OverloadedStrings``
+        pragma is emitted here so the embedded JSON literal resolves to
+        :class:`Data.Text.Text` before ``encodeUtf8`` widens it to a
+        strict ``ByteString``.
+        """
+        if self._json_type_active:
+            return _AESON_VALUE_STATIC_PREAMBLE
+        return ()
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -1600,6 +1809,11 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1642,16 +1856,22 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return _AESON_VALUE_SEQUENCE_CONFIG
         return self._seq_setup.format_config
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
+        if self._json_type_active:
+            return _AESON_VALUE_SEQUENCE_CONFIG.sequence_open
         return self._seq_setup.sequence_open
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return _AESON_VALUE_SET_CONFIG
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(
@@ -1681,6 +1901,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return _AESON_VALUE_DICT_CONFIG
         map_open = f"{self.constructor_prefix}Map ["
         return DictFormatConfig(
             dict_open=fixed_open(open_str=map_open),
@@ -1695,6 +1917,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return _AESON_VALUE_ORDERED_MAP_CONFIG
         map_open = f"{self.constructor_prefix}Map ["
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str=map_open),
@@ -1809,6 +2033,8 @@ class Haskell(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self._json_type_active:
+            return _format_haskell_json_declaration
         return self._decl_fmts.format_variable_declaration
 
     @cached_property
@@ -1816,6 +2042,8 @@ class Haskell(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
+        if self._json_type_active:
+            return _format_haskell_json_assignment
         return self._decl_fmts.format_variable_assignment
 
     @cached_property
@@ -1861,7 +2089,16 @@ class Haskell(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble for Haskell imports."""
+        """Per-instance scalar preamble for Haskell imports.
+
+        Under :attr:`json_type` every temporal value is folded into the
+        JSON text as an ISO-8601 string and every string ships inside
+        that same JSON literal, so the per-scalar Haskell extension
+        directives and imports that the configured ``date_format`` /
+        ``datetime_format`` would otherwise add do not apply.
+        """
+        if self._json_type_active:
+            return {}
         return self._preamble.scalar_preamble
 
     @cached_property
@@ -1873,7 +2110,16 @@ class Haskell(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines for Haskell data declarations."""
+        """Compute body-preamble lines for Haskell data declarations.
+
+        Under :attr:`json_type` the body preamble is reduced to the
+        ``Data.Aeson`` and ``Data.Text.Encoding`` imports needed by the
+        ``eitherDecodeStrict (encodeUtf8 ...)`` rendering, so the custom
+        ``Val`` algebraic type and its ``Num`` / ``IsString`` instances
+        are not emitted.
+        """
+        if self._json_type_active:
+            return _aeson_value_body_preamble
         return self._preamble.compute_body_preamble
 
     @cached_property
@@ -1890,8 +2136,9 @@ class Haskell(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Callable that returns Haskell stub declarations for a call."""
+        stub_type_name = "Value" if self._json_type_active else self.type_name
         return _build_haskell_call_stub(
-            type_name=self.type_name,
+            type_name=stub_type_name,
             curried=isinstance(self.call_style.value, CommandCallStyle),
         )
 
@@ -1903,6 +2150,8 @@ class Haskell(metaclass=LanguageCls):
         applications (``HInt 1``) are not parsed as additional arguments
         to the outer call.
         """
+        if self._json_type_active:
+            return _format_haskell_json_call_arg
         if isinstance(self.call_style.value, CommandCallStyle):
             return _haskell_format_call_arg
         return identity_call_arg
