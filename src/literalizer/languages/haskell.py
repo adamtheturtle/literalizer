@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import json
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -41,6 +40,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
 )
+from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -1137,56 +1137,6 @@ _AESON_VALUE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
-def _aeson_temporal_to_iso(data: datetime.date | datetime.time) -> str:
-    """Return ISO-8601 text for a date / datetime / time value.
-
-    Naive datetimes are anchored to UTC so the rendered JSON document
-    round-trips through ``Data.Aeson`` without a missing-offset error.
-    """
-    if isinstance(data, datetime.datetime):
-        iso = data.isoformat()
-        if data.tzinfo is None:
-            iso += "Z"
-        return iso
-    return data.isoformat()
-
-
-@beartype
-def _aeson_to_jsonable(data: Value) -> object:
-    """Convert *data* into a value that :func:`json.dumps` can serialize.
-
-    Dates, datetimes, and times become ISO-8601 strings (JSON has no
-    temporal type).  Bytes become a hex-encoded string.  Sets and
-    :class:`OrderedMap` are folded into list/dict respectively.  Non-string
-    dict keys are not handled here; the caller validates first.
-    """
-    match data:
-        case datetime.datetime() | datetime.date() | datetime.time():
-            return _aeson_temporal_to_iso(data=data)
-        case bytes():
-            return data.hex()
-        case OrderedMap() | dict():
-            return {
-                key: _aeson_to_jsonable(data=value)
-                for key, value in data.items()
-            }
-        case set():
-            items = [_aeson_to_jsonable(data=item) for item in data]
-            items.sort(key=repr)
-            return items
-        case list():
-            return [_aeson_to_jsonable(data=item) for item in data]
-        case _:
-            return data
-
-
-@beartype
-def _format_aeson_value_json_text(data: Value) -> str:
-    """Serialize *data* as a single-line JSON expression."""
-    return json.dumps(obj=_aeson_to_jsonable(data=data), ensure_ascii=False)
-
-
-@beartype
 def _aeson_quasi_expression(data: Value) -> str:
     """Render ``[aesonQQ| <json> |]`` for *data*.
 
@@ -1196,7 +1146,7 @@ def _aeson_quasi_expression(data: Value) -> str:
     JSON.  Bare scalars (``42``, ``true``, ``"hello"``, ``null``) are
     accepted by the quasi-quote bracket just like top-level JSON documents.
     """
-    json_text = _format_aeson_value_json_text(data=data)
+    json_text = format_json_value_text(data=data)
     if _AESON_QQ_CLOSE in json_text:
         msg = (
             "Haskell(json_type=AESON_VALUE) cannot represent a value whose "
