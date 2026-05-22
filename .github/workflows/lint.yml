@@ -542,6 +542,21 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-perl
           xargs -0 -P "$(nproc)" -n1 perl < /tmp/files-perl
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      # Basic JSON -> Perl -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the pinned Perl toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. ``JSON::PP`` and ``Math::BigInt``
+      # are core in the pinned 5.36 interpreter so no extra ``cpanm``
+      # step is needed. See `.github/scripts/run_perl_roundtrip.py`.
+      - name: Perl roundtrip
+        run: uv run python .github/scripts/run_perl_roundtrip.py
+
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
     runs-on: ubuntu-latest
