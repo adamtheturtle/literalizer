@@ -642,11 +642,26 @@ jobs:
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
+      # `uv` is needed by the `TypeScript roundtrip` step below; it runs
+      # the helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Run TypeScript files
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+
+      # Basic JSON -> TypeScript -> JSON round-trip (issue 1867).  Runs
+      # here because this is the job with the Node + `tsx` toolchain;
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves.  See
+      # `.github/scripts/run_typescript_roundtrip.py`.
+      - name: TypeScript roundtrip
+        run: uv run python .github/scripts/run_typescript_roundtrip.py
 
   # Elm format + syntax check. Split from `lint-elm-run` so the two
   # `elm make`-based passes (compile-only vs. compile + Node execute)
