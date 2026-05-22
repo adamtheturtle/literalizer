@@ -85,7 +85,10 @@ from literalizer._language import (
     no_validate_spec_for_data,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -1059,13 +1062,18 @@ def _wrap_float_with_constructor(
 
 
 _AESON_VALUE_STATIC_PREAMBLE: tuple[str, ...] = (
-    "{-# LANGUAGE OverloadedStrings #-}",
+    "{-# LANGUAGE QuasiQuotes #-}",
 )
 
 _AESON_VALUE_BODY_PREAMBLE: tuple[str, ...] = (
-    "import Data.Aeson (Value, eitherDecodeStrict)",
-    "import Data.Text.Encoding (encodeUtf8)",
+    "import Data.Aeson (Value)",
+    "import Data.Aeson.QQ (aesonQQ)",
 )
+
+# Closing bracket sequence of the ``aesonQQ`` quasi-quote bracket; if the
+# rendered JSON contains this literal sequence the quasi-quote bracket
+# terminates early and the fixture fails to parse.
+_AESON_QQ_CLOSE = "|]"
 
 
 @beartype
@@ -1179,21 +1187,23 @@ def _format_aeson_value_json_text(data: Value) -> str:
 
 
 @beartype
-def _aeson_decode_expression(data: Value) -> str:
-    """Render ``either error id (eitherDecodeStrict (encodeUtf8 "..."))``.
+def _aeson_quasi_expression(data: Value) -> str:
+    """Render ``[aesonQQ| <json> |]`` for *data*.
 
-    With the ``OverloadedStrings`` pragma the embedded literal resolves
-    to :class:`Data.Text.Text`; ``encodeUtf8`` widens it to a strict
-    ``ByteString`` that :func:`Data.Aeson.eitherDecodeStrict` accepts.
+    The ``aesonQQ`` quasi-quote bracket from ``Data.Aeson.QQ`` parses JSON at
+    compile time and yields a :class:`Data.Aeson.Value`, mirroring how
+    Rust's ``serde_json::json!`` macro builds a ``Value`` from inline
+    JSON.  Bare scalars (``42``, ``true``, ``"hello"``, ``null``) are
+    accepted by the quasi-quote bracket just like top-level JSON documents.
     """
     json_text = _format_aeson_value_json_text(data=data)
-    haskell_literal = format_string_backslash_control(
-        value=json_text,
-        control_char_fmt="\\x{:02x}",
-    )
-    return (
-        f"either error id (eitherDecodeStrict (encodeUtf8 {haskell_literal}))"
-    )
+    if _AESON_QQ_CLOSE in json_text:
+        msg = (
+            "Haskell(json_type=AESON_VALUE) cannot represent a value whose "
+            "JSON encoding contains the aesonQQ terminator sequence '|]'."
+        )
+        raise UnrepresentableInputError(msg)
+    return f"[aesonQQ| {json_text} |]"
 
 
 @beartype
@@ -1203,8 +1213,8 @@ def _format_haskell_json_declaration(
     data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format a ``Value`` declaration backed by ``eitherDecodeStrict``."""
-    expression = _aeson_decode_expression(data=data)
+    """Format a ``Value`` declaration backed by ``aesonQQ``."""
+    expression = _aeson_quasi_expression(data=data)
     return f"{name} :: Value\n{name} = {expression}"
 
 
@@ -1214,19 +1224,18 @@ def _format_haskell_json_assignment(
     _value: str,
     data: Value,
 ) -> str:
-    """Format a ``Value`` assignment backed by ``eitherDecodeStrict``."""
-    return f"{name} = {_aeson_decode_expression(data=data)}"
+    """Format a ``Value`` assignment backed by ``aesonQQ``."""
+    return f"{name} = {_aeson_quasi_expression(data=data)}"
 
 
 @beartype
 def _format_haskell_json_call_arg(raw_value: Value, _formatted: str) -> str:
-    """Format a direct call argument as a parenthesized ``Value`` literal.
+    """Format a direct call argument as a ``Value`` quasi-quote.
 
-    Haskell curried calls parenthesize each argument to keep
-    constructor / operator applications from being parsed as additional
-    arguments to the outer call.
+    The ``aesonQQ`` brackets are self-delimiting so no surrounding
+    parentheses are needed even inside a curried call.
     """
-    return f"({_aeson_decode_expression(data=raw_value)})"
+    return _aeson_quasi_expression(data=raw_value)
 
 
 @beartype
@@ -1304,10 +1313,10 @@ class Haskell(metaclass=LanguageCls):
               and omit the typeclass instances.
 
         json_type: When set to ``json_types.AESON_VALUE``, render values
-            through :func:`Data.Aeson.eitherDecodeStrict` so the output
-            produces a :class:`Data.Aeson.Value` instead of Haskell's
-            narrow custom ``Val`` algebraic type.  Dict keys must be
-            strings so they remain valid JSON object keys.
+            through the ``aesonQQ`` quasi-quote bracket from ``Data.Aeson.QQ``
+            so the output produces a :class:`Data.Aeson.Value` instead
+            of Haskell's narrow custom ``Val`` algebraic type.  Dict
+            keys must be strings so they remain valid JSON object keys.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1782,10 +1791,10 @@ class Haskell(metaclass=LanguageCls):
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
-        When :attr:`json_type` is active the ``OverloadedStrings``
-        pragma is emitted here so the embedded JSON literal resolves to
-        :class:`Data.Text.Text` before ``encodeUtf8`` widens it to a
-        strict ``ByteString``.
+        When :attr:`json_type` is active the ``QuasiQuotes`` pragma is
+        emitted here so the ``aesonQQ`` quasi-quote bracket from
+        ``Data.Aeson.QQ`` can parse the inline JSON document into a
+        :class:`Data.Aeson.Value` at compile time.
         """
         if self._json_type_active:
             return _AESON_VALUE_STATIC_PREAMBLE
@@ -2113,10 +2122,9 @@ class Haskell(metaclass=LanguageCls):
         """Compute body-preamble lines for Haskell data declarations.
 
         Under :attr:`json_type` the body preamble is reduced to the
-        ``Data.Aeson`` and ``Data.Text.Encoding`` imports needed by the
-        ``eitherDecodeStrict (encodeUtf8 ...)`` rendering, so the custom
-        ``Val`` algebraic type and its ``Num`` / ``IsString`` instances
-        are not emitted.
+        ``Data.Aeson`` and ``Data.Aeson.QQ`` imports needed by the
+        ``aesonQQ`` quasi-quote bracket, so the custom ``Val`` algebraic type
+        and its ``Num`` / ``IsString`` instances are not emitted.
         """
         if self._json_type_active:
             return _aeson_value_body_preamble

@@ -255,12 +255,13 @@ type from the ``aeson`` package:
        variable_form=NewVariable(name="payload"),
    )
 
-This emits an ``either error id (eitherDecodeStrict (encodeUtf8 "..."))``
-expression so the rendered binding has the static type
-``Data.Aeson.Value`` instead of Haskell's narrow custom ``Val`` algebraic
-type, and can hold the heterogeneous values that ``Val``'s closed set of
-constructors rejects.  Dict keys must be strings so they remain valid
-JSON object keys.
+This emits an ``[aesonQQ| ... |]`` quasi-quote bracket from
+``Data.Aeson.QQ``, mirroring the ``serde_json::json!`` macro on the
+Rust side, so the rendered binding has the static type
+``Data.Aeson.Value`` instead of Haskell's narrow custom ``Val``
+algebraic type, and can hold the heterogeneous values that ``Val``'s
+closed set of constructors rejects.  Dict keys must be strings so they
+remain valid JSON object keys.
 
 Custom language implementations
 -------------------------------
