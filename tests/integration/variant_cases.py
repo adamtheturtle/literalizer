@@ -516,6 +516,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=CSharp,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="Nim_json_type_json_node",
+            spec=make_spec(
+                lang_cls=Nim,
+                json_type=Nim.json_types.JSON_NODE,
+            ),
+            lang_cls=Nim,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2413,6 +2422,35 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Nim_json_type_json_node_combined",
+                variant=Variant(
+                    name="Nim_json_type_json_node_combined",
+                    spec=make_spec(
+                        lang_cls=Nim,
+                        json_type=Nim.json_types.JSON_NODE,
+                    ),
+                    lang_cls=Nim,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Nim_json_type_json_node_let",
+                variant=Variant(
+                    name="Nim_json_type_json_node_let",
+                    spec=make_spec(
+                        lang_cls=Nim,
+                        json_type=Nim.json_types.JSON_NODE,
+                        declaration_style=Nim.declaration_styles.LET,
+                    ),
+                    lang_cls=Nim,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=wrap_variable_form(),
             ),
         )
     )

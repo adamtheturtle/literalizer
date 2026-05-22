@@ -100,8 +100,8 @@ JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  Rust, Crystal, Java, Scala, and
-C# support this through the ``json_type`` constructor argument:
+fit than native narrow collection types.  Rust, Crystal, Java, Scala, C#,
+and Nim support this through the ``json_type`` constructor argument:
 
 .. code-block:: python
 
@@ -213,6 +213,29 @@ switches date / datetime / time values to ISO 8601 strings so they
 remain valid JSON.  The ``const`` modifier is rejected because the JSON
 constructors and the implicit ``(JsonNode?)`` cast applied to scalars
 are runtime expressions, not C# constant initializers.
+
+Nim exposes the same option through ``Nim.json_types.JSON_NODE``:
+
+.. code-block:: python
+
+   """Render Nim data using the standard library JSON value type."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Nim
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Nim(json_type=Nim.json_types.JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``%*(...)`` expressions backed by Nim's standard-library
+``json`` module,
+relaxes Nim's homogeneous ``seq`` / ``Table`` checks, and switches date and
+datetime values to ISO 8601 strings so they remain valid JSON.  ``CONST``
+declarations are rejected because ``%*`` is a runtime macro and not a
+constant-expression initializer.
 
 Custom language implementations
 -------------------------------
