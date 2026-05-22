@@ -1072,7 +1072,18 @@ _AESON_VALUE_BODY_PREAMBLE: tuple[str, ...] = (
 
 # Closing bracket sequence of the ``aesonQQ`` quasi-quote bracket; if the
 # rendered JSON contains this literal sequence the quasi-quote bracket
-# terminates early and the fixture fails to parse.
+# terminates early and the fixture fails to parse.  The terminator is
+# recognized by GHC at the lexer level, before ``aesonQQ``'s grammar runs,
+# so it bites even inside a JSON string literal -- hence the rejection.
+#
+# ``aesonQQ``'s other splice forms (``#{...}`` value interpolation and
+# ``$ident`` key interpolation) are *not* rejected here: both only trigger
+# in unquoted positions, and :func:`format_json_value_text` runs every
+# string value and dict key through :func:`json.dumps`, which always
+# emits them inside ``"..."`` literals.  See the regression test
+# ``test_haskell_json_type_accepts_aeson_qq_interpolation_metasyntax``
+# that pins data containing literal ``#{...}`` and ``$ident`` text as a
+# round-tripping fixture.
 _AESON_QQ_CLOSE = "|]"
 
 
