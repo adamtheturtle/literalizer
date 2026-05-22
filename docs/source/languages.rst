@@ -121,6 +121,29 @@ This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
 
+Java exposes the same option through Jackson's ``JsonNode``:
+
+.. code-block:: python
+
+   """Render Java data as a Jackson JsonNode."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Java
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Java(json_type=Java.json_types.JACKSON_JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``new ObjectMapper().readTree("...")`` so the rendered
+binding has the static type ``com.fasterxml.jackson.databind.JsonNode``
+and can hold the heterogeneous values that Java's narrow ``List`` /
+``Map`` types reject.  Dict keys must be strings, and the
+``RECORD`` ``heterogeneous_strategy`` is rejected because the two
+rendering modes cannot be combined.
+
 Scala exposes the same option for Circe's :class:`io.circe.Json`:
 
 .. code-block:: python
