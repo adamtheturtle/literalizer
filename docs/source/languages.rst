@@ -121,6 +121,27 @@ This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
 
+Scala exposes the same option for Circe's :class:`io.circe.Json`:
+
+.. code-block:: python
+
+   """Render Scala data as io.circe.Json."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Scala
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Scala(json_type=Scala.json_types.CIRCE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``Json.obj(...)`` / ``Json.arr(...)`` factories with
+per-scalar ``Json.fromXxx(...)`` constructors, relaxes Scala's
+homogeneous ``List[T]`` / ``Map[String, T]`` checks, and requires dict
+keys to be strings so they remain valid JSON object keys.
+
 Custom language implementations
 -------------------------------
 

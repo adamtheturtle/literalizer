@@ -39,6 +39,7 @@ from literalizer.languages import (
     Python,
     Roc,
     Rust,
+    Scala,
     Swift,
     VisualBasic,
 )
@@ -477,7 +478,16 @@ def build_json_type_variants() -> Iterable[Variant]:
             ),
             lang_cls=Rust,
             collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
+        ),
+        Variant(
+            name="Scala_json_type_circe",
+            spec=make_spec(
+                lang_cls=Scala,
+                json_type=Scala.json_types.CIRCE,
+            ),
+            lang_cls=Scala,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
