@@ -4,8 +4,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.tools.JavaCompiler;
@@ -40,6 +43,13 @@ public class CheckJavaSyntax {
         // (`11` for `JDK_11`, `16` for `JDK_16` in `Java.VersionFormats`
         // in `src/literalizer/languages/java.py`). Keep them in sync.
         final String release = args[0];
+        // Optional `LITERALIZER_LINT_CLASSPATH` (colon-separated, with
+        // `dir/*` wildcards expanded to every jar in `dir/`) is added to
+        // both the compiler classpath and the per-fixture URLClassLoader
+        // so json_type fixtures resolve against Jackson at lint time.
+        // See `Lint Java` in `.github/workflows/lint.yml` for the wiring.
+        final List<Path> extraClasspath = resolveExtraClasspath();
+        final String classpathArg = classpathArg(extraClasspath);
         boolean failed = false;
         try (final StandardJavaFileManager fileManager =
                 compiler.getStandardFileManager(null, null, null)) {
@@ -50,11 +60,17 @@ public class CheckJavaSyntax {
                 final Path classDir = Files.createTempDirectory("javac");
                 final Iterable<? extends JavaFileObject> units =
                         fileManager.getJavaFileObjectsFromStrings(List.of(filename));
+                final List<String> options = new ArrayList<>(List.of(
+                        "-d", classDir.toString(), "-proc:none", "--release", release));
+                if (!classpathArg.isEmpty()) {
+                    options.add("-classpath");
+                    options.add(classpathArg);
+                }
                 final JavaCompiler.CompilationTask task = compiler.getTask(
                         null,
                         fileManager,
                         null,
-                        List.of("-d", classDir.toString(), "-proc:none", "--release", release),
+                        options,
                         null,
                         units);
                 if (!task.call()) {
@@ -62,7 +78,7 @@ public class CheckJavaSyntax {
                     failed = true;
                     continue;
                 }
-                if (!runFixture(filename, classDir)) {
+                if (!runFixture(filename, classDir, extraClasspath)) {
                     failed = true;
                 }
             }
@@ -70,19 +86,62 @@ public class CheckJavaSyntax {
         System.exit(failed ? 1 : 0);
     }
 
+    private static List<Path> resolveExtraClasspath() throws IOException {
+        final String env = System.getenv("LITERALIZER_LINT_CLASSPATH");
+        if (env == null || env.isEmpty()) {
+            return List.of();
+        }
+        final List<Path> jars = new ArrayList<>();
+        for (final String entry : env.split(":")) {
+            if (entry.isEmpty()) {
+                continue;
+            }
+            if (entry.endsWith("/*")) {
+                final Path dir = Paths.get(entry.substring(0, entry.length() - 2));
+                try (DirectoryStream<Path> stream =
+                        Files.newDirectoryStream(dir, "*.jar")) {
+                    for (final Path jar : stream) {
+                        jars.add(jar);
+                    }
+                }
+            } else {
+                jars.add(Paths.get(entry));
+            }
+        }
+        return jars;
+    }
+
+    private static String classpathArg(final List<Path> jars) {
+        if (jars.isEmpty()) {
+            return "";
+        }
+        final List<String> parts = new ArrayList<>(jars.size());
+        for (final Path jar : jars) {
+            parts.add(jar.toString());
+        }
+        return String.join(":", parts);
+    }
+
     // Load `Main` from a private class loader rooted at *classDir*,
     // construct an instance (forcing both static- and instance-field
     // initializers), and invoke `main()` if the fixture defines one.
     // `Main` is package-private in every fixture, so `setAccessible`
     // is required before invoking members reflectively.
-    private static boolean runFixture(final String filename, final Path classDir) {
-        final URL[] urls;
+    private static boolean runFixture(
+            final String filename,
+            final Path classDir,
+            final List<Path> extraClasspath) {
+        final List<URL> urlList = new ArrayList<>();
         try {
-            urls = new URL[] {classDir.toUri().toURL()};
+            urlList.add(classDir.toUri().toURL());
+            for (final Path jar : extraClasspath) {
+                urlList.add(jar.toUri().toURL());
+            }
         } catch (final java.net.MalformedURLException e) {
             System.err.println(filename + ": " + e);
             return false;
         }
+        final URL[] urls = urlList.toArray(new URL[0]);
         try (final URLClassLoader loader = new URLClassLoader(urls)) {
             final Class<?> checkClass = Class.forName("Main", true, loader);
             final Constructor<?> constructor = checkClass.getDeclaredConstructor();
