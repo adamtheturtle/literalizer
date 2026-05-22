@@ -480,6 +480,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="Crystal_json_type_json_any",
+            spec=make_spec(
+                lang_cls=Crystal,
+                json_type=Crystal.json_types.JSON_ANY,
+            ),
+            lang_cls=Crystal,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="Java_json_type_jackson_json_node",
             spec=make_spec(
                 lang_cls=Java,
@@ -2324,6 +2333,20 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
+                variant_name="Crystal_json_type_json_any_combined",
+                variant=Variant(
+                    name="Crystal_json_type_json_any_combined",
+                    spec=make_spec(
+                        lang_cls=Crystal,
+                        json_type=Crystal.json_types.JSON_ANY,
+                    ),
+                    lang_cls=Crystal,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
             ),
             VariantCase(
                 variant_name="Java_json_type_jackson_json_node_combined",
