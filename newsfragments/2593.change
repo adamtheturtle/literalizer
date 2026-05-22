@@ -1,0 +1,1 @@
+Add ``Scala(json_type=Scala.json_types.CIRCE)`` to render values through Circe ``Json.obj`` / ``Json.arr`` / ``Json.fromXxx`` instead of Scala's narrow collection types.

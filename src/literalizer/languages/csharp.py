@@ -26,6 +26,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_csharp,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -585,13 +586,10 @@ class CSharp(metaclass=LanguageCls):
             ``json_types.SYSTEM_TEXT_JSON_NODE``, render values through
             ``System.Text.Json.Nodes.JsonNode`` (``JsonObject`` /
             ``JsonArray`` / typed scalars) instead of C#'s narrow
-            collection types.  Dates and datetimes switch to ISO 8601
-            strings (unless ``datetime_format`` is ``EPOCH``).  Times
-            keep the native ``new TimeOnly(...)`` form, which is
-            outside the JSON value model; pass dates or datetimes
-            instead when round-tripping through JSON.  The ``const``
-            modifier is rejected because the JSON constructors are
-            not constant expressions.
+            collection types.  Dates / datetimes / times switch to ISO
+            8601 strings (unless ``datetime_format`` is ``EPOCH``) and
+            the ``const`` modifier is rejected because the JSON
+            constructors are not constant expressions.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1798,7 +1796,15 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
-        """Callable that formats a time as a string literal."""
+        """Callable that formats a time as a string literal.
+
+        ``json_type`` overrides the native ``TimeOnly`` literal with the
+        ISO 8601 string form because there is no implicit conversion
+        from ``TimeOnly`` to ``JsonNode`` and JSON has no native time
+        type.
+        """
+        if self._json_type_active:
+            return format_time_iso
         return format_time_csharp
 
     @cached_property
@@ -1926,9 +1932,9 @@ class CSharp(metaclass=LanguageCls):
         Under ``json_type`` the ``using System.Text.Json.Nodes;`` line
         is contributed by :attr:`data_dependent_preamble` instead, so
         this method returns an empty per-scalar map to avoid
-        duplicating it; dates / datetimes render as ISO 8601 strings
-        (or an epoch integer for the explicit ``EPOCH`` datetime
-        format) and need no per-scalar import of their own.
+        duplicating it; dates / datetimes / times all render as ISO
+        8601 strings (or an epoch integer for the explicit ``EPOCH``
+        datetime format) and need no per-scalar import of their own.
         """
         if self._json_type_active:
             return {}

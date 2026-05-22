@@ -100,8 +100,8 @@ JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  Rust, Java, and C# support this
-through the ``json_type`` constructor argument:
+fit than native narrow collection types.  Rust, Crystal, Java, Scala, and
+C# support this through the ``json_type`` constructor argument:
 
 .. code-block:: python
 
@@ -120,6 +120,30 @@ through the ``json_type`` constructor argument:
 This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
+
+Crystal exposes the same option through its standard-library
+``JSON::Any``:
+
+.. code-block:: python
+
+   """Render Crystal data as JSON::Any."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Crystal
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Crystal(json_type=Crystal.json_types.JSON_ANY),
+       variable_form=NewVariable(name="payload"),
+   )
+
+The rendered literal is a JSON document wrapped in ``JSON.parse(%(...))``,
+parsed at runtime into a ``JSON::Any``.  The mode relaxes Crystal's
+homogeneous ``Hash(K, V)`` and ``Array(T)`` checks, validates that dict
+keys are strings, and rejects characters that would break the
+``%(...)`` percent literal (``\\``, ``"``, ``(``, ``)``, and ``#{``)
+or overflow JSON's signed 64-bit integer range.
 
 Java exposes the same option through Jackson's ``JsonNode``:
 
@@ -144,6 +168,27 @@ and can hold the heterogeneous values that Java's narrow ``List`` /
 ``RECORD`` ``heterogeneous_strategy`` is rejected because the two
 rendering modes cannot be combined.
 
+Scala exposes the same option for Circe's :class:`io.circe.Json`:
+
+.. code-block:: python
+
+   """Render Scala data as a Circe Json value."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Scala
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Scala(json_type=Scala.json_types.CIRCE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``Json.obj(...)`` / ``Json.arr(...)`` factories with
+per-scalar ``Json.fromXxx(...)`` constructors, relaxes Scala's
+homogeneous ``List[T]`` / ``Map[String, T]`` checks, and requires dict
+keys to be strings so they remain valid JSON object keys.
+
 The same option is available for C# through
 ``CSharp.json_types.SYSTEM_TEXT_JSON_NODE``:
 
@@ -164,8 +209,8 @@ The same option is available for C# through
 This emits ``new JsonObject { ... }`` / ``new JsonArray { ... }``
 expressions backed by the built-in ``System.Text.Json.Nodes`` library,
 relaxes C#'s homogeneous ``Dictionary<K, V>`` / typed-array checks, and
-switches date / datetime values to ISO 8601 strings so they remain
-valid JSON.  The ``const`` modifier is rejected because the JSON
+switches date / datetime / time values to ISO 8601 strings so they
+remain valid JSON.  The ``const`` modifier is rejected because the JSON
 constructors and the implicit ``(JsonNode?)`` cast applied to scalars
 are runtime expressions, not C# constant initializers.
 
