@@ -43,6 +43,7 @@ from literalizer.languages import (
     Scala,
     Swift,
     VisualBasic,
+    Zig,
 )
 
 from .case_discovery import cases_with_special_floats, discover_cases
@@ -532,6 +533,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=Haskell.json_types.AESON_VALUE,
             ),
             lang_cls=Haskell,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Zig_json_type_std_json_value",
+            spec=make_spec(
+                lang_cls=Zig,
+                json_type=Zig.json_types.STD_JSON_VALUE,
+            ),
+            lang_cls=Zig,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
     ]
@@ -2446,6 +2456,21 @@ def build_variant_cases() -> list[VariantCase]:
                         json_type=Nim.json_types.JSON_NODE,
                     ),
                     lang_cls=Nim,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Zig_json_type_std_json_value_combined",
+                variant=Variant(
+                    name="Zig_json_type_std_json_value_combined",
+                    spec=make_spec(
+                        lang_cls=Zig,
+                        json_type=Zig.json_types.STD_JSON_VALUE,
+                        declaration_style=Zig.declaration_styles.VAR,
+                    ),
+                    lang_cls=Zig,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
