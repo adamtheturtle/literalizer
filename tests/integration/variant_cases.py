@@ -30,6 +30,7 @@ from literalizer.languages import (
     Go,
     Groovy,
     Haskell,
+    Java,
     Kotlin,
     Mojo,
     Nim,
@@ -476,6 +477,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=Rust.json_types.SERDE_JSON_VALUE,
             ),
             lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Java_json_type_jackson_json_node",
+            spec=make_spec(
+                lang_cls=Java,
+                json_type=Java.json_types.JACKSON_JSON_NODE,
+            ),
+            lang_cls=Java,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
@@ -2062,6 +2072,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="dict_with_nulls", suffix="_nulls"),
         _ci(case_dir_name="date_set", suffix="_date_set"),
         _ci(case_dir_name="ordered_map", suffix="_ordered_map"),
+        _ci(case_dir_name="scalar_datetime_naive", suffix="_datetime_naive"),
+        _ci(case_dir_name="binary", suffix="_binary"),
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
@@ -2321,6 +2333,20 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
+                variant_name="Java_json_type_jackson_json_node_combined",
+                variant=Variant(
+                    name="Java_json_type_jackson_json_node_combined",
+                    spec=make_spec(
+                        lang_cls=Java,
+                        json_type=Java.json_types.JACKSON_JSON_NODE,
+                    ),
+                    lang_cls=Java,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
             ),
             VariantCase(
                 variant_name="Nim_json_type_json_node_combined",

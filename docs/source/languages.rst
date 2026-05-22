@@ -100,8 +100,8 @@ JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  Rust and Nim both support this
-through the ``json_type`` constructor argument:
+fit than native narrow collection types.  Rust, Java, and Nim all support
+this through the ``json_type`` constructor argument:
 
 .. code-block:: python
 
@@ -121,7 +121,30 @@ This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
 
-The same option is available for Nim through ``Nim.json_types.JSON_NODE``:
+Java exposes the same option through Jackson's ``JsonNode``:
+
+.. code-block:: python
+
+   """Render Java data as a Jackson JsonNode."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Java
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Java(json_type=Java.json_types.JACKSON_JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``new ObjectMapper().readTree("...")`` so the rendered
+binding has the static type ``com.fasterxml.jackson.databind.JsonNode``
+and can hold the heterogeneous values that Java's narrow ``List`` /
+``Map`` types reject.  Dict keys must be strings, and the
+``RECORD`` ``heterogeneous_strategy`` is rejected because the two
+rendering modes cannot be combined.
+
+Nim exposes the same option through ``Nim.json_types.JSON_NODE``:
 
 .. code-block:: python
 
