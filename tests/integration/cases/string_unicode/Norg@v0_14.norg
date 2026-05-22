@@ -1,0 +1,7 @@
+* my_data
+@code json
+[
+    "café",
+    "中文"
+]
+@end

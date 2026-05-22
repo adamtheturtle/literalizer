@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -116,6 +117,26 @@ def _perl_format_call_ref_identifier(
 ) -> str:
     """Prepend Perl's scalar ``$`` sigil to a ``$ref`` identifier."""
     return f"${name}"
+
+
+_NON_ASCII_RE = re.compile(pattern=r"[^\x00-\x7f]")
+
+
+@beartype
+def _format_perl_string_double(value: str) -> str:
+    r"""Perl double-quoted string with non-ASCII escaped as ``\x{...}``.
+
+    Without this, a non-ASCII character is emitted as its raw UTF-8
+    bytes, which Perl decodes as Latin-1 unless the file declares
+    ``use utf8;`` -- garbling any later encoding step.  The escape form
+    keeps the output pure ASCII so the snippet round-trips regardless
+    of source-file encoding.
+    """
+    base = format_string_backslash(value)
+    return _NON_ASCII_RE.sub(
+        repl=lambda match: f"\\x{{{ord(match.group()):x}}}",
+        string=base,
+    )
 
 
 @beartype
@@ -387,7 +408,7 @@ class Perl(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_perl_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
