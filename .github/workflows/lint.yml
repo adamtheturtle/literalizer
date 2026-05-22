@@ -1132,6 +1132,14 @@ jobs:
           (cd "$workspace" && ghc -XGHC2021 -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
           "$tmpdir/run"
 
+      # Basic JSON -> Haskell -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with the GHC toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_haskell_roundtrip.py`.
+      - name: Haskell roundtrip
+        run: uv run python .github/scripts/run_haskell_roundtrip.py
+
       - name: Lint PureScript
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript && test -s /tmp/files-purescript
