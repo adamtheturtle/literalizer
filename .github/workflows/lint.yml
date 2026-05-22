@@ -248,7 +248,28 @@ jobs:
       # matching `--release`; the `11` / `16` literals match
       # `Java.VersionFormats.JDK_11` / `JDK_16` in
       # `src/literalizer/languages/java.py`. Keep them in sync.
+      # Jackson jars are needed by `Java(json_type=...)` fixtures so they
+      # compile and run under `CheckJavaSyntax`. Pinned to a recent 2.x
+      # release; bump together. The classpath is exported through
+      # `LITERALIZER_LINT_CLASSPATH`, which `CheckJavaSyntax.java` adds
+      # to both the in-process compile and the per-fixture
+      # `URLClassLoader`. Keep this enum value paired with the literal in
+      # `Java.JsonTypes.JACKSON_JSON_NODE` in
+      # `src/literalizer/languages/java.py`.
+      - name: Set up Jackson for Java
+        run: |-
+          mkdir -p /tmp/jackson-jars
+          jackson_version=2.18.2
+          for f in jackson-databind/$jackson_version/jackson-databind-$jackson_version.jar \
+                   jackson-core/$jackson_version/jackson-core-$jackson_version.jar \
+                   jackson-annotations/$jackson_version/jackson-annotations-$jackson_version.jar; do
+            name=$(basename "$f")
+            curl -fsSL "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/$f" -o "/tmp/jackson-jars/$name"
+          done
+
       - name: Lint Java
+        env:
+          LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
         run: |-
           find tests/integration/cases -name '*@jdk_11.java' -print0 > /tmp/files-java-11 && test -s /tmp/files-java-11
           xargs -0 java CheckJavaSyntax.java 11 < /tmp/files-java-11

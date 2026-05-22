@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -109,6 +110,7 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
     NullInCollectionError,
+    UnrepresentableInputError,
 )
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
@@ -585,6 +587,149 @@ def _object_nil_declaration(
     return _format
 
 
+_JACKSON_JSON_NODE_PREAMBLE: tuple[str, ...] = (
+    "import com.fasterxml.jackson.databind.JsonNode;",
+    "import com.fasterxml.jackson.databind.ObjectMapper;",
+)
+
+
+# Sequence/dict format definitions used while ``json_type`` is active.
+# The framework still walks through the data to compute a formatted
+# ``value``, but that string is discarded by
+# :func:`_format_java_json_declaration` and friends in favor of a fresh
+# ``json.dumps`` of the raw data.  These definitions only need to be
+# permissive enough that the formatting pass does not error on
+# heterogeneous data or nulls inside containers.
+_JSON_NODE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+_JSON_NODE_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="["),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=True,
+)
+
+_JSON_NODE_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_template(
+        template="{key}: {value}",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=True,
+)
+
+_JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _temporal_to_iso(data: datetime.date | datetime.time) -> str:
+    """Return ISO-8601 text for a date / datetime / time value.
+
+    Naive datetimes are anchored to UTC so Jackson can round-trip them
+    through ``readTree`` without a missing-offset error.
+    """
+    if isinstance(data, datetime.datetime):
+        iso = data.isoformat()
+        if data.tzinfo is None:
+            iso += "Z"
+        return iso
+    return data.isoformat()
+
+
+@beartype
+def _to_jsonable(data: Value) -> object:
+    """Convert *data* into a value that :func:`json.dumps` can serialize.
+
+    Dates, datetimes, and times become ISO-8601 strings (JSON has no
+    temporal type).  Bytes become a hex-encoded string.  Sets and
+    :class:`OrderedMap` are folded into list/dict respectively.  Non-string
+    dict keys are not handled here; the caller validates first.
+    """
+    match data:
+        case datetime.datetime() | datetime.date() | datetime.time():
+            return _temporal_to_iso(data=data)
+        case bytes():
+            return data.hex()
+        case OrderedMap() | dict():
+            return {
+                key: _to_jsonable(data=value) for key, value in data.items()
+            }
+        case set():
+            items = [_to_jsonable(data=item) for item in data]
+            items.sort(key=repr)
+            return items
+        case list():
+            return [_to_jsonable(data=item) for item in data]
+        case _:
+            return data
+
+
+@beartype
+def _format_java_json_value(data: Value) -> str:
+    """Serialize *data* as a single-line JSON expression."""
+    return json.dumps(obj=_to_jsonable(data=data), ensure_ascii=False)
+
+
+@beartype
+def _java_read_tree_expression(data: Value) -> str:
+    """Render ``new ObjectMapper().readTree("...")`` for *data*."""
+    json_text = _format_java_json_value(data=data)
+    java_literal = format_string_backslash(value=json_text)
+    return f"new ObjectMapper().readTree({java_literal})"
+
+
+@beartype
+def _format_java_json_declaration(
+    name: str,
+    _value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a JsonNode declaration backed by ``readTree``."""
+    return f"JsonNode {name} = {_java_read_tree_expression(data=data)};"
+
+
+@beartype
+def _format_java_json_assignment(
+    name: str,
+    _value: str,
+    data: Value,
+) -> str:
+    """Format a JsonNode assignment backed by ``readTree``."""
+    return f"{name} = {_java_read_tree_expression(data=data)};"
+
+
+@beartype
+def _format_java_json_call_arg(raw_value: Value, _formatted: str) -> str:
+    """Format a direct call argument as a JsonNode literal."""
+    return _java_read_tree_expression(data=raw_value)
+
+
 @beartype
 def _java_record_field_identifier(key: str, /) -> str:
     """Return the Java record component name for a dict *key*.
@@ -658,6 +803,11 @@ class Java(metaclass=LanguageCls):
               e.g. ``new Object[]{1, 2, 3}``.
             * ``sequence_formats.LIST`` — ``List.of(...)`` call,
               e.g. ``List.of(1, 2, 3)``.
+
+        json_type: When set to ``json_types.JACKSON_JSON_NODE``, render
+            values through Jackson's ``ObjectMapper.readTree(...)`` so the
+            output produces a ``com.fasterxml.jackson.databind.JsonNode``
+            instead of Java's narrow ``List`` / ``Map`` / array types.
     """
 
     format_call_variable_declaration = default_format_call_variable_declaration
@@ -701,13 +851,6 @@ class Java(metaclass=LanguageCls):
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = True
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -1023,6 +1166,14 @@ class Java(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Java."""
+
+        JACKSON_JSON_NODE = "com.fasterxml.jackson.databind.JsonNode"
+        """Jackson's dynamic JSON value type."""
+
+    json_types = JsonTypes
+
     class VersionFormats(enum.Enum):
         """Version options for Java.
 
@@ -1080,6 +1231,48 @@ class Java(metaclass=LanguageCls):
         ):
             object.__setattr__(self, "language_version", jdk_16)
         self._validate_record_naming()
+        self._validate_json_type_spec()
+
+    def _validate_json_type_spec(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit.
+
+        ``readTree(...)`` is a checked-exception call wrapped in a
+        method whose signature gains ``throws Exception``.  Class-field
+        forms (``public static final ...``) have no equivalent place to
+        declare that exception without synthesizing a static initializer
+        block, so a ``RECORD`` strategy is also unsupported because it
+        would mix the JsonNode rendering with auto-generated ``record``
+        declarations.  Both are rejected up front instead.
+        """
+        if not self._json_type_active:
+            return
+        if self.heterogeneous_strategy is self.heterogeneous_strategies.RECORD:
+            msg = (
+                "Java json_type renders data through "
+                "ObjectMapper.readTree(...) and is incompatible with "
+                "heterogeneous_strategy=RECORD, which generates typed "
+                "record declarations. Use heterogeneous_strategy=ERROR."
+            )
+            raise IncompatibleFormatsError(msg)
+
+    def _validate_json_value_keys(self, data: Value, /) -> None:
+        """Reject non-string object keys for Jackson ``JsonNode``."""
+        match data:
+            case OrderedMap() | dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Java json_type can only represent dict keys "
+                            "as JSON object strings, not "
+                            f"{type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case _:
+                return
 
     def _validate_record_naming(self) -> None:
         """Validate ``record_shape_names`` for PascalCase identifier
@@ -1147,8 +1340,13 @@ class Java(metaclass=LanguageCls):
         #2317), so the combination is rejected here rather than
         emitting a ``record`` declaration that fails to compile.  This
         check is spec-only; *data* is unused.
+
+        When :attr:`json_type` is active, additionally walk *data* to
+        reject non-string dict keys, which JSON objects cannot represent.
         """
-        del data
+        if self._json_type_active:
+            self._validate_json_value_keys(data)
+            return
         strategies = type(self.heterogeneous_strategy)
         formats = type(self.sequence_format)
         if (
@@ -1334,10 +1532,12 @@ class Java(metaclass=LanguageCls):
             content=content,
             body_preamble=method_lines,
         )
+        throws_clause = " throws Exception" if self._json_type_active else ""
         return (
             f"class {self.module_name} {{\n"
             f"{class_block}"
-            f"{self.indent}public static void {method_name}() {{\n"
+            f"{self.indent}public static void {method_name}()"
+            f"{throws_clause} {{\n"
             f"{content}\n"
             f"{self.indent}}}\n"
             "}"
@@ -1386,6 +1586,7 @@ class Java(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # The `Lint Java` step in `.github/workflows/lint.yml` compiles each
     # `@jdk_<release>` golden with the `--release` literal matching its
     # `VersionFormats` member (`11` for `JDK_11`, `16` for `JDK_16`).
@@ -1408,9 +1609,32 @@ class Java(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether Java should render via Jackson JsonNode."""
+        return self.json_type is not None
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file.
+
+        When :attr:`json_type` is active the Jackson ``JsonNode`` and
+        ``ObjectMapper`` imports are emitted here so every fixture has
+        them in scope regardless of the rendered data.
+        """
+        if self._json_type_active:
+            return _JACKSON_JSON_NODE_PREAMBLE
+        return ()
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument."""
+        if self._json_type_active:
+            return _format_java_json_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -1430,6 +1654,8 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._json_type_active:
+            return _format_java_json_assignment
         return _format_java_assignment
 
     @cached_property
@@ -1569,8 +1795,14 @@ class Java(metaclass=LanguageCls):
         Always emits ``import java.math.BigInteger;`` when the data
         needs it; under ``HeterogeneousStrategies.RECORD`` also emits
         one ``record`` declaration per record shape present in the
-        data.
+        data.  When :attr:`json_type` is active, neither the BigInteger
+        import nor record declarations apply: integers outside the
+        64-bit range ride inside the JSON text, and the data flows
+        through a single ``ObjectMapper.readTree`` call instead of typed
+        records.
         """
+        if self._json_type_active:
+            return no_data_preamble
         record_preamble = self._record_strategy.preamble
 
         @beartype
@@ -1583,6 +1815,11 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self._record_strategy.behavior
 
     @cached_property
@@ -1687,16 +1924,22 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return _JSON_NODE_SEQUENCE_CONFIG
         return self.sequence_format.value
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return _JSON_NODE_SET_CONFIG
         return self.set_format.value
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
+        if self._json_type_active:
+            return _JSON_NODE_SEQUENCE_CONFIG.sequence_open
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
             return fmt.sequence_open
@@ -1727,6 +1970,8 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return _JSON_NODE_DICT_CONFIG
         return self.dict_format.value
 
     @cached_property
@@ -1812,6 +2057,8 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return _JSON_NODE_ORDERED_MAP_CONFIG
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
                 open_str=(
@@ -1832,6 +2079,8 @@ class Java(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self._json_type_active:
+            return _format_java_json_declaration
         datetime_produced = self.datetime_format.value.type_produced
         match datetime_produced:
             case _ if datetime_produced is str:
@@ -1862,7 +2111,15 @@ class Java(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble computed from date/datetime format."""
+        """Per-instance scalar preamble computed from date/datetime format.
+
+        Under :attr:`json_type` every temporal value is folded into the
+        JSON text as an ISO-8601 string, so the temporal Java imports
+        that the configured ``date_format`` / ``datetime_format`` would
+        otherwise add do not apply.
+        """
+        if self._json_type_active:
+            return {}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
