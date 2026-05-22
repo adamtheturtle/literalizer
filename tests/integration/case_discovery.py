@@ -400,6 +400,55 @@ def cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
+# Languages whose primitive string type cannot hold non-ASCII
+# characters in a portable source file.  The ``Sml`` language targets
+# a compiler whose ``string`` is an 8-bit type and which rejects raw
+# UTF-8 byte sequences without a non-portable annotation; ``\uXXXX``
+# escapes above U+00FF are likewise rejected because the value does
+# not fit in a ``char``.  ``string_unicode`` is the only case that
+# exercises this today.
+_LANGS_WITHOUT_NON_ASCII_STRING_LITERALS = frozenset({"Sml"})
+
+
+def has_non_ascii_strings(data: CaseData) -> bool:
+    """Return ``True`` if *data* contains a string with a non-ASCII
+    character.
+    """
+    match data:
+        case str():
+            return not data.isascii()
+        case dict():
+            return any(
+                (isinstance(k, str) and not k.isascii())
+                or has_non_ascii_strings(data=v)
+                for k, v in data.items()
+            )
+        case list():
+            return any(has_non_ascii_strings(data=item) for item in data)
+        case set() | frozenset():
+            return any(has_non_ascii_strings(data=item) for item in data)
+        case _:
+            return False
+
+
+@functools.cache
+@beartype
+def cases_with_non_ascii_strings(
+    cases_dir: Path,
+) -> frozenset[str]:
+    """Return case directory names whose input contains a non-ASCII
+    string value that some languages cannot represent in a portable
+    string literal.
+    """
+    result: set[str] = set()
+    for case_dir in cases_dir.iterdir():
+        input_info = case_input(case_dir=case_dir)
+        loaded = load_case_data(input_info=input_info)
+        if has_non_ascii_strings(data=loaded):
+            result.add(case_dir.name)
+    return frozenset(result)
+
+
 def has_special_floats(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
@@ -446,18 +495,26 @@ def discover_cases(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
+    non_ascii_string_cases = cases_with_non_ascii_strings(cases_dir=cases_dir)
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in specialized_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
+        non_ascii_string = case_dir.name in non_ascii_string_cases
         for lang_cls in sorted_languages():
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
                 lang_cls=lang_cls
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:
+                continue
+            if (
+                non_ascii_string
+                and lang_cls.__name__
+                in _LANGS_WITHOUT_NON_ASCII_STRING_LITERALS
+            ):
                 continue
             cases.append((case_dir.name, lang_cls))
     return cases
@@ -510,12 +567,14 @@ def discover_combined_cases(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
+    non_ascii_string_cases = cases_with_non_ascii_strings(cases_dir=cases_dir)
     cases: list[CombinedCase] = []
     for case_dir in sorted(cases_dir.iterdir()):
         if case_dir.name in specialized_case_dirs:
             continue
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
+        non_ascii_string = case_dir.name in non_ascii_string_cases
         for lang_cls in sorted_languages():
             lang_name = lang_cls.__name__
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
@@ -523,6 +582,11 @@ def discover_combined_cases(
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:
+                continue
+            if (
+                non_ascii_string
+                and lang_name in _LANGS_WITHOUT_NON_ASCII_STRING_LITERALS
+            ):
                 continue
             spec = make_spec(lang_cls=lang_cls)
             redef_styles = find_redefinition_styles(spec=spec)

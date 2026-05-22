@@ -1,0 +1,1 @@
+Escape non-ASCII characters in Perl double-quoted string literals as ``\x{HHHH}``, so the output no longer requires ``use utf8;`` in the surrounding source file.

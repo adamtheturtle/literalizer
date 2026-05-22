@@ -119,6 +119,24 @@ def _perl_format_call_ref_identifier(
 
 
 @beartype
+def _format_perl_string_double(value: str) -> str:
+    r"""Perl double-quoted string with non-ASCII escaped as ``\x{...}``.
+
+    Without this, a non-ASCII character is emitted as its raw UTF-8
+    bytes, which Perl decodes as Latin-1 unless the file declares
+    ``use utf8;`` -- garbling any later encoding step.  The escape form
+    keeps the output pure ASCII so the snippet round-trips regardless
+    of source-file encoding.
+    """
+    base = format_string_backslash(value)
+    if base.isascii():
+        return base
+    return "".join(
+        char if char.isascii() else f"\\x{{{ord(char):x}}}" for char in base
+    )
+
+
+@beartype
 def _format_datetime_perl(value: datetime.datetime) -> str:
     """Format a datetime as a Perl ``DateTime`` constructor."""
     if value.tzinfo is not None:
@@ -436,7 +454,7 @@ class Perl(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_perl_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
