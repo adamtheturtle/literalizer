@@ -36,6 +36,7 @@ from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
+    BareIntegerWidthStrategies,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -341,6 +342,7 @@ class CommonLisp(metaclass=LanguageCls):
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
     integer_formats = IntegerFormats
+    integer_width_strategies = BareIntegerWidthStrategies
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -445,6 +447,9 @@ class CommonLisp(metaclass=LanguageCls):
     dict_format: DictFormats = DictFormats.DEFAULT
     float_format: FloatFormats = FloatFormats.REPR
     integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    integer_width_strategy: BareIntegerWidthStrategies = (
+        BareIntegerWidthStrategies.BARE
+    )
     numeric_literal_suffix: NumericLiteralSuffixes = (
         NumericLiteralSuffixes.NONE
     )

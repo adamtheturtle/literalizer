@@ -336,18 +336,52 @@ def data_has_out_of_range_int(*, data: Value) -> bool:
     need to add a preamble (e.g. an ``import`` statement) conditionally
     on the presence of a very large integer scalar.
     """
+    return data_has_int_outside_range(
+        data=data, min_value=I64_MIN, max_value=I64_MAX
+    )
+
+
+@beartype
+def data_has_int_outside_range(
+    *, data: Value, min_value: int, max_value: int
+) -> bool:
+    """Return ``True`` if *data* contains an integer outside
+    ``[min_value, max_value]``.
+
+    Descends into lists, sets, and both dict keys and values.  Used by
+    languages that need to add a preamble (e.g. an ``import``
+    statement) conditionally on the presence of an integer whose
+    magnitude exceeds the language's native fixed-precision range; a
+    wide integer appearing only as a dict key still drives the
+    fallback formatter that emits the wrapping constructor, so the
+    preamble has to follow.
+    """
     match data:
         case bool():
             return False
         case int():
-            return not I64_MIN <= data <= I64_MAX
+            return not min_value <= data <= max_value
         case list():
-            return any(data_has_out_of_range_int(data=v) for v in data)
+            return any(
+                data_has_int_outside_range(
+                    data=v, min_value=min_value, max_value=max_value
+                )
+                for v in data
+            )
         case set():
-            return any(data_has_out_of_range_int(data=v) for v in data)
+            return any(
+                data_has_int_outside_range(
+                    data=v, min_value=min_value, max_value=max_value
+                )
+                for v in data
+            )
         case dict():
             return any(
-                data_has_out_of_range_int(data=v) for v in data.values()
+                data_has_int_outside_range(
+                    data=item, min_value=min_value, max_value=max_value
+                )
+                for entry in data.items()
+                for item in entry
             )
         case _:
             return False

@@ -35,10 +35,12 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    data_has_int_outside_range,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
@@ -116,6 +118,35 @@ def _perl_format_call_ref_identifier(
 ) -> str:
     """Prepend Perl's scalar ``$`` sigil to a ``$ref`` identifier."""
     return f"${name}"
+
+
+_PERL_NV_INT_MIN = -(2**53)
+_PERL_NV_INT_MAX = 2**53
+
+
+@beartype
+def _format_perl_math_bigint_literal(value: int) -> str:
+    """Format an integer as a Perl ``Math::BigInt->new("...")`` call.
+
+    Used by the ``MATH_BIG_INT`` integer-width strategy for values
+    outside the 53-bit range where Perl's default scalar (an NV float)
+    silently loses precision.
+    """
+    return f'Math::BigInt->new("{value}")'
+
+
+@beartype
+def _perl_math_bigint_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``use Math::BigInt;`` if *data* contains an integer whose
+    magnitude exceeds Perl's NV mantissa precision (2**53).
+    """
+    if data_has_int_outside_range(
+        data=data,
+        min_value=_PERL_NV_INT_MIN,
+        max_value=_PERL_NV_INT_MAX,
+    ):
+        return ("use Math::BigInt;",)
+    return ()
 
 
 @beartype
@@ -435,6 +466,22 @@ class Perl(metaclass=LanguageCls):
             ]
             return formatter
 
+    class IntegerWidthStrategies(enum.Enum):
+        """Integer-width rendering strategies.
+
+        * ``BARE`` (default) - emit every integer as a bare numeric
+          literal.  Values whose magnitude exceeds ``2**53`` silently
+          lose precision on parse because Perl converts them to an NV
+          float; this matches the historical behavior.
+        * ``MATH_BIG_INT`` - wrap integers whose magnitude exceeds
+          ``2**53`` as ``Math::BigInt->new("...")`` and emit a
+          ``use Math::BigInt;`` preamble.  Smaller integers stay as
+          bare literals.
+        """
+
+        BARE = enum.auto()
+        MATH_BIG_INT = enum.auto()
+
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
 
@@ -488,6 +535,7 @@ class Perl(metaclass=LanguageCls):
     empty_dict_keys = EmptyDictKey
     float_formats = FloatFormats
     integer_formats = IntegerFormats
+    integer_width_strategies = IntegerWidthStrategies
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -595,6 +643,9 @@ class Perl(metaclass=LanguageCls):
     dict_format: DictFormats = DictFormats.DEFAULT
     float_format: FloatFormats = FloatFormats.REPR
     integer_format: IntegerFormats = IntegerFormats.DECIMAL
+    integer_width_strategy: IntegerWidthStrategies = (
+        IntegerWidthStrategies.BARE
+    )
     numeric_literal_suffix: NumericLiteralSuffixes = (
         NumericLiteralSuffixes.NONE
     )
@@ -639,7 +690,11 @@ class Perl(metaclass=LanguageCls):
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
-        return no_data_preamble
+        match self.integer_width_strategy.name:
+            case "MATH_BIG_INT":
+                return _perl_math_bigint_preamble
+            case _:
+                return no_data_preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -801,9 +856,19 @@ class Perl(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
+        base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+        match self.integer_width_strategy.name:
+            case "MATH_BIG_INT":
+                return make_overflow_fallback_formatter(
+                    base=base,
+                    fallback=_format_perl_math_bigint_literal,
+                    min_value=_PERL_NV_INT_MIN,
+                    max_value=_PERL_NV_INT_MAX,
+                )
+            case _:
+                return base
 
     @cached_property
     def comment_config(self) -> CommentConfig:

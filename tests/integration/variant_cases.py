@@ -1682,6 +1682,12 @@ _SIMPLE_AXES: dict[str, _SimpleAxis] = {
         get_default=lambda s: s.integer_format,
         get_formats=lambda s: s.integer_formats,
     ),
+    "integer_width_strategy": _SimpleAxis(
+        category="integer_width_strategy",
+        kwarg="integer_width_strategy",
+        get_default=lambda s: s.integer_width_strategy,
+        get_formats=lambda s: s.integer_width_strategies,
+    ),
     "numeric_literal_suffix": _SimpleAxis(
         category="numeric_literal_suffix",
         kwarg="numeric_literal_suffix",
@@ -2213,6 +2219,11 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="record_epoch_datetime_i32_overflow", suffix=""),
     ),
     "record_numeric_cross": (_ci(case_dir_name="record_wide_int", suffix=""),),
+    "integer_width_strategy": (
+        _ci(case_dir_name="record_wide_int", suffix=""),
+        _ci(case_dir_name="int_list", suffix=""),
+        _ci(case_dir_name="dict_wide_int_key", suffix=""),
+    ),
     "language_version": tuple(
         _ci(case_dir_name=case_dir_name, suffix="")
         for case_dir_name in dict.fromkeys(
