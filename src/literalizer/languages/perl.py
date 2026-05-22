@@ -140,7 +140,7 @@ class _BoolFormatConfig:
 
     true_literal: str
     false_literal: str
-    preamble_lines: tuple[str, ...] = ()
+    preamble_lines: tuple[str, ...]
 
 
 @beartype
@@ -274,10 +274,12 @@ class Perl(metaclass=LanguageCls):
         INTEGER = _BoolFormatConfig(
             true_literal="1",
             false_literal="0",
+            preamble_lines=(),
         )
         JSON_PP_REF = _BoolFormatConfig(
             true_literal=r"\1",
             false_literal=r"\0",
+            preamble_lines=(),
         )
         JSON_PP_SINGLETON = _BoolFormatConfig(
             true_literal="JSON::PP::true",
