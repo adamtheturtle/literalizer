@@ -101,7 +101,7 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Scala, C#,
-Nim, and D support this through the ``json_type`` constructor argument
+Nim, Zig, and D support this through the ``json_type`` constructor argument
 (D's polarity is reversed; see below):
 
 .. code-block:: python
@@ -237,6 +237,32 @@ relaxes Nim's homogeneous ``seq`` / ``Table`` checks, and switches date and
 datetime values to ISO 8601 strings so they remain valid JSON.  ``CONST``
 declarations are rejected because ``%*`` is a runtime macro and not a
 constant-expression initializer.
+
+Zig exposes the same option through ``Zig.json_types.STD_JSON_VALUE``:
+
+.. code-block:: python
+
+   """Render Zig data using the standard library JSON value type."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Zig
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Zig(json_type=Zig.json_types.STD_JSON_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``std.json.parseFromSlice(std.json.Value, allocator, "...",
+.{}) catch unreachable`` expressions whose value flows through a
+``std.heap.ArenaAllocator`` preamble injected into ``pub fn main()``.
+The mode
+relaxes Zig's homogeneous ``ZVal`` checks and folds dates, datetimes,
+times, and bytes into JSON-friendly strings.  Dict keys must be
+strings, and ``heterogeneous_strategy=RECORD`` is rejected because
+``parseFromSlice`` rendering cannot be combined with generated
+``struct`` declarations.
 
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``
