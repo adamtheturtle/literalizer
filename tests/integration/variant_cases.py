@@ -40,6 +40,7 @@ from literalizer.languages import (
     Python,
     Roc,
     Rust,
+    Scala,
     Swift,
     VisualBasic,
 )
@@ -495,6 +496,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=Java.json_types.JACKSON_JSON_NODE,
             ),
             lang_cls=Java,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Scala_json_type_circe",
+            spec=make_spec(
+                lang_cls=Scala,
+                json_type=Scala.json_types.CIRCE,
+            ),
+            lang_cls=Scala,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
     ]
@@ -2074,6 +2084,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="ordered_map", suffix="_ordered_map"),
         _ci(case_dir_name="scalar_datetime_naive", suffix="_datetime_naive"),
         _ci(case_dir_name="binary", suffix="_binary"),
+        _ci(case_dir_name="scalar_float", suffix="_float"),
+        _ci(case_dir_name="scalar_time", suffix="_time"),
+        _ci(case_dir_name="scalar_int_large", suffix="_long"),
+        _ci(case_dir_name="scalar_int_very_large", suffix="_bigint"),
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
@@ -2357,6 +2371,21 @@ def build_variant_cases() -> list[VariantCase]:
                         json_type=Java.json_types.JACKSON_JSON_NODE,
                     ),
                     lang_cls=Java,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Scala_json_type_circe_combined",
+                variant=Variant(
+                    name="Scala_json_type_circe_combined",
+                    spec=make_spec(
+                        lang_cls=Scala,
+                        json_type=Scala.json_types.CIRCE,
+                        declaration_style=Scala.declaration_styles.VAR,
+                    ),
+                    lang_cls=Scala,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",

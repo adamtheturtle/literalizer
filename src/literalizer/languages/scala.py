@@ -26,6 +26,7 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
+    format_time_iso,
     format_time_local_time_of,
 )
 from literalizer._formatters.format_entries import (
@@ -113,14 +114,90 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     InvalidRecordNameError,
     NullInCollectionError,
+    UnrepresentableInputError,
 )
+
+_CIRCE_JSON_TYPE = "io.circe.Json"
+_CIRCE_NULL = "Json.Null"
+_CIRCE_TRUE = "Json.True"
+_CIRCE_FALSE = "Json.False"
+
+
+@beartype
+def _scala_circe_wrap_scalar(raw_value: Value, formatted: str) -> str:  # noqa: PLR0911
+    """Wrap a formatted scalar literal in the matching Circe constructor.
+
+    The literal already produced by the per-type formatter is the inner
+    argument; this lifts it to a :class:`io.circe.Json` expression so
+    every value embedded in a Circe ``Json.obj`` / ``Json.arr`` is a
+    well-typed ``Json``.
+    """
+    match raw_value:
+        case bool():
+            return _CIRCE_TRUE if raw_value else _CIRCE_FALSE
+        case None:
+            return _CIRCE_NULL
+        case int() if formatted.startswith("BigInt"):
+            return f"Json.fromBigInt({formatted})"
+        case int() if formatted.endswith("L"):
+            return f"Json.fromLong({formatted})"
+        case int():
+            return f"Json.fromInt({formatted})"
+        case float():
+            return f"Json.fromDoubleOrNull({formatted})"
+        case _:
+            return f"Json.fromString({formatted})"
+
+
+@beartype
+def _scala_circe_wrap_value(raw_value: Value, formatted: str) -> str:
+    """Wrap a formatted value as a Circe ``Json``; pass container
+    literals through unchanged (they already render as ``Json.obj`` /
+    ``Json.arr``).
+    """
+    if isinstance(raw_value, (list, dict, set, OrderedMap)):
+        return formatted
+    return _scala_circe_wrap_scalar(raw_value=raw_value, formatted=formatted)
+
+
+@beartype
+def _scala_circe_declaration_formatter(
+    *,
+    declaration_style: enum.Enum,
+    json_type_name: str,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Return a declaration formatter for Circe ``Json`` output."""
+
+    def _formatter(
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format a Circe-backed declaration."""
+        del modifiers
+        wrapped = _scala_circe_wrap_value(raw_value=data, formatted=value)
+        keyword = "var" if declaration_style.name == "VAR" else "val"
+        return f"{keyword} {name}: {json_type_name} = {wrapped}"
+
+    return _formatter
+
+
+@beartype
+def _scala_circe_assignment_formatter(
+    name: str,
+    value: str,
+    data: Value,
+) -> str:
+    """Format an assignment to an existing Circe-backed binding."""
+    wrapped = _scala_circe_wrap_value(raw_value=data, formatted=value)
+    return f"{name} = {wrapped}"
 
 
 @beartype
@@ -425,13 +502,6 @@ class Scala(metaclass=LanguageCls):
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     module_name: str = "Check"
 
@@ -771,6 +841,14 @@ class Scala(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Scala."""
+
+        CIRCE = _CIRCE_JSON_TYPE
+        """Circe's :class:`io.circe.Json` dynamic JSON value type."""
+
+    json_types = JsonTypes
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
@@ -782,7 +860,34 @@ class Scala(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate Scala-specific data/format combinations."""
+        if self._json_type_active:
+            self._validate_circe_value_keys(data=data)
+
+    def _validate_circe_value_keys(self, *, data: Value) -> None:
+        """Reject non-string object keys for Circe ``Json``."""
+        match data:
+            case dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Scala json_type can only represent dict keys "
+                            "as JSON object strings, not "
+                            f"{type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_circe_value_keys(data=value)
+            case list() | set():
+                for item in data:
+                    self._validate_circe_value_keys(data=item)
+            case _:
+                return
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether Scala should render via Circe ``Json``."""
+        return self.json_type is not None
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -824,6 +929,7 @@ class Scala(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
+    json_type: JsonTypes | None = None
     date_format: DateFormats = DateFormats.SCALA
     datetime_format: DatetimeFormats = DatetimeFormats.SCALA
     bytes_format: BytesFormats = BytesFormats.HEX
@@ -874,7 +980,6 @@ class Scala(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
@@ -931,17 +1036,30 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
+        if self._json_type_active:
+            return _scala_circe_wrap_value
         return passthrough_sequence_entry
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
+        if self._json_type_active:
+            return _scala_circe_wrap_value
         return passthrough_set_entry
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._json_type_active:
+            return _scala_circe_assignment_formatter
         return variable_formatter(template="{name} = {value}")
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument."""
+        if self._json_type_active:
+            return _scala_circe_wrap_value
+        return identity_call_arg
 
     @cached_property
     def _scalar_field_type_resolver(
@@ -1127,6 +1245,11 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self._record_strategy.behavior
 
     @cached_property
@@ -1246,11 +1369,37 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return SequenceFormatConfig(
+                sequence_open=fixed_open(open_str="Json.arr("),
+                close=")",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_sequence="Json.arr()",
+                preamble_lines=(),
+                format_entry=_scala_circe_wrap_value,
+                typed_opener_fallback=None,
+                uses_typed_literal_for_scalars=False,
+                requires_uniform_record_shapes=False,
+                declared_type=_CIRCE_JSON_TYPE,
+                narrowed_empty_form=None,
+            )
         return self.sequence_format.value
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return SetFormatConfig(
+                set_open=fixed_open(open_str="Json.arr("),
+                close=")",
+                empty_set="Json.arr()",
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=True,
+            )
         return self.set_format.value.with_typed_opener(
             type_to_opener=self._openers.set,
             fallback=self.set_format.value.set_open([]),
@@ -1277,6 +1426,8 @@ class Scala(metaclass=LanguageCls):
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
         )
+        if self._json_type_active:
+            return fixed_open(open_str="Json.arr(")
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy not in (cls.RECORD, cls.TUPLE):
             return base
@@ -1300,6 +1451,19 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="Json.obj("),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+                close=")",
+                format_entry=dict_entry_with_separator(
+                    separator=" -> ",
+                    format_value=_scala_circe_wrap_value,
+                ),
+                empty_dict="Json.obj()",
+                preamble_lines=(),
+            )
         dict_spec: _ScalaDictSpec = self.dict_format.value
         return DictFormatConfig(
             dict_open=typed_dict_open(
@@ -1339,11 +1503,15 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self._json_type_active:
+            return lambda value: format_bytes_hex(value=value)
         return self.bytes_format
 
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return format_date_iso
         return self.date_format
 
     @cached_property
@@ -1358,6 +1526,8 @@ class Scala(metaclass=LanguageCls):
         identically to the plain integer, so every checked-in golden
         file stays byte-identical.
         """
+        if self._json_type_active:
+            return format_datetime_iso
         if self.datetime_format.name == "EPOCH":
             return datetime_epoch_formatter(format_integer=self.format_integer)
         return self.datetime_format
@@ -1365,6 +1535,8 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self._json_type_active:
+            return format_time_iso
         return format_time_local_time_of
 
     @cached_property
@@ -1395,6 +1567,12 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(open_str="Json.obj("),
+                close=")",
+                preamble_lines=(),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
                 open_str="scala.collection.immutable.ListMap("
@@ -1406,6 +1584,11 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
+        if self._json_type_active:
+            return dict_entry_with_separator(
+                separator=" -> ",
+                format_value=_scala_circe_wrap_value,
+            )
         return dict_entry_with_separator(
             separator=" -> ",
             format_value=passthrough_sequence_entry,
@@ -1416,16 +1599,36 @@ class Scala(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self._json_type_active:
+            assert self.json_type is not None  # noqa: S101
+            return _scala_circe_declaration_formatter(
+                declaration_style=self.declaration_style,
+                json_type_name="Json",
+            )
         return self.declaration_style.value.formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
+        if self._json_type_active:
+            return {}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
             extra={datetime.time: ("import java.time.LocalTime",)},
         )
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file.
+
+        Circe-backed Scala output needs ``io.circe.Json`` in scope so
+        the ``Json.obj`` / ``Json.arr`` factories the rendered literal
+        uses resolve.
+        """
+        if self._json_type_active:
+            return ("import io.circe.Json",)
+        return ()
 
     @cached_property
     def compute_body_preamble(
@@ -1447,6 +1650,17 @@ class Scala(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+        if self._json_type_active:
+
+            def _compute_circe(
+                types: frozenset[type],
+                data: Value,
+                /,
+            ) -> tuple[str, ...]:
+                """Skip ``case class`` lines under Circe ``Json``."""
+                return scalar_body(types, data)
+
+            return _compute_circe
         record_preamble = self._record_strategy.preamble
 
         def _compute(

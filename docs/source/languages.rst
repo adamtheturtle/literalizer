@@ -168,6 +168,27 @@ and can hold the heterogeneous values that Java's narrow ``List`` /
 ``RECORD`` ``heterogeneous_strategy`` is rejected because the two
 rendering modes cannot be combined.
 
+Scala exposes the same option for Circe's :class:`io.circe.Json`:
+
+.. code-block:: python
+
+   """Render Scala data as a Circe Json value."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Scala
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Scala(json_type=Scala.json_types.CIRCE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``Json.obj(...)`` / ``Json.arr(...)`` factories with
+per-scalar ``Json.fromXxx(...)`` constructors, relaxes Scala's
+homogeneous ``List[T]`` / ``Map[String, T]`` checks, and requires dict
+keys to be strings so they remain valid JSON object keys.
+
 Custom language implementations
 -------------------------------
 

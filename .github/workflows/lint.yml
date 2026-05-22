@@ -1468,6 +1468,10 @@ jobs:
       # `-S 3` matches the major version of `Scala.language_version` in
       # `src/literalizer/languages/scala.py` (`V3`); keep them in sync.
       # `-S` only accepts the Scala major version, not a point release.
+      # ``--dep io.circe::circe-core:0.14.10`` supplies the
+      # ``io.circe.Json`` value type the ``json_type=Scala.json_types.CIRCE``
+      # fixtures import; keep the version aligned with the ``CIRCE``
+      # entry in ``Scala.JsonTypes`` in ``src/literalizer/languages/scala.py``.
       - name: Run Scala files
         run: |-
           workspace=$(mktemp -d)
@@ -1483,7 +1487,9 @@ jobs:
             printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
-          scala-cli run "$workspace" -S 3 --main-class __run
+          scala-cli run "$workspace" -S 3 \
+            --dep io.circe::circe-core:0.14.10 \
+            --main-class __run
 
   lint-haxe:
     runs-on: ubuntu-latest
