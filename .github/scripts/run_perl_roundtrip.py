@@ -18,17 +18,19 @@ the values Perl *can* represent:
   The default ``BARE`` form would silently demote the 26-digit
   ``biginteger`` field to an NV (see issue #2588).
 
-Some keys are excluded from the comparison because they cannot survive
-the trip through a Perl scalar at all (no separate double-vs-int type,
-no preserved negative zero, NV mantissa narrower than the IEEE 754
-double in the input):
+One key is excluded from the comparison because the Perl JSON encoder
+emits floats with only 15 significant digits.  The shared input's
+``float_large_exponent`` value is the IEEE 754 ``DBL_MAX``; rounded to
+15 digits it becomes ``1.79769313486232e+308``, which on parse rounds
+*up* past ``DBL_MAX`` and Python decodes as ``inf``:
 
-* ``double_array`` -- ``[1.0, 2.5]`` becomes ``[1, 2.5]`` once Perl
-  numifies ``1.0``.
-* ``negative_zero`` -- ``-0.0`` collapses to ``0`` through any Perl
-  arithmetic or serialization path.
-* ``float_large_exponent`` -- Perl's NV precision rounds the IEEE 754
-  ``1.7976931348623157e308`` to ``1.79769313486232e+308``.
+* ``float_large_exponent`` -- ``1.7976931348623157e308`` -> ``inf``
+  after encode/decode.
+
+``double_array`` (``[1.0, 2.5]`` -> ``[1, 2.5]``) and ``negative_zero``
+(``-0.0`` -> ``0``) survive the comparison because Python treats
+``1.0 == 1`` and ``-0.0 == 0`` as equal, so they do not need to be
+excluded even though Perl scalars discard the distinction.
 
 This lives here, driven by the ``Perl roundtrip`` step of the
 ``lint-perl`` job in ``.github/workflows/lint.yml``, because that job is
@@ -49,7 +51,7 @@ from literalizer.languages import Perl
 
 _VAR_NAME = "myData"
 _LABEL = "Perl"
-_EXCLUDED_KEYS = ("double_array", "negative_zero", "float_large_exponent")
+_EXCLUDED_KEYS = ("float_large_exponent",)
 
 
 def _build_program(json_text: str) -> str:
