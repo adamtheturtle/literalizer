@@ -1581,7 +1581,8 @@ class Nim(metaclass=LanguageCls):
         if self._uses_json_node:
 
             def _json_call_preamble(_data: Value, /) -> tuple[str, ...]:
-                """Always import std/json for ``JsonNode`` call args.
+                """Always import std/json for ``JsonNode`` call
+                arguments.
 
                 Suppress ``UnusedImport`` because the stub uses
                 ``varargs[untyped]`` and never evaluates the wrapped
