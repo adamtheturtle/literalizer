@@ -97,10 +97,59 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
+from literalizer.exceptions import UnrepresentableInputError
+
+_CRYSTAL_JSON_ANY = "JSON::Any"
+
+
+@beartype
+def _wrap_in_json_parse(value: str, /) -> str:
+    """Wrap a rendered JSON literal in ``JSON.parse(%(...))``.
+
+    The inner *value* is already a valid JSON document; the
+    ``%(...)`` percent literal embeds it as a Crystal string so it can
+    be parsed at runtime into a ``JSON::Any``.
+    """
+    return f"JSON.parse(%({value}))"
+
+
+@beartype
+def _format_crystal_json_call_arg(_raw_value: Value, formatted: str) -> str:
+    """Format a Crystal call argument as ``JSON::Any``.
+
+    The argument is wrapped in ``JSON.parse(%(...))`` so the receiving
+    proc gets a ``JSON::Any`` regardless of the underlying scalar or
+    container type.
+    """
+    return _wrap_in_json_parse(formatted)
+
+
+@beartype
+def _format_crystal_json_assignment(
+    name: str,
+    value: str,
+    _data: Value,
+) -> str:
+    """Assign a JSON-rendered literal to a ``JSON::Any`` binding."""
+    return f"{name} = {_wrap_in_json_parse(value)}"
+
+
+@beartype
+def _crystal_json_declaration_formatter(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a Crystal ``JSON::Any`` variable declaration.
+
+    Crystal exposes only the ``ASSIGN`` declaration style, so the
+    formatter does not need to branch on the declaration keyword.
+    """
+    return f"{name} = {_wrap_in_json_parse(value)}"
 
 
 @beartype
@@ -372,13 +421,6 @@ class Crystal(metaclass=LanguageCls):
     supports_record_shape_names = False
     supports_non_string_dict_keys = True
 
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
-
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""
 
@@ -597,6 +639,14 @@ class Crystal(metaclass=LanguageCls):
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
+
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Crystal."""
+
+        JSON_ANY = _CRYSTAL_JSON_ANY
+        """Standard-library ``JSON::Any`` via ``JSON.parse(%(...))``."""
+
+    json_types = JsonTypes
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -667,7 +717,85 @@ class Crystal(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        r"""Validate Crystal-specific data/format combinations.
+
+        Under ``json_type`` every dict key must be a string (a JSON
+        object only admits string keys) and every integer must fit the
+        ``Int64`` range that Crystal's ``JSON.parse`` exposes through
+        ``JSON::Any#as_i``.  Strings embedded in the rendered JSON
+        document cannot contain characters the ``%(...)`` percent
+        literal interprets specially: ``\\``, ``"``, ``(``, ``)``, or
+        ``#{``; we reject those upfront with a clear error rather than
+        letting the Crystal compiler or JSON parser fail at runtime.
+        """
+        if self._uses_json_any:
+            self._validate_json_any_data(data=data)
+
+    def _validate_json_any_data(self, *, data: Value) -> None:
+        """Recursively validate *data* for ``JSON::Any`` rendering."""
+        match data:
+            case dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Crystal json_type can only represent dict keys "
+                            "as JSON object strings, not "
+                            f"{type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_any_string(value=key)
+                    self._validate_json_any_data(data=value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_any_data(data=item)
+            case str():
+                self._validate_json_any_string(value=data)
+            case bool():
+                return
+            case int():
+                if not I64_MIN <= data <= I64_MAX:
+                    msg = (
+                        "Crystal json_type cannot represent integer "
+                        f"{data}: value is outside the signed 64-bit "
+                        "range that JSON::Any exposes."
+                    )
+                    raise UnrepresentableInputError(msg)
+            case _:
+                return
+
+    @staticmethod
+    def _validate_json_any_string(*, value: str) -> None:
+        r"""Reject characters Crystal's ``%(...)`` literal mishandles.
+
+        ``%(...)`` processes the same escapes as a double-quoted
+        Crystal string, so a literal ``\\``, ``"``, or ``#{`` inside
+        the JSON document would be rewritten before the JSON parser
+        sees it; unbalanced ``(`` or ``)`` would terminate the
+        percent literal early.  All five cases produce broken Crystal
+        source rather than the intended ``JSON::Any``.
+        """
+        forbidden = {
+            "\\": "backslash",
+            '"': "double quote",
+            "(": "open parenthesis",
+            ")": "close parenthesis",
+        }
+        for char, description in forbidden.items():
+            if char in value:
+                msg = (
+                    f"Crystal json_type cannot embed a {description} in a "
+                    "string value: it would break the JSON.parse(%(...)) "
+                    "wrapper."
+                )
+                raise UnrepresentableInputError(msg)
+        if "#{" in value:
+            msg = (
+                "Crystal json_type cannot embed '#{' in a string value: "
+                "Crystal's %(...) percent literal would interpret it as "
+                "string interpolation."
+            )
+            raise UnrepresentableInputError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -742,6 +870,7 @@ class Crystal(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
     # Keep in sync with the ``crystal:`` pin passed to
     # ``crystal-lang/install-crystal`` in the ``lint-crystal`` job of
@@ -749,7 +878,7 @@ class Crystal(metaclass=LanguageCls):
     language_version: VersionFormats = VersionFormats.V1
     indent: str = "    "
 
-    null_literal: ClassVar[str] = "nil"
+    _default_null_literal: ClassVar[str] = "nil"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -762,6 +891,23 @@ class Crystal(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def _uses_json_any(self) -> bool:
+        """Return whether Crystal should render via ``JSON::Any``."""
+        return self.json_type is not None
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Null literal for the active Crystal representation.
+
+        ``JSON::Any`` mode produces JSON documents inside a
+        ``JSON.parse(%(...))`` wrapper, so the JSON ``null`` keyword
+        replaces Crystal's ``nil``.
+        """
+        if self._uses_json_any:
+            return "null"
+        return self._default_null_literal
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -781,7 +927,22 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._uses_json_any:
+            return _format_crystal_json_assignment
         return variable_formatter(template="{name} = {value}")
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Under ``json_type`` every call argument is wrapped in
+        ``JSON.parse(%(...))`` so the receiving proc gets a
+        ``JSON::Any`` regardless of the underlying scalar or container
+        shape; otherwise the rendered literal passes through unchanged.
+        """
+        if self._uses_json_any:
+            return _format_crystal_json_call_arg
+        return identity_call_arg
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -793,7 +954,18 @@ class Crystal(metaclass=LanguageCls):
         Record0`` would collide across cases.  They are emitted into the
         per-fixture module body instead; see
         :attr:`compute_body_preamble`.
+
+        Under ``json_type`` the rendered output always passes through
+        ``JSON.parse``, so ``require "json"`` is contributed
+        unconditionally.
         """
+        if self._uses_json_any:
+
+            def _json_preamble(_data: Value, /) -> tuple[str, ...]:
+                """Always require the standard-library ``json`` module."""
+                return ('require "json"',)
+
+            return _json_preamble
         return no_data_preamble
 
     @cached_property
@@ -897,10 +1069,18 @@ class Crystal(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
+        ``json_type`` overrides the configured strategy: JSON arrays
+        and objects accept any mix of value types, so scalar-type checks
+        are skipped unconditionally.
         ``RECORD`` resolves to the shared record behavior (its value
         needs the per-instance renderer, so it cannot be stored on the
         enum member); ``ERROR`` raises.
         """
+        if self._uses_json_any:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         if self._record_strategy_active:
             return self._record_strategy.behavior
         return NO_HETEROGENEOUS_BEHAVIOR
@@ -993,7 +1173,29 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
+        """Configuration for the chosen sequence format.
+
+        ``json_type`` renders sequences as JSON arrays (``[ ... ]``)
+        inside the outer ``JSON.parse(%(...))`` wrapper, with no
+        Crystal-side typing or trailing comma (the JSON spec rejects
+        trailing commas in arrays).
+        """
+        if self._uses_json_any:
+            return SequenceFormatConfig(
+                sequence_open=fixed_open(open_str="["),
+                close="]",
+                empty_sequence="[]",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=False,
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback=None,
+                uses_typed_literal_for_scalars=False,
+                requires_uniform_record_shapes=False,
+                declared_type=None,
+                narrowed_empty_form=None,
+            )
         return dataclasses.replace(
             self.sequence_format.value,
             narrowed_empty_form=_crystal_narrowed_empty_form,
@@ -1001,7 +1203,22 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format."""
+        """Configuration for the chosen set format.
+
+        ``json_type`` renders a set as a JSON array because JSON has no
+        native set type; the empty form widens to ``[]`` for the same
+        reason.
+        """
+        if self._uses_json_any:
+            return SetFormatConfig(
+                set_open=fixed_open(open_str="["),
+                close="]",
+                empty_set="[]",
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=False,
+            )
         return self.set_format(
             default_type=self.default_set_element_type,
         )
@@ -1013,7 +1230,25 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
+        """Configuration for dict formatting.
+
+        ``json_type`` renders a dict as a JSON object with ``": "`` as
+        the entry separator and no trailing comma; the empty form
+        widens to ``{}``.
+        """
+        if self._uses_json_any:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="{"),
+                close="}",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict="{}",
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=False,
+            )
         return self.dict_format(
             default_type=self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
@@ -1021,7 +1256,15 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
-        """Configuration for trailing-comma behavior."""
+        """Configuration for trailing-comma behavior.
+
+        ``json_type`` always disables trailing commas because the JSON
+        content embedded in ``JSON.parse(%(...))`` is parsed against
+        the JSON spec, which rejects trailing commas in arrays and
+        objects.
+        """
+        if self._uses_json_any:
+            return TrailingCommaConfig(multiline_trailing_comma=False)
         return self.trailing_comma.value
 
     @cached_property
@@ -1031,12 +1274,28 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
-        """Callable that formats a date as a string literal."""
+        """Callable that formats a date as a string literal.
+
+        ``json_type`` always emits ISO 8601 dates so the result is a
+        JSON string regardless of the configured ``date_format``.
+        """
+        if self._uses_json_any:
+            return format_date_iso
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        ``json_type`` always emits ISO 8601 datetimes (JSON strings)
+        unless the user has explicitly chosen the ``EPOCH`` form, which
+        remains a valid JSON number.
+        """
+        if (
+            self._uses_json_any
+            and self.datetime_format.value.type_produced is not int
+        ):
+            return format_datetime_iso
         return self.datetime_format
 
     @cached_property
@@ -1051,10 +1310,18 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
+        """Callable that formats an int value as a literal.
+
+        ``json_type`` skips the ``_i128`` overflow fallback because the
+        JSON spec has no integer-width annotation; out-of-range values
+        are rejected by :meth:`validate_spec_for_data` with a clear
+        error before they reach the formatter.
+        """
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+        if self._uses_json_any:
+            return base
         return make_overflow_fallback_formatter(
             base=base,
             fallback=_format_crystal_i128_literal,
@@ -1067,7 +1334,17 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
-        """Configuration for ordered-map formatting."""
+        """Configuration for ordered-map formatting.
+
+        ``json_type`` reuses the JSON object form for ordered maps
+        (JSON objects preserve insertion order in the rendered text).
+        """
+        if self._uses_json_any:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(open_str="{"),
+                close="}",
+                preamble_lines=(),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
@@ -1076,7 +1353,16 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
-        """Callable that formats one ordered-map entry."""
+        """Callable that formats one ordered-map entry.
+
+        ``json_type`` uses the JSON ``": "`` separator; the native
+        Crystal form uses ``" => "``.
+        """
+        if self._uses_json_any:
+            return dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            )
         return dict_entry_with_separator(
             separator=" => ",
             format_value=passthrough_sequence_entry,
@@ -1086,7 +1372,14 @@ class Crystal(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under ``json_type`` the rendered literal is wrapped in
+        ``JSON.parse(%(...))``; Crystal's only declaration style is
+        ``ASSIGN``, so the formatter does not branch on the keyword.
+        """
+        if self._uses_json_any:
+            return _crystal_json_declaration_formatter
         return self.declaration_style.value.formatter
 
     @cached_property

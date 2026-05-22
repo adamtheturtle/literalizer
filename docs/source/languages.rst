@@ -121,6 +121,30 @@ This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
 
+Crystal exposes the same option through its standard-library
+``JSON::Any``:
+
+.. code-block:: python
+
+   """Render Crystal data as JSON::Any."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Crystal
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Crystal(json_type=Crystal.json_types.JSON_ANY),
+       variable_form=NewVariable(name="payload"),
+   )
+
+The rendered literal is a JSON document wrapped in ``JSON.parse(%(...))``,
+parsed at runtime into a ``JSON::Any``.  The mode relaxes Crystal's
+homogeneous ``Hash(K, V)`` and ``Array(T)`` checks, validates that dict
+keys are strings, and rejects characters that would break the
+``%(...)`` percent literal (``\\``, ``"``, ``(``, ``)``, and ``#{``)
+or overflow JSON's signed 64-bit integer range.
+
 Custom language implementations
 -------------------------------
 
