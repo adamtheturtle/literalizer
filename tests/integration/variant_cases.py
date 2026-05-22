@@ -507,6 +507,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=Scala,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="CSharp_json_type_json_node",
+            spec=make_spec(
+                lang_cls=CSharp,
+                json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+            ),
+            lang_cls=CSharp,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2386,6 +2395,20 @@ def build_variant_cases() -> list[VariantCase]:
                         declaration_style=Scala.declaration_styles.VAR,
                     ),
                     lang_cls=Scala,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="CSharp_json_type_json_node_combined",
+                variant=Variant(
+                    name="CSharp_json_type_json_node_combined",
+                    spec=make_spec(
+                        lang_cls=CSharp,
+                        json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                    ),
+                    lang_cls=CSharp,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
