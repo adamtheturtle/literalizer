@@ -148,7 +148,7 @@ Scala exposes the same option for Circe's :class:`io.circe.Json`:
 
 .. code-block:: python
 
-   """Render Scala data as io.circe.Json."""
+   """Render Scala data as a Circe Json value."""
 
    from literalizer import InputFormat, NewVariable, literalize
    from literalizer.languages import Scala
