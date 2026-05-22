@@ -26,7 +26,6 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_csharp,
-    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -587,9 +586,12 @@ class CSharp(metaclass=LanguageCls):
             ``System.Text.Json.Nodes.JsonNode`` (``JsonObject`` /
             ``JsonArray`` / typed scalars) instead of C#'s narrow
             collection types.  Dates and datetimes switch to ISO 8601
-            strings (unless ``datetime_format`` is ``EPOCH``) and the
-            ``const`` modifier is rejected because the JSON
-            constructors are not constant expressions.
+            strings (unless ``datetime_format`` is ``EPOCH``).  Times
+            keep the native ``new TimeOnly(...)`` form, which is
+            outside the JSON value model; pass dates or datetimes
+            instead when round-tripping through JSON.  The ``const``
+            modifier is rejected because the JSON constructors are
+            not constant expressions.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1671,6 +1673,13 @@ class CSharp(metaclass=LanguageCls):
         is instead opened with an implicitly-typed array ``new[] {`` so
         C# infers ``RecordN[]`` from the literals.  Every other list
         keeps the typed array opener.
+
+        ``json_type`` takes precedence over the ``RECORD`` strategy:
+        record-shaped dicts under json mode render as ``new JsonObject
+        { ... }`` (not as ``RecordN`` literals), so their parent list
+        must keep the json ``new JsonArray {`` opener rather than the
+        implicitly-typed ``new[] {`` form, which would otherwise infer
+        a ``JsonObject[]`` array that is not what json mode promises.
         """
         fmt = self.sequence_format_config
         if fmt.typed_opener_fallback is not None:
@@ -1680,7 +1689,7 @@ class CSharp(metaclass=LanguageCls):
             )
         else:
             base_open = fmt.sequence_open
-        if not self._record_strategy_active:
+        if self._json_type_active or not self._record_strategy_active:
             return base_open
 
         def _open(items: list[Value]) -> str:
@@ -1789,13 +1798,7 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
-        """Callable that formats a time as a string literal.
-
-        ``json_type`` overrides the native ``TimeOnly`` literal with the
-        ISO 8601 string form so it remains valid JSON.
-        """
-        if self._json_type_active:
-            return format_time_iso
+        """Callable that formats a time as a string literal."""
         return format_time_csharp
 
     @cached_property
@@ -1923,9 +1926,9 @@ class CSharp(metaclass=LanguageCls):
         Under ``json_type`` the ``using System.Text.Json.Nodes;`` line
         is contributed by :attr:`data_dependent_preamble` instead, so
         this method returns an empty per-scalar map to avoid
-        duplicating it; dates / datetimes / times all render as ISO
-        8601 strings (or an epoch integer for the explicit ``EPOCH``
-        datetime format) and need no per-scalar import of their own.
+        duplicating it; dates / datetimes render as ISO 8601 strings
+        (or an epoch integer for the explicit ``EPOCH`` datetime
+        format) and need no per-scalar import of their own.
         """
         if self._json_type_active:
             return {}

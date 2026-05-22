@@ -141,8 +141,8 @@ The same option is available for C# through
 This emits ``new JsonObject { ... }`` / ``new JsonArray { ... }``
 expressions backed by the built-in ``System.Text.Json.Nodes`` library,
 relaxes C#'s homogeneous ``Dictionary<K, V>`` / typed-array checks, and
-switches date / datetime / time values to ISO 8601 strings so they
-remain valid JSON.  The ``const`` modifier is rejected because the JSON
+switches date / datetime values to ISO 8601 strings so they remain
+valid JSON.  The ``const`` modifier is rejected because the JSON
 constructors and the implicit ``(JsonNode?)`` cast applied to scalars
 are runtime expressions, not C# constant initializers.
 
