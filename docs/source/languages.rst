@@ -100,8 +100,8 @@ JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  Rust supports this through the
-``json_type`` constructor argument:
+fit than native narrow collection types.  Rust and Nim both support this
+through the ``json_type`` constructor argument:
 
 .. code-block:: python
 
@@ -120,6 +120,28 @@ fit than native narrow collection types.  Rust supports this through the
 This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
+
+The same option is available for Nim through ``Nim.json_types.JSON_NODE``:
+
+.. code-block:: python
+
+   """Render Nim data as json.JsonNode."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Nim
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Nim(json_type=Nim.json_types.JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``%*(...)`` expressions backed by Nim's stdlib ``json`` module,
+relaxes Nim's homogeneous ``seq`` / ``Table`` checks, and switches date and
+datetime values to ISO 8601 strings so they remain valid JSON.  ``CONST``
+declarations are rejected because ``%*`` is a runtime macro and not a
+constant-expression initializer.
 
 Custom language implementations
 -------------------------------

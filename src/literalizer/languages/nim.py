@@ -107,6 +107,67 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
+_NIM_JSON_MACRO = "%*"
+
+
+@beartype
+def _nim_json_value_expression(value: str, /) -> str:
+    """Wrap *value* in ``%*`` unless it is already a ``JsonNode``
+    expression.
+
+    Values produced by the JSON-mode container openers already begin
+    with ``%*`` and explicit ``newJArray()`` / ``newJObject()`` /
+    ``newJNull()`` builders begin with ``newJ``; both are
+    ``JsonNode`` typed and skip the extra wrap so the output does not
+    accumulate redundant macros.
+    """
+    if value.startswith((_NIM_JSON_MACRO, "newJ")):
+        return value
+    return f"{_NIM_JSON_MACRO}({value})"
+
+
+@beartype
+def _format_nim_json_call_arg(_raw_value: Value, formatted: str) -> str:
+    """Format a direct Nim call argument as ``JsonNode``."""
+    return _nim_json_value_expression(formatted)
+
+
+@beartype
+def _nim_json_non_scalar_child(  # pragma: no cover
+    _raw_value: Value,
+    formatted: str,
+) -> str:
+    """Identity wrapper signaling JSON can hold non-scalar children."""
+    return formatted
+
+
+@beartype
+def _format_nim_json_assignment(name: str, value: str, _data: Value) -> str:
+    """Assign a rendered literal to a Nim ``JsonNode`` binding."""
+    return f"{name} = {_nim_json_value_expression(value)}"
+
+
+@beartype
+def _nim_json_declaration_formatter(
+    *,
+    declaration_style: enum.Enum,
+    json_type: str,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Return a declaration formatter for ``JsonNode`` output."""
+
+    def _formatter(
+        name: str,
+        value: str,
+        _data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format a JSON-backed declaration."""
+        expr = _nim_json_value_expression(value)
+        keyword = declaration_style.name.lower()
+        return f"{keyword} {name}: {json_type} = {expr}"
+
+    return _formatter
+
 
 @beartype
 def _apply_nim_variable_declaration(
@@ -679,13 +740,6 @@ class Nim(metaclass=LanguageCls):
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
 
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
-
     class DateFormats(enum.Enum):
         """Date format options for Nim."""
 
@@ -929,6 +983,14 @@ class Nim(metaclass=LanguageCls):
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
+
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Nim."""
+
+        JSON_NODE = "JsonNode"
+        """Stdlib ``json.JsonNode`` constructed via the ``%*`` macro."""
+
+    json_types = JsonTypes
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -1128,6 +1190,7 @@ class Nim(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     heterogeneous_value_variant_name: str = "Value"
     record_struct_name_prefix: str = "Record"
     call_style: CallStyles = CallStyles.POSITIONAL
@@ -1144,7 +1207,8 @@ class Nim(metaclass=LanguageCls):
         rendering for Nim with runtime ``.toTable`` / ``@[]``
         constructors, so ``CONST`` (which requires a
         compile-time-expressible initializer) cannot be combined with
-        either.
+        either.  ``json_type`` uses the runtime ``%*`` macro for the
+        same reason and is likewise incompatible with ``CONST``.
         """
         _decl_cls = type(self.declaration_style)
         _strategy_cls = type(self.heterogeneous_strategy)
@@ -1157,6 +1221,15 @@ class Nim(metaclass=LanguageCls):
                 f"but {self.heterogeneous_strategy.name} produces runtime "
                 ".toTable / @[] calls which are not constant expressions. "
                 "Use VAR or LET instead."
+            )
+            raise IncompatibleFormatsError(msg)
+        if (
+            self.json_type is not None
+            and self.declaration_style is _decl_cls.CONST
+        ):
+            msg = (
+                "Nim json_type uses the runtime %* macro, which is not a "
+                "constant-expression initializer. Use VAR or LET instead."
             )
             raise IncompatibleFormatsError(msg)
 
@@ -1235,8 +1308,18 @@ class Nim(metaclass=LanguageCls):
         declaration / assignment except ``const`` declarations and
         ``@``-prefixed sequences of simple scalars); importing
         ``json`` unconditionally would trigger the Nim compiler's
-        ``UnusedImport`` warning.
+        ``UnusedImport`` warning.  Under ``json_type`` the rendered
+        output always uses ``%*`` (and ``newJ*`` builders), so the
+        import is emitted unconditionally and takes precedence over
+        any configured heterogeneous strategy.
         """
+        if self._uses_json_node:
+
+            def _json_preamble(_data: Value, /) -> tuple[str, ...]:
+                """Always import std/json for ``JsonNode`` output."""
+                return ("import json",)
+
+            return _json_preamble
         if self._uses_record:
             record_preamble = self._record_strategy.preamble
 
@@ -1289,11 +1372,19 @@ class Nim(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy.
 
+        ``json_type`` relaxes scalar-type checks unconditionally,
+        because the ``%*`` macro accepts heterogeneous JSON values.
         ``RECORD`` resolves to the shared record behavior (its value
         needs the per-instance renderer, so it cannot be stored on the
         enum member); ``ERROR`` and ``OBJECT_VARIANT`` use their
         config-built behaviors.
         """
+        if self._uses_json_node:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+                wrap_non_scalar=_nim_json_non_scalar_child,
+            )
         if self._uses_record:
             return self._record_strategy.behavior
         return self.heterogeneous_strategy.value.build_behavior(
@@ -1301,6 +1392,13 @@ class Nim(metaclass=LanguageCls):
             self._heterogeneous_variant_date_type,
             self._heterogeneous_variant_datetime_type,
         )
+
+    @cached_property
+    def _uses_json_node(self) -> bool:
+        """Whether the instance is configured to render values as
+        ``JsonNode`` via the ``%*`` macro.
+        """
+        return self.json_type is not None
 
     @cached_property
     def _uses_object_variant(self) -> bool:
@@ -1476,7 +1574,26 @@ class Nim(metaclass=LanguageCls):
         by name, so the declaration must be present.  For other
         strategies, call arguments are inline literals that never use
         ``%*``, so ``import json`` is never needed in a call context.
+
+        ``json_type`` wraps every call argument in ``%*``, so the
+        ``import json`` line is contributed unconditionally here too.
         """
+        if self._uses_json_node:
+
+            def _json_call_preamble(_data: Value, /) -> tuple[str, ...]:
+                """Always import std/json for ``JsonNode`` call args.
+
+                Suppress ``UnusedImport`` because the stub uses
+                ``varargs[untyped]`` and never evaluates the wrapped
+                ``%*(...)`` expressions, so the Nim compiler treats the
+                ``json`` import as unused.
+                """
+                return (
+                    "{.warning[UnusedImport]:off.}",
+                    "import json",
+                )
+
+            return _json_call_preamble
         if self._uses_record:
             record_preamble = self._record_strategy.preamble
 
@@ -1578,6 +1695,9 @@ class Nim(metaclass=LanguageCls):
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
+        ``json_type`` wraps every sequence literal in the ``%*`` macro so
+        it renders as a ``JsonNode`` array, and widens an empty sequence
+        to ``newJArray()`` (the explicit JSON array builder).
         ``OBJECT_VARIANT`` and ``RECORD`` replace the JSON-array opener
         with ``@[`` so nested sequences render as Nim-native ``seq``
         literals at every level (the declaration formatter no longer
@@ -1589,6 +1709,16 @@ class Nim(metaclass=LanguageCls):
         record field is declared.
         """
         base = self.sequence_format.value
+        if self._uses_json_node:
+            return dataclasses.replace(
+                base,
+                sequence_open=fixed_open(open_str=f"{_NIM_JSON_MACRO}(["),
+                close="])",
+                supports_heterogeneity=True,
+                uses_typed_literal_for_scalars=False,
+                preamble_lines=(),
+                empty_sequence="newJArray()",
+            )
         if not self._uses_native_nim_collections:
             return base
         return dataclasses.replace(
@@ -1601,7 +1731,20 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format."""
+        """Configuration for the chosen set format.
+
+        ``json_type`` renders a set as a JSON array via ``%*([...])``
+        because JSON has no native set type; empty sets widen to
+        ``newJArray()`` for the same reason empty sequences do.
+        """
+        if self._uses_json_node:
+            return dataclasses.replace(
+                self.set_format.value,
+                set_open=fixed_open(open_str=f"{_NIM_JSON_MACRO}(["),
+                close="])",
+                empty_set="newJArray()",
+                preamble_lines=(),
+            )
         return self.set_format.value
 
     @cached_property
@@ -1630,7 +1773,28 @@ class Nim(metaclass=LanguageCls):
         the common record-only fixture; the import is instead added by
         :attr:`data_dependent_preamble` only when the data still carries
         a genuinely non-record dict that renders as a table.
+
+        ``json_type`` takes precedence: every dict literal is wrapped in
+        ``%*({...})`` so it renders as a JSON object, and an empty dict
+        widens to ``newJObject()`` (the explicit builder).  The
+        ``import json`` line that powers ``%*`` is contributed by
+        :attr:`data_dependent_preamble`, not by this config, so a
+        heterogeneous-strategy-free fixture still imports it exactly
+        once.
         """
+        if self._uses_json_node:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str=f"{_NIM_JSON_MACRO}({{"),
+                close="})",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict="newJObject()",
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+            )
         if self._uses_native_nim_collections:
             return DictFormatConfig(
                 dict_open=fixed_open(open_str="{"),
@@ -1671,12 +1835,29 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
-        """Callable that formats a date as a string literal."""
+        """Callable that formats a date as a string literal.
+
+        ``json_type`` overrides the configured ``date_format`` with the
+        ISO 8601 string form because the ``NIM`` table-literal form
+        would not round-trip through JSON.
+        """
+        if self._uses_json_node:
+            return format_date_iso
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        ``json_type`` overrides the configured ``datetime_format`` with
+        the ISO 8601 string form unless the user has explicitly chosen
+        the ``EPOCH`` integer form, which remains a valid JSON number.
+        """
+        if (
+            self._uses_json_node
+            and self.datetime_format.value.type_produced is not int
+        ):
+            return format_datetime_iso
         return self.datetime_format
 
     @cached_property
@@ -1711,7 +1892,16 @@ class Nim(metaclass=LanguageCls):
         ``OBJECT_VARIANT`` and ``RECORD`` render an ordered map with its
         native ``{...}.toOrderedTable`` constructor (an ordered map is
         never record-shaped, so ``RECORD`` leaves it on this path).
+        ``json_type`` renders an ordered map as a JSON object (the
+        ``%*`` macro preserves object-key insertion order in the
+        rendered output).
         """
+        if self._uses_json_node:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(open_str=f"{_NIM_JSON_MACRO}({{"),
+                close="})",
+                preamble_lines=(),
+            )
         if self._uses_native_nim_collections:
             return OrderedMapFormatConfig(
                 ordered_map_open=fixed_open(open_str="{"),
@@ -1736,7 +1926,21 @@ class Nim(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under ``json_type`` the declaration carries an explicit
+        ``: JsonNode`` type annotation and the right-hand side is wrapped
+        by ``%*`` only when the value is not already a ``JsonNode``
+        expression (the wrapping check in
+        :func:`_nim_json_value_expression` skips re-wrapping ``%*(...)``
+        and ``newJ*`` builders so the rendered output stays flat).
+        """
+        if self._uses_json_node:
+            assert self.json_type is not None  # noqa: S101
+            return _nim_json_declaration_formatter(
+                declaration_style=self.declaration_style,
+                json_type=self.json_type.value,
+            )
         is_const = self.declaration_style is self.declaration_styles.CONST
         return _make_variable_declaration(
             uses_typed_literal_for_scalars=(
@@ -1751,13 +1955,32 @@ class Nim(metaclass=LanguageCls):
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
-        """Callable that formats an assignment to an existing variable."""
+        """Callable that formats an assignment to an existing variable.
+
+        Under ``json_type`` the assigned expression is wrapped by ``%*``
+        through the same helper as the declaration form so the two
+        halves of a combined declaration / assignment stay consistent.
+        """
+        if self._uses_json_node:
+            return _format_nim_json_assignment
         return _make_variable_assignment(
             uses_typed_literal_for_scalars=(
                 self.sequence_format_config.uses_typed_literal_for_scalars
             ),
             uses_json_wrap=not self._uses_native_nim_collections,
         )
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Under ``json_type`` every call argument is wrapped in ``%*`` so
+        the underlying proc receives a ``JsonNode``; under any other
+        mode call arguments pass through unchanged.
+        """
+        if self._uses_json_node:
+            return _format_nim_json_call_arg
+        return identity_call_arg
 
     @cached_property
     def format_call_variable_declaration(
@@ -1799,7 +2022,12 @@ class Nim(metaclass=LanguageCls):
         except that the ``NIM`` date / datetime formats still
         produce a :class:`json.JsonNode` payload and require
         ``import json`` whenever a date or datetime is present.
+        Under ``json_type`` the ``import json`` line is contributed
+        unconditionally by :attr:`data_dependent_preamble`, so this
+        method returns an empty per-scalar map to avoid duplicating it.
         """
+        if self._uses_json_node:
+            return {}
         if self._uses_object_variant:
             json_import = ("import json",)
             date_preamble = (
