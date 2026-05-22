@@ -1,0 +1,1 @@
+Add ``CSharp(json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE)`` to render values through ``System.Text.Json.Nodes.JsonNode`` instead of C#'s narrow collection types.
