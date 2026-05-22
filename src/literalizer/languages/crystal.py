@@ -99,7 +99,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
 
 _CRYSTAL_JSON_ANY = "JSON::Any"
@@ -736,16 +736,7 @@ class Crystal(metaclass=LanguageCls):
         """Recursively validate *data* for ``JSON::Any`` rendering."""
         match data:
             case dict():
-                for key, value in data.items():
-                    if not isinstance(key, str):
-                        msg = (
-                            "Crystal json_type can only represent dict keys "
-                            "as JSON object strings, not "
-                            f"{type(key).__name__}"
-                        )
-                        raise UnrepresentableInputError(msg)
-                    self._validate_json_any_string(value=key)
-                    self._validate_json_any_data(data=value)
+                self._validate_json_any_dict(data=data)
             case list() | set():
                 for item in data:
                     self._validate_json_any_data(data=item)
@@ -754,15 +745,39 @@ class Crystal(metaclass=LanguageCls):
             case bool():
                 return
             case int():
-                if not I64_MIN <= data <= I64_MAX:
-                    msg = (
-                        "Crystal json_type cannot represent integer "
-                        f"{data}: value is outside the signed 64-bit "
-                        "range that JSON::Any exposes."
-                    )
-                    raise UnrepresentableInputError(msg)
+                self._validate_json_any_int(value=data)
             case _:
                 return
+
+    def _validate_json_any_dict(
+        self,
+        *,
+        data: Mapping[Scalar, Value],
+    ) -> None:
+        """Validate that every dict key is a JSON-compatible string."""
+        for key, value in data.items():
+            if not isinstance(key, str):
+                msg = (
+                    "Crystal json_type can only represent dict keys "
+                    "as JSON object strings, not "
+                    f"{type(key).__name__}"
+                )
+                raise UnrepresentableInputError(msg)
+            self._validate_json_any_string(value=key)
+            self._validate_json_any_data(data=value)
+
+    @staticmethod
+    def _validate_json_any_int(*, value: int) -> None:
+        """Reject integers outside the signed 64-bit ``JSON::Any``
+        range.
+        """
+        if not I64_MIN <= value <= I64_MAX:
+            msg = (
+                "Crystal json_type cannot represent integer "
+                f"{value}: value is outside the signed 64-bit "
+                "range that JSON::Any exposes."
+            )
+            raise UnrepresentableInputError(msg)
 
     @staticmethod
     def _validate_json_any_string(*, value: str) -> None:
