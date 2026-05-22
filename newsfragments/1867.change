@@ -1,1 +1,1 @@
-Add Ruby, TypeScript, and Haskell JSON round-trip checks to CI using the shared round-trip fixture.
+Add Ruby, TypeScript, Haskell, and Perl JSON round-trip checks to CI using the shared round-trip fixture.
