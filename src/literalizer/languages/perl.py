@@ -181,6 +181,10 @@ class Perl(metaclass=LanguageCls):
               ``JSON::PP::false`` blessed singletons; adds a
               ``use JSON::PP;`` preamble (``JSON::PP`` is a core
               module).
+
+            Only boolean *values* round-trip; Perl coerces every hash
+            key to a string, so a boolean dict key cannot preserve any
+            non-string representation regardless of ``bool_format``.
     """
 
     format_integer_widened = no_format_integer_widened
