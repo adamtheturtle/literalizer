@@ -90,13 +90,28 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 _D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
+
+# Narrow-typed mode raises this when an input has no raw D
+# representation: a heterogeneous (or empty) list, a heterogeneous-valued
+# dict, a non-record dict (empty or non-string-keyed), a set, or an
+# ordered map.  D arrays and associative arrays hold a single element
+# (or value) type, and ``auto`` cannot infer a type for an empty literal
+# without a typed cast, so each of these has no native narrow form.
+_D_NARROW_UNREPRESENTABLE = (
+    "D narrow-typed mode (json_type=None) cannot represent a "
+    "heterogeneous list, a heterogeneous-valued dict, a non-record dict, "
+    "a set, or an ordered map; use the default json_type=STD_JSON_VALUE "
+    "instead"
+)
 
 
 @beartype
@@ -324,6 +339,76 @@ def _d_int_field_type(value: int, /) -> str:
     if value > I64_MAX:
         return "ulong"
     return "long"
+
+
+@beartype
+def _d_narrow_sequence_open(items: list[Value], /) -> str:
+    """Return the raw D array opener under narrow-typed mode.
+
+    A homogeneous list is a raw ``[ ... ]`` array literal whose
+    element type D infers from the first element.  An empty list has
+    no element type to infer (a plain ``auto x = []`` is rejected by D)
+    and a heterogeneous scalar list has no common type, so each is
+    rejected.
+    """
+    if not items or infer_element_type(items=items) is None:
+        raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
+    return "["
+
+
+@beartype
+def _d_narrow_dict_open(value: dict[Scalar, Value], /) -> str:
+    """Return the raw D AA opener under narrow-typed mode.
+
+    A non-empty all-string-keyed dict whose values share a single
+    inferred type is rendered as ``["k": v, ...]``, D's associative
+    array literal whose value type is inferred from the first entry.
+    An empty dict, a non-string-keyed dict, or a heterogeneous-valued
+    dict has no raw D AA representation and is rejected.
+    """
+    if record_shape_for_dict(value=value) is None:
+        raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
+    if infer_element_type(items=list(value.values())) is None:
+        raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
+    return "["
+
+
+@beartype
+def _d_narrow_validate_data(data: Value, /) -> None:
+    """Reject inputs without a raw narrow D representation.
+
+    Walks the data and raises
+    :class:`~literalizer.exceptions.UnrepresentableInputError` for an
+    empty list or an empty dict that the format-opener rejections
+    never reach (the opener-level checks handle heterogeneous lists,
+    heterogeneous-valued dicts, non-record dicts, sets, and ordered
+    maps).  D's ``auto`` cannot infer an element type for an empty
+    literal without an explicit cast, so neither has a raw narrow
+    form.
+    """
+    match data:
+        case list() if not data:
+            raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
+        case dict() if not data:
+            raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
+        case list():
+            for item in data:
+                _d_narrow_validate_data(item)
+        case dict():
+            for item in data.values():
+                _d_narrow_validate_data(item)
+        case _:
+            return
+
+
+@beartype
+def _d_narrow_reject_open(_collection: object, /) -> str:
+    """Reject a set or ordered map under narrow-typed mode.
+
+    D has no built-in set type, and ``std.json``'s ordered map is
+    represented as a ``JSONValue``; neither has a raw narrow form.
+    """
+    raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
 
 
 @beartype
@@ -603,6 +688,23 @@ class D(metaclass=LanguageCls):
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
+
+    class JsonTypes(enum.Enum):
+        """JSON value type options for D.
+
+        D's default rendering already wraps every value in
+        ``std.json.JSONValue``; this enum exposes that mode explicitly
+        so the field has a named value paired with the opt-out
+        ``json_type=None``, which selects narrow-typed rendering
+        (raw scalars, ``T[]`` arrays, ``V[K]`` associative arrays)
+        and rejects inputs that cannot be expressed without the
+        ``JSONValue`` wrapper.
+        """
+
+        STD_JSON_VALUE = "JSONValue"
+        """The standard-library ``std.json.JSONValue`` model (D's default)."""
+
+    json_types = JsonTypes
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -680,7 +782,17 @@ class D(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate D-specific data/format combinations.
+
+        Narrow-typed mode (``json_type=None``) rejects empty
+        containers up front so D's ``auto`` is never asked to infer
+        a type from an empty literal; the default ``JSONValue`` model
+        renders ``parseJSON("[]")`` / ``parseJSON("{}")`` for these
+        and needs no validation.
+        """
+        if self._narrow_typed_active:
+            _d_narrow_validate_data(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -751,6 +863,7 @@ class D(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = JsonTypes.STD_JSON_VALUE
     record_struct_name_prefix: str = "Record"
     # Keep in sync with the ``compiler`` input of the
     # ``dlang-community/setup-dlang`` step in
@@ -784,16 +897,47 @@ class D(metaclass=LanguageCls):
         return self.heterogeneous_strategy.name == "RECORD"
 
     @cached_property
+    def _narrow_typed_active(self) -> bool:
+        """Return whether narrow-typed (``json_type=None``) is set.
+
+        Narrow-typed mode drops the ``JSONValue`` wrapper and emits raw
+        D scalars / arrays / associative arrays; the alternative is the
+        default ``JSONValue`` model (``json_type=JsonTypes.STD_JSON_VALUE``).
+        """
+        return self.json_type is None
+
+    def __post_init__(self) -> None:
+        """Reject incompatible option combinations.
+
+        Narrow-typed mode and the ``RECORD`` heterogeneous strategy
+        both drop the ``JSONValue`` wrapper and choose conflicting
+        representations for a record-shaped dict (an associative-array
+        literal vs a generated ``struct RecordN``), so the two cannot
+        be combined.
+        """
+        if (
+            self._narrow_typed_active
+            and self.heterogeneous_strategy.name == "RECORD"
+        ):
+            msg = (
+                "D json_type=None (narrow typed) is mutually exclusive "
+                "with heterogeneous_strategy=RECORD: both drop the "
+                "JSONValue wrapper and render a record-shaped dict "
+                "differently (associative-array literal vs generated "
+                "struct). Pick one."
+            )
+            raise IncompatibleFormatsError(msg)
+
+    @cached_property
     def static_preamble(self) -> Sequence[str]:
         """File-scope preamble.
 
-        The default ``ERROR`` model wraps every value in
-        ``std.json.JSONValue`` and so needs ``import std.json;``; the
-        ``RECORD`` strategy emits raw D values plus generated
-        ``struct`` declarations and uses no ``JSONValue``, so it needs
-        no static import.
+        The default ``ERROR`` ``JSONValue`` model needs ``import std.json;``;
+        the ``RECORD`` strategy and narrow-typed (``json_type=None``) mode
+        both emit raw D values with no ``JSONValue`` reference, so neither
+        needs the import.
         """
-        if self._record_strategy_active:
+        if self._record_strategy_active or self._narrow_typed_active:
             return ()
         return ("import std.json;",)
 
@@ -801,10 +945,11 @@ class D(metaclass=LanguageCls):
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry.
 
-        Under ``RECORD`` every element is a raw D literal (no
-        ``JSONValue`` wrapper), so the entry formatter is the identity.
+        Under ``RECORD`` or narrow-typed mode every element is a raw D
+        literal (no ``JSONValue`` wrapper), so the entry formatter is
+        the identity.
         """
-        if self._record_strategy_active:
+        if self._record_strategy_active or self._narrow_typed_active:
             return _format_d_entry_raw
         return _format_d_entry
 
@@ -824,10 +969,11 @@ class D(metaclass=LanguageCls):
         """Format an assignment to an existing variable.
 
         The default model wraps the value in ``JSONValue``; under
-        ``RECORD`` the value is a raw D literal (a ``Record0(...)``
-        struct, array or scalar) assigned directly.
+        ``RECORD`` or narrow-typed mode the value is a raw D literal
+        (a ``Record0(...)`` struct, AA literal, array or scalar)
+        assigned directly.
         """
-        if self._record_strategy_active:
+        if self._record_strategy_active or self._narrow_typed_active:
 
             @beartype
             def _assign(name: str, value: str, _data: Value) -> str:
@@ -947,10 +1093,10 @@ class D(metaclass=LanguageCls):
         """Callable that formats a new variable declaration.
 
         The default model wraps the value in ``JSONValue``; under
-        ``RECORD`` the value is a raw D literal whose type is inferred,
-        so a plain ``auto`` binding is emitted.
+        ``RECORD`` or narrow-typed mode the value is a raw D literal
+        whose type is inferred, so a plain ``auto`` binding is emitted.
         """
-        if self._record_strategy_active:
+        if self._record_strategy_active or self._narrow_typed_active:
 
             @beartype
             def _decl(
@@ -1114,12 +1260,26 @@ class D(metaclass=LanguageCls):
         closer is ``]``, the empty literal is ``[]`` (it coerces to any
         declared element type) and there is no ``parseJSON`` narrowed
         empty form.
+
+        Under narrow-typed mode (``json_type=None``) the literal is
+        also raw ``[ ... ]``, but D's ``auto`` cannot infer an element
+        type for an empty literal, so an empty list is rejected at
+        the opener alongside the heterogeneous case.
         """
         base = self.sequence_format.value
         if self._record_strategy_active:
             return dataclasses.replace(
                 base,
                 sequence_open=_d_record_sequence_open,
+                close="]",
+                empty_sequence="[]",
+                format_entry=_format_d_entry_raw,
+                narrowed_empty_form=None,
+            )
+        if self._narrow_typed_active:
+            return dataclasses.replace(
+                base,
+                sequence_open=_d_narrow_sequence_open,
                 close="]",
                 empty_sequence="[]",
                 format_entry=_format_d_entry_raw,
@@ -1134,14 +1294,19 @@ class D(metaclass=LanguageCls):
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format.
 
-        A set has no raw D representation, so under
-        ``RECORD`` its opener rejects the input.
+        A set has no raw D representation, so under ``RECORD`` or
+        narrow-typed mode its opener rejects the input.
         """
         base = self.set_format.value
         if self._record_strategy_active:
             return dataclasses.replace(
                 base,
                 set_open=_d_record_reject_open,
+            )
+        if self._narrow_typed_active:
+            return dataclasses.replace(
+                base,
+                set_open=_d_narrow_reject_open,
             )
         return base
 
@@ -1175,6 +1340,17 @@ class D(metaclass=LanguageCls):
             return dataclasses.replace(
                 base,
                 dict_open=_d_record_dict_open,
+                empty_dict=None,
+            )
+        if self._narrow_typed_active:
+            return dataclasses.replace(
+                base,
+                dict_open=_d_narrow_dict_open,
+                close="]",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=_format_d_entry_raw,
+                ),
                 empty_dict=None,
             )
         return base
@@ -1233,6 +1409,12 @@ class D(metaclass=LanguageCls):
             return OrderedMapFormatConfig(
                 ordered_map_open=_d_record_reject_open,
                 close="])",
+                preamble_lines=(),
+            )
+        if self._narrow_typed_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=_d_narrow_reject_open,
+                close="]",
                 preamble_lines=(),
             )
         return OrderedMapFormatConfig(

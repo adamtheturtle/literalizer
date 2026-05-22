@@ -21,6 +21,7 @@ from literalizer.languages import (
     Cobol,
     Crystal,
     CSharp,
+    D,
     Dart,
     Dhall,
     Elm,
@@ -523,6 +524,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=Nim.json_types.JSON_NODE,
             ),
             lang_cls=Nim,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="D_json_type_narrow",
+            spec=make_spec(
+                lang_cls=D,
+                json_type=None,
+            ),
+            lang_cls=D,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
     ]

@@ -101,7 +101,8 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Scala, C#,
-and Nim support this through the ``json_type`` constructor argument:
+Nim, and D support this through the ``json_type`` constructor argument
+(D's polarity is reversed; see below):
 
 .. code-block:: python
 
@@ -236,6 +237,39 @@ relaxes Nim's homogeneous ``seq`` / ``Table`` checks, and switches date and
 datetime values to ISO 8601 strings so they remain valid JSON.  ``CONST``
 declarations are rejected because ``%*`` is a runtime macro and not a
 constant-expression initializer.
+
+D's polarity is reversed from the others: its default already renders
+every value through ``std.json.JSONValue``, so the ``json_type``
+constructor argument selects the inverse mode.  ``D.json_types.STD_JSON_VALUE``
+is the default and matches the other languages' opt-in JSON value
+rendering; passing ``json_type=None`` instead activates a narrow-typed
+mode that mirrors the typed-collection defaults the other languages
+provide:
+
+.. code-block:: python
+
+   """Render D data through narrow native collections."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import D
+
+   result = literalize(
+       source='{"a": 1, "b": 2}',
+       input_format=InputFormat.JSON,
+       language=D(json_type=None),
+       variable_form=NewVariable(name="counts"),
+   )
+
+This emits raw D scalars, ``T[]`` array literals, and ``V[K]``
+associative-array literals (``auto counts = ["a": 1, "b": 2];``)
+without the ``JSONValue`` wrapper.  Inputs that have no narrow form,
+a heterogeneous list, a heterogeneous-valued dict, an empty list or
+dict (D's ``auto`` cannot infer an element type for an empty literal),
+a set, an ordered map, or a non-record dict, are rejected with
+:class:`~literalizer.exceptions.UnrepresentableInputError`.  The
+``RECORD`` ``heterogeneous_strategy`` is also rejected because it
+already renders record-shaped dicts as generated ``struct`` literals,
+which conflicts with narrow mode's associative-array form.
 
 Custom language implementations
 -------------------------------
