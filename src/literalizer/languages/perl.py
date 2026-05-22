@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -119,9 +118,6 @@ def _perl_format_call_ref_identifier(
     return f"${name}"
 
 
-_NON_ASCII_RE = re.compile(pattern=r"[^\x00-\x7f]")
-
-
 @beartype
 def _format_perl_string_double(value: str) -> str:
     r"""Perl double-quoted string with non-ASCII escaped as ``\x{...}``.
@@ -133,9 +129,10 @@ def _format_perl_string_double(value: str) -> str:
     of source-file encoding.
     """
     base = format_string_backslash(value)
-    return _NON_ASCII_RE.sub(
-        repl=lambda match: f"\\x{{{ord(match.group()):x}}}",
-        string=base,
+    if base.isascii():
+        return base
+    return "".join(
+        char if char.isascii() else f"\\x{{{ord(char):x}}}" for char in base
     )
 
 
