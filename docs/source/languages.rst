@@ -148,7 +148,7 @@ Nim exposes the same option through ``Nim.json_types.JSON_NODE``:
 
 .. code-block:: python
 
-   """Render Nim data as json.JsonNode."""
+   """Render Nim data using the standard library JSON value type."""
 
    from literalizer import InputFormat, NewVariable, literalize
    from literalizer.languages import Nim
