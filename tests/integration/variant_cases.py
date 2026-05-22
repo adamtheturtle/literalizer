@@ -35,7 +35,6 @@ from literalizer.languages import (
     Nim,
     OCaml,
     Odin,
-    Perl,
     PureScript,
     Python,
     Roc,
@@ -1787,23 +1786,46 @@ def _build_declaration_style_variants() -> list[Variant]:
     )
 
 
-@beartype
-def build_perl_bool_format_variants() -> Iterable[Variant]:
-    """Build :class:`~literalizer.languages.perl.Perl` boolean-format
-    variants.  Perl is the only language with a ``bool_format`` option,
-    so this axis is built explicitly rather than via
-    :data:`_SIMPLE_AXES`.
+@runtime_checkable
+class _HasBoolFormat(Protocol):
+    """Structural type for languages that expose a ``bool_format``
+    constructor field.
+
+    Used by :func:`build_bool_format_variants` to narrow a generic
+    :class:`literalizer.Language` to one with the field, without
+    hard-coding the (currently single) language that has it.
     """
-    return [
-        Variant(
-            name=f"Perl_bool_format_{fmt.name.lower()}",
-            spec=make_spec(lang_cls=Perl, bool_format=fmt),
-            lang_cls=Perl,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-        for fmt in Perl.BoolFormats
-        if fmt is not Perl.BoolFormats.INTEGER
-    ]
+
+    bool_format: enum.Enum
+
+
+@beartype
+def build_bool_format_variants() -> Iterable[Variant]:
+    """Build ``bool_format`` variants for every language whose spec
+    exposes the field.  Equivalent to a :data:`_SIMPLE_AXES` entry, but
+    discovered via the :class:`_HasBoolFormat` protocol so languages
+    without the field do not need a stub enum.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(default_spec, _HasBoolFormat):
+            continue
+        default_format = default_spec.bool_format
+        for fmt in type(default_format):
+            if fmt is default_format:
+                continue
+            variants.append(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_bool_format_{fmt.name.lower()}"
+                    ),
+                    spec=make_spec(lang_cls=lang_cls, bool_format=fmt),
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    return variants
 
 
 _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
@@ -1866,7 +1888,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
     ),
-    "perl_bool_format": build_perl_bool_format_variants,
+    "bool_format": build_bool_format_variants,
 }
 
 
@@ -2202,7 +2224,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_dict", suffix=""),
         _ci(case_dir_name="empty_ordered_map", suffix=""),
     ),
-    "perl_bool_format": (
+    "bool_format": (
         _ci(case_dir_name="scalar_bool", suffix=""),
         _ci(case_dir_name="bool_list", suffix=""),
         _ci(case_dir_name="nested_bool_list", suffix=""),
