@@ -230,7 +230,8 @@ Nim exposes the same option through ``Nim.json_types.JSON_NODE``:
        variable_form=NewVariable(name="payload"),
    )
 
-This emits ``%*(...)`` expressions backed by Nim's stdlib ``json`` module,
+This emits ``%*(...)`` expressions backed by Nim's standard-library
+``json`` module,
 relaxes Nim's homogeneous ``seq`` / ``Table`` checks, and switches date and
 datetime values to ISO 8601 strings so they remain valid JSON.  ``CONST``
 declarations are rejected because ``%*`` is a runtime macro and not a

@@ -988,7 +988,9 @@ class Nim(metaclass=LanguageCls):
         """JSON value type options for Nim."""
 
         JSON_NODE = "JsonNode"
-        """Stdlib ``json.JsonNode`` constructed via the ``%*`` macro."""
+        """Standard-library ``json.JsonNode`` value constructed via
+        the ``%*`` macro.
+        """
 
     json_types = JsonTypes
     declaration_styles = DeclarationStyles
