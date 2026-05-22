@@ -32,11 +32,13 @@ def check_golden(
     if (
         not regen
         and golden_path.is_file()
-        and contents.splitlines() == golden_path.read_text().splitlines()
+        and contents.splitlines()
+        == golden_path.read_text(encoding="utf-8").splitlines()
     ):
         return
     file_regression.check(
         contents=contents,
+        encoding="utf-8",
         extension=extension,
         newline=newline,
         fullpath=golden_path,
