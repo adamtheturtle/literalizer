@@ -100,8 +100,8 @@ JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  Rust supports this through the
-``json_type`` constructor argument:
+fit than native narrow collection types.  Rust and C# both support this
+through the ``json_type`` constructor argument:
 
 .. code-block:: python
 
@@ -120,6 +120,31 @@ fit than native narrow collection types.  Rust supports this through the
 This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
 homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
 to be strings so they remain valid JSON object keys.
+
+The same option is available for C# through
+``CSharp.json_types.SYSTEM_TEXT_JSON_NODE``:
+
+.. code-block:: python
+
+   """Render C# data as a System.Text.Json.Nodes value tree."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import CSharp
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=CSharp(json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``new JsonObject { ... }`` / ``new JsonArray { ... }``
+expressions backed by the built-in ``System.Text.Json.Nodes`` library,
+relaxes C#'s homogeneous ``Dictionary<K, V>`` / typed-array checks, and
+switches date / datetime / time values to ISO 8601 strings so they
+remain valid JSON.  The ``const`` modifier is rejected because the JSON
+constructors and the implicit ``(JsonNode?)`` cast applied to scalars
+are runtime expressions, not C# constant initializers.
 
 Custom language implementations
 -------------------------------

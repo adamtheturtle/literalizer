@@ -13,6 +13,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
+    fixed_open,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -25,6 +26,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_csharp,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -111,13 +113,15 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 
 class _CSharpModifiers(enum.Enum):
@@ -302,6 +306,92 @@ class _CSharpDictSpec:
     """Per-format dict config pieces resolved at init time."""
 
     opener_template: str
+
+
+_CSHARP_JSON_USING = "using System.Text.Json.Nodes;"
+_CSHARP_JSON_OBJECT_OPEN = "new JsonObject {"
+_CSHARP_JSON_ARRAY_OPEN = "new JsonArray {"
+_CSHARP_JSON_EMPTY_OBJECT = "new JsonObject()"
+_CSHARP_JSON_EMPTY_ARRAY = "new JsonArray()"
+
+
+@beartype
+def _csharp_json_value_expression(value: str, /) -> str:
+    """Cast a rendered literal to ``JsonNode?`` unless it already
+    evaluates to a ``JsonNode`` (a ``new JsonObject``/``new JsonArray``
+    expression) or has already been cast.
+
+    The cast triggers ``System.Text.Json.Nodes``'s implicit operators
+    that convert primitives (``int``, ``string``, ``bool``, ``double``)
+    to ``JsonValue`` so scalars become ``JsonNode``-typed without an
+    explicit ``JsonValue.Create(...)`` call.
+    """
+    if value.startswith(
+        (
+            _CSHARP_JSON_OBJECT_OPEN,
+            _CSHARP_JSON_ARRAY_OPEN,
+            _CSHARP_JSON_EMPTY_OBJECT,
+            _CSHARP_JSON_EMPTY_ARRAY,
+            "(JsonNode",
+        )
+    ):
+        return value
+    return f"(JsonNode?)({value})"
+
+
+@beartype
+def _format_csharp_json_call_arg(_raw_value: Value, formatted: str) -> str:
+    """Format a direct C# call argument as ``JsonNode?``."""
+    return _csharp_json_value_expression(formatted)
+
+
+@beartype
+def _csharp_json_non_scalar_child(  # pragma: no cover
+    _raw_value: Value,
+    formatted: str,
+) -> str:
+    """Identity wrapper for non-scalar JSON children."""
+    return formatted
+
+
+@beartype
+def _format_csharp_json_assignment(name: str, value: str, _data: Value) -> str:
+    """Assign a rendered literal to a C# ``JsonNode?`` binding."""
+    return f"{name} = {_csharp_json_value_expression(value)};"
+
+
+@beartype
+def _csharp_json_declaration_formatter(
+    *,
+    json_type: str,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Return a declaration formatter for ``JsonNode?`` output.
+
+    A ``const`` modifier is rejected because ``new JsonObject``/
+    ``new JsonArray`` expressions and the ``(JsonNode?)`` cast applied
+    to scalars are runtime constructors / user-defined conversions,
+    not C# compile-time constant expressions.
+    """
+
+    def _formatter(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format a JSON-backed declaration."""
+        if _CSharpModifiers.CONST in modifiers:
+            msg = (
+                "C# 'const' requires a compile-time constant initializer, "
+                f"but {json_type} expressions are not constant. Use "
+                "'readonly' or remove the 'const' modifier."
+            )
+            raise IncompatibleFormatsError(msg)
+        prefix = _csharp_modifier_prefix(modifiers=modifiers)
+        expr = _csharp_json_value_expression(value)
+        return f"{prefix}{json_type}? {name} = {expr};"
+
+    return _formatter
 
 
 @beartype
@@ -491,6 +581,15 @@ class CSharp(metaclass=LanguageCls):
               e.g. ``new DateTime(2024, 1, 15, 12, 30, 0)``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        json_type: When set to
+            ``json_types.SYSTEM_TEXT_JSON_NODE``, render values through
+            ``System.Text.Json.Nodes.JsonNode`` (``JsonObject`` /
+            ``JsonArray`` / typed scalars) instead of C#'s narrow
+            collection types.  Dates and datetimes switch to ISO 8601
+            strings (unless ``datetime_format`` is ``EPOCH``) and the
+            ``const`` modifier is rejected because the JSON
+            constructors are not constant expressions.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -533,13 +632,6 @@ class CSharp(metaclass=LanguageCls):
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     _opener_config = TypedOpenerConfig(
         str_type="string",
@@ -845,7 +937,35 @@ class CSharp(metaclass=LanguageCls):
             ),
         ),
     )
-    validate_spec_for_data = no_validate_spec_for_data
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate C#-specific data / format combinations.
+
+        Under ``json_type`` only dict keys that are strings can be
+        represented as JSON object keys, so a non-string dict key is
+        rejected up-front rather than emitted as a ``[<non-string>]
+        = ...`` initializer that the C# compiler would reject.
+        """
+        if self._json_type_active:
+            self._validate_json_value_keys(data)
+
+    def _validate_json_value_keys(self, data: Value, /) -> None:
+        """Reject non-string object keys for ``JsonNode`` output."""
+        match data:
+            case dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "C# json_type can only represent dict keys "
+                            f"as JSON object strings, not {type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case _:
+                return
 
     def __post_init__(self) -> None:
         """Force ``sequence_format=ARRAY`` for the ``RECORD`` strategy.
@@ -890,6 +1010,16 @@ class CSharp(metaclass=LanguageCls):
         SAFE = enum.auto()
 
     variable_type_hints_formats = VariableTypeHints
+
+    class JsonTypes(enum.Enum):
+        """JSON value type options for C#."""
+
+        SYSTEM_TEXT_JSON_NODE = "JsonNode"
+        """``System.Text.Json.Nodes.JsonNode``, the built-in .NET JSON
+        document object model.
+        """
+
+    json_types = JsonTypes
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -1076,12 +1206,13 @@ class CSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # Keep in sync with the `LanguageVersion` passed to the C# lint host
     # in `.github/scripts/lint-csharp/Program.cs`.
     language_version: VersionFormats = VersionFormats.V10
     indent: str = "    "
 
-    null_literal: ClassVar[str] = "(object?)null"
+    _default_null_literal: ClassVar[str] = "(object?)null"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -1096,6 +1227,37 @@ class CSharp(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether C# should render through ``JsonNode``."""
+        return self.json_type is not None
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Null literal for the active C# representation.
+
+        Under ``json_type`` an explicitly-typed ``(JsonNode?)null``
+        keeps a top-level ``null`` from ambiguously binding to a method
+        overload (``System.Text.Json.Nodes`` exposes implicit operators
+        from many primitive types that a bare ``null`` literal would
+        also match).
+        """
+        if self._json_type_active:
+            return "(JsonNode?)null"
+        return self._default_null_literal
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Under ``json_type`` every call argument is cast to ``JsonNode?``
+        so the underlying stub receives a JSON value; under any other
+        mode call arguments pass through unchanged.
+        """
+        if self._json_type_active:
+            return _format_csharp_json_call_arg
+        return identity_call_arg
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -1107,12 +1269,26 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
-        """Format an assignment to an existing variable."""
+        """Format an assignment to an existing variable.
+
+        Under ``json_type`` the assigned expression is cast to
+        ``JsonNode?`` through the same helper as the declaration form
+        so the two halves of a combined declaration / assignment stay
+        consistent.
+        """
+        if self._json_type_active:
+            return _format_csharp_json_assignment
         return variable_formatter(template="{name} = {value};")
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
-        """Format one ordered-map entry."""
+        """Format one ordered-map entry.
+
+        Under ``json_type`` an ordered map renders as a ``JsonObject``,
+        whose collection initializer takes ``KeyValuePair`` entries via
+        the indexer ``["key"] = value`` form (matching the dict
+        renderer).
+        """
         return dict_entry_with_template(
             template="[{key}] = {value}",
             format_value=passthrough_sequence_entry,
@@ -1232,10 +1408,23 @@ class CSharp(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
+        Under ``json_type`` every rendered file pulls in
+        ``System.Text.Json.Nodes`` unconditionally; the per-collection
+        format configurations leave their ``preamble_lines`` empty so
+        the ``using`` line is emitted here exactly once regardless of
+        which container shapes appear in the data.
+
         Under ``HeterogeneousStrategies.RECORD`` this emits one
         positional ``record`` declaration per record shape present in
         the data; otherwise C# needs no data-dependent preamble.
         """
+        if self._json_type_active:
+
+            def _json_preamble(_data: Value, /) -> tuple[str, ...]:
+                """Always contribute the JsonNode ``using`` directive."""
+                return (_CSHARP_JSON_USING,)
+
+            return _json_preamble
         if self._record_strategy_active:
             return self._record_strategy.preamble
         return no_data_preamble
@@ -1244,10 +1433,20 @@ class CSharp(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
+        ``json_type`` relaxes scalar-type checks unconditionally,
+        because ``JsonObject`` / ``JsonArray`` accept heterogeneous
+        ``JsonNode`` children by construction.
+
         ``RECORD`` resolves to the shared record behavior (its value
         needs the per-instance renderer, so it cannot be stored on the
         enum member); ``ERROR`` uses the static raising behavior.
         """
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+                wrap_non_scalar=_csharp_json_non_scalar_child,
+            )
         if self._record_strategy_active:
             return self._record_strategy.behavior
         return NO_HETEROGENEOUS_BEHAVIOR
@@ -1381,6 +1580,14 @@ class CSharp(metaclass=LanguageCls):
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
+        Under ``json_type`` every sequence is rendered as ``new
+        JsonArray { ... }`` (and ``new JsonArray()`` for the empty
+        case), which accepts heterogeneous ``JsonNode`` children via
+        the implicit conversion operators on
+        ``System.Text.Json.Nodes``.  The ``using`` directive is
+        contributed by :attr:`data_dependent_preamble`, so this config
+        leaves its ``preamble_lines`` empty.
+
         ``()`` parses as an invalid expression in C#; the language's
         ``ValueTuple.Create()`` (or a typed empty array literal
         ``new T[] {}`` for the array format) is the syntactically valid
@@ -1389,6 +1596,26 @@ class CSharp(metaclass=LanguageCls):
         language-level array literal, never ``Array.Empty<T>()``, so the
         array path needs no ``using System;``.
         """
+        if self._json_type_active:
+            return SequenceFormatConfig(
+                sequence_open=fixed_open(open_str=_CSHARP_JSON_ARRAY_OPEN),
+                close="}",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_sequence=_CSHARP_JSON_EMPTY_ARRAY,
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback=None,
+                uses_typed_literal_for_scalars=False,
+                requires_uniform_record_shapes=False,
+                declared_type=(
+                    self.json_type.value
+                    if self.json_type is not None
+                    else None
+                ),
+                narrowed_empty_form=None,
+            )
         element_type = self.default_sequence_element_type
         base = self.sequence_format(default_type=element_type)
         empty = (
@@ -1410,7 +1637,22 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format (with typed opener)."""
+        """Configuration for the chosen set format (with typed opener).
+
+        Under ``json_type`` a set renders as a ``new JsonArray { ... }``
+        because JSON has no native set type; the empty form widens to
+        ``new JsonArray()`` for the same reason an empty sequence does.
+        """
+        if self._json_type_active:
+            return SetFormatConfig(
+                set_open=fixed_open(open_str=_CSHARP_JSON_ARRAY_OPEN),
+                close="}",
+                empty_set=_CSHARP_JSON_EMPTY_ARRAY,
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=True,
+            )
         base = self._base_set_format_config
         return base.with_typed_opener(
             type_to_opener=self._openers.set,
@@ -1453,7 +1695,29 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
+        """Configuration for dict formatting.
+
+        Under ``json_type`` every dict literal is wrapped in ``new
+        JsonObject { ["key"] = value, ... }`` so it renders as a JSON
+        object, and an empty dict widens to ``new JsonObject()``.  The
+        ``using System.Text.Json.Nodes;`` line that powers
+        ``JsonObject`` is contributed by :attr:`data_dependent_preamble`
+        rather than from this config, so a json-mode fixture imports it
+        exactly once regardless of how many dict literals appear.
+        """
+        if self._json_type_active:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str=_CSHARP_JSON_OBJECT_OPEN),
+                close="}",
+                format_entry=dict_entry_with_template(
+                    template="[{key}] = {value}",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=_CSHARP_JSON_EMPTY_OBJECT,
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+            )
         cfg = self._opener_config
         resolved = self._resolved_dict_opener
         return DictFormatConfig(
@@ -1498,17 +1762,40 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
-        """Callable that formats a date as a string literal."""
+        """Callable that formats a date as a string literal.
+
+        ``json_type`` overrides the configured ``date_format`` with the
+        ISO 8601 string form because the C# native ``DateOnly`` literal
+        would not round-trip through JSON.
+        """
+        if self._json_type_active:
+            return format_date_iso
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        ``json_type`` overrides the configured ``datetime_format`` with
+        the ISO 8601 string form unless the user has explicitly chosen
+        the ``EPOCH`` integer form, which remains a valid JSON number.
+        """
+        if (
+            self._json_type_active
+            and self.datetime_format.value.type_produced is not int
+        ):
+            return format_datetime_iso
         return self.datetime_format
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
-        """Callable that formats a time as a string literal."""
+        """Callable that formats a time as a string literal.
+
+        ``json_type`` overrides the native ``TimeOnly`` literal with the
+        ISO 8601 string form so it remains valid JSON.
+        """
+        if self._json_type_active:
+            return format_time_iso
         return format_time_csharp
 
     @cached_property
@@ -1549,7 +1836,21 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
-        """Configuration for ordered-map formatting."""
+        """Configuration for ordered-map formatting.
+
+        Under ``json_type`` an ordered map renders as a ``JsonObject``;
+        the ``System.Text.Json.Nodes`` library preserves the indexer
+        insertion order in the rendered output, so the JSON object
+        opener is interchangeable with the dict opener here.
+        """
+        if self._json_type_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(
+                    open_str=_CSHARP_JSON_OBJECT_OPEN,
+                ),
+                close="}",
+                preamble_lines=(),
+            )
         return ordered_map_format_factory(
             open_template="new Dictionary<{key_type}, {type}> {{",
             close="}",
@@ -1563,7 +1864,21 @@ class CSharp(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under ``json_type`` the declaration carries an explicit
+        ``JsonNode?`` type annotation (never ``var``) and the
+        right-hand side is wrapped in a ``(JsonNode?)`` cast unless the
+        value is already a ``JsonObject`` / ``JsonArray`` literal.  The
+        per-declaration formatter rejects the ``const`` modifier
+        because every json-mode initializer (the cast or the
+        constructor) is a runtime expression.
+        """
+        if self._json_type_active:
+            assert self.json_type is not None  # noqa: S101
+            return _csharp_json_declaration_formatter(
+                json_type=self.json_type.value,
+            )
         date_hint = (
             "string"
             if self.date_format.value.type_produced is str
@@ -1603,7 +1918,17 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble computed from date/datetime format."""
+        """Per-instance scalar preamble computed from date/datetime format.
+
+        Under ``json_type`` the ``using System.Text.Json.Nodes;`` line
+        is contributed by :attr:`data_dependent_preamble` instead, so
+        this method returns an empty per-scalar map to avoid
+        duplicating it; dates / datetimes / times all render as ISO
+        8601 strings (or an epoch integer for the explicit ``EPOCH``
+        datetime format) and need no per-scalar import of their own.
+        """
+        if self._json_type_active:
+            return {}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
