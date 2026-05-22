@@ -3,20 +3,6 @@ Changelog
 
 .. towncrier release notes start
 
-Next
-----
-
-- :class:`~literalizer.languages.perl.Perl` now exposes a ``BoolFormats``
-  option (``bool_format`` constructor argument) so boolean values can
-  round-trip through JSON and YAML libraries.  The default
-  ``BoolFormats.INTEGER`` keeps the historic bare ``1`` / ``0`` output;
-  ``BoolFormats.JSON_PP_REF`` renders ``\1`` / ``\0`` scalar references
-  (the conventional form used by ``JSON::PP``, ``JSON::XS``,
-  ``Cpanel::JSON::XS``, and ``Mojo::JSON``); and
-  ``BoolFormats.JSON_PP_SINGLETON`` renders the ``JSON::PP::true`` /
-  ``JSON::PP::false`` blessed singletons with a ``use JSON::PP;``
-  preamble.
-
 2026.05.21.1
 ------------
 
