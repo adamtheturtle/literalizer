@@ -11,6 +11,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
+    fixed_open,
     make_element_to_type,
 )
 from literalizer._formatters.format_dates import (
@@ -21,6 +22,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -43,6 +45,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
+from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -102,14 +105,15 @@ from literalizer._language import (
     no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
+    no_data_preamble,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import UnrepresentableInputError
 
 
 class _CppModifiers(enum.Enum):
@@ -1273,6 +1277,102 @@ def _cpp_call_stub(
     return tuple(lines)
 
 
+_NLOHMANN_JSON_STATIC_PREAMBLE: tuple[str, ...] = (
+    "#include <nlohmann/json.hpp>",
+)
+
+# C++ raw-string delimiter used to wrap the inline JSON document for
+# ``nlohmann::json::parse``.  The lexer terminates the raw string at the
+# first byte sequence ``)json"``; :func:`json.dumps` always escapes ``"``
+# inside string literals as ``\"``, so the rendered JSON cannot contain
+# the terminator unless the source data itself encodes the literal
+# sequence ``)json"`` (e.g. through a Unicode escape).  The defensive
+# check in :func:`_nlohmann_json_expression` rejects such inputs.
+_NLOHMANN_JSON_DELIM = "json"
+_NLOHMANN_JSON_RAW_TERMINATOR = f'){_NLOHMANN_JSON_DELIM}"'
+
+
+_NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+
+_NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="["),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=True,
+)
+
+
+_NLOHMANN_JSON_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_template(
+        template="{key}: {value}",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=True,
+)
+
+
+_NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _nlohmann_json_expression(data: Value) -> str:
+    """Render ``nlohmann::json::parse(R"json(<json>)json")`` for *data*.
+
+    The framework's rendered ``value`` string is discarded in favor of a
+    fresh :func:`json.dumps` of the raw data, so heterogeneous
+    collections, ``OrderedMap`` values, sets, bytes and temporal values
+    all fold into one shared JSON document.  The raw-string delimiter is
+    chosen so the JSON encoding cannot terminate the literal early; if a
+    pathological input still encodes the terminator sequence the
+    rejection raised below keeps the emitted source well-formed.
+    """
+    json_text = format_json_value_text(data=data)
+    if _NLOHMANN_JSON_RAW_TERMINATOR in json_text:
+        msg = (
+            "Cpp(json_type=NLOHMANN_JSON) cannot represent a value whose "
+            "JSON encoding contains the raw-string terminator "
+            f"sequence {_NLOHMANN_JSON_RAW_TERMINATOR!r}."
+        )
+        raise UnrepresentableInputError(msg)
+    return (
+        f'nlohmann::json::parse(R"{_NLOHMANN_JSON_DELIM}'
+        f'({json_text}){_NLOHMANN_JSON_DELIM}")'
+    )
+
+
+@beartype
+def _format_cpp_json_call_arg(raw_value: Value, _formatted: str) -> str:
+    """Format a direct call argument as ``nlohmann::json::parse(...)``."""
+    return _nlohmann_json_expression(data=raw_value)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
@@ -1295,6 +1395,12 @@ class Cpp(metaclass=LanguageCls):
               + std::chrono::minutes{30}``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        json_type: When set to ``json_types.NLOHMANN_JSON``, render values
+            through ``nlohmann::json::parse`` over an inline JSON document
+            instead of C++'s narrow ``std::vector`` / ``std::map`` /
+            ``std::unordered_map`` collection types.  Dict keys must be
+            strings so they remain valid JSON object keys.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1339,13 +1445,6 @@ class Cpp(metaclass=LanguageCls):
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for C++."""
@@ -1665,6 +1764,16 @@ class Cpp(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for C++."""
+
+        NLOHMANN_JSON = "nlohmann::json"
+        """The ``nlohmann::json`` dynamic JSON value type from the
+        ``nlohmann/json.hpp`` library.
+        """
+
+    json_types = JsonTypes
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -1684,7 +1793,34 @@ class Cpp(metaclass=LanguageCls):
             ),
         ),
     )
-    validate_spec_for_data = no_validate_spec_for_data
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate C++-specific data/format combinations."""
+        if self._json_type_active:
+            self._validate_json_value_keys(data=data)
+
+    def _validate_json_value_keys(self, *, data: Value) -> None:
+        """Reject non-string object keys for ``nlohmann::json``.
+
+        ``OrderedMap`` is a subclass of :class:`dict`, so the ``dict``
+        arm covers it as well.
+        """
+        match data:
+            case dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Cpp json_type can only represent dict keys "
+                            "as JSON object strings, not "
+                            f"{type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(data=value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value_keys(data=item)
+            case _:
+                return
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1802,13 +1938,14 @@ class Cpp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
     # Keep in sync with the ``-std=`` flag passed to clang++ in
     # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
-    null_literal: ClassVar[str] = "nullptr"
+    _default_null_literal: ClassVar[str] = "nullptr"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -1818,9 +1955,35 @@ class Cpp(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
-    static_preamble: ClassVar[Sequence[str]] = ("#include <initializer_list>",)
+    _default_static_preamble: ClassVar[Sequence[str]] = (
+        "#include <initializer_list>",
+    )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ("#include <cmath>",)
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether C++ should render via ``nlohmann::json``."""
+        return self.json_type is not None
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Null literal for the active C++ representation."""
+        if self._json_type_active:
+            return "null"
+        return self._default_null_literal
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file.
+
+        Under :attr:`json_type` the ``nlohmann/json.hpp`` header replaces
+        the default ``<initializer_list>`` include because every emitted
+        expression goes through :func:`nlohmann::json::parse`.
+        """
+        if self._json_type_active:
+            return _NLOHMANN_JSON_STATIC_PREAMBLE
+        return self._default_static_preamble
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
@@ -1840,7 +2003,22 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._json_type_active:
+
+            def _formatter(name: str, _value: str, data: Value) -> str:
+                """Assign a parsed JSON literal to an existing C++ binding."""
+                expr = _nlohmann_json_expression(data=data)
+                return f"{name} = {expr};"
+
+            return _formatter
         return variable_formatter(template="{name} = {value};")
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument."""
+        if self._json_type_active:
+            return _format_cpp_json_call_arg
+        return identity_call_arg
 
     @cached_property
     def call_data_dependent_preamble(
@@ -2058,11 +2236,15 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return _NLOHMANN_JSON_SEQUENCE_CONFIG
         return self.sequence_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return _NLOHMANN_JSON_SET_CONFIG
         return self.set_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
@@ -2105,11 +2287,18 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return format_date_iso
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if (
+            self._json_type_active
+            and self.datetime_format.value.type_produced is not int
+        ):
+            return format_datetime_iso
         return self.datetime_format
 
     @cached_property
@@ -2138,6 +2327,8 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return _NLOHMANN_JSON_DICT_CONFIG
         return self.dict_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
@@ -2148,6 +2339,8 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return _NLOHMANN_JSON_ORDERED_MAP_CONFIG
         return _build_ordered_map_config(type_ctx=self._type_ctx)
 
     @cached_property
@@ -2163,6 +2356,8 @@ class Cpp(metaclass=LanguageCls):
         headers, plus ``<tuple>`` under the ``TUPLE`` strategy or the
         generated ``struct`` declarations under ``RECORD``).
         """
+        if self._json_type_active:
+            return no_data_preamble
         if self._record_strategy_active:
             return _build_cpp_record_preamble(
                 type_ctx=self._type_ctx,
@@ -2181,6 +2376,11 @@ class Cpp(metaclass=LanguageCls):
         enum member); ``TUPLE`` and ``ERROR`` use their static
         behaviors.
         """
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         if self._record_strategy_active:
             return self._record_strategy.behavior
         if self._tuple_strategy_active:
@@ -2197,6 +2397,24 @@ class Cpp(metaclass=LanguageCls):
         ``const auto*`` vs ``auto`` decision can be driven by the parsed
         :class:`Value` rather than the rendered text.
         """
+        if self._json_type_active:
+            assert self.json_type is not None  # noqa: S101
+            json_type_name = self.json_type.value
+
+            def _json_formatter(
+                name: str,
+                _value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Render a ``nlohmann::json`` declaration via
+                :func:`nlohmann::json::parse` over the inline JSON text.
+                """
+                expr = _nlohmann_json_expression(data=data)
+                prefix = _cpp_modifier_prefix(modifiers=modifiers)
+                return f"{prefix}{json_type_name} {name} = {expr};"
+
+            return _json_formatter
         date_type = self.date_format.value.type_produced
         datetime_type = self.datetime_format.value.type_produced
 
@@ -2223,6 +2441,8 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
+        if self._json_type_active:
+            return {}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
