@@ -101,7 +101,8 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Scala, C#,
-and Nim support this through the ``json_type`` constructor argument:
+Nim, and Haskell support this through the ``json_type`` constructor
+argument:
 
 .. code-block:: python
 
@@ -236,6 +237,31 @@ relaxes Nim's homogeneous ``seq`` / ``Table`` checks, and switches date and
 datetime values to ISO 8601 strings so they remain valid JSON.  ``CONST``
 declarations are rejected because ``%*`` is a runtime macro and not a
 constant-expression initializer.
+
+Haskell exposes the same option through the ``Data.Aeson.Value``
+type from the ``aeson`` package:
+
+.. code-block:: python
+
+   """Render Haskell data as a ``Data.Aeson.Value``."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Haskell
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits an ``[aesonQQ| ... |]`` quasi-quote bracket from
+``Data.Aeson.QQ``, mirroring the ``serde_json::json!`` macro on the
+Rust side, so the rendered binding has the static type
+``Data.Aeson.Value`` instead of Haskell's narrow custom ``Val``
+algebraic type, and can hold the heterogeneous values that ``Val``'s
+closed set of constructors rejects.  Dict keys must be strings so they
+remain valid JSON object keys.
 
 Zig exposes the same option through ``Zig.json_types.STD_JSON_VALUE``:
 

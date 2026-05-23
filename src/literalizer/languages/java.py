@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import enum
 import functools
-import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -51,6 +50,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_overflow_suffix_formatter,
 )
+from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -647,58 +647,9 @@ _JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
-def _temporal_to_iso(data: datetime.date | datetime.time) -> str:
-    """Return ISO-8601 text for a date / datetime / time value.
-
-    Naive datetimes are anchored to UTC so Jackson can round-trip them
-    through ``readTree`` without a missing-offset error.
-    """
-    if isinstance(data, datetime.datetime):
-        iso = data.isoformat()
-        if data.tzinfo is None:
-            iso += "Z"
-        return iso
-    return data.isoformat()
-
-
-@beartype
-def _to_jsonable(data: Value) -> object:
-    """Convert *data* into a value that :func:`json.dumps` can serialize.
-
-    Dates, datetimes, and times become ISO-8601 strings (JSON has no
-    temporal type).  Bytes become a hex-encoded string.  Sets and
-    :class:`OrderedMap` are folded into list/dict respectively.  Non-string
-    dict keys are not handled here; the caller validates first.
-    """
-    match data:
-        case datetime.datetime() | datetime.date() | datetime.time():
-            return _temporal_to_iso(data=data)
-        case bytes():
-            return data.hex()
-        case OrderedMap() | dict():
-            return {
-                key: _to_jsonable(data=value) for key, value in data.items()
-            }
-        case set():
-            items = [_to_jsonable(data=item) for item in data]
-            items.sort(key=repr)
-            return items
-        case list():
-            return [_to_jsonable(data=item) for item in data]
-        case _:
-            return data
-
-
-@beartype
-def _format_java_json_value(data: Value) -> str:
-    """Serialize *data* as a single-line JSON expression."""
-    return json.dumps(obj=_to_jsonable(data=data), ensure_ascii=False)
-
-
-@beartype
 def _java_read_tree_expression(data: Value) -> str:
     """Render ``new ObjectMapper().readTree("...")`` for *data*."""
-    json_text = _format_java_json_value(data=data)
+    json_text = format_json_value_text(data=data)
     java_literal = format_string_backslash(value=json_text)
     return f"new ObjectMapper().readTree({java_literal})"
 
