@@ -528,6 +528,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="Haskell_json_type_aeson_value",
+            spec=make_spec(
+                lang_cls=Haskell,
+                json_type=Haskell.json_types.AESON_VALUE,
+            ),
+            lang_cls=Haskell,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="Zig_json_type_std_json_value",
             spec=make_spec(
                 lang_cls=Zig,
@@ -2476,6 +2485,20 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Haskell_json_type_aeson_value_existing",
+                variant=Variant(
+                    name="Haskell_json_type_aeson_value_existing",
+                    spec=make_spec(
+                        lang_cls=Haskell,
+                        json_type=Haskell.json_types.AESON_VALUE,
+                    ),
+                    lang_cls=Haskell,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.ExistingVariable(name="my_data"),
             ),
             VariantCase(
                 variant_name="Nim_json_type_json_node_let",

@@ -1128,7 +1128,7 @@ jobs:
       # holds the build-depends list), so a dependency bump invalidates
       # automatically. `~/.cabal/packages` holds the Hackage index.
       - name: Cache cabal store
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cabal/store
@@ -1150,6 +1150,29 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+
+      # The `aeson` and `aeson-qq` packages are needed by the
+      # `Haskell(json_type=Haskell.json_types.AESON_VALUE)` fixtures so
+      # they compile under the bare `ghc` invocation below (which does
+      # not see the cabal-script `build-depends` block used by the
+      # `Haskell roundtrip` step). `cabal install --lib` registers them
+      # in the user package database so the subsequent `ghc` call
+      # resolves `Data.Aeson` and `Data.Aeson.QQ`. The file-level
+      # `{-# LANGUAGE QuasiQuotes  #-}` pragma is honored by `ghc`, so
+      # no extra `-XQuasiQuotes` command-line flag is needed.
+      # `template-haskell` ships with GHC.  `base`, `time`, and
+      # `bytestring` are also listed here because `cabal install --lib`
+      # writes a default package environment whose visibility is
+      # restricted to the packages named on the command line plus their
+      # transitive dependencies; without an explicit listing the
+      # subsequent `ghc` call cannot resolve boot libraries like
+      # `Data.Time` that non-`json_type` Haskell fixtures rely on.
+      # Keep this paired with the `AESON_VALUE` member in
+      # `Haskell.JsonTypes` in `src/literalizer/languages/haskell.py`.
+      - name: Install aeson / aeson-qq for Haskell lint
+        run: |-
+          cabal update
+          cabal install --lib aeson aeson-qq base time bytestring
 
       # Compile all fixtures in a single ghc invocation to pay GHC's
       # startup cost once. Each fixture already carries a unique module
