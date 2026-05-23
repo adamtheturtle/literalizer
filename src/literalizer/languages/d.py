@@ -360,14 +360,16 @@ def _d_narrow_sequence_open(items: list[Value], /) -> str:
 def _d_narrow_dict_open(value: dict[Scalar, Value], /) -> str:
     """Return the raw D AA opener under narrow-typed mode.
 
-    A non-empty all-string-keyed dict whose values share a single
-    inferred type is rendered as ``["k": v, ...]``, D's associative
-    array literal whose value type is inferred from the first entry.
-    An empty dict, a non-string-keyed dict, or a heterogeneous-valued
-    dict has no raw D AA representation and is rejected.
+    Renders a record-shaped dict whose values share a single inferred
+    type as ``["k": v, ...]``, D's associative-array literal whose
+    value type is inferred from the first entry.  A
+    heterogeneous-valued dict has no raw D AA representation and is
+    rejected.  Empty / non-string-keyed dicts cannot reach this
+    opener: :func:`_d_narrow_validate_data` rejects an empty dict
+    up front, and D's framework-level
+    ``supports_non_string_dict_keys=False`` rejects a non-string
+    key before render.
     """
-    if record_shape_for_dict(value=value) is None:
-        raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
     if infer_element_type(items=list(value.values())) is None:
         raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
     return "["
