@@ -554,6 +554,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=D,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="Kotlin_json_type_kotlinx_json_element",
+            spec=make_spec(
+                lang_cls=Kotlin,
+                json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT,
+            ),
+            lang_cls=Kotlin,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2499,6 +2508,21 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.ExistingVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Kotlin_json_type_kotlinx_json_element_combined",
+                variant=Variant(
+                    name="Kotlin_json_type_kotlinx_json_element_combined",
+                    spec=make_spec(
+                        lang_cls=Kotlin,
+                        json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT,
+                        declaration_style=Kotlin.declaration_styles.VAR,
+                    ),
+                    lang_cls=Kotlin,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
             ),
             VariantCase(
                 variant_name="Nim_json_type_json_node_let",

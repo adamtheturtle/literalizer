@@ -9,6 +9,30 @@ val files = System.`in`.bufferedReader().readText()
     .split('\u0000')
     .filter { it.isNotEmpty() }
 
+// Optional `LITERALIZER_LINT_CLASSPATH` (colon-separated, with `dir/*`
+// wildcards expanded to every jar in `dir/`) is forwarded to the
+// per-script compiler so json_type fixtures resolve against
+// kotlinx-serialization-json at lint time.  See `Lint Kotlin` in
+// `.github/workflows/lint.yml` for the wiring.
+val extraClasspath = (System.getenv("LITERALIZER_LINT_CLASSPATH") ?: "")
+    .split(":")
+    .filter { it.isNotEmpty() }
+    .flatMap { entry ->
+        if (entry.endsWith("/*")) {
+            val dir = java.nio.file.Paths.get(entry.dropLast(2))
+            java.nio.file.Files.newDirectoryStream(dir, "*.jar").use { stream ->
+                stream.map { it.toString() }.sorted()
+            }
+        } else {
+            listOf(entry)
+        }
+    }
+val classpathArgs = if (extraClasspath.isEmpty()) {
+    emptyList()
+} else {
+    listOf("-classpath", extraClasspath.joinToString(separator = ":"))
+}
+
 val compiler = K2JVMCompiler()
 var allOk = true
 
@@ -18,14 +42,15 @@ for (path in files) {
         // `-language-version 1.9` and `-api-version 1.9` match
         // `Kotlin.language_version` in `src/literalizer/languages/kotlin.py`;
         // keep them in sync.
-        val exit = compiler.exec(
-            System.err,
+        val args = mutableListOf(
             "-script",
             "-language-version", "1.9",
             "-api-version", "1.9",
             "-d", out.absolutePath,
-            path,
         )
+        args.addAll(classpathArgs)
+        args.add(path)
+        val exit = compiler.exec(System.err, *args.toTypedArray())
         if (exit != ExitCode.OK) {
             System.err.println("Failed: $path")
             allOk = false
