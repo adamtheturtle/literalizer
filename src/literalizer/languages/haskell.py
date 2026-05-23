@@ -1185,8 +1185,17 @@ def _format_haskell_json_assignment(
     _value: str,
     data: Value,
 ) -> str:
-    """Format a ``Value`` assignment backed by ``aesonQQ``."""
-    return f"{name} = {_aeson_quasi_expression(data=data)}"
+    """Format a ``Value`` assignment backed by ``aesonQQ``.
+
+    Haskell has no mutable bindings, so an ``ExistingVariable``
+    assignment at module top level is just another binding -- emitted
+    with the same ``name :: Value`` signature as the declaration form so
+    the rendered file keeps the ``Data.Aeson (Value)`` import live
+    (otherwise ``-Wunused-imports`` fires) and satisfies
+    ``-Wmissing-signatures`` under ``-Wall -Werror``.
+    """
+    expression = _aeson_quasi_expression(data=data)
+    return f"{name} :: Value\n{name} = {expression}"
 
 
 @beartype
