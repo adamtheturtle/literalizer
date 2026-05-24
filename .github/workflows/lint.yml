@@ -289,6 +289,13 @@ jobs:
           xargs -0 php -l < /tmp/files-php
           xargs -0 -P "$(nproc)" -n1 php < /tmp/files-php
 
+      # Basic JSON -> PHP -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the PHP toolchain; `uv run` (project
+      # mode, not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_php_roundtrip.py`.
+      - name: Php roundtrip
+        run: uv run python .github/scripts/run_php_roundtrip.py
+
       # Parse every fixture inside a single pwsh invocation so the .NET
       # and PowerShell startup cost is paid once instead of per fixture.
       # The run step reuses the same trick: one pwsh process iterates
