@@ -1343,9 +1343,7 @@ _NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 @beartype
 def _nlohmann_json_expression(data: Value) -> str:
-    """Render ``nlohmann::json::parse(R"json(<json>)json", nullptr,
-    false)``
-    for *data*.
+    """Render a ``nlohmann::json::parse(...)`` expression for *data*.
 
     The framework's rendered ``value`` string is discarded in favor of a
     fresh :func:`json.dumps` of the raw data, so heterogeneous
@@ -1355,10 +1353,10 @@ def _nlohmann_json_expression(data: Value) -> str:
     pathological input still encodes the terminator sequence the
     rejection raised below keeps the emitted source well-formed.
 
-    The trailing ``nullptr, false`` arguments disable ``parse``'s
-    default throw-on-error behavior (``allow_exceptions=false``) so the
-    generated ``main`` does not acquire a throwing callee that
-    ``clang-tidy``'s ``bugprone-exception-escape`` would reject.  The
+    The trailing ``allow_exceptions=false`` argument disables
+    ``parse``'s default throw-on-error behavior so the generated
+    ``main`` is not made throwing by the parse call (which
+    ``clang-tidy``'s ``bugprone-exception-escape`` would reject).  The
     rendered JSON is always well-formed by construction, so the
     discarded-error path is unreachable from valid input.
     """
