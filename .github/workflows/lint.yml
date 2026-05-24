@@ -1521,6 +1521,20 @@ jobs:
       # the binding's right-hand side to execute.
       - name: Run OCaml files
         run: xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml < /tmp/files-to-lint
+      # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
+      # the helper in project mode so ``import literalizer`` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> OCaml -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the OCaml toolchain; ``uv run``
+      # (project mode, not ``--no-project``) is required so
+      # ``import literalizer`` resolves. See
+      # ``.github/scripts/run_ocaml_roundtrip.py``.
+      - name: OCaml roundtrip
+        run: opam exec -- uv run python .github/scripts/run_ocaml_roundtrip.py
 
   lint-commonlisp:
     runs-on: ubuntu-latest
