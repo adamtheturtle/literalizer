@@ -741,8 +741,8 @@ def _make_format_kotlin_json_declaration(
     """Build a JsonElement declaration formatter for ``val`` or ``var``.
 
     The keyword tracks ``declaration_style`` so the combined
-    declaration + assignment form stays compilable (``var`` lets the
-    later assignment retarget the binding).
+    declaration + assignment form stays valid Kotlin (``var`` lets the
+    later assignment rebind the variable).
     """
 
     @beartype
