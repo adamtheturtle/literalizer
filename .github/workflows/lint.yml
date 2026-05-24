@@ -1580,6 +1580,20 @@ jobs:
           scala-cli run "$workspace" -S 3 \
             --dep io.circe::circe-core:0.14.10 \
             --main-class __run
+      # `uv` is needed by the `Scala roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Scala -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Scala toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves.  See
+      # `.github/scripts/run_scala_roundtrip.py`.
+      - name: Scala roundtrip
+        run: uv run python .github/scripts/run_scala_roundtrip.py
 
   lint-haxe:
     runs-on: ubuntu-latest

@@ -1,1 +1,1 @@
-Add Ruby, TypeScript, Haskell, Perl, PHP, Go, Zig, C#, and Swift JSON round-trip checks to CI using the shared round-trip fixture.
+Add Ruby, TypeScript, Haskell, Perl, PHP, Go, Zig, C#, Scala, and Swift JSON round-trip checks to CI using the shared round-trip fixture.
