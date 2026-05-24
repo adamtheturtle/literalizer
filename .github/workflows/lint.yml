@@ -2150,6 +2150,20 @@ jobs:
             printf '}\n'
           } > "$driver"
           zig run "$driver"
+      # `uv` is needed by the `Zig roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Zig -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Zig toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_zig_roundtrip.py`.
+      - name: Zig roundtrip
+        run: uv run python .github/scripts/run_zig_roundtrip.py
 
   lint-systemverilog:
     runs-on: ubuntu-latest
