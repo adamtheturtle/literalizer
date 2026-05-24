@@ -631,7 +631,7 @@ _KOTLINX_JSON_ELEMENT_PREAMBLE: tuple[str, ...] = (
 # Sequence/dict format definitions used while ``json_type`` is active.
 # The framework still walks the data to compute a formatted ``value``,
 # but that string is discarded by
-# :func:`_format_kotlin_json_declaration` and friends in favor of a
+# :func:`_make_format_kotlin_json_declaration` and friends in favor of a
 # fresh ``json.dumps`` of the raw data.  These definitions only need to
 # be permissive enough that the formatting pass does not error on
 # heterogeneous data or nulls inside containers.
@@ -734,17 +734,29 @@ def _kotlin_parse_to_json_element_expression(data: Value) -> str:
 
 
 @beartype
-def _format_kotlin_json_declaration(
-    name: str,
-    _value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format a JsonElement declaration backed by
-    ``parseToJsonElement``.
+def _make_format_kotlin_json_declaration(
+    *,
+    keyword: str,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build a JsonElement declaration formatter for ``val`` or ``var``.
+
+    The keyword tracks ``declaration_style`` so the combined
+    declaration + assignment form stays compilable (``var`` lets the
+    later assignment retarget the binding).
     """
-    expression = _kotlin_parse_to_json_element_expression(data=data)
-    return f"val {name}: JsonElement = {expression}"
+
+    @beartype
+    def _format(
+        name: str,
+        _value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format the declaration with the bound *keyword*."""
+        expression = _kotlin_parse_to_json_element_expression(data=data)
+        return f"{keyword} {name}: JsonElement = {expression}"
+
+    return _format
 
 
 @beartype
@@ -1977,7 +1989,9 @@ class Kotlin(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         if self._json_type_active:
-            return _format_kotlin_json_declaration
+            return _make_format_kotlin_json_declaration(
+                keyword=self.declaration_style.name.lower(),
+            )
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
