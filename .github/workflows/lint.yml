@@ -1414,6 +1414,23 @@ jobs:
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
+      # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Kotlin -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Kotlin toolchain and the
+      # kotlinx-serialization-json jars already on disk; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_kotlin_roundtrip.py`.
+      - name: Kotlin roundtrip
+        env:
+          LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
+        run: uv run python .github/scripts/run_kotlin_roundtrip.py
 
   lint-swift:
     runs-on: ubuntu-latest
