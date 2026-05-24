@@ -1269,6 +1269,11 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
+      # need the single-header library; the Ubuntu package ships
+      # ``<nlohmann/json.hpp>`` under the default include path.
+      - name: Install nlohmann/json
+        run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
       # ``-std=c++20`` matches ``Cpp.language_version`` in
       # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Run clang-tidy on C++ files
@@ -1330,6 +1335,11 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
+      # need the single-header library; the Ubuntu package ships
+      # ``<nlohmann/json.hpp>`` under the default include path.
+      - name: Install nlohmann/json
+        run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers 269 times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in

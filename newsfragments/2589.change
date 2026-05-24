@@ -1,0 +1,1 @@
+Add ``Cpp(json_type=Cpp.json_types.NLOHMANN_JSON)`` to render values through ``nlohmann::json::parse`` instead of C++'s narrow ``std::vector`` / ``std::map`` / ``std::unordered_map`` collection types.

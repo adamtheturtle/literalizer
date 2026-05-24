@@ -188,6 +188,7 @@ mypy
 namespaces
 nan
 natively
+nlohmann
 norc
 normalise
 ocamlopt

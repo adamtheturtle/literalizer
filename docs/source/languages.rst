@@ -101,7 +101,7 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
-Scala, C#, Nim, Haskell, Zig, and D support this through the
+Scala, C#, Nim, Haskell, Zig, C++, and D support this through the
 ``json_type`` constructor argument (D's polarity is reversed; see below):
 
 .. code-block:: python
@@ -312,6 +312,32 @@ times, and bytes into JSON-friendly strings.  Dict keys must be
 strings, and ``heterogeneous_strategy=RECORD`` is rejected because
 ``parseFromSlice`` rendering cannot be combined with generated
 ``struct`` declarations.
+
+C++ exposes the same option through ``Cpp.json_types.NLOHMANN_JSON``:
+
+.. code-block:: python
+
+   """Render C++ data as nlohmann::json."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Cpp
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``nlohmann::json::parse(R"json(...)json")`` expressions and
+adds the ``#include <nlohmann/json.hpp>`` preamble line so the rendered
+binding has the static type ``nlohmann::json`` instead of C++'s narrow
+``std::vector`` / ``std::map`` / ``std::unordered_map`` collection
+types, and can hold the heterogeneous values that ``std::variant``
+would otherwise be needed for.  Dict keys must be strings so they
+remain valid JSON object keys, and the input must not encode the
+raw-string terminator sequence ``)json"`` (e.g. through a dict key
+ending in ``)json``).
 
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``

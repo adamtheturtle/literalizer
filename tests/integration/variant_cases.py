@@ -19,6 +19,7 @@ from literalizer.languages import (
     ALL_LANGUAGES,
     C,
     Cobol,
+    Cpp,
     Crystal,
     CSharp,
     D,
@@ -561,6 +562,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT,
             ),
             lang_cls=Kotlin,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Cpp_json_type_nlohmann_json",
+            spec=make_spec(
+                lang_cls=Cpp,
+                json_type=Cpp.json_types.NLOHMANN_JSON,
+            ),
+            lang_cls=Cpp,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
     ]
@@ -2519,6 +2529,20 @@ def build_variant_cases() -> list[VariantCase]:
                         declaration_style=Kotlin.declaration_styles.VAR,
                     ),
                     lang_cls=Kotlin,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Cpp_json_type_nlohmann_json_combined",
+                variant=Variant(
+                    name="Cpp_json_type_nlohmann_json_combined",
+                    spec=make_spec(
+                        lang_cls=Cpp,
+                        json_type=Cpp.json_types.NLOHMANN_JSON,
+                    ),
+                    lang_cls=Cpp,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
