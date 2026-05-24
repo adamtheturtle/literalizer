@@ -100,9 +100,9 @@ JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  Rust, Crystal, Java, Scala, C#,
-Nim, Haskell, Zig, C++, and D support this through the ``json_type``
-constructor argument (D's polarity is reversed; see below):
+fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
+Scala, C#, Nim, Haskell, Zig, C++, and D support this through the
+``json_type`` constructor argument (D's polarity is reversed; see below):
 
 .. code-block:: python
 
@@ -168,6 +168,30 @@ and can hold the heterogeneous values that Java's narrow ``List`` /
 ``Map`` types reject.  Dict keys must be strings, and the
 ``RECORD`` ``heterogeneous_strategy`` is rejected because the two
 rendering modes cannot be combined.
+
+Kotlin exposes the same option through the ``JsonElement`` type from
+``kotlinx.serialization.json``:
+
+.. code-block:: python
+
+   """Render Kotlin data as a JsonElement."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Kotlin
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``Json.parseToJsonElement("...")`` so the rendered binding
+has the static type ``kotlinx.serialization.json.JsonElement`` and can
+hold the heterogeneous values that Kotlin's narrow ``List`` / ``Map``
+types reject.  Dict keys must be strings, and the ``RECORD`` and
+``TUPLE`` ``heterogeneous_strategy`` options are rejected because the
+two rendering modes cannot be combined.
 
 Scala exposes the same option for Circe's :class:`io.circe.Json`:
 

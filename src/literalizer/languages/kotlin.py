@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -30,6 +31,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -116,12 +118,15 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import InvalidRecordNameError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    InvalidRecordNameError,
+    UnrepresentableInputError,
+)
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
@@ -617,6 +622,161 @@ def _kotlin_tuple_arity_representable(arity: int, /) -> bool:
     return arity in {2, 3}
 
 
+_KOTLINX_JSON_ELEMENT_PREAMBLE: tuple[str, ...] = (
+    "import kotlinx.serialization.json.Json",
+    "import kotlinx.serialization.json.JsonElement",
+)
+
+
+# Sequence/dict format definitions used while ``json_type`` is active.
+# The framework still walks the data to compute a formatted ``value``,
+# but that string is discarded by
+# :func:`_make_format_kotlin_json_declaration` and friends in favor of a
+# fresh ``json.dumps`` of the raw data.  These definitions only need to
+# be permissive enough that the formatting pass does not error on
+# heterogeneous data or nulls inside containers.
+_JSON_NODE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+_JSON_NODE_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="["),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=True,
+)
+
+_JSON_NODE_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_template(
+        template="{key}: {value}",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=True,
+)
+
+_JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _kotlin_temporal_to_iso(data: datetime.date | datetime.time) -> str:
+    """Return ISO-8601 text for a date / datetime / time value."""
+    return data.isoformat()
+
+
+@beartype
+def _kotlin_to_jsonable(data: Value) -> object:
+    """Convert *data* into a value :func:`json.dumps` can serialize.
+
+    Dates, datetimes, and times become ISO-8601 strings (JSON has no
+    temporal type).  Bytes become a hex-encoded string.  Sets and
+    :class:`OrderedMap` are folded into list/dict respectively.  Non-
+    string dict keys are not handled here; the caller validates first.
+    """
+    match data:
+        case datetime.datetime() | datetime.date() | datetime.time():
+            return _kotlin_temporal_to_iso(data=data)
+        case bytes():
+            return data.hex()
+        case OrderedMap() | dict():
+            return {
+                key: _kotlin_to_jsonable(data=value)
+                for key, value in data.items()
+            }
+        case set():
+            items = [_kotlin_to_jsonable(data=item) for item in data]
+            items.sort(key=repr)
+            return items
+        case list():
+            return [_kotlin_to_jsonable(data=item) for item in data]
+        case _:
+            return data
+
+
+@beartype
+def _format_kotlin_json_value(data: Value) -> str:
+    """Serialize *data* as a single-line JSON expression."""
+    return json.dumps(
+        obj=_kotlin_to_jsonable(data=data),
+        ensure_ascii=False,
+    )
+
+
+@beartype
+def _kotlin_parse_to_json_element_expression(data: Value) -> str:
+    """Render ``Json.parseToJsonElement("...")`` for *data*."""
+    json_text = _format_kotlin_json_value(data=data)
+    kotlin_literal = format_string_backslash_dollar(value=json_text)
+    return f"Json.parseToJsonElement({kotlin_literal})"
+
+
+@beartype
+def _make_format_kotlin_json_declaration(
+    *,
+    keyword: str,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build a JsonElement declaration formatter for ``val`` or ``var``.
+
+    The keyword tracks ``declaration_style`` so the combined
+    declaration + assignment form stays valid Kotlin (``var`` lets the
+    later assignment rebind the variable).
+    """
+
+    @beartype
+    def _format(
+        name: str,
+        _value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format the declaration with the bound *keyword*."""
+        expression = _kotlin_parse_to_json_element_expression(data=data)
+        return f"{keyword} {name}: JsonElement = {expression}"
+
+    return _format
+
+
+@beartype
+def _format_kotlin_json_assignment(
+    name: str,
+    _value: str,
+    data: Value,
+) -> str:
+    """Format a JsonElement assignment backed by
+    ``parseToJsonElement``.
+    """
+    return f"{name} = {_kotlin_parse_to_json_element_expression(data=data)}"
+
+
+@beartype
+def _format_kotlin_json_call_arg(raw_value: Value, _formatted: str) -> str:
+    """Format a direct call argument as a JsonElement literal."""
+    return _kotlin_parse_to_json_element_expression(data=raw_value)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Kotlin(metaclass=LanguageCls):
@@ -646,6 +806,11 @@ class Kotlin(metaclass=LanguageCls):
               sequences, ``Triple(…)`` for three-element sequences,
               e.g. ``Pair("a", 1)``.  Other sizes fall back to
               ``listOf<Any?>(…)``.
+
+        json_type: When set to ``json_types.KOTLINX_JSON_ELEMENT``,
+            render values through ``Json.parseToJsonElement(...)`` so
+            the output produces a ``kotlinx.serialization.json.JsonElement``
+            instead of Kotlin's narrow ``List`` / ``Map`` / array types.
     """
 
     format_call_variable_declaration = default_format_call_variable_declaration
@@ -687,13 +852,6 @@ class Kotlin(metaclass=LanguageCls):
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     _opener_config = TypedOpenerConfig(
         str_type="String",
@@ -1088,6 +1246,14 @@ class Kotlin(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Kotlin."""
+
+        KOTLINX_JSON_ELEMENT = "kotlinx.serialization.json.JsonElement"
+        """Dynamic JSON value type from ``kotlinx.serialization.json``."""
+
+    json_types = JsonTypes
+
     class VersionFormats(enum.Enum):
         """Version options for Kotlin."""
 
@@ -1104,8 +1270,6 @@ class Kotlin(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
-
-    validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1179,6 +1343,7 @@ class Kotlin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
         default_factory=lambda: MappingProxyType(mapping={}),
@@ -1199,13 +1364,87 @@ class Kotlin(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     def __post_init__(self) -> None:
         """Validate ``record_shape_names`` after construction."""
         self._validate_record_naming()
+        self._validate_json_type_spec()
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether Kotlin should render via ``JsonElement``."""
+        return self.json_type is not None
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """Static preamble lines emitted once per file.
+
+        When :attr:`json_type` is active the ``Json`` and ``JsonElement``
+        imports are emitted here so every fixture has them in scope
+        regardless of the rendered data.
+        """
+        if self._json_type_active:
+            return _KOTLINX_JSON_ELEMENT_PREAMBLE
+        return ()
+
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument."""
+        if self._json_type_active:
+            return _format_kotlin_json_call_arg
+        return identity_call_arg
+
+    def _validate_json_type_spec(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit.
+
+        ``Json.parseToJsonElement(...)`` produces a single
+        ``JsonElement`` value; a ``RECORD`` or ``TUPLE`` heterogeneous
+        strategy would generate ``data class`` declarations and
+        ``Pair``/``Triple`` literals that have no place inside that
+        single JSON value, so both are rejected up front.
+        """
+        if not self._json_type_active:
+            return
+        cls = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is not cls.ERROR:
+            msg = (
+                "Kotlin json_type renders data through "
+                "Json.parseToJsonElement(...) and is incompatible with "
+                f"heterogeneous_strategy={self.heterogeneous_strategy.name}, "
+                "which generates typed declarations. Use "
+                "heterogeneous_strategy=ERROR."
+            )
+            raise IncompatibleFormatsError(msg)
+
+    def _validate_json_value_keys(self, data: Value, /) -> None:
+        """Reject non-string object keys for ``JsonElement``."""
+        match data:
+            case OrderedMap() | dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Kotlin json_type can only represent dict "
+                            "keys as JSON object strings, not "
+                            f"{type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case _:
+                return
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate the spec against the data.
+
+        When :attr:`json_type` is active, walk *data* to reject non-
+        string dict keys, which JSON objects cannot represent.
+        """
+        if self._json_type_active:
+            self._validate_json_value_keys(data)
 
     def _validate_record_naming(self) -> None:
         """Validate ``record_shape_names`` for PascalCase identifier
@@ -1266,6 +1505,8 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._json_type_active:
+            return _format_kotlin_json_assignment
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
@@ -1432,7 +1673,13 @@ class Kotlin(metaclass=LanguageCls):
         carries an out-of-range integer; under
         ``HeterogeneousStrategies.RECORD`` additionally emits one
         ``data class`` declaration per record shape present in the data.
+        When :attr:`json_type` is active neither applies: integers
+        outside the 64-bit range ride inside the JSON text, and the
+        data flows through a single ``Json.parseToJsonElement`` call
+        instead of typed records.
         """
+        if self._json_type_active:
+            return no_data_preamble
         record_preamble = self._record_strategy.preamble
 
         def _preamble(data: Value, /) -> tuple[str, ...]:
@@ -1444,6 +1691,11 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self._record_strategy.behavior
 
     @cached_property
@@ -1549,6 +1801,8 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return _JSON_NODE_SEQUENCE_CONFIG
         return self.sequence_format.value
 
     @cached_property
@@ -1561,6 +1815,8 @@ class Kotlin(metaclass=LanguageCls):
         ``RecordN(...)`` literals, not the ``Map<...>`` the typed
         opener would otherwise infer).
         """
+        if self._json_type_active:
+            return _JSON_NODE_SEQUENCE_CONFIG.sequence_open
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
             base = fmt.sequence_open
@@ -1593,6 +1849,8 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return _JSON_NODE_SET_CONFIG
         base = self.set_format(default_type=self.default_set_element_type)
         openers = self._opener_config.build(
             date_type=self._date_type_name,
@@ -1609,6 +1867,8 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return _JSON_NODE_DICT_CONFIG
         resolved_dict_opener = self.dict_format.value.opener_template.replace(
             "{key_type}",
             self.default_dict_key_type,
@@ -1702,6 +1962,8 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return _JSON_NODE_ORDERED_MAP_CONFIG
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
                 open_str=(
@@ -1726,6 +1988,10 @@ class Kotlin(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self._json_type_active:
+            return _make_format_kotlin_json_declaration(
+                keyword=self.declaration_style.name.lower(),
+            )
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
@@ -1757,7 +2023,15 @@ class Kotlin(metaclass=LanguageCls):
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble computed from date/datetime format."""
+        """Per-instance scalar preamble computed from date/datetime format.
+
+        Under :attr:`json_type` every temporal value is folded into the
+        JSON text as an ISO-8601 string, so the temporal Kotlin imports
+        that the configured ``date_format`` / ``datetime_format`` would
+        otherwise add do not apply.
+        """
+        if self._json_type_active:
+            return {}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
