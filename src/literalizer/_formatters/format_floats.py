@@ -1,5 +1,7 @@
 """Float formatting functions for finite values."""
 
+import math
+
 from beartype import beartype
 
 from literalizer._types import Value
@@ -57,7 +59,7 @@ def data_has_float(*, data: Value) -> bool:
     """
     match data:
         case float():
-            return True
+            return math.isfinite(data)
         case list() | set():
             return any(data_has_float(data=v) for v in data)
         case dict():

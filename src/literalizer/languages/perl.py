@@ -152,27 +152,45 @@ def _perl_math_bigint_preamble(data: Value, /) -> tuple[str, ...]:
 
 @beartype
 def _format_perl_math_bigfloat_literal(value: float) -> str:
-    """Format a float as a Perl ``Math::BigFloat->new("...")`` call.
+    """Format a float as a ``LiteralizerFloat->new("...")`` call.
 
-    Wraps the value's full ``repr`` precision so a downstream
-    ``JSON::PP->allow_bignum`` (or ``JSON::XS``) encode emits the
-    literal verbatim instead of applying its default 15-digit ``%.15g``
-    formatting, which silently rounds ``DBL_MAX`` up to ``inf`` on
-    re-parse.
+    ``LiteralizerFloat`` is a tiny ``Math::BigFloat`` subclass defined
+    in the preamble whose ``bstr`` returns the original literal
+    verbatim.  ``JSON::PP`` / ``JSON::XS`` in ``allow_bignum`` mode
+    recognize the value as a ``Math::BigFloat`` and serialize via that
+    ``bstr``, so the encoder emits the full ``repr`` precision instead
+    of applying its default 15-digit ``%.15g`` formatting (which
+    silently rounds ``DBL_MAX`` up to ``inf`` on re-parse).  A bare
+    ``Math::BigFloat->new("...")`` does not work because the stock
+    ``bstr`` expands a wide-exponent value to a 309-digit integer-
+    looking decimal that ``json.loads`` parses as ``int``.
     """
-    return f'Math::BigFloat->new("{value!r}")'
+    return f'LiteralizerFloat->new("{value!r}")'
+
+
+_LITERALIZER_FLOAT_PREAMBLE_LINES: tuple[str, ...] = (
+    "use Math::BigFloat;",
+    "{",
+    "    package LiteralizerFloat;",
+    "    our @ISA = ('Math::BigFloat');",
+    "    sub new { my ($c, $s) = @_; bless { _s => $s }, $c }",
+    "    sub bstr { $_[0]->{_s} }",
+    "}",
+)
 
 
 @beartype
 def _perl_math_bigfloat_preamble(data: Value, /) -> tuple[str, ...]:
-    """Return ``use Math::BigFloat;`` if *data* contains any float.
+    """Return the ``LiteralizerFloat`` preamble if *data* has a finite
+    ``float``.
 
-    Every float loses precision when re-encoded through the 15-digit
-    ``%.15g`` default of ``JSON::PP`` / ``JSON::XS``, so the wrapper is
-    applied unconditionally whenever a float appears.
+    Special-float scalars (``inf``, ``-inf``, ``nan``) go through
+    :class:`FloatSpecialsMixin` as bare Perl barewords and never reach
+    the wrapper, so the preamble is unnecessary unless a finite float
+    is actually present.
     """
     if data_has_float(data=data):
-        return ("use Math::BigFloat;",)
+        return _LITERALIZER_FLOAT_PREAMBLE_LINES
     return ()
 
 
