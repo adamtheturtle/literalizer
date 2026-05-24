@@ -2,9 +2,9 @@
 
 Literalize the shared ``roundtrip_input.json`` document to a Zig
 ``const myData: ZVal = ...`` declaration, wrap it in a tiny ``main``
-that serializes ``myData`` back to JSON via a small recursive helper,
-run it with ``zig run``, and hand the emitted JSON to
-:func:`roundtrip_common.verify`.
+that converts ``myData`` into a ``std.json.Value`` tree and serializes
+it back to JSON via ``std.json.stringify``, run it with ``zig run``,
+and hand the emitted JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by a step of the ``lint-zig`` job in
 ``.github/workflows/lint.yml``, because that job is where the Zig
@@ -34,61 +34,34 @@ _VAR_NAME = "myData"
 _LABEL = "Zig"
 _EXCLUDED_KEYS = ("biginteger",)
 
-# Recursive ZVal -> JSON writer. ``.arr`` and ``.set`` share the
-# ``[]const ZVal`` payload type, so a single switch prong handles both;
-# ``.nil`` never appears in the shared input (it is ``null``-free) but
-# the union is exhaustive so the prong is required.
-_WRITE_JSON = r"""
-fn writeJsonString(writer: anytype, s: []const u8) !void {
-    try writer.writeByte('"');
-    for (s) |c| {
-        switch (c) {
-            '"' => try writer.writeAll("\\\""),
-            '\\' => try writer.writeAll("\\\\"),
-            '\n' => try writer.writeAll("\\n"),
-            '\r' => try writer.writeAll("\\r"),
-            '\t' => try writer.writeAll("\\t"),
-            0x08 => try writer.writeAll("\\b"),
-            0x0c => try writer.writeAll("\\f"),
-            else => {
-                if (c < 0x20) {
-                    try std.fmt.format(writer, "\\u{x:0>4}", .{c});
-                } else {
-                    try writer.writeByte(c);
-                }
-            },
-        }
-    }
-    try writer.writeByte('"');
-}
-
-fn writeJson(writer: anytype, v: ZVal) !void {
-    switch (v) {
-        .nil => try writer.writeAll("null"),
-        .bool => |b| try writer.writeAll(if (b) "true" else "false"),
-        .int => |i| try std.fmt.format(writer, "{d}", .{i}),
-        .uint => |u| try std.fmt.format(writer, "{d}", .{u}),
-        .float => |f| try std.fmt.format(writer, "{e}", .{f}),
-        .str => |s| try writeJsonString(writer, s),
-        .arr, .set => |a| {
-            try writer.writeByte('[');
-            for (a, 0..) |item, i| {
-                if (i > 0) try writer.writeByte(',');
-                try writeJson(writer, item);
-            }
-            try writer.writeByte(']');
+# Build a ``std.json.Value`` tree mirroring ``ZVal`` and let
+# ``std.json.stringify`` do the emission. ``.arr`` and ``.set`` share
+# the ``[]const ZVal`` payload type, so one switch prong handles both;
+# ``.nil`` and ``.uint`` never appear in the shared input (it is
+# ``null``-free and ``biginteger`` is excluded) but the union is
+# exhaustive so the prongs are still required.
+_TO_JSON_VALUE = r"""
+fn toJsonValue(allocator: std.mem.Allocator, v: ZVal) !std.json.Value {
+    return switch (v) {
+        .nil => .{ .null = {} },
+        .bool => |b| .{ .bool = b },
+        .int => |i| .{ .integer = i },
+        .uint => |u| .{ .integer = @intCast(u) },
+        .float => |f| .{ .float = f },
+        .str => |s| .{ .string = s },
+        .arr, .set => |a| blk: {
+            var arr = std.json.Array.init(allocator);
+            for (a) |item| try arr.append(try toJsonValue(allocator, item));
+            break :blk .{ .array = arr };
         },
-        .map => |m| {
-            try writer.writeByte('{');
-            for (m, 0..) |kv, i| {
-                if (i > 0) try writer.writeByte(',');
-                try writeJsonString(writer, kv.key);
-                try writer.writeByte(':');
-                try writeJson(writer, kv.val);
+        .map => |m| blk: {
+            var obj = std.json.ObjectMap.init(allocator);
+            for (m) |kv| {
+                try obj.put(kv.key, try toJsonValue(allocator, kv.val));
             }
-            try writer.writeByte('}');
+            break :blk .{ .object = obj };
         },
-    }
+    };
 }
 """
 
@@ -112,13 +85,17 @@ def _build_program(json_text: str) -> str:
     return (
         'const std = @import("std");\n'
         f"{preamble}\n"
-        "\n"
-        f"{_WRITE_JSON}"
+        f"{_TO_JSON_VALUE}"
         "\n"
         "pub fn main() !void {\n"
         f"{result.code}\n"
+        "    var arena = std.heap.ArenaAllocator.init(\n"
+        "        std.heap.page_allocator,\n"
+        "    );\n"
+        "    defer arena.deinit();\n"
+        f"    const value = try toJsonValue(arena.allocator(), {_VAR_NAME});\n"
         "    const stdout = std.io.getStdOut().writer();\n"
-        f"    try writeJson(stdout, {_VAR_NAME});\n"
+        "    try std.json.stringify(value, .{}, stdout);\n"
         "}\n"
     )
 
