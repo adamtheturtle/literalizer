@@ -838,6 +838,14 @@ jobs:
           find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml && test -s /tmp/files-toml
           xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python .github/scripts/check_toml_syntax.py < /tmp/files-toml
 
+      # Basic JSON -> TOML -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the ``tomli`` TOML parser already
+      # configured; ``uv run`` (project mode, not ``--no-project``) is
+      # required so ``import literalizer`` resolves, and ``--with`` adds
+      # ``tomli`` on top.  See ``.github/scripts/run_toml_roundtrip.py``.
+      - name: Toml roundtrip
+        run: uv run --with 'tomli>=2.4.0' python .github/scripts/run_toml_roundtrip.py
+
       - name: Lint Yaml
         run: |-
           find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0 > /tmp/files-yaml && test -s /tmp/files-yaml
