@@ -2,6 +2,8 @@
 
 from beartype import beartype
 
+from literalizer._types import Value
+
 
 @beartype
 def format_float_repr(value: float) -> str:
@@ -42,3 +44,27 @@ def format_float_fixed(value: float) -> str:
     Example: ``1500.0`` -> ``"1500.000000"``, ``0.001`` -> ``"0.001000"``.
     """
     return f"{value:f}"
+
+
+@beartype
+def data_has_float(*, data: Value) -> bool:
+    """Return ``True`` if *data* contains a finite ``float`` scalar.
+
+    Descends into lists, sets, and both dict keys and values.  Used by
+    languages that need to emit a preamble (e.g. an ``import``)
+    conditionally on the presence of any float, such as Perl's
+    ``MATH_BIG_FLOAT`` float-format strategy.
+    """
+    match data:
+        case float():
+            return True
+        case list() | set():
+            return any(data_has_float(data=v) for v in data)
+        case dict():
+            return any(
+                data_has_float(data=item)
+                for entry in data.items()
+                for item in entry
+            )
+        case _:
+            return False

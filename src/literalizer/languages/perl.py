@@ -30,6 +30,7 @@ from literalizer._formatters.format_entries import (
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
+    data_has_float,
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
@@ -146,6 +147,32 @@ def _perl_math_bigint_preamble(data: Value, /) -> tuple[str, ...]:
         max_value=_PERL_NV_INT_MAX,
     ):
         return ("use Math::BigInt;",)
+    return ()
+
+
+@beartype
+def _format_perl_math_bigfloat_literal(value: float) -> str:
+    """Format a float as a Perl ``Math::BigFloat->new("...")`` call.
+
+    Wraps the value's full ``repr`` precision so a downstream
+    ``JSON::PP->allow_bignum`` (or ``JSON::XS``) encode emits the
+    literal verbatim instead of applying its default 15-digit ``%.15g``
+    formatting, which silently rounds ``DBL_MAX`` up to ``inf`` on
+    re-parse.
+    """
+    return f'Math::BigFloat->new("{value!r}")'
+
+
+@beartype
+def _perl_math_bigfloat_preamble(data: Value, /) -> tuple[str, ...]:
+    """Return ``use Math::BigFloat;`` if *data* contains any float.
+
+    Every float loses precision when re-encoded through the 15-digit
+    ``%.15g`` default of ``JSON::PP`` / ``JSON::XS``, so the wrapper is
+    applied unconditionally whenever a float appears.
+    """
+    if data_has_float(data=data):
+        return ("use Math::BigFloat;",)
     return ()
 
 
@@ -484,9 +511,21 @@ class Perl(metaclass=LanguageCls):
         negative_infinity="-Inf",
         nan="NaN",
     ):
-        """Float format options."""
+        """Float format options.
+
+        * ``REPR`` (default) - emit each finite float as Python's
+          shortest round-tripping ``repr``.
+        * ``MATH_BIG_FLOAT`` - wrap each finite float as
+          ``Math::BigFloat->new("...")`` and add a
+          ``use Math::BigFloat;`` preamble.  ``JSON::PP`` /
+          ``JSON::XS`` in ``allow_bignum`` mode then serialize the
+          wrapped value without precision loss; the default 15-digit
+          ``%.15g`` NV formatting otherwise rounds ``DBL_MAX`` up to
+          ``inf`` on re-parse (see issue #2605).
+        """
 
         REPR = enum.member(value=format_float_repr)
+        MATH_BIG_FLOAT = enum.member(value=_format_perl_math_bigfloat_literal)
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
@@ -755,13 +794,19 @@ class Perl(metaclass=LanguageCls):
         """Return data-dependent preamble lines.
 
         Composes the ``MATH_BIG_INT`` integer-width contribution with
-        the ``DOUBLE_UTF8`` string-format contribution so a value
-        triggering both gets both preamble lines in a stable order.
+        the ``MATH_BIG_FLOAT`` float-format and ``DOUBLE_UTF8``
+        string-format contributions so a value triggering several at
+        once gets every preamble line in a stable order.
         """
         contributors: tuple[Callable[[Value], tuple[str, ...]], ...] = (
             *(
                 (_perl_math_bigint_preamble,)
                 if self.integer_width_strategy.name == "MATH_BIG_INT"
+                else ()
+            ),
+            *(
+                (_perl_math_bigfloat_preamble,)
+                if self.float_format.name == "MATH_BIG_FLOAT"
                 else ()
             ),
             *(

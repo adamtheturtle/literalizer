@@ -5,8 +5,8 @@ Literalize the shared ``roundtrip_input.json`` document to a Perl
 ``JSON::PP->new->utf8->allow_bignum->encode($myData)``, run it with
 Perl, and hand the emitted JSON to :func:`roundtrip_common.verify`.
 
-Two non-default Perl options are used so the round-trip is faithful for
-the values Perl *can* represent:
+Three non-default Perl options are used so the round-trip is faithful
+for the values Perl *can* represent:
 
 * ``bool_format=JSON_PP_REF`` renders booleans as ``\1`` / ``\0``,
   which ``JSON::PP`` encodes as JSON ``true`` / ``false``.  The default
@@ -17,15 +17,14 @@ the values Perl *can* represent:
   ``allow_bignum`` mode then serializes back as a plain JSON integer.
   The default ``BARE`` form would silently demote the 26-digit
   ``biginteger`` field to an NV (see issue #2588).
-
-One key is excluded from the comparison because the Perl JSON encoder
-emits floats with only 15 significant digits.  The shared input's
-``float_large_exponent`` value is the IEEE 754 ``DBL_MAX``; rounded to
-15 digits it becomes ``1.79769313486232e+308``, which on parse rounds
-*up* past ``DBL_MAX`` and Python decodes as ``inf``:
-
-* ``float_large_exponent`` -- ``1.7976931348623157e308`` -> ``inf``
-  after encode/decode.
+* ``float_format=MATH_BIG_FLOAT`` wraps every float as
+  ``Math::BigFloat->new("...")``, which ``allow_bignum`` then
+  serializes back with full precision.  The default ``REPR`` form is
+  re-encoded by ``JSON::PP`` / ``JSON::XS`` with their hard-coded
+  15-digit ``%.15g`` precision, which rounds ``DBL_MAX``
+  (``float_large_exponent = 1.7976931348623157e+308``) up past
+  ``DBL_MAX`` and Python decodes the result as ``inf`` (see issue
+  #2605).
 
 ``double_array`` (``[1.0, 2.5]`` -> ``[1, 2.5]``) and ``negative_zero``
 (``-0.0`` -> ``0``) survive the comparison because Python treats
@@ -51,7 +50,7 @@ from literalizer.languages import Perl
 
 _VAR_NAME = "myData"
 _LABEL = "Perl"
-_EXCLUDED_KEYS = ("float_large_exponent",)
+_EXCLUDED_KEYS: tuple[str, ...] = ()
 
 
 def _build_program(json_text: str) -> str:
@@ -59,6 +58,7 @@ def _build_program(json_text: str) -> str:
     language = Perl(
         bool_format=Perl.bool_formats.JSON_PP_REF,
         integer_width_strategy=Perl.integer_width_strategies.MATH_BIG_INT,
+        float_format=Perl.float_formats.MATH_BIG_FLOAT,
     )
     result = literalize(
         source=json_text,
