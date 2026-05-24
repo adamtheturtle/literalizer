@@ -3,7 +3,10 @@
 import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 from literalizer.languages import Cpp
 
 
@@ -40,4 +43,28 @@ def test_cpp_json_type_rejects_raw_string_terminator_in_key() -> None:
             input_format=InputFormat.JSON,
             language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
             variable_form=NewVariable(name="my_data"),
+        )
+
+
+def test_cpp_json_type_rejects_record_strategy() -> None:
+    """``parse`` rendering cannot coexist with generated ``struct``s."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match="incompatible with heterogeneous_strategy=RECORD",
+    ):
+        Cpp(
+            json_type=Cpp.json_types.NLOHMANN_JSON,
+            heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+        )
+
+
+def test_cpp_json_type_rejects_tuple_strategy() -> None:
+    """``parse`` rendering cannot coexist with generated tuple aliases."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match="incompatible with heterogeneous_strategy=TUPLE",
+    ):
+        Cpp(
+            json_type=Cpp.json_types.NLOHMANN_JSON,
+            heterogeneous_strategy=Cpp.heterogeneous_strategies.TUPLE,
         )

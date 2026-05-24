@@ -113,7 +113,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 
 class _CppModifiers(enum.Enum):
@@ -1800,6 +1803,38 @@ class Cpp(metaclass=LanguageCls):
             ),
         ),
     )
+
+    def __post_init__(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit."""
+        self._validate_json_type_spec()
+
+    def _validate_json_type_spec(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit.
+
+        Under ``json_type`` the rendered data flows through a single
+        ``nlohmann::json::parse`` call.  That is incompatible with the
+        ``RECORD`` and ``TUPLE`` heterogeneous strategies, both of
+        which generate type declarations (``struct``s for ``RECORD``,
+        ``std::tuple<...>`` aliases for ``TUPLE``) that the json_type
+        renderer would silently drop on the floor.
+        """
+        if not self._json_type_active:
+            return
+        rejected = {
+            self.heterogeneous_strategies.RECORD: "struct",
+            self.heterogeneous_strategies.TUPLE: "std::tuple<...>",
+        }
+        if self.heterogeneous_strategy in rejected:
+            strategy_name = self.heterogeneous_strategy.name
+            generated = rejected[self.heterogeneous_strategy]
+            msg = (
+                "Cpp json_type renders data through "
+                "nlohmann::json::parse(...) and is incompatible with "
+                f"heterogeneous_strategy={strategy_name}, which generates "
+                f"{generated} declarations. Use "
+                "heterogeneous_strategy=ERROR."
+            )
+            raise IncompatibleFormatsError(msg)
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate C++-specific data/format combinations."""
