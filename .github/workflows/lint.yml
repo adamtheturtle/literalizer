@@ -1911,6 +1911,19 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
+      # `uv` is needed by the `D roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> D -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the D toolchain; `uv run` (project
+      # mode, not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_d_roundtrip.py`.
+      - name: D roundtrip
+        run: uv run python .github/scripts/run_d_roundtrip.py
 
   lint-crystal:
     runs-on: ubuntu-latest
