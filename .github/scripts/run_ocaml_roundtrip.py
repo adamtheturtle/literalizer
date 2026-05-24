@@ -2,29 +2,31 @@
 
 Literalize the shared ``roundtrip_input.json`` document to an OCaml
 ``let my_data : val_t = ...`` binding (with the generated tagged
-``val_t`` algebraic type), append a hand-rolled
-``val_to_json : val_t -> string`` recursive serializer, run it through
-``ocaml``, and hand the emitted JSON to :func:`roundtrip_common.verify`.
+``val_t`` algebraic type), append a small ``val_to_yojson`` mapping into
+``Yojson.Safe.t`` plus a ``Yojson.Safe.to_string`` call, compile with
+``ocamlfind ocamlopt -package yojson -linkpkg``, run the binary, and
+hand the emitted JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by a step of the ``lint-ocaml`` job in
 ``.github/workflows/lint.yml``, because that job is where the OCaml
-toolchain is installed.  It shares the same input and comparison logic
-as the other per-language round-trip helpers.
+toolchain (and the ``yojson`` opam package installed by a sibling step)
+is available.  It shares the same input and comparison logic as the
+other per-language round-trip helpers.
 
-OCaml's standard library has no JSON encoder, so the serializer is
-hand-rolled rather than pulled in via an external opam package
-(``yojson`` etc.) -- same shape as the Java setup.  The generated
-``val_t`` algebraic type carries only the constructors needed for the
-values that actually appear in the input, so ``val_to_json`` covers
-exactly the six variants the shared input exercises (``OBool``,
-``OInt``, ``OFloat``, ``OStr``, ``OList``, ``OMap``); a future
-expansion of ``roundtrip_input.json`` adding a new scalar kind would
-fail compilation here until the match is extended.
+OCaml's standard library has no JSON encoder, so we route through the
+de-facto ``yojson`` package rather than hand-roll a serializer -- same
+preference expressed in the issue notes.  The generated ``val_t``
+algebraic type carries only the constructors needed for the values
+that actually appear in the input, so ``val_to_yojson`` covers exactly
+the six variants the shared input exercises (``OBool``, ``OInt``,
+``OFloat``, ``OStr``, ``OList``, ``OMap``); a future expansion of
+``roundtrip_input.json`` adding a new scalar kind would fail compilation
+here until the match is extended.
 
 The shared input's ``biginteger`` field is excluded from the
 comparison: its 26-digit value exceeds OCaml's 63-bit native ``int``,
 so the literalizer would raise rather than emit a literal for it.
-Same shape as the Go, TypeScript, Swift, Zig, and Rust exclusions.
+Same shape as the Go, TypeScript, Swift, Zig, Rust, and D exclusions.
 """
 
 import json
@@ -43,45 +45,18 @@ _VAR_NAME = "my_data"
 _LABEL = "OCaml"
 _EXCLUDED_KEYS = ("biginteger",)
 
-# Hand-rolled JSON encoder.  ``%.17g`` is the shortest fixed precision
-# that round-trips any IEEE 754 double; the parser on the Python side
-# only compares parsed values, so trailing-zero stripping (e.g. ``1.0``
-# rendered as ``1``) and ``-0.0`` rendered as ``-0`` are both fine.
-_VAL_TO_JSON = """\
-let json_string s =
-  let buf = Buffer.create (String.length s + 2) in
-  Buffer.add_char buf '"';
-  String.iter (fun c ->
-    match c with
-    | '"' -> Buffer.add_string buf "\\\\\\""
-    | '\\\\' -> Buffer.add_string buf "\\\\\\\\"
-    | '\\n' -> Buffer.add_string buf "\\\\n"
-    | '\\r' -> Buffer.add_string buf "\\\\r"
-    | '\\t' -> Buffer.add_string buf "\\\\t"
-    | '\\b' -> Buffer.add_string buf "\\\\b"
-    | '\\012' -> Buffer.add_string buf "\\\\f"
-    | c when Char.code c < 0x20 ->
-        Buffer.add_string buf (Printf.sprintf "\\\\u%04x" (Char.code c))
-    | c -> Buffer.add_char buf c
-  ) s;
-  Buffer.add_char buf '"';
-  Buffer.contents buf
-
-let rec val_to_json (v : val_t) : string =
+_VAL_TO_YOJSON = """\
+let rec val_to_yojson (v : val_t) : Yojson.Safe.t =
   match v with
-  | OBool true -> "true"
-  | OBool false -> "false"
-  | OInt i -> string_of_int i
-  | OFloat f -> Printf.sprintf "%.17g" f
-  | OStr s -> json_string s
-  | OList xs ->
-      "[" ^ String.concat "," (List.map val_to_json xs) ^ "]"
+  | OBool b -> `Bool b
+  | OInt i -> `Int i
+  | OFloat f -> `Float f
+  | OStr s -> `String s
+  | OList xs -> `List (List.map val_to_yojson xs)
   | OMap kvs ->
-      "{" ^ String.concat ","
-        (List.map (fun (k, v) -> json_string k ^ ":" ^ val_to_json v) kvs)
-      ^ "}"
+      `Assoc (List.map (fun (k, v) -> (k, val_to_yojson v)) kvs)
 
-let () = print_string (val_to_json my_data)
+let () = print_string (Yojson.Safe.to_string (val_to_yojson my_data))
 """
 
 
@@ -106,19 +81,44 @@ def _build_program(json_text: str) -> str:
     # here. Prepending ``body_preamble`` separately would duplicate
     # the ``val_t`` type and break compilation.
     preamble = "\n".join(result.preamble)
-    return f"{preamble}\n{result.code}\n{_VAL_TO_JSON}"
+    return f"{preamble}\n{result.code}\n{_VAL_TO_YOJSON}"
 
 
 def main() -> None:
     """Round-trip the shared document through the OCaml backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
-    ocaml = shutil.which(cmd="ocaml") or "ocaml"
+    ocamlfind = shutil.which(cmd="ocamlfind") or "ocamlfind"
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
         src = tmpdir / "main.ml"
         src.write_text(data=program, encoding="utf-8")
+        binary = tmpdir / "main"
+        compile_result = subprocess.run(
+            args=[
+                ocamlfind,
+                "ocamlopt",
+                "-package",
+                "yojson",
+                "-linkpkg",
+                str(object=src),
+                "-o",
+                str(object=binary),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=tmpdir,
+            encoding="utf-8",
+        )
+        if compile_result.returncode != 0:
+            sys.stderr.write(
+                f"{_LABEL}: ocamlfind error\n"
+                f"{compile_result.stdout}{compile_result.stderr}",
+            )
+            sys.stderr.write(f"\nProgram:\n{program}\n")
+            sys.exit(1)
         run_result = subprocess.run(
-            args=[ocaml, str(object=src)],
+            args=[str(object=binary)],
             capture_output=True,
             text=True,
             check=False,
@@ -126,7 +126,7 @@ def main() -> None:
         )
     if run_result.returncode != 0:
         sys.stderr.write(
-            f"{_LABEL}: ocaml error\n{run_result.stdout}{run_result.stderr}",
+            f"{_LABEL}: run error\n{run_result.stdout}{run_result.stderr}",
         )
         sys.stderr.write(f"\nProgram:\n{program}\n")
         sys.exit(1)

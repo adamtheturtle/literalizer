@@ -1541,6 +1541,8 @@ jobs:
       # (project mode, not ``--no-project``) is required so
       # ``import literalizer`` resolves. See
       # ``.github/scripts/run_ocaml_roundtrip.py``.
+      - name: Install yojson
+        run: opam install -y yojson
       - name: OCaml roundtrip
         run: opam exec -- uv run python .github/scripts/run_ocaml_roundtrip.py
 
