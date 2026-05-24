@@ -1378,11 +1378,31 @@ jobs:
         uses: fwilhe2/setup-kotlin@v1
         with:
           version: ${{ env.KOTLIN_VERSION }}
+      # kotlinx-serialization-json jars are needed by
+      # `Kotlin(json_type=...)` fixtures so they type-check under the
+      # K2JVMCompiler script host. Pinned to a recent 1.x release;
+      # bump together. The classpath is exported through
+      # `LITERALIZER_LINT_CLASSPATH`, which
+      # `.github/scripts/lint-kotlin.main.kts` forwards via `-classpath`
+      # to every per-fixture compile. Keep this enum value paired with
+      # the literal in `Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT` in
+      # `src/literalizer/languages/kotlin.py`.
+      - name: Set up kotlinx-serialization-json for Kotlin
+        run: |-
+          mkdir -p /tmp/kotlinx-jars
+          serialization_version=1.7.3
+          for f in kotlinx-serialization-json-jvm/$serialization_version/kotlinx-serialization-json-jvm-$serialization_version.jar \
+                   kotlinx-serialization-core-jvm/$serialization_version/kotlinx-serialization-core-jvm-$serialization_version.jar; do
+            name=$(basename "$f")
+            curl -fsSL "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/$f" -o "/tmp/kotlinx-jars/$name"
+          done
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
       # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
+        env:
+          LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
 
   lint-swift:
