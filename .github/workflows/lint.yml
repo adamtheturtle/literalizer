@@ -1787,10 +1787,13 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
-      - name: Check Rust syntax and run binaries
+      # Build chrono + serde_json once and stash the rlib paths in
+      # `$GITHUB_ENV`; both the per-fixture compile step below and the
+      # `Rust roundtrip` step reuse them. The build tmpdir is kept for
+      # the rest of the job (the runner is ephemeral).
+      - name: Build Rust dependencies
         run: |-
           tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
           cargo init "$tmpdir/chrono-check"
           cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
           cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" serde_json
@@ -1800,6 +1803,14 @@ jobs:
           test -n "$chrono_rlib"
           serde_json_rlib=$(find "$deps" -name "libserde_json-*.rlib" -print -quit)
           test -n "$serde_json_rlib"
+          {
+            echo "RUST_TMPDIR=$tmpdir"
+            echo "RUST_DEPS=$deps"
+            echo "RUST_CHRONO_RLIB=$chrono_rlib"
+            echo "RUST_SERDE_JSON_RLIB=$serde_json_rlib"
+          } >> "$GITHUB_ENV"
+      - name: Check Rust syntax and run binaries
+        run: |-
           # ``--edition 2021`` matches ``Rust.language_version`` in
           # ``src/literalizer/languages/rust.py``; keep them in sync.
           # rustc infers a crate name from the source filename and
@@ -1810,12 +1821,26 @@ jobs:
             crate_name=${stem//@/_}
             rustc --edition 2021 \
               --crate-name "$crate_name" \
-              -L "dependency=$deps" \
-              --extern "chrono=$chrono_rlib" \
-              --extern "serde_json=$serde_json_rlib" \
-              "$f" -o "$tmpdir/out" 2>&1 || exit 1
-            "$tmpdir/out" || exit 1
+              -L "dependency=$RUST_DEPS" \
+              --extern "chrono=$RUST_CHRONO_RLIB" \
+              --extern "serde_json=$RUST_SERDE_JSON_RLIB" \
+              "$f" -o "$RUST_TMPDIR/out" 2>&1 || exit 1
+            "$RUST_TMPDIR/out" || exit 1
           done < /tmp/files-to-lint
+      # `uv` is needed by the `Rust roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Rust -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Rust toolchain and a prebuilt
+      # `libserde_json-*.rlib`; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_rust_roundtrip.py`.
+      - name: Rust roundtrip
+        run: uv run python .github/scripts/run_rust_roundtrip.py "$RUST_DEPS" "$RUST_SERDE_JSON_RLIB"
 
   lint-r:
     runs-on: ubuntu-latest
