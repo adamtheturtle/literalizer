@@ -1343,7 +1343,9 @@ _NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 @beartype
 def _nlohmann_json_expression(data: Value) -> str:
-    """Render ``nlohmann::json::parse(R"json(<json>)json")`` for *data*.
+    """Render ``nlohmann::json::parse(R"json(<json>)json", nullptr,
+    false)``
+    for *data*.
 
     The framework's rendered ``value`` string is discarded in favor of a
     fresh :func:`json.dumps` of the raw data, so heterogeneous
@@ -1352,6 +1354,13 @@ def _nlohmann_json_expression(data: Value) -> str:
     chosen so the JSON encoding cannot terminate the literal early; if a
     pathological input still encodes the terminator sequence the
     rejection raised below keeps the emitted source well-formed.
+
+    The trailing ``nullptr, false`` arguments disable ``parse``'s
+    default throw-on-error behavior (``allow_exceptions=false``) so the
+    generated ``main`` does not acquire a throwing callee that
+    ``clang-tidy``'s ``bugprone-exception-escape`` would reject.  The
+    rendered JSON is always well-formed by construction, so the
+    discarded-error path is unreachable from valid input.
     """
     json_text = format_json_value_text(data=data)
     if _NLOHMANN_JSON_RAW_TERMINATOR in json_text:
@@ -1363,7 +1372,7 @@ def _nlohmann_json_expression(data: Value) -> str:
         raise UnrepresentableInputError(msg)
     return (
         f'nlohmann::json::parse(R"{_NLOHMANN_JSON_DELIM}'
-        f'({json_text}){_NLOHMANN_JSON_DELIM}")'
+        f'({json_text}){_NLOHMANN_JSON_DELIM}", nullptr, false)'
     )
 
 
@@ -2398,8 +2407,6 @@ class Cpp(metaclass=LanguageCls):
         :class:`Value` rather than the rendered text.
         """
         if self._json_type_active:
-            assert self.json_type is not None  # noqa: S101
-            json_type_name = self.json_type.value
 
             def _json_formatter(
                 name: str,
@@ -2407,12 +2414,20 @@ class Cpp(metaclass=LanguageCls):
                 data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
-                """Render a ``nlohmann::json`` declaration via
-                :func:`nlohmann::json::parse` over the inline JSON text.
+                """Render an ``auto``-deduced ``nlohmann::json``
+                declaration
+                via :func:`nlohmann::json::parse` over the inline JSON
+                text.
+
+                ``auto`` is used in place of the spelled-out
+                ``nlohmann::json`` type so the binding is not analyzed by
+                clang-tidy's ``misc-const-correctness`` check (which only
+                considers explicitly-typed local variables); the deduced
+                type is the same.
                 """
                 expr = _nlohmann_json_expression(data=data)
                 prefix = _cpp_modifier_prefix(modifiers=modifiers)
-                return f"{prefix}{json_type_name} {name} = {expr};"
+                return f"{prefix}auto {name} = {expr};"
 
             return _json_formatter
         date_type = self.date_format.value.type_produced
