@@ -1918,7 +1918,17 @@ class Cpp(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap a C++ declaration in a main function."""
+        """Wrap a C++ declaration in a main function.
+
+        Under :attr:`json_type` the body is additionally wrapped in
+        ``try { ... } catch (...) { return 1; }`` so the
+        potentially-throwing ``nlohmann::json::parse`` call cannot make
+        ``main`` itself throwing — clang-tidy's
+        ``bugprone-exception-escape`` check rejects an implicitly
+        ``noexcept`` ``main`` that calls a function whose signature
+        permits exceptions, even when the runtime flag
+        ``allow_exceptions=false`` has been passed to suppress them.
+        """
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1926,6 +1936,15 @@ class Cpp(metaclass=LanguageCls):
         use_line = (
             f"\n{self.indent}(void){variable_name};" if variable_name else ""
         )
+        if self._json_type_active:
+            return (
+                f"int {self.module_name}() {{\n"
+                f"{self.indent}try {{\n{content}{use_line}\n"
+                f"{self.indent}{self.indent}return 0;\n"
+                f"{self.indent}}} catch (...) {{\n"
+                f"{self.indent}{self.indent}return 1;\n"
+                f"{self.indent}}}\n}}"
+            )
         return (
             f"int {self.module_name}() {{\n{content}{use_line}\n"
             f"{self.indent}return 0;\n}}"
