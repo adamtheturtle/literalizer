@@ -1445,6 +1445,20 @@ jobs:
       - name: Run Swift files
         run: xargs -0 -P "$(nproc)" -n1 swift -swift-version 5 -warnings-as-errors
           < /tmp/files-to-lint
+      # `uv` is needed by the `Swift roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Swift -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Swift toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_swift_roundtrip.py`.
+      - name: Swift roundtrip
+        run: uv run python .github/scripts/run_swift_roundtrip.py
 
   lint-ocaml:
     runs-on: ubuntu-latest
