@@ -112,6 +112,10 @@ jobs:
       # Ubuntu 24.04 build of Tcl 8.6.14), which is ``>=`` the ``V8_6``
       # (Tcl 8.6) default of ``Tcl.language_version`` in
       # ``src/literalizer/languages/tcl.py``; keep them in sync.
+      # ``tcllib`` (pinned to the Ubuntu 24.04 build of ``1.21+dfsg-1``)
+      # provides the ``json::write`` package used by
+      # ``.github/scripts/run_tcl_roundtrip.py`` to re-emit JSON from a
+      # literalized Tcl ``dict``; Tcl itself ships no JSON library.
       # The ``guile-3.0`` apt package pins Guile to the 3.x series,
       # which implements ``R7RS``, matching ``Scheme.language_version``
       # (``R7RS``) in ``src/literalizer/languages/scheme.py``; keep them
@@ -122,7 +126,8 @@ jobs:
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: tcl=8.6.14build1 gforth=0.7.3+dfsg-9build4.1 guile-3.0
+          packages: tcl=8.6.14build1 tcllib=1.21+dfsg-1 gforth=0.7.3+dfsg-9build4.1
+            guile-3.0
           version: 1.0
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
@@ -394,6 +399,14 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl && test -s /tmp/files-tcl
           xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
+
+      # Driven from `lint-fast` because that is the job where the `tcl`
+      # apt package (pinned by the `Install apt packages` step above) is
+      # installed; `uv run` (project mode, not `--no-project`) is required
+      # so `import literalizer` resolves.
+      # See `.github/scripts/run_tcl_roundtrip.py`.
+      - name: Tcl roundtrip
+        run: uv run python .github/scripts/run_tcl_roundtrip.py
 
       - name: Lint Forth
         run: |-
