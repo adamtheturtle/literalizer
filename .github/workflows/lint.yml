@@ -2413,10 +2413,32 @@ jobs:
         uses: Raku/setup-raku@v1
         with:
           raku-version: ${{ env.RAKU_VERSION }}
+      # ``JSON::Fast`` is the standard Raku JSON library used by the
+      # ``Raku roundtrip`` step below; Rakudo has no standard-library
+      # JSON serializer.  ``--/test`` skips the module's own test suite
+      # to keep the install fast.  See
+      # ``.github/scripts/run_raku_roundtrip.py``.
+      - name: Install JSON::Fast
+        run: zef install --/test JSON::Fast
       - name: Check Raku syntax
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
       - name: Run Raku files
         run: xargs -0 -P "$(nproc)" -n1 raku < /tmp/files-to-lint
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      # Basic JSON -> Raku -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Raku toolchain (pinned by the
+      # `Install Raku` step above) and ``JSON::Fast`` provisioned by the
+      # `Install JSON::Fast` step; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_raku_roundtrip.py`.
+      - name: Raku roundtrip
+        run: uv run python .github/scripts/run_raku_roundtrip.py
 
   lint-zig:
     runs-on: ubuntu-latest
