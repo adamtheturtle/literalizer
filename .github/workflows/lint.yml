@@ -1980,6 +1980,31 @@ jobs:
           < /tmp/files-to-lint
       - name: Run R files
         run: xargs -0 -P "$(nproc)" -n1 Rscript < /tmp/files-to-lint
+      # `jsonlite` is needed by the `R roundtrip` step below (see
+      # `.github/scripts/run_r_roundtrip.py`); install it into a
+      # per-job library directory and point `R_LIBS_USER` at it so the
+      # script's `Rscript` subprocess can `library(jsonlite)`.
+      - name: Install jsonlite
+        run: |
+          mkdir -p /tmp/r-lint-libs
+          Rscript -e 'install.packages("jsonlite", lib="/tmp/r-lint-libs", repos="https://cloud.r-project.org")'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> R -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with `Rscript` on PATH and the
+      # `/tmp/r-lint-libs` library (with the `jsonlite` package) already
+      # provisioned above; `R_LIBS_USER` points the script's `Rscript`
+      # subprocess at that library so `library(jsonlite)` resolves.
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_r_roundtrip.py`.
+      - name: R roundtrip
+        env:
+          R_LIBS_USER: /tmp/r-lint-libs
+        run: uv run python .github/scripts/run_r_roundtrip.py
 
   lint-d:
     runs-on: ubuntu-latest
