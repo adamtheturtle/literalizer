@@ -777,6 +777,14 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           xargs -0 uv run --no-project python .github/scripts/run_elm.py < /tmp/files-elm
+      # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the `elm` binary (from the
+      # npm-linters install above) and Node 22 already on PATH; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_elm_roundtrip.py`.
+      - name: Elm roundtrip
+        run: uv run python .github/scripts/run_elm_roundtrip.py
 
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
