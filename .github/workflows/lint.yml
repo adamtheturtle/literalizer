@@ -854,6 +854,13 @@ jobs:
       - name: Toml roundtrip
         run: uv run --with 'tomli>=2.4.0' python .github/scripts/run_toml_roundtrip.py
 
+      # Basic JSON -> JSON5 -> JSON round-trip (issue 1867).  ``pyjson5``
+      # is already a core ``literalizer`` dependency, so plain ``uv run``
+      # (project mode) resolves it without an extra ``--with`` layer.
+      # See ``.github/scripts/run_json5_roundtrip.py``.
+      - name: Json5 roundtrip
+        run: uv run python .github/scripts/run_json5_roundtrip.py
+
       - name: Lint Yaml
         run: |-
           find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0 > /tmp/files-yaml && test -s /tmp/files-yaml
