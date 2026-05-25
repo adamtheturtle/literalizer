@@ -1812,14 +1812,34 @@ jobs:
         uses: julia-actions/setup-julia@v3
         with:
           version: '1.9'
+      # `JSON` is needed by the `Julia roundtrip` step below (see
+      # `.github/scripts/run_julia_roundtrip.py`); `DataStructures`
+      # backs the `OrderedDict` literals the fixture goldens use.
       - name: Set up Julia project
         run: |
           mkdir -p /tmp/julia-lint
           julia --startup-file=no --project=/tmp/julia-lint -e \
-            'using Pkg; Pkg.add("DataStructures"); Pkg.precompile()'
+            'using Pkg; Pkg.add(["DataStructures", "JSON"]); Pkg.precompile()'
       - name: Run Julia golden files
         run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no --project=/tmp/julia-lint
           < /tmp/files-to-lint
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Julia -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with `julia` on PATH and the
+      # `/tmp/julia-lint` project (with the `JSON` package) already
+      # provisioned above; `JULIA_PROJECT` points the script's `julia`
+      # subprocess at that project so `using JSON` resolves. `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_julia_roundtrip.py`.
+      - name: Julia roundtrip
+        env:
+          JULIA_PROJECT: /tmp/julia-lint
+        run: uv run python .github/scripts/run_julia_roundtrip.py
 
   lint-go:
     runs-on: ubuntu-latest
