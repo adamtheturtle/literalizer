@@ -1033,6 +1033,8 @@ jobs:
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
 
       # Every fixture defines its own entry point at top level, so compile
       # and run each file directly. Each invocation gets a private tmpdir
@@ -1048,6 +1050,13 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
+
+      # Driven from `lint-sml` because that is the job where MLton (pinned
+      # by the `Install MLton` step above) is installed; `uv run` (project
+      # mode, not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_sml_roundtrip.py`.
+      - name: SML roundtrip
+        run: uv run python .github/scripts/run_sml_roundtrip.py
 
   lint-elixir:
     runs-on: ubuntu-latest
