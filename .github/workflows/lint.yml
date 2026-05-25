@@ -443,6 +443,14 @@ jobs:
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren && test -s /tmp/files-wren
           xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
 
+      # Driven from `lint-fast` because that is the job where the
+      # `wren_cli` binary (pinned by the `Install Wren CLI` step above)
+      # is installed; `uv run` (project mode, not `--no-project`) is
+      # required so `import literalizer` resolves.
+      # See `.github/scripts/run_wren_roundtrip.py`.
+      - name: Wren roundtrip
+        run: uv run python .github/scripts/run_wren_roundtrip.py
+
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
