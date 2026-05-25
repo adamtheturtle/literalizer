@@ -871,6 +871,14 @@ jobs:
           find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0 > /tmp/files-yaml && test -s /tmp/files-yaml
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
 
+      # Basic JSON -> YAML -> JSON round-trip (issue 1867). Runs here
+      # alongside the existing Yaml syntax check; ``uv run`` (project
+      # mode, not ``--no-project``) is required so ``import literalizer``
+      # resolves, and ``--with`` layers ``pyyaml`` on top.  See
+      # ``.github/scripts/run_yaml_roundtrip.py``.
+      - name: Yaml roundtrip
+        run: uv run --with 'pyyaml' python .github/scripts/run_yaml_roundtrip.py
+
   # .NET-hosted linters. Run host builds in parallel-looking sequential
   # steps so the .NET runtime startup is paid once for the whole job.
   lint-dotnet:
