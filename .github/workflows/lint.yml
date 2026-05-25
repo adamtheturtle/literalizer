@@ -77,6 +77,19 @@ jobs:
         uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: '5.4'
+      # ``luarocks`` is needed by the ``Lua roundtrip`` step below to
+      # install the ``dkjson`` JSON library; Lua has no standard-library
+      # JSON serializer.  Pinned to a recent ``leafo/gh-actions-luarocks``
+      # release; the action picks the LuaRocks version compatible with
+      # the Lua installed above.  See ``.github/scripts/run_lua_roundtrip.py``.
+      - name: Install LuaRocks
+        uses: leafo/gh-actions-luarocks@v5
+      # ``dkjson`` is the pure-Lua JSON library used by
+      # ``.github/scripts/run_lua_roundtrip.py``; pinned to a ``2.x``
+      # release.  Installed into the per-job tree provisioned above so
+      # ``require "dkjson"`` resolves under the ``Lua roundtrip`` step.
+      - name: Install dkjson
+        run: luarocks install dkjson 2.10-1
       # The pinned Nix ``2.34.7`` is in the Nix 2.x series, which is
       # ``>=`` the ``V2`` default of ``Nix.language_version`` in
       # ``src/literalizer/languages/nix.py``; keep them in sync. ``V2``
@@ -362,6 +375,15 @@ jobs:
           find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua && test -s /tmp/files-lua
           xargs -0 luac -p < /tmp/files-lua
           xargs -0 -P "$(nproc)" -n1 lua < /tmp/files-lua
+
+      # Basic JSON -> Lua -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Lua toolchain (pinned by the
+      # `Install Lua` step above) and the `dkjson` rock provisioned by
+      # the `Install dkjson` step; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_lua_roundtrip.py`.
+      - name: Lua roundtrip
+        run: uv run python .github/scripts/run_lua_roundtrip.py
 
       - name: Lint Nix
         run: |-
