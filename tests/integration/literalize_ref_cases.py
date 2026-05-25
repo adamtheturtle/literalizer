@@ -37,7 +37,6 @@ from .case_discovery import (
     LiteralizeRefCaseConfig,
     case_input,
 )
-from .check_golden import check_golden
 from .language_specs import (
     make_golden_path,
     sorted_languages,
@@ -244,10 +243,10 @@ def run_literalize_ref_golden_case(
         pytest.skip(
             f"{lang_cls.__name__} rejected ref identifier: {exc.reason}"
         )
-    check_golden(
-        file_regression=file_regression,
+    file_regression.check(
         contents=result.code + "\n",
+        encoding="utf-8",
         extension=lang_cls.extension,
         newline="",
-        golden_path=golden_path,
+        fullpath=golden_path,
     )
