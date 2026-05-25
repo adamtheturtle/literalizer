@@ -1175,6 +1175,17 @@ jobs:
           python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
           uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
 
+      # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Gleam toolchain and the primed
+      # project (with `gleam_json` already downloaded) on disk; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_gleam_roundtrip.py`.
+      - name: Gleam roundtrip
+        env:
+          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
+        run: uv run python .github/scripts/run_gleam_roundtrip.py
+
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
     runs-on: ubuntu-latest
