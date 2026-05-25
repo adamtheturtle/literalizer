@@ -1549,8 +1549,12 @@ jobs:
       # (project mode, not ``--no-project``) is required so
       # ``import literalizer`` resolves. See
       # ``.github/scripts/run_ocaml_roundtrip.py``.
+      # ``ocamlfind`` is not installed by ``ocaml/setup-ocaml@v3``; the
+      # roundtrip helper invokes ``ocamlfind ocamlopt -package yojson``
+      # to compile the literalized program, so install it alongside
+      # yojson here.
       - name: Install yojson
-        run: opam install -y yojson
+        run: opam install -y yojson ocamlfind
       - name: OCaml roundtrip
         run: opam exec -- uv run python .github/scripts/run_ocaml_roundtrip.py
 
