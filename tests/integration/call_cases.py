@@ -36,7 +36,6 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 
-from .check_golden import check_golden
 from .language_specs import (
     make_golden_path,
     sorted_languages,
@@ -1722,12 +1721,12 @@ def _run_wrap_in_file_case(
                 f"name); it diverges from the compilable "
                 f"{mirror_form!r} form, so no golden is emitted",
             )
-    check_golden(
-        file_regression=file_regression,
+    file_regression.check(
         contents=wrap_result.code + "\n",
+        encoding="utf-8",
         extension=lang_extension,
         newline="",
-        golden_path=golden_path,
+        fullpath=golden_path,
     )
 
 
@@ -2004,10 +2003,10 @@ def run_call_golden_case(
             f"{config.case_dir_name}"
         )
         assert bound.code == composed.code, divergence_message  # noqa: S101
-    check_golden(
-        file_regression=file_regression,
+    file_regression.check(
         contents=composed.code + "\n",
+        encoding="utf-8",
         extension=lang_cls.extension,
         newline="",
-        golden_path=golden_path,
+        fullpath=golden_path,
     )

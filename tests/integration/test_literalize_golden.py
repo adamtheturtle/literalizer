@@ -43,7 +43,6 @@ from .case_discovery import (
     group_cases_by_language,
     group_combined_cases_by_language,
 )
-from .check_golden import check_golden
 from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
@@ -141,12 +140,12 @@ def test_golden_file(
                 # \r\n to \n on Windows, which would corrupt golden
                 # files containing literal CR bytes (e.g. CommonLisp
                 # string_control_chars).
-                check_golden(
-                    file_regression=file_regression,
+                file_regression.check(
                     contents=result.code + "\n",
+                    encoding="utf-8",
                     extension=lang_cls.extension,
                     newline="",
-                    golden_path=golden_path,
+                    fullpath=golden_path,
                 )
 
 
@@ -226,12 +225,12 @@ def test_golden_file_combined_variable_forms(
                     pytest.skip(
                         f"{lang_cls.__name__} cannot represent this input"
                     )
-                check_golden(
-                    file_regression=file_regression,
+                file_regression.check(
                     contents=result.code + "\n",
+                    encoding="utf-8",
                     extension=lang_cls.extension,
                     newline="",
-                    golden_path=golden_path,
+                    fullpath=golden_path,
                 )
 
 
@@ -312,12 +311,12 @@ def test_format_variant_golden_file(
             except UnrepresentableInputError:
                 golden_path.unlink(missing_ok=True)
                 pytest.skip("Format cannot represent this input")
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=variant.spec.extension,
                 newline=None,
-                golden_path=golden_path,
+                fullpath=golden_path,
             )
 
 
@@ -357,12 +356,12 @@ def test_statement_terminator_style_combined_variable_forms(
                 variable_form=literalizer.BothVariableForms(name="my_data"),
                 wrap_in_file=True,
             )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=spec.extension,
                 newline=None,
-                golden_path=make_golden_path(
+                fullpath=make_golden_path(
                     parent=input_info.path.parent,
                     name=case.name,
                     extension=spec.extension,
@@ -440,12 +439,12 @@ def test_heterogeneous_strategy_combined_variable_forms(
                     "heterogeneous input under "
                     f"{case.heterogeneous_strategy.name}",
                 )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=spec.extension,
                 newline=None,
-                golden_path=golden_path,
+                fullpath=golden_path,
             )
 
 
@@ -488,12 +487,12 @@ def test_pre_indent_level_with_new_variable_golden_file(
                 ),
                 wrap_in_file=True,
             )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=spec.extension,
                 newline=None,
-                golden_path=make_golden_path(
+                fullpath=make_golden_path(
                     parent=input_info.path.parent,
                     name=case.name,
                     extension=spec.extension,
@@ -550,12 +549,12 @@ def test_no_variable_form_golden_file(
                 variable_form=None,
                 wrap_in_file=True,
             )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=case.lang_cls.extension,
                 newline=None,
-                golden_path=golden_path,
+                fullpath=golden_path,
             )
 
 
@@ -618,12 +617,12 @@ def test_indent_golden_file(
                     variable_form=None,
                     wrap_in_file=True,
                 )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=case.lang_cls.extension,
                 newline=None,
-                golden_path=golden_path,
+                fullpath=golden_path,
             )
 
 

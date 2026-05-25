@@ -12,7 +12,6 @@ import literalizer
 from literalizer import InputFormat, Language, NewVariable, literalize_call
 from literalizer.exceptions import IncompatibleFormatsError
 
-from .check_golden import check_golden
 from .language_specs import make_golden_path, make_spec, sorted_languages
 
 _CONSTRUCTOR_NAME = "Playlist"
@@ -72,14 +71,14 @@ def test_constructor_targets_golden_file(
                 lang_cls=lang_cls,
                 language_version=version_format,
             )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=(
                     spec.format_constructor_target(_CONSTRUCTOR_NAME) + "\n"
                 ),
+                encoding="utf-8",
                 extension=".txt",
                 newline="",
-                golden_path=_golden_path(
+                fullpath=_golden_path(
                     name=f"{lang_cls.__name__}_constructor_target",
                     lang_cls=lang_cls,
                     version=version_format,
@@ -204,12 +203,12 @@ def test_constructor_default_call_binding_golden_file(
                 parameter_names=[],
                 variable_form=NewVariable(name="p"),
             )
-            check_golden(
-                file_regression=file_regression,
+            file_regression.check(
                 contents=result.code + "\n",
+                encoding="utf-8",
                 extension=".txt",
                 newline="",
-                golden_path=_golden_path(
+                fullpath=_golden_path(
                     name=f"{lang_cls.__name__}_constructor_call",
                     lang_cls=lang_cls,
                     version=version_format,
@@ -252,12 +251,12 @@ def _check_constructor_binding(
         parameter_names=[],
         variable_form=variable_form,
     )
-    check_golden(
-        file_regression=file_regression,
+    file_regression.check(
         contents=result.code + "\n",
+        encoding="utf-8",
         extension=".txt",
         newline="",
-        golden_path=_variant_golden_path(
+        fullpath=_variant_golden_path(
             name=name,
             lang_cls=lang_cls,
             version=language.language_version,
