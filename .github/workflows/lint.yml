@@ -605,11 +605,23 @@ jobs:
           go install github.com/google/go-jsonnet/cmd/jsonnet@latest
           go install github.com/tmccombs/hcl2json@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Jsonnet
         run: |-
           find tests/integration/cases -name '*.jsonnet' -print0 > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
           xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-jsonnet > /dev/null
+      # Basic JSON -> Jsonnet -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the `jsonnet` binary (from the
+      # `go install` above) already on PATH; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_jsonnet_roundtrip.py`.
+      - name: Jsonnet roundtrip
+        run: uv run python .github/scripts/run_jsonnet_roundtrip.py
 
       - name: Lint Hcl
         run: |-
