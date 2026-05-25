@@ -1803,6 +1803,20 @@ jobs:
           } >> "$driver"
           dart analyze --fatal-infos "$tmpdir"
           (cd "$tmpdir" && dart run main.dart)
+      # `uv` is needed by the `Dart roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Dart -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Dart toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so `import
+      # literalizer` resolves. See
+      # `.github/scripts/run_dart_roundtrip.py`.
+      - name: Dart roundtrip
+        run: uv run python .github/scripts/run_dart_roundtrip.py
 
   lint-julia:
     runs-on: ubuntu-latest
