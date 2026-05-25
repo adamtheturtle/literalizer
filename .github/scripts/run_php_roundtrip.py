@@ -22,30 +22,23 @@ cannot represent them losslessly:
 """
 
 import shutil
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Php
 
 _VAR_NAME = "myData"
 _LABEL = "PHP"
+_EXCLUDED_KEYS = ("biginteger", "empty_object")
 
 
 def _build_program(json_text: str) -> str:
     """Return a runnable PHP program literalized from *json_text*."""
-    result = literalize(
-        source=json_text,
-        input_format=InputFormat.JSON,
+    result = roundtrip_common.literalize_new_variable(
         language=Php(),
+        json_text=json_text,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     return f"{preamble}\n{result.code}\necho json_encode(${_VAR_NAME});\n"
@@ -55,28 +48,18 @@ def main() -> None:
     """Round-trip the shared document through the PHP backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
     php = shutil.which(cmd="php") or "php"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        script_path = Path(tmpdir_name) / "main.php"
-        script_path.write_text(data=program, encoding="utf-8")
-        run_result = subprocess.run(
-            args=[php, str(script_path)],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: php runtime error\n{run_result.stdout}"
-            f"{run_result.stderr}",
-        )
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=("biginteger", "empty_object"),
+        source_filename="main.php",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[php, "main.php"],
+                failure_label="php runtime error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

@@ -22,14 +22,8 @@ future expansion of ``roundtrip_input.json`` that adds a new scalar
 kind would fail compilation here until ``valToValue`` is extended.
 """
 
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
-
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Haskell
 
 _VAR_NAME = "myData"
@@ -67,14 +61,11 @@ valToEncoding (HMap kvs) =
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Haskell cabal-script program for *json_text*."""
-    result = literalize(
-        source=json_text,
-        input_format=InputFormat.JSON,
+    result = roundtrip_common.literalize_new_variable(
         language=Haskell(),
+        json_text=json_text,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     # ``Haskell.literalize`` already inlines ``result.body_preamble``
     # (the ``data Val`` declaration and its instances) at the top of
@@ -100,32 +91,21 @@ def _build_program(json_text: str) -> str:
 def main() -> None:
     """Round-trip the shared document through the Haskell backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        source_path = tmpdir / f"{_MODULE_NAME}.hs"
-        source_path.write_text(data=program, encoding="utf-8")
-        # ``--verbose=0`` keeps cabal's progress chatter off stdout so
-        # only the program's encoded JSON reaches ``run_result.stdout``.
-        run_result = subprocess.run(
-            args=["cabal", "run", "--verbose=0", str(source_path)],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: cabal run error\n"
-            f"{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    source_filename = f"{_MODULE_NAME}.hs"
+    # ``--verbose=0`` keeps cabal's progress chatter off stdout so only
+    # the program's encoded JSON reaches the verified stdout.
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=(),
+        source_filename=source_filename,
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=["cabal", "run", "--verbose=0", source_filename],
+                failure_label="cabal run error",
+            ),
+        ],
+        excluded_keys=(),
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

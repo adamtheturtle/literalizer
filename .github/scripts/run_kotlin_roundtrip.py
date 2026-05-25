@@ -20,17 +20,12 @@ its 26-digit value is emitted as ``java.math.BigInteger("...")`` which
 overload for, same shape as the Go, TypeScript and Zig exclusions.
 """
 
-import json
 import os
 import shutil
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Kotlin
 
 _VAR_NAME = "myData"
@@ -64,18 +59,15 @@ fun toJsonElement(v: Any?): JsonElement = when (v) {
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Kotlin script literalized from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
-    result = literalize(
-        source=trimmed_json,
-        input_format=InputFormat.JSON,
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    result = roundtrip_common.literalize_new_variable(
         language=Kotlin(),
+        json_text=trimmed_json,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     return (
@@ -116,30 +108,18 @@ def main() -> None:
             )
         ),
     )
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        (tmpdir / "main.kts").write_text(data=program, encoding="utf-8")
-        run_result = subprocess.run(
-            args=[kotlin, "-classpath", classpath, "main.kts"],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: kotlin run error\n"
-            f"{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="main.kts",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[kotlin, "-classpath", classpath, "main.kts"],
+                failure_label="kotlin run error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

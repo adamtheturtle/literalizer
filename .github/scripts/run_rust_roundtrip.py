@@ -20,16 +20,11 @@ its 26-digit value fits in ``i128`` (which the Rust backend emits) but
 serialization. Same shape as the Go, TypeScript, and Zig exclusions.
 """
 
-import json
 import shutil
-import subprocess
 import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Rust
 
 _VAR_NAME = "my_data"
@@ -39,18 +34,15 @@ _EXCLUDED_KEYS = ("biginteger",)
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Rust program literalized from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
-    result = literalize(
-        source=trimmed_json,
-        input_format=InputFormat.JSON,
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    result = roundtrip_common.literalize_new_variable(
         language=Rust(json_type=Rust.json_types.SERDE_JSON_VALUE),
+        json_text=trimmed_json,
+        var_name=_VAR_NAME,
         pre_indent_level=1,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     return (
@@ -69,55 +61,33 @@ def main() -> None:
     rustc = shutil.which(cmd="rustc") or "rustc"
     deps_dir = sys.argv[1]
     serde_json_rlib = sys.argv[2]
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        src = tmpdir / "main.rs"
-        src.write_text(data=program, encoding="utf-8")
-        binary = tmpdir / "main"
-        compile_result = subprocess.run(
-            args=[
-                rustc,
-                "--edition",
-                "2021",
-                "-L",
-                f"dependency={deps_dir}",
-                "--extern",
-                f"serde_json={serde_json_rlib}",
-                str(object=src),
-                "-o",
-                str(object=binary),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-        if compile_result.returncode != 0:
-            sys.stderr.write(
-                f"{_LABEL}: rustc error\n"
-                f"{compile_result.stdout}{compile_result.stderr}",
-            )
-            sys.stderr.write(f"\nProgram:\n{program}\n")
-            sys.exit(1)
-        run_result = subprocess.run(
-            args=[str(object=binary)],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: run error\n{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="main.rs",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[
+                    rustc,
+                    "--edition",
+                    "2021",
+                    "-L",
+                    f"dependency={deps_dir}",
+                    "--extern",
+                    f"serde_json={serde_json_rlib}",
+                    "main.rs",
+                    "-o",
+                    "main",
+                ],
+                failure_label="rustc error",
+            ),
+            roundtrip_common.Step(
+                args=["./main"],
+                failure_label="run error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":
