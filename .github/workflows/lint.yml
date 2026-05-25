@@ -2688,6 +2688,13 @@ jobs:
           < /tmp/files-to-lint
       - name: Run V files
         run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
+      # Driven from `lint-v` because that is the job where the pinned
+      # `v` binary (installed by the `Install V` step above) is on
+      # `PATH`; `uv run` (project mode, not `--no-project`) is required
+      # so `import literalizer` resolves.
+      # See `.github/scripts/run_v_roundtrip.py`.
+      - name: V roundtrip
+        run: uv run python .github/scripts/run_v_roundtrip.py
 
   lint-objectivec:
     # ``macos-15`` pins the runner image (the current ``macos-latest``
