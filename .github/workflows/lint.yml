@@ -240,6 +240,14 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-js
           xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
 
+      # Basic JSON -> JavaScript -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with the Node toolchain (pinned by
+      # the `Set up Node` step above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_javascript_roundtrip.py`.
+      - name: JavaScript roundtrip
+        run: uv run python .github/scripts/run_javascript_roundtrip.py
+
       # The host compiles each fixture into an in-memory assembly, then
       # reflectively constructs `Main` and invokes its `main()` method
       # (or runs field initializers on field-only fixtures), so javac
@@ -854,10 +862,25 @@ jobs:
       - name: Toml roundtrip
         run: uv run --with 'tomli>=2.4.0' python .github/scripts/run_toml_roundtrip.py
 
+      # Basic JSON -> JSON5 -> JSON round-trip (issue 1867).  ``pyjson5``
+      # is already a core ``literalizer`` dependency, so plain ``uv run``
+      # (project mode) resolves it without an extra ``--with`` layer.
+      # See ``.github/scripts/run_json5_roundtrip.py``.
+      - name: Json5 roundtrip
+        run: uv run python .github/scripts/run_json5_roundtrip.py
+
       - name: Lint Yaml
         run: |-
           find tests/integration/cases -name '*.yaml' ! -name 'input.yaml' -print0 > /tmp/files-yaml && test -s /tmp/files-yaml
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
+
+      # Basic JSON -> YAML -> JSON round-trip (issue 1867). Runs here
+      # alongside the existing Yaml syntax check; ``uv run`` (project
+      # mode, not ``--no-project``) is required so ``import literalizer``
+      # resolves, and ``--with`` layers ``pyyaml`` on top.  See
+      # ``.github/scripts/run_yaml_roundtrip.py``.
+      - name: Yaml roundtrip
+        run: uv run --with 'pyyaml' python .github/scripts/run_yaml_roundtrip.py
 
   # .NET-hosted linters. Run host builds in parallel-looking sequential
   # steps so the .NET runtime startup is paid once for the whole job.
