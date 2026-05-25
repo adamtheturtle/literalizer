@@ -417,6 +417,14 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
 
+      # Basic JSON -> Dhall -> JSON round-trip (issue 1867).  Runs here
+      # because this is the job with the `dhall` binary on PATH (the
+      # `Install Dhall` step above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_dhall_roundtrip.py`.
+      - name: Dhall roundtrip
+        run: uv run python .github/scripts/run_dhall_roundtrip.py
+
       - name: Lint Wren
         run: |-
           find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren && test -s /tmp/files-wren
