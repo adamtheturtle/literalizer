@@ -1184,6 +1184,21 @@ jobs:
           find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
           groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
 
+      # `uv` is needed by the `Groovy roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Groovy -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Groovy toolchain (pinned by the
+      # `Install Groovy` step above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_groovy_roundtrip.py`.
+      - name: Groovy roundtrip
+        run: uv run python .github/scripts/run_groovy_roundtrip.py
+
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
     runs-on: ubuntu-latest
