@@ -240,6 +240,14 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-js
           xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
 
+      # Basic JSON -> JavaScript -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with the Node toolchain (pinned by
+      # the `Set up Node` step above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_javascript_roundtrip.py`.
+      - name: JavaScript roundtrip
+        run: uv run python .github/scripts/run_javascript_roundtrip.py
+
       # The host compiles each fixture into an in-memory assembly, then
       # reflectively constructs `Main` and invokes its `main()` method
       # (or runs field initializers on field-only fixtures), so javac
@@ -597,11 +605,23 @@ jobs:
           go install github.com/google/go-jsonnet/cmd/jsonnet@latest
           go install github.com/tmccombs/hcl2json@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Jsonnet
         run: |-
           find tests/integration/cases -name '*.jsonnet' -print0 > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
           xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-jsonnet > /dev/null
+      # Basic JSON -> Jsonnet -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the `jsonnet` binary (from the
+      # `go install` above) already on PATH; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_jsonnet_roundtrip.py`.
+      - name: Jsonnet roundtrip
+        run: uv run python .github/scripts/run_jsonnet_roundtrip.py
 
       - name: Lint Hcl
         run: |-
@@ -853,6 +873,13 @@ jobs:
       # ``tomli`` on top.  See ``.github/scripts/run_toml_roundtrip.py``.
       - name: Toml roundtrip
         run: uv run --with 'tomli>=2.4.0' python .github/scripts/run_toml_roundtrip.py
+
+      # Basic JSON -> JSON5 -> JSON round-trip (issue 1867).  ``pyjson5``
+      # is already a core ``literalizer`` dependency, so plain ``uv run``
+      # (project mode) resolves it without an extra ``--with`` layer.
+      # See ``.github/scripts/run_json5_roundtrip.py``.
+      - name: Json5 roundtrip
+        run: uv run python .github/scripts/run_json5_roundtrip.py
 
       - name: Lint Yaml
         run: |-
@@ -1403,6 +1430,20 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+      # `uv` is needed by the `C++ roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> C++ -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the C++ toolchain and the
+      # `nlohmann-json3-dev` package; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_cpp_roundtrip.py`.
+      - name: C++ roundtrip
+        run: uv run python .github/scripts/run_cpp_roundtrip.py
 
   lint-kotlin:
     runs-on: ubuntu-latest
