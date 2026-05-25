@@ -19,9 +19,13 @@ encoder that pattern-matches on the literalized ``Val`` constructors.
 
 One top-level key is excluded from the comparison:
 
-* ``float_large_exponent`` -- Roc's ``Num.to_str`` for ``F64`` does not
-  promise to round-trip the largest finite ``1.7976931348623157e+308``
-  literal byte-for-byte, and the encoder relies on that for floats.
+* ``float_large_exponent`` -- ``format_float_repr`` emits the literal
+  with ``e+308``, and Roc's float lexer rejects the explicit ``+`` sign
+  in the exponent ("Floating point literals can only contain the
+  digits 0-9, or use scientific notation 10e4, or have a float
+  suffix").  The key is trimmed from the input before literalization
+  (so the generated Roc file does not contain it) and from both sides
+  of the parsed comparison.
 """
 
 import shutil
@@ -98,9 +102,13 @@ escape_byte = |b|
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Roc app literalized from *json_text*."""
+    trimmed = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = roundtrip_common.literalize_new_variable(
         language=Roc(),
-        json_text=json_text,
+        json_text=trimmed,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
