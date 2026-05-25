@@ -990,6 +990,14 @@ jobs:
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
             dotnet fsi --nologo --langversion:8.0 --exec "$driver"
 
+      # Basic JSON -> F# -> JSON round-trip (issue 2653). Runs here
+      # because this is the job with the .NET toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_fsharp_roundtrip.py`.
+      - name: FSharp roundtrip
+        run: uv run python .github/scripts/run_fsharp_roundtrip.py
+
   lint-sml:
     runs-on: ubuntu-latest
     steps:
