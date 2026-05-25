@@ -649,6 +649,13 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl && test -s /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
+      # Basic JSON -> HCL -> JSON round-trip (issue 2657). Runs here
+      # because this is the job with the `hcl2json` binary (from the
+      # `go install` above) already on PATH; `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_hcl_roundtrip.py`.
+      - name: Hcl roundtrip
+        run: uv run python .github/scripts/run_hcl_roundtrip.py
 
   # Json5 + Norg + TypeScript syntax check. The Run-TypeScript and Elm
   # passes are split into sibling jobs (`lint-typescript-run`, `lint-elm`)
