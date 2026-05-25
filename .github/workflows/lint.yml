@@ -2079,6 +2079,20 @@ jobs:
             printf '%s.cr <- %s\n' "$name" "$f"
           done < /tmp/files-to-lint
           crystal run "$driver"
+      # `uv` is needed by the `Crystal roundtrip` step below; it runs
+      # the helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Crystal -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Crystal toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so `import
+      # literalizer` resolves. See
+      # `.github/scripts/run_crystal_roundtrip.py`.
+      - name: Crystal roundtrip
+        run: uv run python .github/scripts/run_crystal_roundtrip.py
 
   # Mojo reserves ~3.6 GB of virtual address space per invocation
   # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
