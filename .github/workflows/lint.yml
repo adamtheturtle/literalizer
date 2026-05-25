@@ -1248,13 +1248,24 @@ jobs:
           find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
           groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
 
-      # `uv` is needed by the `Groovy roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
+      # `uv` is needed by the `Clojure roundtrip` and `Groovy roundtrip`
+      # steps below; they run their helpers in project mode so
+      # `import literalizer` resolves.
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Clojure -> JSON round-trip (issue 2642). Runs here
+      # because this is the job with Babashka (pinned by the
+      # `Install clj-kondo and Babashka` step above); `cheshire.core`
+      # ships built in with Babashka so no extra rock is needed.
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves.
+      # See `.github/scripts/run_clojure_roundtrip.py`.
+      - name: Clojure roundtrip
+        run: uv run python .github/scripts/run_clojure_roundtrip.py
+
       # Basic JSON -> Groovy -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Groovy toolchain (pinned by the
       # `Install Groovy` step above); `uv run` (project mode, not
