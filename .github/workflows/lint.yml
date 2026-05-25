@@ -573,6 +573,23 @@ jobs:
           find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc && test -s /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
 
+      # `uv` is needed by the `Roc roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Roc -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Roc toolchain (the pinned
+      # nightly installed above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # The first invocation downloads and caches the basic-cli
+      # platform tarball pinned in
+      # `.github/scripts/run_roc_roundtrip.py`.
+      - name: Roc roundtrip
+        run: uv run python .github/scripts/run_roc_roundtrip.py
+
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
   # escaped quotes and the ``datetime`` builtin) are documented in
