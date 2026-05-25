@@ -29,16 +29,10 @@ been translated.
 """
 
 import json
-import os
 import shutil
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Elm
 
 _VAR_NAME = "myData"
@@ -154,18 +148,15 @@ main =
 
 def _build_main(json_text: str) -> str:
     """Return a runnable Elm port module literalized from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
-    result = literalize(
-        source=trimmed_json,
-        input_format=InputFormat.JSON,
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    result = roundtrip_common.literalize_new_variable(
         language=Elm(),
+        json_text=trimmed_json,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     # ``result.code`` for Elm starts with the body_preamble (the
     # ``type Val ...`` declaration restricted to used constructors);
@@ -187,50 +178,26 @@ def main() -> None:
     program = _build_main(json_text=roundtrip_common.read_input())
     elm = shutil.which(cmd="elm") or "elm"
     node = shutil.which(cmd="node") or "node"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        src_dir = tmpdir / "src"
-        src_dir.mkdir()
-        (tmpdir / "elm.json").write_text(data=_ELM_JSON, encoding="utf-8")
-        (src_dir / "Main.elm").write_text(data=program, encoding="utf-8")
-        (tmpdir / "run.js").write_text(data=_RUN_JS, encoding="utf-8")
-        compile_result = subprocess.run(
-            args=[elm, "make", "src/Main.elm", "--output=main.js"],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-            env={**os.environ},
-        )
-        if compile_result.returncode != 0:
-            sys.stderr.write(
-                f"{_LABEL}: elm make error\n"
-                f"{compile_result.stdout}{compile_result.stderr}",
-            )
-            sys.stderr.write(f"\nProgram:\n{program}\n")
-            sys.exit(1)
-        run_result = subprocess.run(
-            args=[node, "run.js"],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: node run error\n"
-            f"{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="src/Main.elm",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[elm, "make", "src/Main.elm", "--output=main.js"],
+                failure_label="elm make error",
+            ),
+            roundtrip_common.Step(
+                args=[node, "run.js"],
+                failure_label="node run error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
+        extra_files={
+            "elm.json": _ELM_JSON,
+            "run.js": _RUN_JS,
+        },
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

@@ -26,12 +26,7 @@ The whole file evaluates to that expression, which is exactly what we
 want.
 """
 
-import json
 import shutil
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 
@@ -44,10 +39,10 @@ _EXCLUDED_KEYS = ("biginteger",)
 
 def _build_program(json_text: str) -> str:
     """Return a Jsonnet program literalized from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = literalize(
         source=trimmed_json,
         input_format=InputFormat.JSON,
@@ -63,29 +58,18 @@ def main() -> None:
     """Round-trip the shared document through the Jsonnet backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
     jsonnet = shutil.which(cmd="jsonnet") or "jsonnet"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        program_path = tmpdir / "main.jsonnet"
-        program_path.write_text(data=program, encoding="utf-8")
-        run_result = subprocess.run(
-            args=[jsonnet, str(program_path)],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: jsonnet error\n{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="main.jsonnet",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[jsonnet, "main.jsonnet"],
+                failure_label="jsonnet error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

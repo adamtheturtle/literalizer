@@ -32,17 +32,11 @@ relies on the standard JSON formatter for the tricky bits (escapes,
 negative zero, large exponents) rather than re-implementing them.
 """
 
-import json
 import shutil
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 from purescript_common import PRELUDE_JS, PRELUDE_PURS
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import PureScript
 
 _VAR_NAME = "myData"
@@ -140,18 +134,15 @@ _NODE_DRIVER = (
 
 def _build_check(json_text: str) -> str:
     """Return a runnable PureScript ``Check`` module from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
-    result = literalize(
-        source=trimmed_json,
-        input_format=InputFormat.JSON,
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    result = roundtrip_common.literalize_new_variable(
         language=PureScript(),
+        json_text=trimmed_json,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     body_preamble_text = "\n".join(result.body_preamble)
     declaration = result.code
@@ -171,59 +162,34 @@ def main() -> None:
     program = _build_check(json_text=roundtrip_common.read_input())
     purs = shutil.which(cmd="purs") or "purs"
     node = shutil.which(cmd="node") or "node"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        prelude_purs = tmpdir / "Prelude.purs"
-        prelude_js = tmpdir / "Prelude.js"
-        prelude_purs.write_text(data=PRELUDE_PURS, encoding="utf-8")
-        prelude_js.write_text(data=PRELUDE_JS, encoding="utf-8")
-        check_purs = tmpdir / "Check.purs"
-        check_js = tmpdir / "Check.js"
-        check_purs.write_text(data=program, encoding="utf-8")
-        check_js.write_text(data=_CHECK_JS, encoding="utf-8")
-        output_dir = tmpdir / "output"
-        compile_result = subprocess.run(
-            args=[
-                purs,
-                "compile",
-                check_purs.as_posix(),
-                prelude_purs.as_posix(),
-                "-o",
-                output_dir.as_posix(),
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-        if compile_result.returncode != 0:
-            sys.stderr.write(
-                f"{_LABEL}: purs compile error\n"
-                f"{compile_result.stdout}{compile_result.stderr}",
-            )
-            sys.stderr.write(f"\nProgram:\n{program}\n")
-            sys.exit(1)
-        run_result = subprocess.run(
-            args=[node, "--input-type=module", "-e", _NODE_DRIVER],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: node run error\n"
-            f"{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="Check.purs",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[
+                    purs,
+                    "compile",
+                    "Check.purs",
+                    "Prelude.purs",
+                    "-o",
+                    "output",
+                ],
+                failure_label="purs compile error",
+            ),
+            roundtrip_common.Step(
+                args=[node, "--input-type=module", "-e", _NODE_DRIVER],
+                failure_label="node run error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
+        extra_files={
+            "Prelude.purs": PRELUDE_PURS,
+            "Prelude.js": PRELUDE_JS,
+            "Check.js": _CHECK_JS,
+        },
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

@@ -21,16 +21,10 @@ double quotes inside string values: they would be reinterpreted by the
 ``%(...)`` percent literal before the JSON parser sees them.
 """
 
-import json
 import shutil
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Crystal
 
 _VAR_NAME = "my_data"
@@ -40,18 +34,15 @@ _EXCLUDED_KEYS = ("biginteger", "string_escapes")
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Crystal program literalized from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
-    result = literalize(
-        source=trimmed_json,
-        input_format=InputFormat.JSON,
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    result = roundtrip_common.literalize_new_variable(
         language=Crystal(json_type=Crystal.json_types.JSON_ANY),
+        json_text=trimmed_json,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     return f"{preamble}\n{result.code}\nprint {_VAR_NAME}.to_json\n"
@@ -61,30 +52,18 @@ def main() -> None:
     """Round-trip the shared document through the Crystal backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
     crystal = shutil.which(cmd="crystal") or "crystal"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        src = tmpdir / "main.cr"
-        src.write_text(data=program, encoding="utf-8")
-        run_result = subprocess.run(
-            args=[crystal, "run", str(object=src)],
-            capture_output=True,
-            text=True,
-            check=False,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: crystal run error\n"
-            f"{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="main.cr",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[crystal, "run", "main.cr"],
+                failure_label="crystal run error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

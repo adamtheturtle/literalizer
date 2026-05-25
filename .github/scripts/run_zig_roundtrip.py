@@ -18,16 +18,10 @@ not compile if the field were kept.  Same shape as the Go and
 TypeScript exclusions.
 """
 
-import json
 import shutil
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Zig
 
 _VAR_NAME = "myData"
@@ -68,18 +62,15 @@ fn toJsonValue(allocator: std.mem.Allocator, v: ZVal) !std.json.Value {
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Zig program literalized from *json_text*."""
-    parsed: dict[str, object] = json.loads(s=json_text)
-    for key in _EXCLUDED_KEYS:
-        parsed.pop(key, None)
-    trimmed_json = json.dumps(obj=parsed)
-    result = literalize(
-        source=trimmed_json,
-        input_format=InputFormat.JSON,
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    result = roundtrip_common.literalize_new_variable(
         language=Zig(),
+        json_text=trimmed_json,
+        var_name=_VAR_NAME,
         pre_indent_level=1,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     return (
@@ -104,29 +95,18 @@ def main() -> None:
     """Round-trip the shared document through the Zig backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
     zig = shutil.which(cmd="zig") or "zig"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        (tmpdir / "main.zig").write_text(data=program, encoding="utf-8")
-        run_result = subprocess.run(
-            args=[zig, "run", "main.zig"],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: zig run error\n{run_result.stdout}{run_result.stderr}",
-        )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
-        sys.exit(1)
-    roundtrip_common.verify(
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=_EXCLUDED_KEYS,
+        source_filename="main.zig",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[zig, "run", "main.zig"],
+                failure_label="zig run error",
+            ),
+        ],
+        excluded_keys=_EXCLUDED_KEYS,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

@@ -15,14 +15,10 @@ test under ``tests/``.  It is the template for further per-language
 """
 
 import shutil
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 
 import roundtrip_common
 
-from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Java
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -33,14 +29,11 @@ _LABEL = "Java"
 
 def _build_main(json_text: str) -> str:
     """Return a runnable ``Main`` program literalized from *json_text*."""
-    result = literalize(
-        source=json_text,
-        input_format=InputFormat.JSON,
+    result = roundtrip_common.literalize_new_variable(
         language=Java(),
+        json_text=json_text,
+        var_name=_VAR_NAME,
         pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
-        wrap_in_file=False,
     )
     imports = "\n".join(result.preamble)
     body_preamble = "\n".join(result.body_preamble)
@@ -66,44 +59,24 @@ def main() -> None:
     program = _build_main(json_text=roundtrip_common.read_input())
     javac = shutil.which(cmd="javac") or "javac"
     java = shutil.which(cmd="java") or "java"
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        (tmpdir / "Main.java").write_text(data=program, encoding="utf-8")
-        shutil.copy(src=_SERIALIZER_SRC, dst=tmpdir / _SERIALIZER_SRC.name)
-        compile_result = subprocess.run(
-            args=[javac, "Main.java", _SERIALIZER_SRC.name],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-        )
-        if compile_result.returncode != 0:
-            sys.stderr.write(
-                f"{_LABEL}: javac error\n{compile_result.stdout}"
-                f"{compile_result.stderr}",
-            )
-            sys.exit(1)
-        run_result = subprocess.run(
-            args=[java, "Main"],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
-        )
-    if run_result.returncode != 0:
-        sys.stderr.write(
-            f"{_LABEL}: java runtime error\n{run_result.stdout}"
-            f"{run_result.stderr}",
-        )
-        sys.exit(1)
-    roundtrip_common.verify(
+    serializer_text = _SERIALIZER_SRC.read_text(encoding="utf-8")
+    roundtrip_common.execute(
         label=_LABEL,
-        produced_json=run_result.stdout,
-        exclude_keys=(),
+        source_filename="Main.java",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[javac, "Main.java", _SERIALIZER_SRC.name],
+                failure_label="javac error",
+            ),
+            roundtrip_common.Step(
+                args=[java, "Main"],
+                failure_label="java runtime error",
+            ),
+        ],
+        excluded_keys=(),
+        extra_files={_SERIALIZER_SRC.name: serializer_text},
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":
