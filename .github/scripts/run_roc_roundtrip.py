@@ -64,11 +64,11 @@ val_to_json = |v|
         RFloat(f) -> Num.to_str(f)
         RStr(s) -> escape_str(s)
         RList(items) ->
-            parts = List.map(items, val_to_json)
+            parts = List.map(items, |x| val_to_json(x))
             joined = Str.join_with(parts, ",")
             "[${joined}]"
         RDict(entries) ->
-            parts = List.map(entries, entry_to_json)
+            parts = List.map(entries, |e| entry_to_json(e))
             joined = Str.join_with(parts, ",")
             "{${joined}}"
 
