@@ -1084,6 +1084,22 @@ jobs:
             Results = [Run(M) || M <- [$modules]],
             case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
 
+      # `uv` is needed by the `Erlang roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Erlang -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Erlang/OTP toolchain (`escript`
+      # on PATH, OTP 27's built-in `json` module available); `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_erlang_roundtrip.py`.
+      - name: Erlang roundtrip
+        run: uv run python .github/scripts/run_erlang_roundtrip.py
+
   lint-gleam:
     runs-on: ubuntu-latest
     # Every Gleam fixture on disk carries the tag from
