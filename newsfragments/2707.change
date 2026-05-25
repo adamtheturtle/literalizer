@@ -1,0 +1,1 @@
+Replace the hand-rolled JSON serializer in the Java round-trip CI check with Jackson's ``ObjectMapper``.
