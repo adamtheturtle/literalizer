@@ -1263,6 +1263,15 @@ jobs:
         run: xargs -0 uv run --no-project python .github/scripts/run_purescript.py
           < /tmp/files-purescript
 
+      # Basic JSON -> PureScript -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with the `purs` binary (from
+      # `setup-purescript`) and Node already on PATH; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_purescript_roundtrip.py`.
+      - name: PureScript roundtrip
+        run: uv run python .github/scripts/run_purescript_roundtrip.py
+
   # Ubuntu's packaged clang-tidy is several releases behind and is the
   # dominant cost of this job on runners. Pull a recent build from PyPI
   # via uv instead.
