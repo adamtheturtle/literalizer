@@ -240,6 +240,14 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-js
           xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
 
+      # Basic JSON -> JavaScript -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with the Node toolchain (pinned by
+      # the `Set up Node` step above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_javascript_roundtrip.py`.
+      - name: JavaScript roundtrip
+        run: uv run python .github/scripts/run_javascript_roundtrip.py
+
       # The host compiles each fixture into an in-memory assembly, then
       # reflectively constructs `Main` and invokes its `main()` method
       # (or runs field initializers on field-only fixtures), so javac
