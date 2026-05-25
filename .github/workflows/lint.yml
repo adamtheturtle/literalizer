@@ -2723,6 +2723,21 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
+      # `uv` is needed by the `Objective-C roundtrip` step below; it runs
+      # the helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Objective-C -> JSON round-trip (issue 2668). Runs
+      # here because this is the job with the Objective-C toolchain
+      # (Apple `clang` plus the `Foundation` framework); `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_objective_c_roundtrip.py`.
+      - name: Objective-C roundtrip
+        run: uv run python .github/scripts/run_objective_c_roundtrip.py
 
   lint-objectivec-tidy:
     # ``macos-15`` pins the runner image to match ``lint-objectivec`` so
