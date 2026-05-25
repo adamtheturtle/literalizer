@@ -2391,6 +2391,20 @@ jobs:
         run: xargs -0 raco make < /tmp/files-to-lint
       - name: Run Racket files
         run: xargs -0 -P "$(nproc)" -n1 racket < /tmp/files-to-lint
+      # `uv` is needed by the `Racket roundtrip` step below; it runs
+      # the helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Racket -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Racket toolchain (`racket` on
+      # PATH, the built-in `json` module available); `uv run` (project
+      # mode, not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_racket_roundtrip.py`.
+      - name: Racket roundtrip
+        run: uv run python .github/scripts/run_racket_roundtrip.py
 
   lint-raku:
     runs-on: ubuntu-latest
