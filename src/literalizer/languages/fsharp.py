@@ -324,6 +324,27 @@ class FSharp(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"F"``, producing constructors like ``FNull``,
             ``FBool``, ``FInt``, etc.
+
+    Notes:
+        The generated ``Val`` discriminated union does not round-trip
+        through ``System.Text.Json.JsonSerializer.Serialize`` (with or
+        without ``FSharp.SystemTextJson``) without a custom
+        ``JsonConverter<Val>``.  Two pitfalls:
+
+        * The map case is emitted as ``FMap of (string * Val) list``, a
+          tuple list rather than a ``Map<,>``, so that insertion order
+          survives (F#'s built-in ``Map<,>`` is sorted by key).  A
+          generic JSON encoder emits it as ``[[k, v], ...]`` instead of
+          ``{"k": v}``.
+        * ``FSharp.SystemTextJson``'s ``Untagged`` encoding ignores
+          ``UnwrapSingleFieldCases``, so ``FInt 42L`` round-trips as
+          ``{"Item": 42}`` rather than ``42`` (upstream behavior
+          reproduced on 1.3.13 and 1.4.36).
+
+        Users serializing ``Val`` to JSON must walk the constructors
+        explicitly; ``.github/scripts/run_fsharp_roundtrip.py`` ships a
+        ``writeVal`` ``match`` on top of ``Utf8JsonWriter`` that can be
+        used as a starting point.
     """
 
     format_integer_widened = no_format_integer_widened

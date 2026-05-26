@@ -574,6 +574,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="OCaml_json_type_yojson_safe_t",
+            spec=make_spec(
+                lang_cls=OCaml,
+                json_type=OCaml.json_types.YOJSON_SAFE_T,
+            ),
+            lang_cls=OCaml,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="PureScript_json_type_argonaut_json",
             spec=make_spec(
                 lang_cls=PureScript,
@@ -2527,6 +2536,39 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.ExistingVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="OCaml_json_type_yojson_safe_t_existing",
+                variant=Variant(
+                    name="OCaml_json_type_yojson_safe_t_existing",
+                    spec=make_spec(
+                        lang_cls=OCaml,
+                        json_type=OCaml.json_types.YOJSON_SAFE_T,
+                    ),
+                    lang_cls=OCaml,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.ExistingVariable(name="my_data"),
+            ),
+            # Covers the ``false_literal`` cached property on OCaml
+            # under ``YOJSON_SAFE_T``: none of the shared
+            # ``VARIANT_CASES["json_type"]`` inputs contain a ``False``
+            # value, so the coverage gate flags the false-literal arm
+            # otherwise.
+            VariantCase(
+                variant_name="OCaml_json_type_yojson_safe_t_bool_list",
+                variant=Variant(
+                    name="OCaml_json_type_yojson_safe_t_bool_list",
+                    spec=make_spec(
+                        lang_cls=OCaml,
+                        json_type=OCaml.json_types.YOJSON_SAFE_T,
+                    ),
+                    lang_cls=OCaml,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="bool_list",
+                variable_form=literalizer.NewVariable(name="my_data"),
             ),
             VariantCase(
                 variant_name="Kotlin_json_type_kotlinx_json_element_combined",
