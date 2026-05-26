@@ -192,13 +192,13 @@ def _format_fsharp_json_entry(_original: Value, formatted: str) -> str:
     """Wrap a sequence / set / dict entry for ``JsonArray`` /
     ``JsonObject``.
     """
-    return _fsharp_json_wrap(formatted)
+    return _fsharp_json_wrap(formatted=formatted)
 
 
 @beartype
 def _format_fsharp_json_call_arg(_original: Value, formatted: str, /) -> str:
     """Wrap a direct F# call argument as ``JsonNode``."""
-    return _fsharp_json_wrap(formatted)
+    return _fsharp_json_wrap(formatted=formatted)
 
 
 @beartype
@@ -229,7 +229,7 @@ def _fsharp_json_top_level(formatted: str) -> str:
 @beartype
 def _format_fsharp_json_assignment(name: str, value: str, _data: Value) -> str:
     """Assign a rendered literal to an F# ``JsonNode`` binding."""
-    return f"let {name}: JsonNode = {_fsharp_json_top_level(value)}"
+    return f"let {name}: JsonNode = {_fsharp_json_top_level(formatted=value)}"
 
 
 @beartype
@@ -241,7 +241,8 @@ def _build_fsharp_json_declaration_inner(
 
     def _format(name: str, value: str, _data: Value) -> str:
         """Format a JSON-backed declaration."""
-        return f"{keyword} {name}: JsonNode = {_fsharp_json_top_level(value)}"
+        rhs = _fsharp_json_top_level(formatted=value)
+        return f"{keyword} {name}: JsonNode = {rhs}"
 
     return _format
 
