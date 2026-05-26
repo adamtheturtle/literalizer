@@ -26,35 +26,16 @@ calls.  No ``Val`` ADT or walker is needed: ``Json.Encode.encode 0``
 serializes the declared value directly.
 """
 
-import json
 import shutil
 
 import roundtrip_common
+from elm_common import ELM_JSON
 
 from literalizer.languages import Elm
 
 _VAR_NAME = "myData"
 _LABEL = "Elm"
 _EXCLUDED_KEYS = ("biginteger",)
-
-# elm.json with ``elm/json`` promoted to a direct dependency so
-# ``import Json.Encode`` resolves; the rest mirrors the shared
-# ``ELM_JSON`` from ``elm_common.py``.
-_ELM_JSON = json.dumps(
-    obj={
-        "type": "application",
-        "source-directories": ["src"],
-        "elm-version": "0.19.1",
-        "dependencies": {
-            "direct": {
-                "elm/core": "1.0.5",
-                "elm/json": "1.1.3",
-            },
-            "indirect": {},
-        },
-        "test-dependencies": {"direct": {}, "indirect": {}},
-    },
-)
 
 # Node wrapper.  ``Elm.Main.init`` returns synchronously; the runtime
 # processes the ``init`` ``Cmd`` (which calls ``output``) on the next
@@ -137,7 +118,7 @@ def main() -> None:
         ],
         excluded_keys=_EXCLUDED_KEYS,
         extra_files={
-            "elm.json": _ELM_JSON,
+            "elm.json": ELM_JSON,
             "run.js": _RUN_JS,
         },
     )
