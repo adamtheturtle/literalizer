@@ -153,19 +153,20 @@ def _apply_yojson_entry(original: Value, formatted: str) -> str:
     """
     if formatted.startswith("`"):
         return formatted
+    # Only bare-scalar formatted values reach here: ints, floats,
+    # quoted strings (str, bytes, and ISO date/datetime/time strings).
+    # ``bool`` is a subclass of ``int`` in Python but cannot reach here
+    # because ``true_literal`` / ``false_literal`` are already
+    # backtick-prefixed and caught by the early-return above.  ``None``
+    # / collections (list, dict, set, OrderedMap) likewise arrive
+    # pre-wrapped via the configured open/close delimiters.
     match original:
-        case bool():
-            return formatted
         case int():
             tag = "Int"
         case float():
             tag = "Float"
-        case str() | bytes():
-            tag = "String"
-        case datetime.datetime() | datetime.date() | datetime.time():
-            tag = "String"
         case _:
-            return formatted
+            tag = "String"
     literal = f"({formatted})" if formatted.startswith("-") else formatted
     return f"`{tag} {literal}"
 
