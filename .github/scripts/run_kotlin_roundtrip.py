@@ -1,11 +1,13 @@
 """Kotlin JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to a Kotlin
-``val myData = ...`` declaration, wrap it in a tiny ``.kts`` script
-that walks the generated ``Any?`` value into a
-``kotlinx.serialization.json.JsonElement`` and prints
-``Json.encodeToString(...)`` to stdout, run it with ``kotlin``, and
-hand the emitted JSON to :func:`roundtrip_common.verify`.
+``val myData: JsonElement = ...`` declaration under
+``json_type=Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT`` (so the binding is a
+``kotlinx.serialization.json.JsonElement`` tree built via
+``Json.parseToJsonElement``), wrap it in a tiny ``.kts`` script that
+prints ``Json.encodeToString(JsonElement.serializer(), myData)`` to
+stdout, run it with ``kotlin``, and hand the emitted JSON to
+:func:`roundtrip_common.verify`.
 
 This lives here, driven by a step of the ``lint-kotlin`` job in
 ``.github/workflows/lint.yml``, because that job is where the Kotlin
@@ -14,10 +16,9 @@ installed (same ``LITERALIZER_LINT_CLASSPATH`` the per-fixture compile
 host reads).  It shares the same input and comparison logic as the
 other per-language round-trip helpers.
 
-The shared input's ``biginteger`` field is excluded from the comparison:
-its 26-digit value is emitted as ``java.math.BigInteger("...")`` which
-``kotlinx.serialization.json`` has no first-class ``JsonPrimitive``
-overload for, same shape as the Go, TypeScript and Zig exclusions.
+``kotlinx.serialization.json`` preserves numbers verbatim through
+``parseToJsonElement``/``encodeToString``, so the shared input's
+26-digit ``biginteger`` field needs no exclusion under this strategy.
 """
 
 import os
@@ -30,61 +31,23 @@ from literalizer.languages import Kotlin
 
 _VAR_NAME = "myData"
 _LABEL = "Kotlin"
-_EXCLUDED_KEYS = ("biginteger",)
-
-# Recursive ``Any?`` -> ``JsonElement`` walker.  The Kotlin backend
-# emits primitive-typed arrays (``intArrayOf``, ...) for homogeneous
-# numeric lists, so each primitive-array shape needs its own branch
-# before the generic ``List<*>`` arm.  ``Map<*, *>`` covers both
-# ``mapOf<String, Any?>`` and the narrower homogeneous-value maps the
-# backend emits for inner objects.
-_TO_JSON_ELEMENT = r"""
-fun toJsonElement(v: Any?): JsonElement = when (v) {
-    null -> JsonNull
-    is Boolean -> JsonPrimitive(v)
-    is Number -> JsonPrimitive(v)
-    is String -> JsonPrimitive(v)
-    is IntArray -> JsonArray(v.map { JsonPrimitive(it) })
-    is LongArray -> JsonArray(v.map { JsonPrimitive(it) })
-    is DoubleArray -> JsonArray(v.map { JsonPrimitive(it) })
-    is BooleanArray -> JsonArray(v.map { JsonPrimitive(it) })
-    is List<*> -> JsonArray(v.map(::toJsonElement))
-    is Map<*, *> -> JsonObject(
-        v.entries.associate { (k, vv) -> k.toString() to toJsonElement(vv) }
-    )
-    else -> error("unhandled type: " + v::class)
-}
-"""
 
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Kotlin script literalized from *json_text*."""
-    trimmed_json = roundtrip_common.trim_keys(
-        json_text=json_text,
-        excluded_keys=_EXCLUDED_KEYS,
-    )
     result = roundtrip_common.literalize_new_variable(
-        language=Kotlin(),
-        json_text=trimmed_json,
+        language=Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT),
+        json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
-    preamble = "\n".join((*result.preamble, *result.body_preamble))
+    preamble = "\n".join(result.preamble)
     return (
-        "import kotlinx.serialization.json.Json\n"
-        "import kotlinx.serialization.json.JsonArray\n"
-        "import kotlinx.serialization.json.JsonElement\n"
-        "import kotlinx.serialization.json.JsonNull\n"
-        "import kotlinx.serialization.json.JsonObject\n"
-        "import kotlinx.serialization.json.JsonPrimitive\n"
         f"{preamble}\n"
-        f"{_TO_JSON_ELEMENT}"
-        "\n"
         f"{result.code}\n"
-        "\n"
         "print(Json.encodeToString("
         "JsonElement.serializer(), "
-        f"toJsonElement({_VAR_NAME})"
+        f"{_VAR_NAME}"
         "))\n"
     )
 
@@ -118,7 +81,7 @@ def main() -> None:
                 failure_label="kotlin run error",
             ),
         ],
-        excluded_keys=_EXCLUDED_KEYS,
+        excluded_keys=(),
     )
 
 
