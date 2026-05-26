@@ -16,10 +16,11 @@ installed (same ``LITERALIZER_LINT_CLASSPATH`` the per-fixture compile
 host reads).  It shares the same input and comparison logic as the
 other per-language round-trip helpers.
 
-``kotlinx.serialization.json`` preserves numbers verbatim through
-``parseToJsonElement``/``encodeToString``, so the shared input's
-26-digit ``biginteger`` field needs no exclusion under this strategy
-(superseding the hand-rolled Jackson walker from issue #2709).
+The shared input's ``biginteger`` field is excluded from the comparison:
+``kotlinx.serialization.json``'s ``parseToJsonElement`` falls back to a
+``Double`` for integer literals that overflow ``Long``, so the 26-digit
+value re-emerges as ``1e+26``.  Same shape as the Go, TypeScript, Swift,
+Rust and Zig-pre-``std.json.Value`` exclusions.
 """
 
 import os
@@ -32,13 +33,18 @@ from literalizer.languages import Kotlin
 
 _VAR_NAME = "myData"
 _LABEL = "Kotlin"
+_EXCLUDED_KEYS = ("biginteger",)
 
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Kotlin script literalized from *json_text*."""
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = roundtrip_common.literalize_new_variable(
         language=Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT),
-        json_text=json_text,
+        json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
@@ -82,7 +88,7 @@ def main() -> None:
                 failure_label="kotlin run error",
             ),
         ],
-        excluded_keys=(),
+        excluded_keys=_EXCLUDED_KEYS,
     )
 
 
