@@ -573,6 +573,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=Cpp,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="Elm_json_type_json_encode_value",
+            spec=make_spec(
+                lang_cls=Elm,
+                json_type=Elm.json_types.JSON_ENCODE_VALUE,
+            ),
+            lang_cls=Elm,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
