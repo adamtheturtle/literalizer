@@ -12,10 +12,13 @@ This lives here, driven by a step of the ``lint-typescript-run`` job in
 source, because ``JSON.stringify`` is in the JavaScript standard
 library.
 
-The shared input's ``biginteger`` field is excluded from the comparison:
-the literalizer emits a plain numeric literal, which JavaScript stores
-as an IEEE-754 double, so the original 26-digit integer cannot survive
-the round-trip even with a custom serializer.
+The shared input's ``biginteger`` field is trimmed before
+literalization: JavaScript's ``number`` is an IEEE-754 double whose
+integer precision tops out at ``Number.MAX_SAFE_INTEGER`` (``2**53 -
+1``), so the literalizer raises
+:class:`literalizer.exceptions.UnrepresentableIntegerError` for the
+26-digit value rather than emit a numeric literal that loses precision
+on parse.
 """
 
 import shutil

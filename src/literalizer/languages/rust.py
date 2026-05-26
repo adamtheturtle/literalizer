@@ -44,6 +44,8 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
@@ -143,6 +145,8 @@ _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
 _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
+_I128_MIN = -(2**127)
+_I128_MAX = 2**127 - 1
 _SERDE_JSON_MACRO = "serde_json::json!"
 
 
@@ -2533,11 +2537,22 @@ class Rust(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return _make_rust_integer_suffix_formatter(
-            base=self.integer_format.get_formatter(
-                numeric_separator=self.numeric_separator,
+        """Callable that formats an int value as a literal.
+
+        Rust's widest built-in integer types are ``i128``/``u128``;
+        values outside the signed ``i128`` range have no native literal
+        form, so raise :class:`UnrepresentableIntegerError` rather than
+        emit a literal ``rustc`` will reject.
+        """
+        return make_overflow_fallback_formatter(
+            base=_make_rust_integer_suffix_formatter(
+                base=self.integer_format.get_formatter(
+                    numeric_separator=self.numeric_separator,
+                ),
             ),
+            min_value=_I128_MIN,
+            max_value=_I128_MAX,
+            fallback=raise_for_unrepresentable_int(language_name="Rust"),
         )
 
     @cached_property
