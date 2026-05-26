@@ -1749,16 +1749,29 @@ jobs:
           # ``OCaml.language_version`` in
           # ``src/literalizer/languages/ocaml.py``; keep them in sync.
           ocaml-compiler: 5
+      # ``ocamlfind`` is not installed by ``ocaml/setup-ocaml@v3`` and
+      # the YOJSON_SAFE_T json_type fixtures plus the roundtrip helper
+      # both reference ``Yojson.Safe.t``, so install ocamlfind+yojson
+      # before the syntax / run / roundtrip steps below.
+      - name: Install yojson
+        run: opam install -y yojson ocamlfind
       - name: Check OCaml syntax
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -n1 opam exec -- ocamlopt -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
       # Fixtures only declare ``module Check = struct ... end`` with a
       # ``my_data`` let-binding; OCaml evaluates struct bodies when the
       # module is initialized, so running the file as a script forces
-      # the binding's right-hand side to execute.
+      # the binding's right-hand side to execute.  A small prelude
+      # loads ``yojson`` via findlib so the ``Yojson.Safe.t`` json_type
+      # fixtures resolve in script mode too.
       - name: Run OCaml files
-        run: xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml < /tmp/files-to-lint
+        run: |-
+          cat > /tmp/yojson_prelude.ml <<'EOF'
+          # use "topfind";;
+          # require "yojson";;
+          EOF
+          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml /tmp/yojson_prelude.ml < /tmp/files-to-lint
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
@@ -1771,12 +1784,6 @@ jobs:
       # (project mode, not ``--no-project``) is required so
       # ``import literalizer`` resolves. See
       # ``.github/scripts/run_ocaml_roundtrip.py``.
-      # ``ocamlfind`` is not installed by ``ocaml/setup-ocaml@v3``; the
-      # roundtrip helper invokes ``ocamlfind ocamlopt -package yojson``
-      # to compile the literalized program, so install it alongside
-      # yojson here.
-      - name: Install yojson
-        run: opam install -y yojson ocamlfind
       - name: OCaml roundtrip
         run: opam exec -- uv run python .github/scripts/run_ocaml_roundtrip.py
 
@@ -1809,6 +1816,34 @@ jobs:
           --load {}
           --quit
           < /tmp/files-to-lint
+
+      # ``com.inuoe.jzon`` is a modern, actively maintained Common
+      # Lisp JSON library; the ``Common Lisp roundtrip`` step below
+      # ``ql:quickload``s it and calls ``stringify`` once on a typed
+      # rebuild of the literalized data.  Pre-installing through
+      # Roswell here warms the Quicklisp cache so the ``ql:quickload``
+      # call inside the roundtrip step does not have to fetch anything
+      # over the network.
+      - name: Install com.inuoe.jzon
+        run: ros install com.inuoe.jzon
+      # ``uv`` is needed by the ``Common Lisp roundtrip`` step below; it
+      # runs the helper in project mode so ``import literalizer``
+      # resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Common Lisp -> JSON round-trip (issue 2644). Runs
+      # here because this is the job with the SBCL toolchain (``ros run``
+      # pinned by the ``Install SBCL`` step above) and the
+      # ``com.inuoe.jzon`` library installed by the ``Install
+      # com.inuoe.jzon`` step above; ``uv run`` (project mode, not
+      # ``--no-project``) is required so ``import literalizer``
+      # resolves.
+      # See ``.github/scripts/run_common_lisp_roundtrip.py``.
+      - name: Common Lisp roundtrip
+        run: uv run python .github/scripts/run_common_lisp_roundtrip.py
 
   lint-scala:
     runs-on: ubuntu-latest
