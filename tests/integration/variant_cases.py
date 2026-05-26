@@ -2575,6 +2575,49 @@ def build_variant_cases() -> list[VariantCase]:
                 variable_form=literalizer.BothVariableForms(name="my_data"),
             ),
             VariantCase(
+                variant_name="FSharp_json_type_json_node_null",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_null",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_null",
+                variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
+                variant_name="FSharp_json_type_json_node_bool_list",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_bool_list",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="bool_list",
+                variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
+                variant_name="FSharp_json_type_json_node_epoch_dt",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_epoch_dt",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                        datetime_format=FSharp.datetime_formats.EPOCH,
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_datetime",
+                variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
                 variant_name="Nim_json_type_json_node_let",
                 variant=Variant(
                     name="Nim_json_type_json_node_let",

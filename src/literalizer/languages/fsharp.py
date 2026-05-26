@@ -1378,8 +1378,6 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble with type declarations."""
-        if self._json_type_active:
-            return {}
         p = self.constructor_prefix
         header = f"type {self.type_name} ="
         f_str = f"    | {p}Str of string"
