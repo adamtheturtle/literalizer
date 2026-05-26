@@ -36,9 +36,13 @@ def _build_program(json_text: str) -> str:
     """Return a runnable TypeScript program literalized from
     *json_text*.
     """
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = roundtrip_common.literalize_new_variable(
         language=TypeScript(),
-        json_text=json_text,
+        json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
