@@ -17,7 +17,10 @@ The shared input's ``biginteger`` field is excluded from the comparison:
 its 26-digit value fits in ``i128`` (which the Rust backend emits) but
 ``serde_json::Value`` stores numbers as ``i64``/``u64``/``f64``, so the
 ``json!`` macro would coerce it to a ``f64`` and lose precision before
-serialization. Same shape as the Go, TypeScript, and Zig exclusions.
+serialization.  Values above the ``i128`` range have no native Rust
+literal and raise
+:class:`literalizer.exceptions.UnrepresentableIntegerError` at
+literalize time.  Same shape as the Go, TypeScript, and Zig exclusions.
 """
 
 import shutil

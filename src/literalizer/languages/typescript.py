@@ -42,6 +42,8 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
@@ -1100,9 +1102,26 @@ class TypeScript(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        """Callable that formats an int value as a literal.
+
+        JavaScript's ``number`` is an IEEE 754 double whose integer
+        precision tops out at ``Number.MAX_SAFE_INTEGER`` (``2**53 -
+        1``).  Above that, a bare numeric literal silently loses
+        precision on parse, so reject the value at literalize time with
+        :class:`UnrepresentableIntegerError` rather than emit a literal
+        that no longer round-trips.  Wrapping such values in a
+        ``BigInt`` literal (``99n``) is a separate strategy not yet
+        offered for TypeScript.
+        """
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            min_value=-(2**53 - 1),
+            max_value=2**53 - 1,
+            fallback=raise_for_unrepresentable_int(
+                language_name="TypeScript",
+            ),
         )
 
     @cached_property

@@ -1,3 +1,3 @@
 void main() {
-auto my_data = 9223372036854775808;
+auto my_data = 9223372036854775808UL;
 }

@@ -33,9 +33,12 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     I64_MAX,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
@@ -96,7 +99,38 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
+    UnrepresentableIntegerError,
 )
+
+
+@beartype
+def _make_d_ulong_positive_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Return a formatter for positive values above ``long.max``.
+
+    Reuses *base* (which honors the configured ``integer_format`` and
+    ``numeric_separator``) and appends D's ``UL`` suffix.  Values above
+    the unsigned 64-bit range have no native D literal, so raise
+    :class:`UnrepresentableIntegerError` rather than emit a literal the
+    compiler rejects.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Append ``UL`` to *base*'s rendering, raising past unsigned
+        64-bit max.
+        """
+        if value > U64_MAX:
+            msg = (
+                f"D cannot represent integer {value} above the unsigned "
+                "64-bit range."
+            )
+            raise UnrepresentableIntegerError(msg)
+        return f"{base(value)}UL"
+
+    return _format
+
 
 _D_EMPTY_JSON_ARRAY = 'parseJSON("[]")'
 
@@ -1389,9 +1423,24 @@ class D(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
+        """Callable that formats an int value as a literal.
+
+        D's widest built-in integer types are ``long`` (signed 64-bit)
+        and ``ulong`` (unsigned 64-bit).  Positive values above
+        ``long.max`` emit a ``UL``-suffixed ``ulong`` literal; values
+        below ``long.min`` or above ``ulong.max`` raise
+        :class:`UnrepresentableIntegerError` rather than emit a decimal
+        literal the compiler rejects.
+        """
+        base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_make_d_ulong_positive_formatter(base=base),
+                language_name="D",
+            ),
         )
 
     @cached_property

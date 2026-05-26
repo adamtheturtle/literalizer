@@ -12,10 +12,13 @@ toolchain (``clang++``) and the ``nlohmann-json3-dev`` package are
 already installed.  It shares the same input and comparison logic as
 the other per-language round-trip helpers.
 
-The shared input's ``biginteger`` field is excluded from the
-comparison: its 26-digit value overflows ``nlohmann::json``'s
-``int64_t`` integer node, same shape as the Go, TypeScript, Zig, Swift,
-Rust and D exclusions.
+The shared input's ``biginteger`` field is trimmed before
+literalization: its 26-digit value overflows the unsigned 64-bit range
+(the widest C++ literal the literalizer emits, via a ``ULL`` suffix),
+so the literalizer raises
+:class:`literalizer.exceptions.UnrepresentableIntegerError` rather than
+emit code ``clang++`` would reject.  Same shape as the Go, TypeScript,
+Zig, Swift, Rust and D exclusions.
 """
 
 import shutil
