@@ -39,6 +39,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
@@ -89,7 +90,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    UnrepresentableIntegerError,
+)
 
 
 @beartype
@@ -1162,11 +1166,25 @@ class FSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
-        if (
-            self._json_type_active
-            and self.datetime_format.value.type_produced is not int
-        ):
+        """Callable that formats a datetime as a string literal.
+
+        Under ``json_type`` the EPOCH branch emits a bare ``int64``
+        literal (e.g. ``1705320600L``) rather than the tagged ``FInt
+        ...`` constructor used outside json mode: the ``Val``
+        discriminated union does not exist under ``json_type``, and the
+        entry / top-level formatter is responsible for wrapping the
+        literal with ``JsonValue.Create`` so it becomes a ``JsonNode``.
+        """
+        if self._json_type_active:
+            if self.datetime_format.value.type_produced is int:
+                format_integer = self.format_integer
+
+                def _format_json_epoch(value: datetime.datetime) -> str:
+                    """Return an epoch-seconds ``int64`` literal."""
+                    formatted = format_datetime_epoch(value=value)
+                    return format_integer(int(formatted))
+
+                return _format_json_epoch
             return format_datetime_iso
         if self.datetime_format.name == "EPOCH":
             return _build_fsharp_datetime_epoch(
@@ -1194,7 +1212,10 @@ class FSharp(metaclass=LanguageCls):
         (``L`` for signed-64-bit, ``UL`` for values one beyond
         ``Int64.MaxValue`` up through ``UInt64.MaxValue``) so the
         ``JsonValue.Create`` overload set can resolve unambiguously to
-        ``long`` / ``ulong``.
+        ``long`` / ``ulong``.  Negative values below ``Int64.MinValue``
+        and positive values above ``UInt64.MaxValue`` have no
+        ``JsonValue.Create`` overload and are rejected up-front rather
+        than emitted as a literal F# would refuse to compile.
         """
         if self._json_type_active:
             base = self.integer_format
@@ -1204,7 +1225,14 @@ class FSharp(metaclass=LanguageCls):
                 rendered = base(value)
                 if I64_MIN <= value <= I64_MAX:
                     return f"{rendered}L"
-                return f"{rendered}UL"
+                if 0 <= value <= U64_MAX:
+                    return f"{rendered}UL"
+                msg = (
+                    f"F# json_type cannot represent integer {value}: "
+                    "JsonValue.Create has no overload for values outside "
+                    "the Int64 / UInt64 ranges."
+                )
+                raise UnrepresentableIntegerError(msg)
 
             return _format
         return make_overflow_suffix_formatter(
