@@ -18,7 +18,8 @@ other per-language round-trip helpers.
 
 ``kotlinx.serialization.json`` preserves numbers verbatim through
 ``parseToJsonElement``/``encodeToString``, so the shared input's
-26-digit ``biginteger`` field needs no exclusion under this strategy.
+26-digit ``biginteger`` field needs no exclusion under this strategy
+(superseding the hand-rolled Jackson walker from issue #2709).
 """
 
 import os
