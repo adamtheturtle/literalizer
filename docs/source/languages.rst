@@ -339,6 +339,34 @@ remain valid JSON object keys, and the input must not encode the
 raw-string terminator sequence ``)json"`` (e.g. through a dict key
 ending in ``)json``).
 
+PureScript exposes the same option through
+``PureScript.json_types.ARGONAUT_JSON``:
+
+.. code-block:: python
+
+   """Render PureScript data as Argonaut Json."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import PureScript
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=PureScript(
+           json_type=PureScript.json_types.ARGONAUT_JSON,
+       ),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits a ``fromRight jsonNull (jsonParser "...")`` expression that
+parses the embedded JSON document at runtime, so the rendered binding
+has the static type ``Data.Argonaut.Core.Json`` instead of PureScript's
+narrow custom ``Val`` algebraic type, and can hold the heterogeneous
+values that ``Val``'s closed set of constructors rejects.  Dict keys
+must be strings so they remain valid JSON object keys, and special
+floats (``NaN``, ``+Infinity``, ``-Infinity``) are rejected because
+JSON has no syntax for them.
+
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``
 constructor argument selects the inverse mode.  ``D.json_types.STD_JSON_VALUE``
