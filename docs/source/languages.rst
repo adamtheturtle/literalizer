@@ -339,6 +339,33 @@ remain valid JSON object keys, and the input must not encode the
 raw-string terminator sequence ``)json"`` (e.g. through a dict key
 ending in ``)json``).
 
+Gleam exposes the same option through
+``Gleam.json_types.GLEAM_JSON_JSON``:
+
+.. code-block:: python
+
+   """Render Gleam data using the gleam_json builder type."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Gleam
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``gleam_json`` builder calls such as ``json.int(1)``,
+``json.string("red")``, ``json.preprocessed_array([...])``, and
+``json.object([#("k", v), ...])`` so each binding has the static type
+``gleam/json.Json``, ready to feed straight into ``json.to_string``.
+An ``import gleam/json`` line is added at file scope and the generated
+``GVal`` ADT is dropped.  Dict keys must be strings so they remain
+valid JSON object keys, and non-finite floats are rejected because
+the Erlang target has no expression that evaluates to a non-finite
+float.
+
 OCaml exposes the same option through ``OCaml.json_types.YOJSON_SAFE_T``:
 
 .. code-block:: python

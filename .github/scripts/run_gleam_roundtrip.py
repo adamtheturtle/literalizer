@@ -1,12 +1,12 @@
 """Gleam JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to a Gleam
-``let my_data = GDict([...])`` binding, wrap it in a ``main`` module
-whose ``to_json`` walker turns the generated ``GVal`` ADT into a
-``gleam_json`` ``Json`` value and prints ``json.to_string(...)`` on
-standard output, copy the primed Gleam project from
-``LINT_GLEAM_PRIMED_DIR`` into a tmpdir, run ``gleam run -m main``,
-and hand the emitted JSON to :func:`roundtrip_common.verify`.
+``let my_data: json.Json = json.object([...])`` binding using
+``Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON)``, wrap it in a
+``main`` module that prints ``json.to_string(my_data)`` on standard
+output, copy the primed Gleam project from ``LINT_GLEAM_PRIMED_DIR``
+into a tmpdir, run ``gleam run -m main``, and hand the emitted JSON
+to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Gleam roundtrip`` step of the
 ``lint-gleam`` job in ``.github/workflows/lint.yml``, because that job
@@ -16,16 +16,9 @@ is where the Gleam toolchain is installed and the
 available.  It shares the same input and comparison logic as the
 other per-language round-trip helpers.
 
-The serializer is ``gleam_json``'s built-in encoder rather than a
-hand-rolled one (matching the preference expressed in the issue
-notes).  The literalized data lives in a custom ``GVal`` ADT whose
-shape is fixed by the Gleam backend, so a small recursive
-``to_json`` walker maps each constructor to the matching
-``gleam_json`` builder.  The full ``GVal`` is defined here rather
-than reusing the literalizer's narrower preamble so the walker stays
-exhaustive if the fixture later grows ``GNull`` cases; the
-literalizer-generated preamble is dropped because Gleam rejects two
-type definitions with the same name.
+The serializer is ``gleam_json``'s built-in encoder.  The literalizer
+emits ``json.Json`` builder calls directly, so the previous hand-rolled
+``GVal`` -> ``Json`` walker has gone away.
 
 The shared input's ``float_large_exponent`` field is excluded from
 the comparison: Gleam's float literal grammar rejects the explicit
@@ -51,47 +44,6 @@ _VAR_NAME = "my_data"
 _LABEL = "Gleam"
 _EXCLUDED_KEYS = ("float_large_exponent",)
 
-# Full ``GVal`` type with every constructor the Gleam backend can
-# emit, not just the ones present in the trimmed input, so ``to_json``
-# below stays exhaustive if the fixture later grows ``GNull`` cases.
-# Replaces the literalizer's preamble (which only lists the
-# constructors actually used by the data).
-_GVAL_TYPE = """\
-pub type GVal {
-  GNull
-  GBool(Bool)
-  GInt(Int)
-  GFloat(Float)
-  GStr(String)
-  GList(List(GVal))
-  GDict(List(#(String, GVal)))
-}
-"""
-
-# Walker that turns ``GVal`` into a ``gleam_json`` ``Json`` value.
-# ``preprocessed_array`` is the heterogeneous-list constructor; the
-# typed ``json.array`` overload would force every element to share a
-# type, which the ``mixed_array`` field violates.
-_TO_JSON = """\
-fn to_json(v: GVal) -> json.Json {
-  case v {
-    GNull -> json.null()
-    GBool(b) -> json.bool(b)
-    GInt(i) -> json.int(i)
-    GFloat(f) -> json.float(f)
-    GStr(s) -> json.string(s)
-    GList(items) -> json.preprocessed_array(list.map(items, to_json))
-    GDict(entries) ->
-      json.object(
-        list.map(entries, fn(e) {
-          let #(k, child) = e
-          #(k, to_json(child))
-        }),
-      )
-  }
-}
-"""
-
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Gleam module literalized from *json_text*."""
@@ -100,7 +52,7 @@ def _build_program(json_text: str) -> str:
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=Gleam(),
+        language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
         json_text=trimmed,
         var_name=_VAR_NAME,
         pre_indent_level=1,
@@ -108,13 +60,10 @@ def _build_program(json_text: str) -> str:
     return (
         "import gleam/io\n"
         "import gleam/json\n"
-        "import gleam/list\n"
         "\n"
-        f"{_GVAL_TYPE}\n"
-        f"{_TO_JSON}\n"
         "pub fn main() {\n"
         f"{result.declaration_code}\n"
-        f"  io.println(json.to_string(to_json({_VAR_NAME})))\n"
+        f"  io.println(json.to_string({_VAR_NAME}))\n"
         "}\n"
     )
 

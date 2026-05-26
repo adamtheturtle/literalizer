@@ -574,6 +574,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="Gleam_json_type_gleam_json_json",
+            spec=make_spec(
+                lang_cls=Gleam,
+                json_type=Gleam.json_types.GLEAM_JSON_JSON,
+            ),
+            lang_cls=Gleam,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="OCaml_json_type_yojson_safe_t",
             spec=make_spec(
                 lang_cls=OCaml,
@@ -2163,6 +2172,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="scalar_time", suffix="_time"),
         _ci(case_dir_name="scalar_int_large", suffix="_long"),
         _ci(case_dir_name="scalar_int_very_large", suffix="_bigint"),
+        _ci(case_dir_name="bool_list", suffix="_bool_list"),
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
@@ -2585,6 +2595,50 @@ def build_variant_cases() -> list[VariantCase]:
                         json_type=Cpp.json_types.NLOHMANN_JSON,
                     ),
                     lang_cls=Cpp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Gleam_json_type_gleam_json_json_datetime_epoch",
+                variant=Variant(
+                    name="Gleam_json_type_gleam_json_json_datetime_epoch",
+                    spec=make_spec(
+                        lang_cls=Gleam,
+                        json_type=Gleam.json_types.GLEAM_JSON_JSON,
+                        datetime_format=Gleam.datetime_formats.EPOCH,
+                    ),
+                    lang_cls=Gleam,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_datetime_naive",
+                variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Gleam_json_type_gleam_json_json_bytes_base64",
+                variant=Variant(
+                    name="Gleam_json_type_gleam_json_json_bytes_base64",
+                    spec=make_spec(
+                        lang_cls=Gleam,
+                        json_type=Gleam.json_types.GLEAM_JSON_JSON,
+                        bytes_format=Gleam.bytes_formats.BASE64,
+                    ),
+                    lang_cls=Gleam,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="binary",
+                variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Gleam_json_type_gleam_json_json_combined",
+                variant=Variant(
+                    name="Gleam_json_type_gleam_json_json_combined",
+                    spec=make_spec(
+                        lang_cls=Gleam,
+                        json_type=Gleam.json_types.GLEAM_JSON_JSON,
+                    ),
+                    lang_cls=Gleam,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
