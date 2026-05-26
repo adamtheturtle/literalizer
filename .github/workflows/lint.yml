@@ -1641,6 +1641,21 @@ jobs:
             name=$(basename "$f")
             curl -fsSL "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/$f" -o "/tmp/kotlinx-jars/$name"
           done
+      # Jackson jars are needed by `run_kotlin_roundtrip.py`, which uses
+      # `ObjectMapper().writeValueAsString(...)` to dump the heterogeneous
+      # `Any?` literalized value (including primitive `IntArray`/`LongArray`
+      # etc) without a hand-rolled `JsonElement` walker. Pinned alongside
+      # the `Set up Jackson for Java` step above; bump together.
+      - name: Set up Jackson for Kotlin
+        run: |-
+          mkdir -p /tmp/jackson-jars
+          jackson_version=2.18.2
+          for f in jackson-databind/$jackson_version/jackson-databind-$jackson_version.jar \
+                   jackson-core/$jackson_version/jackson-core-$jackson_version.jar \
+                   jackson-annotations/$jackson_version/jackson-annotations-$jackson_version.jar; do
+            name=$(basename "$f")
+            curl -fsSL "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/$f" -o "/tmp/jackson-jars/$name"
+          done
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
@@ -1657,14 +1672,15 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Kotlin -> JSON round-trip (issue 1867). Runs here
-      # because this is the job with the Kotlin toolchain and the
-      # kotlinx-serialization-json jars already on disk; `uv run`
-      # (project mode, not `--no-project`) is required so
-      # `import literalizer` resolves. See
-      # `.github/scripts/run_kotlin_roundtrip.py`.
+      # because this is the job with the Kotlin toolchain on hand; the
+      # script (issue 2709) prints
+      # `ObjectMapper().writeValueAsString(myData)` so the classpath
+      # points at the Jackson jars set up above. `uv run` (project mode,
+      # not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_kotlin_roundtrip.py`.
       - name: Kotlin roundtrip
         env:
-          LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
+          LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
         run: uv run python .github/scripts/run_kotlin_roundtrip.py
 
   lint-swift:
