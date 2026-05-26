@@ -303,10 +303,15 @@ jobs:
           xargs -0 java CheckJavaSyntax.java 16 < /tmp/files-java-16
 
       # Basic JSON -> Java -> JSON round-trip (issue 1867). Runs here
-      # because this is the job with the JDK toolchain; `uv run` (project
-      # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_java_roundtrip.py`.
+      # because this is the job with the JDK toolchain and the Jackson
+      # jars set up above; `uv run` (project mode, not `--no-project`)
+      # is required so `import literalizer` resolves. The runner uses
+      # `LITERALIZER_LINT_CLASSPATH` to pass Jackson to `javac`/`java`
+      # so it can serialize the literalized value with `ObjectMapper`.
+      # See `.github/scripts/run_java_roundtrip.py`.
       - name: Java roundtrip
+        env:
+          LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
         run: uv run python .github/scripts/run_java_roundtrip.py
 
       - name: Lint Php

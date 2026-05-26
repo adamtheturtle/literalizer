@@ -1,0 +1,1 @@
+Replace the hand-rolled JSON encoder in the Java round-trip CI check with Jackson's ``ObjectMapper``.
