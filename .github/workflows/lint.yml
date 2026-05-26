@@ -1906,6 +1906,20 @@ jobs:
           done < /tmp/files-to-lint
           printf '  }\n}\n' >> "$driver"
           haxe -p "$workspace" --main Driver --interp
+      # `uv` is needed by the `Haxe roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Haxe -> JSON round-trip (issue  # 1867). Runs here
+      # because this is the job with the Haxe toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so `import
+      # literalizer` resolves. See
+      # `.github/scripts/run_haxe_roundtrip.py`.
+      - name: Haxe roundtrip
+        run: uv run python .github/scripts/run_haxe_roundtrip.py
 
   lint-dart:
     runs-on: ubuntu-latest
