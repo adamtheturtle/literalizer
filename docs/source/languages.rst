@@ -365,6 +365,42 @@ remain valid JSON object keys, and the input must not encode the
 raw-string terminator sequence ``)json"`` (e.g. through a dict key
 ending in ``)json``).
 
+OCaml exposes the same option through ``OCaml.json_types.YOJSON_SAFE_T``:
+
+.. code-block:: python
+
+   """Render OCaml data as a ``Yojson.Safe.t`` polymorphic variant."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import OCaml
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``Yojson.Safe.t`` polymorphic-variant literals directly,
+keyed by the standard ``yojson`` tag set (``Bool``, ``Int``,
+``Float``, ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``), so
+the rendered binding has the static type ``Yojson.Safe.t`` instead of
+OCaml's generated ``val_t`` algebraic type, and the ``type val_t = ...``
+preamble drops out entirely:
+
+.. code-block:: ocaml
+
+   let payload : Yojson.Safe.t = `Assoc [
+       ("id", `Int 1);
+       ("tags", `List [`String "red"; `Int 2])
+   ]
+
+Dates, datetimes, times, and bytes fold into JSON-friendly strings;
+integers that exceed OCaml's native ``int`` range route through the
+``Intlit`` arbitrary-precision escape hatch (a string-tagged JSON
+number) instead of raising.  Dict keys must be strings so they remain
+valid JSON object keys.
+
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``
 constructor argument selects the inverse mode.  ``D.json_types.STD_JSON_VALUE``
