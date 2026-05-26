@@ -89,8 +89,10 @@ def _build(*, value: JsonValue, path_expr: str) -> str:
     """
     if isinstance(value, bool):
         # `bool` must precede `int` (it is a subclass).  Both `t` and
-        # `nil` pass through; the surrounding `let` binds jzon's
-        # `*nil-as*` to `:false` so `nil` encodes as `false`.
+        # `nil` pass through: jzon's default mapping already encodes
+        # `t` as `true` and `nil` as `false` (the symbol `cl:null` is
+        # what it reserves for JSON `null`), so no encoder configuration
+        # is needed for the boolean side.
         return path_expr
     if isinstance(value, (int, float, str)):
         return path_expr
@@ -111,8 +113,9 @@ def _build(*, value: JsonValue, path_expr: str) -> str:
         return f"(let ((ht (make-hash-table :test 'equal))) {body} ht)"
     # `roundtrip_input.json` is deliberately `null`-free; the residual
     # `None` branch keeps the walker total without expanding the shared
-    # input's coverage promise.
-    return ":null"
+    # input's coverage promise.  jzon reserves the symbol `cl:null` as
+    # its JSON `null` sentinel.
+    return "'cl:null"
 
 
 def _build_program(json_text: str) -> str:
@@ -128,10 +131,7 @@ def _build_program(json_text: str) -> str:
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     parsed: JsonValue = json.loads(s=json_text)
     rebuild = _build(value=parsed, path_expr=f"*{_VAR_NAME}*")
-    emit = (
-        "(let ((com.inuoe.jzon:*nil-as* :false))\n"
-        f"  (write-string (com.inuoe.jzon:stringify {rebuild})))"
-    )
+    emit = f"(write-string (com.inuoe.jzon:stringify {rebuild}))"
     return f"{_HEADER}\n{preamble}\n{result.code}\n{emit}\n"
 
 
