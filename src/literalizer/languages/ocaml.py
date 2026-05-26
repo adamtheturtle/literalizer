@@ -153,7 +153,7 @@ def _apply_yojson_entry(original: Value, formatted: str) -> str:
     """
     if formatted.startswith("`"):
         return formatted
-    # Only bare-scalar formatted values reach here: ints, floats,
+    # Only bare-scalar formatted values reach here: integers, floats,
     # quoted strings (str, bytes, and ISO date/datetime/time strings).
     # ``bool`` is a subclass of ``int`` in Python but cannot reach here
     # because ``true_literal`` / ``false_literal`` are already

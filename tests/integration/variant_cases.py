@@ -2542,8 +2542,8 @@ def build_variant_cases() -> list[VariantCase]:
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.ExistingVariable(name="my_data"),
             ),
-            # Covers OCaml's ``false_literal`` cached property under
-            # ``YOJSON_SAFE_T``: none of the shared
+            # Covers the ``false_literal`` cached property on OCaml
+            # under ``YOJSON_SAFE_T``: none of the shared
             # ``VARIANT_CASES["json_type"]`` inputs contain a ``False``
             # value, so the coverage gate flags the false-literal arm
             # otherwise.
