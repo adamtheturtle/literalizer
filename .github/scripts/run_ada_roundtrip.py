@@ -25,6 +25,14 @@ its 26-digit value overflows ``Long_Long_Integer`` (what the Ada backend
 emits ``AInt`` over), so the program would not compile if the field
 were kept.  Same shape as the Go/Zig/TypeScript exclusions.
 
+The shared input's ``float_large_exponent`` field
+(``1.7976931348623157e+308``, ``Float64`` max) is also excluded:
+``GNATCOLL.JSON.Write`` formats ``Long_Float`` with around 15 decimal
+digits and offers no precision knob, so the rendered text rounds
+slightly above ``DBL_MAX`` and Python's ``json.loads`` then parses it
+as ``inf``.  Every smaller float in the shared input still
+round-trips.
+
 The shared input's ``empty_object`` field is also excluded.  The Ada
 backend writes empty maps as ``AMap'[]`` and empty lists as ``AList'[]``,
 both of which resolve to the same ``A_Val`` private type with one shared
@@ -47,7 +55,7 @@ _STUB_ADS_SRC = _SCRIPT_DIR / "roundtrip_a_stub.ads"
 _STUB_ADB_SRC = _SCRIPT_DIR / "roundtrip_a_stub.adb"
 _VAR_NAME = "my_data"
 _LABEL = "Ada"
-_EXCLUDED_KEYS = ("biginteger", "empty_object")
+_EXCLUDED_KEYS = ("biginteger", "empty_object", "float_large_exponent")
 
 # ``-gnat2022`` matches ``Ada.language_version`` in
 # ``src/literalizer/languages/ada.py``; keep them in sync.  GNAT's
