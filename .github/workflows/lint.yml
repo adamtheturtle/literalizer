@@ -1810,6 +1810,34 @@ jobs:
           --quit
           < /tmp/files-to-lint
 
+      # ``com.inuoe.jzon`` is a modern, actively maintained Common
+      # Lisp JSON library; the ``Common Lisp roundtrip`` step below
+      # ``ql:quickload``s it and calls ``stringify`` once on a typed
+      # rebuild of the literalized data.  Pre-installing through
+      # Roswell here warms the Quicklisp cache so the ``ql:quickload``
+      # call inside the roundtrip step does not have to fetch anything
+      # over the network.
+      - name: Install com.inuoe.jzon
+        run: ros install com.inuoe.jzon
+      # ``uv`` is needed by the ``Common Lisp roundtrip`` step below; it
+      # runs the helper in project mode so ``import literalizer``
+      # resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Common Lisp -> JSON round-trip (issue 2644). Runs
+      # here because this is the job with the SBCL toolchain (``ros run``
+      # pinned by the ``Install SBCL`` step above) and the
+      # ``com.inuoe.jzon`` library installed by the ``Install
+      # com.inuoe.jzon`` step above; ``uv run`` (project mode, not
+      # ``--no-project``) is required so ``import literalizer``
+      # resolves.
+      # See ``.github/scripts/run_common_lisp_roundtrip.py``.
+      - name: Common Lisp roundtrip
+        run: uv run python .github/scripts/run_common_lisp_roundtrip.py
+
   lint-scala:
     runs-on: ubuntu-latest
     steps:

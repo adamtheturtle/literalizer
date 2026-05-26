@@ -1,0 +1,1 @@
+Add a Common Lisp JSON round-trip check to CI using the shared round-trip fixture.
