@@ -896,8 +896,11 @@ jobs:
       - name: Install apt packages for Ada
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: gnat
-          version: 1.0
+          # ``gprbuild`` and ``libgnatcoll-dev`` are used by
+          # ``run_ada_roundtrip.py`` (the project-file build links the
+          # GNATCOLL.JSON serializer).
+          packages: gnat gprbuild libgnatcoll-dev
+          version: 1.1
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -911,6 +914,14 @@ jobs:
       - name: Run Ada files
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_ada.py
           < /tmp/files-ada
+
+      # Basic JSON -> Ada -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the GNAT toolchain; ``uv run``
+      # (project mode, not ``--no-project``) is required so
+      # ``import literalizer`` resolves. See
+      # ``.github/scripts/run_ada_roundtrip.py``.
+      - name: Ada roundtrip
+        run: uv run python .github/scripts/run_ada_roundtrip.py
 
       # KRoC (the only maintained Occam-pi compiler, last updated 2020) cannot
       # compile these fixtures for several fundamental reasons:
