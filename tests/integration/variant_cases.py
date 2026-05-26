@@ -573,6 +573,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=Cpp,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="OCaml_json_type_yojson_safe_t",
+            spec=make_spec(
+                lang_cls=OCaml,
+                json_type=OCaml.json_types.YOJSON_SAFE_T,
+            ),
+            lang_cls=OCaml,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2514,6 +2523,20 @@ def build_variant_cases() -> list[VariantCase]:
                         json_type=Haskell.json_types.AESON_VALUE,
                     ),
                     lang_cls=Haskell,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.ExistingVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="OCaml_json_type_yojson_safe_t_existing",
+                variant=Variant(
+                    name="OCaml_json_type_yojson_safe_t_existing",
+                    spec=make_spec(
+                        lang_cls=OCaml,
+                        json_type=OCaml.json_types.YOJSON_SAFE_T,
+                    ),
+                    lang_cls=OCaml,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",

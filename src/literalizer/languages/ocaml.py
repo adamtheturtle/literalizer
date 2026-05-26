@@ -135,6 +135,49 @@ def _build_ocaml_entry_formatter(
 _format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 
+_YOJSON_SAFE_T = "Yojson.Safe.t"
+
+
+@beartype
+def _apply_yojson_entry(original: Value, formatted: str) -> str:
+    """Wrap a formatted entry in the appropriate ``Yojson.Safe.t``
+    polymorphic-variant constructor.
+
+    Pre-wrapped literals (null, booleans, lists, dicts, sets, the
+    arbitrary-precision ``Intlit`` fallback for integers that overflow
+    the native ``int`` range) already carry a leading backtick and are
+    passed through untouched.  Scalars whose formatted form is a bare
+    value (numbers, quoted strings produced by ISO date/time formatters
+    or by the bytes encoder) get a leading ``Bool``/``Int``/``Float``/
+    ``String`` tag here.
+    """
+    if formatted.startswith("`"):
+        return formatted
+    match original:
+        case bool():
+            return formatted
+        case int():
+            tag = "Int"
+        case float():
+            tag = "Float"
+        case str() | bytes():
+            tag = "String"
+        case datetime.datetime() | datetime.date() | datetime.time():
+            tag = "String"
+        case _:
+            return formatted
+    literal = f"({formatted})" if formatted.startswith("-") else formatted
+    return f"`{tag} {literal}"
+
+
+@beartype
+def _yojson_intlit_fallback(value: int) -> str:
+    """Return the ``Intlit`` poly-variant for an arbitrary-precision
+    integer in ``Yojson.Safe.t`` rendering.
+    """
+    return f'`Intlit "{value}"'
+
+
 @beartype
 def _build_ocaml_call_stub_lines(
     *,
@@ -285,6 +328,19 @@ class OCaml(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"O"``, producing constructors like ``ONull``,
             ``OBool``, ``OInt``, etc.
+
+        json_type: Opt into rendering through a JSON value type instead
+            of the generated tagged ADT.
+
+            * ``None`` (default) --- emit the custom ``val_t`` ADT.
+            * ``json_types.YOJSON_SAFE_T`` --- emit ``Yojson.Safe.t``
+              polymorphic-variant literals using the standard
+              ``yojson`` tag set (``Bool``, ``Int``, ``Float``,
+              ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``).  Dates,
+              datetimes, times, and bytes reformat to JSON-friendly
+              strings; arbitrary-precision integers route through the
+              ``Intlit`` escape hatch; the ``type val_t`` preamble is
+              dropped.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -597,6 +653,16 @@ class OCaml(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for OCaml."""
+
+        YOJSON_SAFE_T = _YOJSON_SAFE_T
+        """``Yojson.Safe.t`` --- the polymorphic-variant JSON value type
+        from the ``yojson`` package.
+        """
+
+    json_types = JsonTypes
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -678,6 +744,7 @@ class OCaml(metaclass=LanguageCls):
     indent: str = "    "
     type_name: str = "val_t"
     constructor_prefix: str = "O"
+    json_type: JsonTypes | None = None
 
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = "; "
@@ -817,29 +884,45 @@ class OCaml(metaclass=LanguageCls):
         return never_inhibits_consuming_form
 
     @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether OCaml should render as ``Yojson.Safe.t``."""
+        return self.json_type is not None
+
+    @cached_property
     def null_literal(self) -> str:
         """Null literal using the configured constructor prefix."""
+        if self._json_type_active:
+            return "`Null"
         return f"{self.constructor_prefix}Null"
 
     @cached_property
     def true_literal(self) -> str:
         """True literal using the configured constructor prefix."""
+        if self._json_type_active:
+            return "`Bool true"
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
     def false_literal(self) -> str:
         """False literal using the configured constructor prefix."""
+        if self._json_type_active:
+            return "`Bool false"
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
     def _entry_formatter(self) -> Callable[[Value, str], str]:
         """Entry formatter built from the configured prefix."""
+        if self._json_type_active:
+            return _apply_yojson_entry
         return _build_ocaml_entry_formatter(prefix=self.constructor_prefix)
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         fmt = self.sequence_format.value
+        if self._json_type_active:
+            _yojson_open = fixed_open(open_str="`List [")
+            return dataclasses.replace(fmt, sequence_open=_yojson_open)
         if self.sequence_format.name == "LIST":
             _seq_open = fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
@@ -851,6 +934,8 @@ class OCaml(metaclass=LanguageCls):
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         fmt = self.sequence_format.value
+        if self._json_type_active:
+            return fixed_open(open_str="`List [")
         if self.sequence_format.name == "LIST":
             return fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
@@ -860,20 +945,28 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        # ``Yojson.Safe.t`` has no set constructor: render sets as JSON
+        # arrays (``\`List``) the same as sequences.
+        set_open_str = (
+            "`List ["
+            if self._json_type_active
+            else f"{self.constructor_prefix}Set ["
+        )
         return dataclasses.replace(
             self.set_format.value,
-            set_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Set [",
-            ),
+            set_open=fixed_open(open_str=set_open_str),
         )
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        dict_open_str = (
+            "`Assoc ["
+            if self._json_type_active
+            else f"{self.constructor_prefix}Map ["
+        )
         return DictFormatConfig(
-            dict_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Map [",
-            ),
+            dict_open=fixed_open(open_str=dict_open_str),
             close="]",
             format_entry=tuple_dict_entry(
                 format_value=self._entry_formatter,
@@ -897,6 +990,8 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return format_date_iso
         if self.date_format.name == "OCAML":
             return date_ymd_formatter(
                 template=(
@@ -909,6 +1004,8 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self._json_type_active:
+            return format_datetime_iso
         if self.datetime_format.name == "OCAML":
             return datetime_ymdhms_formatter(
                 template=(
@@ -932,11 +1029,16 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        fallback: Callable[[int], str] = (
+            _yojson_intlit_fallback
+            if self._json_type_active
+            else raise_for_unrepresentable_int(language_name="OCaml")
+        )
         return make_overflow_fallback_formatter(
             base=self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
             ),
-            fallback=raise_for_unrepresentable_int(language_name="OCaml"),
+            fallback=fallback,
         )
 
     @cached_property
@@ -957,10 +1059,13 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        ordered_open_str = (
+            "`Assoc ["
+            if self._json_type_active
+            else f"{self.constructor_prefix}Map ["
+        )
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Map [",
-            ),
+            ordered_map_open=fixed_open(open_str=ordered_open_str),
             close="]",
             preamble_lines=(),
         )
@@ -973,6 +1078,12 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def _ocaml_declaration(self) -> Callable[[str, str, Value], str]:
         """Declaration formatter built from the configured type name."""
+        if self._json_type_active:
+            return _build_ocaml_declaration(
+                sequence_declared_type=_YOJSON_SAFE_T,
+                scalar_declared_type=_YOJSON_SAFE_T,
+                entry_formatter=self._entry_formatter,
+            )
         _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
             _raw_declared.replace("val_t", self.type_name)
@@ -1042,6 +1153,8 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble for OCaml."""
+        if self._json_type_active:
+            return {}
         p = self.constructor_prefix
         _h = f"type {self.type_name} ="
         _date_constructor = (
