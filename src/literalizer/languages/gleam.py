@@ -1156,15 +1156,6 @@ class Gleam(metaclass=LanguageCls):
         """Return whether the ``gleam_json.Json`` builder mode is set."""
         return self.json_type is not None
 
-    def __post_init__(self) -> None:
-        """Reject incompatible :attr:`json_type` combinations."""
-        # Today the JSON value mode only conflicts with the default
-        # ``GVal`` ADT settings via field overrides; no enum combination
-        # is rejected yet, but the hook is kept for parity with the
-        # other ``json_type`` languages so future incompatibilities have
-        # an obvious place to land.
-        return
-
     @cached_property
     def static_preamble(self) -> Sequence[str]:
         """File-scope preamble.
